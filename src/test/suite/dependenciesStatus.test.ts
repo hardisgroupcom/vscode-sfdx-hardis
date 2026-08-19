@@ -47,9 +47,7 @@ suite("dependenciesStatus", () => {
       const summary = buildCheckingSummary();
       assert.strictEqual(summary.state, "checking");
       assert.strictEqual(summary.prerequisites.length, 5);
-      assert.ok(
-        summary.prerequisites.every((p) => p.status === "checking"),
-      );
+      assert.ok(summary.prerequisites.every((p) => p.status === "checking"));
       assert.strictEqual(summary.missingCount, 0);
       assert.strictEqual(summary.outdatedCount, 0);
       assert.strictEqual(summary.actionableCount, 0);
@@ -139,72 +137,78 @@ suite("dependenciesStatus", () => {
     });
   });
 
-  suite("applyRichInfoToPrerequisites — missing detection independent of npm latest", () => {
-    test("flags sf as missing when the rich pass resolved it as missing", () => {
-      const richInfo: PluginsDetailSnapshot = {
-        outdatedPluginsCount: 0,
-        sfCliMissing: true,
-        sfdxHardisMissing: false,
-      };
-      const merged = applyRichInfoToPrerequisites(ALL_OK, richInfo);
-      const sf = merged.find((p) => p.id === "sf");
-      assert.strictEqual(sf?.status, "missing");
-      assert.strictEqual(sf?.installed, false);
-    });
+  suite(
+    "applyRichInfoToPrerequisites — missing detection independent of npm latest",
+    () => {
+      test("flags sf as missing when the rich pass resolved it as missing", () => {
+        const richInfo: PluginsDetailSnapshot = {
+          outdatedPluginsCount: 0,
+          sfCliMissing: true,
+          sfdxHardisMissing: false,
+        };
+        const merged = applyRichInfoToPrerequisites(ALL_OK, richInfo);
+        const sf = merged.find((p) => p.id === "sf");
+        assert.strictEqual(sf?.status, "missing");
+        assert.strictEqual(sf?.installed, false);
+      });
 
-    test("flags sfdx-hardis as missing even though the naive check reported it ok (cold npm cache)", () => {
-      const richInfo: PluginsDetailSnapshot = {
-        outdatedPluginsCount: 0,
-        sfCliMissing: false,
-        sfdxHardisMissing: true,
-      };
-      const merged = applyRichInfoToPrerequisites(ALL_OK, richInfo);
-      const sfdxHardis = merged.find((p) => p.id === "sfdxHardis");
-      assert.strictEqual(sfdxHardis?.status, "missing");
-      assert.strictEqual(sfdxHardis?.installed, false);
-    });
+      test("flags sfdx-hardis as missing even though the naive check reported it ok (cold npm cache)", () => {
+        const richInfo: PluginsDetailSnapshot = {
+          outdatedPluginsCount: 0,
+          sfCliMissing: false,
+          sfdxHardisMissing: true,
+        };
+        const merged = applyRichInfoToPrerequisites(ALL_OK, richInfo);
+        const sfdxHardis = merged.find((p) => p.id === "sfdxHardis");
+        assert.strictEqual(sfdxHardis?.status, "missing");
+        assert.strictEqual(sfdxHardis?.installed, false);
+      });
 
-    test("is idempotent: re-applying the same info twice does not change the result", () => {
-      const richInfo: PluginsDetailSnapshot = {
-        outdatedPluginsCount: 2,
-        sfCliMissing: true,
-        sfdxHardisMissing: true,
-      };
-      const once = applyRichInfoToPrerequisites(ALL_OK, richInfo);
-      const twice = applyRichInfoToPrerequisites(once, richInfo);
-      assert.deepStrictEqual(once, twice);
-    });
+      test("is idempotent: re-applying the same info twice does not change the result", () => {
+        const richInfo: PluginsDetailSnapshot = {
+          outdatedPluginsCount: 2,
+          sfCliMissing: true,
+          sfdxHardisMissing: true,
+        };
+        const once = applyRichInfoToPrerequisites(ALL_OK, richInfo);
+        const twice = applyRichInfoToPrerequisites(once, richInfo);
+        assert.deepStrictEqual(once, twice);
+      });
 
-    test("leaves node, git and the extension pack untouched", () => {
-      const richInfo: PluginsDetailSnapshot = {
-        outdatedPluginsCount: 0,
-        sfCliMissing: true,
-        sfdxHardisMissing: true,
-      };
-      const merged = applyRichInfoToPrerequisites(ALL_OK, richInfo);
-      assert.strictEqual(merged.find((p) => p.id === "node")?.status, "ok");
-      assert.strictEqual(merged.find((p) => p.id === "git")?.status, "ok");
-      assert.strictEqual(
-        merged.find((p) => p.id === "vscodeExtensionPack")?.status,
-        "ok",
-      );
-    });
-  });
+      test("leaves node, git and the extension pack untouched", () => {
+        const richInfo: PluginsDetailSnapshot = {
+          outdatedPluginsCount: 0,
+          sfCliMissing: true,
+          sfdxHardisMissing: true,
+        };
+        const merged = applyRichInfoToPrerequisites(ALL_OK, richInfo);
+        assert.strictEqual(merged.find((p) => p.id === "node")?.status, "ok");
+        assert.strictEqual(merged.find((p) => p.id === "git")?.status, "ok");
+        assert.strictEqual(
+          merged.find((p) => p.id === "vscodeExtensionPack")?.status,
+          "ok",
+        );
+      });
+    },
+  );
 
-  suite("buildDependenciesStatusSummary + rich info — end to end missing gap fix", () => {
-    test("sf CLI and sfdx-hardis genuinely missing surface in missingPrerequisites and drive upgradesRequired", () => {
-      const richInfo: PluginsDetailSnapshot = {
-        outdatedPluginsCount: 0,
-        sfCliMissing: true,
-        sfdxHardisMissing: true,
-      };
-      const summary = buildDependenciesStatusSummary(ALL_OK, richInfo);
-      assert.strictEqual(summary.state, "upgradesRequired");
-      assert.strictEqual(summary.missingCount, 2);
-      assert.deepStrictEqual(
-        summary.missingPrerequisites.map((p) => p.id).sort(),
-        ["sf", "sfdxHardis"],
-      );
-    });
-  });
+  suite(
+    "buildDependenciesStatusSummary + rich info — end to end missing gap fix",
+    () => {
+      test("sf CLI and sfdx-hardis genuinely missing surface in missingPrerequisites and drive upgradesRequired", () => {
+        const richInfo: PluginsDetailSnapshot = {
+          outdatedPluginsCount: 0,
+          sfCliMissing: true,
+          sfdxHardisMissing: true,
+        };
+        const summary = buildDependenciesStatusSummary(ALL_OK, richInfo);
+        assert.strictEqual(summary.state, "upgradesRequired");
+        assert.strictEqual(summary.missingCount, 2);
+        assert.deepStrictEqual(
+          summary.missingPrerequisites.map((p) => p.id).sort(),
+          ["sf", "sfdxHardis"],
+        );
+      });
+    },
+  );
 });

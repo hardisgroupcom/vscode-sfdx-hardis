@@ -1,6 +1,14 @@
-import { execCommand, getNpmLatestVersion, isToolingCachePreloaded, stripAnsi } from "../utils";
+import {
+  execCommand,
+  getNpmLatestVersion,
+  isToolingCachePreloaded,
+  stripAnsi,
+} from "../utils";
 import { findExecutable } from "./executableUtils";
-import { getSalesforceExtensionPackStatus, resolveSfCliPath } from "./setupUtils";
+import {
+  getSalesforceExtensionPackStatus,
+  resolveSfCliPath,
+} from "./setupUtils";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import {
   NODE_JS_MINIMUM_VERSION,
@@ -22,11 +30,7 @@ import {
  */
 
 export type PrerequisiteId =
-  | "node"
-  | "git"
-  | "sf"
-  | "sfdxHardis"
-  | "vscodeExtensionPack";
+  "node" | "git" | "sf" | "sfdxHardis" | "vscodeExtensionPack";
 
 export type PrerequisiteState = "checking" | "ok" | "outdated" | "missing";
 
@@ -52,9 +56,7 @@ export interface PluginsDetailSnapshot {
 }
 
 export type DependenciesButtonState =
-  | "checking"
-  | "upgradesRequired"
-  | "allUpToDate";
+  "checking" | "upgradesRequired" | "allUpToDate";
 
 export interface DependenciesStatusSummary {
   state: DependenciesButtonState;
@@ -273,7 +275,9 @@ export function buildCheckingSummary(): DependenciesStatusSummary {
  * `null` when nothing is cached yet (never happens once `isToolingCachePreloaded()`
  * is true for the commands preloaded by `preLoadCache()`).
  */
-async function readCachedCommandOutput(command: string): Promise<string | null> {
+async function readCachedCommandOutput(
+  command: string,
+): Promise<string | null> {
   try {
     const res: any = await execCommand(command, {
       fail: false,

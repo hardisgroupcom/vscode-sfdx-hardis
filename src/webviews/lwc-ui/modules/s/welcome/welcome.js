@@ -203,7 +203,8 @@ export default class Welcome extends SharedMixin(LightningElement) {
       this.dependenciesStatus = data.dependenciesStatus;
     }
     if (data && data.dependenciesModalDismissed !== undefined) {
-      this.prerequisitesModalDismissed = data.dependenciesModalDismissed === true;
+      this.prerequisitesModalDismissed =
+        data.dependenciesModalDismissed === true;
     }
   }
 
@@ -498,7 +499,9 @@ export default class Welcome extends SharedMixin(LightningElement) {
   // ── Dependencies button (checking / upgrades required / all up to date) ──
 
   get dependenciesButtonState() {
-    return (this.dependenciesStatus && this.dependenciesStatus.state) || "checking";
+    return (
+      (this.dependenciesStatus && this.dependenciesStatus.state) || "checking"
+    );
   }
 
   get isDependenciesChecking() {
@@ -549,15 +552,23 @@ export default class Welcome extends SharedMixin(LightningElement) {
   // Salesforce Extension Pack entirely missing — guidance for new users) ──
 
   get missingPrerequisites() {
-    return (this.dependenciesStatus && this.dependenciesStatus.missingPrerequisites) || [];
+    return (
+      (this.dependenciesStatus &&
+        this.dependenciesStatus.missingPrerequisites) ||
+      []
+    );
   }
 
   get showPrerequisitesModal() {
-    return this.missingPrerequisites.length > 0 && !this.prerequisitesModalDismissed;
+    return (
+      this.missingPrerequisites.length > 0 && !this.prerequisitesModalDismissed
+    );
   }
 
   get missingPrerequisiteItems() {
-    return this.missingPrerequisites.map((item) => this.buildMissingPrerequisiteItem(item));
+    return this.missingPrerequisites.map((item) =>
+      this.buildMissingPrerequisiteItem(item),
+    );
   }
 
   buildMissingPrerequisiteItem(item) {
