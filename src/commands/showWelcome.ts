@@ -18,6 +18,12 @@ import {
   CustomCommandMenu,
 } from "../utils/sfdx-hardis-config-utils";
 import { CacheManager } from "../utils/cache-manager";
+import {
+  dismissPrerequisitesModalForSession,
+  getCachedDependenciesStatus,
+  isPrerequisitesModalDismissed,
+  refreshDependenciesStatus,
+} from "../utils/dependenciesStatus";
 
 const EXTENSION_ID = "NicolasVuillamy.vscode-sfdx-hardis";
 const QUICK_START_COLLAPSED_PREF = "welcomeQuickStartCollapsed";
@@ -87,6 +93,8 @@ export function registerShowWelcome(command: Commands) {
 
       const panel = lwcManager.getOrCreatePanel("s-welcome", {
         showWelcomeAtStartup: showWelcomeAtStartup,
+        dependenciesStatus: getCachedDependenciesStatus(),
+        dependenciesModalDismissed: isPrerequisitesModalDismissed(),
         quickStartCollapsed:
           CacheManager.getPreference<boolean>(QUICK_START_COLLAPSED_PREF) ===
           true,
@@ -137,6 +145,12 @@ export function registerShowWelcome(command: Commands) {
         })();
       }
 
+      // Never block the Welcome page on the dependencies computation: it
+      // renders immediately with the last cached value (or "checking"), and
+      // refreshDependenciesStatus() pushes the fresh value to this panel once
+      // ready (see src/utils/dependenciesStatus.ts)
+      void refreshDependenciesStatus();
+
       // Handle messages from the Welcome panel
       panel.onMessage(async (type: string, data: any) => {
         if (type === "navigateTo") {
@@ -149,6 +163,8 @@ export function registerShowWelcome(command: Commands) {
             QUICK_START_COLLAPSED_PREF,
             data?.collapsed === true,
           );
+        } else if (type === "dismissPrerequisitesModal") {
+          dismissPrerequisitesModalForSession();
         }
       });
     },

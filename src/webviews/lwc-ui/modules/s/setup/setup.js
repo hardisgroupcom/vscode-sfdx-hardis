@@ -14,17 +14,33 @@ const STATE_TILE_HUE = {
 export default class Setup extends SharedMixin(LightningElement) {
   @track checks = [];
   @track summaryMessage = "";
-  @track summaryClass = "";
+  @track summaryClass = "info";
   _pendingCheckResolvers = {};
   _autoUpdateDependencies = false;
+
+  // The panel paints before `initialize` comes back from the extension, so the
+  // summary starts in the "checking" state rather than falling back to a static
+  // gear icon with no message. updateSummary() takes over from the first result.
+  _summaryChecking = true;
+  _summaryIconName = "utility:sync";
+  _summaryState = "neutral";
 
   // Control visibility of the top-right settings (hide on scroll)
   // (no fixed-position behaviour needed; toggle will live inside header)
 
   connectedCallback() {
     super.connectedCallback();
+    this.summaryMessage = this.t("checkInProgress");
     // Request initialization data (UI should render the list immediately)
     window.sendMessageToVSCode({ type: "requestSetupInit" });
+  }
+
+  /**
+   * True until the extension has sent the dependency list. The grid is empty in
+   * that window, so it shows a spinner instead of a blank page.
+   */
+  get isLoadingChecks() {
+    return !this.checks || this.checks.length === 0;
   }
 
   @api

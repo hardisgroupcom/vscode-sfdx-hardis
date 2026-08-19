@@ -60,6 +60,18 @@
                     </div>
                 </div>
 
+                <template if:true={isLoadingChecks}>
+                    <div class="hardis-empty">
+                        <div class="slds-is-relative setup-loading-spinner">
+                            <s-spinner
+                                alternative-text={i18n.checkInProgress}
+                                size="medium">
+                            </s-spinner>
+                        </div>
+                        <p class="hardis-empty-desc">{i18n.checkInProgress}</p>
+                    </div>
+                </template>
+
                 <div class="hardis-status-grid">
                     <template for:each={checks} for:item="chk">
                         <div key={chk.id} class={chk.cardClass}>

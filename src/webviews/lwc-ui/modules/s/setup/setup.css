@@ -34,3 +34,11 @@
 .setup-container .slds-spinner_container {
   display: none !important;
 }
+
+/* Loading placeholder shown while the extension computes the dependency list.
+   Layout comes from .hardis-empty in global-theme.css; only the spinner needs
+   an explicit box, since s-spinner is absolutely positioned. */
+.setup-loading-spinner {
+  height: 3rem;
+  width: 100%;
+}
