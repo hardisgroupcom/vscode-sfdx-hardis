@@ -2,6 +2,7 @@ import * as assert from "assert";
 import * as fs from "fs";
 import * as path from "path";
 import { WELCOME_NAVIGATION_TARGETS } from "../../commands/showWelcome";
+import { REPO_ROOT } from "./lwcSourceUtils";
 
 /**
  * Contract tests for the Welcome page (v8 design).
@@ -15,7 +16,6 @@ import { WELCOME_NAVIGATION_TARGETS } from "../../commands/showWelcome";
  *  - the "essentials" featured row keeps the heavy-use features
  */
 
-const REPO_ROOT = path.join(__dirname, "..", "..", "..");
 const I18N_DIR = path.join(REPO_ROOT, "src", "i18n");
 const WELCOME_DIR = path.join(
   REPO_ROOT,

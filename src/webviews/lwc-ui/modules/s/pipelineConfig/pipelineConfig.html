@@ -168,7 +168,7 @@
                           <template if:true={entry.isArrayObject}>
                             <!-- Display existing items as datatable -->
                             <template if:true={entry.hasArrayObjectValues}>
-                              <lightning-datatable
+                              <s-hardis-datatable
                                 key-field="_index"
                                 data={entry.arrayObjectDatatableData}
                                 column-widths-mode="auto"
@@ -177,7 +177,7 @@
                                 onrowaction={handleArrayObjectRowAction}
                                 hide-checkbox-column
                                 class="slds-m-bottom_medium"
-                              ></lightning-datatable>
+                              ></s-hardis-datatable>
                             </template>
 
                             <!-- Add New Button (Edit mode only) -->
@@ -371,7 +371,7 @@
                             </template>
                             <template if:true={entry.isArrayObject}>
                               <template if:true={entry.hasArrayObjectValues}>
-                                <lightning-datatable
+                                <s-hardis-datatable
                                   key-field="_index"
                                   data={entry.arrayObjectDatatableData}
                                   column-widths-mode="auto"
@@ -380,7 +380,7 @@
                                   onrowaction={handleArrayObjectRowAction}
                                   hide-checkbox-column
                                   class="slds-m-top_x-small"
-                                ></lightning-datatable>
+                                ></s-hardis-datatable>
                               </template>
                               <template if:false={entry.hasArrayObjectValues}>
                                 <span class="slds-text-color_weak hardis-not-set">{i18n.notDefined}</span>

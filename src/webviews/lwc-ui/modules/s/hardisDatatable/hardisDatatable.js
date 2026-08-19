@@ -4,6 +4,7 @@ import LightningDatatable from "lightning/datatable";
 import statusPill from "./statusPill.html";
 import avatarText from "./avatarText.html";
 import branchChip from "./branchChip.html";
+import typePill from "./typePill.html";
 
 /**
  * lightning-datatable extended with SLDS-flavored cell types shared by the
@@ -13,6 +14,11 @@ import branchChip from "./branchChip.html";
  *   e.g. "hardis-pill hardis-status-success"), url.
  * - avatarText: initials avatar circle + text value. typeAttributes:
  *   initials, avatarClass (computed CSS classes for the color variant).
+ * - typePill: colored CATEGORY pill (leading icon or dot + label), optionally
+ *   a link. Same shape as statusPill but the hue carries a category
+ *   (deployment action type, metadata type...) instead of a state.
+ *   typeAttributes: label, pillClass (see s/pillUtils), url, tooltip,
+ *   iconName (SLDS icon shown instead of the dot).
  * - branchChip: monospace chip for technical identifiers such as git branch
  *   names; the full value is available on hover. No typeAttributes.
  *
@@ -24,6 +30,11 @@ export default class HardisDatatable extends LightningDatatable {
       template: statusPill,
       standardCellLayout: true,
       typeAttributes: ["label", "pillClass", "url"],
+    },
+    typePill: {
+      template: typePill,
+      standardCellLayout: true,
+      typeAttributes: ["label", "pillClass", "url", "tooltip", "iconName"],
     },
     avatarText: {
       template: avatarText,
