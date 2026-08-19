@@ -116,6 +116,7 @@
 - **Commands**
   - Added **7 commands** to the Commands panel: **MFA Readiness**, **Unsecure Permissions**, **Usage-Based Entitlements**, **Consumption Alerts**, **AI Credit Usage**, **Run Agentforce Tests** and **Data Dictionary**
   - New **Search** button in the Commands panel header, opening a picker that lists commands from **every category** and filters on their label, category and tooltip **as you type**
+  - The Search picker also proposes **17 additional sfdx-hardis commands** that are not displayed in the Commands panel, like **Deployments history analysis**, **Org licenses**, **Create sandbox org**, **Data Cloud SQL query**, **Purge references from metadata** or **Clear sfdx-hardis cache**
 
 - **Pipeline Settings**
   - Global and branch deployment actions are now edited with the **same editor as the one of the DevOps Pipeline**, instead of a reduced form that offered only the text and toggle fields of an action
