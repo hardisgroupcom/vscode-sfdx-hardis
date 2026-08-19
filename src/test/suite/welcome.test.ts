@@ -41,13 +41,26 @@ function extractWelcomeI18nKeys(): string[] {
   for (const match of html.matchAll(/\{i18n\.([a-zA-Z0-9_]+)\}/g)) {
     keys.add(match[1]);
   }
-  for (const match of js.matchAll(/this\.t\("([a-zA-Z0-9_]+)"\)/g)) {
+  for (const match of js.matchAll(/this\.t\("([a-zA-Z0-9_]+)"[,)]/g)) {
     keys.add(match[1]);
   }
   // Keys resolved dynamically through this.t(<variable>) in welcome.js
   const jsKeyProperties = [
     ...js.matchAll(/(?:labelKey|descriptionKey):\s*"([a-zA-Z0-9_]+)"/g),
   ].map((match) => match[1]);
+  // Explanation keys resolved dynamically through this.t(explanationKey) via
+  // PREREQUISITE_EXPLANATION_KEYS (missing-prerequisites modal)
+  const explanationBlockStart = js.indexOf(
+    "const PREREQUISITE_EXPLANATION_KEYS",
+  );
+  const explanationBlockEnd = js.indexOf("};", explanationBlockStart);
+  if (explanationBlockStart > -1 && explanationBlockEnd > -1) {
+    for (const match of js
+      .substring(explanationBlockStart, explanationBlockEnd)
+      .matchAll(/:\s*"([a-zA-Z0-9_]+)"/g)) {
+      keys.add(match[1]);
+    }
+  }
   jsKeyProperties.forEach((key) => keys.add(key));
   return [...keys];
 }
@@ -139,5 +152,30 @@ suite("Welcome page contracts", () => {
       ["documentationWorkbench", "orgMonitoring", "pipeline"].sort(),
       "The featured row must contain DevOps Pipeline, Org Monitoring and Documentation Workbench",
     );
+  });
+
+  test("only the actionable dependencies state is tinted", () => {
+    const js = fs.readFileSync(path.join(WELCOME_DIR, "welcome.js"), "utf8");
+    const getterStart = js.indexOf("get dependenciesButtonClass()");
+    assert.ok(
+      getterStart !== -1,
+      "dependenciesButtonClass getter not found in welcome.js",
+    );
+    const getter = js.substring(
+      getterStart,
+      js.indexOf("get dependenciesButtonDisabled()", getterStart),
+    );
+    assert.ok(
+      getter.includes("hardis-btn-tinted-amber"),
+      "The 'upgrades required' state must stay visually distinct (amber tint)",
+    );
+    // "All up to date" and "checking" must remain discrete: nothing needs the
+    // user's attention, so no colour should compete with the rest of the page.
+    for (const tint of ["green", "blue", "red"]) {
+      assert.ok(
+        !getter.includes(`hardis-btn-tinted-${tint}`),
+        `The dependencies button must not use the ${tint} tint: only the actionable state is coloured`,
+      );
+    }
   });
 });

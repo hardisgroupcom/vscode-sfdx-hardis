@@ -74,6 +74,31 @@ export async function resolveSfCliPath(): Promise<string> {
   }
 }
 
+export type SalesforceExtensionPackStatus = {
+  installed: boolean;
+  version: string | null;
+};
+
+/**
+ * Detects whether the Salesforce Extension Pack (or its "expanded" variant) is
+ * installed. Single source of truth for the Setup panel, the Dependencies tree
+ * and the Welcome page.
+ *
+ * Deliberately NOT cached: `vscode.extensions.getExtension()` is a synchronous
+ * in-memory registry lookup with no I/O, so there is nothing to save, while
+ * caching a positive result would keep reporting the pack as installed after
+ * the user uninstalls or disables it (and would freeze a stale version).
+ */
+export function getSalesforceExtensionPackStatus(): SalesforceExtensionPackStatus {
+  const found =
+    vscode.extensions.getExtension("salesforce.salesforcedx-vscode") ||
+    vscode.extensions.getExtension("salesforce.salesforcedx-vscode-expanded");
+  return {
+    installed: !!found,
+    version: found?.packageJSON?.version ?? null,
+  };
+}
+
 export type DependencyInfo = {
   explanation: string;
   installable: boolean;
@@ -385,17 +410,12 @@ export class SetupHelper {
 
   async checkSalesforceExtensionPack(): Promise<DependencyCheckResult> {
     const id = "vscode:salesforce-extension-pack";
-    const normalId = "salesforce.salesforcedx-vscode";
-    const extendedId = "salesforce.salesforcedx-vscode-expanded";
-    const normal = vscode.extensions.getExtension(normalId);
-    const extended = vscode.extensions.getExtension(extendedId);
-    const found = normal || extended;
-    const installed = !!found;
+    const { installed, version } = getSalesforceExtensionPackStatus();
     return {
       id,
       label: "Salesforce Extension Pack",
       installed,
-      version: found?.packageJSON?.version ?? null,
+      version,
       recommended: null,
       status: installed ? "ok" : "missing",
       helpUrl:

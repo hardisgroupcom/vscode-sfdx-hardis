@@ -93,6 +93,26 @@ const THEMES = [
   { code: "dark", iconKey: "themeDark", labelKey: "darkTheme" },
 ];
 
+// i18n key of the "what is it / why do I need it" explanation shown in the
+// missing-prerequisites modal, keyed by PrerequisiteId (see
+// src/utils/dependenciesStatus.ts on the extension side)
+const PREREQUISITE_EXPLANATION_KEYS = {
+  node: "depNodeExplanation",
+  git: "depGitExplanation",
+  sf: "depSfCliExplanation",
+  sfdxHardis: "depSfdxHardisExplanation",
+  vscodeExtensionPack: "depSalesforceExtensionPackExplanation",
+};
+
+const DEPENDENCIES_STATUS_CHECKING = {
+  state: "checking",
+  prerequisites: [],
+  missingPrerequisites: [],
+  missingCount: 0,
+  outdatedCount: 0,
+  actionableCount: 0,
+};
+
 export default class Welcome extends SharedMixin(LightningElement) {
   @track isLoading = false;
   @track showWelcomeAtStartup = true;
@@ -112,6 +132,8 @@ export default class Welcome extends SharedMixin(LightningElement) {
   @track extensionVersion = "";
   @track customMenus = [];
   @track activeCustomMenu = null;
+  @track dependenciesStatus = DEPENDENCIES_STATUS_CHECKING;
+  @track prerequisitesModalDismissed = false;
 
   connectedCallback() {
     super.connectedCallback();
@@ -177,6 +199,12 @@ export default class Welcome extends SharedMixin(LightningElement) {
     if (data && data.customMenus) {
       this.customMenus = this.normalizeMenus(data.customMenus);
     }
+    if (data && data.dependenciesStatus) {
+      this.dependenciesStatus = data.dependenciesStatus;
+    }
+    if (data && data.dependenciesModalDismissed !== undefined) {
+      this.prerequisitesModalDismissed = data.dependenciesModalDismissed === true;
+    }
   }
 
   normalizeMenus(menus) {
@@ -219,6 +247,10 @@ export default class Welcome extends SharedMixin(LightningElement) {
     console.log("Welcome component received message:", type, data);
     if (type === "updateCustomMenus") {
       this.customMenus = this.normalizeMenus(data || []);
+    } else if (type === "updateDependenciesStatus") {
+      if (data && data.dependenciesStatus) {
+        this.dependenciesStatus = data.dependenciesStatus;
+      }
     }
   }
 
@@ -461,6 +493,94 @@ export default class Welcome extends SharedMixin(LightningElement) {
       type: "navigateTo",
       data: { target: "setup" },
     });
+  }
+
+  // ── Dependencies button (checking / upgrades required / all up to date) ──
+
+  get dependenciesButtonState() {
+    return (this.dependenciesStatus && this.dependenciesStatus.state) || "checking";
+  }
+
+  get isDependenciesChecking() {
+    return this.dependenciesButtonState === "checking";
+  }
+
+  get isDependenciesUpgradesRequired() {
+    return this.dependenciesButtonState === "upgradesRequired";
+  }
+
+  get dependenciesButtonLabel() {
+    if (this.isDependenciesChecking) {
+      return this.i18n.checkInProgress;
+    }
+    if (this.isDependenciesUpgradesRequired) {
+      return this.t("welcomeDependenciesUpdatesNeeded", {
+        count: this.dependenciesStatus.actionableCount,
+      });
+    }
+    return this.i18n.dependenciesUpToDate;
+  }
+
+  get dependenciesButtonIcon() {
+    if (this.isDependenciesChecking) {
+      return "utility:hourglass";
+    }
+    if (this.isDependenciesUpgradesRequired) {
+      return "utility:warning";
+    }
+    return "utility:check";
+  }
+
+  get dependenciesButtonClass() {
+    // Only the actionable state is tinted. "All up to date" and "checking" stay
+    // visually discrete on purpose: nothing needs the user's attention there,
+    // so colouring them would compete with the rest of the Welcome page.
+    if (this.isDependenciesUpgradesRequired) {
+      return "hardis-btn-tinted-amber";
+    }
+    return "";
+  }
+
+  get dependenciesButtonDisabled() {
+    return this.isDependenciesChecking;
+  }
+
+  // ── Missing-prerequisites modal (Git / sf CLI / Node.js / sfdx-hardis /
+  // Salesforce Extension Pack entirely missing — guidance for new users) ──
+
+  get missingPrerequisites() {
+    return (this.dependenciesStatus && this.dependenciesStatus.missingPrerequisites) || [];
+  }
+
+  get showPrerequisitesModal() {
+    return this.missingPrerequisites.length > 0 && !this.prerequisitesModalDismissed;
+  }
+
+  get missingPrerequisiteItems() {
+    return this.missingPrerequisites.map((item) => this.buildMissingPrerequisiteItem(item));
+  }
+
+  buildMissingPrerequisiteItem(item) {
+    const explanationKey = PREREQUISITE_EXPLANATION_KEYS[item.id] || "";
+    return {
+      id: item.id,
+      label: item.label,
+      explanation: explanationKey ? this.t(explanationKey) : "",
+    };
+  }
+
+  handleDismissPrerequisitesModal() {
+    this.prerequisitesModalDismissed = true;
+    window.sendMessageToVSCode({ type: "dismissPrerequisitesModal" });
+  }
+
+  /**
+   * The modal's single call to action: close it and hand the user over to the
+   * Setup panel, which is where dependencies are actually checked and installed.
+   */
+  handleOpenSetupFromModal() {
+    this.handleDismissPrerequisitesModal();
+    this.navigateToSetup();
   }
 
   navigateToExtensionConfig() {
