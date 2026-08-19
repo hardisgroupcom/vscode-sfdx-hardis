@@ -1,6 +1,7 @@
 import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
 import { getAvatarClass, getInitials } from "s/avatarUtils";
+import { getMetadataTypePillClass } from "s/pillUtils";
 
 /**
  * LWC to retrieve and search metadata from a Salesforce org
@@ -112,18 +113,22 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       });
     }
 
-    // Metadata Type
+    // Metadata Type, as a colored pill linking to the type documentation.
+    // The hue groups the types by family (Apex, UI, automation, data model,
+    // security, integration, analytics, experience, settings) so a long
+    // result list can be scanned by color instead of read type by type.
     cols.push({
       label: this.t("metadataTypeLabel"),
-      fieldName: "MemberTypeUrl",
-      type: "url",
+      fieldName: "MemberType",
+      type: "typePill",
       sortable: true,
-      wrapText: true,
-      initialWidth: 160,
+      wrapText: false,
+      initialWidth: 220,
       typeAttributes: {
         label: { fieldName: "MemberType" },
+        pillClass: { fieldName: "MemberTypePillClass" },
+        url: { fieldName: "MemberTypeUrl" },
         tooltip: { fieldName: "MemberTypeTitle" },
-        target: "_blank",
       },
     });
 
@@ -1353,6 +1358,8 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
           MemberType: record.MemberType,
           MemberTypeUrl: `${METADATA_DOC_BASE_URL}${record.MemberType}`,
           MemberTypeTitle: `View ${record.MemberType} documentation`,
+          // Colored pill classes, stable per metadata type family
+          MemberTypePillClass: getMetadataTypePillClass(record.MemberType),
           MemberNameTitle: `Open metadata for ${record.MemberType} ${record.MemberName}`,
           LastModifiedDate: record.LastModifiedDate,
           LastModifiedByName: lastModifiedByName,

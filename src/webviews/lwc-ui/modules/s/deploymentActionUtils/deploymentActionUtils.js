@@ -7,6 +7,8 @@
 // so the DevOps Pipeline panel and the Pipeline Settings editor display the
 // same type labels, icons and execution contexts for the same action.
 
+import { getPillClass } from "s/pillUtils";
+
 const TYPE_LABEL_KEY_BY_CODE = {
   command: "commandType",
   data: "dataType",
@@ -27,6 +29,25 @@ const TYPE_ICON_BY_CODE = {
   manual: "utility:task",
 };
 
+// Category hue of each action type, rendered as a colored pill by the
+// typePill cell type (classes declared in resources/global-theme.css).
+const TYPE_HUE_BY_CODE = {
+  command: "blue",
+  data: "teal",
+  apex: "violet",
+  "schedule-batch": "amber",
+  "publish-community": "green",
+  "remove-packagexml-items": "pink",
+  manual: "slate",
+};
+
+// Hue of the execution moment pill. Distinct from every type hue so both
+// pills of a row stay tellable apart.
+const WHEN_HUE_BY_CODE = {
+  "pre-deploy": "cyan",
+  "post-deploy": "indigo",
+};
+
 const CONTEXT_LABEL_KEY_BY_CODE = {
   all: "checkAndProcessDeployment",
   "check-deployment-only": "checkDeploymentOnly",
@@ -41,6 +62,16 @@ export function getActionTypeLabel(typeCode, t) {
 
 export function getActionTypeIconName(typeCode) {
   return TYPE_ICON_BY_CODE[typeCode] || "utility:question";
+}
+
+// CSS classes of the colored pill displaying an action type
+export function getActionTypePillClass(typeCode) {
+  return getPillClass(TYPE_HUE_BY_CODE[typeCode]);
+}
+
+// CSS classes of the colored pill displaying when an action runs
+export function getActionWhenPillClass(whenCode) {
+  return getPillClass(WHEN_HUE_BY_CODE[whenCode]);
 }
 
 export function getActionContextLabel(contextCode, t) {

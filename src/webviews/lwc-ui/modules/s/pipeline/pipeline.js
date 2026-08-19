@@ -8,7 +8,10 @@ import { getAvatarClass, getInitials } from "s/avatarUtils";
 import {
   getActionTypeLabel,
   getActionTypeIconName,
+  getActionTypePillClass,
+  getActionWhenPillClass,
 } from "s/deploymentActionUtils";
+import { getTicketStatusPillClass } from "s/pillUtils";
 
 export default class Pipeline extends SharedMixin(LightningElement) {
   @track prButtonInfo;
@@ -199,17 +202,21 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // Compute actions columns to dynamically set Pull Request label
   get computedModalActionsColumns() {
     const columns = [
+      // Action type as a colored pill (hue + icon per type), so a long list of
+      // actions can be scanned by category instead of by reading each label
       {
         key: "type",
         label: this.i18n.typeLabel,
         fieldName: "type",
-        type: "text",
-        cellAttributes: {
+        type: "typePill",
+        typeAttributes: {
+          label: { fieldName: "type" },
+          pillClass: { fieldName: "typePillClass" },
           iconName: { fieldName: "typeIconName" },
-          iconPosition: "left",
+          tooltip: { fieldName: "type" },
         },
-        wrapText: true,
-        initialWidth: 150,
+        wrapText: false,
+        initialWidth: 170,
       },
       {
         key: "label",
@@ -223,18 +230,27 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         },
         wrapText: true,
       },
+      // Pre-Deploy / Post-Deploy pill: the rows are sorted by this value, so
+      // the color makes the two blocks obvious at a glance
       {
         key: "when",
         label: this.i18n.actionWhenField,
         fieldName: "when",
-        type: "text",
-        wrapText: true,
-        initialWidth: 120,
+        type: "typePill",
+        typeAttributes: {
+          label: { fieldName: "when" },
+          pillClass: { fieldName: "whenPillClass" },
+          tooltip: { fieldName: "when" },
+        },
+        wrapText: false,
+        initialWidth: 130,
       },
     ];
 
-    // Only show PR column in branch mode
+    // Only show the pull request author and column in branch mode, where the
+    // actions of several pull requests are aggregated in the same table
     if (this.modalMode !== "singlePR") {
+      columns.push(this._authorColumn());
       columns.push(this._pullRequestColumn());
     }
 
@@ -280,20 +296,21 @@ export default class Pipeline extends SharedMixin(LightningElement) {
           type: "text",
           wrapText: true,
         },
+        // Ticket status as a colored pill: green when done, blue while in
+        // progress, red when blocked/rejected (see s/pillUtils)
         {
           key: "status",
           label: this.i18n.statusLabel,
           fieldName: "statusLabel",
-          type: "text",
-          wrapText: true,
+          type: "statusPill",
+          typeAttributes: {
+            label: { fieldName: "statusLabel" },
+            pillClass: { fieldName: "statusPillClass" },
+          },
+          wrapText: false,
+          initialWidth: 140,
         },
-        {
-          key: "author",
-          label: this.i18n.authorLabel,
-          fieldName: "authorLabel",
-          type: "text",
-          wrapText: true,
-        },
+        this._authorColumn(),
       );
     }
 
@@ -303,6 +320,23 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
 
     return columns;
+  }
+
+  // Datatable column definition for an author, displayed with the same
+  // initials avatar as in the Pull Requests tab.
+  _authorColumn() {
+    return {
+      key: "author",
+      label: this.i18n.authorLabel,
+      fieldName: "authorLabel",
+      type: "avatarText",
+      wrapText: false,
+      initialWidth: 170,
+      typeAttributes: {
+        initials: { fieldName: "authorInitials" },
+        avatarClass: { fieldName: "authorAvatarClass" },
+      },
+    };
   }
 
   // Datatable column definition for the pull request link (branch mode only).
@@ -2701,6 +2735,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         when: whenLabel,
         whenCode: when,
         typeCode: typeCode,
+        ...this._actionDisplayFields(
+          typeCode,
+          when,
+          this.modalActions[actionIndex].authorLabel,
+        ),
         _fullAction: {
           ...action,
           pullRequest: {
@@ -2730,6 +2769,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         when: whenLabel,
         whenCode: when,
         typeCode: typeCode,
+        ...this._actionDisplayFields(typeCode, when, this._modalPrAuthorLabel()),
         prLabel: `#${prNumber} - ${action.pullRequest?.title || ""}`,
         prWebUrl: action.pullRequest?.webUrl || "",
         prNumber: prNumber,
@@ -2766,6 +2806,36 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.isDeploymentActionEditMode = false;
   }
 
+  // Colored status pill + initials avatar of a ticket row
+  _ticketDisplayFields(ticket) {
+    const authorLabel = ticket.authorLabel || "";
+    return {
+      statusPillClass: getTicketStatusPillClass(ticket.statusLabel),
+      authorInitials: getInitials(authorLabel),
+      authorAvatarClass: authorLabel ? getAvatarClass(authorLabel) : "",
+    };
+  }
+
+  // Colored type/when pills + initials avatar of the pull request author,
+  // shared by the aggregated actions and the ones edited in the modal
+  _actionDisplayFields(typeCode, whenCode, authorLabel) {
+    const author = authorLabel || "";
+    return {
+      typePillClass: getActionTypePillClass(typeCode),
+      whenPillClass: getActionWhenPillClass(whenCode),
+      authorLabel: author,
+      authorInitials: getInitials(author),
+      authorAvatarClass: author ? getAvatarClass(author) : "",
+    };
+  }
+
+  // Author of the pull request the modal is currently showing (single PR mode)
+  _modalPrAuthorLabel() {
+    return this.modalPullRequests.length === 1
+      ? this.modalPullRequests[0].authorLabel || ""
+      : "";
+  }
+
   _aggregateTicketsFromPRs(prs) {
     if (!Array.isArray(prs)) {
       return [];
@@ -2788,6 +2858,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
                 author: ticket.author || "",
                 authorLabel: ticket.authorLabel || "",
                 url: ticket.url || "",
+                ...this._ticketDisplayFields(ticket),
                 prs: [
                   {
                     number: pr.number,
@@ -2837,8 +2908,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         subject: ticketData.subject,
         status: ticketData.status,
         statusLabel: ticketData.statusLabel,
+        statusPillClass: ticketData.statusPillClass,
         author: ticketData.author,
         authorLabel: ticketData.authorLabel,
+        authorInitials: ticketData.authorInitials,
+        authorAvatarClass: ticketData.authorAvatarClass,
         url: ticketData.url,
         prLabel: prLabel,
         prWebUrl: prWebUrl,
@@ -3056,6 +3130,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
               typeCode: typeCode,
               when: whenLabel,
               whenCode: when,
+              ...this._actionDisplayFields(typeCode, when, pr.authorLabel),
               prLabel: `#${pr.number} - ${pr.title || ""}`,
               prWebUrl: pr.webUrl || "",
               prNumber: pr.number || 0,

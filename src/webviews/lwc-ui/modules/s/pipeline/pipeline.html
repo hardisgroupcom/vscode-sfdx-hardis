@@ -389,13 +389,13 @@
                         <template if:false={isFeaturePrModal}>
                         <lightning-tab label={modalTicketsTabLabel} value="tickets" icon-name="utility:link" icon-assistive-text={modalTicketsTabLabel}>
                             <template if:true={modalTickets.length}>
-                                <lightning-datatable
+                                <s-hardis-datatable
                                     key-field="id"
                                     data={modalTickets}
                                     columns={computedModalTicketColumns}
                                     hide-checkbox-column
                                     column-widths-mode="auto"
-                                ></lightning-datatable>
+                                ></s-hardis-datatable>
                             </template>
                             <template if:false={modalTickets.length}>
                                 <div class="slds-align_absolute-center slds-p-around_medium">
@@ -415,14 +415,14 @@
                                 </div>
                             </template>
                             <template if:true={modalActions.length}>
-                                <lightning-datatable
+                                <s-hardis-datatable
                                     key-field="id"
                                     data={modalActions}
                                     columns={computedModalActionsColumns}
                                     hide-checkbox-column
                                     column-widths-mode="auto"
                                     onrowaction={handleActionRowClick}
-                                ></lightning-datatable>
+                                ></s-hardis-datatable>
                             </template>
                             <template if:false={modalActions.length}>
                                 <div class="slds-align_absolute-center slds-p-around_medium">
