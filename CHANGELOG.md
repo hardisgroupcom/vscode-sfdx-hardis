@@ -83,6 +83,9 @@
     - The remaining tabs of the **Pull Requests modal** follow the same rules
       - **Tickets**: the ticket status is a **colored pill** (green when done, blue while in progress, orange while waiting, red when blocked or rejected) and its author is shown with an **initials avatar**, like in the Pull Requests tab
       - **Deployment Actions**: the action type and its **Pre-Deploy / Post-Deploy** moment are **colored pills**, and the author of the pull request carrying each action is shown with an initials avatar
+      - **Apex Tests**: test class names are displayed as **monospace chips**, like the branch names of the Pull Requests tab
+    - The **Pre-Post Deploy Commands** tables of the Pipeline Settings show the action type and its execution context with the **same colored pills**, so an action looks the same wherever it is displayed
+    - The last tables that were left out (Pull Requests modal, Pipeline Settings) now also have the **alternate row colors**, the hover highlight and the **right-click to copy a value**
     - In the **Metadata Retriever**, the metadata type is now a **colored pill** whose color tells its family apart at a glance (Apex, user interface, automation, data model, security, integration, analytics, experience sites, settings), and it still links to the type documentation
   - Quick action cards and other panels (Org Monitoring, Package XML, Documentation, Welcome, Setup, Monitoring Config, Metadata Retriever) now use the **official Salesforce color palette** for their icons and buttons, including the Release Notes buttons that could be **hard to read in dark mode**
   - Modals got a **design refresh** with a brand accent strip and chips in their title, in the Pull Requests modal (branch name and pull request count) as in all the other dialog windows (Data Workbench, Files Workbench, Pipeline Config, Monitoring Config, Deployment Actions)

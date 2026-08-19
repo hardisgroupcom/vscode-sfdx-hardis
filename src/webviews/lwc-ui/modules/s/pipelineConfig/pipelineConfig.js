@@ -4,6 +4,8 @@ import {
   getActionTypeLabel,
   getActionTypeIconName,
   getActionContextLabel,
+  getActionTypePillClass,
+  getActionContextPillClass,
 } from "s/deploymentActionUtils";
 
 // Config keys that hold git branch names: rendered as monospace branch chips
@@ -1094,22 +1096,31 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
         },
         wrapText: true,
       },
+      // Type and execution context as colored pills, exactly like the
+      // deployment actions tab of the DevOps Pipeline panel
       {
         label: this.t("typeLabel"),
         fieldName: "_typeLabel",
-        type: "text",
-        cellAttributes: {
+        type: "typePill",
+        typeAttributes: {
+          label: { fieldName: "_typeLabel" },
+          pillClass: { fieldName: "_typePillClass" },
           iconName: { fieldName: "_typeIconName" },
-          iconPosition: "left",
+          tooltip: { fieldName: "_typeLabel" },
         },
-        wrapText: true,
+        wrapText: false,
         initialWidth: 190,
       },
       {
         label: this.t("executionContextsLabel"),
         fieldName: "_contextLabel",
-        type: "text",
-        wrapText: true,
+        type: "typePill",
+        typeAttributes: {
+          label: { fieldName: "_contextLabel" },
+          pillClass: { fieldName: "_contextPillClass" },
+          tooltip: { fieldName: "_contextLabel" },
+        },
+        wrapText: false,
         initialWidth: 230,
       },
     ];
@@ -1209,12 +1220,12 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
         const typeCode = obj.type || "command";
         rowData._displayLabel =
           obj.label || obj.command || obj.id || this.t("unnamedAction");
+        const contextCode = obj.context || "all";
         rowData._typeLabel = getActionTypeLabel(typeCode, translate);
         rowData._typeIconName = getActionTypeIconName(typeCode);
-        rowData._contextLabel = getActionContextLabel(
-          obj.context || "all",
-          translate,
-        );
+        rowData._typePillClass = getActionTypePillClass(typeCode);
+        rowData._contextLabel = getActionContextLabel(contextCode, translate);
+        rowData._contextPillClass = getActionContextPillClass(contextCode);
       }
 
       return {

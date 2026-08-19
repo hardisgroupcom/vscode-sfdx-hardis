@@ -448,13 +448,13 @@
                                             </div>
 
                                             <template if:true={hasSelectedApexTests}>
-                                                <lightning-datatable
+                                                <s-hardis-datatable
                                                     key-field="id"
                                                     data={apexTestsSelectedRows}
                                                     columns={apexTestsSelectedColumns}
                                                     hide-checkbox-column
                                                     column-widths-mode="auto"
-                                                ></lightning-datatable>
+                                                ></s-hardis-datatable>
                                             </template>
                                             <template if:false={hasSelectedApexTests}>
                                                 <div class="slds-text-color_weak">{i18n.noApexClassesConfigured}</div>
@@ -491,13 +491,13 @@
                                             {readOnlyBranchModeMsg}
                                         </div>
                                         <template if:true={hasApexTestsByLineRows}>
-                                            <lightning-datatable
+                                            <s-hardis-datatable
                                                 key-field="id"
                                                 data={apexTestsByLineRows}
                                                 columns={apexTestsByLineColumns}
                                                 hide-checkbox-column
                                                 column-widths-mode="auto"
-                                            ></lightning-datatable>
+                                            ></s-hardis-datatable>
                                         </template>
                                         <template if:false={hasApexTestsByLineRows}>
                                             <div class="slds-text-color_weak">{i18n.noApexTestsInBranch}</div>

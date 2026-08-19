@@ -48,6 +48,14 @@ const WHEN_HUE_BY_CODE = {
   "post-deploy": "indigo",
 };
 
+// Hue of the execution context pill. Distinct from every action type hue so
+// the two pill columns of the Pipeline Settings table stay tellable apart.
+const CONTEXT_HUE_BY_CODE = {
+  all: "cyan",
+  "check-deployment-only": "amber",
+  "process-deployment-only": "indigo",
+};
+
 const CONTEXT_LABEL_KEY_BY_CODE = {
   all: "checkAndProcessDeployment",
   "check-deployment-only": "checkDeploymentOnly",
@@ -77,4 +85,10 @@ export function getActionWhenPillClass(whenCode) {
 export function getActionContextLabel(contextCode, t) {
   const labelKey = CONTEXT_LABEL_KEY_BY_CODE[contextCode];
   return labelKey ? t(labelKey) : contextCode;
+}
+
+// CSS classes of the colored pill displaying when an action is executed
+// (validation job, deployment job, or both)
+export function getActionContextPillClass(contextCode) {
+  return getPillClass(CONTEXT_HUE_BY_CODE[contextCode]);
 }

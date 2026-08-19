@@ -46,7 +46,7 @@ suite("Datatable colored pills contract", () => {
     const hues = new Set<string>();
     for (const source of [pillUtils, deploymentActionUtils]) {
       const huesBlock = source.match(
-        /(FALLBACK_HUES|METADATA_CATEGORY_HUE|TYPE_HUE_BY_CODE|WHEN_HUE_BY_CODE)\s*=\s*[[{][\s\S]*?[\]}];/g,
+        /(FALLBACK_HUES|METADATA_CATEGORY_HUE|TYPE_HUE_BY_CODE|WHEN_HUE_BY_CODE|CONTEXT_HUE_BY_CODE)\s*=\s*[[{][\s\S]*?[\]}];/g,
       );
       assert.ok(huesBlock, "hue declarations should be found in the module");
       for (const block of huesBlock) {
@@ -105,6 +105,36 @@ suite("Datatable colored pills contract", () => {
         pipeline,
         new RegExp(`${field}:\\s`),
         `pipeline.js should compute the ${field} row field`,
+      );
+    }
+  });
+
+  test("pipeline settings deployment action rows compute their pill fields", () => {
+    const pipelineConfig = readModuleFile("pipelineConfig", "pipelineConfig.js");
+    for (const field of ["_typePillClass", "_contextPillClass"]) {
+      assert.match(
+        pipelineConfig,
+        new RegExp(`fieldName:\\s*"${field}"`),
+        `a Pipeline Settings column should bind the ${field} row field`,
+      );
+      assert.match(
+        pipelineConfig,
+        new RegExp(`rowData\\.${field}\\s*=`),
+        `pipelineConfig.js should compute the ${field} row field`,
+      );
+    }
+  });
+
+  test("every datatable of the webviews uses the shared s-hardis-datatable", () => {
+    const templates = fs
+      .readdirSync(MODULES_DIR)
+      .map((module) => path.join(MODULES_DIR, module, `${module}.html`))
+      .filter((file) => fs.existsSync(file));
+    for (const template of templates) {
+      assert.doesNotMatch(
+        fs.readFileSync(template, "utf8"),
+        /<lightning-datatable/,
+        `${path.basename(template)} should use <s-hardis-datatable> so every table shares the same cell types and behaviors`,
       );
     }
   });

@@ -404,12 +404,14 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // Column set for the Apex test datatables (test class + PR link).
   _apexTestClassColumns() {
     return [
+      // Apex class names are technical identifiers: same monospace chip as
+      // the git branch names of the Pull Requests tab
       {
         key: "apexTestClass",
         label: this.i18n.apexTestClassLabel,
         fieldName: "apexTestClass",
-        type: "text",
-        wrapText: true,
+        type: "branchChip",
+        wrapText: false,
       },
       this._pullRequestColumn(),
     ];
