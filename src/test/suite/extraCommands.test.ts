@@ -193,6 +193,36 @@ suite("extraCommands Test Suite", () => {
     assert.strictEqual(remaining.length, all.length);
   });
 
+  test("the command search feeds on the catalog, through the anti-duplicate filter", () => {
+    const commandsSource = fs.readFileSync(
+      path.join(REPO_ROOT, "src", "commands.ts"),
+      "utf8",
+    );
+    // Isolate the body of registerSearchCommands(), not its call in registerCommands()
+    const searchStart = commandsSource.indexOf("registerSearchCommands() {");
+    assert.ok(
+      searchStart > -1,
+      "registerSearchCommands() not found in commands.ts",
+    );
+    const searchEnd = commandsSource.indexOf(
+      "registerExecuteCommand() {",
+      searchStart,
+    );
+    assert.ok(
+      searchEnd > searchStart,
+      "registerExecuteCommand() not found after registerSearchCommands()",
+    );
+    const searchSource = commandsSource.slice(searchStart, searchEnd);
+    assert.ok(
+      searchSource.includes("ExtraCommands.getCommandsNotAlreadyListed("),
+      "The command search must list the extra commands with getCommandsNotAlreadyListed()",
+    );
+    assert.ok(
+      !searchSource.includes("ExtraCommands.getCommands("),
+      "The command search must not call getCommands(): commands promoted to the menu would be displayed twice",
+    );
+  });
+
   test("getCommandsByTopic filters on the suggested topic", () => {
     const monitoringCommands =
       ExtraCommands.getCommandsByTopic("org-monitoring");
