@@ -127,6 +127,11 @@
   - Deployment actions edited from the settings no longer offer the obsolete **Skip if deploy error** option
 
 - **Dependencies**
+  - The Welcome page now shows your setup status at a glance
+    - The **Install Dependencies** button turns into a live status: checking, the number of updates needed, or a confirmation that everything is up to date, and always opens the Setup panel when clicked
+    - The button is only highlighted when something actually needs your attention, and stays discreet once everything is up to date
+    - When Git, the Salesforce CLI, Node.js, the sfdx-hardis plugin or the Salesforce Extension Pack is completely missing, a **welcome popup** explains that these tools are required before using the extension, lists what is missing with a short explanation of each, and offers a single button to open the Setup panel (shown once per VS Code session)
+  - The **Install Dependencies** panel now displays a **loading spinner** while the dependency checks are running, instead of an empty page
   - Fixed the **pre-release** version of the extension asking to install the **alpha** version of the sfdx-hardis plugin even when an alpha, a beta, or a **locally developed (linked)** plugin was already installed
     - A pre-release extension now accepts an alpha, a beta or a locally developed plugin, and a released extension accepts a published version or a locally developed plugin (it now asks to install the latest version when an alpha or a beta is installed)
     - A locally developed plugin is **never proposed for upgrade** anymore: reinstalling it from npm would break the local development setup (which is what happened when clicking the upgrade button)
