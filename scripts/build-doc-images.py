@@ -118,6 +118,37 @@ BOX_CROPS = {
         "pipeline-edit-action",
         (760, 264, 1462, 706),
     ),
+    # One pre-filled "Edit Deployment Action" editor per action type, for
+    # salesforce-ci-cd-work-on-task-deployment-actions.md (same zoomed-out
+    # captures; the modal height depends on the action type)
+    "screenshot-deployment-action-command.jpg": (
+        "pipeline-edit-action-command",
+        (760, 263, 1462, 704),
+    ),
+    "screenshot-deployment-action-data.jpg": (
+        "pipeline-edit-action-data",
+        (760, 264, 1462, 703),
+    ),
+    "screenshot-deployment-action-apex.jpg": (
+        "pipeline-edit-action-apex",
+        (760, 264, 1462, 703),
+    ),
+    "screenshot-deployment-action-manual.jpg": (
+        "pipeline-edit-action-manual",
+        (760, 222, 1462, 746),
+    ),
+    "screenshot-deployment-action-schedule-batch.jpg": (
+        "pipeline-edit-action-schedule-batch",
+        (760, 195, 1462, 772),
+    ),
+    "screenshot-deployment-action-publish-community.jpg": (
+        "pipeline-edit-action-publish-community",
+        (760, 264, 1462, 703),
+    ),
+    "screenshot-deployment-action-remove-packagexml-items.jpg": (
+        "pipeline-edit-action-remove-packagexml-items",
+        (760, 239, 1462, 728),
+    ),
 }
 
 # --- Animated GIFs ------------------------------------------------------------

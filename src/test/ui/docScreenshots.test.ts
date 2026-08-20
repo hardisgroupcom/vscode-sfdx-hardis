@@ -503,6 +503,78 @@ suite("Documentation screenshots", function () {
     await captureStable("pipeline-branch-modal-actions");
   });
 
+  // One screenshot of the "Edit Deployment Action" editor per action type,
+  // pre-filled from the PR #125 fixture actions
+  // (test/fixtures/doc-screenshots-project/scripts/actions/.sfdx-hardis.125.yml).
+  // Feeds the docs images screenshot-deployment-action-<type>.jpg of
+  // salesforce-ci-cd-work-on-task-deployment-actions.md.
+  test("pipeline: deployment action editors", async function () {
+    if (!shouldTake("pipeline-action-editors")) {
+      this.skip();
+    }
+    // Rows of the Deployment Actions tab of the PR modal, in display order
+    // editY: y of the Edit button of the read-only details view, which
+    // depends on the height of the modal (one height per action type)
+    const ACTION_EDITOR_SHOTS: Array<{
+      name: string;
+      row: number;
+      editY: number;
+    }> = [
+      { name: "pipeline-edit-action-command", row: 0, editY: 672 },
+      { name: "pipeline-edit-action-data", row: 1, editY: 671 },
+      {
+        name: "pipeline-edit-action-remove-packagexml-items",
+        row: 2,
+        editY: 696,
+      },
+      { name: "pipeline-edit-action-apex", row: 3, editY: 671 },
+      { name: "pipeline-edit-action-schedule-batch", row: 4, editY: 740 },
+      { name: "pipeline-edit-action-publish-community", row: 5, editY: 671 },
+      { name: "pipeline-edit-action-manual", row: 6, editY: 714 },
+    ];
+    const FIRST_ROW_CENTER_Y = 270;
+    const ROW_STEP = 36;
+    // Clicking the action label opens its editor
+    const EDIT_BUTTON_X = 610;
+    // Zoomed out two levels, like the other modal shots: the editors of every
+    // type fit in the window and the published images are crops of the modal
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await sleep(800);
+    let firstIteration = true;
+    for (const shot of ACTION_EDITOR_SHOTS) {
+      // Reload the panel for each editor: closing all editors resets every
+      // modal state, which is more robust than clicking per-type Cancel
+      // buttons whose position depends on the editor height
+      await shootPanel(panelManager, {
+        name: "pipeline-action-editors-base",
+        command: "vscode-sfdx-hardis.showPipeline",
+        lwcId: "s-pipeline",
+        settleMs: 8000,
+        force: true,
+      });
+      await click(1502, 804); // "My Pull Request" card
+      await sleep(2500);
+      await click(543, 156); // "Deployment Actions" tab of the PR modal
+      await sleep(1500);
+      if (firstIteration) {
+        await cleanChrome();
+        await captureStable("pipeline-pr-actions-list");
+        firstIteration = false;
+      }
+      await click(EDIT_BUTTON_X, FIRST_ROW_CENTER_Y + shot.row * ROW_STEP);
+      await sleep(1800);
+      // Switch the read-only details view to the editable form: the published
+      // screenshots must show the values inside editable fields
+      await click(1360, shot.editY); // "Edit" button of the details view
+      await sleep(1500);
+      await captureStable(shot.name);
+    }
+    await vscode.commands.executeCommand("workbench.action.zoomIn");
+    await vscode.commands.executeCommand("workbench.action.zoomIn");
+    await sleep(800);
+  });
+
   test("pipeline configuration", async function () {
     await shootPanel(panelManager, {
       name: "pipeline-config",

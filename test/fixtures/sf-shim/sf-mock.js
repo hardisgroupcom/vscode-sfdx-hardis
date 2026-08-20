@@ -433,10 +433,33 @@ async function main() {
 
   if (first === "data" && args[1] === "query") {
     const query = args[args.indexOf("--query") + 1] || "";
-    const records =
-      DOCS_PROFILE && query.includes("FROM SourceMember")
-        ? docsSourceMemberRecords()
-        : [];
+    let records = [];
+    if (DOCS_PROFILE && query.includes("FROM SourceMember")) {
+      records = docsSourceMemberRecords();
+    } else if (DOCS_PROFILE && query.includes("FROM ApexClass")) {
+      // Schedulable classes picker of the deployment action editor
+      records = [
+        {
+          Name: "AccountHierarchySyncBatch",
+          Body: "global class AccountHierarchySyncBatch implements Database.Batchable<SObject>, Schedulable {",
+        },
+        {
+          Name: "InvoiceBatchScheduler",
+          Body: "global class InvoiceBatchScheduler implements Database.Batchable<SObject>, Schedulable {",
+        },
+        {
+          Name: "TimesheetReminderBatch",
+          Body: "global class TimesheetReminderBatch implements Schedulable {",
+        },
+        {
+          Name: "OpportunityService",
+          Body: "public with sharing class OpportunityService {",
+        },
+      ];
+    } else if (DOCS_PROFILE && query.includes("FROM Network")) {
+      // Communities picker of the deployment action editor
+      records = [{ Name: "Customer Portal" }, { Name: "Partner Community" }];
+    }
     outputJsonIfRequested(
       {
         status: 0,
