@@ -52,7 +52,7 @@ PANEL_SHOTS = {
     "org-monitoring.png": "org-monitoring",
     "dependencies-ok-ui.png": "setup",
     "install-dependencies-screenshot.png": "missing/setup",
-    "ProductivityCommands.png": "command-runner-multiselect",
+    "ProductivityCommands.png": "user-activateinvalid-multiselect",
     "screenshot-work-save.png": "command-runner-completed",
     "command-runner.png": "command-runner-question",
 }

@@ -1289,6 +1289,136 @@ const DOCS_SCENARIOS = {
     });
     await sleep(600);
   },
+
+  // Productivity command example (docs/assets/images/ProductivityCommands.png):
+  // replay of a real `sf hardis:org:user:activateinvalid` run (reactivation of
+  // sandbox users whose email was suffixed with .invalid by a refresh),
+  // anonymized
+  "hardis:org:user:activateinvalid": async (send, askPrompt, sleep) => {
+    const log = (logType, message, extra) =>
+      send({ event: "commandLogLine", logType, message, ...(extra || {}) });
+    const invalidUsers = [
+      ["Alex Martin", "alex.martin@mycompany.com"],
+      ["Amelia Clark", "amelia.clark@mycompany.com"],
+      ["Bruno Keller", "bruno.keller@mycompany.com"],
+      ["Carla Mendes", "carla.mendes@mycompany.com"],
+      ["David Osei", "david.osei@mycompany.com"],
+      ["Elena Petrova", "elena.petrova@mycompany.com"],
+      ["Farid Haddad", "farid.haddad@mycompany.com"],
+      ["Grace Wong", "grace.wong@mycompany.com"],
+      ["Hugo Fernandez", "hugo.fernandez@mycompany.com"],
+      ["Ines Laurent", "ines.laurent@mycompany.com"],
+      ["Lisa Chen", "lisa.chen@mycompany.com"],
+      ["Sam Dubois", "sam.dubois@mycompany.com"],
+    ];
+
+    log("action", "Querying User records with email ending with .invalid...");
+    log(
+      "log",
+      "[BulkApiV2] SELECT Id,Name,Username,Email,ProfileId FROM User WHERE Email LIKE '%.invalid' and IsActive=true",
+    );
+    await sleep(600);
+    log("log", "[BulkApiV2] Bulk Query completed with 23 results.");
+    await sleep(200);
+
+    log(
+      "action",
+      "Do you want to replace invalid mails by valid mails for all 23 found users in org deploy.user@mycompany.com.uat?",
+      { isQuestion: true },
+    );
+    await askPrompt({
+      name: "confirmSelect",
+      type: "select",
+      message:
+        "Do you want to replace invalid mails by valid mails for all 23 found users in org deploy.user@mycompany.com.uat?",
+      description:
+        "Choose whether to update email addresses for all found users or select specific ones",
+      choices: [
+        { title: "Yes, all 23 users", value: "all" },
+        {
+          title: "No, I want to manually select by profile(s)",
+          value: "selectProfiles",
+        },
+        { title: "No, I want to manually select user(s)", value: "select" },
+      ],
+    });
+    log("log", "No, I want to manually select user(s)");
+    await sleep(200);
+
+    log(
+      "action",
+      "Please select users that you want to remove the .invalid from emails",
+      { isQuestion: true },
+    );
+    const selectedUsersResponse = await askPrompt({
+      name: "selectUsers",
+      type: "multiselect",
+      message:
+        "Please select users that you want to remove the .invalid from emails",
+      description:
+        "Choose specific users to reactivate by removing .invalid suffix from their email addresses",
+      choices: invalidUsers.map(([name, email]) => ({
+        title: `${name} - ${email}.invalid`,
+        value: email,
+      })),
+    });
+    const selectedEmails =
+      (selectedUsersResponse &&
+        selectedUsersResponse[0] &&
+        selectedUsersResponse[0].selectUsers) ||
+      invalidUsers.slice(0, 7).map(([, email]) => email);
+    log(
+      "log",
+      invalidUsers
+        .filter(([, email]) => selectedEmails.includes(email))
+        .map(([name, email]) => `${name} - ${email}.invalid`)
+        .join("\n"),
+    );
+    await sleep(200);
+
+    log("action", `Reactivating ${selectedEmails.length} user(s)...`);
+    log(
+      "log",
+      `[BulkApiV2] Bulk UPDATE on ${selectedEmails.length} records of object User`,
+    );
+    await sleep(900);
+    log(
+      "log",
+      `[BulkApiV2] Bulk UPDATE on User completed.\n- Success: ${selectedEmails.length} records\n- Failed: 0 records\n- Unprocessed: 0 records`,
+    );
+    await sleep(200);
+
+    log(
+      "action",
+      `Results of the reactivation of ${selectedEmails.length} users by removing the .invalid from their email`,
+    );
+    log(
+      "table",
+      JSON.stringify(
+        selectedEmails.map((email, index) => ({
+          Id: "0055f00000AbCd" + String(index + 1).padStart(2, "0") + "AAB",
+          Email: email,
+        })),
+      ),
+    );
+    send({
+      event: "reportFile",
+      file: "hardis-report/reactivated-users-2026-08-20.csv",
+      title: "Reactivated users (CSV)",
+      type: "report",
+    });
+    send({
+      event: "reportFile",
+      file: "hardis-report/reactivated-users-2026-08-20.xlsx",
+      title: "Reactivated users (XLSX)",
+      type: "report",
+    });
+    log(
+      "success",
+      `${selectedEmails.length} users have been reactivated by removing the .invalid from their email`,
+    );
+    await sleep(400);
+  },
 };
 
 main().then(

@@ -620,6 +620,66 @@ suite("Documentation screenshots", function () {
     capture("command-runner-completed");
   });
 
+  // Productivity command example: reactivation of the sandbox users whose
+  // email was suffixed with .invalid by a refresh. Its multiselect question is
+  // the docs image ProductivityCommands.png.
+  test("command runner (activate invalid users)", async function () {
+    if (!shouldTake("user-activateinvalid")) {
+      this.skip();
+    }
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await sleep(400);
+    const mockLogStart = readMockLog().length;
+    const panelId = await runCommandAndWaitForPanel(
+      panelManager,
+      "sf hardis:org:user:activateinvalid",
+    );
+    const panel = panelManager.getPanel(panelId);
+    const asked = (promptName: string) =>
+      readMockLog()
+        .slice(mockLogStart)
+        .some(
+          (entry) =>
+            entry.event === "promptAsked" && entry.promptName === promptName,
+        );
+
+    await waitFor(() => asked("confirmSelect"), 30000, "confirm prompt");
+    await sleep(1200);
+    panel.simulateWebviewMessage({
+      type: "submit",
+      data: { confirmSelect: "select" },
+    });
+
+    // The users multiselect: the most representative state of the command
+    await waitFor(() => asked("selectUsers"), 30000, "users multiselect");
+    await sleep(1500);
+    await cleanChrome();
+    capture("user-activateinvalid-multiselect");
+    panel.simulateWebviewMessage({
+      type: "submit",
+      data: {
+        selectUsers: [
+          "alex.martin@mycompany.com",
+          "amelia.clark@mycompany.com",
+          "bruno.keller@mycompany.com",
+          "carla.mendes@mycompany.com",
+          "david.osei@mycompany.com",
+          "elena.petrova@mycompany.com",
+          "farid.haddad@mycompany.com",
+        ],
+      },
+    });
+
+    await waitFor(
+      () => panelManager.getPanel(panelId)?.commandStatus === "completed",
+      60000,
+      "activateinvalid to complete",
+    );
+    await sleep(1500);
+    await cleanChrome();
+    capture("user-activateinvalid-completed");
+  });
+
   // ---------------------------------------------------------------------
   // Animated recordings: the documentation illustrates several panels with a
   // GIF. Each scenario drives the panel while the screen is recorded.
