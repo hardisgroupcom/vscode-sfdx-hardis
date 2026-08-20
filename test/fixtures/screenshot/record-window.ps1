@@ -21,7 +21,8 @@ param(
   [double]$Seconds = 12,
   [double]$Fps = 5,
   [string]$TitleMatch = "MyCompany-CRM",
-  [int]$CropTop = 38
+  [int]$CropTop = 38,
+  [int]$CropLeft = 0
 )
 
 $ErrorActionPreference = "Stop"
@@ -49,7 +50,7 @@ for ($i = 1; $i -le $frameCount; $i++) {
   # A frame can fail when the window is being activated: skip it rather than
   # stopping the whole recording
   try {
-    $bmp = Get-SfhWindowBitmap -Hwnd $hwnd -Rect $rect -CropTop $CropTop
+    $bmp = Get-SfhWindowBitmap -Hwnd $hwnd -Rect $rect -CropTop $CropTop -CropLeft $CropLeft
     $bmp.Save(
       (Join-Path $OutDir ("frame-{0:D4}.png" -f $i)),
       [System.Drawing.Imaging.ImageFormat]::Png

@@ -12,6 +12,7 @@
     - Questions asked by a command are highlighted, long choice lists are **searchable in place** (no more dropdown covering the validation buttons), and answered questions collapse to a single line showing your answer
     - Log lines carrying a **big JSON** (deployment results, API responses) or a **very long text** now show only their beginning: click them to see the complete content, **copy it** or **open it in a VS Code tab**
     - Once a command is over, a **Run again** button replays it with the same parameters, whether it succeeded or failed
+    - Fixed the **Log file** button failing with "File seems to be binary and cannot be opened as text" on logs containing raw git output: a cleaned copy of the log now opens instead
   - In the **DevOps Pipeline diagram**, CI job status is now **color-coded consistently**: **blue animated = running**, **orange = pending**, **red = failed**, **green = success** (previously running and pending showed as red, and failed jobs were not highlighted at all)
   - **Extension Settings** are now readable: real setting names (e.g. "User input command line if LWC" instead of "User Input Command Line If L W C") and each setting's **description always visible** under its name instead of hidden behind a hover icon
   - Fix panels wrongly opening in **light mode inside a dark VS Code**: the extension theme now follows the VS Code theme by default (users who explicitly selected Light or Dark keep their choice)

@@ -61,6 +61,9 @@ function shouldTake(name: string): boolean {
 // "[Extension Development Host]", which has no place in a documentation
 // screenshot: the title bar is cropped out of every capture.
 const TITLE_BAR_HEIGHT = 38;
+// Width of the activity bar + side bar in a capture: recordings crop it out
+// (must match SIDE_BAR_WIDTH in scripts/build-doc-images.py)
+const SIDE_BAR_WIDTH = 435;
 
 function capture(
   name: string,
@@ -268,6 +271,10 @@ async function record(
       String(fps),
       "-CropTop",
       String(TITLE_BAR_HEIGHT),
+      // The documentation GIFs show the panel only: the activity bar and the
+      // side bar are cropped out (they carry nothing relevant to the scenario)
+      "-CropLeft",
+      String(SIDE_BAR_WIDTH),
     ],
     { stdio: ["ignore", "pipe", "pipe"], detached: false },
   );
@@ -460,6 +467,11 @@ suite("Documentation screenshots", function () {
     await click(425, 205); // "Add New Action"
     await sleep(1500);
     await captureStable("pipeline-edit-action");
+    // Close the editor and the PR modal before the branch-modal shots
+    await click(1355, 675); // Cancel button of the action editor
+    await sleep(800);
+    await click(1863, 54); // close cross of the PR modal
+    await sleep(800);
     await vscode.commands.executeCommand("workbench.action.zoomIn");
     await vscode.commands.executeCommand("workbench.action.zoomIn");
     await sleep(800);
@@ -805,32 +817,26 @@ suite("Documentation screenshots", function () {
     if (!shouldTake("rec-work-new")) {
       this.skip();
     }
-    await recordWorkflowCommand("work-new", "sf hardis:work:new", 26, [
-      { prompt: "project", data: { project: "CRM" } },
-      { prompt: "userStoryType", data: { userStoryType: "features" } },
+    await recordWorkflowCommand("work-new", "sf hardis:work:new", 32, [
+      { prompt: "targetBranch", data: { targetBranch: "integration" } },
+      { prompt: "storyType", data: { storyType: "feature" } },
       {
-        prompt: "userStoryName",
-        data: { userStoryName: "CRM-1042 Account hierarchy" },
+        prompt: "storyName",
+        data: { storyName: "CRM-123 Sync accounts with SAP" },
       },
-      { prompt: "targetOrg", data: { targetOrg: "sandbox" } },
+      { prompt: "orgType", data: { orgType: "sandbox" } },
+      { prompt: "sandboxOrg", data: { sandboxOrg: "dev" } },
+      { prompt: "openOrg", data: { openOrg: "no" } },
     ]);
   });
 
-  test("recording: save user story", async function () {
+  test("recording: save / publish user story", async function () {
     if (!shouldTake("rec-work-save")) {
       this.skip();
     }
-    await recordWorkflowCommand("work-save", "sf hardis:work:save", 24, [
-      { prompt: "confirmUpdates", data: { confirmUpdates: "yes" } },
-    ]);
-  });
-
-  test("recording: publish user story", async function () {
-    if (!shouldTake("rec-work-publish")) {
-      this.skip();
-    }
-    await recordWorkflowCommand("work-publish", "sf hardis:work:publish", 22, [
-      { prompt: "targetBranch", data: { targetBranch: "integration" } },
+    await recordWorkflowCommand("work-save", "sf hardis:work:save", 26, [
+      { prompt: "commitReady", data: { commitReady: "commitReady" } },
+      { prompt: "pushCommits", data: { pushCommits: "yes" } },
     ]);
   });
 

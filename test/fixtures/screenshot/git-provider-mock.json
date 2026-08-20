@@ -19,7 +19,7 @@
       "number": 128,
       "title": "CRM-1042 Account hierarchy",
       "description": "New Account hierarchy tree on the Account lightning page, synced by the Account_Hierarchy_Sync flow.",
-      "sourceBranch": "features/dev/CRM-1042-account-hierarchy",
+      "sourceBranch": "feature/CRM-1042-account-hierarchy",
       "targetBranch": "integration",
       "author": {
         "name": "Alex Martin",
@@ -61,7 +61,7 @@
       "number": 127,
       "title": "CRM-1055 Quote approval process",
       "description": "Two-step quote approval with the Quote_Approval_Process flow and the CRM_Manager permission set.",
-      "sourceBranch": "features/config/CRM-1055-quote-approval-process",
+      "sourceBranch": "feature/CRM-1055-quote-approval-process",
       "targetBranch": "integration",
       "author": {
         "name": "Sam Dubois",
@@ -103,7 +103,7 @@
       "number": 126,
       "title": "CRM-1061 Fix opportunity trigger recursion",
       "description": "Prevents the OpportunityService trigger handler from re-entering itself when amounts are recalculated.",
-      "sourceBranch": "fixes/dev/CRM-1061-opportunity-trigger",
+      "sourceBranch": "fix/CRM-1061-opportunity-trigger",
       "targetBranch": "integration",
       "author": {
         "name": "Lisa Chen",
@@ -172,7 +172,7 @@
       "number": 121,
       "title": "CRM-1030 Invoice batch scheduler",
       "description": "Nightly InvoiceBatchScheduler generating invoices from closed-won opportunities.",
-      "sourceBranch": "features/dev/CRM-1030-invoice-batch-scheduler",
+      "sourceBranch": "feature/CRM-1030-invoice-batch-scheduler",
       "targetBranch": "integration",
       "author": {
         "name": "Alex Martin",
@@ -208,7 +208,7 @@
       "number": 119,
       "title": "CRM-1024 Case auto escalation",
       "description": "Escalates cases pending for more than 48h with the Case_Auto_Escalation flow.",
-      "sourceBranch": "features/config/CRM-1024-case-auto-escalation",
+      "sourceBranch": "feature/CRM-1024-case-auto-escalation",
       "targetBranch": "integration",
       "author": {
         "name": "Sam Dubois",
@@ -244,7 +244,7 @@
       "number": 117,
       "title": "CRM-1018 Lead conversion assistant",
       "description": "Guided lead conversion screen flow for the sales team.",
-      "sourceBranch": "features/config/CRM-1018-lead-conversion-assistant",
+      "sourceBranch": "feature/CRM-1018-lead-conversion-assistant",
       "targetBranch": "integration",
       "author": {
         "name": "Lisa Chen",
@@ -282,7 +282,7 @@
         "id": 124,
         "number": 124,
         "title": "CRM-1049 Opportunity stage notifications",
-        "sourceBranch": "features/config/CRM-1049-opportunity-stage-notification",
+        "sourceBranch": "feature/CRM-1049-opportunity-stage-notification",
         "targetBranch": "integration",
         "author": {
           "name": "Sam Dubois",
@@ -309,7 +309,7 @@
         "id": 123,
         "number": 123,
         "title": "CRM-1044 Segment field on Account",
-        "sourceBranch": "features/dev/CRM-1044-account-segment-field",
+        "sourceBranch": "feature/CRM-1044-account-segment-field",
         "targetBranch": "integration",
         "author": {
           "name": "Alex Martin",
@@ -336,7 +336,7 @@
         "id": 122,
         "number": 122,
         "title": "CRM-1038 Minimize Sales User profile",
-        "sourceBranch": "features/config/CRM-1038-minimize-sales-profile",
+        "sourceBranch": "feature/CRM-1038-minimize-sales-profile",
         "targetBranch": "integration",
         "author": {
           "name": "Lisa Chen",
@@ -474,7 +474,7 @@
         "id": 104,
         "number": 104,
         "title": "CRM-991 Quote PDF generation",
-        "sourceBranch": "features/dev/CRM-991-quote-pdf-generation",
+        "sourceBranch": "feature/CRM-991-quote-pdf-generation",
         "targetBranch": "integration",
         "author": {
           "name": "Alex Martin",
@@ -490,7 +490,7 @@
         "id": 101,
         "number": 101,
         "title": "CRM-987 Account scoring fields",
-        "sourceBranch": "features/config/CRM-987-account-scoring",
+        "sourceBranch": "feature/CRM-987-account-scoring",
         "targetBranch": "integration",
         "author": {
           "name": "Sam Dubois",

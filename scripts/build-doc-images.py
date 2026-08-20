@@ -65,6 +65,9 @@ SIDE_BAR_WIDTH = 435
 # webview only. The others keep the whole window, because the side bar is part
 # of what they illustrate (the tree views, the menu entry to click).
 WEBVIEW_ONLY = {
+    "welcome.png",
+    "ProductivityCommands.png",
+    "install-dependencies-screenshot.png",
     "data-workbench.png",
     "files-workbench.png",
     "documentation-workbench.png",
@@ -133,8 +136,7 @@ GIF_RECORDINGS = {
     "monitoring-config-2026.gif": "monitoring-config",
     "project-documentation.gif": "documentation-workbench",
     "new-user-story-2026.gif": "work-new",
-    "retrieve-and-commit-2026.gif": "work-save",
-    "save-publish-pr-2026.gif": "work-publish",
+    "save-publish-pr-2026.gif": "work-save",
 }
 
 GIF_FRAME_MS = 200  # 5 fps

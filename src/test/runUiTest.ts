@@ -65,9 +65,9 @@ async function main() {
       git(`branch ${branch}`);
     }
     for (const branch of [
-      "features/dev/CRM-1042-account-hierarchy",
-      "features/config/CRM-1055-quote-approval-process",
-      "fixes/dev/CRM-1061-opportunity-trigger",
+      "feature/CRM-1042-account-hierarchy",
+      "feature/CRM-1055-quote-approval-process",
+      "fix/CRM-1061-opportunity-trigger",
       // Monitoring branch: feeds the "Copy from branch" menu of the
       // Monitoring Config workbench
       "monitoring_mycompany",
