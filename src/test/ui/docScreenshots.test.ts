@@ -189,9 +189,12 @@ async function shootPanel(
     ready?: (initData: any) => boolean;
     /** Clicks to perform inside the webview before capturing */
     clicks?: Array<{ x: number; y: number; scroll?: number }>;
+    /** Open and capture even when the name is not in the ONLY filter (used by
+     * the recording tests, whose pre-shot must not depend on the filter) */
+    force?: boolean;
   },
 ): Promise<any> {
-  if (!shouldTake(options.name)) {
+  if (!options.force && !shouldTake(options.name)) {
     return null;
   }
   // One tab per screenshot: a crowded tab bar hides the panel title and pushes
@@ -245,6 +248,9 @@ async function record(
     return;
   }
   const outDir = path.join(OUT_DIR, "recordings", name);
+  // Purge frames of a previous run: a shorter new recording must not leave
+  // stale trailing frames that would end up in the assembled GIF
+  fs.rmSync(outDir, { recursive: true, force: true });
   fs.mkdirSync(outDir, { recursive: true });
   const recorder = spawn(
     "powershell",
@@ -425,6 +431,37 @@ suite("Documentation screenshots", function () {
     });
   });
 
+  test("pipeline: contribution cards and branch modal", async function () {
+    if (!shouldTake("pipeline-modals")) {
+      this.skip();
+    }
+    // Zoom the window out one level so the second row of contribution cards
+    // (with the "My Pull Request" card) fits in the capture
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await sleep(800);
+    await shootPanel(panelManager, {
+      name: "pipeline-workflow-cards",
+      command: "vscode-sfdx-hardis.showPipeline",
+      lwcId: "s-pipeline",
+      settleMs: 9000,
+      force: true,
+    });
+    await vscode.commands.executeCommand("workbench.action.zoomIn");
+    await vscode.commands.executeCommand("workbench.action.zoomIn");
+    await sleep(800);
+    // Branch modal: click the "integration" branch node of the mermaid, then
+    // its Deployment Actions tab
+    await sleep(1000);
+    await click(893, 410); // integration branch node
+    await sleep(2500);
+    await cleanChrome();
+    await captureStable("pipeline-branch-modal");
+    await click(958, 227); // "Deployment Actions" tab of the modal
+    await sleep(1500);
+    await captureStable("pipeline-branch-modal-actions");
+  });
+
   test("pipeline configuration", async function () {
     await shootPanel(panelManager, {
       name: "pipeline-config",
@@ -569,20 +606,25 @@ suite("Documentation screenshots", function () {
     }
     const panel = await shootPanel(panelManager, {
       name: "welcome-for-recording",
+      force: true,
       command: "vscode-sfdx-hardis.showWelcome",
       lwcId: "s-welcome",
       settleMs: 2500,
     });
     void panel;
-    await record("welcome", 16, async () => {
-      for (let i = 0; i < 5; i++) {
+    await record("welcome", 22, async () => {
+      await sleep(1500);
+      for (let i = 0; i < 4; i++) {
         await click(1170, 600, { scroll: -3 });
       }
-      await sleep(1500);
-      for (let i = 0; i < 5; i++) {
+      await sleep(1200);
+      for (let i = 0; i < 4; i++) {
         await click(1170, 600, { scroll: 3 });
       }
-      await sleep(1500);
+      await sleep(1200);
+      // Open a workbench from its Welcome card: the DevOps Pipeline
+      await click(700, 505);
+      await sleep(9000);
     });
   });
 
@@ -592,6 +634,7 @@ suite("Documentation screenshots", function () {
     }
     await shootPanel(panelManager, {
       name: "orgs-manager-for-recording",
+      force: true,
       command: "vscode-sfdx-hardis.openOrgsManager",
       lwcId: "s-org-manager",
       settleMs: 2500,
@@ -613,15 +656,16 @@ suite("Documentation screenshots", function () {
     }
     await shootPanel(panelManager, {
       name: "pipeline-for-recording",
+      force: true,
       command: "vscode-sfdx-hardis.showPipeline",
       lwcId: "s-pipeline",
       settleMs: 5000,
     });
     await record("devops-pipeline", 16, async () => {
       await sleep(2000);
-      await click(880, 771); // "Open Pull Requests" tab
+      await click(890, 803); // "Open Pull Requests" tab
       await sleep(3000);
-      await click(618, 771); // "Project Contribution Workflow" tab
+      await click(618, 803); // "Project Contribution Workflow" tab
       await sleep(2500);
       for (let i = 0; i < 3; i++) {
         await click(1170, 600, { scroll: -2 });
@@ -636,6 +680,7 @@ suite("Documentation screenshots", function () {
     }
     await shootPanel(panelManager, {
       name: "metadata-retriever-for-recording",
+      force: true,
       command: "vscode-sfdx-hardis.showMetadataRetriever",
       lwcId: "s-metadata-retriever",
       settleMs: 4000,
@@ -660,6 +705,7 @@ suite("Documentation screenshots", function () {
     }
     await shootPanel(panelManager, {
       name: "monitoring-config-for-recording",
+      force: true,
       command: "vscode-sfdx-hardis.showMonitoringConfig",
       lwcId: "s-monitoring-config",
       settleMs: 3000,
@@ -683,6 +729,7 @@ suite("Documentation screenshots", function () {
     }
     await shootPanel(panelManager, {
       name: "documentation-workbench-for-recording",
+      force: true,
       command: "vscode-sfdx-hardis.showDocumentationWorkbench",
       lwcId: "s-documentation-workbench",
       settleMs: 3000,

@@ -68,6 +68,9 @@ async function main() {
       "features/dev/CRM-1042-account-hierarchy",
       "features/config/CRM-1055-quote-approval-process",
       "fixes/dev/CRM-1061-opportunity-trigger",
+      // Monitoring branch: feeds the "Copy from branch" menu of the
+      // Monitoring Config workbench
+      "monitoring_mycompany",
     ]) {
       git(`branch ${branch}`);
     }
@@ -121,6 +124,9 @@ async function main() {
     workspaceSettings["chat.commandCenter.enabled"] = false;
     workspaceSettings["workbench.activityBar.location"] = "default";
     workspaceSettings["workbench.tips.enabled"] = false;
+    // The DevOps Pipeline documentation shows the full diagram: feature
+    // branches (from the mocked open pull requests) included
+    workspaceSettings["vsCodeSfdxHardis.pipelineDisplayFeatureBranches"] = true;
     workspaceSettings["git.openRepositoryInParentFolders"] = "never";
     workspaceSettings["git.autofetch"] = false;
     workspaceSettings["extensions.ignoreRecommendations"] = true;
@@ -212,6 +218,16 @@ async function main() {
               SFDX_HARDIS_DOC_SCREENSHOTS_ONLY:
                 process.env.SFDX_HARDIS_DOC_SCREENSHOTS_ONLY || "",
               SF_MOCK_PROFILE: "docs",
+              // Git provider answers (open PRs with CI jobs, merged PRs,
+              // go-lives) served from a fixture so the DevOps Pipeline shows
+              // feature branches and running jobs (see gitProviderMock.ts)
+              SFDX_HARDIS_MOCK_GIT_PROVIDER_FILE: path.join(
+                extensionDevelopmentPath,
+                "test",
+                "fixtures",
+                "screenshot",
+                "git-provider-mock.json",
+              ),
               SF_MOCK_DEPS_STATE: process.env.SF_MOCK_DEPS_STATE || "ok",
               SF_MOCK_VERSIONS_FILE: process.env.SF_MOCK_VERSIONS_FILE || "",
               // Screenshots must not depend on what npm answers today: the

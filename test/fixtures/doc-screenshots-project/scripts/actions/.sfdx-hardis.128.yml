@@ -1,0 +1,11 @@
+commandsPostDeploy:
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-128a00000001
+    label: Schedule the account hierarchy sync batch
+    type: schedule-batch
+    when: post-deploy
+    parameters:
+      className: AccountHierarchySyncBatch
+      cronExpression: 0 0 3 * * ?
+      jobName: Account Hierarchy Sync
+    command: ""
+    context: process-deployment-only

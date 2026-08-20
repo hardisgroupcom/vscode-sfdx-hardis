@@ -1,0 +1,507 @@
+{
+  "_comment": "Git provider fixture served by GitProviderMock during the documentation screenshots (yarn screenshots). Modeled on a real sfdx-hardis CI/CD repository (branch topology integration -> uat -> preprod -> main, one promotion PR, feature PRs with CI jobs), anonymized to the MyCompany-CRM universe of the doc-screenshots fixture project.",
+  "repoInfo": {
+    "providerName": "github",
+    "host": "github.com",
+    "owner": "mycompany",
+    "repo": "salesforce-crm",
+    "remoteUrl": "https://github.com/mycompany/salesforce-crm.git",
+    "webUrl": "https://github.com/mycompany/salesforce-crm"
+  },
+  "providerDescription": {
+    "providerLabel": "GitHub",
+    "pullRequestLabel": "Pull Request",
+    "pullRequestsWebUrl": "https://github.com/mycompany/salesforce-crm/pulls"
+  },
+  "openPullRequests": [
+    {
+      "id": 128,
+      "number": 128,
+      "title": "CRM-1042 Account hierarchy",
+      "description": "New Account hierarchy tree on the Account lightning page, synced by the Account_Hierarchy_Sync flow.",
+      "sourceBranch": "features/dev/CRM-1042-account-hierarchy",
+      "targetBranch": "integration",
+      "author": {
+        "name": "Alex Martin",
+        "username": "alex-martin"
+      },
+      "authorLabel": "Alex Martin",
+      "state": "open",
+      "createdAt": "2026-08-18T09:24:00.000Z",
+      "updatedAt": "2026-08-20T08:41:00.000Z",
+      "webUrl": "https://github.com/mycompany/salesforce-crm/pull/128",
+      "jobs": [
+        {
+          "name": "Check deployment to integration",
+          "status": "running",
+          "webUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/1128",
+          "updatedAt": "2026-08-20T08:41:00.000Z"
+        },
+        {
+          "name": "MegaLinter",
+          "status": "success",
+          "webUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/1127",
+          "updatedAt": "2026-08-20T08:39:00.000Z"
+        }
+      ],
+      "jobsStatus": "running",
+      "relatedTickets": [
+        {
+          "provider": "JIRA",
+          "id": "CRM-1042",
+          "url": "https://mycompany.atlassian.net/browse/CRM-1042",
+          "subject": "Account hierarchy",
+          "status": "In Review",
+          "statusLabel": "In Review"
+        }
+      ]
+    },
+    {
+      "id": 127,
+      "number": 127,
+      "title": "CRM-1055 Quote approval process",
+      "description": "Two-step quote approval with the Quote_Approval_Process flow and the CRM_Manager permission set.",
+      "sourceBranch": "features/config/CRM-1055-quote-approval-process",
+      "targetBranch": "integration",
+      "author": {
+        "name": "Sam Dubois",
+        "username": "sam-dubois"
+      },
+      "authorLabel": "Sam Dubois",
+      "state": "open",
+      "createdAt": "2026-08-17T14:02:00.000Z",
+      "updatedAt": "2026-08-19T16:55:00.000Z",
+      "webUrl": "https://github.com/mycompany/salesforce-crm/pull/127",
+      "jobs": [
+        {
+          "name": "Check deployment to integration",
+          "status": "success",
+          "webUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/1122",
+          "updatedAt": "2026-08-19T16:55:00.000Z"
+        },
+        {
+          "name": "MegaLinter",
+          "status": "success",
+          "webUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/1121",
+          "updatedAt": "2026-08-19T16:52:00.000Z"
+        }
+      ],
+      "jobsStatus": "success",
+      "relatedTickets": [
+        {
+          "provider": "JIRA",
+          "id": "CRM-1055",
+          "url": "https://mycompany.atlassian.net/browse/CRM-1055",
+          "subject": "Quote approval process",
+          "status": "In Review",
+          "statusLabel": "In Review"
+        }
+      ]
+    },
+    {
+      "id": 126,
+      "number": 126,
+      "title": "CRM-1061 Fix opportunity trigger recursion",
+      "description": "Prevents the OpportunityService trigger handler from re-entering itself when amounts are recalculated.",
+      "sourceBranch": "fixes/dev/CRM-1061-opportunity-trigger",
+      "targetBranch": "integration",
+      "author": {
+        "name": "Lisa Chen",
+        "username": "lisa-chen"
+      },
+      "authorLabel": "Lisa Chen",
+      "state": "open",
+      "createdAt": "2026-08-16T10:12:00.000Z",
+      "updatedAt": "2026-08-19T09:03:00.000Z",
+      "webUrl": "https://github.com/mycompany/salesforce-crm/pull/126",
+      "jobs": [
+        {
+          "name": "Check deployment to integration",
+          "status": "pending",
+          "webUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/1119",
+          "updatedAt": "2026-08-19T09:03:00.000Z"
+        }
+      ],
+      "jobsStatus": "pending",
+      "relatedTickets": [
+        {
+          "provider": "JIRA",
+          "id": "CRM-1061",
+          "url": "https://mycompany.atlassian.net/browse/CRM-1061",
+          "subject": "Opportunity trigger recursion",
+          "status": "In Progress",
+          "statusLabel": "In Progress"
+        }
+      ]
+    },
+    {
+      "id": 125,
+      "number": 125,
+      "title": "Promotion: integration to uat",
+      "description": "Promotes the user stories validated in integration to the UAT org.",
+      "sourceBranch": "integration",
+      "targetBranch": "uat",
+      "author": {
+        "name": "Nadia Ferreira",
+        "username": "nadia-ferreira"
+      },
+      "authorLabel": "Nadia Ferreira",
+      "state": "open",
+      "createdAt": "2026-08-19T08:00:00.000Z",
+      "updatedAt": "2026-08-20T08:30:00.000Z",
+      "webUrl": "https://github.com/mycompany/salesforce-crm/pull/125",
+      "jobs": [
+        {
+          "name": "Check deployment to uat",
+          "status": "running",
+          "webUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/1125",
+          "updatedAt": "2026-08-20T08:30:00.000Z"
+        },
+        {
+          "name": "MegaLinter",
+          "status": "success",
+          "webUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/1124",
+          "updatedAt": "2026-08-20T08:12:00.000Z"
+        }
+      ],
+      "jobsStatus": "running",
+      "relatedTickets": []
+    },
+    {
+      "id": 121,
+      "number": 121,
+      "title": "CRM-1030 Invoice batch scheduler",
+      "description": "Nightly InvoiceBatchScheduler generating invoices from closed-won opportunities.",
+      "sourceBranch": "features/dev/CRM-1030-invoice-batch-scheduler",
+      "targetBranch": "integration",
+      "author": {
+        "name": "Alex Martin",
+        "username": "alex-martin"
+      },
+      "authorLabel": "Alex Martin",
+      "state": "open",
+      "createdAt": "2026-08-10T11:40:00.000Z",
+      "updatedAt": "2026-08-14T15:20:00.000Z",
+      "webUrl": "https://github.com/mycompany/salesforce-crm/pull/121",
+      "jobs": [
+        {
+          "name": "Check deployment to integration",
+          "status": "success",
+          "webUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/1101",
+          "updatedAt": "2026-08-14T15:20:00.000Z"
+        }
+      ],
+      "jobsStatus": "success",
+      "relatedTickets": [
+        {
+          "provider": "JIRA",
+          "id": "CRM-1030",
+          "url": "https://mycompany.atlassian.net/browse/CRM-1030",
+          "subject": "Invoice batch scheduler",
+          "status": "In Review",
+          "statusLabel": "In Review"
+        }
+      ]
+    },
+    {
+      "id": 119,
+      "number": 119,
+      "title": "CRM-1024 Case auto escalation",
+      "description": "Escalates cases pending for more than 48h with the Case_Auto_Escalation flow.",
+      "sourceBranch": "features/config/CRM-1024-case-auto-escalation",
+      "targetBranch": "integration",
+      "author": {
+        "name": "Sam Dubois",
+        "username": "sam-dubois"
+      },
+      "authorLabel": "Sam Dubois",
+      "state": "open",
+      "createdAt": "2026-08-06T09:05:00.000Z",
+      "updatedAt": "2026-08-12T10:47:00.000Z",
+      "webUrl": "https://github.com/mycompany/salesforce-crm/pull/119",
+      "jobs": [
+        {
+          "name": "Check deployment to integration",
+          "status": "success",
+          "webUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/1086",
+          "updatedAt": "2026-08-12T10:47:00.000Z"
+        }
+      ],
+      "jobsStatus": "success",
+      "relatedTickets": [
+        {
+          "provider": "JIRA",
+          "id": "CRM-1024",
+          "url": "https://mycompany.atlassian.net/browse/CRM-1024",
+          "subject": "Case auto escalation",
+          "status": "In Review",
+          "statusLabel": "In Review"
+        }
+      ]
+    },
+    {
+      "id": 117,
+      "number": 117,
+      "title": "CRM-1018 Lead conversion assistant",
+      "description": "Guided lead conversion screen flow for the sales team.",
+      "sourceBranch": "features/config/CRM-1018-lead-conversion-assistant",
+      "targetBranch": "integration",
+      "author": {
+        "name": "Lisa Chen",
+        "username": "lisa-chen"
+      },
+      "authorLabel": "Lisa Chen",
+      "state": "open",
+      "createdAt": "2026-08-03T16:30:00.000Z",
+      "updatedAt": "2026-08-11T13:58:00.000Z",
+      "webUrl": "https://github.com/mycompany/salesforce-crm/pull/117",
+      "jobs": [
+        {
+          "name": "Check deployment to integration",
+          "status": "success",
+          "webUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/1074",
+          "updatedAt": "2026-08-11T13:58:00.000Z"
+        }
+      ],
+      "jobsStatus": "success",
+      "relatedTickets": [
+        {
+          "provider": "JIRA",
+          "id": "CRM-1018",
+          "url": "https://mycompany.atlassian.net/browse/CRM-1018",
+          "subject": "Lead conversion assistant",
+          "status": "In Review",
+          "statusLabel": "In Review"
+        }
+      ]
+    }
+  ],
+  "mergedPullRequestsByBranch": {
+    "integration": [
+      {
+        "id": 124,
+        "number": 124,
+        "title": "CRM-1049 Opportunity stage notifications",
+        "sourceBranch": "features/config/CRM-1049-opportunity-stage-notification",
+        "targetBranch": "integration",
+        "author": {
+          "name": "Sam Dubois",
+          "username": "sam-dubois"
+        },
+        "authorLabel": "Sam Dubois",
+        "state": "merged",
+        "mergeDate": "2026-08-19T15:10:00.000Z",
+        "createdAt": "2026-08-13T08:20:00.000Z",
+        "webUrl": "https://github.com/mycompany/salesforce-crm/pull/124",
+        "jobsStatus": "success",
+        "relatedTickets": [
+          {
+            "provider": "JIRA",
+            "id": "CRM-1049",
+            "url": "https://mycompany.atlassian.net/browse/CRM-1049",
+            "subject": "Opportunity stage notifications",
+            "status": "Done",
+            "statusLabel": "Done"
+          }
+        ]
+      },
+      {
+        "id": 123,
+        "number": 123,
+        "title": "CRM-1044 Segment field on Account",
+        "sourceBranch": "features/dev/CRM-1044-account-segment-field",
+        "targetBranch": "integration",
+        "author": {
+          "name": "Alex Martin",
+          "username": "alex-martin"
+        },
+        "authorLabel": "Alex Martin",
+        "state": "merged",
+        "mergeDate": "2026-08-18T17:42:00.000Z",
+        "createdAt": "2026-08-12T09:11:00.000Z",
+        "webUrl": "https://github.com/mycompany/salesforce-crm/pull/123",
+        "jobsStatus": "success",
+        "relatedTickets": [
+          {
+            "provider": "JIRA",
+            "id": "CRM-1044",
+            "url": "https://mycompany.atlassian.net/browse/CRM-1044",
+            "subject": "Segment field on Account",
+            "status": "Done",
+            "statusLabel": "Done"
+          }
+        ]
+      },
+      {
+        "id": 122,
+        "number": 122,
+        "title": "CRM-1038 Minimize Sales User profile",
+        "sourceBranch": "features/config/CRM-1038-minimize-sales-profile",
+        "targetBranch": "integration",
+        "author": {
+          "name": "Lisa Chen",
+          "username": "lisa-chen"
+        },
+        "authorLabel": "Lisa Chen",
+        "state": "merged",
+        "mergeDate": "2026-08-17T10:05:00.000Z",
+        "createdAt": "2026-08-10T14:55:00.000Z",
+        "webUrl": "https://github.com/mycompany/salesforce-crm/pull/122",
+        "jobsStatus": "success",
+        "relatedTickets": [
+          {
+            "provider": "JIRA",
+            "id": "CRM-1038",
+            "url": "https://mycompany.atlassian.net/browse/CRM-1038",
+            "subject": "Minimize Sales User profile",
+            "status": "Done",
+            "statusLabel": "Done"
+          }
+        ]
+      }
+    ],
+    "uat": [
+      {
+        "id": 118,
+        "number": 118,
+        "title": "Promotion: integration to uat",
+        "sourceBranch": "integration",
+        "targetBranch": "uat",
+        "author": {
+          "name": "Nadia Ferreira",
+          "username": "nadia-ferreira"
+        },
+        "authorLabel": "Nadia Ferreira",
+        "state": "merged",
+        "mergeDate": "2026-08-12T09:30:00.000Z",
+        "createdAt": "2026-08-11T16:00:00.000Z",
+        "webUrl": "https://github.com/mycompany/salesforce-crm/pull/118",
+        "jobsStatus": "success"
+      }
+    ],
+    "preprod": [
+      {
+        "id": 112,
+        "number": 112,
+        "title": "Promotion: uat to preprod",
+        "sourceBranch": "uat",
+        "targetBranch": "preprod",
+        "author": {
+          "name": "Nadia Ferreira",
+          "username": "nadia-ferreira"
+        },
+        "authorLabel": "Nadia Ferreira",
+        "state": "merged",
+        "mergeDate": "2026-08-05T08:45:00.000Z",
+        "createdAt": "2026-08-04T17:25:00.000Z",
+        "webUrl": "https://github.com/mycompany/salesforce-crm/pull/112",
+        "jobsStatus": "success"
+      }
+    ],
+    "main": []
+  },
+  "branchJobs": {
+    "integration": {
+      "jobs": [
+        {
+          "name": "Deploy to integration",
+          "status": "success",
+          "webUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/1123",
+          "updatedAt": "2026-08-19T15:25:00.000Z"
+        }
+      ],
+      "jobsStatus": "success"
+    },
+    "uat": {
+      "jobs": [
+        {
+          "name": "Deploy to uat",
+          "status": "success",
+          "webUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/1108",
+          "updatedAt": "2026-08-12T09:48:00.000Z"
+        }
+      ],
+      "jobsStatus": "success"
+    },
+    "preprod": {
+      "jobs": [
+        {
+          "name": "Deploy to preprod",
+          "status": "running",
+          "webUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/1126",
+          "updatedAt": "2026-08-20T08:35:00.000Z"
+        }
+      ],
+      "jobsStatus": "running"
+    },
+    "main": {
+      "jobs": [
+        {
+          "name": "Deploy to production",
+          "status": "success",
+          "webUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/1090",
+          "updatedAt": "2026-07-31T07:12:00.000Z"
+        }
+      ],
+      "jobsStatus": "success"
+    }
+  },
+  "branchTips": {
+    "main": "f3d9c2a17b5e",
+    "preprod": "a1c8e4b09d27",
+    "uat": "9b7f5e3c1a04",
+    "integration": "5e2a8c6f4d19"
+  },
+  "goLives": [
+    {
+      "id": "f3d9c2a17b5e",
+      "prNumber": 110,
+      "title": "Release 2026-07: promotion preprod to main",
+      "mergeDate": "2026-07-30T18:30:00.000Z",
+      "webUrl": "https://github.com/mycompany/salesforce-crm/pull/110"
+    },
+    {
+      "id": "c4b2a9e75d31",
+      "prNumber": 96,
+      "title": "Release 2026-06: promotion preprod to main",
+      "mergeDate": "2026-06-25T18:05:00.000Z",
+      "webUrl": "https://github.com/mycompany/salesforce-crm/pull/96"
+    }
+  ],
+  "pullRequestsByGoLive": {
+    "f3d9c2a17b5e": [
+      {
+        "id": 104,
+        "number": 104,
+        "title": "CRM-991 Quote PDF generation",
+        "sourceBranch": "features/dev/CRM-991-quote-pdf-generation",
+        "targetBranch": "integration",
+        "author": {
+          "name": "Alex Martin",
+          "username": "alex-martin"
+        },
+        "authorLabel": "Alex Martin",
+        "state": "merged",
+        "mergeDate": "2026-07-21T10:15:00.000Z",
+        "webUrl": "https://github.com/mycompany/salesforce-crm/pull/104",
+        "jobsStatus": "success"
+      },
+      {
+        "id": 101,
+        "number": 101,
+        "title": "CRM-987 Account scoring fields",
+        "sourceBranch": "features/config/CRM-987-account-scoring",
+        "targetBranch": "integration",
+        "author": {
+          "name": "Sam Dubois",
+          "username": "sam-dubois"
+        },
+        "authorLabel": "Sam Dubois",
+        "state": "merged",
+        "mergeDate": "2026-07-17T09:40:00.000Z",
+        "webUrl": "https://github.com/mycompany/salesforce-crm/pull/101",
+        "jobsStatus": "success"
+      }
+    ]
+  }
+}

@@ -103,7 +103,35 @@ ROW_CROPS = {
 BOX_CROPS = {
     "hardis-button.jpg": ("sidebar", (4, 304, 58, 358)),
     "dependencies-ok.jpg": ("sidebar-dependencies", (60, 99, 436, 462)),
+    # "My Pull Request" contribution card (pipeline-workflow-cards is captured
+    # two zoom levels out so the second card row fits in the window)
+    "card-my-pull-request.png": ("pipeline-workflow-cards", (1378, 750, 1630, 858)),
+    # Branch modal of the pipeline, on its Deployment Actions tab
+    "screenshot-deployment-actions.jpg": (
+        "pipeline-branch-modal-actions",
+        (470, 60, 1866, 810),
+    ),
 }
+
+# --- Animated GIFs ------------------------------------------------------------
+# doc GIF name -> recording folder in doc-screenshots/recordings/
+# Frames are recorded at 5 fps by the harness (record() in
+# src/test/ui/docScreenshots.test.ts); identical consecutive frames are merged
+# into a single longer frame and every frame shares one global palette, which
+# is what keeps these files small enough for a documentation page.
+GIF_RECORDINGS = {
+    "extension-demo.gif": "welcome",
+    "sfdx-hardis-pipeline-view.gif": "devops-pipeline",
+    "orgs-manager.gif": "orgs-manager",
+    "metadata-retriever.gif": "metadata-retriever",
+    "monitoring-config-2026.gif": "monitoring-config",
+    "project-documentation.gif": "documentation-workbench",
+    "new-user-story-2026.gif": "work-new",
+    "retrieve-and-commit-2026.gif": "work-save",
+    "save-publish-pr-2026.gif": "work-publish",
+}
+
+GIF_FRAME_MS = 200  # 5 fps
 
 RED = (215, 25, 30)
 WHITE = (255, 255, 255)
@@ -247,6 +275,73 @@ def build_dependencies_home_link(welcome, target, dry_run):
     save(image, target, dry_run)
 
 
+def build_gif(recording, target, dry_run):
+    """Assembles the frames of one recording into an optimized animated GIF.
+
+    Consecutive identical frames are merged (their durations add up) and every
+    frame is quantized against one shared palette: without both, a 20 second
+    recording weighs tens of MB.
+    """
+    frames_dir = os.path.join(SHOTS_DIR, "recordings", recording)
+    if not os.path.isdir(frames_dir):
+        return False
+    frame_files = sorted(
+        os.path.join(frames_dir, name)
+        for name in os.listdir(frames_dir)
+        if name.lower().endswith(".png")
+    )
+    if len(frame_files) < 2:
+        return False
+
+    # Merge identical consecutive frames into (file, duration) pairs
+    kept = []
+    previous_bytes = None
+    for frame_file in frame_files:
+        with open(frame_file, "rb") as stream:
+            content = stream.read()
+        if content == previous_bytes:
+            kept[-1][1] += GIF_FRAME_MS
+        else:
+            kept.append([frame_file, GIF_FRAME_MS])
+        previous_bytes = content
+
+    first = Image.open(kept[0][0]).convert("RGB")
+    if is_blank(first):
+        sys.exit(
+            f"{kept[0][0]} is blank: the session was probably locked while "
+            "recording. Unlock it and run `yarn screenshots` again."
+        )
+    # One global palette, computed on the first frame (the theme never changes
+    # during a recording, so its colors represent the whole sequence well).
+    palette = first.quantize(colors=255, method=Image.MEDIANCUT)
+
+    images = []
+    durations = []
+    for frame_file, duration in kept:
+        frame = Image.open(frame_file).convert("RGB")
+        images.append(frame.quantize(palette=palette, dither=Image.NONE))
+        durations.append(duration)
+
+    print(
+        f"  {'(dry-run) ' if dry_run else ''}{os.path.basename(target)} "
+        f"{first.size[0]}x{first.size[1]} {len(images)} frames "
+        f"({len(frame_files)} captured)"
+    )
+    if dry_run:
+        return True
+    images[0].save(
+        target,
+        "GIF",
+        save_all=True,
+        append_images=images[1:],
+        duration=durations,
+        loop=0,
+        optimize=True,
+    )
+    print(f"    -> {os.path.getsize(target) // 1024} KB")
+    return True
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--docs-images", default=DEFAULT_DOCS_IMAGES)
@@ -283,6 +378,11 @@ def main():
             missing.append(capture)
             continue
         save(image.crop(box), os.path.join(args.docs_images, name), args.dry_run)
+
+    print("Animated GIFs:")
+    for name, recording in GIF_RECORDINGS.items():
+        if not build_gif(recording, os.path.join(args.docs_images, name), args.dry_run):
+            missing.append(f"recordings/{recording}")
 
     print("Annotated screenshots:")
     welcome = load("welcome")

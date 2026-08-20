@@ -193,9 +193,18 @@ captured as full window PNGs, and `scripts/build-doc-images.py` crops (some
 images show only the webview, others the whole window), annotates and renames
 them to the file names the documentation expects.
 
-The **animated GIFs are recorded by hand**: see
-[docs/animated-gifs.md](docs/animated-gifs.md) for the list, what each one must
-show, and the recording conventions.
+Most **animated GIFs** are assembled automatically as well:
+`yarn screenshots` records scripted scenarios as frame sequences
+(`doc-screenshots/recordings/`), and `build-doc-images.py` turns them into
+optimized GIFs. A few workflow GIFs are still recorded by hand: see
+[docs/animated-gifs.md](docs/animated-gifs.md) for the mapping, what each one
+must show, and the recording conventions.
+
+The DevOps Pipeline screenshots include open pull requests, feature branches
+and CI job statuses: they are served by a mocked git provider
+(`src/utils/gitProviders/gitProviderMock.ts`), which reads its data from
+`test/fixtures/screenshot/git-provider-mock.json` and is only activated by the
+UI test harness.
 
 ### Manual Testing Checklist
 

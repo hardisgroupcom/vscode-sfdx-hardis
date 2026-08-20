@@ -28,6 +28,9 @@ $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "window-common.ps1")
 
 $hwnd = Get-SfhWindow -TitleMatch $TitleMatch
+# Activate and maximize like capture-window.ps1: the rect is measured once, so
+# the window must already have its final (maximized) geometry
+Set-SfhForeground -Hwnd $hwnd -Maximize
 $rect = Get-SfhWindowRect -Hwnd $hwnd
 
 if (Test-Path $OutDir) {
