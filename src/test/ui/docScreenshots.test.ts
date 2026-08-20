@@ -680,6 +680,86 @@ suite("Documentation screenshots", function () {
     capture("user-activateinvalid-completed");
   });
 
+  // Full package installation journey, recorded for
+  // docs/assets/images/animation-install-packages.gif: Manage Packages card of
+  // the DevOps Pipeline -> Installed Packages workbench -> Install new package
+  // -> hardis:package:install run -> back to the workbench where the newly
+  // installed package appears after a refresh.
+  test("recording: install packages", async function () {
+    if (!shouldTake("rec-install-packages")) {
+      this.skip();
+    }
+    await shootPanel(panelManager, {
+      name: "pipeline-for-recording",
+      command: "vscode-sfdx-hardis.showPipeline",
+      lwcId: "s-pipeline",
+      settleMs: 9000,
+      force: true,
+    });
+    const mockLogStart = readMockLog().length;
+    const asked = (promptName: string) =>
+      readMockLog()
+        .slice(mockLogStart)
+        .some(
+          (entry) =>
+            entry.event === "promptAsked" && entry.promptName === promptName,
+        );
+    await record("install-packages", 42, async () => {
+      await sleep(1500);
+      await click(1630, 895); // "Manage Packages" contribution card
+      await waitFor(
+        () => panelManager.getPanel("s-installed-packages"),
+        20000,
+        "installed packages panel to open",
+      );
+      await sleep(3000);
+      const knownPanels = new Set<string>(panelManager.getActivePanelIds());
+      await click(1636, 109); // "Install new package"
+      const commandPanelId = await waitFor(
+        () =>
+          panelManager
+            .getActivePanelIds()
+            .find(
+              (id: string) =>
+                id.startsWith("s-command-execution-") && !knownPanels.has(id),
+            ),
+        20000,
+        "package install command panel to open",
+      );
+      const commandPanel = panelManager.getPanel(commandPanelId);
+      const answers: Array<{ prompt: string; data: any }> = [
+        { prompt: "selectPackage", data: { selectPackage: "other" } },
+        {
+          prompt: "packageVersionId",
+          data: { packageVersionId: "04t5p000001BlVPAA0" },
+        },
+        { prompt: "installationKey", data: { installationKey: "" } },
+        { prompt: "packagesToConfig", data: { packagesToConfig: ["dlrs"] } },
+        { prompt: "installConfig", data: { installConfig: "scratch-deploy" } },
+      ];
+      for (const answer of answers) {
+        await waitFor(() => asked(answer.prompt), 30000, answer.prompt);
+        await sleep(1800); // the question must be readable in the recording
+        commandPanel.simulateWebviewMessage({
+          type: "submit",
+          data: answer.data,
+        });
+      }
+      await waitFor(
+        () => panelManager.getPanel(commandPanelId)?.commandStatus === "completed",
+        40000,
+        "package install to complete",
+      );
+      await sleep(2500);
+      // Back to the Installed Packages workbench: the new package appears
+      // after a refresh (the mocked CLI registered it in .sfdx-hardis.yml)
+      panelManager.getPanel("s-installed-packages").reveal();
+      await sleep(1500);
+      await click(1815, 109); // "Refresh"
+      await sleep(3500);
+    });
+  });
+
   // ---------------------------------------------------------------------
   // Animated recordings: the documentation illustrates several panels with a
   // GIF. Each scenario drives the panel while the screen is recorded.

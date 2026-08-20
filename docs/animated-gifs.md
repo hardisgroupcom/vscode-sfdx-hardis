@@ -24,6 +24,7 @@ All of them live in the sibling repository, under
 | `project-documentation.gif`     | `documentation-workbench` | Documentation Workbench: generation options and deployment cards                                                  |
 | `new-user-story-2026.gif`       | `work-new`                | `New User Story`: the questions of `hardis:work:new` answered in the command panel, up to the created branch      |
 | `save-publish-pr-2026.gif`      | `work-save`               | `Save / Publish User Story` (`hardis:work:save`): delta package.xml, cleanings, push, with the actions bar at the end of the run |
+| `animation-install-packages.gif` | `install-packages`       | Manage Packages from the DevOps Pipeline, Install new package (`hardis:package:install`), then the new package in the workbench |
 
 ## Recording conventions (manual GIFs)
 
@@ -38,7 +39,6 @@ All of them live in the sibling repository, under
 | GIF                                        | What it must show                                                                                 | Used by                                                                                                                                 |
 |--------------------------------------------|-----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
 | `retrieve-and-commit-2026.gif`             | Pull from org then commit: retrieved metadata, staging in Source Control                          | sfdx-hardis `hardis/work/save.md`, `salesforce-ci-cd-publish-task.md` + extension `README.md`                                           |
-| `animation-install-packages.gif`           | Installing a package from the menu, and its registration in `.sfdx-hardis.yml`                    | sfdx-hardis `salesforce-ci-cd-work-on-task-install-packages.md`                                                                         |
 | `activate-merge-driver-in-sfdx-hardis.gif` | Activating the Salesforce git merge driver from the extension                                     | sfdx-hardis `salesforce-ci-cd-hotfixes.md`                                                                                              |
 | `multi-org-query-demo.gif`                 | Multi-org SOQL Query & Report: selecting the orgs, the query, and the generated report            | sfdx-hardis `hardis/org/multi-org-query.md`, `src/commands/hardis/org/multi-org-query.ts`                                               |
 | `sfdx-hardis-plugin-demo.gif`              | The extension as the graphical companion of the plugin: menu, then a command running              | sfdx-hardis `sfdx-hardis-plugins.md`                                                                                                    |

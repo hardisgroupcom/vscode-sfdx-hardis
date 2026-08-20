@@ -136,6 +136,7 @@ GIF_RECORDINGS = {
     "project-documentation.gif": "documentation-workbench",
     "new-user-story-2026.gif": "work-new",
     "save-publish-pr-2026.gif": "work-save",
+    "animation-install-packages.gif": "install-packages",
 }
 
 GIF_FRAME_MS = 200  # 5 fps

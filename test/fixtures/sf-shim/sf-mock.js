@@ -1419,6 +1419,213 @@ const DOCS_SCENARIOS = {
     );
     await sleep(400);
   },
+
+  // Package installation (docs/assets/images/animation-install-packages.gif):
+  // replay of a real `sf hardis:package:install` run launched from the
+  // Installed Packages workbench, with an invented successful ending. The
+  // package list shows popular AppExchange apps; the installed package (DLRS)
+  // is really written into the workspace .sfdx-hardis.yml so the Installed
+  // Packages panel shows it after a refresh.
+  "hardis:package:install": async (send, askPrompt, sleep) => {
+    const log = (logType, message, extra) =>
+      send({ event: "commandLogLine", logType, message, ...(extra || {}) });
+    const packageChoices = [
+      "Conga Composer",
+      "DocuSign eSignature for Salesforce",
+      "Declarative Lookup Rollup Summaries Tool",
+      "Dynamic Flow Progress",
+      "FormAssembly",
+      "Nonprofit Success Pack",
+      "Salesforce CPQ",
+      "Salesforce Maps",
+    ].map((name) => ({
+      title: `${name} - AppExchange`,
+      value: name,
+    }));
+    packageChoices.push({ title: "Other", value: "other" });
+
+    log(
+      "action",
+      "Please select the package you want to install on org deploy.user@mycompany.com.integ",
+      { isQuestion: true },
+    );
+    await askPrompt({
+      name: "selectPackage",
+      type: "select",
+      message:
+        "Please select the package you want to install on org deploy.user@mycompany.com.integ",
+      description: "Choose which package to install from the available list",
+      choices: packageChoices,
+    });
+    log("log", "Other");
+    await sleep(200);
+
+    log(
+      "action",
+      "What is the id of the Package Version to install ? (starting with 04t)",
+      { isQuestion: true },
+    );
+    await askPrompt({
+      name: "packageVersionId",
+      type: "text",
+      message:
+        "What is the id of the Package Version to install ? (starting with 04t)\nYou can find it using tooling api request Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage",
+      description: "Enter the package version ID for the package you want to install",
+      placeholder: "Ex: 04t1t000003VYzRAAW",
+    });
+    log("log", "04t5p000001BlVPAA0");
+    await sleep(200);
+
+    log(
+      "action",
+      "Enter the password for this package (leave empty if package is not protected by a password)",
+      { isQuestion: true },
+    );
+    await askPrompt({
+      name: "installationKey",
+      type: "text",
+      message:
+        "Enter the password for this package (leave empty if package is not protected by a password)",
+      description: "Provide the installation password if the package is protected",
+      placeholder: "Ex: MyPassword123",
+    });
+    await sleep(200);
+
+    log("action", "Listing packages installed on current org...");
+    send({
+      event: "commandSubCommandStart",
+      data: { command: "sf package installed list --json", cwd: "." },
+    });
+    await sleep(800);
+    send({
+      event: "commandSubCommandEnd",
+      data: { command: "sf package installed list --json", success: true },
+    });
+
+    log("action", "Installing package 04t5p000001BlVPAA0...");
+    send({
+      event: "commandSubCommandStart",
+      data: {
+        command:
+          "sf package install --package 04t5p000001BlVPAA0 --no-prompt --security-type AdminsOnly --wait 60 --json",
+        cwd: ".",
+      },
+    });
+    await sleep(3500);
+    send({
+      event: "commandSubCommandEnd",
+      data: {
+        command:
+          "sf package install --package 04t5p000001BlVPAA0 --no-prompt --security-type AdminsOnly --wait 60 --json",
+        success: true,
+      },
+    });
+    log(
+      "success",
+      "Package Declarative Lookup Rollup Summaries Tool (04t5p000001BlVPAA0) has been installed on org deploy.user@mycompany.com.integ",
+    );
+    await sleep(300);
+
+    log(
+      "action",
+      "Please select packages to add to your project configuration",
+      { isQuestion: true },
+    );
+    await askPrompt({
+      name: "packagesToConfig",
+      type: "multiselect",
+      message: "Please select packages to add to your project configuration",
+      description:
+        "Select packages to add to your project configuration for automatic installation during scratch org creation and/or deployments",
+      choices: [
+        {
+          title: "Declarative Lookup Rollup Summaries Tool (2.23.0.12)",
+          value: "dlrs",
+        },
+      ],
+    });
+    log("log", "☑ Declarative Lookup Rollup Summaries Tool (2.23.0.12)");
+    await sleep(200);
+
+    log(
+      "action",
+      "Please select the install configuration for Declarative Lookup Rollup Summaries Tool",
+      { isQuestion: true },
+    );
+    await askPrompt({
+      name: "installConfig",
+      type: "select",
+      message:
+        "Please select the install configuration for Declarative Lookup Rollup Summaries Tool",
+      description:
+        "Configure how this package should be automatically installed during CI/CD operations",
+      choices: [
+        {
+          title:
+            "Deploy automatically Declarative Lookup Rollup Summaries Tool on integration/production orgs only",
+          value: "deploy",
+        },
+        {
+          title:
+            "Install automatically Declarative Lookup Rollup Summaries Tool on scratch orgs only",
+          value: "scratch",
+        },
+        {
+          title:
+            "Both: Install & deploy automatically Declarative Lookup Rollup Summaries Tool",
+          value: "scratch-deploy",
+        },
+        {
+          title:
+            "Do not configure Declarative Lookup Rollup Summaries Tool installation / deployment",
+          value: "none",
+        },
+      ],
+    });
+    log(
+      "log",
+      "Both: Install & deploy automatically Declarative Lookup Rollup Summaries Tool",
+    );
+    await sleep(200);
+
+    // Register the package in the workspace .sfdx-hardis.yml, like the real
+    // command: the Installed Packages panel then shows it after a refresh
+    try {
+      const yaml = require(
+        path.join(process.env.SF_MOCK_NODE_MODULES || "", "js-yaml"),
+      );
+      const configFile = path.join(process.cwd(), ".sfdx-hardis.yml");
+      const config = yaml.load(fs.readFileSync(configFile, "utf8")) || {};
+      config.installedPackages = (config.installedPackages || []).concat([
+        {
+          Id: "0A35f000000TN2ECAW",
+          SubscriberPackageId: "0333X000000DlrsQAC",
+          SubscriberPackageName: "Declarative Lookup Rollup Summaries Tool",
+          SubscriberPackageNamespace: "dlrs",
+          SubscriberPackageVersionId: "04t5p000001BlVPAA0",
+          SubscriberPackageVersionName: "DLRS Winter 26",
+          SubscriberPackageVersionNumber: "2.23.0.12",
+          installOnScratchOrgs: true,
+          installDuringDeployments: true,
+        },
+      ]);
+      fs.writeFileSync(configFile, yaml.dump(config));
+    } catch (e) {
+      logInvocation({ event: "configWriteFailed", error: String(e) });
+    }
+
+    log(
+      "action",
+      "Updated package configuration in .sfdx-hardis.yml config file",
+    );
+    send({
+      event: "reportFile",
+      file: ".sfdx-hardis.yml#installedPackages",
+      title: "Package config in .sfdx-hardis.yml",
+      type: "report",
+    });
+    await sleep(500);
+  },
 };
 
 main().then(
