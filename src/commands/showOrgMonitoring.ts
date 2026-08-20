@@ -14,6 +14,7 @@ import {
   clearMonitoringCatalogCache,
   MonitoringCatalogPayload,
 } from "../utils/monitoringConfigUtils";
+import { readSfdxHardisConfig } from "../utils/sfdx-hardis-config-utils";
 
 async function safeFetchMonitoringCatalog(): Promise<MonitoringCatalogPayload | null> {
   try {
@@ -45,22 +46,16 @@ export function registerShowOrgMonitoring(commands: Commands) {
       );
       const isCiCdRepo = fs.existsSync(ciCdManifestPath);
 
-      // Read optional monitoring repository URL from config/.sfdx-hardis.yml (monitoring_repository)
+      // Read optional monitoring repository URL from .sfdx-hardis.yml
+      // (root file first, then config/.sfdx-hardis.yml, like every other
+      // consumer of the project configuration)
       let monitoringRepository: string | null = null;
       try {
-        const configPath = path.join(
-          workspaceRoot || "",
-          "config",
-          ".sfdx-hardis.yml",
-        );
-        if (fs.existsSync(configPath)) {
-          const raw = fs.readFileSync(configPath, "utf8");
-          const parsed = yaml.load(raw) as any;
-          monitoringRepository =
-            parsed?.monitoring_repository ||
-            parsed?.monitoringRepository ||
-            null;
-        }
+        const projectConfig = await readSfdxHardisConfig();
+        monitoringRepository =
+          projectConfig?.monitoring_repository ||
+          projectConfig?.monitoringRepository ||
+          null;
       } catch (e) {
         Logger.log(`Unable to read monitoring_repository from config: ${e}`);
       }
@@ -106,19 +101,11 @@ export function registerShowOrgMonitoring(commands: Commands) {
             const isCiCdRepo2 = fs.existsSync(ciCdManifestPath2);
             let monitoringRepository2: string | null = null;
             try {
-              const configPath2 = path.join(
-                workspaceRoot2 || "",
-                "config",
-                ".sfdx-hardis.yml",
-              );
-              if (fs.existsSync(configPath2)) {
-                const raw2 = fs.readFileSync(configPath2, "utf8");
-                const parsed2 = yaml.load(raw2) as any;
-                monitoringRepository2 =
-                  parsed2?.monitoring_repository ||
-                  parsed2?.monitoringRepository ||
-                  null;
-              }
+              const projectConfig2 = await readSfdxHardisConfig();
+              monitoringRepository2 =
+                projectConfig2?.monitoring_repository ||
+                projectConfig2?.monitoringRepository ||
+                null;
             } catch (e) {
               Logger.log(
                 `Unable to read monitoring_repository from config: ${e}`,

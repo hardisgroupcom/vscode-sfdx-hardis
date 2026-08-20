@@ -12,6 +12,7 @@
     - Questions asked by a command are highlighted, long choice lists are **searchable in place** (no more dropdown covering the validation buttons), and answered questions collapse to a single line showing your answer
     - Log lines carrying a **big JSON** (deployment results, API responses) or a **very long text** now show only their beginning: click them to see the complete content, **copy it** or **open it in a VS Code tab**
     - Once a command is over, a **Run again** button replays it with the same parameters, whether it succeeded or failed
+    - Fixed the **Log file** button failing with "File seems to be binary and cannot be opened as text" on logs containing raw git output: a cleaned copy of the log now opens instead
   - In the **DevOps Pipeline diagram**, CI job status is now **color-coded consistently**: **blue animated = running**, **orange = pending**, **red = failed**, **green = success** (previously running and pending showed as red, and failed jobs were not highlighted at all)
   - **Extension Settings** are now readable: real setting names (e.g. "User input command line if LWC" instead of "User Input Command Line If L W C") and each setting's **description always visible** under its name instead of hidden behind a hover icon
   - Fix panels wrongly opening in **light mode inside a dark VS Code**: the extension theme now follows the VS Code theme by default (users who explicitly selected Light or Dark keep their choice)
@@ -56,6 +57,9 @@
   - Fixed the pull request modal occasionally **opening on the wrong tab** after a previous attempt to load its details had failed
   - The pipeline **no longer warns** when no manual actions tracking file is configured, since manual actions are now declared in pull requests and ticked off in their comments
 
+- **Org Monitoring**
+  - The **Open monitoring repository** button now also appears when `monitoringRepository` is defined in the root `.sfdx-hardis.yml` file (previously only `config/.sfdx-hardis.yml` was read)
+
 - **Commands**
   - Added **7 commands** to the Commands panel: **MFA Readiness**, **Unsecure Permissions**, **Usage-Based Entitlements**, **Consumption Alerts**, **AI Credit Usage**, **Run Agentforce Tests** and **Data Dictionary**
   - New **Search** button in the Commands panel header, opening a picker that lists commands from **every category** and filters on their label, category and tooltip **as you type**
@@ -89,6 +93,8 @@
   - The extension code loaded at startup was reduced to **a fraction of its previous size**, the rest is now loaded only when actually used
   - Installed plugins are now identified with `sf plugins --json`, which tells exactly how each plugin was installed, instead of reading the displayed text (that could be colorized, hiding the version and the alpha/beta/link markers)
   - All the **screenshots of the documentation** are regenerated with the new design (and are now regenerated automatically, so they will no longer drift from the real product)
+    - The sample data behind them is now modeled on real sfdx-hardis projects: the DevOps Pipeline shows open pull requests, feature branches and running CI jobs, the monitoring panels a real monitoring configuration, and the org list real-life connection states
+    - Most **animated GIFs** of the documentation are now assembled automatically from scripted recordings of the same harness
   - The extension package no longer ships **15 MB of obsolete images** (old menu screenshots and demo animation) that nothing displayed anymore
 
 ## [7.18.0] 2026-07-26

@@ -61,6 +61,9 @@ function shouldTake(name: string): boolean {
 // "[Extension Development Host]", which has no place in a documentation
 // screenshot: the title bar is cropped out of every capture.
 const TITLE_BAR_HEIGHT = 38;
+// Width of the activity bar + side bar in a capture: recordings crop it out
+// (must match SIDE_BAR_WIDTH in scripts/build-doc-images.py)
+const SIDE_BAR_WIDTH = 435;
 
 function capture(
   name: string,
@@ -189,9 +192,12 @@ async function shootPanel(
     ready?: (initData: any) => boolean;
     /** Clicks to perform inside the webview before capturing */
     clicks?: Array<{ x: number; y: number; scroll?: number }>;
+    /** Open and capture even when the name is not in the ONLY filter (used by
+     * the recording tests, whose pre-shot must not depend on the filter) */
+    force?: boolean;
   },
 ): Promise<any> {
-  if (!shouldTake(options.name)) {
+  if (!options.force && !shouldTake(options.name)) {
     return null;
   }
   // One tab per screenshot: a crowded tab bar hides the panel title and pushes
@@ -245,6 +251,9 @@ async function record(
     return;
   }
   const outDir = path.join(OUT_DIR, "recordings", name);
+  // Purge frames of a previous run: a shorter new recording must not leave
+  // stale trailing frames that would end up in the assembled GIF
+  fs.rmSync(outDir, { recursive: true, force: true });
   fs.mkdirSync(outDir, { recursive: true });
   const recorder = spawn(
     "powershell",
@@ -262,6 +271,10 @@ async function record(
       String(fps),
       "-CropTop",
       String(TITLE_BAR_HEIGHT),
+      // The documentation GIFs show the panel only: the activity bar and the
+      // side bar are cropped out (they carry nothing relevant to the scenario)
+      "-CropLeft",
+      String(SIDE_BAR_WIDTH),
     ],
     { stdio: ["ignore", "pipe", "pipe"], detached: false },
   );
@@ -334,6 +347,22 @@ async function cleanChrome(): Promise<void> {
   await vscode.commands.executeCommand("notifications.clearAll");
   await vscode.commands.executeCommand("workbench.action.closeAuxiliaryBar");
   await sleep(600);
+}
+
+/**
+ * Returns a predicate telling whether the mocked CLI asked a given prompt
+ * since the moment this tracker was created (see promptAsked entries logged
+ * by test/fixtures/sf-shim/sf-mock.js).
+ */
+function trackAskedPrompts(): (promptName: string) => boolean {
+  const mockLogStart = readMockLog().length;
+  return (promptName: string) =>
+    readMockLog()
+      .slice(mockLogStart)
+      .some(
+        (entry) =>
+          entry.event === "promptAsked" && entry.promptName === promptName,
+      );
 }
 
 suite("Documentation screenshots", function () {
@@ -425,6 +454,55 @@ suite("Documentation screenshots", function () {
     });
   });
 
+  test("pipeline: contribution cards and branch modal", async function () {
+    if (!shouldTake("pipeline-modals")) {
+      this.skip();
+    }
+    // Zoom the window out one level so the second row of contribution cards
+    // (with the "My Pull Request" card) fits in the capture
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await sleep(800);
+    await shootPanel(panelManager, {
+      name: "pipeline-workflow-cards",
+      command: "vscode-sfdx-hardis.showPipeline",
+      lwcId: "s-pipeline",
+      settleMs: 9000,
+      force: true,
+    });
+    // Single-PR modal of the current branch: Deployment Actions tab, then the
+    // Add New Action editor (still zoomed out; the published image is a crop
+    // of the modal, so the zoom only affects its resolution)
+    await click(1502, 804); // "My Pull Request" card
+    await sleep(2500);
+    await cleanChrome();
+    await captureStable("pipeline-pr-modal");
+    await click(543, 156); // "Deployment Actions" tab of the PR modal
+    await sleep(1200);
+    await captureStable("pipeline-pr-actions-empty");
+    await click(425, 205); // "Add New Action"
+    await sleep(1500);
+    await captureStable("pipeline-edit-action");
+    // Close the editor and the PR modal before the branch-modal shots
+    await click(1355, 675); // Cancel button of the action editor
+    await sleep(800);
+    await click(1863, 54); // close cross of the PR modal
+    await sleep(800);
+    await vscode.commands.executeCommand("workbench.action.zoomIn");
+    await vscode.commands.executeCommand("workbench.action.zoomIn");
+    await sleep(800);
+    // Branch modal: click the "integration" branch node of the mermaid, then
+    // its Deployment Actions tab
+    await sleep(1000);
+    await click(893, 410); // integration branch node
+    await sleep(2500);
+    await cleanChrome();
+    await captureStable("pipeline-branch-modal");
+    await click(958, 227); // "Deployment Actions" tab of the modal
+    await sleep(1500);
+    await captureStable("pipeline-branch-modal-actions");
+  });
+
   test("pipeline configuration", async function () {
     await shootPanel(panelManager, {
       name: "pipeline-config",
@@ -509,19 +587,12 @@ suite("Documentation screenshots", function () {
     }
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
     await sleep(400);
-    const mockLogStart = readMockLog().length;
+    const asked = trackAskedPrompts();
     const panelId = await runCommandAndWaitForPanel(
       panelManager,
       "sf hardis:org:mock-showcase",
     );
     const panel = panelManager.getPanel(panelId);
-    const asked = (promptName: string) =>
-      readMockLog()
-        .slice(mockLogStart)
-        .some(
-          (entry) =>
-            entry.event === "promptAsked" && entry.promptName === promptName,
-        );
 
     // 1. Sections, sub-command, warning, table and the first question
     await waitFor(() => asked("setDefault"), 30000, "first prompt");
@@ -558,33 +629,136 @@ suite("Documentation screenshots", function () {
     capture("command-runner-completed");
   });
 
+  // Productivity command example: reactivation of the sandbox users whose
+  // email was suffixed with .invalid by a refresh. Its multiselect question is
+  // the docs image ProductivityCommands.png.
+  test("command runner (activate invalid users)", async function () {
+    if (!shouldTake("user-activateinvalid")) {
+      this.skip();
+    }
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await sleep(400);
+    const asked = trackAskedPrompts();
+    const panelId = await runCommandAndWaitForPanel(
+      panelManager,
+      "sf hardis:org:user:activateinvalid",
+    );
+    const panel = panelManager.getPanel(panelId);
+
+    await waitFor(() => asked("confirmSelect"), 30000, "confirm prompt");
+    await sleep(1200);
+    panel.simulateWebviewMessage({
+      type: "submit",
+      data: { confirmSelect: "select" },
+    });
+
+    // The users multiselect: the most representative state of the command
+    await waitFor(() => asked("selectUsers"), 30000, "users multiselect");
+    await sleep(1500);
+    await cleanChrome();
+    capture("user-activateinvalid-multiselect");
+    panel.simulateWebviewMessage({
+      type: "submit",
+      data: {
+        selectUsers: [
+          "alex.martin@mycompany.com",
+          "amelia.clark@mycompany.com",
+          "bruno.keller@mycompany.com",
+          "carla.mendes@mycompany.com",
+          "david.osei@mycompany.com",
+          "elena.petrova@mycompany.com",
+          "farid.haddad@mycompany.com",
+        ],
+      },
+    });
+
+    await waitFor(
+      () => panelManager.getPanel(panelId)?.commandStatus === "completed",
+      60000,
+      "activateinvalid to complete",
+    );
+    await sleep(1500);
+    await cleanChrome();
+    capture("user-activateinvalid-completed");
+  });
+
+  // Full package installation journey, recorded for
+  // docs/assets/images/animation-install-packages.gif: Manage Packages card of
+  // the DevOps Pipeline -> Installed Packages workbench -> Install new package
+  // -> hardis:package:install run -> back to the workbench where the newly
+  // installed package appears after a refresh.
+  test("recording: install packages", async function () {
+    if (!shouldTake("rec-install-packages")) {
+      this.skip();
+    }
+    await shootPanel(panelManager, {
+      name: "pipeline-for-recording",
+      command: "vscode-sfdx-hardis.showPipeline",
+      lwcId: "s-pipeline",
+      settleMs: 9000,
+      force: true,
+    });
+    const asked = trackAskedPrompts();
+    await record("install-packages", 42, async () => {
+      await sleep(1500);
+      await click(1630, 895); // "Manage Packages" contribution card
+      await waitFor(
+        () => panelManager.getPanel("s-installed-packages"),
+        20000,
+        "installed packages panel to open",
+      );
+      await sleep(3000);
+      const knownPanels = new Set<string>(panelManager.getActivePanelIds());
+      await click(1636, 109); // "Install new package"
+      const commandPanelId = await waitFor(
+        () =>
+          panelManager
+            .getActivePanelIds()
+            .find(
+              (id: string) =>
+                id.startsWith("s-command-execution-") && !knownPanels.has(id),
+            ),
+        20000,
+        "package install command panel to open",
+      );
+      const commandPanel = panelManager.getPanel(commandPanelId);
+      const answers: Array<{ prompt: string; data: any }> = [
+        { prompt: "selectPackage", data: { selectPackage: "other" } },
+        {
+          prompt: "packageVersionId",
+          data: { packageVersionId: "04t5p000001BlVPAA0" },
+        },
+        { prompt: "installationKey", data: { installationKey: "" } },
+        { prompt: "packagesToConfig", data: { packagesToConfig: ["dlrs"] } },
+        { prompt: "installConfig", data: { installConfig: "scratch-deploy" } },
+      ];
+      for (const answer of answers) {
+        await waitFor(() => asked(answer.prompt), 30000, answer.prompt);
+        await sleep(1800); // the question must be readable in the recording
+        commandPanel.simulateWebviewMessage({
+          type: "submit",
+          data: answer.data,
+        });
+      }
+      await waitFor(
+        () => panelManager.getPanel(commandPanelId)?.commandStatus === "completed",
+        40000,
+        "package install to complete",
+      );
+      await sleep(2500);
+      // Back to the Installed Packages workbench: the new package appears
+      // after a refresh (the mocked CLI registered it in .sfdx-hardis.yml)
+      panelManager.getPanel("s-installed-packages").reveal();
+      await sleep(1500);
+      await click(1815, 109); // "Refresh"
+      await sleep(3500);
+    });
+  });
+
   // ---------------------------------------------------------------------
   // Animated recordings: the documentation illustrates several panels with a
   // GIF. Each scenario drives the panel while the screen is recorded.
   // ---------------------------------------------------------------------
-
-  test("recording: welcome page tour", async function () {
-    if (!shouldTake("rec-welcome")) {
-      this.skip();
-    }
-    const panel = await shootPanel(panelManager, {
-      name: "welcome-for-recording",
-      command: "vscode-sfdx-hardis.showWelcome",
-      lwcId: "s-welcome",
-      settleMs: 2500,
-    });
-    void panel;
-    await record("welcome", 16, async () => {
-      for (let i = 0; i < 5; i++) {
-        await click(1170, 600, { scroll: -3 });
-      }
-      await sleep(1500);
-      for (let i = 0; i < 5; i++) {
-        await click(1170, 600, { scroll: 3 });
-      }
-      await sleep(1500);
-    });
-  });
 
   test("recording: orgs manager", async function () {
     if (!shouldTake("rec-orgs-manager")) {
@@ -592,6 +766,7 @@ suite("Documentation screenshots", function () {
     }
     await shootPanel(panelManager, {
       name: "orgs-manager-for-recording",
+      force: true,
       command: "vscode-sfdx-hardis.openOrgsManager",
       lwcId: "s-org-manager",
       settleMs: 2500,
@@ -613,15 +788,16 @@ suite("Documentation screenshots", function () {
     }
     await shootPanel(panelManager, {
       name: "pipeline-for-recording",
+      force: true,
       command: "vscode-sfdx-hardis.showPipeline",
       lwcId: "s-pipeline",
       settleMs: 5000,
     });
     await record("devops-pipeline", 16, async () => {
       await sleep(2000);
-      await click(880, 771); // "Open Pull Requests" tab
+      await click(890, 803); // "Open Pull Requests" tab
       await sleep(3000);
-      await click(618, 771); // "Project Contribution Workflow" tab
+      await click(618, 803); // "Project Contribution Workflow" tab
       await sleep(2500);
       for (let i = 0; i < 3; i++) {
         await click(1170, 600, { scroll: -2 });
@@ -636,6 +812,7 @@ suite("Documentation screenshots", function () {
     }
     await shootPanel(panelManager, {
       name: "metadata-retriever-for-recording",
+      force: true,
       command: "vscode-sfdx-hardis.showMetadataRetriever",
       lwcId: "s-metadata-retriever",
       settleMs: 4000,
@@ -660,6 +837,7 @@ suite("Documentation screenshots", function () {
     }
     await shootPanel(panelManager, {
       name: "monitoring-config-for-recording",
+      force: true,
       command: "vscode-sfdx-hardis.showMonitoringConfig",
       lwcId: "s-monitoring-config",
       settleMs: 3000,
@@ -683,6 +861,7 @@ suite("Documentation screenshots", function () {
     }
     await shootPanel(panelManager, {
       name: "documentation-workbench-for-recording",
+      force: true,
       command: "vscode-sfdx-hardis.showDocumentationWorkbench",
       lwcId: "s-documentation-workbench",
       settleMs: 3000,
@@ -712,20 +891,13 @@ suite("Documentation screenshots", function () {
   ): Promise<void> {
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
     await sleep(400);
-    const mockLogStart = readMockLog().length;
+    const asked = trackAskedPrompts();
     await record(name, seconds, async () => {
       const panelId = await runCommandAndWaitForPanel(panelManager, command);
       const panel = panelManager.getPanel(panelId);
       for (const answer of answers) {
         await waitFor(
-          () =>
-            readMockLog()
-              .slice(mockLogStart)
-              .some(
-                (entry) =>
-                  entry.event === "promptAsked" &&
-                  entry.promptName === answer.prompt,
-              ),
+          () => asked(answer.prompt),
           30000,
           `prompt ${answer.prompt}`,
         );
@@ -745,32 +917,26 @@ suite("Documentation screenshots", function () {
     if (!shouldTake("rec-work-new")) {
       this.skip();
     }
-    await recordWorkflowCommand("work-new", "sf hardis:work:new", 26, [
-      { prompt: "project", data: { project: "CRM" } },
-      { prompt: "userStoryType", data: { userStoryType: "features" } },
+    await recordWorkflowCommand("work-new", "sf hardis:work:new", 32, [
+      { prompt: "targetBranch", data: { targetBranch: "integration" } },
+      { prompt: "storyType", data: { storyType: "feature" } },
       {
-        prompt: "userStoryName",
-        data: { userStoryName: "CRM-1042 Account hierarchy" },
+        prompt: "storyName",
+        data: { storyName: "CRM-123 Sync accounts with SAP" },
       },
-      { prompt: "targetOrg", data: { targetOrg: "sandbox" } },
+      { prompt: "orgType", data: { orgType: "sandbox" } },
+      { prompt: "sandboxOrg", data: { sandboxOrg: "dev" } },
+      { prompt: "openOrg", data: { openOrg: "no" } },
     ]);
   });
 
-  test("recording: save user story", async function () {
+  test("recording: save / publish user story", async function () {
     if (!shouldTake("rec-work-save")) {
       this.skip();
     }
-    await recordWorkflowCommand("work-save", "sf hardis:work:save", 24, [
-      { prompt: "confirmUpdates", data: { confirmUpdates: "yes" } },
-    ]);
-  });
-
-  test("recording: publish user story", async function () {
-    if (!shouldTake("rec-work-publish")) {
-      this.skip();
-    }
-    await recordWorkflowCommand("work-publish", "sf hardis:work:publish", 22, [
-      { prompt: "targetBranch", data: { targetBranch: "integration" } },
+    await recordWorkflowCommand("work-save", "sf hardis:work:save", 26, [
+      { prompt: "commitReady", data: { commitReady: "commitReady" } },
+      { prompt: "pushCommits", data: { pushCommits: "yes" } },
     ]);
   });
 

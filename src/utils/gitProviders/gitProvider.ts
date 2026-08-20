@@ -82,6 +82,20 @@ export class GitProvider {
   }
 
   private static async buildInstance(): Promise<GitProvider | null> {
+    // UI test / documentation screenshot harness only: serve every git
+    // provider call from a JSON fixture instead of a real provider API (see
+    // gitProviderMock.ts). Both env vars are set by src/test/runUiTest.ts.
+    if (
+      process.env.VSCODE_SFDX_HARDIS_UI_TEST === "true" &&
+      process.env.SFDX_HARDIS_MOCK_GIT_PROVIDER_FILE
+    ) {
+      this.instance = await (
+        await import("./gitProviderMock")
+      ).GitProviderMock.buildFromFixtureFile(
+        process.env.SFDX_HARDIS_MOCK_GIT_PROVIDER_FILE,
+      );
+      return this.instance;
+    }
     {
       const gitInfo = await GitProvider.detectRepoInfo();
       if (!gitInfo) {
