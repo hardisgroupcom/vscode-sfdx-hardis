@@ -719,7 +719,7 @@ export class HardisColors {
     this.statusBarItem.show();
   }
 
-  /** Short org name for the status bar, e.g. `wecheck--devmercury` */
+  /** Short org name for the status bar, e.g. `acme--dev` */
   getOrgHostLabel(): string {
     return shortenOrgHost(this.currentDefaultOrgDomain || "");
   }

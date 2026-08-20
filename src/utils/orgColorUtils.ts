@@ -288,7 +288,7 @@ export function resolveOrgHue(
 /**
  * Build the `workbench.colorCustomizations` payload for a hue.
  *
- * Every background is written together with its foreground and its neighbours,
+ * Every background is written together with its foreground and its neighbors,
  * so no theme is ever left with its own (clashing) text color on our surface.
  * `accent` keeps the footprint to the status bar stripe and a few indicators,
  * `tinted` adds the title bar, `full` also fills the activity bar.
@@ -423,7 +423,7 @@ const ORG_HOST_SUFFIXES: string[] = [
 
 /**
  * Turn an org instance URL into a short host label, e.g.
- * `https://wecheck--devmercury.sandbox.my.salesforce.com` -> `wecheck--devmercury`.
+ * `https://acme--dev.sandbox.my.salesforce.com` -> `acme--dev`.
  */
 export function shortenOrgHost(instanceUrl: string): string {
   if (!instanceUrl) {

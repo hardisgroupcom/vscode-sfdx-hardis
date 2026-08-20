@@ -2,9 +2,18 @@ import * as assert from "assert";
 import * as http from "http";
 import { getJson, getText, ping, HttpError } from "../../utils/httpUtils";
 
-suite("httpUtils Test Suite", () => {
+// The very first `fetch` of the extension host pays a one-time initialization cost
+// (VS Code proxy resolution + system certificate loading through
+// `http.fetchAdditionalSupport`), which regularly exceeds mocha's 2s default on CI.
+// The suite talks to a local server only, so a generous timeout stays meaningful.
+const HTTP_SUITE_TIMEOUT_MS = 30000;
+
+suite("httpUtils Test Suite", function () {
+  this.timeout(HTTP_SUITE_TIMEOUT_MS);
+
   let server: http.Server;
   let baseUrl: string;
+  const pendingTimers: ReturnType<typeof setTimeout>[] = [];
 
   suiteSetup(async () => {
     server = http.createServer((req, res) => {
@@ -29,10 +38,15 @@ suite("httpUtils Test Suite", () => {
         return;
       }
       if (req.url === "/slow") {
-        setTimeout(() => {
-          res.writeHead(200, { "Content-Type": "text/plain" });
-          res.end("done");
+        // Kept referenced so the teardown can clear it: an aborted client leaves this
+        // timer pending, and a pending timer would keep the test process alive.
+        const timer = setTimeout(() => {
+          if (!res.writableEnded) {
+            res.writeHead(200, { "Content-Type": "text/plain" });
+            res.end("done");
+          }
         }, 2000);
+        pendingTimers.push(timer);
         return;
       }
       res.writeHead(404);
@@ -48,7 +62,16 @@ suite("httpUtils Test Suite", () => {
   });
 
   suiteTeardown(async () => {
-    await new Promise<void>((resolve) => server.close(() => resolve()));
+    for (const timer of pendingTimers) {
+      clearTimeout(timer);
+    }
+    pendingTimers.length = 0;
+    // `server.close()` only stops accepting new connections and then waits for the
+    // open ones. The fetch stack keeps its sockets alive, so without an explicit
+    // `closeAllConnections()` the teardown hangs until the keep-alive timeout.
+    const closed = new Promise<void>((resolve) => server.close(() => resolve()));
+    server.closeAllConnections();
+    await closed;
   });
 
   test("getJson parses a JSON 200 response", async () => {
@@ -89,5 +112,5 @@ suite("httpUtils Test Suite", () => {
 
   test("getText aborts with a timeout on a slow response", async () => {
     await assert.rejects(() => getText(`${baseUrl}/slow`, { timeoutMs: 200 }));
-  }).timeout(5000);
+  });
 });

@@ -166,8 +166,8 @@ suite("orgColorUtils Test Suite", () => {
 
   test("shortens org hosts for the status bar badge", () => {
     assert.strictEqual(
-      shortenOrgHost("https://wecheck--devmercury.sandbox.my.salesforce.com"),
-      "wecheck--devmercury",
+      shortenOrgHost("https://acme--dev.sandbox.my.salesforce.com"),
+      "acme--dev",
     );
     assert.strictEqual(
       shortenOrgHost("https://acme.my.salesforce.com/"),
