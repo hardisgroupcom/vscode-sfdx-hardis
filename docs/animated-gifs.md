@@ -15,16 +15,16 @@ All of them live in the sibling repository, under
 
 ## Assembled automatically from the harness recordings
 
-| GIF                             | Recording                 | What it shows                                                                                                    |
-|---------------------------------|---------------------------|------------------------------------------------------------------------------------------------------------------|
-| `sfdx-hardis-pipeline-view.gif` | `devops-pipeline`         | DevOps Pipeline panel: branch/org diagram with feature branches and running jobs, open pull requests tab          |
-| `orgs-manager.gif`              | `orgs-manager`            | Orgs Manager: list of orgs, "View all orgs" toggle, row actions menu                                              |
-| `metadata-retriever.gif`        | `metadata-retriever`      | Metadata Retriever: search, selection of several items                                                            |
-| `monitoring-config-2026.gif`    | `monitoring-config`       | Monitoring Config Workbench: browsing the categories, frequency picker                                            |
-| `project-documentation.gif`     | `documentation-workbench` | Documentation Workbench: generation options and deployment cards                                                  |
-| `new-user-story-2026.gif`       | `work-new`                | `New User Story`: the questions of `hardis:work:new` answered in the command panel, up to the created branch      |
-| `save-publish-pr-2026.gif`      | `work-save`               | `Save / Publish User Story` (`hardis:work:save`): delta package.xml, cleanings, push, with the actions bar at the end of the run |
-| `animation-install-packages.gif` | `install-packages`       | Manage Packages from the DevOps Pipeline, Install new package (`hardis:package:install`), then the new package in the workbench |
+| GIF                              | Recording                 | What it shows                                                                                                                    |
+|----------------------------------|---------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| `sfdx-hardis-pipeline-view.gif`  | `devops-pipeline`         | DevOps Pipeline panel: branch/org diagram with feature branches and running jobs, open pull requests tab                         |
+| `orgs-manager.gif`               | `orgs-manager`            | Orgs Manager: list of orgs, "View all orgs" toggle, row actions menu                                                             |
+| `metadata-retriever.gif`         | `metadata-retriever`      | Metadata Retriever: search, selection of several items                                                                           |
+| `monitoring-config-2026.gif`     | `monitoring-config`       | Monitoring Config Workbench: browsing the categories, frequency picker                                                           |
+| `project-documentation.gif`      | `documentation-workbench` | Documentation Workbench: generation options and deployment cards                                                                 |
+| `new-user-story-2026.gif`        | `work-new`                | `New User Story`: the questions of `hardis:work:new` answered in the command panel, up to the created branch                     |
+| `save-publish-pr-2026.gif`       | `work-save`               | `Save / Publish User Story` (`hardis:work:save`): delta package.xml, cleanings, push, with the actions bar at the end of the run |
+| `animation-install-packages.gif` | `install-packages`        | Manage Packages from the DevOps Pipeline, Install new package (`hardis:package:install`), then the new package in the workbench  |
 
 ## Recording conventions (manual GIFs)
 
@@ -37,7 +37,7 @@ All of them live in the sibling repository, under
 ## Still recorded by hand (no harness scenario yet)
 
 | GIF                                        | What it must show                                                                                 | Used by                                                                                                                                 |
-|--------------------------------------------|-----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
+|--------------------------------------------|---------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
 | `retrieve-and-commit-2026.gif`             | Pull from org then commit: retrieved metadata, staging in Source Control                          | sfdx-hardis `hardis/work/save.md`, `salesforce-ci-cd-publish-task.md` + extension `README.md`                                           |
 | `activate-merge-driver-in-sfdx-hardis.gif` | Activating the Salesforce git merge driver from the extension                                     | sfdx-hardis `salesforce-ci-cd-hotfixes.md`                                                                                              |
 | `multi-org-query-demo.gif`                 | Multi-org SOQL Query & Report: selecting the orgs, the query, and the generated report            | sfdx-hardis `hardis/org/multi-org-query.md`, `src/commands/hardis/org/multi-org-query.ts`                                               |

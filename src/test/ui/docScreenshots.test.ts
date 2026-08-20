@@ -741,7 +741,8 @@ suite("Documentation screenshots", function () {
         });
       }
       await waitFor(
-        () => panelManager.getPanel(commandPanelId)?.commandStatus === "completed",
+        () =>
+          panelManager.getPanel(commandPanelId)?.commandStatus === "completed",
         40000,
         "package install to complete",
       );

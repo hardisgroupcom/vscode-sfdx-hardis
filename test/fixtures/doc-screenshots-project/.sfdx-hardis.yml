@@ -13,7 +13,7 @@ availableProjects:
   - CRM,Customer Relationship Management
   - BILLING,Billing & Invoicing
   - SERVICE,Service Cloud
-newTaskNameRegex: '^CRM-[0-9]+ .*'
+newTaskNameRegex: "^CRM-[0-9]+ .*"
 newTaskNameRegexExample: CRM-1042 Account hierarchy
 sharedDevSandboxes: true
 installedPackages:
@@ -95,13 +95,13 @@ notificationConfig:
       messaging: warning
   - key: LEGACY_API
     notifications:
-      email: 'off'
+      email: "off"
   - key: APEX_ERROR
     notifications:
-      email: 'off'
+      email: "off"
   - key: FLOW_ERROR
     notifications:
-      email: 'off'
+      email: "off"
   - key: MONITORING_SUMMARY
     notifications:
       messaging: info

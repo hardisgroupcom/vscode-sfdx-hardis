@@ -246,8 +246,18 @@ const DOCS_METADATA = {
 // Recent changes of the org, as returned by the SourceMember tooling query
 // used by the "Recent Changes" mode of the Metadata Retriever
 const DOCS_SOURCE_MEMBERS = [
-  ["ActionableListDefinition", "General_Contact_List", "Automated Process", "modified"],
-  ["ActionableListDefinition", "General_Lead_List", "Automated Process", "modified"],
+  [
+    "ActionableListDefinition",
+    "General_Contact_List",
+    "Automated Process",
+    "modified",
+  ],
+  [
+    "ActionableListDefinition",
+    "General_Lead_List",
+    "Automated Process",
+    "modified",
+  ],
   ["Bot", "Customer_Support_Agent", "Alex Martin", "modified"],
   ["BotVersion", "Customer_Support_Agent.v3", "Alex Martin", "modified"],
   [
@@ -1470,7 +1480,8 @@ const DOCS_SCENARIOS = {
       type: "text",
       message:
         "What is the id of the Package Version to install ? (starting with 04t)\nYou can find it using tooling api request Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage",
-      description: "Enter the package version ID for the package you want to install",
+      description:
+        "Enter the package version ID for the package you want to install",
       placeholder: "Ex: 04t1t000003VYzRAAW",
     });
     log("log", "04t5p000001BlVPAA0");
@@ -1486,7 +1497,8 @@ const DOCS_SCENARIOS = {
       type: "text",
       message:
         "Enter the password for this package (leave empty if package is not protected by a password)",
-      description: "Provide the installation password if the package is protected",
+      description:
+        "Provide the installation password if the package is protected",
       placeholder: "Ex: MyPassword123",
     });
     await sleep(200);

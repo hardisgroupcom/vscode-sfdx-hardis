@@ -31,7 +31,9 @@ export class GitProviderMock extends GitProvider {
     fixtureFile: string,
   ): Promise<GitProviderMock> {
     const provider = new GitProviderMock();
-    provider.fixture = JSON.parse(await fs.promises.readFile(fixtureFile, "utf8"));
+    provider.fixture = JSON.parse(
+      await fs.promises.readFile(fixtureFile, "utf8"),
+    );
     provider.repoInfo = provider.fixture.repoInfo || null;
     provider.hostKey = (provider.repoInfo?.host || "mock")
       .replace(/\./g, "_")
