@@ -354,6 +354,20 @@ async function cleanChrome(): Promise<void> {
  * since the moment this tracker was created (see promptAsked entries logged
  * by test/fixtures/sf-shim/sf-mock.js).
  */
+/**
+ * The DevOps Pipeline renders twice: first without pull requests (short
+ * diagram), then with them once the git provider answered (taller diagram,
+ * cards pushed down). Clicking before the second render hits the wrong card,
+ * so every pipeline capture waits for the final payload.
+ */
+function pipelineFullyLoaded(data: any): boolean {
+  return (
+    data.prLoading === false &&
+    Array.isArray(data.openPullRequests) &&
+    data.openPullRequests.length > 0
+  );
+}
+
 function trackAskedPrompts(): (promptName: string) => boolean {
   const mockLogStart = readMockLog().length;
   return (promptName: string) =>
@@ -448,6 +462,7 @@ suite("Documentation screenshots", function () {
       name: "devops-pipeline",
       command: "vscode-sfdx-hardis.showPipeline",
       lwcId: "s-pipeline",
+      ready: pipelineFullyLoaded,
       // The mermaid bundle is loaded and the diagram built after the panel
       // opens: captureStable() then waits for the SVG to actually be painted
       settleMs: 9000,
@@ -463,38 +478,44 @@ suite("Documentation screenshots", function () {
     await vscode.commands.executeCommand("workbench.action.zoomOut");
     await vscode.commands.executeCommand("workbench.action.zoomOut");
     await sleep(800);
-    await shootPanel(panelManager, {
-      name: "pipeline-workflow-cards",
-      command: "vscode-sfdx-hardis.showPipeline",
-      lwcId: "s-pipeline",
-      settleMs: 9000,
-      force: true,
-    });
-    // Single-PR modal of the current branch: Deployment Actions tab, then the
-    // Add New Action editor (still zoomed out; the published image is a crop
-    // of the modal, so the zoom only affects its resolution)
-    await click(1502, 804); // "My Pull Request" card
-    await sleep(2500);
-    await cleanChrome();
-    await captureStable("pipeline-pr-modal");
-    await click(543, 156); // "Deployment Actions" tab of the PR modal
-    await sleep(1200);
-    await captureStable("pipeline-pr-actions-empty");
-    await click(425, 205); // "Add New Action"
-    await sleep(1500);
-    await captureStable("pipeline-edit-action");
-    // Close the editor and the PR modal before the branch-modal shots
-    await click(1355, 675); // Cancel button of the action editor
-    await sleep(800);
-    await click(1863, 54); // close cross of the PR modal
-    await sleep(800);
-    await vscode.commands.executeCommand("workbench.action.zoomIn");
-    await vscode.commands.executeCommand("workbench.action.zoomIn");
-    await sleep(800);
+    try {
+      await shootPanel(panelManager, {
+        name: "pipeline-workflow-cards",
+        command: "vscode-sfdx-hardis.showPipeline",
+        lwcId: "s-pipeline",
+        ready: pipelineFullyLoaded,
+        settleMs: 9000,
+        force: true,
+      });
+      // Single-PR modal of the current branch: Deployment Actions tab, then the
+      // Add New Action editor (still zoomed out; the published image is a crop
+      // of the modal, so the zoom only affects its resolution)
+      await click(1500, 750); // "My Pull Request" card
+      await sleep(2500);
+      await cleanChrome();
+      await captureStable("pipeline-pr-modal");
+      await click(543, 156); // "Deployment Actions" tab of the PR modal
+      await sleep(1200);
+      await captureStable("pipeline-pr-actions-empty");
+      await click(425, 205); // "Add New Action"
+      await sleep(1500);
+      await captureStable("pipeline-edit-action");
+      // Close the editor and the PR modal before the branch-modal shots
+      await click(1355, 675); // Cancel button of the action editor
+      await sleep(800);
+      await click(1863, 54); // close cross of the PR modal
+      await sleep(800);
+    } finally {
+      // Always restore the zoom: a leaked zoom level would skew every
+      // following capture of the run
+      await vscode.commands.executeCommand("workbench.action.zoomIn");
+      await vscode.commands.executeCommand("workbench.action.zoomIn");
+      await sleep(800);
+    }
     // Branch modal: click the "integration" branch node of the mermaid, then
     // its Deployment Actions tab
     await sleep(1000);
-    await click(893, 410); // integration branch node
+    await click(850, 405); // integration branch node
     await sleep(2500);
     await cleanChrome();
     await captureStable("pipeline-branch-modal");
@@ -542,37 +563,41 @@ suite("Documentation screenshots", function () {
     await vscode.commands.executeCommand("workbench.action.zoomOut");
     await sleep(800);
     let firstIteration = true;
-    for (const shot of ACTION_EDITOR_SHOTS) {
-      // Reload the panel for each editor: closing all editors resets every
-      // modal state, which is more robust than clicking per-type Cancel
-      // buttons whose position depends on the editor height
-      await shootPanel(panelManager, {
-        name: "pipeline-action-editors-base",
-        command: "vscode-sfdx-hardis.showPipeline",
-        lwcId: "s-pipeline",
-        settleMs: 8000,
-        force: true,
-      });
-      await click(1502, 804); // "My Pull Request" card
-      await sleep(2500);
-      await click(543, 156); // "Deployment Actions" tab of the PR modal
-      await sleep(1500);
-      if (firstIteration) {
-        await cleanChrome();
-        await captureStable("pipeline-pr-actions-list");
-        firstIteration = false;
+    try {
+      for (const shot of ACTION_EDITOR_SHOTS) {
+        // Reload the panel for each editor: closing all editors resets every
+        // modal state, which is more robust than clicking per-type Cancel
+        // buttons whose position depends on the editor height
+        await shootPanel(panelManager, {
+          name: "pipeline-action-editors-base",
+          command: "vscode-sfdx-hardis.showPipeline",
+          lwcId: "s-pipeline",
+          ready: pipelineFullyLoaded,
+          settleMs: 8000,
+          force: true,
+        });
+        await click(1500, 750); // "My Pull Request" card
+        await sleep(2500);
+        await click(543, 156); // "Deployment Actions" tab of the PR modal
+        await sleep(1500);
+        if (firstIteration) {
+          await cleanChrome();
+          await captureStable("pipeline-pr-actions-list");
+          firstIteration = false;
+        }
+        await click(EDIT_BUTTON_X, FIRST_ROW_CENTER_Y + shot.row * ROW_STEP);
+        await sleep(1800);
+        // Switch the read-only details view to the editable form: the published
+        // screenshots must show the values inside editable fields
+        await click(1360, shot.editY); // "Edit" button of the details view
+        await sleep(1500);
+        await captureStable(shot.name);
       }
-      await click(EDIT_BUTTON_X, FIRST_ROW_CENTER_Y + shot.row * ROW_STEP);
-      await sleep(1800);
-      // Switch the read-only details view to the editable form: the published
-      // screenshots must show the values inside editable fields
-      await click(1360, shot.editY); // "Edit" button of the details view
-      await sleep(1500);
-      await captureStable(shot.name);
+    } finally {
+      await vscode.commands.executeCommand("workbench.action.zoomIn");
+      await vscode.commands.executeCommand("workbench.action.zoomIn");
+      await sleep(800);
     }
-    await vscode.commands.executeCommand("workbench.action.zoomIn");
-    await vscode.commands.executeCommand("workbench.action.zoomIn");
-    await sleep(800);
   });
 
   test("pipeline configuration", async function () {
@@ -767,13 +792,14 @@ suite("Documentation screenshots", function () {
       name: "pipeline-for-recording",
       command: "vscode-sfdx-hardis.showPipeline",
       lwcId: "s-pipeline",
+      ready: pipelineFullyLoaded,
       settleMs: 9000,
       force: true,
     });
     const asked = trackAskedPrompts();
     await record("install-packages", 42, async () => {
       await sleep(1500);
-      await click(1630, 895); // "Manage Packages" contribution card
+      await click(1630, 850); // "Manage Packages" contribution card
       await waitFor(
         () => panelManager.getPanel("s-installed-packages"),
         20000,
@@ -864,13 +890,14 @@ suite("Documentation screenshots", function () {
       force: true,
       command: "vscode-sfdx-hardis.showPipeline",
       lwcId: "s-pipeline",
+      ready: pipelineFullyLoaded,
       settleMs: 5000,
     });
     await record("devops-pipeline", 16, async () => {
       await sleep(2000);
-      await click(890, 803); // "Open Pull Requests" tab
+      await click(910, 733); // "Open Pull Requests" tab
       await sleep(3000);
-      await click(618, 803); // "Project Contribution Workflow" tab
+      await click(618, 733); // "Project Contribution Workflow" tab
       await sleep(2500);
       for (let i = 0; i < 3; i++) {
         await click(1170, 600, { scroll: -2 });

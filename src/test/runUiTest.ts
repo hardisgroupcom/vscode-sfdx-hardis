@@ -68,6 +68,7 @@ async function main() {
       "feature/CRM-1042-account-hierarchy",
       "feature/CRM-1055-quote-approval-process",
       "fix/CRM-1061-opportunity-trigger",
+      "fix/CRM-1101-invoice-rounding",
       // Monitoring branch: feeds the "Copy from branch" menu of the
       // Monitoring Config workbench
       "monitoring_mycompany",
@@ -227,6 +228,15 @@ async function main() {
                 "fixtures",
                 "screenshot",
                 "git-provider-mock.json",
+              ),
+              // Connected JIRA ticketing provider with the tickets referenced
+              // by the mocked pull requests (see ticketProviderMock.ts)
+              SFDX_HARDIS_MOCK_TICKET_PROVIDER_FILE: path.join(
+                extensionDevelopmentPath,
+                "test",
+                "fixtures",
+                "screenshot",
+                "ticket-provider-mock.json",
               ),
               SF_MOCK_DEPS_STATE: process.env.SF_MOCK_DEPS_STATE || "ok",
               SF_MOCK_VERSIONS_FILE: process.env.SF_MOCK_VERSIONS_FILE || "",

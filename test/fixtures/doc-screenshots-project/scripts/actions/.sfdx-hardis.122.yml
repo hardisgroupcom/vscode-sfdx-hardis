@@ -1,0 +1,24 @@
+commandsPreDeploy:
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-122a00000001
+    label: Remove the Sales User profile from the delta package on production
+    type: remove-packagexml-items
+    when: pre-deploy
+    parameters:
+      packageXmlItems:
+        - 'Profile:Sales User'
+    command: ""
+    context: all
+    includeTargetBranches:
+      - main
+commandsPostDeploy:
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-122a00000002
+    label: Check the Sales User profile assignments with the team leads
+    type: manual
+    when: post-deploy
+    parameters:
+      instructions: >-
+        Review with the sales team leads that no user lost a permission after
+        the Sales User profile minimization, and assign the CRM_Sales_User
+        permission set where needed.
+    command: ""
+    context: process-deployment-only

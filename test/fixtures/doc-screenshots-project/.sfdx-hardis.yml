@@ -16,6 +16,9 @@ availableProjects:
 newTaskNameRegex: "^CRM-[0-9]+ .*"
 newTaskNameRegexExample: CRM-1042 Account hierarchy
 sharedDevSandboxes: true
+ticketingProvider: JIRA
+jiraHost: https://mycompany.atlassian.net
+jiraTicketRegex: 'CRM-[0-9]+'
 installedPackages:
   - Id: 0A35f000000TN2ACAW
     SubscriberPackageId: 033w0000000gYbxAAE
