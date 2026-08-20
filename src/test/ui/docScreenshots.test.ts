@@ -278,6 +278,12 @@ async function record(
     ],
     { stdio: ["ignore", "pipe", "pipe"], detached: false },
   );
+  // The assembler (scripts/build-doc-images.py) needs the frame rate to time
+  // the GIF frames: recordings may use a higher rate than the default
+  fs.writeFileSync(
+    path.join(outDir, "recording.json"),
+    JSON.stringify({ fps }, null, 2),
+  );
   let recorderOutput = "";
   recorder.stdout?.on("data", (chunk) => (recorderOutput += chunk.toString()));
   recorder.stderr?.on("data", (chunk) => (recorderOutput += chunk.toString()));
@@ -893,7 +899,13 @@ suite("Documentation screenshots", function () {
       ready: pipelineFullyLoaded,
       settleMs: 5000,
     });
-    await record("devops-pipeline", 16, async () => {
+    // 10 fps: the running edges of the diagram move their dashes 45px/s over
+    // a 14px dash period; sampled at 5 fps the dashes would appear to flow
+    // backward in the GIF
+    await record(
+      "devops-pipeline",
+      16,
+      async () => {
       await sleep(2000);
       await click(910, 733); // "Open Pull Requests" tab
       await sleep(3000);
@@ -903,7 +915,9 @@ suite("Documentation screenshots", function () {
         await click(1170, 600, { scroll: -2 });
       }
       await sleep(1500);
-    });
+      },
+      10,
+    );
   });
 
   test("recording: metadata retriever", async function () {

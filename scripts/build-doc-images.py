@@ -16,6 +16,7 @@ Requires Pillow (`pip install pillow`).
 """
 
 import argparse
+import json
 import os
 import sys
 
@@ -106,7 +107,7 @@ BOX_CROPS = {
     "dependencies-ok.jpg": ("sidebar-dependencies", (60, 99, 436, 462)),
     # "My Pull Request" contribution card (pipeline-workflow-cards is captured
     # two zoom levels out so the second card row fits in the window)
-    "card-my-pull-request.png": ("pipeline-workflow-cards", (1378, 750, 1630, 858)),
+    "card-my-pull-request.png": ("pipeline-workflow-cards", (1378, 698, 1630, 806)),
     # Branch modal of the pipeline, on its Deployment Actions tab
     "screenshot-deployment-actions.jpg": (
         "pipeline-branch-modal-actions",
@@ -330,6 +331,14 @@ def build_gif(recording, target, dry_run):
     if len(frame_files) < 2:
         return False
 
+    # Frame rate of this recording (written by record() in the harness); the
+    # pipeline scenario uses a higher rate so the animated edges read forward
+    frame_ms = GIF_FRAME_MS
+    meta_file = os.path.join(frames_dir, "recording.json")
+    if os.path.exists(meta_file):
+        with open(meta_file, encoding="utf8") as stream:
+            frame_ms = int(round(1000 / float(json.load(stream).get("fps", 5))))
+
     # Merge identical consecutive frames into (file, duration) pairs
     kept = []
     previous_bytes = None
@@ -337,9 +346,9 @@ def build_gif(recording, target, dry_run):
         with open(frame_file, "rb") as stream:
             content = stream.read()
         if content == previous_bytes:
-            kept[-1][1] += GIF_FRAME_MS
+            kept[-1][1] += frame_ms
         else:
-            kept.append([frame_file, GIF_FRAME_MS])
+            kept.append([frame_file, frame_ms])
         previous_bytes = content
 
     first = Image.open(kept[0][0]).convert("RGB")
