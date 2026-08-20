@@ -20,8 +20,8 @@ commandsPreDeploy:
     when: pre-deploy
     parameters:
       packageXmlItems:
-        - 'Profile:*'
-        - 'CustomLabel:Quote_Approval_Required'
+        - "Profile:*"
+        - "CustomLabel:Quote_Approval_Required"
     command: ""
     context: check-deployment-only
 commandsPostDeploy:
