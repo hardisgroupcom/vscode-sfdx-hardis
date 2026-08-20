@@ -5,7 +5,7 @@ commandsPreDeploy:
     when: pre-deploy
     parameters:
       packageXmlItems:
-        - 'Profile:Sales User'
+        - "Profile:Sales User"
     command: ""
     context: all
     includeTargetBranches:
