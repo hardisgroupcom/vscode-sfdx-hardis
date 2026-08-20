@@ -16,8 +16,6 @@
 
 Built and maintained by [**Cloudity**](https://cloudity.com/?ref=sfdxhardis) and the Trailblazer Community. Free, Open Source (AGPL-3.0), and **commercial use allowed**.
 
-![Extension demo](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/extension-demo.gif)
-
 [▶ Watch the **sfdx-hardis v7 walkthrough**](https://www.youtube.com/watch?v=t8jT6IPd9n4) · [▶ Watch the **Dreamforce session**](https://www.youtube.com/watch?v=o0Mm9F07UFs) · [📖 Online documentation](https://sfdx-hardis.cloudity.com/)
 
 ---

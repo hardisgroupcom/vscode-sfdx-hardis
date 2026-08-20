@@ -85,7 +85,7 @@ const DOCS_ORGS = {
       alias: "PRODUCTION",
       orgId: "00D3X0000008aBcUAI",
       instanceUrl: "https://mycompany.my.salesforce.com",
-      instanceApiVersion: "66.0",
+      instanceApiVersion: "67.0",
       loginUrl: "https://login.salesforce.com",
       connectedStatus: "Connected",
       isDefaultUsername: false,
@@ -99,7 +99,7 @@ const DOCS_ORGS = {
       alias: "PREPROD",
       orgId: "00D5f0000012XyZEAU",
       instanceUrl: "https://mycompany--preprod.sandbox.my.salesforce.com",
-      instanceApiVersion: "66.0",
+      instanceApiVersion: "67.0",
       loginUrl: "https://test.salesforce.com",
       connectedStatus: "Connected",
       isDefaultUsername: false,
@@ -111,7 +111,7 @@ const DOCS_ORGS = {
       alias: "UAT",
       orgId: "00D5f0000012XyaEAE",
       instanceUrl: "https://mycompany--uat.sandbox.my.salesforce.com",
-      instanceApiVersion: "66.0",
+      instanceApiVersion: "67.0",
       loginUrl: "https://test.salesforce.com",
       connectedStatus: "Connected",
       isDefaultUsername: false,
@@ -123,7 +123,7 @@ const DOCS_ORGS = {
       alias: "INTEGRATION",
       orgId: "00D5f0000012XybEAE",
       instanceUrl: "https://mycompany--integ.sandbox.my.salesforce.com",
-      instanceApiVersion: "66.0",
+      instanceApiVersion: "67.0",
       loginUrl: "https://test.salesforce.com",
       connectedStatus: "Connected",
       isDefaultUsername: true,
@@ -135,7 +135,7 @@ const DOCS_ORGS = {
       alias: "DEV-Alex",
       orgId: "00D5f0000012XycEAE",
       instanceUrl: "https://mycompany--dev.sandbox.my.salesforce.com",
-      instanceApiVersion: "66.0",
+      instanceApiVersion: "67.0",
       loginUrl: "https://test.salesforce.com",
       connectedStatus: "Connected",
       isDefaultUsername: false,
@@ -147,11 +147,35 @@ const DOCS_ORGS = {
       alias: "DEV-Sam",
       orgId: "00D5f0000012XydEAE",
       instanceUrl: "https://mycompany--dev2.sandbox.my.salesforce.com",
-      instanceApiVersion: "66.0",
+      instanceApiVersion: "67.0",
       loginUrl: "https://test.salesforce.com",
-      connectedStatus: "RefreshTokenAuthError",
+      connectedStatus:
+        "Unable to refresh session due to: expired access/refresh token",
       isDefaultUsername: false,
       isSandbox: true,
+      isScratch: false,
+    },
+    {
+      username: "deploy.user@mycompany.com.qa",
+      orgId: "00D5f0000012XyfEAE",
+      instanceUrl: "https://mycompany--qa.sandbox.my.salesforce.com",
+      instanceApiVersion: "67.0",
+      loginUrl: "https://test.salesforce.com",
+      connectedStatus: "Connected",
+      isDefaultUsername: false,
+      isSandbox: true,
+      isScratch: false,
+    },
+    {
+      username: "integration.bot@mycompany.com",
+      alias: "TECHNICAL_ORG",
+      orgId: "00D5f0000012XygEAE",
+      instanceUrl: "https://mycompany-tech.develop.my.salesforce.com",
+      instanceApiVersion: "67.0",
+      loginUrl: "https://login.salesforce.com",
+      connectedStatus: "Connected",
+      isDefaultUsername: false,
+      isSandbox: false,
       isScratch: false,
     },
   ],
@@ -161,7 +185,7 @@ const DOCS_ORGS = {
       alias: "scratch-CRM-1042",
       orgId: "00D5f0000012XyeEAE",
       instanceUrl: "https://flow-power-3821-dev-ed.scratch.my.salesforce.com",
-      instanceApiVersion: "66.0",
+      instanceApiVersion: "67.0",
       connectedStatus: "Connected",
       isScratch: true,
       isSandbox: false,
@@ -183,6 +207,10 @@ const DOCS_METADATA = {
     "QuoteApprovalController",
     "InvoiceBatchScheduler",
     "CaseAssignmentSelector",
+    "InvoiceService",
+    "InvoiceServiceTest",
+    "TimesheetReminderBatch",
+    "CustomerPortalController",
   ],
   Flow: [
     "Account_Hierarchy_Sync",
@@ -218,6 +246,27 @@ const DOCS_METADATA = {
 // Recent changes of the org, as returned by the SourceMember tooling query
 // used by the "Recent Changes" mode of the Metadata Retriever
 const DOCS_SOURCE_MEMBERS = [
+  [
+    "ActionableListDefinition",
+    "General_Contact_List",
+    "Automated Process",
+    "modified",
+  ],
+  [
+    "ActionableListDefinition",
+    "General_Lead_List",
+    "Automated Process",
+    "modified",
+  ],
+  ["Bot", "Customer_Support_Agent", "Alex Martin", "modified"],
+  ["BotVersion", "Customer_Support_Agent.v3", "Alex Martin", "modified"],
+  [
+    "GenAiPlannerBundle",
+    "Customer_Support_Agent_v3",
+    "Alex Martin",
+    "modified",
+  ],
+  ["Profile", "Admin", "Nicolas Vuillamy", "modified"],
   ["ApexClass", "OpportunityService", "Alex Martin", "modified"],
   ["ApexClass", "QuoteApprovalController", "Alex Martin", "created"],
   ["ApexClass", "InvoiceBatchScheduler", "Sam Dubois", "modified"],
@@ -233,7 +282,12 @@ const DOCS_SOURCE_MEMBERS = [
 ];
 
 function docsSourceMemberRecords() {
-  return DOCS_SOURCE_MEMBERS.map(([type, name, author, operation], index) => ({
+  // The extension queries "... ORDER BY MemberType, MemberName": honor it so
+  // the Metadata Retriever results are ordered by type like with a real org
+  const sorted = [...DOCS_SOURCE_MEMBERS].sort((a, b) =>
+    a[0] === b[0] ? a[1].localeCompare(b[1]) : a[0].localeCompare(b[0]),
+  );
+  return sorted.map(([type, name, author, operation], index) => ({
     attributes: { type: "SourceMember" },
     MemberType: type,
     MemberName: name,
@@ -354,7 +408,7 @@ async function main() {
               id: "00D5f0000012XybEAE",
               username: "deploy.user@mycompany.com.integ",
               instanceUrl: "https://mycompany--integ.sandbox.my.salesforce.com",
-              apiVersion: "66.0",
+              apiVersion: "67.0",
               connectedStatus: "Connected",
               alias: "INTEGRATION",
             },
@@ -379,10 +433,33 @@ async function main() {
 
   if (first === "data" && args[1] === "query") {
     const query = args[args.indexOf("--query") + 1] || "";
-    const records =
-      DOCS_PROFILE && query.includes("FROM SourceMember")
-        ? docsSourceMemberRecords()
-        : [];
+    let records = [];
+    if (DOCS_PROFILE && query.includes("FROM SourceMember")) {
+      records = docsSourceMemberRecords();
+    } else if (DOCS_PROFILE && query.includes("FROM ApexClass")) {
+      // Schedulable classes picker of the deployment action editor
+      records = [
+        {
+          Name: "AccountHierarchySyncBatch",
+          Body: "global class AccountHierarchySyncBatch implements Database.Batchable<SObject>, Schedulable {",
+        },
+        {
+          Name: "InvoiceBatchScheduler",
+          Body: "global class InvoiceBatchScheduler implements Database.Batchable<SObject>, Schedulable {",
+        },
+        {
+          Name: "TimesheetReminderBatch",
+          Body: "global class TimesheetReminderBatch implements Schedulable {",
+        },
+        {
+          Name: "OpportunityService",
+          Body: "public with sharing class OpportunityService {",
+        },
+      ];
+    } else if (DOCS_PROFILE && query.includes("FROM Network")) {
+      // Communities picker of the deployment action editor
+      records = [{ Name: "Customer Portal" }, { Name: "Partner Community" }];
+    }
     outputJsonIfRequested(
       {
         status: 0,
@@ -791,150 +868,232 @@ async function runShowcaseScenario(send, askPrompt, sleep) {
 }
 
 /**
- * Scenarios of the three CI/CD workflow commands, used by the documentation
- * recordings (docs/assets/images/new-user-story-2026.gif and friends). They
- * reproduce the log lines, questions and report files the real commands emit.
+ * Scenarios of the CI/CD workflow commands hardis:work:new and
+ * hardis:work:save, used by the documentation recordings
+ * (docs/assets/images/new-user-story-2026.gif and save-publish-pr-2026.gif).
+ * They replay, anonymized, the log lines, questions and report files of real
+ * runs of these commands (see hardis-report/commands/*.log of any sfdx-hardis
+ * CI/CD project).
  */
+const DOCS_REPO_URL = "https://github.com/mycompany/salesforce-crm";
+const DOCS_STORY_BRANCH = "feature/CRM-123-Sync-accounts-with-SAP";
+
 const DOCS_SCENARIOS = {
   "hardis:work:new": async (send, askPrompt, sleep) => {
     const log = (logType, message, extra) =>
       send({ event: "commandLogLine", logType, message, ...(extra || {}) });
 
-    log("action", "Creating a new User Story");
-    await sleep(150);
     log(
-      "log",
-      "Current git repository: salesforce-crm (branch integration, up to date with origin).",
+      "action",
+      "Creating a new User Story (dev or config) with SFDX Hardis CI/CD",
     );
-    await sleep(150);
-
-    log("action", "Please select the project you are working on", {
-      isQuestion: true,
+    log("log", "When unsure, press ENTER to use the default value");
+    send({
+      event: "commandSubCommandStart",
+      data: { command: "git stash", cwd: "." },
     });
+    await sleep(400);
+    send({
+      event: "commandSubCommandEnd",
+      data: { command: "git stash", success: true },
+    });
+
+    log(
+      "action",
+      "What will be the target branch of your new User Story ? (the branch where you will make your Pull Request after the User Story is completed)",
+      { isQuestion: true },
+    );
     await askPrompt({
-      name: "project",
+      name: "targetBranch",
       type: "select",
-      message: "Please select the project you are working on",
+      message:
+        "What will be the target branch of your new User Story ? (the branch where you will make your Pull Request after the User Story is completed)",
       choices: [
         {
-          title: "CRM",
-          value: "CRM",
-          description: "Customer Relationship Management",
+          title: "integration",
+          value: "integration",
+          description: "New features and enhancements (BUILD)",
         },
         {
-          title: "BILLING",
-          value: "BILLING",
-          description: "Billing & Invoicing",
+          title: "preprod",
+          value: "preprod",
+          description: "Hotfixes on the production version (RUN)",
         },
-        { title: "SERVICE", value: "SERVICE", description: "Service Cloud" },
       ],
     });
-    log("log", "CRM");
+    log("log", "integration");
     await sleep(150);
 
-    log("action", "What is the type of the User Story you want to work on?", {
+    log("action", "What type of User Story do you want to create?", {
       isQuestion: true,
     });
     await askPrompt({
-      name: "userStoryType",
+      name: "storyType",
       type: "select",
-      message: "What is the type of the User Story you want to work on?",
+      message: "What type of User Story do you want to create?",
+      description:
+        "Select the category of work that best describes your User Story",
       choices: [
         {
-          title: "🏗️ Configuration or development",
-          value: "features",
+          title: "\u{1F3D7}️ Feature",
+          value: "feature",
           description: "New feature, enhancement or configuration change",
         },
         {
-          title: "🐞 Bug fix",
-          value: "fixes",
+          title: "\u{1F6E0}️ Fix",
+          value: "fix",
           description: "Fix a defect found in an org",
         },
       ],
     });
-    log("log", "🏗️ Configuration or development");
+    log("log", "\u{1F3D7}️ Feature");
     await sleep(150);
 
-    log("action", "What is the name of your User Story?", {
+    log(
+      "action",
+      "What is the name of your new User Story? Please avoid accents and special characters.",
+      { isQuestion: true },
+    );
+    await askPrompt({
+      name: "storyName",
+      type: "text",
+      message:
+        "What is the name of your new User Story? Please avoid accents and special characters. (ex: CRM-1042 Account hierarchy)",
+    });
+    log("log", "CRM-123 Sync accounts with SAP");
+    await sleep(150);
+
+    log(
+      "action",
+      `Checking out latest version of branch integration from ${DOCS_REPO_URL}.git...`,
+    );
+    log("action", `Creating new branch ${DOCS_STORY_BRANCH}...`);
+    send({
+      event: "commandSubCommandStart",
+      data: {
+        command: `git checkout -b ${DOCS_STORY_BRANCH} --no-track origin/integration`,
+        cwd: ".",
+      },
+    });
+    await sleep(900);
+    send({
+      event: "commandSubCommandEnd",
+      data: {
+        command: `git checkout -b ${DOCS_STORY_BRANCH} --no-track origin/integration`,
+        success: true,
+      },
+    });
+    log("success", `Created and checked out git branch ${DOCS_STORY_BRANCH}`);
+    await sleep(200);
+
+    log("action", "Which Salesforce org do you want to work in?", {
       isQuestion: true,
     });
     await askPrompt({
-      name: "userStoryName",
-      type: "text",
-      message:
-        "What is the name of your User Story? (ex: CRM-1042 Account hierarchy)",
-    });
-    log("log", "CRM-1042 Account hierarchy");
-    await sleep(150);
-
-    log("action", "Which org do you want to work in?", { isQuestion: true });
-    await askPrompt({
-      name: "targetOrg",
+      name: "orgType",
       type: "select",
-      message: "Which org do you want to work in?",
+      message: "Which Salesforce org do you want to work in?",
+      description:
+        "Choose the type of Salesforce org to use for your development work",
       choices: [
         {
-          title: "☁️ Use my sandbox DEV-Alex",
+          title: "\u{1F30E} Sandbox org with source tracking",
           value: "sandbox",
-          description: "mycompany--dev.sandbox.my.salesforce.com",
+          description:
+            "Work in a developer sandbox provided by your Release Manager",
         },
         {
-          title: "🧪 Create a new scratch org",
+          title: "\u{1FA90} Scratch org",
           value: "scratch",
-          description: "A fresh scratch org created from the Dev Hub",
+          description:
+            "Scratch orgs are configured on my project so I want to create or reuse one",
         },
         {
-          title: "🔗 Connect to another org",
+          title: "\u{1F920} I'm hardcore, I don't need an org !",
+          value: "noOrg",
+          description: "Work with XML and sfdx-hardis configuration only",
+        },
+      ],
+    });
+    log("log", "\u{1F30E} Sandbox org with source tracking");
+    await sleep(150);
+
+    log(
+      "action",
+      `Select a sandbox org to work in branch ${DOCS_STORY_BRANCH}`,
+      { isQuestion: true },
+    );
+    await askPrompt({
+      name: "sandboxOrg",
+      type: "select",
+      message: `Select a sandbox org to work in branch ${DOCS_STORY_BRANCH}`,
+      choices: [
+        {
+          title: "https://mycompany--dev.sandbox.my.salesforce.com",
+          value: "dev",
+          description: "alex.martin@mycompany.com.dev",
+        },
+        {
+          title: "https://mycompany--dev2.sandbox.my.salesforce.com",
+          value: "dev2",
+          description: "sam.dubois@mycompany.com.dev2",
+        },
+        {
+          title: "\u{1F517} Connect to another org",
           value: "other",
           description: "Authenticate to an org that is not in the list yet",
         },
       ],
     });
-    log("log", "☁️ Use my sandbox DEV-Alex");
-    await sleep(200);
+    log("log", "https://mycompany--dev.sandbox.my.salesforce.com");
+    await sleep(150);
 
+    log(
+      "action",
+      "Setting https://mycompany--dev.sandbox.my.salesforce.com (alex.martin@mycompany.com.dev) as default org...",
+    );
     send({
       event: "commandSubCommandStart",
       data: {
-        command: "git checkout -b features/dev/CRM-1042-account-hierarchy",
+        command: "sf config set target-org=alex.martin@mycompany.com.dev",
         cwd: ".",
       },
     });
-    await sleep(700);
+    await sleep(1000);
     send({
       event: "commandSubCommandEnd",
       data: {
-        command: "git checkout -b features/dev/CRM-1042-account-hierarchy",
+        command: "sf config set target-org=alex.martin@mycompany.com.dev",
         success: true,
       },
     });
+
     log(
-      "success",
-      "Created and checked out branch features/dev/CRM-1042-account-hierarchy",
+      "action",
+      "Do you want to open org alex.martin@mycompany.com.dev in your browser?",
+      { isQuestion: true },
     );
+    await askPrompt({
+      name: "openOrg",
+      type: "select",
+      message:
+        "Do you want to open org alex.martin@mycompany.com.dev in your browser?",
+      choices: [
+        { title: "✅ Yes", value: "yes" },
+        { title: "❌ No", value: "no" },
+      ],
+    });
+    log("log", "❌ No");
     await sleep(200);
 
-    send({
-      event: "progressStart",
-      title: "Resetting local source tracking...",
-      totalSteps: 40,
-    });
-    for (let step = 1; step <= 40; step += 4) {
-      send({ event: "progressStep", step, totalSteps: 40 });
-      await sleep(90);
-    }
-    send({ event: "progressEnd", totalSteps: 40 });
-    await sleep(200);
-
-    send({
-      event: "reportFile",
-      file: "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-create-new-task/",
-      title: "How to work on a User Story",
-      type: "docUrl",
-    });
+    log("action", `Ready to work in branch ${DOCS_STORY_BRANCH}`);
     log(
-      "success",
-      "You are now ready to work on User Story CRM-1042 Account hierarchy in org DEV-Alex 🚀",
+      "log",
+      "Use your default org with username alex.martin@mycompany.com.dev",
+    );
+    log(
+      "log",
+      "Your current org URL is https://mycompany--dev.sandbox.my.salesforce.com",
     );
     await sleep(600);
   },
@@ -943,63 +1102,60 @@ const DOCS_SCENARIOS = {
     const log = (logType, message, extra) =>
       send({ event: "commandLogLine", logType, message, ...(extra || {}) });
 
-    log("action", "Saving your User Story");
-    await sleep(150);
-    log(
-      "log",
-      "Branch features/dev/CRM-1042-account-hierarchy, target branch integration.",
-    );
-
-    log("action", "Pulling the latest changes from your org...");
     send({
       event: "commandSubCommandStart",
-      data: { command: "sf project retrieve start", cwd: "." },
+      data: { command: "git status --porcelain -b -u --null", cwd: "." },
     });
-    await sleep(900);
+    await sleep(400);
     send({
       event: "commandSubCommandEnd",
-      data: { command: "sf project retrieve start", success: true },
+      data: { command: "git status --porcelain -b -u --null", success: true },
     });
     log(
-      "table",
-      JSON.stringify([
-        { type: "ApexClass", name: "OpportunityService", state: "Changed" },
-        { type: "Flow", name: "Account_Hierarchy_Sync", state: "Changed" },
-        {
-          type: "CustomField",
-          name: "Account.Segment__c",
-          state: "Created",
-        },
-        {
-          type: "PermissionSet",
-          name: "CRM_Manager",
-          state: "Changed",
-        },
-      ]),
+      "action",
+      `Preparing Pull Request from branch ${DOCS_STORY_BRANCH} to integration`,
     );
-    await sleep(250);
+    await sleep(150);
 
-    log("action", "Do you confirm the updates you want to save?", {
-      isQuestion: true,
-    });
+    log(
+      "action",
+      "Have you already committed the updated metadata you want to deploy?",
+      { isQuestion: true },
+    );
     await askPrompt({
-      name: "confirmUpdates",
+      name: "commitReady",
       type: "select",
-      message: "Do you confirm the updates you want to save?",
+      message:
+        "Have you already committed the updated metadata you want to deploy?",
+      description:
+        "Select your current state regarding git commits and metadata updates",
       choices: [
         {
-          title: "😎 Yes, my commit(s) are ready!",
-          value: "yes",
-          description: "Continue with the files staged in the Source Control",
+          title:
+            "\u{1F60E} Yes, my commit(s) are ready! I staged my files and created one or multiple commits.",
+          value: "commitReady",
+          description:
+            "You have already pulled updates from your org (or locally updated the files), staged your files, and created a commit",
         },
         {
-          title: "🙋 Not yet, let me review my files",
-          value: "no",
-          description: "Stop here and come back later",
+          title:
+            "\u{1F610} No, please pull my latest updates from my org so I can commit my metadata",
+          value: "pleasePull",
+          description:
+            "Pull latest updates from org so you can stage files and create your commit",
+        },
+        {
+          title: "\u{1F631} What is a commit? What does pull mean? Help!",
+          value: "help",
+          description:
+            "Don't panic, just click on the link that will appear in the console (CTRL + Click) and you'll learn!",
         },
       ],
     });
-    log("log", "😎 Yes, my commit(s) are ready!");
+    log(
+      "log",
+      "\u{1F60E} Yes, my commit(s) are ready! I staged my files and created one or multiple commits.",
+    );
     await sleep(200);
 
     log(
@@ -1009,134 +1165,501 @@ const DOCS_SCENARIOS = {
     send({
       event: "commandSubCommandStart",
       data: {
-        command: "sf sgd:source:delta --to HEAD --from origin/integration",
+        command: `sf sgd:source:delta --from integration --to ${DOCS_STORY_BRANCH} --ignore-whitespace --source-dir force-app --json`,
         cwd: ".",
       },
+    });
+    await sleep(1200);
+    send({
+      event: "commandSubCommandEnd",
+      data: {
+        command: `sf sgd:source:delta --from integration --to ${DOCS_STORY_BRANCH} --ignore-whitespace --source-dir force-app --json`,
+        success: true,
+      },
+    });
+    log(
+      "log",
+      `Calculating package.xml diff from [integration] to [${DOCS_STORY_BRANCH} - commit]`,
+    );
+    log(
+      "log",
+      [
+        "Delta package.xml diff to be merged within manifest/package.xml:",
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<Package xmlns="http://soap.sforce.com/2006/04/metadata">',
+        "    <types>",
+        "        <members>AccountSyncService</members>",
+        "        <name>ApexClass</name>",
+        "    </types>",
+        "    <types>",
+        "        <members>Account.SAP_Reference__c</members>",
+        "        <name>CustomField</name>",
+        "    </types>",
+        "    <types>",
+        "        <members>Account_Sync_With_SAP</members>",
+        "        <name>Flow</name>",
+        "    </types>",
+        "    <version>67.0</version>",
+        "</Package>",
+      ].join("\n"),
+    );
+    send({
+      event: "reportFile",
+      file: "manifest/package.xml",
+      title: "Git Delta package.xml (3)",
+      type: "report",
+    });
+    await sleep(250);
+
+    log(
+      "action",
+      "Apply cleaning of references to destructivechanges (DestructiveChanges.xml: Remove source files mentioned in destructiveChanges.xml)...",
+    );
+    await sleep(400);
+    log(
+      "action",
+      "Run cleaning command flowPositions (Flows: Replace all positions in AutoLayout Flows by 0 to simplify conflicts management) ...",
+    );
+    send({
+      event: "commandSubCommandStart",
+      data: { command: "sf hardis:project:clean:flowpositions", cwd: "." },
+    });
+    await sleep(700);
+    send({
+      event: "commandSubCommandEnd",
+      data: {
+        command: "sf hardis:project:clean:flowpositions",
+        success: true,
+      },
+    });
+    log("log", "Setting flows as Auto Layout and remove positions...");
+    log("log", "Updated 1 flow to remove positions");
+    await sleep(250);
+
+    log(
+      "action",
+      `Do you want to push your commit(s) to the git server? (git push to remote git branch ${DOCS_STORY_BRANCH})`,
+      { isQuestion: true },
+    );
+    await askPrompt({
+      name: "pushCommits",
+      type: "select",
+      message: `Do you want to push your commit(s) to the git server? (git push to remote git branch ${DOCS_STORY_BRANCH})`,
+      choices: [
+        { title: "✅ Yes", value: "yes" },
+        { title: "❌ No", value: "no" },
+      ],
+    });
+    log("log", "✅ Yes");
+    await sleep(200);
+
+    log(
+      "action",
+      `Pushing commit(s) to remote branch origin/${DOCS_STORY_BRANCH}...`,
+    );
+    send({
+      event: "commandSubCommandStart",
+      data: {
+        command: `git push --set-upstream origin ${DOCS_STORY_BRANCH}`,
+        cwd: ".",
+      },
+    });
+    await sleep(1000);
+    send({
+      event: "commandSubCommandEnd",
+      data: {
+        command: `git push --set-upstream origin ${DOCS_STORY_BRANCH}`,
+        success: true,
+      },
+    });
+
+    log(
+      "action",
+      `If your work is completed, create a Pull Request, otherwise push new commits to the ${DOCS_STORY_BRANCH} branch.`,
+    );
+    log(
+      "log",
+      `- Repository: ${DOCS_REPO_URL}\n- Source branch: ${DOCS_STORY_BRANCH}\n- Target branch: integration`,
+    );
+    log(
+      "log",
+      "When your Pull Request has been merged:\n- DO NOT REUSE THE SAME BRANCH\n- Use New User Story menu (sf hardis:work:new), even if you work in the same sandbox or scratch org \u{1F60A}",
+    );
+    log(
+      "warning",
+      "If you have pre-deployment or post-deployment manual actions, record them in https://mycompany.sharepoint.com/sites/crm/ManualActions.xlsx",
+    );
+    send({
+      event: "reportFile",
+      file: `${DOCS_REPO_URL}/compare/integration...${encodeURIComponent(DOCS_STORY_BRANCH)}?expand=1`,
+      title: "Create Pull Request",
+      type: "actionUrl",
+    });
+    send({
+      event: "reportFile",
+      file: "https://mycompany.sharepoint.com/sites/crm/ManualActions.xlsx",
+      title: "Update Manual Actions file",
+      type: "actionUrl",
+    });
+    send({
+      event: "reportFile",
+      file: "vscode-sfdx-hardis.showPipeline",
+      title: "Update the Deployment Actions of your Pull Request",
+      type: "actionCommand",
+      commandArgs: [
+        {
+          focus: "deploymentActions",
+          sourceBranch: DOCS_STORY_BRANCH,
+          targetBranch: "integration",
+        },
+      ],
+    });
+    send({
+      event: "reportFile",
+      file: "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#create-merge-request",
+      title: "View Pull Request documentation",
+      type: "docUrl",
+    });
+    await sleep(600);
+  },
+
+  // Productivity command example (docs/assets/images/ProductivityCommands.png):
+  // replay of a real `sf hardis:org:user:activateinvalid` run (reactivation of
+  // sandbox users whose email was suffixed with .invalid by a refresh),
+  // anonymized
+  "hardis:org:user:activateinvalid": async (send, askPrompt, sleep) => {
+    const log = (logType, message, extra) =>
+      send({ event: "commandLogLine", logType, message, ...(extra || {}) });
+    const invalidUsers = [
+      ["Alex Martin", "alex.martin@mycompany.com"],
+      ["Amelia Clark", "amelia.clark@mycompany.com"],
+      ["Bruno Keller", "bruno.keller@mycompany.com"],
+      ["Carla Mendes", "carla.mendes@mycompany.com"],
+      ["David Osei", "david.osei@mycompany.com"],
+      ["Elena Petrova", "elena.petrova@mycompany.com"],
+      ["Farid Haddad", "farid.haddad@mycompany.com"],
+      ["Grace Wong", "grace.wong@mycompany.com"],
+      ["Hugo Fernandez", "hugo.fernandez@mycompany.com"],
+      ["Ines Laurent", "ines.laurent@mycompany.com"],
+      ["Lisa Chen", "lisa.chen@mycompany.com"],
+      ["Sam Dubois", "sam.dubois@mycompany.com"],
+    ];
+
+    log("action", "Querying User records with email ending with .invalid...");
+    log(
+      "log",
+      "[BulkApiV2] SELECT Id,Name,Username,Email,ProfileId FROM User WHERE Email LIKE '%.invalid' and IsActive=true",
+    );
+    await sleep(600);
+    log("log", "[BulkApiV2] Bulk Query completed with 23 results.");
+    await sleep(200);
+
+    log(
+      "action",
+      "Do you want to replace invalid mails by valid mails for all 23 found users in org deploy.user@mycompany.com.uat?",
+      { isQuestion: true },
+    );
+    await askPrompt({
+      name: "confirmSelect",
+      type: "select",
+      message:
+        "Do you want to replace invalid mails by valid mails for all 23 found users in org deploy.user@mycompany.com.uat?",
+      description:
+        "Choose whether to update email addresses for all found users or select specific ones",
+      choices: [
+        { title: "Yes, all 23 users", value: "all" },
+        {
+          title: "No, I want to manually select by profile(s)",
+          value: "selectProfiles",
+        },
+        { title: "No, I want to manually select user(s)", value: "select" },
+      ],
+    });
+    log("log", "No, I want to manually select user(s)");
+    await sleep(200);
+
+    log(
+      "action",
+      "Please select users that you want to remove the .invalid from emails",
+      { isQuestion: true },
+    );
+    const selectedUsersResponse = await askPrompt({
+      name: "selectUsers",
+      type: "multiselect",
+      message:
+        "Please select users that you want to remove the .invalid from emails",
+      description:
+        "Choose specific users to reactivate by removing .invalid suffix from their email addresses",
+      choices: invalidUsers.map(([name, email]) => ({
+        title: `${name} - ${email}.invalid`,
+        value: email,
+      })),
+    });
+    const selectedEmails =
+      (selectedUsersResponse &&
+        selectedUsersResponse[0] &&
+        selectedUsersResponse[0].selectUsers) ||
+      invalidUsers.slice(0, 7).map(([, email]) => email);
+    log(
+      "log",
+      invalidUsers
+        .filter(([, email]) => selectedEmails.includes(email))
+        .map(([name, email]) => `${name} - ${email}.invalid`)
+        .join("\n"),
+    );
+    await sleep(200);
+
+    log("action", `Reactivating ${selectedEmails.length} user(s)...`);
+    log(
+      "log",
+      `[BulkApiV2] Bulk UPDATE on ${selectedEmails.length} records of object User`,
+    );
+    await sleep(900);
+    log(
+      "log",
+      `[BulkApiV2] Bulk UPDATE on User completed.\n- Success: ${selectedEmails.length} records\n- Failed: 0 records\n- Unprocessed: 0 records`,
+    );
+    await sleep(200);
+
+    log(
+      "action",
+      `Results of the reactivation of ${selectedEmails.length} users by removing the .invalid from their email`,
+    );
+    log(
+      "table",
+      JSON.stringify(
+        selectedEmails.map((email, index) => ({
+          Id: "0055f00000AbCd" + String(index + 1).padStart(2, "0") + "AAB",
+          Email: email,
+        })),
+      ),
+    );
+    send({
+      event: "reportFile",
+      file: "hardis-report/reactivated-users-2026-08-20.csv",
+      title: "Reactivated users (CSV)",
+      type: "report",
+    });
+    send({
+      event: "reportFile",
+      file: "hardis-report/reactivated-users-2026-08-20.xlsx",
+      title: "Reactivated users (XLSX)",
+      type: "report",
+    });
+    log(
+      "success",
+      `${selectedEmails.length} users have been reactivated by removing the .invalid from their email`,
+    );
+    await sleep(400);
+  },
+
+  // Package installation (docs/assets/images/animation-install-packages.gif):
+  // replay of a real `sf hardis:package:install` run launched from the
+  // Installed Packages workbench, with an invented successful ending. The
+  // package list shows popular AppExchange apps; the installed package (DLRS)
+  // is really written into the workspace .sfdx-hardis.yml so the Installed
+  // Packages panel shows it after a refresh.
+  "hardis:package:install": async (send, askPrompt, sleep) => {
+    const log = (logType, message, extra) =>
+      send({ event: "commandLogLine", logType, message, ...(extra || {}) });
+    const packageChoices = [
+      "Conga Composer",
+      "DocuSign eSignature for Salesforce",
+      "Declarative Lookup Rollup Summaries Tool",
+      "Dynamic Flow Progress",
+      "FormAssembly",
+      "Nonprofit Success Pack",
+      "Salesforce CPQ",
+      "Salesforce Maps",
+    ].map((name) => ({
+      title: `${name} - AppExchange`,
+      value: name,
+    }));
+    packageChoices.push({ title: "Other", value: "other" });
+
+    log(
+      "action",
+      "Please select the package you want to install on org deploy.user@mycompany.com.integ",
+      { isQuestion: true },
+    );
+    await askPrompt({
+      name: "selectPackage",
+      type: "select",
+      message:
+        "Please select the package you want to install on org deploy.user@mycompany.com.integ",
+      description: "Choose which package to install from the available list",
+      choices: packageChoices,
+    });
+    log("log", "Other");
+    await sleep(200);
+
+    log(
+      "action",
+      "What is the id of the Package Version to install ? (starting with 04t)",
+      { isQuestion: true },
+    );
+    await askPrompt({
+      name: "packageVersionId",
+      type: "text",
+      message:
+        "What is the id of the Package Version to install ? (starting with 04t)\nYou can find it using tooling api request Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage",
+      description:
+        "Enter the package version ID for the package you want to install",
+      placeholder: "Ex: 04t1t000003VYzRAAW",
+    });
+    log("log", "04t5p000001BlVPAA0");
+    await sleep(200);
+
+    log(
+      "action",
+      "Enter the password for this package (leave empty if package is not protected by a password)",
+      { isQuestion: true },
+    );
+    await askPrompt({
+      name: "installationKey",
+      type: "text",
+      message:
+        "Enter the password for this package (leave empty if package is not protected by a password)",
+      description:
+        "Provide the installation password if the package is protected",
+      placeholder: "Ex: MyPassword123",
+    });
+    await sleep(200);
+
+    log("action", "Listing packages installed on current org...");
+    send({
+      event: "commandSubCommandStart",
+      data: { command: "sf package installed list --json", cwd: "." },
     });
     await sleep(800);
     send({
       event: "commandSubCommandEnd",
-      data: {
-        command: "sf sgd:source:delta --to HEAD --from origin/integration",
-        success: true,
-      },
+      data: { command: "sf package installed list --json", success: true },
     });
-    log("action", "Applying automated cleanings to the sources...");
-    send({
-      event: "progressStart",
-      title: "Cleaning 5 metadata types...",
-      totalSteps: 5,
-    });
-    for (let step = 1; step <= 5; step++) {
-      send({ event: "progressStep", step, totalSteps: 5 });
-      await sleep(280);
-    }
-    send({ event: "progressEnd", totalSteps: 5 });
-    log(
-      "success",
-      "Cleaned profiles, list views, destructive changes references and Flow positions.",
-    );
-    await sleep(250);
 
-    send({
-      event: "reportFile",
-      file: "manifest/package.xml",
-      title: "Git Delta package.xml (4)",
-      type: "report",
-    });
-    send({
-      event: "reportFile",
-      file: "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/",
-      title: "How to publish a User Story",
-      type: "docUrl",
-    });
-    log(
-      "success",
-      "Your User Story is saved. Commit and push your files, then publish them with Save / Publish User Story 🎉",
-    );
-    await sleep(600);
-  },
-
-  "hardis:work:publish": async (send, askPrompt, sleep) => {
-    const log = (logType, message, extra) =>
-      send({ event: "commandLogLine", logType, message, ...(extra || {}) });
-
-    log("action", "Publishing your User Story");
-    await sleep(150);
+    log("action", "Installing package 04t5p000001BlVPAA0...");
     send({
       event: "commandSubCommandStart",
       data: {
-        command: "git push origin features/dev/CRM-1042-account-hierarchy",
+        command:
+          "sf package install --package 04t5p000001BlVPAA0 --no-prompt --security-type AdminsOnly --wait 60 --json",
         cwd: ".",
       },
     });
-    await sleep(900);
+    await sleep(3500);
     send({
       event: "commandSubCommandEnd",
       data: {
-        command: "git push origin features/dev/CRM-1042-account-hierarchy",
+        command:
+          "sf package install --package 04t5p000001BlVPAA0 --no-prompt --security-type AdminsOnly --wait 60 --json",
         success: true,
       },
     });
-    log("success", "Pushed 3 commits to origin.");
-    await sleep(200);
+    log(
+      "success",
+      "Package Declarative Lookup Rollup Summaries Tool (04t5p000001BlVPAA0) has been installed on org deploy.user@mycompany.com.integ",
+    );
+    await sleep(300);
 
-    log("action", "Which branch do you want to merge your User Story into?", {
-      isQuestion: true,
-    });
+    log(
+      "action",
+      "Please select packages to add to your project configuration",
+      { isQuestion: true },
+    );
     await askPrompt({
-      name: "targetBranch",
-      type: "select",
-      message: "Which branch do you want to merge your User Story into?",
+      name: "packagesToConfig",
+      type: "multiselect",
+      message: "Please select packages to add to your project configuration",
+      description:
+        "Select packages to add to your project configuration for automatic installation during scratch org creation and/or deployments",
       choices: [
         {
-          title: "integration",
-          value: "integration",
-          description: "Integration sandbox (mycompany--integ)",
-        },
-        {
-          title: "uat",
-          value: "uat",
-          description: "User Acceptance Testing sandbox (mycompany--uat)",
-        },
-        {
-          title: "preprod",
-          value: "preprod",
-          description: "Pre-production sandbox (mycompany--preprod)",
+          title: "Declarative Lookup Rollup Summaries Tool (2.23.0.12)",
+          value: "dlrs",
         },
       ],
     });
-    log("log", "integration");
+    log("log", "☑ Declarative Lookup Rollup Summaries Tool (2.23.0.12)");
     await sleep(200);
 
-    log("action", "Creating the Pull Request on GitHub...");
-    send({
-      event: "progressStart",
-      title: "Collecting the User Story details...",
-      totalSteps: 20,
-    });
-    for (let step = 1; step <= 20; step += 2) {
-      send({ event: "progressStep", step, totalSteps: 20 });
-      await sleep(120);
-    }
-    send({ event: "progressEnd", totalSteps: 20 });
-    send({
-      event: "reportFile",
-      file: "https://github.com/mycompany/salesforce-crm/pull/128",
-      title: "Pull Request #128",
-      type: "docUrl",
-    });
-    send({
-      event: "reportFile",
-      file: "docs/user-stories/CRM-1042-account-hierarchy.md",
-      title: "User Story documentation",
-      type: "report",
+    log(
+      "action",
+      "Please select the install configuration for Declarative Lookup Rollup Summaries Tool",
+      { isQuestion: true },
+    );
+    await askPrompt({
+      name: "installConfig",
+      type: "select",
+      message:
+        "Please select the install configuration for Declarative Lookup Rollup Summaries Tool",
+      description:
+        "Configure how this package should be automatically installed during CI/CD operations",
+      choices: [
+        {
+          title:
+            "Deploy automatically Declarative Lookup Rollup Summaries Tool on integration/production orgs only",
+          value: "deploy",
+        },
+        {
+          title:
+            "Install automatically Declarative Lookup Rollup Summaries Tool on scratch orgs only",
+          value: "scratch",
+        },
+        {
+          title:
+            "Both: Install & deploy automatically Declarative Lookup Rollup Summaries Tool",
+          value: "scratch-deploy",
+        },
+        {
+          title:
+            "Do not configure Declarative Lookup Rollup Summaries Tool installation / deployment",
+          value: "none",
+        },
+      ],
     });
     log(
-      "success",
-      "Pull Request #128 created: CRM-1042 Account hierarchy -> integration 🚀",
+      "log",
+      "Both: Install & deploy automatically Declarative Lookup Rollup Summaries Tool",
     );
-    await sleep(600);
+    await sleep(200);
+
+    // Register the package in the workspace .sfdx-hardis.yml, like the real
+    // command: the Installed Packages panel then shows it after a refresh
+    try {
+      const yaml = require(
+        path.join(process.env.SF_MOCK_NODE_MODULES || "", "js-yaml"),
+      );
+      const configFile = path.join(process.cwd(), ".sfdx-hardis.yml");
+      const config = yaml.load(fs.readFileSync(configFile, "utf8")) || {};
+      config.installedPackages = (config.installedPackages || []).concat([
+        {
+          Id: "0A35f000000TN2ECAW",
+          SubscriberPackageId: "0333X000000DlrsQAC",
+          SubscriberPackageName: "Declarative Lookup Rollup Summaries Tool",
+          SubscriberPackageNamespace: "dlrs",
+          SubscriberPackageVersionId: "04t5p000001BlVPAA0",
+          SubscriberPackageVersionName: "DLRS Winter 26",
+          SubscriberPackageVersionNumber: "2.23.0.12",
+          installOnScratchOrgs: true,
+          installDuringDeployments: true,
+        },
+      ]);
+      fs.writeFileSync(configFile, yaml.dump(config));
+    } catch (e) {
+      logInvocation({ event: "configWriteFailed", error: String(e) });
+    }
+
+    log(
+      "action",
+      "Updated package configuration in .sfdx-hardis.yml config file",
+    );
+    send({
+      event: "reportFile",
+      file: ".sfdx-hardis.yml#installedPackages",
+      title: "Package config in .sfdx-hardis.yml",
+      type: "report",
+    });
+    await sleep(500);
   },
 };
 

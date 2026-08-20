@@ -1,0 +1,131 @@
+projectName: MyCompany-CRM
+developmentBranch: integration
+defaultBranch: main
+instanceUrl: https://mycompany.my.salesforce.com
+targetUsername: deploy.user@mycompany.com
+availableTargetBranches:
+  - integration
+  - preprod
+availableTargetBranchesLabels:
+  - New features and enhancements (BUILD)
+  - Hotfixes on the production version (RUN)
+availableProjects:
+  - CRM,Customer Relationship Management
+  - BILLING,Billing & Invoicing
+  - SERVICE,Service Cloud
+newTaskNameRegex: "^CRM-[0-9]+ .*"
+newTaskNameRegexExample: CRM-1042 Account hierarchy
+sharedDevSandboxes: true
+installedPackages:
+  - Id: 0A35f000000TN2ACAW
+    SubscriberPackageId: 033w0000000gYbxAAE
+    SubscriberPackageName: Conga Composer
+    SubscriberPackageNamespace: APXTConga4
+    SubscriberPackageVersionId: 04t1t0000037BgHAAU
+    SubscriberPackageVersionName: Conga Composer 8 Winter 26
+    SubscriberPackageVersionNumber: 8.187.0.1
+    installOnScratchOrgs: true
+    installDuringDeployments: true
+  - Id: 0A35f000000TN2BCAW
+    SubscriberPackageId: 033A0000000TXX1IAO
+    SubscriberPackageName: DocuSign eSignature
+    SubscriberPackageNamespace: dsfs
+    SubscriberPackageVersionId: 04t4W000002GJHnQAO
+    SubscriberPackageVersionName: DocuSign for Salesforce
+    SubscriberPackageVersionNumber: 7.6.0.1
+    installOnScratchOrgs: true
+    installDuringDeployments: false
+  - Id: 0A35f000000TN2CCAW
+    SubscriberPackageId: 033Kj000000TrGyIAK
+    SubscriberPackageName: MyCompany Core
+    SubscriberPackageNamespace: mcc
+    SubscriberPackageVersionId: 04tKj000000UbNlIAK
+    SubscriberPackageVersionName: MyCompany Core 2.14
+    SubscriberPackageVersionNumber: 2.14.0.3
+    installOnScratchOrgs: true
+    installDuringDeployments: true
+  - Id: 0A35f000000TN2DCAW
+    SubscriberPackageId: 033B000000021ZYIAY
+    SubscriberPackageName: Salesforce Connected Apps
+    SubscriberPackageNamespace: sf_com_apps
+    SubscriberPackageVersionId: 04tB0000000IWNVIA4
+    SubscriberPackageVersionName: Salesforce Connected Apps
+    SubscriberPackageVersionNumber: 1.7.0.1
+    installOnScratchOrgs: false
+    installDuringDeployments: false
+customCommands: []
+monitoringRepository: https://github.com/mycompany/salesforce-crm-monitoring
+monitoringCommands:
+  - key: AUDIT_TRAIL
+    frequency: daily
+  - key: ORG_HEALTH_CHECK
+    frequency: daily
+  - key: LEGACY_API
+    frequency: weekly
+  - key: LINT_ACCESS
+    frequency: weekly
+  - key: UNUSED_METADATAS
+    frequency: weekly
+  - key: UNLINK_MFA_USERS
+    title: Unlink users from MFA apps
+    command: >-
+      sf hardis:org:user:unlink-security-key --usernames
+      'deploy.user@mycompany.com' --include-salesforce-authenticator
+      --include-totp
+    frequency: daily
+notificationConfig:
+  - key: ORG_HEALTH_CHECK
+    notifications:
+      messaging: warning
+      api: log
+      email:
+        threshold: log
+        recipients:
+          - crm-admins@mycompany.com
+  - key: AUDIT_TRAIL
+    notifications:
+      messaging: warning
+      api: log
+      email:
+        threshold: log
+        recipients:
+          - crm-admins@mycompany.com
+  - key: ORG_LIMITS
+    notifications:
+      messaging: warning
+  - key: LEGACY_API
+    notifications:
+      email: "off"
+  - key: APEX_ERROR
+    notifications:
+      email: "off"
+  - key: FLOW_ERROR
+    notifications:
+      email: "off"
+  - key: MONITORING_SUMMARY
+    notifications:
+      messaging: info
+      api: log
+      email:
+        threshold: log
+        recipients:
+          - crm-admins@mycompany.com
+autoCleanTypes:
+  - checkPermissions
+  - destructivechanges
+  - datadotcom
+  - minimizeProfiles
+  - listViewsMine
+useDeltaDeployment: true
+useSmartDeploymentTests: true
+installPackagesDuringCheckDeploy: true
+apexTestsMinCoverageOrgWide: 80
+manualActionsFileUrl: https://mycompany.sharepoint.com/sites/crm/ManualActions.xlsx
+orgAuthenticationMode: encryptedCert
+allowedOrgTypes:
+  - sandbox
+useAgentforce: true
+useLangchainLlm: false
+useOpenaiDirect: false
+promptsLanguage: en,fr,de,es
+promptsParallelCallNumber: 20
