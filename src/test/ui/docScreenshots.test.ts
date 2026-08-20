@@ -349,6 +349,22 @@ async function cleanChrome(): Promise<void> {
   await sleep(600);
 }
 
+/**
+ * Returns a predicate telling whether the mocked CLI asked a given prompt
+ * since the moment this tracker was created (see promptAsked entries logged
+ * by test/fixtures/sf-shim/sf-mock.js).
+ */
+function trackAskedPrompts(): (promptName: string) => boolean {
+  const mockLogStart = readMockLog().length;
+  return (promptName: string) =>
+    readMockLog()
+      .slice(mockLogStart)
+      .some(
+        (entry) =>
+          entry.event === "promptAsked" && entry.promptName === promptName,
+      );
+}
+
 suite("Documentation screenshots", function () {
   this.timeout(600000);
   let panelManager: any;
@@ -571,19 +587,12 @@ suite("Documentation screenshots", function () {
     }
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
     await sleep(400);
-    const mockLogStart = readMockLog().length;
+    const asked = trackAskedPrompts();
     const panelId = await runCommandAndWaitForPanel(
       panelManager,
       "sf hardis:org:mock-showcase",
     );
     const panel = panelManager.getPanel(panelId);
-    const asked = (promptName: string) =>
-      readMockLog()
-        .slice(mockLogStart)
-        .some(
-          (entry) =>
-            entry.event === "promptAsked" && entry.promptName === promptName,
-        );
 
     // 1. Sections, sub-command, warning, table and the first question
     await waitFor(() => asked("setDefault"), 30000, "first prompt");
@@ -629,19 +638,12 @@ suite("Documentation screenshots", function () {
     }
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
     await sleep(400);
-    const mockLogStart = readMockLog().length;
+    const asked = trackAskedPrompts();
     const panelId = await runCommandAndWaitForPanel(
       panelManager,
       "sf hardis:org:user:activateinvalid",
     );
     const panel = panelManager.getPanel(panelId);
-    const asked = (promptName: string) =>
-      readMockLog()
-        .slice(mockLogStart)
-        .some(
-          (entry) =>
-            entry.event === "promptAsked" && entry.promptName === promptName,
-        );
 
     await waitFor(() => asked("confirmSelect"), 30000, "confirm prompt");
     await sleep(1200);
@@ -696,14 +698,7 @@ suite("Documentation screenshots", function () {
       settleMs: 9000,
       force: true,
     });
-    const mockLogStart = readMockLog().length;
-    const asked = (promptName: string) =>
-      readMockLog()
-        .slice(mockLogStart)
-        .some(
-          (entry) =>
-            entry.event === "promptAsked" && entry.promptName === promptName,
-        );
+    const asked = trackAskedPrompts();
     await record("install-packages", 42, async () => {
       await sleep(1500);
       await click(1630, 895); // "Manage Packages" contribution card
@@ -896,20 +891,13 @@ suite("Documentation screenshots", function () {
   ): Promise<void> {
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
     await sleep(400);
-    const mockLogStart = readMockLog().length;
+    const asked = trackAskedPrompts();
     await record(name, seconds, async () => {
       const panelId = await runCommandAndWaitForPanel(panelManager, command);
       const panel = panelManager.getPanel(panelId);
       for (const answer of answers) {
         await waitFor(
-          () =>
-            readMockLog()
-              .slice(mockLogStart)
-              .some(
-                (entry) =>
-                  entry.event === "promptAsked" &&
-                  entry.promptName === answer.prompt,
-              ),
+          () => asked(answer.prompt),
           30000,
           `prompt ${answer.prompt}`,
         );
