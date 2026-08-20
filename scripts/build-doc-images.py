@@ -111,6 +111,12 @@ BOX_CROPS = {
         "pipeline-branch-modal-actions",
         (470, 60, 1866, 810),
     ),
+    # "Edit Deployment Action" editor, opened from the PR modal (captured two
+    # zoom levels out, like pipeline-workflow-cards)
+    "screenshot-edit-deployment-action.jpg": (
+        "pipeline-edit-action",
+        (760, 264, 1462, 706),
+    ),
 }
 
 # --- Animated GIFs ------------------------------------------------------------

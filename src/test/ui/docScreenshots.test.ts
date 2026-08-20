@@ -447,6 +447,19 @@ suite("Documentation screenshots", function () {
       settleMs: 9000,
       force: true,
     });
+    // Single-PR modal of the current branch: Deployment Actions tab, then the
+    // Add New Action editor (still zoomed out; the published image is a crop
+    // of the modal, so the zoom only affects its resolution)
+    await click(1502, 804); // "My Pull Request" card
+    await sleep(2500);
+    await cleanChrome();
+    await captureStable("pipeline-pr-modal");
+    await click(543, 156); // "Deployment Actions" tab of the PR modal
+    await sleep(1200);
+    await captureStable("pipeline-pr-actions-empty");
+    await click(425, 205); // "Add New Action"
+    await sleep(1500);
+    await captureStable("pipeline-edit-action");
     await vscode.commands.executeCommand("workbench.action.zoomIn");
     await vscode.commands.executeCommand("workbench.action.zoomIn");
     await sleep(800);
