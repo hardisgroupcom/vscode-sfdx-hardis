@@ -280,13 +280,13 @@ In addition to the workbenches, the extension contributes three classic tree vie
 
 VS Code is tinted according to the selected default org, so you never confuse Production with a sandbox, and a badge in the status bar always spells out which kind of org you are working on:
 
-| Org type | Badge | Color |
-|---|---|---|
-| Production | 🛡️ **PROD** | red |
-| Major org (UAT, integration…) | ⚖️ **MAJOR** | orange |
-| Dev sandbox | 🧪 **SANDBOX** | green |
-| Scratch org | 🚀 **SCRATCH** | cyan |
-| Other (Dev org, trial…) | ☁️ **DEV ORG** | blue |
+| Org type                      | Badge          | Color  |
+|-------------------------------|----------------|--------|
+| Production                    | 🛡️ **PROD**   | red    |
+| Major org (UAT, integration…) | ⚖️ **MAJOR**   | orange |
+| Dev sandbox                   | 🧪 **SANDBOX** | green  |
+| Scratch org                   | 🚀 **SCRATCH** | cyan   |
+| Other (Dev org, trial…)       | ☁️ **DEV ORG** | blue   |
 
 The colors come from the same design system palette as the extension panels, and adapt to your **light or dark** theme. High contrast themes are never recolored, so accessibility settings stay intact.
 

@@ -20,11 +20,7 @@
  */
 
 export type OrgColorKind =
-  | "production"
-  | "major"
-  | "sandbox"
-  | "scratch"
-  | "dev";
+  "production" | "major" | "sandbox" | "scratch" | "dev";
 
 export type OrgColorMode = "off" | "accent" | "tinted" | "full";
 
@@ -209,7 +205,9 @@ export function contrastRatio(colorA: string, colorB: string): number {
 
 /** Pick white or near-black, whichever reads better on the given background. */
 export function readableForegroundFor(background: string): string {
-  if (contrastRatio(WHITE, background) >= contrastRatio(NEAR_BLACK, background)) {
+  if (
+    contrastRatio(WHITE, background) >= contrastRatio(NEAR_BLACK, background)
+  ) {
     return WHITE;
   }
   return NEAR_BLACK;
@@ -231,8 +229,7 @@ export function ensureContrast(
   if (!backgroundRgb) {
     return foreground;
   }
-  const towards =
-    relativeLuminance(backgroundRgb) > 0.35 ? NEAR_BLACK : WHITE;
+  const towards = relativeLuminance(backgroundRgb) > 0.35 ? NEAR_BLACK : WHITE;
   for (let step = 1; step <= 20; step++) {
     const candidate = mixColors(foreground, towards, step / 20);
     if (contrastRatio(candidate, background) >= target) {
@@ -257,7 +254,11 @@ export function buildCustomHue(hex: string): OrgHue | null {
   return {
     container: { light: containerLight, dark: containerDark },
     text: {
-      light: ensureContrast(mixColors(base, NEAR_BLACK, 0.3), containerLight, 4.5),
+      light: ensureContrast(
+        mixColors(base, NEAR_BLACK, 0.3),
+        containerLight,
+        4.5,
+      ),
       dark: ensureContrast(mixColors(base, WHITE, 0.3), containerDark, 4.5),
     },
     accent: {

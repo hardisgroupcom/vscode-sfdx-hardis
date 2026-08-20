@@ -532,7 +532,10 @@ export class HardisColors {
   /** Recompute and apply the shell colors and the status bar badge. */
   async refreshDecoration() {
     const mode = this.getColorMode();
-    const hue = resolveOrgHue(this.currentOrgColorKind, this.currentCustomColor);
+    const hue = resolveOrgHue(
+      this.currentOrgColorKind,
+      this.currentCustomColor,
+    );
     const colors =
       mode === "off" || this.isHighContrastTheme()
         ? {}

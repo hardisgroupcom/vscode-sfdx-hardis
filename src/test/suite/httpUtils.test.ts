@@ -69,7 +69,9 @@ suite("httpUtils Test Suite", function () {
     // `server.close()` only stops accepting new connections and then waits for the
     // open ones. The fetch stack keeps its sockets alive, so without an explicit
     // `closeAllConnections()` the teardown hangs until the keep-alive timeout.
-    const closed = new Promise<void>((resolve) => server.close(() => resolve()));
+    const closed = new Promise<void>((resolve) =>
+      server.close(() => resolve()),
+    );
     server.closeAllConnections();
     await closed;
   });

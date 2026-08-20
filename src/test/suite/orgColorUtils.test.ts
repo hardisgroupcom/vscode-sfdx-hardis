@@ -86,7 +86,10 @@ suite("orgColorUtils Test Suite", () => {
   });
 
   test("custom color takes priority over the org type hue", () => {
-    assert.strictEqual(resolveOrgHue("production", "#7526e3")?.strong, "#7526e3");
+    assert.strictEqual(
+      resolveOrgHue("production", "#7526e3")?.strong,
+      "#7526e3",
+    );
     assert.strictEqual(
       resolveOrgHue("production", null)?.strong,
       ORG_HUES.production.strong,
@@ -154,7 +157,11 @@ suite("orgColorUtils Test Suite", () => {
 
   test("light and dark variants produce different container colors", () => {
     for (const kind of ORG_KINDS) {
-      const light = buildOrgColorCustomizations(ORG_HUES[kind], "full", "light");
+      const light = buildOrgColorCustomizations(
+        ORG_HUES[kind],
+        "full",
+        "light",
+      );
       const dark = buildOrgColorCustomizations(ORG_HUES[kind], "full", "dark");
       assert.notStrictEqual(
         light["activityBar.background"],
