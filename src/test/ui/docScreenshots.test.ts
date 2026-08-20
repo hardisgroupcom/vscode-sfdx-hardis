@@ -685,34 +685,6 @@ suite("Documentation screenshots", function () {
   // GIF. Each scenario drives the panel while the screen is recorded.
   // ---------------------------------------------------------------------
 
-  test("recording: welcome page tour", async function () {
-    if (!shouldTake("rec-welcome")) {
-      this.skip();
-    }
-    const panel = await shootPanel(panelManager, {
-      name: "welcome-for-recording",
-      force: true,
-      command: "vscode-sfdx-hardis.showWelcome",
-      lwcId: "s-welcome",
-      settleMs: 2500,
-    });
-    void panel;
-    await record("welcome", 22, async () => {
-      await sleep(1500);
-      for (let i = 0; i < 4; i++) {
-        await click(1170, 600, { scroll: -3 });
-      }
-      await sleep(1200);
-      for (let i = 0; i < 4; i++) {
-        await click(1170, 600, { scroll: 3 });
-      }
-      await sleep(1200);
-      // Open a workbench from its Welcome card: the DevOps Pipeline
-      await click(700, 505);
-      await sleep(9000);
-    });
-  });
-
   test("recording: orgs manager", async function () {
     if (!shouldTake("rec-orgs-manager")) {
       this.skip();

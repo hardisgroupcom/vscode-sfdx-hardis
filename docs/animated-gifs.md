@@ -17,7 +17,6 @@ All of them live in the sibling repository, under
 
 | GIF                             | Recording                 | What it shows                                                                                                    |
 |---------------------------------|---------------------------|------------------------------------------------------------------------------------------------------------------|
-| `extension-demo.gif`            | `welcome`                 | Tour of the Welcome page                                                                                          |
 | `sfdx-hardis-pipeline-view.gif` | `devops-pipeline`         | DevOps Pipeline panel: branch/org diagram with feature branches and running jobs, open pull requests tab          |
 | `orgs-manager.gif`              | `orgs-manager`            | Orgs Manager: list of orgs, "View all orgs" toggle, row actions menu                                              |
 | `metadata-retriever.gif`        | `metadata-retriever`      | Metadata Retriever: search, selection of several items                                                            |

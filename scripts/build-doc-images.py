@@ -129,7 +129,6 @@ BOX_CROPS = {
 # into a single longer frame and every frame shares one global palette, which
 # is what keeps these files small enough for a documentation page.
 GIF_RECORDINGS = {
-    "extension-demo.gif": "welcome",
     "sfdx-hardis-pipeline-view.gif": "devops-pipeline",
     "orgs-manager.gif": "orgs-manager",
     "metadata-retriever.gif": "metadata-retriever",
