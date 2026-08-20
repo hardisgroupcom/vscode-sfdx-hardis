@@ -1,0 +1,66 @@
+commandsPreDeploy:
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-125a00000001
+    label: Check org limits before the deployment
+    type: command
+    when: pre-deploy
+    command: sf hardis:org:monitor:limits
+    context: all
+    allowFailure: true
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-125a00000002
+    label: Load projects referential data
+    type: data
+    when: pre-deploy
+    parameters:
+      sfdmuProject: ProjectsRefsUpsert
+    command: sf hardis:org:data:import --path scripts/data/ProjectsRefsUpsert
+    context: process-deployment-only
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-125a00000003
+    label: Remove profiles from the delta package
+    type: remove-packagexml-items
+    when: pre-deploy
+    parameters:
+      packageXmlItems:
+        - "Profile:*"
+        - "CustomLabel:Quote_Approval_Required"
+    command: ""
+    context: check-deployment-only
+commandsPostDeploy:
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-125a00000004
+    label: Assign CRM_Manager permission set to admins
+    type: apex
+    when: post-deploy
+    parameters:
+      apexScript: scripts/apex/assign-crm-manager.apex
+    command: sf apex run --file scripts/apex/assign-crm-manager.apex
+    context: process-deployment-only
+    runOnlyOnceByOrg: true
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-125a00000005
+    label: Schedule the account hierarchy sync batch
+    type: schedule-batch
+    when: post-deploy
+    parameters:
+      className: AccountHierarchySyncBatch
+      cronExpression: 0 0 3 * * ?
+      jobName: Account Hierarchy Sync
+    command: ""
+    context: process-deployment-only
+    runOnlyOnceByOrg: true
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-125a00000006
+    label: Publish the Customer Portal community
+    type: publish-community
+    when: post-deploy
+    parameters:
+      communityName: Customer Portal
+    command: ""
+    context: process-deployment-only
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-125a00000007
+    label: Activate the Opportunity stage notifications
+    type: manual
+    when: post-deploy
+    parameters:
+      instructions: >-
+        In Setup > Process Automation Settings, enable the notifications for
+        the Opportunity stage changes, then warn the sales team on the CRM
+        channel.
+    command: ""
+    context: process-deployment-only
