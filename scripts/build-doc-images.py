@@ -53,7 +53,6 @@ PANEL_SHOTS = {
     "dependencies-ok-ui.png": "setup",
     "install-dependencies-screenshot.png": "missing/setup",
     "ProductivityCommands.png": "user-activateinvalid-multiselect",
-    "screenshot-work-save.png": "command-runner-completed",
     "command-runner.png": "command-runner-question",
 }
 
@@ -74,7 +73,6 @@ WEBVIEW_ONLY = {
     "devops-pipeline.png",
     "org-monitoring.png",
     "dependencies-ok-ui.png",
-    "screenshot-work-save.png",
     "command-runner.png",
 }
 
