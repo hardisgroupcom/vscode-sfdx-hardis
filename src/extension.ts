@@ -118,7 +118,7 @@ export function activate(context: vscode.ExtensionContext) {
   LwcPanelManager.getInstance(context);
 
   // Initialize colors
-  const hardisColors = new HardisColors();
+  const hardisColors = new HardisColors(context);
   context.subscriptions.push(hardisColors);
   hardisColors.init();
 
@@ -206,6 +206,8 @@ export function activate(context: vscode.ExtensionContext) {
       // Enable / Disable org colors
       if (
         event.affectsConfiguration("vsCodeSfdxHardis.disableVsCodeColors") ||
+        event.affectsConfiguration("vsCodeSfdxHardis.orgColorMode") ||
+        event.affectsConfiguration("vsCodeSfdxHardis.showOrgStatusBarItem") ||
         event.affectsConfiguration("vsCodeSfdxHardis.colorUpdateLocation")
       ) {
         hardisColors.init();
