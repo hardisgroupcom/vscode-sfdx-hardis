@@ -278,14 +278,26 @@ In addition to the workbenches, the extension contributes three classic tree vie
 
 ## Per-org VS Code colors
 
-The status panel automatically tints VS Code based on the selected default org, so you never confuse Production with a sandbox:
+VS Code is tinted according to the selected default org, so you never confuse Production with a sandbox, and a badge in the status bar always spells out which kind of org you are working on:
 
-- 🔴 **Production** - red
-- 🟠 **Major sandbox** (UAT, integration…) - orange
-- 🟢 **Dev sandbox / scratch org** - green
-- 🔵 **Other** (Dev org, trial…) - blue
+| Org type | Badge | Color |
+|---|---|---|
+| Production | 🛡️ **PROD** | red |
+| Major org (UAT, integration…) | ⚖️ **MAJOR** | orange |
+| Dev sandbox | 🧪 **SANDBOX** | green |
+| Scratch org | 🚀 **SCRATCH** | cyan |
+| Other (Dev org, trial…) | ☁️ **DEV ORG** | blue |
 
-You can override a color per org, or per URL pattern (e.g. `https://*.scratch.my.salesforce.com`), and choose whether the change applies to your workspace or user settings via `vsCodeSfdxHardis.colorUpdateLocation`. Disable entirely with `vsCodeSfdxHardis.disableVsCodeColors`.
+The colors come from the same design system palette as the extension panels, and adapt to your **light or dark** theme. High contrast themes are never recolored, so accessibility settings stay intact.
+
+Choose how much of the window is colored with `vsCodeSfdxHardis.orgColorMode`:
+
+- **`accent`** (default) - status bar and activity indicators only
+- **`tinted`** - also tints the title bar
+- **`full`** - also fills the activity bar
+- **`off`** - never change VS Code colors
+
+You can override a color per org, or per URL pattern (e.g. `https://*.scratch.my.salesforce.com`): run **Select color for current org** and pick one from the palette, previewed live. Use `vsCodeSfdxHardis.colorUpdateLocation` to apply the change to your workspace or user settings, and `vsCodeSfdxHardis.showOrgStatusBarItem` to hide the status bar badge.
 
 [![Colors video](https://img.youtube.com/vi/6WU4rezC2GM/0.jpg)](https://www.youtube.com/watch?v=6WU4rezC2GM)
 

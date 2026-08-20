@@ -79,7 +79,8 @@ async function main() {
   const workspaceSettings: Record<string, unknown> = {
     "vsCodeSfdxHardis.showWelcomeAtStartup": false,
     "vsCodeSfdxHardis.disableGitBashCheck": true,
-    "vsCodeSfdxHardis.disableVsCodeColors": true,
+    "vsCodeSfdxHardis.orgColorMode": "off",
+    "vsCodeSfdxHardis.showOrgStatusBarItem": false,
     "vsCodeSfdxHardis.userInput": "ui-lwc",
     "vsCodeSfdxHardis.userInputCommandLineIfLWC": "background",
     "telemetry.telemetryLevel": "off",

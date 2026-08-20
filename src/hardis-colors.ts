@@ -9,11 +9,26 @@ import {
 } from "./utils";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { t } from "./i18n/i18n";
+import { Logger } from "./logger";
 import {
   loadFromLocalConfigFile,
   readSfdxHardisConfig,
   writeSfdxHardisConfig,
 } from "./utils/sfdx-hardis-config-utils";
+import {
+  buildOrgColorCustomizations,
+  isValidHexColor,
+  LEGACY_COLOR_KEYS,
+  LEGACY_ORG_COLORS,
+  MANAGED_COLOR_KEYS,
+  matchCustomOrgColor,
+  ORG_HUES,
+  OrgColorKind,
+  OrgColorMode,
+  resolveOrgHue,
+  shortenOrgHost,
+  ThemeVariant,
+} from "./utils/orgColorUtils";
 
 const PRODUCTION_EDITIONS = [
   "Team Edition",
@@ -25,32 +40,68 @@ const PRODUCTION_EDITIONS = [
   "Base Edition",
 ];
 
+type ColorUpdateLocation = "Workspace" | "User";
+
+/** What we wrote, where, and what was there before: kept out of user settings. */
+interface AppliedColorsState {
+  target: ColorUpdateLocation;
+  keys: string[];
+  previous: Record<string, string>;
+}
+
+const APPLIED_COLORS_STATE_KEY = "sfdxHardis.orgColors.applied";
+const LEGACY_CLEANUP_STATE_KEY = "sfdxHardis.orgColors.legacyCleanupDone";
+
+/**
+ * Status bar badge per org type. The badge carries the org type as *text*, so
+ * the information does not rely on color alone (red production vs orange major
+ * org is exactly the pair color-blind users cannot separate), and the two
+ * `statusBarItem.*Background` theme colors are rendered correctly by every
+ * theme, including high contrast ones.
+ */
+const ORG_BADGES: Record<
+  OrgColorKind,
+  { icon: string; labelKey: string; severity?: "error" | "warning" }
+> = {
+  production: {
+    icon: "shield",
+    labelKey: "orgBadgeProduction",
+    severity: "error",
+  },
+  major: { icon: "law", labelKey: "orgBadgeMajor", severity: "warning" },
+  sandbox: { icon: "beaker", labelKey: "orgBadgeSandbox" },
+  scratch: { icon: "rocket", labelKey: "orgBadgeScratch" },
+  dev: { icon: "cloud", labelKey: "orgBadgeDev" },
+};
+
 export class HardisColors {
+  context: vscode.ExtensionContext;
   disposables: vscode.Disposable[] = [];
   majorOrgInstanceUrls: any[] = [];
   currentDefaultOrg: string | undefined = undefined;
   currentDefaultOrgDomain: string | undefined | null = undefined;
+  currentOrgColorKind: OrgColorKind | null = null;
+  currentCustomColor: string | null = null;
   initializing: boolean = true;
   majorOrgBranch: string | undefined = undefined;
   invalidCustomOrgColorWarningShown: boolean = false;
+  warnedOrgs: Set<string> = new Set();
+  statusBarItem: vscode.StatusBarItem | undefined = undefined;
 
-  // Initialize file watchers only if we are in a sfdx project
-  constructor() {}
+  constructor(context: vscode.ExtensionContext) {
+    this.context = context;
+  }
 
   async init() {
     this.initializing = true;
-    this.reset();
-    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
-
-    // Manage color only if not disabled and in a sfdx project context
-    if (
-      hasSfdxProjectJson() &&
-      vscode.workspace.workspaceFolders &&
-      config.get("disableVsCodeColors") !== true
-    ) {
-      // Watch config files
+    await this.migrateDeprecatedSettings();
+    await this.migrateLegacyOrgColors();
+    await this.reset();
+    // Manage colors only in a sfdx project context
+    if (hasSfdxProjectJson() && vscode.workspace.workspaceFolders) {
       this.registerFileSystemWatchers();
       this.registerColorPickerCommand();
+      this.registerThemeListener();
       await this.initColor();
       this.initializing = false;
     }
@@ -104,48 +155,126 @@ export class HardisColors {
     }
   }
 
+  /**
+   * Re-apply the decoration when the user switches between a light and a dark
+   * theme: the palette is a function of (org type, theme kind), so the shell
+   * tint has to follow.
+   */
+  registerThemeListener() {
+    const disposable = vscode.window.onDidChangeActiveColorTheme(async () => {
+      await this.refreshDecoration();
+    });
+    this.disposables.push(disposable);
+  }
+
   registerColorPickerCommand() {
-    // Refresh commands tree
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.selectColorForOrg",
       async () => {
-        if (this.currentDefaultOrgDomain) {
-          const sfdxHardisConfig = await readSfdxHardisConfig();
-          const customOrgColors = sfdxHardisConfig.customOrgColors || {};
-          const color = await this.promptColor(this.currentDefaultOrgDomain);
-          if (!color) {
-            return;
-          }
-          customOrgColors[this.currentDefaultOrgDomain] = color;
-          await writeSfdxHardisConfig("customOrgColors", customOrgColors);
-          await this.applyColor(color);
-        } else {
+        if (!this.currentDefaultOrgDomain) {
           vscode.window.showWarningMessage(
             t("needToSelectDefaultOrg"),
             t("close"),
           );
+          return;
         }
+        const choice = await this.promptColor(this.currentDefaultOrgDomain);
+        if (choice === null) {
+          // Cancelled: restore the decoration that was previewed away
+          await this.refreshDecoration();
+          return;
+        }
+        const sfdxHardisConfig = await readSfdxHardisConfig();
+        const customOrgColors = sfdxHardisConfig.customOrgColors || {};
+        if (choice === "automatic") {
+          delete customOrgColors[this.currentDefaultOrgDomain];
+        } else {
+          customOrgColors[this.currentDefaultOrgDomain] = choice;
+        }
+        await writeSfdxHardisConfig("customOrgColors", customOrgColors);
+        await this.refreshCustomColor();
+        await this.refreshDecoration();
       },
     );
     this.disposables.push(disposable);
   }
 
-  // Prompt color to user
-  // Will be replaced by color picker once available in VsCode API: https://github.com/microsoft/vscode/pull/178242
-  async promptColor(org: string) {
+  /**
+   * Let the user pick a color from the palette of the extension design system,
+   * previewing each one live, rather than typing a raw hexadecimal code.
+   * Returns a hex color, "automatic" to drop the override, or null if cancelled.
+   */
+  async promptColor(org: string): Promise<string | null> {
+    const paletteItems: (vscode.QuickPickItem & { value: string })[] = [
+      { label: t("orgColorNameRed"), value: ORG_HUES.production.strong },
+      { label: t("orgColorNameOrange"), value: ORG_HUES.major.strong },
+      { label: t("orgColorNameGreen"), value: ORG_HUES.sandbox.strong },
+      { label: t("orgColorNameCyan"), value: ORG_HUES.scratch.strong },
+      { label: t("orgColorNameBlue"), value: ORG_HUES.dev.strong },
+    ].map((item) => {
+      return { ...item, description: item.value };
+    });
+    const customItem: vscode.QuickPickItem & { value: string } = {
+      label: `$(edit) ${t("orgColorCustom")}`,
+      value: "custom",
+    };
+    const automaticItem: vscode.QuickPickItem & { value: string } = {
+      label: `$(discard) ${t("orgColorAutomatic")}`,
+      value: "automatic",
+    };
+    const quickPick = vscode.window.createQuickPick<
+      vscode.QuickPickItem & { value: string }
+    >();
+    quickPick.title = t("orgColorPickTitle", { org });
+    quickPick.placeholder = t("orgColorPickPlaceholder");
+    quickPick.ignoreFocusOut = true;
+    quickPick.items = [...paletteItems, customItem, automaticItem];
+    let previewedValue: string | null = null;
+    quickPick.onDidChangeActive(async (active) => {
+      const value = active?.[0]?.value;
+      if (!value || value === previewedValue || !isValidHexColor(value)) {
+        return;
+      }
+      previewedValue = value;
+      await this.previewColor(value);
+    });
+    const picked = await new Promise<
+      (vscode.QuickPickItem & { value: string }) | null
+    >((resolve) => {
+      quickPick.onDidAccept(() => {
+        resolve(quickPick.selectedItems[0] || null);
+        quickPick.hide();
+      });
+      quickPick.onDidHide(() => {
+        resolve(null);
+        quickPick.dispose();
+      });
+      quickPick.show();
+    });
+    if (!picked) {
+      return null;
+    }
+    if (picked.value === "custom") {
+      return await this.promptCustomHexColor(org);
+    }
+    return picked.value;
+  }
+
+  // Free hexadecimal input, kept as an escape hatch behind the palette
+  async promptCustomHexColor(org: string): Promise<string | null> {
     const inputBoxOptions: vscode.InputBoxOptions = {
       prompt: t("enterColorPrompt", { org }),
       placeHolder: t("enterColorPlaceholder"),
       ignoreFocusOut: true,
       validateInput: (text) => {
-        return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(text)
+        return isValidHexColor(text)
           ? null
-          : "This is not a valid color code ! (ex: #0335fc)"; // return null if validates
+          : "This is not a valid color code ! (ex: #0335fc)";
       },
     };
     try {
       const color = await vscode.window.showInputBox(inputBoxOptions);
-      return color;
+      return color || null;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       return null;
@@ -168,8 +297,10 @@ export class HardisColors {
             lowPriority: true,
           })
         : null;
-      const orgColor = await this.getCurrentDefaultOrgColor();
-      await this.applyColor(orgColor);
+      this.currentOrgColorKind = await this.computeOrgColorKind();
+      await this.refreshCustomColor();
+      await this.refreshDecoration();
+      this.warnAboutSensitiveOrg();
       // Refresh status panel when colors is changed except at initialization
       if (this.initializing === false) {
         vscode.commands.executeCommand(
@@ -180,107 +311,54 @@ export class HardisColors {
     }
   }
 
-  describeOrgColors() {
-    return {
-      production: "#8c1004", // red
-      major: "#a66004", // orange
-      dev: "#2f53a8", // blue
-    };
-  }
-
   /**
-   * Match a domain against customOrgColors keys, supporting wildcard (`*`) patterns.
-   * Exact matches take priority over wildcard matches.
+   * Match a domain against customOrgColors keys, supporting wildcard (`*`)
+   * patterns. Exact matches take priority over wildcard matches.
    */
   getCustomOrgColor(
     domain: string,
     customOrgColors: Record<string, string>,
   ): string | null {
-    if (!domain) {
-      return null;
+    const { color, hasInvalidPattern } = matchCustomOrgColor(
+      domain,
+      customOrgColors,
+    );
+    if (hasInvalidPattern && this.invalidCustomOrgColorWarningShown === false) {
+      this.invalidCustomOrgColorWarningShown = true;
+      vscode.window.showWarningMessage(t("invalidOrgColorUrls"), t("close"));
     }
-    const validURL = (url: string) => {
-      const cleanedUrl = url.replaceAll("*", "placeholder");
-      try {
-        new URL(cleanedUrl);
-        return true;
-      } catch {
-        return false;
-      }
-    };
-    const normalize = (s: string) => s.replace(/\/+$/, "").toLowerCase();
-    const normalizedDomain = normalize(domain);
-    const wildcardPatterns: string[] = [];
-    let hasInvalidPattern: boolean = false;
-    let fullURLMatchColor: string | null = null;
-    for (const pattern of Object.keys(customOrgColors)) {
-      const normalizedPattern = normalize(pattern);
-      if (!validURL(normalizedPattern)) {
-        hasInvalidPattern = true;
-      }
-      if (pattern.includes("*")) {
-        wildcardPatterns.push(pattern);
-      } else if (normalizedPattern === normalizedDomain) {
-        fullURLMatchColor = customOrgColors[pattern];
-      }
-    }
-    if (hasInvalidPattern) {
-      if (this.invalidCustomOrgColorWarningShown === false) {
-        this.invalidCustomOrgColorWarningShown = true;
-        vscode.window.showWarningMessage(t("invalidOrgColorUrls"), t("close"));
-      }
-    }
-    if (fullURLMatchColor) {
-      return fullURLMatchColor;
-    }
-
-    for (const pattern of wildcardPatterns) {
-      // Build regex: split on '*', escape each part, join with '.*'
-      const regex = new RegExp(
-        "^" +
-          normalize(pattern)
-            .split("*")
-            .map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-            .join(".*") +
-          "$",
-        "i",
-      );
-      if (regex.test(normalizedDomain)) {
-        return customOrgColors[pattern];
-      }
-    }
-
-    return null;
+    return color;
   }
 
-  // Get org color :)
-  async getCurrentDefaultOrgColor() {
-    // Get user customized color directly in config/.sfdx-hardis.yml
+  async refreshCustomColor() {
     const sfdxHardisConfig = await readSfdxHardisConfig();
     const customOrgColors = sfdxHardisConfig.customOrgColors || {};
-    const forcedColor = this.getCustomOrgColor(
+    this.currentCustomColor = this.getCustomOrgColor(
       this.currentDefaultOrgDomain || "",
       customOrgColors,
     );
-    if (
-      this.currentDefaultOrgDomain &&
-      (this.currentDefaultOrgDomain.includes(".sandbox.") ||
-        this.currentDefaultOrgDomain.includes(".scratch."))
-    ) {
-      // We are in a dev sandbox or scratch org !
-      const isMajorOrg = await this.isMajorOrg(
-        this.currentDefaultOrgDomain || "",
-      );
-      if (isMajorOrg) {
-        vscode.window.showWarningMessage(
-          t("majorOrgWarning", { branch: this.majorOrgBranch }),
-          t("close"),
-        );
-        return forcedColor || this.describeOrgColors()["major"]; // orange !
-      }
-      return forcedColor || null;
+  }
+
+  /** Identify what kind of org the current default org is. */
+  async computeOrgColorKind(): Promise<OrgColorKind | null> {
+    if (!this.currentDefaultOrgDomain) {
+      return null;
     }
-    // Production or dev org
+    const isSandboxOrScratch =
+      this.currentDefaultOrgDomain.includes(".sandbox.") ||
+      this.currentDefaultOrgDomain.includes(".scratch.");
+    if (isSandboxOrScratch) {
+      // A sandbox deployed by the CI/CD server (UAT, integration...) is a major org
+      if (await this.isMajorOrg(this.currentDefaultOrgDomain)) {
+        return "major";
+      }
+      if (this.currentDefaultOrgDomain.includes(".scratch.")) {
+        return "scratch";
+      }
+      return "sandbox";
+    }
+    // Production or dev org: production always wins, even when the org is also
+    // declared in a .sfdx-hardis config file as a CI/CD deployment target
     const orgRes = await execSfdxJson(
       `sf data query --query "SELECT OrganizationType FROM Organization LIMIT 1" --target-org "${this.currentDefaultOrg}"`,
       {
@@ -297,145 +375,353 @@ export class HardisColors {
     if (orgRes?.result?.records?.length === 1) {
       const org = orgRes.result.records[0];
       if (PRODUCTION_EDITIONS.includes(org.OrganizationType)) {
-        // We are in production !!
-        vscode.window.showWarningMessage(t("productionOrgWarning"), t("close"));
-        return forcedColor || this.describeOrgColors()["production"]; // red !
+        return "production";
       }
-      return forcedColor || this.describeOrgColors()["dev"]; // blue
+      // A developer org can still be a CI/CD deployment target
+      if (await this.isMajorOrg(this.currentDefaultOrgDomain)) {
+        return "major";
+      }
+      return "dev";
     }
-    // Default color
-    return forcedColor || null;
+    return null;
   }
 
-  // Apply color to current VsCode Workspace config
-  async applyColor(color: string | null) {
-    if (vscode.workspace.workspaceFolders) {
-      const config = vscode.workspace.getConfiguration();
-      const colorUpdateLocation =
-        config.get("vsCodeSfdxHardis.colorUpdateLocation") || "Workspace";
-      let colorCustomization = config.get("workbench.colorCustomizations");
-      // Ensure colorCustomization is an object and convert proxy to plain object
-      if (
-        typeof colorCustomization !== "object" ||
-        colorCustomization === null
-      ) {
-        colorCustomization = {};
+  /** Warn once per org and per session, not on every config file change. */
+  warnAboutSensitiveOrg() {
+    const orgKey = this.currentDefaultOrgDomain || this.currentDefaultOrg || "";
+    if (!orgKey || this.warnedOrgs.has(orgKey)) {
+      return;
+    }
+    if (this.currentOrgColorKind === "production") {
+      this.warnedOrgs.add(orgKey);
+      vscode.window.showWarningMessage(t("productionOrgWarning"), t("close"));
+    } else if (this.currentOrgColorKind === "major") {
+      this.warnedOrgs.add(orgKey);
+      vscode.window.showWarningMessage(
+        t("majorOrgWarning", { branch: this.majorOrgBranch }),
+        t("close"),
+      );
+    }
+  }
+
+  getColorMode(): OrgColorMode {
+    const mode = vscode.workspace
+      .getConfiguration("vsCodeSfdxHardis")
+      .get<OrgColorMode>("orgColorMode");
+    if (mode === "off" || mode === "tinted" || mode === "full") {
+      return mode;
+    }
+    return "accent";
+  }
+
+  /**
+   * One-shot upgrade of the deprecated `disableVsCodeColors` boolean into
+   * `orgColorMode`, so nothing in the runtime has to keep reading the old
+   * setting. Self-clearing: once the deprecated key is gone, this does nothing.
+   */
+  async migrateDeprecatedSettings() {
+    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+    const deprecated = config.inspect<boolean>("disableVsCodeColors");
+    const targets: [any, ColorUpdateLocation][] = [
+      [deprecated?.globalValue, "User"],
+      [deprecated?.workspaceValue, "Workspace"],
+    ];
+    for (const [deprecatedValue, target] of targets) {
+      if (deprecatedValue === undefined) {
+        continue;
       }
-      // Convert proxy object to plain object to allow delete operations
-      const colorCustomObj = JSON.parse(
-        JSON.stringify(colorCustomization),
-      ) as Record<string, any>;
-      this.savePreviousCustomizedColors(colorCustomObj);
-      if (color !== null) {
-        colorCustomObj["statusBar.background"] = color;
-        colorCustomObj["activityBar.background"] = color;
-        // Update config file with the new color
+      const configurationTarget = this.getConfigurationTarget(target);
+      try {
+        if (deprecatedValue === true) {
+          const mode = config.inspect<OrgColorMode>("orgColorMode");
+          const alreadySet =
+            target === "User" ? mode?.globalValue : mode?.workspaceValue;
+          if (!alreadySet) {
+            await config.update("orgColorMode", "off", configurationTarget);
+          }
+        }
         await config.update(
-          "workbench.colorCustomizations",
-          colorCustomObj,
-          colorUpdateLocation === "Workspace"
-            ? vscode.ConfigurationTarget.Workspace
-            : vscode.ConfigurationTarget.Global,
+          "disableVsCodeColors",
+          undefined,
+          configurationTarget,
         );
-      } else if (
-        colorCustomObj["statusBar.background"] ||
-        colorCustomObj["activityBar.background"]
-      ) {
-        // Check if current colors are org colors managed by this extension
-        const orgColors = Object.values(this.describeOrgColors());
-        const statusBarIsOrgColor =
-          colorCustomObj["statusBar.background"] &&
-          orgColors.includes(colorCustomObj["statusBar.background"]);
-        const activityBarIsOrgColor =
-          colorCustomObj["activityBar.background"] &&
-          orgColors.includes(colorCustomObj["activityBar.background"]);
-
-        // Check if previous colors are org colors
-        const statusBarPreviousIsOrgColor =
-          colorCustomObj["statusBar.backgroundPrevious"] &&
-          orgColors.includes(colorCustomObj["statusBar.backgroundPrevious"]);
-        const activityBarPreviousIsOrgColor =
-          colorCustomObj["activityBar.backgroundPrevious"] &&
-          orgColors.includes(colorCustomObj["activityBar.backgroundPrevious"]);
-
-        // Check if current colors are part of custom config defined for sfdx-hardis
-        const sfdxHardisConfig = await readSfdxHardisConfig();
-        const customOrgColors = Object.values(
-          sfdxHardisConfig.customOrgColors || {},
+        Logger.log(
+          `Migrated deprecated setting disableVsCodeColors to orgColorMode (${target})`,
         );
-        const statusBarIsCustomColor =
-          colorCustomObj["statusBar.background"] &&
-          customOrgColors.includes(colorCustomObj["statusBar.background"]);
-        const activityBarIsCustomColor =
-          colorCustomObj["activityBar.background"] &&
-          customOrgColors.includes(colorCustomObj["activityBar.background"]);
-
-        // Check if previous colors are custom colors
-        const statusBarPreviousIsCustomColor =
-          colorCustomObj["statusBar.backgroundPrevious"] &&
-          customOrgColors.includes(
-            colorCustomObj["statusBar.backgroundPrevious"],
-          );
-        const activityBarPreviousIsCustomColor =
-          colorCustomObj["activityBar.backgroundPrevious"] &&
-          customOrgColors.includes(
-            colorCustomObj["activityBar.backgroundPrevious"],
-          );
-
-        let updated = false;
-
-        // Handle statusBar.background
-        if (colorCustomObj["statusBar.background"]) {
-          if (statusBarIsOrgColor || statusBarIsCustomColor) {
-            // Current color is an org or custom color, remove it
-            delete colorCustomObj["statusBar.background"];
-            updated = true;
-          } else if (
-            colorCustomObj["statusBar.backgroundPrevious"] &&
-            !statusBarPreviousIsOrgColor &&
-            !statusBarPreviousIsCustomColor
-          ) {
-            // There's a previous backup and it's not an org or custom color, restore it
-            colorCustomObj["statusBar.background"] =
-              colorCustomObj["statusBar.backgroundPrevious"];
-            delete colorCustomObj["statusBar.backgroundPrevious"];
-            updated = true;
-          }
-          // Otherwise, keep the current color
-        }
-
-        // Handle activityBar.background
-        if (colorCustomObj["activityBar.background"]) {
-          if (activityBarIsOrgColor || activityBarIsCustomColor) {
-            // Current color is an org color or custom color, remove it
-            delete colorCustomObj["activityBar.background"];
-            updated = true;
-          } else if (
-            colorCustomObj["activityBar.backgroundPrevious"] &&
-            !activityBarPreviousIsOrgColor &&
-            !activityBarPreviousIsCustomColor
-          ) {
-            // There's a previous backup and it's not an org or custom color, restore it
-            colorCustomObj["activityBar.background"] =
-              colorCustomObj["activityBar.backgroundPrevious"];
-            delete colorCustomObj["activityBar.backgroundPrevious"];
-            updated = true;
-          }
-          // Otherwise, keep the current color
-        }
-
-        // Update config only if changes were made
-        if (updated) {
-          await config.update(
-            "workbench.colorCustomizations",
-            colorCustomObj,
-            colorUpdateLocation === "Workspace"
-              ? vscode.ConfigurationTarget.Workspace
-              : vscode.ConfigurationTarget.Global,
-          );
-        }
+      } catch (error: any) {
+        Logger.log(
+          `Unable to migrate deprecated setting disableVsCodeColors: ${error.message}`,
+        );
       }
     }
+  }
+
+  /**
+   * One-shot cleanup of what previous versions left in the user settings: the
+   * invalid `*Previous` color ids, and the hardcoded org colors they wrote.
+   * Without it, those leftovers would be recorded as "the color the user had
+   * before" and restored later when the feature is turned off.
+   */
+  async migrateLegacyOrgColors() {
+    const knownOrgColors = await this.listKnownOrgColors();
+    for (const target of ["Workspace", "User"] as ColorUpdateLocation[]) {
+      const memento = this.getStateMemento(target);
+      if (memento.get(LEGACY_CLEANUP_STATE_KEY) === true) {
+        continue;
+      }
+      const currentColors = this.getColorCustomizationsOfTarget(target);
+      const initialContent = JSON.stringify(currentColors);
+      // Restore the color the user had before, then drop the invalid key
+      for (const legacyKey of LEGACY_COLOR_KEYS) {
+        if (currentColors[legacyKey] === undefined) {
+          continue;
+        }
+        const originalKey = legacyKey.replace(/Previous$/, "");
+        if (
+          currentColors[originalKey] === undefined ||
+          knownOrgColors.includes(currentColors[originalKey])
+        ) {
+          currentColors[originalKey] = currentColors[legacyKey];
+        }
+        delete currentColors[legacyKey];
+      }
+      // Drop any leftover org color written by a previous version
+      for (const key of MANAGED_COLOR_KEYS) {
+        if (knownOrgColors.includes(currentColors[key])) {
+          delete currentColors[key];
+        }
+      }
+      if (JSON.stringify(currentColors) !== initialContent) {
+        await this.updateColorCustomizationsOfTarget(target, currentColors);
+      }
+      await memento.update(LEGACY_CLEANUP_STATE_KEY, true);
+    }
+  }
+
+  getColorUpdateLocation(): ColorUpdateLocation {
+    const config = vscode.workspace.getConfiguration();
+    return config.get("vsCodeSfdxHardis.colorUpdateLocation") === "User"
+      ? "User"
+      : "Workspace";
+  }
+
+  getThemeVariant(): ThemeVariant {
+    const kind = vscode.window.activeColorTheme.kind;
+    if (
+      kind === vscode.ColorThemeKind.Light ||
+      kind === vscode.ColorThemeKind.HighContrastLight
+    ) {
+      return "light";
+    }
+    return "dark";
+  }
+
+  /**
+   * High contrast themes are carefully tuned for accessibility: overriding
+   * their workbench colors does more harm than good, so only the status bar
+   * badge is kept there.
+   */
+  isHighContrastTheme(): boolean {
+    const kind = vscode.window.activeColorTheme.kind;
+    return (
+      kind === vscode.ColorThemeKind.HighContrast ||
+      kind === vscode.ColorThemeKind.HighContrastLight
+    );
+  }
+
+  /** Recompute and apply the shell colors and the status bar badge. */
+  async refreshDecoration() {
+    const mode = this.getColorMode();
+    const hue = resolveOrgHue(this.currentOrgColorKind, this.currentCustomColor);
+    const colors =
+      mode === "off" || this.isHighContrastTheme()
+        ? {}
+        : buildOrgColorCustomizations(hue, mode, this.getThemeVariant());
+    await this.writeColorCustomizations(colors);
+    this.updateStatusBarItem();
+  }
+
+  /** Apply a color without persisting it in the sfdx-hardis configuration. */
+  async previewColor(hexColor: string) {
+    const mode = this.getColorMode();
+    if (mode === "off" || this.isHighContrastTheme()) {
+      return;
+    }
+    const hue = resolveOrgHue(this.currentOrgColorKind, hexColor);
+    await this.writeColorCustomizations(
+      buildOrgColorCustomizations(hue, mode, this.getThemeVariant()),
+    );
+  }
+
+  getStateMemento(target: ColorUpdateLocation): vscode.Memento {
+    return target === "User"
+      ? this.context.globalState
+      : this.context.workspaceState;
+  }
+
+  getConfigurationTarget(
+    target: ColorUpdateLocation,
+  ): vscode.ConfigurationTarget {
+    return target === "User"
+      ? vscode.ConfigurationTarget.Global
+      : vscode.ConfigurationTarget.Workspace;
+  }
+
+  /**
+   * Read `workbench.colorCustomizations` for a single target: `get()` returns
+   * the merged value, and writing that back would copy the user settings into
+   * the workspace ones.
+   */
+  getColorCustomizationsOfTarget(
+    target: ColorUpdateLocation,
+  ): Record<string, string> {
+    const inspected = vscode.workspace
+      .getConfiguration()
+      .inspect<Record<string, string>>("workbench.colorCustomizations");
+    const value =
+      target === "User" ? inspected?.globalValue : inspected?.workspaceValue;
+    return { ...(value || {}) };
+  }
+
+  async updateColorCustomizationsOfTarget(
+    target: ColorUpdateLocation,
+    colors: Record<string, string>,
+  ) {
+    try {
+      await vscode.workspace
+        .getConfiguration()
+        .update(
+          "workbench.colorCustomizations",
+          Object.keys(colors).length > 0 ? colors : undefined,
+          this.getConfigurationTarget(target),
+        );
+    } catch (error: any) {
+      Logger.log(`Unable to update VS Code org colors: ${error.message}`);
+    }
+  }
+
+  /**
+   * Single entry point for every settings write.
+   *
+   * For each target it restores what the extension had written before (using
+   * the bookkeeping stored in the extension state, never in the user settings),
+   * then applies the new color set on the configured target. One settings write
+   * per target, so the workbench never flickers through an intermediate state.
+   */
+  async writeColorCustomizations(colors: Record<string, string>) {
+    if (!vscode.workspace.workspaceFolders) {
+      return;
+    }
+    const targetToApply =
+      Object.keys(colors).length > 0 ? this.getColorUpdateLocation() : null;
+    for (const target of ["Workspace", "User"] as ColorUpdateLocation[]) {
+      const memento = this.getStateMemento(target);
+      const state = memento.get<AppliedColorsState>(APPLIED_COLORS_STATE_KEY);
+      const currentColors = this.getColorCustomizationsOfTarget(target);
+      const initialContent = JSON.stringify(currentColors);
+      // Restore what we replaced
+      for (const key of state?.keys || []) {
+        if (state?.previous?.[key] !== undefined) {
+          currentColors[key] = state.previous[key];
+        } else {
+          delete currentColors[key];
+        }
+      }
+      // Apply the new color set on the configured target
+      let newState: AppliedColorsState | undefined = undefined;
+      if (target === targetToApply) {
+        const previous: Record<string, string> = {};
+        for (const [key, value] of Object.entries(colors)) {
+          if (currentColors[key] !== undefined) {
+            previous[key] = currentColors[key];
+          }
+          currentColors[key] = value;
+        }
+        newState = {
+          target: target,
+          keys: Object.keys(colors),
+          previous: previous,
+        };
+      }
+      if (JSON.stringify(currentColors) !== initialContent) {
+        await this.updateColorCustomizationsOfTarget(target, currentColors);
+      }
+      if (state !== undefined || newState !== undefined) {
+        await memento.update(APPLIED_COLORS_STATE_KEY, newState);
+      }
+    }
+  }
+
+  /**
+   * Every color value that could have been written as an org color by this
+   * extension, current or previous versions. Only used by the one-shot legacy
+   * cleanup, to tell our own leftovers from a color the user picked.
+   */
+  async listKnownOrgColors(): Promise<string[]> {
+    const colors = [...LEGACY_ORG_COLORS];
+    for (const hue of Object.values(ORG_HUES)) {
+      colors.push(hue.strong);
+    }
+    try {
+      const sfdxHardisConfig = await readSfdxHardisConfig();
+      const customOrgColors: Record<string, string> =
+        sfdxHardisConfig.customOrgColors || {};
+      colors.push(...Object.values(customOrgColors));
+    } catch (error: any) {
+      Logger.log(`Unable to read custom org colors: ${error.message}`);
+    }
+    return colors;
+  }
+
+  /**
+   * The org type badge: the primary, always readable signal. VS Code renders
+   * `statusBarItem.errorBackground` and `statusBarItem.warningBackground`
+   * correctly in every theme, so no color math is needed here.
+   */
+  updateStatusBarItem() {
+    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+    const kind = this.currentOrgColorKind;
+    if (config.get("showOrgStatusBarItem") === false || !kind) {
+      this.statusBarItem?.hide();
+      return;
+    }
+    if (!this.statusBarItem) {
+      this.statusBarItem = vscode.window.createStatusBarItem(
+        "sfdxHardis.defaultOrg",
+        vscode.StatusBarAlignment.Left,
+        200,
+      );
+      this.statusBarItem.name = "SFDX Hardis: Default Org";
+      this.statusBarItem.command = "vscode-sfdx-hardis.openOrgsManager";
+      this.disposables.push(this.statusBarItem);
+    }
+    const badge = ORG_BADGES[kind];
+    const badgeLabel = t(badge.labelKey);
+    const host = this.getOrgHostLabel();
+    this.statusBarItem.text = host
+      ? `$(${badge.icon}) ${badgeLabel} · ${host}`
+      : `$(${badge.icon}) ${badgeLabel}`;
+    this.statusBarItem.tooltip = t("orgBadgeTooltip", {
+      type: badgeLabel,
+      org: this.currentDefaultOrg || this.currentDefaultOrgDomain || host,
+    });
+    if (badge.severity === "error") {
+      this.statusBarItem.backgroundColor = new vscode.ThemeColor(
+        "statusBarItem.errorBackground",
+      );
+    } else if (badge.severity === "warning") {
+      this.statusBarItem.backgroundColor = new vscode.ThemeColor(
+        "statusBarItem.warningBackground",
+      );
+    } else {
+      this.statusBarItem.backgroundColor = undefined;
+    }
+    this.statusBarItem.show();
+  }
+
+  /** Short org name for the status bar, e.g. `wecheck--devmercury` */
+  getOrgHostLabel(): string {
+    return shortenOrgHost(this.currentDefaultOrgDomain || "");
   }
 
   async isMajorOrg(orgInstanceUrl: string) {
@@ -487,36 +773,18 @@ export class HardisColors {
     return [];
   }
 
-  savePreviousCustomizedColors(colorCustomObj: Record<string, any>) {
-    if (
-      colorCustomObj["statusBar.background"] &&
-      !Object.values(this.describeOrgColors()).includes(
-        colorCustomObj["statusBar.background"],
-      )
-    ) {
-      colorCustomObj["statusBar.backgroundPrevious"] =
-        colorCustomObj["statusBar.background"];
-    }
-    if (
-      colorCustomObj["activityBar.background"] &&
-      !Object.values(this.describeOrgColors()).includes(
-        colorCustomObj["activityBar.background"],
-      )
-    ) {
-      colorCustomObj["activityBar.backgroundPrevious"] =
-        colorCustomObj["activityBar.background"];
-    }
-  }
-
-  reset() {
+  async reset() {
     this.currentDefaultOrg = undefined;
     this.currentDefaultOrgDomain = undefined;
+    this.currentOrgColorKind = null;
+    this.currentCustomColor = null;
     this.majorOrgInstanceUrls = [];
     this.disposables.map((disposable) => disposable.dispose());
-    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
-    if (!config.get("disableVsCodeColors") === true) {
-      this.applyColor(null);
-    }
+    this.disposables = [];
+    this.statusBarItem = undefined;
+    // Always clean up: leaving colors behind when the feature is switched off
+    // used to strand the workspace in the color of the last selected org.
+    await this.writeColorCustomizations({});
   }
 
   // Remove custom colors when quitting the extension or VsCode

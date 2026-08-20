@@ -112,7 +112,30 @@
         "vsCodeSfdxHardis.disableVsCodeColors": {
           "type": "boolean",
           "default": false,
-          "description": "Disable coloration of VsCode depending on the org type selected (red for production, orange for major org...)"
+          "description": "Disable coloration of VsCode depending on the org type selected (red for production, orange for major org...)",
+          "markdownDeprecationMessage": "Deprecated: use `#vsCodeSfdxHardis.orgColorMode#` and set it to `off` instead."
+        },
+        "vsCodeSfdxHardis.orgColorMode": {
+          "type": "string",
+          "default": "accent",
+          "enum": [
+            "accent",
+            "tinted",
+            "full",
+            "off"
+          ],
+          "enumDescriptions": [
+            "Color the status bar and the activity indicators only (recommended)",
+            "Also tint the title bar",
+            "Also fill the activity bar (previous behavior)",
+            "Never change VS Code colors depending on the selected org"
+          ],
+          "description": "How much of VS Code is colored depending on the type of the selected default org (red for production, orange for major org, green for dev sandbox...). Colors adapt to your light or dark theme, and are never applied on high contrast themes."
+        },
+        "vsCodeSfdxHardis.showOrgStatusBarItem": {
+          "type": "boolean",
+          "default": true,
+          "description": "Display the type of the selected default org (PROD, MAJOR, SANDBOX, SCRATCH, DEV ORG) in the VS Code status bar"
         },
         "vsCodeSfdxHardis.colorUpdateLocation": {
           "type": "string",

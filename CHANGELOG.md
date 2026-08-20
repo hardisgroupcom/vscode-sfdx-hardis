@@ -18,6 +18,14 @@
   - Fixed help tooltips that displayed black text on their dark blue background in **dark mode**, making them **nearly impossible to read** ([#2051](https://github.com/hardisgroupcom/sfdx-hardis/issues/2051))
   - Fixed the **Language** tab of the Extension Settings, which showed the raw key `languageSection` instead of its name
 
+- **VS Code colors per org**
+  - A badge in the status bar now spells out the type of your default org - **PROD**, **MAJOR**, **SANDBOX**, **SCRATCH** or **DEV ORG** - and opens the Orgs Manager when clicked
+  - Colors now use the same **Salesforce palette as the extension panels** and adapt to your **light or dark theme**; dev sandboxes are green and scratch orgs cyan, instead of being left uncolored
+  - Text and icons stay readable on every colored bar in both themes (activity bar icons could previously become invisible in light themes)
+  - New **Org color mode** setting to choose how much of the window is colored: status bar only (new default), title bar too, or the whole activity bar as before - high contrast themes are never recolored
+  - **Select color for current org** now offers a palette with a live preview instead of asking you to type a color code, and can restore the automatic color
+  - Turning the colors off now restores your original VS Code colors, and the extension no longer leaves invalid entries in your settings file
+
 - **Performance**
   - Commands launched from the menu now open their execution tab **immediately** when clicked, instead of after the Salesforce CLI finished booting (which could take **more than 10 seconds**)
   - Commands run in a terminal now **start immediately**
