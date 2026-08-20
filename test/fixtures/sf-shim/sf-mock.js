@@ -879,10 +879,13 @@ const DOCS_SCENARIOS = {
         {
           title: "integration",
           value: "integration",
-          description: "Integration sandbox",
+          description: "New features and enhancements (BUILD)",
         },
-        { title: "uat", value: "uat", description: "User Acceptance Testing" },
-        { title: "preprod", value: "preprod", description: "Pre-production" },
+        {
+          title: "preprod",
+          value: "preprod",
+          description: "Hotfixes on the production version (RUN)",
+        },
       ],
     });
     log("log", "integration");

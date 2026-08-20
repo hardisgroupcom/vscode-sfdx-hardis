@@ -5,9 +5,10 @@ instanceUrl: https://mycompany.my.salesforce.com
 targetUsername: deploy.user@mycompany.com
 availableTargetBranches:
   - integration
-  - uat
   - preprod
-  - main
+availableTargetBranchesLabels:
+  - New features and enhancements (BUILD)
+  - Hotfixes on the production version (RUN)
 availableProjects:
   - CRM,Customer Relationship Management
   - BILLING,Billing & Invoicing
