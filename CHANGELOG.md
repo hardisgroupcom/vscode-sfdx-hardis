@@ -95,6 +95,7 @@
   - All the **screenshots of the documentation** are regenerated with the new design (and are now regenerated automatically, so they will no longer drift from the real product)
     - The sample data behind them is now modeled on real sfdx-hardis projects: the DevOps Pipeline shows open pull requests, feature branches and running CI jobs, the monitoring panels a real monitoring configuration, and the org list real-life connection states
     - Most **animated GIFs** of the documentation are now assembled automatically from scripted recordings of the same harness
+    - New documentation images for the v8 guides: the Installed Packages panel, the Pipeline Settings panel, the contribution cards of the DevOps Pipeline, the Pull Requests merged in a major branch and the deployment actions of a Pull Request
   - The extension package no longer ships **15 MB of obsolete images** (old menu screenshots and demo animation) that nothing displayed anymore
 
 ## [7.18.0] 2026-07-26

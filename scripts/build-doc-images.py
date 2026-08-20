@@ -55,6 +55,8 @@ PANEL_SHOTS = {
     "install-dependencies-screenshot.png": "missing/setup",
     "ProductivityCommands.png": "user-activateinvalid-multiselect",
     "command-runner.png": "command-runner-question",
+    "installed-packages.png": "installed-packages",
+    "pipeline-config.png": "pipeline-config",
 }
 
 # Width of the activity bar + side bar in a capture: the editor area (the
@@ -75,6 +77,8 @@ WEBVIEW_ONLY = {
     "org-monitoring.png",
     "dependencies-ok-ui.png",
     "command-runner.png",
+    "installed-packages.png",
+    "pipeline-config.png",
 }
 
 # --- Crops of a single side bar row ----------------------------------------
@@ -108,6 +112,21 @@ BOX_CROPS = {
     # "My Pull Request" contribution card (pipeline-workflow-cards is captured
     # two zoom levels out so the second card row fits in the window)
     "card-my-pull-request.png": ("pipeline-workflow-cards", (1378, 698, 1630, 806)),
+    # The whole "Project Contribution Workflow" card row (same zoomed-out
+    # capture), for the Contributor Guide overview
+    "pipeline-contribution-cards.png": ("pipeline-workflow-cards", (312, 636, 1910, 818)),
+    # Branch modal of the pipeline, on its Pull Requests tab (merged Pull
+    # Requests of the branch, with the Release Notes buttons)
+    "screenshot-branch-pull-requests.jpg": (
+        "pipeline-branch-modal",
+        (470, 60, 1866, 810),
+    ),
+    # Deployment Actions tab of the "My Pull Request" modal, listing the
+    # actions of the PR #125 fixture (captured two zoom levels out)
+    "screenshot-pr-deployment-actions-list.jpg": (
+        "pipeline-pr-actions-list",
+        (338, 36, 1884, 852),
+    ),
     # Branch modal of the pipeline, on its Deployment Actions tab
     "screenshot-deployment-actions.jpg": (
         "pipeline-branch-modal-actions",
