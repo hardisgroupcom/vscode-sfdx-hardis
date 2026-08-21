@@ -167,7 +167,7 @@
         },
         "vsCodeSfdxHardis.theme.colorTheme": {
           "type": "string",
-          "default": "auto",
+          "default": "light",
           "enum": [
             "auto",
             "light",

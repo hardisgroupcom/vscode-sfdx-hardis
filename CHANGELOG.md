@@ -1,5 +1,9 @@
 # Changelog
 
+## [8.0.1] 2026-08-21
+
+- Set default theme as light
+
 ## [8.0.0] 2026-08-21
 
 - **What's new in v8**
