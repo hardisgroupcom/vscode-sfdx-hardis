@@ -247,14 +247,13 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       },
     ];
 
-    // Only show the pull request author and column in branch mode, where the
-    // actions of several pull requests are aggregated in the same table
-    if (this.modalMode !== "singlePR") {
+    // Only show the pull request author and column when the actions of
+    // several pull requests are aggregated in the same table: branch mode, or
+    // the modal of a Pull Request between two major branches
+    if (this.modalActionsAggregated) {
       columns.push(this._authorColumn());
       columns.push(this._pullRequestColumn());
-    }
-
-    if (this.modalMode === "singlePR") {
+    } else {
       columns.push({
         key: "delete",
         label: this.i18n.deleteLabel,
@@ -375,6 +374,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   modalActiveTabValue = "prs";
   // Tab to activate the next time the single PR modal opens (consumed on open).
   _nextModalTab = null;
+  // True when the single-PR modal shows a Pull Request between two major
+  // branches: its deployment actions are the ones of the feature Pull
+  // Requests it carries, listed read-only with their author and Pull Request
+  @track modalIsMajorPr = false;
   // Deep link received before the pull request data is available, applied as soon
   // as the current branch pull request is known (see _maybeApplyPendingDeepLink).
   _pendingDeepLink = null;
@@ -2601,14 +2604,18 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // Single PR details are enriched with tickets / deployment actions, so keep
     // those tabs visible.
     this.isFeaturePrModal = false;
+    this.modalIsMajorPr = pr.isMajorToMajor === true;
     // Map through icons so the job status column (statusPill) is populated.
     this.modalPullRequests = this._mapPrsWithIcons([pr]);
 
     // Aggregate tickets from this single PR
     this.modalTickets = this._aggregateTicketsFromPRs([pr]);
 
-    // Aggregate deployment actions from this single PR
-    this.modalActions = this._aggregateActionsFromPRs([pr]);
+    // Deployment actions: the PR's own ones, or, for a Pull Request between
+    // two major branches, the ones of the feature Pull Requests it carries
+    this.modalActions = this.modalIsMajorPr
+      ? this._aggregateActionsFromPRs(pr.aggregatedPullRequests || [])
+      : this._aggregateActionsFromPRs([pr]);
 
     // Set Apex tests list for this single PR
     const apexTests =
@@ -3054,7 +3061,23 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   get showAddActionButton() {
-    return this.modalMode === "singlePR";
+    return this.modalMode === "singlePR" && !this.modalIsMajorPr;
+  }
+
+  // Actions of several Pull Requests listed in one table (branch mode, or a
+  // Pull Request between two major branches): read-only, with author and PR
+  get modalActionsAggregated() {
+    return this.modalMode !== "singlePR" || this.modalIsMajorPr;
+  }
+
+  get showMajorPrActionsHint() {
+    return this.modalMode === "singlePR" && this.modalIsMajorPr;
+  }
+
+  get majorPrActionsHint() {
+    return this.t("deploymentActionsAggregatedHint", {
+      branch: this.modalBranchName,
+    });
   }
 
   handleAddNewAction() {

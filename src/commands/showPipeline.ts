@@ -230,6 +230,15 @@ export function registerShowPipeline(commands: Commands) {
 
       let pipelineProperties: PipelineInfo | null = null;
 
+      // The deep link travels with the staged payloads: the webview applies
+      // the data embedded in its HTML only when no "initialize" message got
+      // there first, and every sendInitializationData() call replaces the
+      // data re-sent on webviewReady. On a fast load, the pipeline data
+      // arrives before the page finished booting, so a deep link carried
+      // by the first payload only would be lost and the panel would open on
+      // its home view. Consumed by the last stage of the first load.
+      let pendingDeepLink = pipelineDeepLink;
+
       // Staged 3-step pipeline loader:
       // Step 1: spinner flags already sent via getOrCreatePanel init data.
       // Step 2: fast load (no git provider) — renders diagram without PR annotations.
@@ -237,7 +246,11 @@ export function registerShowPipeline(commands: Commands) {
       const loadPipelineStaged = async (opts?: { resetGit?: boolean }) => {
         const stagedT0 = Date.now();
         Logger.logPerf("[pipeline-perf] staged load START (step 2: no git)");
-        panel.sendInitializationData({ mermaidLoading: true, prLoading: true });
+        panel.sendInitializationData({
+          mermaidLoading: true,
+          prLoading: true,
+          deepLink: pendingDeepLink,
+        });
         try {
           const fast = await loadAllPipelineInfo({
             browseGitProvider: false,
@@ -255,6 +268,7 @@ export function registerShowPipeline(commands: Commands) {
             mermaidLoading: false,
             mermaidRefreshing: true,
             prLoading: true,
+            deepLink: pendingDeepLink,
           });
           const full = await loadAllPipelineInfo({
             browseGitProvider: true,
@@ -271,7 +285,11 @@ export function registerShowPipeline(commands: Commands) {
             mermaidLoading: false,
             mermaidRefreshing: false,
             prLoading: false,
+            deepLink: pendingDeepLink,
           });
+          // Applied by the webview with this payload: a later staged reload
+          // (refresh with git reset) must not open the modal again
+          pendingDeepLink = null;
         } catch (e: any) {
           Logger.log(
             "[vscode-sfdx-hardis] pipeline staged load failed: " +
@@ -459,6 +477,19 @@ export function registerShowPipeline(commands: Commands) {
               fetchDetails: true,
             });
             const prDetails = prList[0];
+            // A Pull Request between two major branches (ex: integration ->
+            // uat) carries no deployment action of its own: sfdx-hardis runs
+            // the actions declared on the feature Pull Requests merged in its
+            // source branch since the last promotion. The modal lists those,
+            // read-only, instead of proposing to create actions on it.
+            const sourceMajorOrg = (
+              pipelineProperties?.pipelineData?.orgs || []
+            ).find((org: any) => org?.name === prDetails?.sourceBranch);
+            if (prDetails && sourceMajorOrg) {
+              prDetails.isMajorToMajor = true;
+              prDetails.aggregatedPullRequests =
+                sourceMajorOrg.pullRequestsInBranchSinceLastMerge || [];
+            }
             panel.sendMessage({
               type: "returnGetPrInfoForModal",
               data: prDetails || null,

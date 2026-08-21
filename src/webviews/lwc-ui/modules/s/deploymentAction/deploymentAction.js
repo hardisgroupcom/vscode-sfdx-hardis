@@ -7,6 +7,9 @@ import { SharedMixin } from "s/sharedMixin";
 
 export default class DeploymentAction extends SharedMixin(LightningElement) {
   @api action = null;
+  // Hides the Edit button: actions aggregated from several Pull Requests
+  // (branch modal, Pull Request between major branches) are not editable here
+  @api readOnly = false;
   _isEditMode = false;
 
   @api

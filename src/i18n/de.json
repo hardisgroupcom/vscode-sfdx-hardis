@@ -380,6 +380,7 @@
   "deploymentActionMissingRequiredFields": "Bitte füllen Sie vor dem Speichern alle Pflichtfelder aus.",
   "deploymentActionSaved": "Bereitstellungsaktion für {{prLabel}} #{{prNumber}} gespeichert. Vergessen Sie nicht, {{updatedFile}} zu committen und zu pushen",
   "deploymentActionSavedDraft": "Bereitstellungsaktion im Entwurf für den zukünftigen {{prLabel}} gespeichert. Sie wird mit dem {{prLabel}} verknüpft, sobald dieser erstellt wird.",
+  "deploymentActionsAggregatedHint": "Diese Aktionen wurden auf den seit der letzten Promotion in {{branch}} zusammengeführten Pull Requests deklariert. Sie werden bei der Bereitstellung dieses Pull Requests ausgeführt und können hier nicht bearbeitet werden.",
   "deploymentActionsTab": "Bereitstellungsaktionen ({{count}})",
   "deploymentHistoryAnalysis": "Analyse der Deployment-Historie",
   "deploymentHistoryAnalysisTooltip": "Analysiert die auf der Org durchgeführten Metadaten-Deployments und -Validierungen",

@@ -1,0 +1,10 @@
+commandsPostDeploy:
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-123a00000001
+    label: Backfill the Segment field of existing accounts
+    type: apex
+    when: post-deploy
+    parameters:
+      apexScript: scripts/apex/backfill-account-segment.apex
+    command: sf apex run --file scripts/apex/backfill-account-segment.apex
+    context: process-deployment-only
+    runOnlyOnceByOrg: true

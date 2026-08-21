@@ -380,6 +380,7 @@
   "deploymentActionMissingRequiredFields": "Compila tutti i campi obbligatori prima di salvare.",
   "deploymentActionSaved": "Azione di deployment salvata per {{prLabel}} #{{prNumber}}. Non dimenticare di fare commit e push di {{updatedFile}}",
   "deploymentActionSavedDraft": "Azione di deployment salvata come bozza per il futuro {{prLabel}}. Verrà collegata al {{prLabel}} una volta creato.",
+  "deploymentActionsAggregatedHint": "Queste azioni sono state dichiarate sulle Pull Request unite in {{branch}} dall'ultima promozione. Vengono eseguite durante il deployment di questa Pull Request e non possono essere modificate da qui.",
   "deploymentActionsTab": "Azioni di deployment ({{count}})",
   "deploymentHistoryAnalysis": "Analisi dello storico dei deployment",
   "deploymentHistoryAnalysisTooltip": "Analizza i deployment e le validazioni di metadati effettuati sull'org",

@@ -380,6 +380,7 @@
   "deploymentActionMissingRequiredFields": "Veuillez renseigner tous les champs obligatoires avant d'enregistrer.",
   "deploymentActionSaved": "Action de déploiement enregistrée pour {{prLabel}} #{{prNumber}}. N'oubliez pas de committer et pousser {{updatedFile}}",
   "deploymentActionSavedDraft": "Action de déploiement enregistrée dans le fichier brouillon pour la future {{prLabel}}. Elle sera liée à la {{prLabel}} une fois créée.",
+  "deploymentActionsAggregatedHint": "Ces actions ont été déclarées sur les Pull Requests fusionnées dans {{branch}} depuis sa dernière promotion. Elles s'exécutent lors du déploiement de cette Pull Request et ne peuvent pas être modifiées ici.",
   "deploymentActionsTab": "Actions de déploiement ({{count}})",
   "deploymentHistoryAnalysis": "Analyse de l'historique des déploiements",
   "deploymentHistoryAnalysisTooltip": "Analyse les déploiements et validations de métadonnées effectués sur l'org",

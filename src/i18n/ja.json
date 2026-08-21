@@ -380,6 +380,7 @@
   "deploymentActionMissingRequiredFields": "保存する前に必須項目をすべて入力してください。",
   "deploymentActionSaved": "{{prLabel}} #{{prNumber}} のデプロイアクションを保存しました。{{updatedFile}} を commit して push するのを忘れないでください",
   "deploymentActionSavedDraft": "将来の {{prLabel}} 用のドラフトファイルにデプロイアクションを保存しました。作成されると {{prLabel}} に関連付けられます。",
+  "deploymentActionsAggregatedHint": "これらのアクションは、前回のプロモーション以降に {{branch}} にマージされた Pull Request で宣言されたものです。この Pull Request のデプロイ時に実行され、ここでは編集できません。",
   "deploymentActionsTab": "デプロイアクション（{{count}}）",
   "deploymentHistoryAnalysis": "デプロイ履歴の分析",
   "deploymentHistoryAnalysisTooltip": "組織で実行されたメタデータのデプロイと検証を分析します",

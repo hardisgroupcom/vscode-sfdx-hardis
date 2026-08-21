@@ -469,11 +469,13 @@
         </div>
         <footer class="slds-modal__footer">
           <template if:false={isEditMode}>
-            <lightning-button class="hardis-btn-tinted-blue"
-              variant="neutral"
-              label={i18n.editLabel}
-              onclick={handleEdit}
-            ></lightning-button>
+            <template if:false={readOnly}>
+              <lightning-button class="hardis-btn-tinted-blue"
+                variant="neutral"
+                label={i18n.editLabel}
+                onclick={handleEdit}
+              ></lightning-button>
+            </template>
             <lightning-button
               variant="neutral"
               label={i18n.closeLabel}
