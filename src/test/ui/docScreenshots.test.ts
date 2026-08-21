@@ -906,15 +906,15 @@ suite("Documentation screenshots", function () {
       "devops-pipeline",
       16,
       async () => {
-      await sleep(2000);
-      await click(910, 733); // "Open Pull Requests" tab
-      await sleep(3000);
-      await click(618, 733); // "Project Contribution Workflow" tab
-      await sleep(2500);
-      for (let i = 0; i < 3; i++) {
-        await click(1170, 600, { scroll: -2 });
-      }
-      await sleep(1500);
+        await sleep(2000);
+        await click(910, 733); // "Open Pull Requests" tab
+        await sleep(3000);
+        await click(618, 733); // "Project Contribution Workflow" tab
+        await sleep(2500);
+        for (let i = 0; i < 3; i++) {
+          await click(1170, 600, { scroll: -2 });
+        }
+        await sleep(1500);
       },
       10,
     );
