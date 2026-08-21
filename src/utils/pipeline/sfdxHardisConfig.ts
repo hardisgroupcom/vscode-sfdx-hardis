@@ -223,7 +223,12 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
   let gitBranch: string | null = process.env.CI_COMMIT_REF_NAME || null;
   if (!gitBranch) {
     try {
-      gitBranch = (await simpleGit().branchLocal()).current;
+      // The workspace root must be explicit: without it simple-git resolves
+      // against the process working directory, which is not the opened
+      // project (e.g. in the Extension Development Host)
+      gitBranch = (
+        await simpleGit(getWorkspaceRoot() || process.cwd()).branchLocal()
+      ).current;
     } catch {
       return null;
     }

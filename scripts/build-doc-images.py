@@ -16,6 +16,7 @@ Requires Pillow (`pip install pillow`).
 """
 
 import argparse
+import json
 import os
 import sys
 
@@ -52,9 +53,10 @@ PANEL_SHOTS = {
     "org-monitoring.png": "org-monitoring",
     "dependencies-ok-ui.png": "setup",
     "install-dependencies-screenshot.png": "missing/setup",
-    "ProductivityCommands.png": "command-runner-multiselect",
-    "screenshot-work-save.png": "command-runner-completed",
+    "ProductivityCommands.png": "user-activateinvalid-multiselect",
     "command-runner.png": "command-runner-question",
+    "installed-packages.png": "installed-packages",
+    "pipeline-config.png": "pipeline-config",
 }
 
 # Width of the activity bar + side bar in a capture: the editor area (the
@@ -65,14 +67,18 @@ SIDE_BAR_WIDTH = 435
 # webview only. The others keep the whole window, because the side bar is part
 # of what they illustrate (the tree views, the menu entry to click).
 WEBVIEW_ONLY = {
+    "welcome.png",
+    "ProductivityCommands.png",
+    "install-dependencies-screenshot.png",
     "data-workbench.png",
     "files-workbench.png",
     "documentation-workbench.png",
     "devops-pipeline.png",
     "org-monitoring.png",
     "dependencies-ok-ui.png",
-    "screenshot-work-save.png",
     "command-runner.png",
+    "installed-packages.png",
+    "pipeline-config.png",
 }
 
 # --- Crops of a single side bar row ----------------------------------------
@@ -103,7 +109,86 @@ ROW_CROPS = {
 BOX_CROPS = {
     "hardis-button.jpg": ("sidebar", (4, 304, 58, 358)),
     "dependencies-ok.jpg": ("sidebar-dependencies", (60, 99, 436, 462)),
+    # "My Pull Request" contribution card (pipeline-workflow-cards is captured
+    # two zoom levels out so the second card row fits in the window)
+    "card-my-pull-request.png": ("pipeline-workflow-cards", (1378, 698, 1630, 806)),
+    # The whole "Project Contribution Workflow" card row (same zoomed-out
+    # capture), for the Contributor Guide overview
+    "pipeline-contribution-cards.png": ("pipeline-workflow-cards", (312, 636, 1910, 818)),
+    # Branch modal of the pipeline, on its Pull Requests tab (merged Pull
+    # Requests of the branch, with the Release Notes buttons)
+    "screenshot-branch-pull-requests.jpg": (
+        "pipeline-branch-modal",
+        (470, 60, 1866, 810),
+    ),
+    # Deployment Actions tab of the "My Pull Request" modal, listing the
+    # actions of the PR #125 fixture (captured two zoom levels out)
+    "screenshot-pr-deployment-actions-list.jpg": (
+        "pipeline-pr-actions-list",
+        (338, 36, 1884, 852),
+    ),
+    # Branch modal of the pipeline, on its Deployment Actions tab
+    "screenshot-deployment-actions.jpg": (
+        "pipeline-branch-modal-actions",
+        (470, 60, 1866, 810),
+    ),
+    # "Edit Deployment Action" editor, opened from the PR modal (captured two
+    # zoom levels out, like pipeline-workflow-cards)
+    "screenshot-edit-deployment-action.jpg": (
+        "pipeline-edit-action",
+        (760, 264, 1462, 706),
+    ),
+    # One pre-filled "Edit Deployment Action" editor per action type, for
+    # salesforce-ci-cd-work-on-task-deployment-actions.md (same zoomed-out
+    # captures; the modal height depends on the action type)
+    "screenshot-deployment-action-command.jpg": (
+        "pipeline-edit-action-command",
+        (760, 263, 1462, 704),
+    ),
+    "screenshot-deployment-action-data.jpg": (
+        "pipeline-edit-action-data",
+        (760, 264, 1462, 703),
+    ),
+    "screenshot-deployment-action-apex.jpg": (
+        "pipeline-edit-action-apex",
+        (760, 264, 1462, 703),
+    ),
+    "screenshot-deployment-action-manual.jpg": (
+        "pipeline-edit-action-manual",
+        (760, 222, 1462, 746),
+    ),
+    "screenshot-deployment-action-schedule-batch.jpg": (
+        "pipeline-edit-action-schedule-batch",
+        (760, 195, 1462, 772),
+    ),
+    "screenshot-deployment-action-publish-community.jpg": (
+        "pipeline-edit-action-publish-community",
+        (760, 264, 1462, 703),
+    ),
+    "screenshot-deployment-action-remove-packagexml-items.jpg": (
+        "pipeline-edit-action-remove-packagexml-items",
+        (760, 239, 1462, 728),
+    ),
 }
+
+# --- Animated GIFs ------------------------------------------------------------
+# doc GIF name -> recording folder in doc-screenshots/recordings/
+# Frames are recorded at 5 fps by the harness (record() in
+# src/test/ui/docScreenshots.test.ts); identical consecutive frames are merged
+# into a single longer frame and every frame shares one global palette, which
+# is what keeps these files small enough for a documentation page.
+GIF_RECORDINGS = {
+    "sfdx-hardis-pipeline-view.gif": "devops-pipeline",
+    "orgs-manager.gif": "orgs-manager",
+    "metadata-retriever.gif": "metadata-retriever",
+    "monitoring-config-2026.gif": "monitoring-config",
+    "project-documentation.gif": "documentation-workbench",
+    "new-user-story-2026.gif": "work-new",
+    "save-publish-pr-2026.gif": "work-save",
+    "animation-install-packages.gif": "install-packages",
+}
+
+GIF_FRAME_MS = 200  # 5 fps
 
 RED = (215, 25, 30)
 WHITE = (255, 255, 255)
@@ -247,6 +332,81 @@ def build_dependencies_home_link(welcome, target, dry_run):
     save(image, target, dry_run)
 
 
+def build_gif(recording, target, dry_run):
+    """Assembles the frames of one recording into an optimized animated GIF.
+
+    Consecutive identical frames are merged (their durations add up) and every
+    frame is quantized against one shared palette: without both, a 20 second
+    recording weighs tens of MB.
+    """
+    frames_dir = os.path.join(SHOTS_DIR, "recordings", recording)
+    if not os.path.isdir(frames_dir):
+        return False
+    frame_files = sorted(
+        os.path.join(frames_dir, name)
+        for name in os.listdir(frames_dir)
+        if name.lower().endswith(".png")
+    )
+    if len(frame_files) < 2:
+        return False
+
+    # Frame rate of this recording (written by record() in the harness); the
+    # pipeline scenario uses a higher rate so the animated edges read forward
+    frame_ms = GIF_FRAME_MS
+    meta_file = os.path.join(frames_dir, "recording.json")
+    if os.path.exists(meta_file):
+        with open(meta_file, encoding="utf8") as stream:
+            frame_ms = int(round(1000 / float(json.load(stream).get("fps", 5))))
+
+    # Merge identical consecutive frames into (file, duration) pairs
+    kept = []
+    previous_bytes = None
+    for frame_file in frame_files:
+        with open(frame_file, "rb") as stream:
+            content = stream.read()
+        if content == previous_bytes:
+            kept[-1][1] += frame_ms
+        else:
+            kept.append([frame_file, frame_ms])
+        previous_bytes = content
+
+    first = Image.open(kept[0][0]).convert("RGB")
+    if is_blank(first):
+        sys.exit(
+            f"{kept[0][0]} is blank: the session was probably locked while "
+            "recording. Unlock it and run `yarn screenshots` again."
+        )
+    # One global palette, computed on the first frame (the theme never changes
+    # during a recording, so its colors represent the whole sequence well).
+    palette = first.quantize(colors=255, method=Image.MEDIANCUT)
+
+    images = []
+    durations = []
+    for frame_file, duration in kept:
+        frame = Image.open(frame_file).convert("RGB")
+        images.append(frame.quantize(palette=palette, dither=Image.NONE))
+        durations.append(duration)
+
+    print(
+        f"  {'(dry-run) ' if dry_run else ''}{os.path.basename(target)} "
+        f"{first.size[0]}x{first.size[1]} {len(images)} frames "
+        f"({len(frame_files)} captured)"
+    )
+    if dry_run:
+        return True
+    images[0].save(
+        target,
+        "GIF",
+        save_all=True,
+        append_images=images[1:],
+        duration=durations,
+        loop=0,
+        optimize=True,
+    )
+    print(f"    -> {os.path.getsize(target) // 1024} KB")
+    return True
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--docs-images", default=DEFAULT_DOCS_IMAGES)
@@ -283,6 +443,11 @@ def main():
             missing.append(capture)
             continue
         save(image.crop(box), os.path.join(args.docs_images, name), args.dry_run)
+
+    print("Animated GIFs:")
+    for name, recording in GIF_RECORDINGS.items():
+        if not build_gif(recording, os.path.join(args.docs_images, name), args.dry_run):
+            missing.append(f"recordings/{recording}")
 
     print("Annotated screenshots:")
     welcome = load("welcome")

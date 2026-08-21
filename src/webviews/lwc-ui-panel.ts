@@ -694,7 +694,27 @@ export class LwcUiPanel {
         }
       } else {
         // Open the file in VS Code for text files
-        const document = await vscode.workspace.openTextDocument(fileUri);
+        let document: vscode.TextDocument;
+        try {
+          document = await vscode.workspace.openTextDocument(fileUri);
+        } catch (openError) {
+          // Some sfdx-hardis log files contain NUL characters (raw output of
+          // git commands run with --null), which makes VS Code refuse to open
+          // them ("File seems to be binary and cannot be opened as text").
+          // Fall back to an in-memory copy with the NUL characters stripped.
+          Logger.log(
+            `Direct open failed (${(openError as Error)?.message}), opening a sanitized copy of ${resolvedPath}`,
+          );
+          const rawContent = await vscode.workspace.fs.readFile(fileUri);
+          const sanitized = Buffer.from(rawContent)
+            .toString("utf8")
+            .split(String.fromCharCode(0))
+            .join("");
+          document = await vscode.workspace.openTextDocument({
+            content: sanitized,
+            language: "log",
+          });
+        }
         await vscode.window.showTextDocument(document);
         if (anchor) {
           // Find anchor text in document and scroll to it

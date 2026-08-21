@@ -1,0 +1,99 @@
+{
+  "_comment": "Ticketing provider fixture served by TicketProviderMock during the documentation screenshots (yarn screenshots): a connected JIRA instance of the MyCompany-CRM universe, with the details of the tickets referenced by the pull requests of git-provider-mock.json.",
+  "providerName": "JIRA",
+  "webUrl": "https://mycompany.atlassian.net",
+  "ticketRegex": "CRM-\\d+",
+  "tickets": {
+    "CRM-1101": {
+      "subject": "Invoice rounding differs from production",
+      "status": "In Progress",
+      "statusLabel": "In Progress",
+      "author": "Nadia Ferreira",
+      "authorLabel": "Nadia Ferreira"
+    },
+    "CRM-1061": {
+      "subject": "Opportunity trigger recursion",
+      "status": "In Progress",
+      "statusLabel": "In Progress",
+      "author": "Lisa Chen",
+      "authorLabel": "Lisa Chen"
+    },
+    "CRM-1055": {
+      "subject": "Quote approval process",
+      "status": "In Review",
+      "statusLabel": "In Review",
+      "author": "Sam Dubois",
+      "authorLabel": "Sam Dubois"
+    },
+    "CRM-1049": {
+      "subject": "Opportunity stage notifications",
+      "status": "Done",
+      "statusLabel": "Done",
+      "author": "Sam Dubois",
+      "authorLabel": "Sam Dubois"
+    },
+    "CRM-1044": {
+      "subject": "Segment field on Account",
+      "status": "Done",
+      "statusLabel": "Done",
+      "author": "Alex Martin",
+      "authorLabel": "Alex Martin"
+    },
+    "CRM-1042": {
+      "subject": "Account hierarchy",
+      "status": "In Review",
+      "statusLabel": "In Review",
+      "author": "Alex Martin",
+      "authorLabel": "Alex Martin"
+    },
+    "CRM-1038": {
+      "subject": "Minimize Sales User profile",
+      "status": "Done",
+      "statusLabel": "Done",
+      "author": "Lisa Chen",
+      "authorLabel": "Lisa Chen"
+    },
+    "CRM-1030": {
+      "subject": "Invoice batch scheduler",
+      "status": "In Review",
+      "statusLabel": "In Review",
+      "author": "Alex Martin",
+      "authorLabel": "Alex Martin"
+    },
+    "CRM-1024": {
+      "subject": "Case auto escalation",
+      "status": "In Review",
+      "statusLabel": "In Review",
+      "author": "Sam Dubois",
+      "authorLabel": "Sam Dubois"
+    },
+    "CRM-1018": {
+      "subject": "Lead conversion assistant",
+      "status": "In Review",
+      "statusLabel": "In Review",
+      "author": "Lisa Chen",
+      "authorLabel": "Lisa Chen"
+    },
+    "CRM-991": {
+      "subject": "Quote PDF generation",
+      "status": "Done",
+      "statusLabel": "Done",
+      "author": "Alex Martin",
+      "authorLabel": "Alex Martin"
+    },
+    "CRM-987": {
+      "subject": "Account scoring fields",
+      "status": "Done",
+      "statusLabel": "Done",
+      "author": "Sam Dubois",
+      "authorLabel": "Sam Dubois"
+    },
+    "CRM-123": {
+      "subject": "Sync accounts with SAP",
+      "status": "In Progress",
+      "statusLabel": "In Progress",
+      "author": "Alex Martin",
+      "authorLabel": "Alex Martin"
+    }
+  }
+}

@@ -23,6 +23,20 @@ export class TicketProvider {
       return null;
     }
     if (options.reset || this.instance === null) {
+      // UI test / documentation screenshot harness only: serve the ticketing
+      // provider from a JSON fixture (see ticketProviderMock.ts). Both env
+      // vars are set by src/test/runUiTest.ts.
+      if (
+        process.env.VSCODE_SFDX_HARDIS_UI_TEST === "true" &&
+        process.env.SFDX_HARDIS_MOCK_TICKET_PROVIDER_FILE
+      ) {
+        this.instance = await (
+          await import("./ticketProviderMock")
+        ).TicketProviderMock.buildFromFixtureFile(
+          process.env.SFDX_HARDIS_MOCK_TICKET_PROVIDER_FILE,
+        );
+        return this.instance;
+      }
       const config = await getConfig("project");
       const providerName = config.ticketingProvider || null;
       if (!providerName) {
