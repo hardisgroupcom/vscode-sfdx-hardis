@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## [8.0.0] 2026-08-21
+
+- **What's new in v8**
+  - The extension now requires the **sfdx-hardis plugin v8.0.0** or later: when an older version is installed, the Setup panel offers to upgrade it
+  - The **See what's new** button of the Welcome page now opens the [What's new in sfdx-hardis v8](https://sfdx-hardis.cloudity.com/sfdx-hardis-v8/) page, which presents the release to end users, instead of the raw changelog file
 
 - **The extension was fully redesigned**
   - Every panel now shares the same design: the same header, the same cards and buttons, the **official Salesforce color palette**, and **colors that stay readable in both light and dark themes**

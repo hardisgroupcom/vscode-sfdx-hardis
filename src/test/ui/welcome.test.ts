@@ -53,8 +53,8 @@ suite("Welcome page UI tests", function () {
       `marketplaceUrl must point to the Visual Studio Marketplace or Open VSX (got: ${initData.marketplaceUrl})`,
     );
     assert.ok(
-      (initData.whatsNewUrl || "").includes("CHANGELOG"),
-      "whatsNewUrl must point to the changelog",
+      (initData.whatsNewUrl || "").includes("sfdx-hardis-v8"),
+      `whatsNewUrl must point to the v8 what's new page (got: ${initData.whatsNewUrl})`,
     );
     // Version pill in the hero
     assert.match(
