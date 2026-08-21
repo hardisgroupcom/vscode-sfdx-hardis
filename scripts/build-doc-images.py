@@ -121,11 +121,12 @@ BOX_CROPS = {
         "pipeline-branch-modal",
         (470, 60, 1866, 810),
     ),
-    # Deployment Actions tab of the "My Pull Request" modal, listing the
-    # actions of the PR #125 fixture (captured two zoom levels out)
+    # Deployment Actions tab of the "My Pull Request" modal of the feature
+    # pull request #128 (normal zoom, opened through the hardis:work:save
+    # deep link), listing the actions of its fixture file
     "screenshot-pr-deployment-actions-list.jpg": (
         "pipeline-pr-actions-list",
-        (338, 36, 1884, 852),
+        (470, 60, 1866, 810),
     ),
     # Branch modal of the pipeline, on its Deployment Actions tab
     "screenshot-deployment-actions.jpg": (

@@ -43,6 +43,8 @@
 
 - **DevOps Pipeline**
   - **Deployment Actions are no longer in beta**: pre-deployment and post-deployment actions are now a **fully supported feature** of the DevOps Pipeline, and the beta label was removed from their tab
+  - The **My Pull Request** window of a Pull Request **between two major branches** (for example a promotion from integration to uat) now lists the deployment actions declared on the **feature Pull Requests it carries**, with their author and Pull Request, instead of proposing to create actions on the promotion Pull Request itself (sfdx-hardis never reads them there)
+  - Fixed the **Update the Deployment Actions of your Pull Request** button (end of Save / Publish) sometimes opening the DevOps Pipeline on its home view instead of the deployment actions of your Pull Request, when the pipeline data loaded faster than the panel
   - Deployment action execution contexts were **renamed for clarity**: **"Validation and Deployment jobs"**, **"Validation job only"** and **"Deployment job only"** (previously "Check job" and "Process Deployment job"), in all languages
   - New **Update the Deployment Actions of your Pull Request** button at the end of **Save / Publish Task**, opening the DevOps Pipeline straight on the deployment actions of your pull request, instead of leaving you to find them yourself
     - When the pull request is not created yet, the **draft deployment actions** of your current branch are displayed, so you can declare them right after saving your task

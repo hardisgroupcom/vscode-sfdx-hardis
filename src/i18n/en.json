@@ -380,6 +380,7 @@
   "deploymentActionMissingRequiredFields": "Please fill in all required fields before saving.",
   "deploymentActionSaved": "Deployment action saved for {{prLabel}} #{{prNumber}}. Don't forget to commit and push {{updatedFile}}",
   "deploymentActionSavedDraft": "Deployment action saved in draft file for the future {{prLabel}}. It will be linked to the {{prLabel}} once created.",
+  "deploymentActionsAggregatedHint": "These actions were declared on the Pull Requests merged in {{branch}} since its last promotion. They run during the deployment of this Pull Request and cannot be edited from here.",
   "deploymentActionsTab": "Deployment Actions ({{count}})",
   "deploymentHistoryAnalysis": "Deployments history analysis",
   "deploymentHistoryAnalysisTooltip": "Analyze the metadata deployments and validations performed on the org",

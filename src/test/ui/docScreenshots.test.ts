@@ -195,6 +195,8 @@ async function shootPanel(
     /** Open and capture even when the name is not in the ONLY filter (used by
      * the recording tests, whose pre-shot must not depend on the filter) */
     force?: boolean;
+    /** Argument passed to the VS Code command (ex: a pipeline deep link) */
+    commandArgs?: any;
   },
 ): Promise<any> {
   if (!options.force && !shouldTake(options.name)) {
@@ -204,7 +206,11 @@ async function shootPanel(
   // the earlier tabs out of view
   await vscode.commands.executeCommand("workbench.action.closeAllEditors");
   await sleep(400);
-  await vscode.commands.executeCommand(options.command);
+  if (options.commandArgs !== undefined) {
+    await vscode.commands.executeCommand(options.command, options.commandArgs);
+  } else {
+    await vscode.commands.executeCommand(options.command);
+  }
   const panel = await waitFor(
     () => panelManager.getPanel(options.lwcId),
     20000,
@@ -233,6 +239,27 @@ async function shootPanel(
   await captureStable(options.name);
   return panel;
 }
+
+/**
+ * Switches the git branch of the test workspace. The "My Pull Request" card
+ * and its modal show the pull request of the current branch: the workspace is
+ * on `integration` (whose pull request is the promotion to uat), and the
+ * deployment actions of the documentation are declared on a feature pull
+ * request, so the modal shots check out its branch first.
+ */
+function checkoutWorkspaceBranch(branchName: string): void {
+  const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  if (!workspaceRoot) {
+    throw new Error("No workspace folder to check out a branch in");
+  }
+  execFileSync("git", ["checkout", "-q", branchName], {
+    cwd: workspaceRoot,
+    stdio: "pipe",
+  });
+}
+
+const FEATURE_BRANCH = "feature/CRM-1042-account-hierarchy";
+const PIPELINE_ACTIONS_DEEP_LINK = { focus: "deploymentActions" };
 
 /**
  * Records the window while `scenario` drives the UI, into
@@ -479,6 +506,9 @@ suite("Documentation screenshots", function () {
     if (!shouldTake("pipeline-modals")) {
       this.skip();
     }
+    // The "My Pull Request" card must show a feature pull request (#128, with
+    // the deployment actions fixture), not the integration -> uat promotion
+    checkoutWorkspaceBranch(FEATURE_BRANCH);
     // Zoom the window out one level so the second row of contribution cards
     // (with the "My Pull Request" card) fits in the capture
     await vscode.commands.executeCommand("workbench.action.zoomOut");
@@ -518,8 +548,33 @@ suite("Documentation screenshots", function () {
       await vscode.commands.executeCommand("workbench.action.zoomIn");
       await sleep(800);
     }
+    // Deployment Actions tab of the feature pull request modal, at the normal
+    // zoom level (the table stretches to the modal width there) and opened
+    // through the deep link used by hardis:work:save, so no coordinate is
+    // involved. Feeds screenshot-pr-deployment-actions-list.jpg.
+    try {
+      await shootPanel(panelManager, {
+        name: "pipeline-pr-actions-list",
+        command: "vscode-sfdx-hardis.showPipeline",
+        lwcId: "s-pipeline",
+        ready: pipelineFullyLoaded,
+        settleMs: 9000,
+        force: true,
+        commandArgs: PIPELINE_ACTIONS_DEEP_LINK,
+      });
+    } finally {
+      checkoutWorkspaceBranch("integration");
+    }
     // Branch modal: click the "integration" branch node of the mermaid, then
     // its Deployment Actions tab
+    await shootPanel(panelManager, {
+      name: "pipeline-branch-modal-base",
+      command: "vscode-sfdx-hardis.showPipeline",
+      lwcId: "s-pipeline",
+      ready: pipelineFullyLoaded,
+      settleMs: 9000,
+      force: true,
+    });
     await sleep(1000);
     await click(850, 405); // integration branch node
     await sleep(2500);
@@ -531,8 +586,8 @@ suite("Documentation screenshots", function () {
   });
 
   // One screenshot of the "Edit Deployment Action" editor per action type,
-  // pre-filled from the PR #125 fixture actions
-  // (test/fixtures/doc-screenshots-project/scripts/actions/.sfdx-hardis.125.yml).
+  // pre-filled from the PR #128 fixture actions
+  // (test/fixtures/doc-screenshots-project/scripts/actions/.sfdx-hardis.128.yml).
   // Feeds the docs images screenshot-deployment-action-<type>.jpg of
   // salesforce-ci-cd-work-on-task-deployment-actions.md.
   test("pipeline: deployment action editors", async function () {
@@ -563,17 +618,20 @@ suite("Documentation screenshots", function () {
     const ROW_STEP = 36;
     // Clicking the action label opens its editor
     const EDIT_BUTTON_X = 610;
+    // The actions belong to the feature pull request of the fixture branch
+    checkoutWorkspaceBranch(FEATURE_BRANCH);
     // Zoomed out two levels, like the other modal shots: the editors of every
     // type fit in the window and the published images are crops of the modal
     await vscode.commands.executeCommand("workbench.action.zoomOut");
     await vscode.commands.executeCommand("workbench.action.zoomOut");
     await sleep(800);
-    let firstIteration = true;
     try {
       for (const shot of ACTION_EDITOR_SHOTS) {
-        // Reload the panel for each editor: closing all editors resets every
-        // modal state, which is more robust than clicking per-type Cancel
-        // buttons whose position depends on the editor height
+        // Reload the panel for each editor, straight on the Deployment Actions
+        // tab of the pull request modal (deep link of hardis:work:save):
+        // closing all editors resets every modal state, which is more robust
+        // than clicking per-type Cancel buttons whose position depends on the
+        // editor height
         await shootPanel(panelManager, {
           name: "pipeline-action-editors-base",
           command: "vscode-sfdx-hardis.showPipeline",
@@ -581,16 +639,8 @@ suite("Documentation screenshots", function () {
           ready: pipelineFullyLoaded,
           settleMs: 8000,
           force: true,
+          commandArgs: PIPELINE_ACTIONS_DEEP_LINK,
         });
-        await click(1500, 750); // "My Pull Request" card
-        await sleep(2500);
-        await click(543, 156); // "Deployment Actions" tab of the PR modal
-        await sleep(1500);
-        if (firstIteration) {
-          await cleanChrome();
-          await captureStable("pipeline-pr-actions-list");
-          firstIteration = false;
-        }
         await click(EDIT_BUTTON_X, FIRST_ROW_CENTER_Y + shot.row * ROW_STEP);
         await sleep(1800);
         // Switch the read-only details view to the editable form: the published
@@ -603,6 +653,7 @@ suite("Documentation screenshots", function () {
       await vscode.commands.executeCommand("workbench.action.zoomIn");
       await vscode.commands.executeCommand("workbench.action.zoomIn");
       await sleep(800);
+      checkoutWorkspaceBranch("integration");
     }
   });
 

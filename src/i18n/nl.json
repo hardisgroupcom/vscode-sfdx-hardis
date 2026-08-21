@@ -380,6 +380,7 @@
   "deploymentActionMissingRequiredFields": "Vul alle verplichte velden in voordat je opslaat.",
   "deploymentActionSaved": "Implementatieactie opgeslagen voor {{prLabel}} #{{prNumber}}. Vergeet niet om {{updatedFile}} te committen en te pushen",
   "deploymentActionSavedDraft": "Implementatieactie opgeslagen in conceptbestand voor de toekomstige {{prLabel}}. Ze wordt gekoppeld aan de {{prLabel}} zodra deze is aangemaakt.",
+  "deploymentActionsAggregatedHint": "Deze acties zijn gedeclareerd op de Pull Requests die sinds de laatste promotie in {{branch}} zijn samengevoegd. Ze worden uitgevoerd tijdens de implementatie van deze Pull Request en kun je hier niet bewerken.",
   "deploymentActionsTab": "Implementatieacties ({{count}})",
   "deploymentHistoryAnalysis": "Analyse van de deploymentgeschiedenis",
   "deploymentHistoryAnalysisTooltip": "Analyseert de metadata-deployments en -validaties die op de org zijn uitgevoerd",

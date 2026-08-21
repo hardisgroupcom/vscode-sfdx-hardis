@@ -1,5 +1,39 @@
-commandsPostDeploy:
+commandsPreDeploy:
   - id: 6f0b2b1e-1c9a-4e0d-9d2a-128a00000001
+    label: Check org limits before the deployment
+    type: command
+    when: pre-deploy
+    command: sf hardis:org:monitor:limits
+    context: all
+    allowFailure: true
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-128a00000002
+    label: Load the account segments reference data
+    type: data
+    when: pre-deploy
+    parameters:
+      sfdmuProject: ProjectsRefsUpsert
+    command: sf hardis:org:data:import --path scripts/data/ProjectsRefsUpsert
+    context: process-deployment-only
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-128a00000003
+    label: Remove profiles from the delta package
+    type: remove-packagexml-items
+    when: pre-deploy
+    parameters:
+      packageXmlItems:
+        - "Profile:*"
+        - "CustomLabel:Account_Hierarchy_Help"
+    command: ""
+    context: check-deployment-only
+commandsPostDeploy:
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-128a00000004
+    label: Assign the CRM_Manager permission set to admins
+    type: apex
+    when: post-deploy
+    parameters:
+      apexScript: scripts/apex/assign-crm-manager.apex
+    command: ""
+    context: process-deployment-only
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-128a00000005
     label: Schedule the account hierarchy sync batch
     type: schedule-batch
     when: post-deploy
@@ -7,5 +41,22 @@ commandsPostDeploy:
       className: AccountHierarchySyncBatch
       cronExpression: 0 0 3 * * ?
       jobName: Account Hierarchy Sync
+    command: ""
+    context: process-deployment-only
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-128a00000006
+    label: Publish the Customer Portal community
+    type: publish-community
+    when: post-deploy
+    parameters:
+      communityName: Customer Portal
+    command: ""
+    context: process-deployment-only
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-128a00000007
+    label: Activate the account hierarchy sharing rule in Setup
+    type: manual
+    when: post-deploy
+    parameters:
+      instructions: |
+        In **Setup > Sharing Settings**, activate the sharing rule `Account_Hierarchy_Read` so the hierarchy is visible to the Sales team.
     command: ""
     context: process-deployment-only

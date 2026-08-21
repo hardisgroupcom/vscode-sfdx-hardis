@@ -414,6 +414,9 @@
                                     ></lightning-button>
                                 </div>
                             </template>
+                            <template if:true={showMajorPrActionsHint}>
+                                <div class="hardis-note slds-m-bottom_small">{majorPrActionsHint}</div>
+                            </template>
                             <template if:true={modalActions.length}>
                                 <s-hardis-datatable
                                     key-field="id"
@@ -553,6 +556,7 @@
         <s-deployment-action
             action={currentDeploymentAction}
             is-edit-mode={isDeploymentActionEditMode}
+            read-only={modalActionsAggregated}
             apex-scripts={projectApexScripts}
             sfdmu-workspaces={projectSfdmuWorkspaces}
             schedulable-classes={projectSchedulableClasses}

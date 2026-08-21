@@ -380,6 +380,7 @@
   "deploymentActionMissingRequiredFields": "Przed zapisaniem uzupełnij wszystkie pola wymagane.",
   "deploymentActionSaved": "Akcja wdrożenia zapisana dla {{prLabel}} #{{prNumber}}. Pamiętaj, żeby zcommitować i pushować {{updatedFile}}",
   "deploymentActionSavedDraft": "Akcja wdrożenia zapisana w pliku roboczym dla przyszłego {{prLabel}}. Zostanie powiązana z {{prLabel}} po jego utworzeniu.",
+  "deploymentActionsAggregatedHint": "Te akcje zostały zadeklarowane w Pull Requestach scalonych z {{branch}} od ostatniej promocji. Są wykonywane podczas wdrożenia tego Pull Requesta i nie można ich tutaj edytować.",
   "deploymentActionsTab": "Akcje wdrożenia ({{count}})",
   "deploymentHistoryAnalysis": "Analiza historii wdrożeń",
   "deploymentHistoryAnalysisTooltip": "Analizuje wdrożenia i walidacje metadata wykonane na orgu",
