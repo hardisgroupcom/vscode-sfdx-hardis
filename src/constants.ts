@@ -11,6 +11,8 @@ export const EXTENSION_REPOSITORY_URL =
   "https://github.com/hardisgroupcom/vscode-sfdx-hardis";
 export const EXTENSION_CHANGELOG_URL =
   EXTENSION_REPOSITORY_URL + "/blob/main/CHANGELOG.md";
+// "What's new" page presenting the current major version to end users
+export const WHATS_NEW_URL = DOCSITE_URL + "/sfdx-hardis-v8/";
 export const SFDX_HARDIS_REPOSITORY_URL =
   "https://github.com/hardisgroupcom/sfdx-hardis";
 export const EXTENSION_MARKETPLACE_URL =
