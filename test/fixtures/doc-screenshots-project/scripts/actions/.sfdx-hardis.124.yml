@@ -1,0 +1,28 @@
+commandsPreDeploy:
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-124a00000001
+    label: Load projects referential data
+    type: data
+    when: pre-deploy
+    parameters:
+      sfdmuProject: ProjectsRefsUpsert
+    command: sf hardis:org:data:import --path scripts/data/ProjectsRefsUpsert
+    context: process-deployment-only
+commandsPostDeploy:
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-124a00000002
+    label: Assign CRM_Manager permission set to admins
+    type: apex
+    when: post-deploy
+    parameters:
+      apexScript: scripts/apex/assign-crm-manager.apex
+    command: sf apex run --file scripts/apex/assign-crm-manager.apex
+    context: process-deployment-only
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-124a00000003
+    label: Activate the Opportunity stage notifications
+    type: manual
+    when: post-deploy
+    parameters:
+      instructions: >-
+        In Setup > Process Automation Settings, enable the notifications for
+        the Opportunity stage changes.
+    command: ""
+    context: process-deployment-only

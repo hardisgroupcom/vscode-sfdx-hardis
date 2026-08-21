@@ -74,6 +74,7 @@ Defined in `webpack.common.js`, with `webpack.dev.js` and `webpack.prod.js` over
 - `executableUtils.ts` - `findExecutable()` cross-platform binary lookup
 - `portUtils.ts`, `processUtils.ts` - Port availability and child-process helpers
 - `pendingCommandPanels.ts` - Panel adoption for instant command tabs (see Performance below)
+- `orgColorUtils.ts` - SLDS-token palette, contrast math and `workbench.colorCustomizations` payloads for the per-org VS Code coloring
 - `metadataPresets.ts` - Metadata type presets for the Metadata Retriever
 - `salesforceSettingsCheck.ts` - Warns about slow Salesforce settings (e.g. conflict detection)
 - `ansiColors.ts`, `sortUtils.ts`, `gitUrlUtils.ts`, `pluginsVersionUtils.ts`, `prePostCommandsUtils.ts` - Small shared helpers (all unit-tested in `src/test/suite/`)

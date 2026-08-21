@@ -31,6 +31,7 @@ import { registerShowPackageXml } from "./commands/packageXml";
 import { registerGitMergeDriverToggle } from "./commands/gitMergeDriver";
 import { registerShowDocumentationWorkbench } from "./commands/showDocumentationWorkbench";
 import { t } from "./i18n/i18n";
+import { ExtraCommands } from "./utils/extraCommands";
 import { refreshAllRefreshableUis } from "./utils/uiUtils";
 import { ThemeUtils } from "./utils/themeUtils";
 import { refreshDependenciesStatus } from "./utils/dependenciesStatus";
@@ -113,14 +114,20 @@ export class Commands {
         }
         const topics = await this.hardisCommandsProvider.getChildren(undefined);
         const items: (vscode.QuickPickItem & { _cmd: vscode.Command })[] = [];
+        const menuCommandLines: string[] = [];
+        const topicLabels: Record<string, string> = {};
         for (const topic of topics) {
           if (topic.collapsibleState === vscode.TreeItemCollapsibleState.None) {
             continue;
           }
+          topicLabels[topic.id] = topic.label as string;
           const children = await this.hardisCommandsProvider.getChildren(topic);
           for (const child of children) {
             if (!child.command) {
               continue;
+            }
+            if (child.hardisCommand) {
+              menuCommandLines.push(child.hardisCommand);
             }
             items.push({
               label: child.label as string,
@@ -129,6 +136,23 @@ export class Commands {
               _cmd: child.command,
             });
           }
+        }
+        // Add the sfdx-hardis commands that are not displayed in the menu,
+        // except the ones that have been added to the menu in the meantime
+        for (const extraCommand of ExtraCommands.getCommandsNotAlreadyListed(
+          menuCommandLines,
+        )) {
+          items.push({
+            label: extraCommand.label,
+            description:
+              topicLabels[extraCommand.suggestedTopic] || t("otherSection"),
+            detail: `${extraCommand.tooltip}\nCommand: ${extraCommand.command}`,
+            _cmd: {
+              title: extraCommand.label,
+              command: "vscode-sfdx-hardis.execute-command",
+              arguments: [extraCommand.command],
+            },
+          });
         }
         const selected = await vscode.window.showQuickPick(items, {
           placeHolder: "Search SFDX-HARDIS commands…",
