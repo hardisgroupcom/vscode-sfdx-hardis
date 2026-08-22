@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [8.0.2] 2026-08-22
+
 - Fixed the Install Dependencies panel showing a useless **Fix Instructions** button (leading to the sfdx-hardis repository) when the installed sfdx-hardis plugin is older than the required version
   - The panel now shows an **Upgrade** button that directly installs the required version
   - The card now shows the same warning icon as other upgrades (on the red "required" accent), instead of the same icon as a broken dependency
