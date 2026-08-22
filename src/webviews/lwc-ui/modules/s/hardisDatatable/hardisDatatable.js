@@ -97,8 +97,8 @@ export default class HardisDatatable extends LightningDatatable {
     }
   }
 
-  // The TD/TH of a body row found on the event path, else null
-  getHoveredCell(event) {
+  // The first TD/TH node found on the event path, else null
+  findCellOnEventPath(event) {
     const path =
       event && typeof event.composedPath === "function"
         ? event.composedPath()
@@ -106,15 +106,24 @@ export default class HardisDatatable extends LightningDatatable {
     for (const node of path) {
       const tagName = node && node.tagName ? String(node.tagName) : "";
       if (tagName === "TD" || tagName === "TH") {
-        const row = node.parentElement;
-        const section = row ? row.parentElement : null;
-        if (section && String(section.tagName) === "THEAD") {
-          return null;
-        }
         return node;
       }
     }
     return null;
+  }
+
+  // The TD/TH of a body row found on the event path, else null
+  getHoveredCell(event) {
+    const cell = this.findCellOnEventPath(event);
+    if (!cell) {
+      return null;
+    }
+    const row = cell.parentElement;
+    const section = row ? row.parentElement : null;
+    if (section && String(section.tagName) === "THEAD") {
+      return null;
+    }
+    return cell;
   }
 
   // Right click on a cell: propose to copy its value instead of the browser menu
@@ -137,17 +146,11 @@ export default class HardisDatatable extends LightningDatatable {
     if (selection && selection.trim() !== "") {
       return selection.trim();
     }
-    const path =
-      event && typeof event.composedPath === "function"
-        ? event.composedPath()
-        : [];
-    for (const node of path) {
-      const tagName = node && node.tagName ? String(node.tagName) : "";
-      if (tagName === "TD" || tagName === "TH") {
-        return (node.innerText || node.textContent || "").trim();
-      }
+    const cell = this.findCellOnEventPath(event);
+    if (!cell) {
+      return "";
     }
-    return "";
+    return (cell.innerText || cell.textContent || "").trim();
   }
 
   openCellContextMenu(x, y, value) {
