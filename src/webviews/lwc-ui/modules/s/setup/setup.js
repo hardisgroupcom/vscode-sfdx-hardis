@@ -366,7 +366,13 @@ export default class Setup extends SharedMixin(LightningElement) {
             state = "error";
             break;
           case "error":
-            statusIcon = "utility:ban";
+            // A mandatory upgrade is not a broken dependency: show the same
+            // warning icon as an optional upgrade, on the red (required) accent
+            if (c.upgradeAvailable === true && c.installable) {
+              statusIcon = "utility:warning";
+            } else {
+              statusIcon = "utility:ban";
+            }
             state = "error";
         }
       }

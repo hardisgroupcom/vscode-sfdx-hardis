@@ -5,7 +5,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { getText } from "./httpUtils";
 import { t } from "../i18n/i18n";
-import { execSfdxJson } from "../utils";
+import { execSfdxJson, getInstalledPluginsInfo } from "../utils";
 import { Logger } from "../logger";
 
 /** A single command entry inside a custom menu */
@@ -363,21 +363,13 @@ const KNOWN_PLUGINS = [
 
 /**
  * Returns the list of non-core installed plugin names (type === "user" or "link").
- * Uses the "app" cache section with a 1-day TTL.
+ * Reuses the trimmed plugin infos cached by getInstalledPluginsInfo(), so the
+ * multi-MB raw `sf plugins --json` payload is never stored in globalState.
  */
 async function listNonCorePluginNames(): Promise<string[]> {
-  const result = await execSfdxJson("sf plugins --json", {
-    fail: false,
-    output: false,
-    cacheSection: "app",
-    cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
-  });
-  const plugins: any[] = result?.result ?? result ?? [];
-  if (!Array.isArray(plugins)) {
-    return [];
-  }
-  return plugins
-    .filter((p: any) => {
+  const pluginsInfo = await getInstalledPluginsInfo();
+  return Object.values(pluginsInfo)
+    .filter((p) => {
       const pType = p.type || "";
       if (pType !== "user" && pType !== "link") {
         return false;
@@ -388,7 +380,7 @@ async function listNonCorePluginNames(): Promise<string[]> {
         !KNOWN_PLUGINS.includes(name)
       );
     })
-    .map((p: any) => p.alias || p.name);
+    .map((p) => p.alias || p.name);
 }
 
 /**
