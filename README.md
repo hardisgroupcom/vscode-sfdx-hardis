@@ -82,9 +82,21 @@ Salesforce DX is powerful, but you have to glue together dozens of `sf` commands
 
 ## Installation
 
-1. Install [Visual Studio Code](https://code.visualstudio.com/).
+1. Install [Visual Studio Code](https://code.visualstudio.com/) (or any VS Code-compatible IDE, see below).
 2. Install the [**SFDX Hardis** extension](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) (or from [Open VSX](https://open-vsx.org/extension/NicolasVuillamy/vscode-sfdx-hardis)).
 3. Click the **Hardis** icon in the VS Code Activity Bar, then **Install dependencies** - the extension installs and updates everything for you (`@salesforce/cli`, `sfdx-hardis`, SFDMU, sfdx-git-delta…).
+
+### Works in every VS Code-compatible IDE
+
+SFDX Hardis is published on both the Visual Studio Marketplace and the [Open VSX Registry](https://open-vsx.org/extension/NicolasVuillamy/vscode-sfdx-hardis), so it is fully compatible with every VS Code-based IDE, on desktop or in the browser:
+
+|                                                                                                                                                                                                                                                                                                                                                                       | IDE                                                                                                              | Install from                                                                                                        |
+|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
+| <img src="https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/ide-vscode.png" alt="Visual Studio Code" height="32"/>                                                                                                                                                                                                                             | [Visual Studio Code](https://code.visualstudio.com/)                                                             | [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) |
+| <img src="https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/ide-agentforce-vibes.png" alt="Agentforce Vibes IDE" height="32"/>                                                                                                                                                                                                                 | [Agentforce Vibes IDE](https://www.salesforce.com/agentforce/developers/vibe-coding/ide/) and other browser IDEs | [Open VSX](https://open-vsx.org/extension/NicolasVuillamy/vscode-sfdx-hardis)                                       |
+| <img src="https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/ide-cursor.png" alt="Cursor" height="32"/> <img src="https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/ide-windsurf.png" alt="Windsurf" height="32"/> <img src="https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/ide-vscodium.png" alt="VSCodium" height="32"/> | [Cursor](https://cursor.com/), [Windsurf](https://windsurf.com/), [VSCodium](https://vscodium.com/) and other VS Code forks | [Open VSX](https://open-vsx.org/extension/NicolasVuillamy/vscode-sfdx-hardis)                                       |
+
+The only requirement is the same as for VS Code: the IDE must be able to run the Salesforce CLI (Agentforce Vibes IDE ships it preinstalled).
 
 ![Install dependencies](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/install-dependencies-highlight.png)
 
