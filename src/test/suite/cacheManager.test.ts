@@ -134,4 +134,41 @@ suite("CacheManager large value offload", () => {
     assert.strictEqual(listLargeCacheFiles().length, 0);
     assert.strictEqual(CacheManager.get("app", "huge"), undefined);
   });
+
+  test("a rejected oversized overwrite keeps the previous cached value and its file", async () => {
+    const value = bigValue();
+    await CacheManager.set("app", "key", value, 60_000);
+    await CacheManager.set("app", "key", "y".repeat(21_000_000), 60_000);
+    assert.strictEqual(listLargeCacheFiles().length, 1);
+    assert.deepStrictEqual(CacheManager.get("app", "key"), value);
+    // Also from the file, not just from the in-memory memo
+    (CacheManager as any).largeValueMemo.clear();
+    assert.deepStrictEqual(CacheManager.get("app", "key"), value);
+  });
+
+  test("a non-serializable overwrite keeps the previous cached value", async () => {
+    await CacheManager.set("app", "key", { a: 1 }, 60_000);
+    const cyclic: any = {};
+    cyclic.self = cyclic;
+    await CacheManager.set("app", "key", cyclic, 60_000);
+    assert.deepStrictEqual(CacheManager.get("app", "key"), { a: 1 });
+  });
+
+  test("a corrupted file behaves as a cache miss and cleans the entry", async () => {
+    await CacheManager.set("app", "big", bigValue(), 60_000);
+    (CacheManager as any).largeValueMemo.clear();
+    for (const f of listLargeCacheFiles()) {
+      fs.writeFileSync(path.join(largeCacheDir(), f), "{ not json", "utf8");
+    }
+    assert.strictEqual(CacheManager.get("app", "big"), undefined);
+    // get() fires the cleanup delete() without awaiting it
+    await new Promise((r) => setImmediate(r));
+    assert.strictEqual(fakeStore.get("app:big"), undefined);
+  });
+
+  test("no temp file is left behind after a large value write", async () => {
+    await CacheManager.set("app", "big", bigValue(), 60_000);
+    const tmpFiles = listLargeCacheFiles().filter((f) => f.endsWith(".tmp"));
+    assert.strictEqual(tmpFiles.length, 0);
+  });
 });

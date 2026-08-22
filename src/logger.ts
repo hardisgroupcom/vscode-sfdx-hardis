@@ -27,6 +27,12 @@ function isPerfDebugEnabled(): boolean {
   return perfDebugEnabled;
 }
 
+// A single log call can carry a multi-MB CLI output (e.g. a failed
+// `sf plugins install ...` dump): each line is one appendLine RPC to the
+// renderer, so an oversized message freezes the extension host. Capped here so
+// every caller is covered, success and error paths alike.
+const MAX_LOGGED_CHARS = 100_000;
+
 export class Logger {
   outputChannel: any;
 
@@ -42,13 +48,19 @@ export class Logger {
   }
 
   static log(str: any): void {
+    let text = String(str ?? "");
+    if (text.length > MAX_LOGGED_CHARS) {
+      text =
+        text.slice(0, MAX_LOGGED_CHARS) +
+        `\n[vscode-sfdx-hardis] ... output truncated in this log (${text.length} characters total)`;
+    }
     if (loggerInstance) {
-      console.log(str);
-      for (const line of str.toString().split("\n")) {
+      console.log(text);
+      for (const line of text.split("\n")) {
         loggerInstance.outputChannelLog(line);
       }
     } else {
-      console.log(str);
+      console.log(text);
     }
   }
 

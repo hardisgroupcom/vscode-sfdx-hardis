@@ -73,12 +73,10 @@ export class CacheManager {
   ): Promise<void> {
     const fullKey = this.makeKey(section, key);
     const expiresAt = Date.now() + ttlMs;
-    this.largeValueMemo.delete(fullKey);
-    // A large value previously stored for this key must not leak on overwrite
+    // Any early return below must leave the previously stored entry (and its
+    // file) fully intact: a rejected NEW value must never destroy a still
+    // valid OLD one, so nothing is deleted before the new entry is committed
     const previousEntry = this.store.get<CacheEntry<unknown>>(fullKey);
-    if (previousEntry?.largeValueFile) {
-      this.removeLargeValueFile(previousEntry);
-    }
     let serialized: string;
     try {
       serialized = JSON.stringify(value) ?? "";
@@ -96,12 +94,18 @@ export class CacheManager {
     }
     let entry: CacheEntry<T>;
     if (serialized.length > LARGE_VALUE_THRESHOLD_CHARS && this.largeValueDir) {
-      // Large value: store it in a file, keep only its name in globalState
+      // Large value: store it in a file, keep only its name in globalState.
+      // Written to a temp file then renamed: the deterministic name means
+      // another VS Code window can be reading the previous version of this
+      // very file, and it must never observe a partial write
       const fileName =
         crypto.createHash("md5").update(fullKey).digest("hex") + ".json";
+      const finalPath = this.largeValueFilePath(fileName);
       try {
         fs.mkdirSync(this.largeValueDir, { recursive: true });
-        fs.writeFileSync(this.largeValueFilePath(fileName), serialized, "utf8");
+        const tmpPath = `${finalPath}.${process.pid}.tmp`;
+        fs.writeFileSync(tmpPath, serialized, "utf8");
+        fs.renameSync(tmpPath, finalPath);
       } catch (e: any) {
         Logger.log(
           `[vscode-sfdx-hardis][WARNING] Unable to write large cache file for ${fullKey}: ${e?.message}`,
@@ -115,8 +119,15 @@ export class CacheManager {
       );
     } else {
       entry = { value, expiresAt: expiresAt };
+      this.largeValueMemo.delete(fullKey);
     }
     await this.store.update(fullKey, entry);
+    // Only now that the new entry is committed: a file the entry no longer
+    // references (large -> small transition) must not leak on disk. The
+    // large -> large case overwrote the same deterministic file name in place.
+    if (previousEntry?.largeValueFile && !entry.largeValueFile) {
+      this.removeLargeValueFile(previousEntry);
+    }
     await this.trackKey(fullKey);
     const expiresInDaysHoursMinutes = this.buildHumanExpiry(expiresAt);
     Logger.logPerf(
@@ -148,9 +159,17 @@ export class CacheManager {
             ),
           );
           this.largeValueMemo.set(fullKey, value);
-        } catch {
-          // File removed or unreadable: behave as a cache miss
-          this.delete(section, key);
+        } catch (e: any) {
+          // A missing or corrupted file is a real miss: drop the entry. A
+          // transient read error (EBUSY/EACCES: antivirus scan, file locked by
+          // another VS Code window) must NOT delete the shared entry and file
+          if (e?.code === "ENOENT" || e instanceof SyntaxError) {
+            this.delete(section, key);
+          } else {
+            Logger.log(
+              `[vscode-sfdx-hardis][WARNING] Unable to read large cache file for ${fullKey}: ${e?.message}`,
+            );
+          }
           return undefined;
         }
       }

@@ -75,14 +75,14 @@ export async function getInstalledPluginsInfo(): Promise<
       typeof res?.stdout === "string" && res.stdout
         ? parsePluginsJson(res.stdout)
         : parsePluginsData(res);
-    if (Object.keys(pluginsInfo).length > 0) {
-      await CacheManager.set(
-        "app",
-        "installedPluginsInfo",
-        pluginsInfo,
-        1000 * 60 * 5, // 5 minutes
-      );
-    }
+    // An empty result (CLI not installed, transient failure) is cached too,
+    // with a short TTL: without it, every dependency card and menu builder
+    // would re-spawn the multi-second `sf plugins --json` command in a loop
+    const ttlMs =
+      Object.keys(pluginsInfo).length > 0
+        ? 1000 * 60 * 5 // 5 minutes
+        : 1000 * 60; // 1 minute
+    await CacheManager.set("app", "installedPluginsInfo", pluginsInfo, ttlMs);
     return pluginsInfo;
   } catch (e: any) {
     Logger.log("Unable to list installed plugins as JSON: " + e?.message);
@@ -600,20 +600,6 @@ export async function execSfdxJsonWithProgress(
 }
 /* jscpd:ignore-end */
 
-// Commands like `sf plugins --json` return multi-MB payloads: dumping them
-// line by line in the output channel freezes the extension host (each line is
-// an RPC to the renderer), so displayed output is capped.
-const MAX_LOGGED_OUTPUT_CHARS = 100_000;
-function truncateLoggedOutput(output: string, command: string): string {
-  if (output.length <= MAX_LOGGED_OUTPUT_CHARS) {
-    return output;
-  }
-  return (
-    output.slice(0, MAX_LOGGED_OUTPUT_CHARS) +
-    `\n[vscode-sfdx-hardis] ... output truncated in this log (${output.length} characters total for command "${command}")`
-  );
-}
-
 // Execute command
 export async function execCommand(
   command: string,
@@ -716,8 +702,9 @@ export async function execCommand(
     return res;
   }
   // Display output if requested, for better user understanding of the logs
+  // (Logger.log caps oversized outputs like the multi-MB `sf plugins --json`)
   if (options.output || options.debug) {
-    Logger.log(truncateLoggedOutput(commandResult.stdout.toString(), command));
+    Logger.log(commandResult.stdout.toString());
   }
   // Return status 0 if not --json
   if (!command.includes("--json")) {
@@ -753,16 +740,20 @@ export async function execCommand(
     }
     return parsedResult;
   } catch (e: any) {
-    // Manage case when json is not parsable
+    // Manage case when json is not parsable (e.g. warning lines printed before
+    // the JSON payload). The raw stdout is returned so callers can attempt
+    // their own recovery, and NOTHING is cached: caching this error object for
+    // a long TTL would pin a multi-MB garbage payload and mask the next
+    // successful run.
     const errorObj = {
       status: 1,
+      stdout: (commandResult.stdout ?? "").toString(),
+      stderr: (commandResult.stderr ?? "").toString(),
+      unableToParseJson: true,
       errorMessage: c.red(
         `[sfdx-hardis][ERROR] Error parsing JSON in command result: ${e.message}\n${commandResult.stdout}\n${commandResult.stderr})`,
       ),
     };
-    if (cacheSection && typeof cacheExpiration === "number") {
-      CacheManager.set(cacheSection, command, errorObj, cacheExpiration);
-    }
     return errorObj;
   }
 }
