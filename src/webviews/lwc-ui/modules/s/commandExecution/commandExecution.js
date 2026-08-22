@@ -87,6 +87,8 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
   @track isWaitingForAnswer = false;
   @track latestQuestionId = null;
   @track lastQueryLogId = null;
+  // sfdx-hardis query id -> id of the log line showing that query (structured query events)
+  queryLogIds = {};
   @track detailsMode = "simple"; // 'advanced' or 'simple'
   @track currentProgressSection = null; // Track current progress section
   readyMessageSent = false;
@@ -988,34 +990,34 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
       logLine.isRunning = false;
     }
 
-    const isQueryOrResult =
-      logLine.message.includes("[SOQL Query]") ||
-      logLine.message.includes("[BulkApiV2]") ||
-      logLine.message.includes("[SOQL Query Tooling]") ||
-      logLine.message.includes("[DataCloudSqlQuery]");
-
-    if (isQueryOrResult) {
-      // Clean up the message for queries
-      logLine.message = logLine.message
-        .replace(/\[SOQL Query\]/g, "")
-        .replace(/\[BulkApiV2\]/g, "")
-        .replace(/\[SOQL Query Tooling\]/g, "")
-        .replace(/\[DataCloudSqlQuery\]/g, "")
-        .trim();
-    }
-
-    if (isQueryOrResult && this.lastQueryLogId) {
-      // This is a result for the last query, merge it
-      this.mergeQueryResult(this.lastQueryLogId, logLine.message);
-      this.lastQueryLogId = null; // Reset after merging
-      return; // Skip adding the result as a separate line
-    }
-
-    // Detect if this is a new query
-    if (isQueryOrResult) {
-      logLine.isQuery = true;
-      logLine.logType = "query";
-      this.lastQueryLogId = logLine.id;
+    const queryInfo = this.extractQueryInfo(logData);
+    if (queryInfo) {
+      // Structured query events sent by sfdx-hardis: the start line becomes the query line,
+      // the completion (or failure) line only updates its chip (number of records, failed)
+      logLine.message = this.stripQueryPrefixes(logLine.message);
+      if (this.applyQueryEvent(logLine, queryInfo)) {
+        return;
+      }
+    } else {
+      // Legacy text protocol (sfdx-hardis without query events): the next line carrying
+      // a query prefix is the result of the last query, merged below the query text
+      const isQueryOrResult =
+        logLine.message.includes("[SOQL Query]") ||
+        logLine.message.includes("[BulkApiV2]") ||
+        logLine.message.includes("[SOQL Query Tooling]") ||
+        logLine.message.includes("[DataCloudSqlQuery]");
+      if (isQueryOrResult) {
+        logLine.message = this.stripQueryPrefixes(logLine.message);
+        if (this.lastQueryLogId) {
+          this.mergeQueryResult(this.lastQueryLogId, logLine.message);
+          this.lastQueryLogId = null; // Reset after merging
+          return; // Skip adding the result as a separate line
+        }
+        // New query
+        logLine.isQuery = true;
+        logLine.logType = "query";
+        this.lastQueryLogId = logLine.id;
+      }
     }
 
     // Handle question/answer logic
@@ -1230,46 +1232,140 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     return this.tableLogs[tableLogId] || null;
   }
 
+  // Legacy text protocol: append the result text below the query text
   mergeQueryResult(queryLogId, resultMessage) {
-    const logIndex = this.logLines.findIndex((log) => log.id === queryLogId);
-    if (logIndex === -1) {
+    const queryLog = this.logLines.find((log) => log.id === queryLogId);
+    if (!queryLog) {
       return; // Query log not found, nothing to do
     }
+    this.updateLogLine(queryLogId, {
+      message: `${queryLog.message}\n${resultMessage}`,
+    });
+  }
 
-    const queryLog = this.logLines[logIndex];
-    const newMergedMessage = `${queryLog.message}
-${resultMessage}`;
+  // Structured query description attached to a log line by sfdx-hardis
+  // ({ id, type, status: running|completed|error, recordCount, batchCount }), or null
+  extractQueryInfo(logData) {
+    const query = logData && logData.query;
+    if (
+      query &&
+      typeof query === "object" &&
+      typeof query.id === "string" &&
+      typeof query.status === "string"
+    ) {
+      return query;
+    }
+    return null;
+  }
 
-    const updatedLog = {
-      ...queryLog,
-      message: newMergedMessage,
+  // Remove the technical query prefixes from a message before displaying it
+  stripQueryPrefixes(message) {
+    return (message || "")
+      .replace(/\[SOQL Query\]/g, "")
+      .replace(/\[BulkApiV2\]/g, "")
+      .replace(/\[SOQL Query Tooling\]/g, "")
+      .replace(/\[DataCloudSqlQuery\]/g, "")
+      .trim();
+  }
+
+  // Apply a query event to the log line being added.
+  // Returns true when the event only updated the existing query line (nothing to add).
+  applyQueryEvent(logLine, query) {
+    const existingLogId = this.queryLogIds[query.id];
+    if (query.status !== "running" && existingLogId) {
+      this.updateLogLine(existingLogId, this.buildQueryChip(query));
+      delete this.queryLogIds[query.id];
+      return true;
+    }
+    // New query (or a completion whose start was not seen): show it as a query line
+    logLine.isQuery = true;
+    logLine.logType = "query";
+    logLine.queryId = query.id;
+    Object.assign(logLine, this.buildQueryChip(query));
+    if (query.status === "running") {
+      this.queryLogIds[query.id] = logLine.id;
+    }
+    return false;
+  }
+
+  // Chip displayed next to a query line: running indicator, number of records, or failure
+  buildQueryChip(query) {
+    if (query.status === "completed") {
+      const count = Number(query.recordCount) || 0;
+      return {
+        queryStatus: "completed",
+        queryChipClass: "hardis-count-chip hardis-query-chip",
+        queryChipDotClass: "",
+        queryChipLabel:
+          count === 1
+            ? this.i18n.queryRecordsCountOne
+            : this.t("queryRecordsCount", { count: count.toLocaleString() }),
+      };
+    }
+    if (query.status === "error") {
+      return {
+        queryStatus: "error",
+        queryChipClass: "hardis-chip hardis-query-chip",
+        queryChipDotClass: "hardis-pill-dot hardis-status-failed",
+        queryChipLabel: this.i18n.queryStatusFailed,
+      };
+    }
+    return {
+      queryStatus: "running",
+      queryChipClass: "hardis-chip hardis-query-chip",
+      queryChipDotClass: "hardis-pill-dot hardis-status-running",
+      queryChipLabel: this.i18n.queryStatusRunning,
+    };
+  }
+
+  // Patch a log line everywhere it is displayed (flat list, section logs, progress logs)
+  // and refresh its rendered fields so the change shows up immediately
+  updateLogLine(logId, patch) {
+    const applyPatch = (log) => {
+      const updated = { ...log, ...patch };
+      if (patch.message !== undefined && log.formattedMessage !== undefined) {
+        updated.formattedMessage = this.formatMultiLineMessage(updated.message);
+      }
+      if (log.cssClass !== undefined) {
+        updated.cssClass = this.getLogLineClass(updated);
+      }
+      return updated;
+    };
+    const patchList = (list) => {
+      if (!Array.isArray(list)) {
+        return null;
+      }
+      const index = list.findIndex((log) => log.id === logId);
+      if (index === -1) {
+        return null;
+      }
+      return [
+        ...list.slice(0, index),
+        applyPatch(list[index]),
+        ...list.slice(index + 1),
+      ];
     };
 
-    // Update logLines immutably
-    this.logLines = [
-      ...this.logLines.slice(0, logIndex),
-      updatedLog,
-      ...this.logLines.slice(logIndex + 1),
-    ];
+    const updatedLogLines = patchList(this.logLines);
+    if (updatedLogLines) {
+      this.logLines = updatedLogLines;
+    }
 
-    // Update logSections immutably
-    if (this.currentSection && this.currentSection.logs) {
-      const sectionLogIndex = this.currentSection.logs.findIndex(
-        (log) => log.id === queryLogId,
-      );
-      if (sectionLogIndex !== -1) {
-        const updatedSectionLog = {
-          ...this.currentSection.logs[sectionLogIndex],
-          message: newMergedMessage,
-        };
-
-        this.currentSection.logs = [
-          ...this.currentSection.logs.slice(0, sectionLogIndex),
-          updatedSectionLog,
-          ...this.currentSection.logs.slice(sectionLogIndex + 1),
-        ];
-        this.logSections = [...this.logSections];
+    let sectionsChanged = false;
+    for (const section of this.logSections) {
+      const updatedLogs = patchList(section.logs);
+      if (updatedLogs) {
+        section.logs = updatedLogs;
+        sectionsChanged = true;
       }
+      const updatedProgressLogs = patchList(section.progressLogs);
+      if (updatedProgressLogs) {
+        section.progressLogs = updatedProgressLogs;
+        sectionsChanged = true;
+      }
+    }
+    if (sectionsChanged) {
+      this.logSections = [...this.logSections];
     }
   }
 

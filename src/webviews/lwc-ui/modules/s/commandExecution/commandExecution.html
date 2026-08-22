@@ -125,6 +125,9 @@
                             <template if:false={logLine.formattedMessage}>
                               <span class="log-message">{logLine.message}</span>
                             </template>
+                            <template if:true={logLine.queryChipLabel}>
+                              <span class={logLine.queryChipClass}><template if:true={logLine.queryChipDotClass}><span class={logLine.queryChipDotClass}></span></template>{logLine.queryChipLabel}</span>
+                            </template>
                             <template if:true={logLine.hasBigContent}>
                               <div class={logLine.bigContentClass} data-log-id={logLine.id} role="button" tabindex="0" title={i18n.viewFullContentTooltip} onclick={handleShowFullContent} onkeydown={handleContentPreviewKeydown}>
                                 <template if:true={logLine.bigContentPreview}>
@@ -242,6 +245,9 @@
                               </template>
                               <template if:false={logLine.formattedMessage}>
                                 <span class="log-message">{logLine.message}</span>
+                              </template>
+                              <template if:true={logLine.queryChipLabel}>
+                                <span class={logLine.queryChipClass}><template if:true={logLine.queryChipDotClass}><span class={logLine.queryChipDotClass}></span></template>{logLine.queryChipLabel}</span>
                               </template>
                               <template if:true={logLine.hasBigContent}>
                                 <div class={logLine.bigContentClass} data-log-id={logLine.id} role="button" tabindex="0" title={i18n.viewFullContentTooltip} onclick={handleShowFullContent} onkeydown={handleContentPreviewKeydown}>

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- The Command Runner now shows **how many records each query returned**
+  - SOQL, Tooling API, Bulk API and Data Cloud queries get a chip next to the query text: a running indicator while the query runs, then the **number of records**, or **Query failed**
+  - With sfdx-hardis versions that do not send query states yet, the result line of a query is now correctly displayed below the query text (it was never shown before)
 - The **Target orgs** field of a deployment action now makes it obvious whether the selected branches are the ones the action runs on, or the ones it skips
   - Both columns of the branch selector are labelled with what happens there, **Runs here** and **Does not run here**, and they swap when you switch between **Only these branches** and **All except these branches**
   - A sentence below the selector spells out the result with the branch names, for example "This action runs on uat and main only"
