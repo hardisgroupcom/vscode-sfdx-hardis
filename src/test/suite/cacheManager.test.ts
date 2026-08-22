@@ -40,7 +40,9 @@ suite("CacheManager large value offload", () => {
   }
 
   function listLargeCacheFiles(): string[] {
-    return fs.existsSync(largeCacheDir()) ? fs.readdirSync(largeCacheDir()) : [];
+    return fs.existsSync(largeCacheDir())
+      ? fs.readdirSync(largeCacheDir())
+      : [];
   }
 
   setup(() => {
