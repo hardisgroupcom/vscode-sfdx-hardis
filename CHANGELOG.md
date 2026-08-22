@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Fixed the Install Dependencies panel showing a useless **Fix Instructions** button (leading to the sfdx-hardis repository) when the installed sfdx-hardis plugin is older than the required version
+  - The panel now shows an **Upgrade** button that directly installs the required version
+  - When **Auto-update dependencies** is enabled, the upgrade now runs automatically too
+
 ## [8.0.1] 2026-08-21
 
 - Set default theme as light

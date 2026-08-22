@@ -404,9 +404,18 @@ export default class Setup extends SharedMixin(LightningElement) {
         buttonTint = "hardis-btn-tinted-blue";
         buttonAction = c.installable ? "install" : "instructions";
       } else if (status === "error") {
-        buttonLabel = this.t("fixInstructions");
-        buttonTint = "hardis-btn-tinted-blue";
-        buttonAction = "instructions";
+        // A mandatory upgrade (ex: sfdx-hardis older than the minimal version)
+        // is still an upgrade: run the install command instead of sending the
+        // user to generic fix instructions
+        if (c.upgradeAvailable === true && c.installable) {
+          buttonLabel = this.t("upgradeLabel");
+          buttonTint = "hardis-btn-tinted-amber";
+          buttonAction = "install";
+        } else {
+          buttonLabel = this.t("fixInstructions");
+          buttonTint = "hardis-btn-tinted-blue";
+          buttonAction = "instructions";
+        }
       }
       const buttonClass = buttonTint;
 
@@ -493,7 +502,12 @@ export default class Setup extends SharedMixin(LightningElement) {
       this.checks &&
       this.checks.some((c) => {
         const status = c.status || (c.installed ? "ok" : "missing");
-        const needs = status === "missing" || status === "outdated";
+        // "error" with an upgrade available is a mandatory upgrade
+        // (ex: sfdx-hardis older than the minimal version)
+        const needs =
+          status === "missing" ||
+          status === "outdated" ||
+          (status === "error" && c.upgradeAvailable === true);
         if (!needs) return false;
         // Exclude manual-only installs
         if (c.id === "node" || c.id === "git") return false;
