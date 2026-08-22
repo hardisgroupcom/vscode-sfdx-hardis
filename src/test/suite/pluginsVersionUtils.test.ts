@@ -4,6 +4,7 @@ import {
   getPluginInstallKindFromInfo,
   getPluginInstallKindFromText,
   mustUpgradeSfdxHardisPlugin,
+  parsePluginsData,
   parsePluginsJson,
   stripAnsiCodes,
 } from "../../utils/pluginsVersionUtils";
@@ -162,6 +163,61 @@ suite("pluginsVersionUtils", () => {
       assert.strictEqual(getPluginInstallKindFromInfo(null), "missing");
       assert.deepStrictEqual(parsePluginsJson("not json at all"), {});
       assert.deepStrictEqual(parsePluginsJson(""), {});
+    });
+  });
+
+  suite("parsePluginsData", () => {
+    test("parses an already parsed array (execCommand --json result)", () => {
+      const plugins = parsePluginsData(JSON.parse(PLUGINS_JSON_LINKED));
+      assert.strictEqual(plugins["sfdx-hardis"].version, "7.23.0");
+      assert.strictEqual(
+        getPluginInstallKindFromInfo(plugins["sfdx-hardis"]),
+        "localdev",
+      );
+    });
+    test("parses a { status, result } envelope and keeps the alias", () => {
+      const plugins = parsePluginsData({
+        status: 0,
+        result: [
+          {
+            name: "packaging",
+            alias: "@salesforce/plugin-packaging",
+            version: "3.0.5",
+            type: "user",
+            tag: "latest",
+          },
+        ],
+      });
+      assert.strictEqual(
+        plugins["packaging"].alias,
+        "@salesforce/plugin-packaging",
+      );
+    });
+    test("keeps only the trimmed fields, dropping the oclif manifest", () => {
+      const plugins = parsePluginsData([
+        {
+          name: "sfdmu",
+          version: "5.8.0",
+          type: "user",
+          tag: "latest",
+          root: "C:\\somewhere",
+          commandIDs: ["a", "b"],
+          commands: [{ id: "a", flags: {} }],
+        },
+      ]);
+      assert.deepStrictEqual(Object.keys(plugins["sfdmu"]).sort(), [
+        "alias",
+        "name",
+        "root",
+        "tag",
+        "type",
+        "version",
+      ]);
+    });
+    test("returns an empty map for unusable payloads", () => {
+      assert.deepStrictEqual(parsePluginsData(null), {});
+      assert.deepStrictEqual(parsePluginsData("string"), {});
+      assert.deepStrictEqual(parsePluginsData({ status: 1 }), {});
     });
   });
 

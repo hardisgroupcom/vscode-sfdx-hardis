@@ -18,6 +18,8 @@ export type PluginInstallKind = "localdev" | "preview" | "standard" | "missing";
 
 export interface InstalledPluginInfo {
   name: string;
+  // npm alias when it differs from the name (ex: "@salesforce/plugin-packaging")
+  alias?: string | null;
   version: string;
   // "user" | "link" | "core"
   type?: string;
@@ -34,10 +36,9 @@ export interface InstalledPluginInfo {
 export function parsePluginsJson(
   stdout: string,
 ): Record<string, InstalledPluginInfo> {
-  const result: Record<string, InstalledPluginInfo> = {};
   const cleanStdout = stripAnsiCodes(stdout || "").trim();
   if (!cleanStdout) {
-    return result;
+    return {};
   }
   let parsed: any;
   try {
@@ -46,14 +47,28 @@ export function parsePluginsJson(
     // Output can contain warning lines before the JSON payload
     const firstBracket = cleanStdout.search(/[[{]/);
     if (firstBracket === -1) {
-      return result;
+      return {};
     }
     try {
       parsed = JSON.parse(cleanStdout.substring(firstBracket));
     } catch {
-      return result;
+      return {};
     }
   }
+  return parsePluginsData(parsed);
+}
+
+/**
+ * Same as parsePluginsJson, from an already parsed `sf plugins --json` payload
+ * (execCommand returns the parsed JSON for `--json` commands, not the stdout).
+ * Only the few fields the extension uses are kept: the raw payload embeds the
+ * whole oclif manifest of every plugin (several MB), which must never be
+ * stored or logged as-is.
+ */
+export function parsePluginsData(
+  parsed: any,
+): Record<string, InstalledPluginInfo> {
+  const result: Record<string, InstalledPluginInfo> = {};
   const plugins = Array.isArray(parsed) ? parsed : parsed?.result;
   if (!Array.isArray(plugins)) {
     return result;
@@ -62,6 +77,7 @@ export function parsePluginsJson(
     if (plugin && typeof plugin.name === "string") {
       result[plugin.name] = {
         name: plugin.name,
+        alias: plugin.alias ?? null,
         version: plugin.version || "",
         type: plugin.type,
         tag: plugin.tag ?? null,

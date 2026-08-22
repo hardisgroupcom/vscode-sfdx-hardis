@@ -17,6 +17,7 @@ import {
   PluginInstallKind,
   getPluginInstallKindFromInfo,
   getPluginInstallKindFromText,
+  parsePluginsData,
   parsePluginsJson,
 } from "./utils/pluginsVersionUtils";
 
@@ -53,13 +54,36 @@ export async function getInstalledPluginsInfo(): Promise<
   Record<string, InstalledPluginInfo>
 > {
   try {
+    // Cache only the trimmed plugin infos, NEVER the raw `sf plugins --json`
+    // payload: it embeds the whole oclif manifest of every plugin (several MB),
+    // which used to bloat globalState (4+ MB serialized on every cache write)
+    // and flood the output channel, freezing the extension host at startup
+    const cached = CacheManager.get<Record<string, InstalledPluginInfo>>(
+      "app",
+      "installedPluginsInfo",
+    );
+    if (cached) {
+      return cached;
+    }
     const res: any = await execCommand("sf plugins --json", {
-      output: true,
+      output: false,
       fail: false,
-      cacheSection: "app",
-      cacheExpiration: 1000 * 60 * 5, // 5 minutes
     });
-    return parsePluginsJson((res?.stdout || "").toString());
+    // execCommand returns the parsed JSON payload for `--json` commands; the
+    // stdout string is only present on the error path
+    const pluginsInfo =
+      typeof res?.stdout === "string" && res.stdout
+        ? parsePluginsJson(res.stdout)
+        : parsePluginsData(res);
+    // An empty result (CLI not installed, transient failure) is cached too,
+    // with a short TTL: without it, every dependency card and menu builder
+    // would re-spawn the multi-second `sf plugins --json` command in a loop
+    const ttlMs =
+      Object.keys(pluginsInfo).length > 0
+        ? 1000 * 60 * 5 // 5 minutes
+        : 1000 * 60; // 1 minute
+    await CacheManager.set("app", "installedPluginsInfo", pluginsInfo, ttlMs);
+    return pluginsInfo;
   } catch (e: any) {
     Logger.log("Unable to list installed plugins as JSON: " + e?.message);
     return {};
@@ -678,6 +702,7 @@ export async function execCommand(
     return res;
   }
   // Display output if requested, for better user understanding of the logs
+  // (Logger.log caps oversized outputs like the multi-MB `sf plugins --json`)
   if (options.output || options.debug) {
     Logger.log(commandResult.stdout.toString());
   }
@@ -715,16 +740,20 @@ export async function execCommand(
     }
     return parsedResult;
   } catch (e: any) {
-    // Manage case when json is not parsable
+    // Manage case when json is not parsable (e.g. warning lines printed before
+    // the JSON payload). The raw stdout is returned so callers can attempt
+    // their own recovery, and NOTHING is cached: caching this error object for
+    // a long TTL would pin a multi-MB garbage payload and mask the next
+    // successful run.
     const errorObj = {
       status: 1,
+      stdout: (commandResult.stdout ?? "").toString(),
+      stderr: (commandResult.stderr ?? "").toString(),
+      unableToParseJson: true,
       errorMessage: c.red(
         `[sfdx-hardis][ERROR] Error parsing JSON in command result: ${e.message}\n${commandResult.stdout}\n${commandResult.stderr})`,
       ),
     };
-    if (cacheSection && typeof cacheExpiration === "number") {
-      CacheManager.set(cacheSection, command, errorObj, cacheExpiration);
-    }
     return errorObj;
   }
 }

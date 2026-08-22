@@ -755,10 +755,18 @@ export class SetupHelper {
     name: string,
     action: () => Promise<void>,
     command?: string,
-  ): Promise<{ success: boolean; message?: string; command?: string }> {
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    command?: string;
+    reason?: string;
+  }> {
     if (this.hasUpdatesInProgress()) {
       return {
         success: false,
+        // Machine-readable marker: the setup LWC uses it to know the install
+        // was never attempted (vs actually failed), independently of locale
+        reason: "alreadyRunning",
         message: t("installInProgress"),
         ...(command !== undefined ? { command } : {}),
       };
@@ -796,7 +804,21 @@ export class SetupHelper {
     const recommended =
       RECOMMENDED_SFDX_CLI_VERSION ||
       (await getNpmLatestVersion("@salesforce/cli").catch(() => null));
-    const command = buildSfCliUpgradeCommand(sfdxPath, recommended);
+    // A legacy sfdx-cli install cannot be upgraded in place: it must be
+    // uninstalled before installing @salesforce/cli, otherwise both global
+    // binaries coexist and `sf` keeps resolving to the deprecated one
+    // (same command as the one checkSfCli() advertises for this case)
+    const versionRes: any = await execCommand("sf --version", {
+      fail: false,
+      output: false,
+      spinner: false,
+    });
+    const isLegacySfdxCli = /sfdx-cli\//.test(
+      (versionRes?.stdout || "").toString(),
+    );
+    const command = isLegacySfdxCli
+      ? "npm uninstall sfdx-cli --global && npm install @salesforce/cli --global"
+      : buildSfCliUpgradeCommand(sfdxPath, recommended);
     return this.runUpdateOperation(
       "sf",
       async () => {

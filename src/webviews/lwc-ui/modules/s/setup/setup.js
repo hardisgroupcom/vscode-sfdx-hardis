@@ -50,6 +50,9 @@ export default class Setup extends SharedMixin(LightningElement) {
       // Render the static list first (no checking yet) so the UI paints quickly
       this._autoUpdateDependencies =
         data && data.autoUpdateDependencies === true;
+      // Full refresh: give auto-update a fresh chance on every re-check cycle
+      // (a previous failure may have been fixed outside the panel since)
+      this._autoInstallAttemptedIds = new Set();
       this.checks = data.checks.map((c) => ({
         ...c,
         explanation: c.explanation || "",
@@ -122,6 +125,11 @@ export default class Setup extends SharedMixin(LightningElement) {
     // Receive install result
     else if (type === "installResult") {
       const { id, res } = data || {};
+      // The install was never attempted (another update was already running):
+      // let auto-update retry it instead of burning its one attempt
+      if (res && res.reason === "alreadyRunning") {
+        this._autoInstallAttemptedIds.delete(id);
+      }
       // After install, re-run the single check to refresh its status
       this._startCheck(id);
     }
@@ -327,16 +335,27 @@ export default class Setup extends SharedMixin(LightningElement) {
       }
     }
 
+    // Auto-update tries each dependency at most once per re-check cycle: a
+    // failing install re-checks into the same pending status, and retrying it
+    // automatically would loop forever (the user can still retry manually).
+    // Only the exact filtered list is run and marked: installing unrelated
+    // errored cards, or re-running previously failed ones, is manual-only
+    const autoInstallCandidates = this.listAutoInstallCandidates().filter(
+      (c) => !this._autoInstallAttemptedIds.has(c.id),
+    );
     if (
       this._autoUpdateDependencies &&
-      this.listInstallCandidates().length > 0 &&
+      autoInstallCandidates.length > 0 &&
       !anyChecking &&
       !this.installQueueRunning &&
       !this._summaryChecking &&
       this.hasPendingActions
     ) {
       // Automatically run pending installs if the setting is enabled, the queue is not already running, and there are pending actions
-      this.runPendingInstalls();
+      autoInstallCandidates.forEach((c) =>
+        this._autoInstallAttemptedIds.add(c.id),
+      );
+      this.runPendingInstalls(autoInstallCandidates);
     }
 
     // Ensure button labels/disabled state reflect the new summary/installQueue states
@@ -366,7 +385,13 @@ export default class Setup extends SharedMixin(LightningElement) {
             state = "error";
             break;
           case "error":
-            statusIcon = "utility:ban";
+            // A mandatory upgrade is not a broken dependency: show the same
+            // warning icon as an optional upgrade, on the red (required) accent
+            if (c.upgradeAvailable === true && c.installable) {
+              statusIcon = "utility:warning";
+            } else {
+              statusIcon = "utility:ban";
+            }
             state = "error";
         }
       }
@@ -404,9 +429,18 @@ export default class Setup extends SharedMixin(LightningElement) {
         buttonTint = "hardis-btn-tinted-blue";
         buttonAction = c.installable ? "install" : "instructions";
       } else if (status === "error") {
-        buttonLabel = this.t("fixInstructions");
-        buttonTint = "hardis-btn-tinted-blue";
-        buttonAction = "instructions";
+        // A mandatory upgrade (ex: sfdx-hardis older than the minimal version)
+        // is still an upgrade: run the install command instead of sending the
+        // user to generic fix instructions
+        if (c.upgradeAvailable === true && c.installable) {
+          buttonLabel = this.t("upgradeLabel");
+          buttonTint = "hardis-btn-tinted-amber";
+          buttonAction = "install";
+        } else {
+          buttonLabel = this.t("fixInstructions");
+          buttonTint = "hardis-btn-tinted-blue";
+          buttonAction = "instructions";
+        }
       }
       const buttonClass = buttonTint;
 
@@ -469,6 +503,10 @@ export default class Setup extends SharedMixin(LightningElement) {
   // Flag indicating install queue is running to prevent re-entrancy
   _installQueueRunning = false;
 
+  // Dependencies already auto-installed once in this panel session, so a
+  // failing install is not retried in a loop by the auto-update setting
+  _autoInstallAttemptedIds = new Set();
+
   // Expose whether the install queue is currently running
   get installQueueRunning() {
     return !!this._installQueueRunning;
@@ -493,7 +531,12 @@ export default class Setup extends SharedMixin(LightningElement) {
       this.checks &&
       this.checks.some((c) => {
         const status = c.status || (c.installed ? "ok" : "missing");
-        const needs = status === "missing" || status === "outdated";
+        // "error" with an upgrade available is a mandatory upgrade
+        // (ex: sfdx-hardis older than the minimal version)
+        const needs =
+          status === "missing" ||
+          status === "outdated" ||
+          (status === "error" && c.upgradeAvailable === true);
         if (!needs) return false;
         // Exclude manual-only installs
         if (c.id === "node" || c.id === "git") return false;
@@ -522,9 +565,26 @@ export default class Setup extends SharedMixin(LightningElement) {
     return installCandidates;
   }
 
-  // Run the install queue for all items that need install/upgrade and are installable
-  async runPendingInstalls() {
-    const installCandidates = this.listInstallCandidates();
+  // Candidates auto-update is allowed to install unattended: dependencies that
+  // genuinely need an install (missing, outdated, or a mandatory upgrade).
+  // Other error cards (transient check failures, e.g. npm registry unreachable)
+  // are left alone: reinstalling cannot fix them
+  listAutoInstallCandidates() {
+    return this.listInstallCandidates().filter(
+      (c) =>
+        c.status === "missing" ||
+        c.status === "outdated" ||
+        (c.status === "error" && c.upgradeAvailable === true),
+    );
+  }
+
+  // Run the install queue for all items that need install/upgrade and are
+  // installable. `candidates` restricts the queue to an explicit list (used by
+  // auto-update); anything else (the button click event) runs the full list
+  async runPendingInstalls(candidates = null) {
+    const installCandidates = Array.isArray(candidates)
+      ? candidates
+      : this.listInstallCandidates();
     if (installCandidates.length === 0) {
       const manualInstallCandidates = this.checks.filter((c) => {
         if (

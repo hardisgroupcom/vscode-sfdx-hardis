@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Fixed the Install Dependencies panel showing a useless **Fix Instructions** button (leading to the sfdx-hardis repository) when the installed sfdx-hardis plugin is older than the required version
+  - The panel now shows an **Upgrade** button that directly installs the required version
+  - The card now shows the same warning icon as other upgrades (on the red "required" accent), instead of the same icon as a broken dependency
+  - When **Auto-update dependencies** is enabled, the upgrade now runs automatically too
+  - Upgrading from the deprecated sfdx-cli package now runs the correct replacement command
+- Fixed VS Code freezing for several seconds at startup while checking the installed Salesforce CLI plugins
+  - The SFDX Hardis output channel is no longer flooded with huge command outputs
+
 ## [8.0.1] 2026-08-21
 
 - Set default theme as light
