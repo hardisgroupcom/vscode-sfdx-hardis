@@ -21,7 +21,10 @@ const LOCALES = ["en", "fr", "es", "de", "it", "nl", "ja", "pl", "pt-BR"];
 
 function loadLocale(locale: string): Record<string, string> {
   return JSON.parse(
-    fs.readFileSync(path.join(REPO_ROOT, "src", "i18n", `${locale}.json`), "utf8"),
+    fs.readFileSync(
+      path.join(REPO_ROOT, "src", "i18n", `${locale}.json`),
+      "utf8",
+    ),
   );
 }
 
@@ -52,9 +55,9 @@ suite("Deployment action target orgs contract", () => {
       "targetBranchesSelectedColumnLabel",
     ]) {
       const body = js.substring(js.indexOf(`get ${getter}()`));
-      const keys = [...body.substring(0, 220).matchAll(/this\.t\("(\w+)"\)/g)].map(
-        (match) => match[1],
-      );
+      const keys = [
+        ...body.substring(0, 220).matchAll(/this\.t\("(\w+)"\)/g),
+      ].map((match) => match[1]);
       assert.deepStrictEqual(
         keys.slice(0, 2).sort(),
         ["targetBranchesDoesNotRunHere", "targetBranchesRunsHere"],
@@ -63,7 +66,9 @@ suite("Deployment action target orgs contract", () => {
     }
     // The exclude mode is what flips them, so the two getters must not resolve
     // the same key for the same mode
-    const source = js.substring(js.indexOf("get targetBranchesSourceColumnLabel()"));
+    const source = js.substring(
+      js.indexOf("get targetBranchesSourceColumnLabel()"),
+    );
     assert.match(
       source.substring(0, 220),
       /exclude"\s*\?\s*this\.t\("targetBranchesRunsHere"\)/,
