@@ -21,8 +21,10 @@ commandsPostDeploy:
     type: manual
     when: post-deploy
     parameters:
-      instructions: >-
-        In Setup > Process Automation Settings, enable the notifications for
-        the Opportunity stage changes.
+      instructions: |
+        1. Open **Setup**, type `Process Automation Settings` in the Quick Find box, then open **Process Automation Settings**.
+        2. Tick **Send Notifications on Opportunity Stage Changes**.
+        3. Click **Save**.
+        4. Check: reopen the page, the box is still ticked. If it was already ticked, there is nothing to do: tick the box anyway.
     command: ""
     context: process-deployment-only

@@ -25,6 +25,7 @@
     "**/scripts/**",
     "**/eslint.config.mjs",
     "**/CLAUDE.md",
+    "**/README.md",
     "**/.claude/**"
   ]
 }
