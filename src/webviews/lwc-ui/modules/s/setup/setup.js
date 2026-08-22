@@ -327,15 +327,24 @@ export default class Setup extends SharedMixin(LightningElement) {
       }
     }
 
+    // Auto-update tries each dependency at most once per panel session: a
+    // failing install re-checks into the same pending status, and retrying it
+    // automatically would loop forever (the user can still retry manually)
+    const autoInstallCandidates = this.listInstallCandidates().filter(
+      (c) => !this._autoInstallAttemptedIds.has(c.id),
+    );
     if (
       this._autoUpdateDependencies &&
-      this.listInstallCandidates().length > 0 &&
+      autoInstallCandidates.length > 0 &&
       !anyChecking &&
       !this.installQueueRunning &&
       !this._summaryChecking &&
       this.hasPendingActions
     ) {
       // Automatically run pending installs if the setting is enabled, the queue is not already running, and there are pending actions
+      this.listInstallCandidates().forEach((c) =>
+        this._autoInstallAttemptedIds.add(c.id),
+      );
       this.runPendingInstalls();
     }
 
@@ -483,6 +492,10 @@ export default class Setup extends SharedMixin(LightningElement) {
 
   // Flag indicating install queue is running to prevent re-entrancy
   _installQueueRunning = false;
+
+  // Dependencies already auto-installed once in this panel session, so a
+  // failing install is not retried in a loop by the auto-update setting
+  _autoInstallAttemptedIds = new Set();
 
   // Expose whether the install queue is currently running
   get installQueueRunning() {

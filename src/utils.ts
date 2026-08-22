@@ -618,7 +618,9 @@ function truncateLoggedOutput(output: string, command: string): string {
 // update: caching a multi-MB command result stalls the extension host and
 // triggers the VS Code "large extension state detected" warning. Oversized
 // results are simply not cached; callers must cache a trimmed value instead.
-const MAX_CACHED_RESULT_CHARS = 500_000;
+// The threshold is far above any legitimate cached result (org lists, metadata
+// folder lists) while still rejecting the `sf plugins --json` manifest (4+ MB).
+const MAX_CACHED_RESULT_CHARS = 1_000_000;
 function isCacheableCommandResult(command: string, value: any): boolean {
   try {
     const size = JSON.stringify(value)?.length ?? 0;
