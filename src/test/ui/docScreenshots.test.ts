@@ -620,8 +620,8 @@ suite("Documentation screenshots", function () {
       { name: "pipeline-edit-action-manual", row: 6, editY: 714 },
       // The two last actions of the fixture restrict their target orgs, so
       // their editor also shows the branch selector (taller modal)
-      { name: "pipeline-edit-action-target-orgs-include", row: 7, editY: 775 },
-      { name: "pipeline-edit-action-target-orgs-exclude", row: 8, editY: 775 },
+      { name: "pipeline-edit-action-target-orgs-include", row: 7, editY: 796 },
+      { name: "pipeline-edit-action-target-orgs-exclude", row: 8, editY: 796 },
     ];
     const FIRST_ROW_CENTER_Y = 270;
     const ROW_STEP = 36;

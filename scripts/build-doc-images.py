@@ -122,11 +122,11 @@ BOX_CROPS = {
         (470, 60, 1866, 810),
     ),
     # Deployment Actions tab of the "My Pull Request" modal of the feature
-    # pull request #128 (normal zoom, opened through the hardis:work:save
-    # deep link), listing the actions of its fixture file
+    # pull request #128 (one zoom level out, opened through the
+    # hardis:work:save deep link), listing the actions of its fixture file
     "screenshot-pr-deployment-actions-list.jpg": (
         "pipeline-pr-actions-list",
-        (470, 60, 1866, 810),
+        (401, 87, 1863, 832),
     ),
     # Branch modal of the pipeline, on its Deployment Actions tab
     "screenshot-deployment-actions.jpg": (
@@ -174,11 +174,11 @@ BOX_CROPS = {
     # "Choose the target orgs" section (the branch selector makes it taller)
     "screenshot-deployment-action-target-orgs-include.jpg": (
         "pipeline-edit-action-target-orgs-include",
-        (760, 165, 1462, 802),
+        (760, 144, 1462, 823),
     ),
     "screenshot-deployment-action-target-orgs-exclude.jpg": (
         "pipeline-edit-action-target-orgs-exclude",
-        (760, 165, 1462, 802),
+        (760, 144, 1462, 823),
     ),
 }
 
