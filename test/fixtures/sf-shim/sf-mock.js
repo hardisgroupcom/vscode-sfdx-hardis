@@ -696,6 +696,22 @@ async function runShowcaseScenario(send, askPrompt, sleep) {
   );
   await sleep(80);
   log("log", "Detected 4 item types to save before the refresh.");
+  // A SOQL query with its structured events: running chip, then the number of records
+  const showcaseQuery = { id: "showcase-query-1", type: "soql" };
+  log(
+    "log",
+    "[SOQL Query] SELECT Id, DeveloperName, ExpirationDate FROM Certificate ORDER BY DeveloperName",
+    { query: { ...showcaseQuery, status: "running" } },
+  );
+  await sleep(150);
+  log("log", "[SOQL Query] Retrieved 12 records", {
+    query: {
+      ...showcaseQuery,
+      status: "completed",
+      recordCount: 12,
+      batchCount: 1,
+    },
+  });
   log(
     "action",
     "Checking which Connected Apps can be converted to External Client Apps...",
@@ -842,6 +858,25 @@ async function runShowcaseScenario(send, askPrompt, sleep) {
   const daysSelected =
     (daysResponse && daysResponse[0] && daysResponse[0].auditDays) || 30;
   log("log", String(daysSelected));
+  await sleep(100);
+
+  // Last section: a Tooling API query whose record count chip stays visible once completed
+  log("action", "Generating the data dictionary...");
+  const dictionaryQuery = { id: "showcase-query-2", type: "tooling" };
+  log(
+    "log",
+    "[SOQL Query Tooling] SELECT Id, DeveloperName, Description FROM CustomObject WHERE NamespacePrefix = null",
+    { query: { ...dictionaryQuery, status: "running" } },
+  );
+  await sleep(200);
+  log("log", "[SOQL Query Tooling] Retrieved 34 records", {
+    query: {
+      ...dictionaryQuery,
+      status: "completed",
+      recordCount: 34,
+      batchCount: 1,
+    },
+  });
   await sleep(100);
 
   // Report files + final status

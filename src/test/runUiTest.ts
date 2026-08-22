@@ -93,8 +93,10 @@ async function main() {
   // e.g. SFDX_HARDIS_VISUAL_THEME=light to screenshot webviews in light mode
   if (process.env.SFDX_HARDIS_VISUAL_THEME === "light") {
     workspaceSettings["workbench.colorTheme"] = "Default Light Modern";
+    workspaceSettings["vsCodeSfdxHardis.theme.colorTheme"] = "light";
   } else if (process.env.SFDX_HARDIS_VISUAL_THEME === "dark") {
     workspaceSettings["workbench.colorTheme"] = "Default Dark Modern";
+    workspaceSettings["vsCodeSfdxHardis.theme.colorTheme"] = "dark";
   }
   if (docScreenshots) {
     // Documentation screenshots are always taken in light mode, English, with

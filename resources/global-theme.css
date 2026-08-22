@@ -2109,6 +2109,14 @@ lightning-helptext::part(icon) {
   flex-shrink: 0;
   white-space: nowrap;
 }
+/* Query state chip (running / number of records / failed) shown after the query text */
+.slds-scope[data-theme] .hardis-logline .hardis-query-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
 .slds-scope[data-theme] .hardis-textlink {
   background: transparent;
   border: 0;

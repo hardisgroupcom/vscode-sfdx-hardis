@@ -287,6 +287,8 @@ export class LocalWebSocketServer {
             timestamp: new Date(),
             isQuestion: data.isQuestion || false,
             alwaysVisible: data.alwaysVisible || false,
+            // Query start / completion / failure description (see CommandLogLineQuery in sfdx-hardis)
+            query: data.query,
           },
         });
       }
