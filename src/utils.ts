@@ -614,28 +614,6 @@ function truncateLoggedOutput(output: string, command: string): string {
   );
 }
 
-// globalState (backing CacheManager) is serialized synchronously on every
-// update: caching a multi-MB command result stalls the extension host and
-// triggers the VS Code "large extension state detected" warning. Oversized
-// results are simply not cached; callers must cache a trimmed value instead.
-// The threshold is far above any legitimate cached result (org lists, metadata
-// folder lists) while still rejecting the `sf plugins --json` manifest (4+ MB).
-const MAX_CACHED_RESULT_CHARS = 1_000_000;
-function isCacheableCommandResult(command: string, value: any): boolean {
-  try {
-    const size = JSON.stringify(value)?.length ?? 0;
-    if (size > MAX_CACHED_RESULT_CHARS) {
-      Logger.log(
-        `[vscode-sfdx-hardis][WARNING] Result of "${command}" is too large to be cached (${size} characters): cache a trimmed value instead`,
-      );
-      return false;
-    }
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 // Execute command
 export async function execCommand(
   command: string,
@@ -751,8 +729,7 @@ export async function execCommand(
     if (
       cacheSection &&
       typeof cacheExpiration === "number" &&
-      !CacheManager.get(cacheSection, command) &&
-      isCacheableCommandResult(command, resultObj)
+      !CacheManager.get(cacheSection, command)
     ) {
       CacheManager.set(cacheSection, command, resultObj, cacheExpiration);
     }
@@ -771,11 +748,7 @@ export async function execCommand(
         "[sfdx-hardis][WARNING] stderr: " + c.yellow(commandResult.stderr),
       );
     }
-    if (
-      cacheSection &&
-      typeof cacheExpiration === "number" &&
-      isCacheableCommandResult(command, parsedResult)
-    ) {
+    if (cacheSection && typeof cacheExpiration === "number") {
       CacheManager.set(cacheSection, command, parsedResult, cacheExpiration);
     }
     return parsedResult;
