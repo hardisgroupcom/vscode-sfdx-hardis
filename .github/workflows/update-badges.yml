@@ -1,0 +1,70 @@
+---
+# Refreshes the README badges that no live badge URL can compute anymore
+# (shields.io retired its visual-studio-marketplace endpoints), today only the
+# Marketplace install count
+name: Update Badges
+
+on:
+  schedule:
+    # Every day at 04:17 UTC
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  update-badges:
+    name: Refresh README badges
+    runs-on: ubuntu-latest
+    # Avoid useless scheduled runs on forks
+    if: github.repository == 'hardisgroupcom/vscode-sfdx-hardis'
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true # zizmor: ignore[artipacked]
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      - name: Read Marketplace stats and update README
+        run: node scripts/update-badges.js
+
+      # Nothing is committed to main: the refreshed values are proposed in a
+      # Pull Request, reusing the same branch as long as it is not merged
+      - name: Create Pull Request with refreshed badges
+        id: cpr
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7.0.11
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: main
+          branch: chore/update-badges
+          delete-branch: true
+          add-paths: README.md
+          commit-message: "chore(readme): refresh Marketplace badge values"
+          title: "chore(readme): refresh Marketplace badge values"
+          body: |
+            Automated refresh of the README badges that no live badge URL can compute
+            (see `scripts/update-badges.js`).
+          labels: bot
+
+      - name: Create PR output
+        if: steps.cpr.outputs.pull-request-number
+        env:
+          PR_NUMBER: ${{ steps.cpr.outputs.pull-request-number }}
+          PR_URL: ${{ steps.cpr.outputs.pull-request-url }}
+        run: |
+          echo "Pull Request Number - $PR_NUMBER"
+          echo "Pull Request URL - $PR_URL"
