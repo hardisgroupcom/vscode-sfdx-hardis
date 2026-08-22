@@ -73,6 +73,25 @@ suite("Datatable colored pills contract", () => {
     );
   });
 
+  test("hardisDatatable shows the full cell value on hover", () => {
+    const datatable = readModuleFile("hardisDatatable", "hardisDatatable.js");
+    assert.match(
+      datatable,
+      /addEventListener\("mouseover",\s*this\._onCellMouseOver\)/,
+      "hardisDatatable should listen to mouseover to expose cell values",
+    );
+    assert.match(
+      datatable,
+      /removeEventListener\("mouseover",\s*this\._onCellMouseOver\)/,
+      "hardisDatatable should drop the mouseover listener when disconnected",
+    );
+    assert.match(
+      datatable,
+      /cell\.setAttribute\("title",\s*text\)/,
+      "hardisDatatable should set the hovered cell title to its full text",
+    );
+  });
+
   test("pipeline ticket and deployment action rows compute their pill fields", () => {
     const pipeline = readModuleFile("pipeline", "pipeline.js");
     // Fields referenced by the ticket / action / author columns
