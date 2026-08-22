@@ -8,6 +8,7 @@
 - The **Target orgs** field of a deployment action now makes it obvious whether the selected branches are the ones the action runs on, or the ones it skips
   - Both columns of the branch selector are labelled with what happens there, **Runs here** and **Does not run here**, and they swap when you switch between **Only these branches** and **All except these branches**
   - A sentence below the selector spells out the result with the branch names, for example "This action runs on uat and main only"
+- Hovering a cell in any table now shows its **full value** in a tooltip, so long texts cut off by a narrow column can still be read
 - The **Instructions** field of a manual deployment action now shows a click by click template and explains how to write a step that anyone can replay in every org (exact Setup path, exact item name, value to set, how to check it worked)
 
 ## [8.0.2] 2026-08-22
