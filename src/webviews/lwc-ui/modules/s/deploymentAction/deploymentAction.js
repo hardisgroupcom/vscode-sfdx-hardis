@@ -504,6 +504,46 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       : this.t("targetBranchesIncludedLabel");
   }
 
+  // Both columns say what happens to the branches they hold, so a glance at the
+  // selector is enough to tell an inclusion from an exclusion
+  get targetBranchesSourceColumnLabel() {
+    return this.targetBranchesMode === "exclude"
+      ? this.t("targetBranchesRunsHere")
+      : this.t("targetBranchesDoesNotRunHere");
+  }
+
+  get targetBranchesSelectedColumnLabel() {
+    return this.targetBranchesMode === "exclude"
+      ? this.t("targetBranchesDoesNotRunHere")
+      : this.t("targetBranchesRunsHere");
+  }
+
+  // Plain sentence naming the branches actually selected, below the selector
+  get targetBranchesSummary() {
+    const selected = (this.selectedTargetBranches || []).filter(Boolean);
+    // An empty restriction list is dropped when saving, so it means exactly the
+    // same thing as the "All target orgs" mode
+    if (selected.length === 0) {
+      return this.t("targetBranchesSummaryAll");
+    }
+    const branches = this._formatBranchList(selected);
+    return this.targetBranchesMode === "exclude"
+      ? this.t("targetBranchesSummaryExclude", { branches })
+      : this.t("targetBranchesSummaryInclude", { branches });
+  }
+
+  _formatBranchList(branches) {
+    const labels = branches.map((branch) =>
+      branch === "dev-sandboxes" ? this.t("devSandboxesOption") : branch,
+    );
+    // Intl.ListFormat writes the list the way the locale does ("uat and main",
+    // "uat et main"), including the languages that use no conjunction at all
+    return new Intl.ListFormat(this.locale, {
+      style: "long",
+      type: "conjunction",
+    }).format(labels);
+  }
+
   handleTargetBranchesModeChange(event) {
     const mode = event.detail.value;
     this.targetBranchesModeOverride = mode;

@@ -64,3 +64,25 @@ commandsPostDeploy:
         5. Check: the rule is listed with `Sales Team` / `Read Only`. If it was already the case, there is nothing to do: tick the box anyway.
     command: ""
     context: process-deployment-only
+  # Target orgs examples: the ERP is only connected to the uat and production
+  # orgs, and the agent sample records must never reach production
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-128a00000008
+    label: Enable the ERP integration
+    type: command
+    when: post-deploy
+    command: >-
+      sf data update record --sobject Integration_Setting__c --where "Name='ERP'" --values "IsActive__c=true" --json
+    context: process-deployment-only
+    includeTargetBranches:
+      - uat
+      - main
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-128a00000009
+    label: Upsert the sample records used to test the agents
+    type: apex
+    when: post-deploy
+    parameters:
+      apexScript: scripts/apex/upsert-agent-sample-data.apex
+    command: ""
+    context: process-deployment-only
+    excludeTargetBranches:
+      - main

@@ -170,6 +170,16 @@ BOX_CROPS = {
         "pipeline-edit-action-remove-packagexml-items",
         (760, 239, 1462, 728),
     ),
+    # Same editor with the "Target orgs" field restricting the action, for the
+    # "Choose the target orgs" section (the branch selector makes it taller)
+    "screenshot-deployment-action-target-orgs-include.jpg": (
+        "pipeline-edit-action-target-orgs-include",
+        (760, 165, 1462, 802),
+    ),
+    "screenshot-deployment-action-target-orgs-exclude.jpg": (
+        "pipeline-edit-action-target-orgs-exclude",
+        (760, 165, 1462, 802),
+    ),
 }
 
 # --- Animated GIFs ------------------------------------------------------------
