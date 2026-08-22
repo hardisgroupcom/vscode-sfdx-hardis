@@ -3,13 +3,16 @@
 
 # SFDX Hardis for Visual Studio Code
 
-[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/NicolasVuillamy.vscode-sfdx-hardis?label=VS%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
-[![Visual Studio Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/NicolasVuillamy.vscode-sfdx-hardis?label=VS%20Code%20installs)](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
+<!-- The VS Code installs badge is hardcoded: no live badge service exposes the Marketplace install count anymore, so its value is refreshed by the daily Pull Request of .github/workflows/update-badges.yml -->
+
+[![Visual Studio Marketplace Version](https://img.shields.io/github/v/release/hardisgroupcom/vscode-sfdx-hardis?label=VS%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
+[![Visual Studio Marketplace Installs](https://img.shields.io/badge/VS%20Code%20installs-14.3k-blue)](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 [![Open VSX Downloads](https://img.shields.io/open-vsx/dt/NicolasVuillamy/vscode-sfdx-hardis?label=Open%20VSX%20installs)](https://open-vsx.org/extension/NicolasVuillamy/vscode-sfdx-hardis)
-[![Mega-Linter](https://github.com/hardisgroupcom/vscode-sfdx-hardis/workflows/Mega-Linter/badge.svg?branch=main)](https://github.com/nvuillam/mega-linter#readme)
-[![License](https://img.shields.io/github/license/hardisgroupcom/vscode-sfdx-hardis.png)](https://github.com/hardisgroupcom/vscode-sfdx-hardis/blob/main/LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/hardisgroupcom/vscode-sfdx-hardis.png?label=Star&maxAge=2592000)](https://github.com/hardisgroupcom/vscode-sfdx-hardis/stargazers/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.png?style=flat-square)](http://makeapullrequest.com)
+[![Tests](https://img.shields.io/github/actions/workflow/status/hardisgroupcom/vscode-sfdx-hardis/test.yml?branch=main&label=Tests)](https://github.com/hardisgroupcom/vscode-sfdx-hardis/actions/workflows/test.yml)
+[![Mega-Linter](https://img.shields.io/github/actions/workflow/status/hardisgroupcom/vscode-sfdx-hardis/mega-linter.yml?branch=main&label=Mega-Linter)](https://megalinter.io)
+[![License](https://img.shields.io/github/license/hardisgroupcom/vscode-sfdx-hardis)](https://github.com/hardisgroupcom/vscode-sfdx-hardis/blob/main/LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/hardisgroupcom/vscode-sfdx-hardis?label=Star)](https://github.com/hardisgroupcom/vscode-sfdx-hardis/stargazers/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat)](https://makeapullrequest.com)
 
 > **The complete Salesforce DX toolkit - for everyone.**
 > A click-driven UI on top of the [sfdx-hardis](https://sfdx-hardis.cloudity.com/) CLI: deliver Salesforce projects with a state-of-the-art DevOps pipeline, monitor your orgs, generate AI-assisted documentation, and run hundreds of productivity commands - **without having to learn Salesforce DX or Git first**.

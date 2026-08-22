@@ -679,6 +679,7 @@
     "clean:out": "node -e \"require('fs').rmSync('out', { recursive: true, force: true })\"",
     "sync:schema": "node scripts/sync-schema.js",
     "sync:metadata-list": "node scripts/sync-metadata-list.js",
+    "sync:badges": "node scripts/update-badges.js",
     "compile": "tsc -p ./",
     "prebuild": "yarn run sync:schema && yarn run sync:metadata-list",
     "build": "yarn run clean:out && webpack --config webpack.prod.js",
