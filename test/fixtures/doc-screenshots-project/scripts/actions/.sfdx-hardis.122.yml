@@ -16,9 +16,11 @@ commandsPostDeploy:
     type: manual
     when: post-deploy
     parameters:
-      instructions: >-
-        Review with the sales team leads that no user lost a permission after
-        the Sales User profile minimization, and assign the CRM_Sales_User
-        permission set where needed.
+      instructions: |
+        1. Open **Setup**, type `Users` in the Quick Find box, then open **Users**.
+        2. Filter the list on **Profile** = `Sales User` and export it.
+        3. With the sales team leads, check that no user lost an access after the profile minimization.
+        4. For each user who did, open their record and assign the `CRM_Sales_User` permission set.
+        5. Check: every user of the list is confirmed by their lead. If nobody lost an access, there is nothing to do: tick the box anyway.
     command: ""
     context: process-deployment-only

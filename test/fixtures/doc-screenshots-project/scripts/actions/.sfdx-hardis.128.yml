@@ -57,6 +57,10 @@ commandsPostDeploy:
     when: post-deploy
     parameters:
       instructions: |
-        In **Setup > Sharing Settings**, activate the sharing rule `Account_Hierarchy_Read` so the hierarchy is visible to the Sales team.
+        1. Open **Setup**, type `Sharing Settings` in the Quick Find box, then open **Sharing Settings**.
+        2. In **Account Sharing Rules**, find `Account_Hierarchy_Read` and click **Edit**.
+        3. Set **Share with** to the public group `Sales Team`, and **Account Access** to `Read Only`.
+        4. Click **Save**, then confirm the sharing recalculation.
+        5. Check: the rule is listed with `Sales Team` / `Read Only`. If it was already the case, there is nothing to do: tick the box anyway.
     command: ""
     context: process-deployment-only

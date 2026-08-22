@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- The **Instructions** field of a manual deployment action now shows a click by click template and explains how to write a step that anyone can replay in every org (exact Setup path, exact item name, value to set, how to check it worked)
+
 ## [8.0.2] 2026-08-22
 
 - Fixed the Install Dependencies panel showing a useless **Fix Instructions** button (leading to the sfdx-hardis repository) when the installed sfdx-hardis plugin is older than the required version
