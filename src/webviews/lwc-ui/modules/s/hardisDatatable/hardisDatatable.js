@@ -22,6 +22,8 @@ import typePill from "./typePill.html";
  * - branchChip: monospace chip for technical identifiers such as git branch
  *   names; the full value is available on hover. No typeAttributes.
  *
+ * Hovering a cell shows its full value in a tooltip (standard cell types such
+ * as text, number or date truncate long values without any hover title).
  * A right click on a cell opens a small menu to copy its value to the clipboard.
  */
 export default class HardisDatatable extends LightningDatatable {
@@ -54,6 +56,8 @@ export default class HardisDatatable extends LightningDatatable {
     }
     this._onCellContextMenu = (event) => this.handleCellContextMenu(event);
     this.addEventListener("contextmenu", this._onCellContextMenu);
+    this._onCellMouseOver = (event) => this.handleCellMouseOver(event);
+    this.addEventListener("mouseover", this._onCellMouseOver);
     // Hide the VS Code webview context menu items over the table, ours replaces them
     this.setAttribute(
       "data-vscode-context",
@@ -66,7 +70,51 @@ export default class HardisDatatable extends LightningDatatable {
       super.disconnectedCallback();
     }
     this.removeEventListener("contextmenu", this._onCellContextMenu);
+    this.removeEventListener("mouseover", this._onCellMouseOver);
     this.closeCellContextMenu();
+  }
+
+  // Hover on a data cell: expose its full text as a native tooltip, so truncated
+  // values can still be read. Header cells already carry their own title.
+  handleCellMouseOver(event) {
+    const cell = this.getHoveredCell(event);
+    if (!cell) {
+      return;
+    }
+    // Action menus have no readable value, and their assistive text is not one
+    if (cell.querySelector("button")) {
+      return;
+    }
+    const text = (cell.innerText || cell.textContent || "").trim();
+    if (text === "") {
+      if (cell.hasAttribute("title")) {
+        cell.removeAttribute("title");
+      }
+      return;
+    }
+    if (cell.getAttribute("title") !== text) {
+      cell.setAttribute("title", text);
+    }
+  }
+
+  // The TD/TH of a body row found on the event path, else null
+  getHoveredCell(event) {
+    const path =
+      event && typeof event.composedPath === "function"
+        ? event.composedPath()
+        : [];
+    for (const node of path) {
+      const tagName = node && node.tagName ? String(node.tagName) : "";
+      if (tagName === "TD" || tagName === "TH") {
+        const row = node.parentElement;
+        const section = row ? row.parentElement : null;
+        if (section && String(section.tagName) === "THEAD") {
+          return null;
+        }
+        return node;
+      }
+    }
+    return null;
   }
 
   // Right click on a cell: propose to copy its value instead of the browser menu
