@@ -297,7 +297,7 @@ VS Code is tinted according to the selected default org, so you never confuse Pr
 
 | Org type                      | Badge          | Color  |
 |-------------------------------|----------------|--------|
-| Production                    | 🛡️ **PROD**    | red    |
+| Production                    | 🛡️ **PROD**   | red    |
 | Major org (UAT, integration…) | ⚖️ **MAJOR**   | orange |
 | Dev sandbox                   | 🧪 **SANDBOX** | green  |
 | Scratch org                   | 🚀 **SCRATCH** | cyan   |
