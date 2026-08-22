@@ -1,19 +1,39 @@
 import * as vscode from "vscode";
+import * as fs from "fs";
+import * as path from "path";
+import * as crypto from "crypto";
 import { Logger } from "../logger";
 
 interface CacheEntry<T> {
-  value: T;
+  value?: T;
+  // Set when the value is stored in a file instead of globalState (large values)
+  largeValueFile?: string;
   expiresAt: number;
 }
 
 export type CacheSection = "app" | "project" | "orgs";
 
+// globalState is serialized synchronously on every update, so large values
+// must not live there: above this size they are written to a file in the
+// extension's globalStorage folder, and only the file name + expiration are
+// kept in globalState.
+const LARGE_VALUE_THRESHOLD_CHARS = 100_000;
+// Absolute cap: a value this big is a design smell, cache a trimmed value instead
+const MAX_VALUE_CHARS = 20_000_000;
+
 export class CacheManager {
   private static store: vscode.Memento;
+  private static largeValueDir: string | null = null;
   private static KEYS_INDEX = "__cacheKeys"; // track stored keys safely
+  // Avoids re-reading/re-parsing a large value file on every get
+  private static largeValueMemo: Map<string, unknown> = new Map();
 
-  static init(store: vscode.Memento) {
+  static init(store: vscode.Memento, storageDirPath?: string) {
     this.store = store;
+    this.largeValueMemo = new Map();
+    this.largeValueDir = storageDirPath
+      ? path.join(storageDirPath, "large-cache")
+      : null;
     if (!this.store.get<string[]>(this.KEYS_INDEX)) {
       this.store.update(this.KEYS_INDEX, []);
     }
@@ -31,6 +51,20 @@ export class CacheManager {
     }
   }
 
+  private static largeValueFilePath(fileName: string): string {
+    return path.join(this.largeValueDir || "", fileName);
+  }
+
+  private static removeLargeValueFile(entry: CacheEntry<unknown>) {
+    if (entry?.largeValueFile && this.largeValueDir) {
+      try {
+        fs.unlinkSync(this.largeValueFilePath(entry.largeValueFile));
+      } catch {
+        // Already removed (temp cleanup, manual delete): nothing to do
+      }
+    }
+  }
+
   static async set<T>(
     section: CacheSection,
     key: string,
@@ -39,10 +73,49 @@ export class CacheManager {
   ): Promise<void> {
     const fullKey = this.makeKey(section, key);
     const expiresAt = Date.now() + ttlMs;
-    const entry: CacheEntry<T> = {
-      value,
-      expiresAt: expiresAt,
-    };
+    this.largeValueMemo.delete(fullKey);
+    // A large value previously stored for this key must not leak on overwrite
+    const previousEntry = this.store.get<CacheEntry<unknown>>(fullKey);
+    if (previousEntry?.largeValueFile) {
+      this.removeLargeValueFile(previousEntry);
+    }
+    let serialized: string;
+    try {
+      serialized = JSON.stringify(value) ?? "";
+    } catch {
+      Logger.log(
+        `[vscode-sfdx-hardis][WARNING] Value for cache key ${fullKey} is not serializable: not cached`,
+      );
+      return;
+    }
+    if (serialized.length > MAX_VALUE_CHARS) {
+      Logger.log(
+        `[vscode-sfdx-hardis][WARNING] Value for cache key ${fullKey} is too large to be cached (${serialized.length} characters): cache a trimmed value instead`,
+      );
+      return;
+    }
+    let entry: CacheEntry<T>;
+    if (serialized.length > LARGE_VALUE_THRESHOLD_CHARS && this.largeValueDir) {
+      // Large value: store it in a file, keep only its name in globalState
+      const fileName =
+        crypto.createHash("md5").update(fullKey).digest("hex") + ".json";
+      try {
+        fs.mkdirSync(this.largeValueDir, { recursive: true });
+        fs.writeFileSync(this.largeValueFilePath(fileName), serialized, "utf8");
+      } catch (e: any) {
+        Logger.log(
+          `[vscode-sfdx-hardis][WARNING] Unable to write large cache file for ${fullKey}: ${e?.message}`,
+        );
+        return;
+      }
+      entry = { largeValueFile: fileName, expiresAt: expiresAt };
+      this.largeValueMemo.set(fullKey, value);
+      Logger.logPerf(
+        `Cache value for ${fullKey} stored in file ${fileName} (${serialized.length} characters)`,
+      );
+    } else {
+      entry = { value, expiresAt: expiresAt };
+    }
     await this.store.update(fullKey, entry);
     await this.trackKey(fullKey);
     const expiresInDaysHoursMinutes = this.buildHumanExpiry(expiresAt);
@@ -62,13 +135,33 @@ export class CacheManager {
       this.delete(section, key); // auto cleanup expired
       return undefined;
     }
+    let value: T | undefined = entry.value;
+    if (entry.largeValueFile) {
+      if (this.largeValueMemo.has(fullKey)) {
+        value = this.largeValueMemo.get(fullKey) as T;
+      } else {
+        try {
+          value = JSON.parse(
+            fs.readFileSync(
+              this.largeValueFilePath(entry.largeValueFile),
+              "utf8",
+            ),
+          );
+          this.largeValueMemo.set(fullKey, value);
+        } catch {
+          // File removed or unreadable: behave as a cache miss
+          this.delete(section, key);
+          return undefined;
+        }
+      }
+    }
     // Hot path: keys are already tracked by set(); logging goes through
     // logPerf so cache hits cost nothing when the debug setting is off
     const expiresInDaysHoursMinutes = this.buildHumanExpiry(entry.expiresAt);
     Logger.logPerf(
       `Cache hit for ${section}:${key} (expires in ${expiresInDaysHoursMinutes})`,
     );
-    return entry.value;
+    return value;
   }
 
   static has(section: CacheSection, key: string): boolean {
@@ -105,6 +198,11 @@ export class CacheManager {
     }
 
     for (const k of toDelete) {
+      const entry = this.store.get<CacheEntry<unknown>>(k);
+      if (entry?.largeValueFile) {
+        this.removeLargeValueFile(entry);
+      }
+      this.largeValueMemo.delete(k);
       await this.store.update(k, undefined);
       Logger.log(`Cache deleted for key ${k}`);
     }
@@ -119,6 +217,10 @@ export class CacheManager {
       const entry = this.store.get<CacheEntry<unknown>>(k);
       if (entry && entry.expiresAt < now) {
         expiredKeys.push(k);
+        if (entry.largeValueFile) {
+          this.removeLargeValueFile(entry);
+        }
+        this.largeValueMemo.delete(k);
         await this.store.update(k, undefined);
       }
     }

@@ -327,15 +327,24 @@ export default class Setup extends SharedMixin(LightningElement) {
       }
     }
 
+    // Auto-update tries each dependency at most once per panel session: a
+    // failing install re-checks into the same pending status, and retrying it
+    // automatically would loop forever (the user can still retry manually)
+    const autoInstallCandidates = this.listInstallCandidates().filter(
+      (c) => !this._autoInstallAttemptedIds.has(c.id),
+    );
     if (
       this._autoUpdateDependencies &&
-      this.listInstallCandidates().length > 0 &&
+      autoInstallCandidates.length > 0 &&
       !anyChecking &&
       !this.installQueueRunning &&
       !this._summaryChecking &&
       this.hasPendingActions
     ) {
       // Automatically run pending installs if the setting is enabled, the queue is not already running, and there are pending actions
+      this.listInstallCandidates().forEach((c) =>
+        this._autoInstallAttemptedIds.add(c.id),
+      );
       this.runPendingInstalls();
     }
 
@@ -366,7 +375,13 @@ export default class Setup extends SharedMixin(LightningElement) {
             state = "error";
             break;
           case "error":
-            statusIcon = "utility:ban";
+            // A mandatory upgrade is not a broken dependency: show the same
+            // warning icon as an optional upgrade, on the red (required) accent
+            if (c.upgradeAvailable === true && c.installable) {
+              statusIcon = "utility:warning";
+            } else {
+              statusIcon = "utility:ban";
+            }
             state = "error";
         }
       }
@@ -404,9 +419,18 @@ export default class Setup extends SharedMixin(LightningElement) {
         buttonTint = "hardis-btn-tinted-blue";
         buttonAction = c.installable ? "install" : "instructions";
       } else if (status === "error") {
-        buttonLabel = this.t("fixInstructions");
-        buttonTint = "hardis-btn-tinted-blue";
-        buttonAction = "instructions";
+        // A mandatory upgrade (ex: sfdx-hardis older than the minimal version)
+        // is still an upgrade: run the install command instead of sending the
+        // user to generic fix instructions
+        if (c.upgradeAvailable === true && c.installable) {
+          buttonLabel = this.t("upgradeLabel");
+          buttonTint = "hardis-btn-tinted-amber";
+          buttonAction = "install";
+        } else {
+          buttonLabel = this.t("fixInstructions");
+          buttonTint = "hardis-btn-tinted-blue";
+          buttonAction = "instructions";
+        }
       }
       const buttonClass = buttonTint;
 
@@ -469,6 +493,10 @@ export default class Setup extends SharedMixin(LightningElement) {
   // Flag indicating install queue is running to prevent re-entrancy
   _installQueueRunning = false;
 
+  // Dependencies already auto-installed once in this panel session, so a
+  // failing install is not retried in a loop by the auto-update setting
+  _autoInstallAttemptedIds = new Set();
+
   // Expose whether the install queue is currently running
   get installQueueRunning() {
     return !!this._installQueueRunning;
@@ -493,7 +521,12 @@ export default class Setup extends SharedMixin(LightningElement) {
       this.checks &&
       this.checks.some((c) => {
         const status = c.status || (c.installed ? "ok" : "missing");
-        const needs = status === "missing" || status === "outdated";
+        // "error" with an upgrade available is a mandatory upgrade
+        // (ex: sfdx-hardis older than the minimal version)
+        const needs =
+          status === "missing" ||
+          status === "outdated" ||
+          (status === "error" && c.upgradeAvailable === true);
         if (!needs) return false;
         // Exclude manual-only installs
         if (c.id === "node" || c.id === "git") return false;

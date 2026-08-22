@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Fixed the Install Dependencies panel showing a useless **Fix Instructions** button (leading to the sfdx-hardis repository) when the installed sfdx-hardis plugin is older than the required version
+  - The panel now shows an **Upgrade** button that directly installs the required version
+  - The card now shows the same warning icon as other upgrades (on the red "required" accent), instead of the same icon as a broken dependency
+  - When **Auto-update dependencies** is enabled, the upgrade now runs automatically too
+- Fixed VS Code freezing for several seconds at startup while checking the installed Salesforce CLI plugins
+  - The check no longer dumps the multi-megabyte plugin list JSON into the SFDX Hardis output channel (over 100 000 lines) and no longer stores it in the extension storage
+  - Large cached values in general are now kept in files on disk instead of the extension storage, whose size was slowing down every VS Code save of extension state
+
 ## [8.0.1] 2026-08-21
 
 - Set default theme as light

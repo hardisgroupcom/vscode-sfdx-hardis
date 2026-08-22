@@ -32,7 +32,9 @@ let welcomeShownThisSession = false; // Flag to track if welcome was shown this 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-  CacheManager.init(context.globalState);
+  // Large cached values are offloaded to files under globalStorage: globalState
+  // itself is serialized synchronously on every update, so it must stay small
+  CacheManager.init(context.globalState, context.globalStorageUri.fsPath);
   CacheManager.clearExpired();
   SecretsManager.init(context);
 

@@ -17,6 +17,7 @@ import {
   PluginInstallKind,
   getPluginInstallKindFromInfo,
   getPluginInstallKindFromText,
+  parsePluginsData,
   parsePluginsJson,
 } from "./utils/pluginsVersionUtils";
 
@@ -53,13 +54,36 @@ export async function getInstalledPluginsInfo(): Promise<
   Record<string, InstalledPluginInfo>
 > {
   try {
+    // Cache only the trimmed plugin infos, NEVER the raw `sf plugins --json`
+    // payload: it embeds the whole oclif manifest of every plugin (several MB),
+    // which used to bloat globalState (4+ MB serialized on every cache write)
+    // and flood the output channel, freezing the extension host at startup
+    const cached = CacheManager.get<Record<string, InstalledPluginInfo>>(
+      "app",
+      "installedPluginsInfo",
+    );
+    if (cached) {
+      return cached;
+    }
     const res: any = await execCommand("sf plugins --json", {
-      output: true,
+      output: false,
       fail: false,
-      cacheSection: "app",
-      cacheExpiration: 1000 * 60 * 5, // 5 minutes
     });
-    return parsePluginsJson((res?.stdout || "").toString());
+    // execCommand returns the parsed JSON payload for `--json` commands; the
+    // stdout string is only present on the error path
+    const pluginsInfo =
+      typeof res?.stdout === "string" && res.stdout
+        ? parsePluginsJson(res.stdout)
+        : parsePluginsData(res);
+    if (Object.keys(pluginsInfo).length > 0) {
+      await CacheManager.set(
+        "app",
+        "installedPluginsInfo",
+        pluginsInfo,
+        1000 * 60 * 5, // 5 minutes
+      );
+    }
+    return pluginsInfo;
   } catch (e: any) {
     Logger.log("Unable to list installed plugins as JSON: " + e?.message);
     return {};
@@ -576,6 +600,20 @@ export async function execSfdxJsonWithProgress(
 }
 /* jscpd:ignore-end */
 
+// Commands like `sf plugins --json` return multi-MB payloads: dumping them
+// line by line in the output channel freezes the extension host (each line is
+// an RPC to the renderer), so displayed output is capped.
+const MAX_LOGGED_OUTPUT_CHARS = 100_000;
+function truncateLoggedOutput(output: string, command: string): string {
+  if (output.length <= MAX_LOGGED_OUTPUT_CHARS) {
+    return output;
+  }
+  return (
+    output.slice(0, MAX_LOGGED_OUTPUT_CHARS) +
+    `\n[vscode-sfdx-hardis] ... output truncated in this log (${output.length} characters total for command "${command}")`
+  );
+}
+
 // Execute command
 export async function execCommand(
   command: string,
@@ -679,7 +717,7 @@ export async function execCommand(
   }
   // Display output if requested, for better user understanding of the logs
   if (options.output || options.debug) {
-    Logger.log(commandResult.stdout.toString());
+    Logger.log(truncateLoggedOutput(commandResult.stdout.toString(), command));
   }
   // Return status 0 if not --json
   if (!command.includes("--json")) {
