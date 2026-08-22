@@ -456,13 +456,16 @@
                 <div class="slds-form-element">
                   <lightning-dual-listbox
                     label={targetBranchesSelectorLabel}
-                    source-label={i18n.targetBranchesAvailableLabel}
-                    selected-label={i18n.targetBranchesSelectedLabel}
+                    source-label={targetBranchesSourceColumnLabel}
+                    selected-label={targetBranchesSelectedColumnLabel}
                     options={targetBranchOptions}
                     value={selectedTargetBranches}
                     onchange={handleTargetBranchesChange}
                     disabled={isViewMode}
                   ></lightning-dual-listbox>
+                  <div class="hardis-note slds-m-top_x-small">
+                    <span>{targetBranchesSummary}</span>
+                  </div>
                 </div>
               </div>
             </template>

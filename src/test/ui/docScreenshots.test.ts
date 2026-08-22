@@ -548,10 +548,13 @@ suite("Documentation screenshots", function () {
       await vscode.commands.executeCommand("workbench.action.zoomIn");
       await sleep(800);
     }
-    // Deployment Actions tab of the feature pull request modal, at the normal
-    // zoom level (the table stretches to the modal width there) and opened
-    // through the deep link used by hardis:work:save, so no coordinate is
-    // involved. Feeds screenshot-pr-deployment-actions-list.jpg.
+    // Deployment Actions tab of the feature pull request modal, opened through
+    // the deep link used by hardis:work:save, so no coordinate is involved.
+    // Feeds screenshot-pr-deployment-actions-list.jpg. One zoom level out, so
+    // that the nine actions of the fixture all fit in the modal: at two levels
+    // out the lightning-datatable leaves a grey gap right of the table.
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await sleep(800);
     try {
       await shootPanel(panelManager, {
         name: "pipeline-pr-actions-list",
@@ -563,6 +566,8 @@ suite("Documentation screenshots", function () {
         commandArgs: PIPELINE_ACTIONS_DEEP_LINK,
       });
     } finally {
+      await vscode.commands.executeCommand("workbench.action.zoomIn");
+      await sleep(800);
       checkoutWorkspaceBranch("integration");
     }
     // Branch modal: click the "integration" branch node of the mermaid, then
@@ -613,6 +618,10 @@ suite("Documentation screenshots", function () {
       { name: "pipeline-edit-action-schedule-batch", row: 4, editY: 740 },
       { name: "pipeline-edit-action-publish-community", row: 5, editY: 671 },
       { name: "pipeline-edit-action-manual", row: 6, editY: 714 },
+      // The two last actions of the fixture restrict their target orgs, so
+      // their editor also shows the branch selector (taller modal)
+      { name: "pipeline-edit-action-target-orgs-include", row: 7, editY: 796 },
+      { name: "pipeline-edit-action-target-orgs-exclude", row: 8, editY: 796 },
     ];
     const FIRST_ROW_CENTER_Y = 270;
     const ROW_STEP = 36;
