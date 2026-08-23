@@ -3016,6 +3016,72 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return this.hasBranchPullRequests && !this.modalIsTopBranch;
   }
 
+  // Selected go-live combobox option (top branches only), if any.
+  get _selectedGoLiveOption() {
+    if (!this.modalIsTopBranch || !this.selectedGoLiveId) {
+      return null;
+    }
+    return (
+      this.modalGoLives.find((g) => g.value === this.selectedGoLiveId) || null
+    );
+  }
+
+  // The notes buttons state their exact scope. Merging into a top branch (no
+  // merge target, e.g. main) is a release/go-live; merging between other major
+  // branches (e.g. integ -> uat) is only a promotion, and sfdx-hardis titles
+  // that document "Promotion Notes", so the wording matches:
+  // - top branch + go-live selected: release notes of that go-live
+  // - top branch fallback: release notes of the latest release in the branch
+  // - other branches: promotion notes (latest promotion into the branch)
+  get generateReleaseNotesLabel() {
+    const goLiveOption = this._selectedGoLiveOption;
+    if (goLiveOption) {
+      let goLive = goLiveOption.label || "";
+      if (goLive.length > 50) {
+        goLive = goLive.slice(0, 47) + "…";
+      }
+      return this.t("generateReleaseNotesForGoLive", { goLive });
+    }
+    if (this.modalIsTopBranch) {
+      return this.t("generateReleaseNotesForBranch", {
+        branch: this.modalBranchName,
+      });
+    }
+    return this.t("generatePromotionNotes", {
+      branch: this.modalBranchName,
+    });
+  }
+
+  get generateReleaseNotesTitle() {
+    const goLiveOption = this._selectedGoLiveOption;
+    if (goLiveOption) {
+      return this.t("generateReleaseNotesForGoLiveHelp", {
+        goLive: goLiveOption.label || "",
+        branch: this.modalBranchName,
+      });
+    }
+    if (this.modalIsTopBranch) {
+      return this.t("generateReleaseNotesForBranchHelp", {
+        branch: this.modalBranchName,
+      });
+    }
+    return this.t("generatePromotionNotesHelp", {
+      branch: this.modalBranchName,
+    });
+  }
+
+  get previewReleaseNotesLabel() {
+    return this.t("previewPromotionNotes", {
+      branch: this.modalBranchName,
+    });
+  }
+
+  get previewReleaseNotesTitle() {
+    return this.t("previewPromotionNotesHelp", {
+      branch: this.modalBranchName,
+    });
+  }
+
   // Show the go-lives selector only for top branches that have at least one
   // go-live to choose from.
   get showGoLivesSelector() {
