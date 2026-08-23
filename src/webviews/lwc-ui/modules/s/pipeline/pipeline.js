@@ -3026,13 +3026,13 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     );
   }
 
-  // The "Generate release notes" button states its exact scope. Merging into
-  // a top branch (no merge target, e.g. main) is a release/go-live; merging
-  // between other major branches (e.g. integ -> uat) is only a promotion, so
-  // the wording differs:
-  // - top branch + go-live selected: that go-live
-  // - top branch fallback: latest release merged into the branch
-  // - other branches: latest promotion merged into the branch
+  // The notes buttons state their exact scope. Merging into a top branch (no
+  // merge target, e.g. main) is a release/go-live; merging between other major
+  // branches (e.g. integ -> uat) is only a promotion, and sfdx-hardis titles
+  // that document "Promotion Notes", so the wording matches:
+  // - top branch + go-live selected: release notes of that go-live
+  // - top branch fallback: release notes of the latest release in the branch
+  // - other branches: promotion notes (latest promotion into the branch)
   get generateReleaseNotesLabel() {
     const goLiveOption = this._selectedGoLiveOption;
     if (goLiveOption) {
@@ -3047,7 +3047,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         branch: this.modalBranchName,
       });
     }
-    return this.t("generateReleaseNotesForPromotion", {
+    return this.t("generatePromotionNotes", {
       branch: this.modalBranchName,
     });
   }
@@ -3065,19 +3065,19 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         branch: this.modalBranchName,
       });
     }
-    return this.t("generateReleaseNotesForPromotionHelp", {
+    return this.t("generatePromotionNotesHelp", {
       branch: this.modalBranchName,
     });
   }
 
   get previewReleaseNotesLabel() {
-    return this.t("previewReleaseNotesForPromotion", {
+    return this.t("previewPromotionNotes", {
       branch: this.modalBranchName,
     });
   }
 
   get previewReleaseNotesTitle() {
-    return this.t("previewReleaseNotesHelp", {
+    return this.t("previewPromotionNotesHelp", {
       branch: this.modalBranchName,
     });
   }
