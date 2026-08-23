@@ -2,16 +2,18 @@
 
 ## Unreleased
 
-- The release notes buttons of the DevOps Pipeline now say exactly what they will generate
-  - On the last branch of the pipeline (like main), the button names the go-live selected in the selector, for example "Generate Release Notes for 2026-08-20 - #42 - Summer release"
-  - On other major branches, the buttons talk about **promotion notes**, matching the document sfdx-hardis generates there, since only reaching the last branch of the pipeline is a release: **Generate Promotion Notes for \<branch\>** and **Preview Upcoming Promotion Notes from \<branch\>**, with tooltips explaining what is included
+## [8.1.0] 2026-08-23
+
 - The Command Runner now shows **how many records each query returned**
   - SOQL, Tooling API, Bulk API and Data Cloud queries get a chip next to the query text: a running indicator while the query runs, then the **number of records**, or **Query failed**
   - With sfdx-hardis versions that do not send query states yet, the result line of a query is now correctly displayed below the query text (it was never shown before)
+- Hovering a cell in any table now shows its **full value** in a tooltip, so long texts cut off by a narrow column can still be read
+- The release notes buttons of the DevOps Pipeline now say exactly what they will generate
+  - On the last branch of the pipeline (like main), the button names the go-live selected in the selector, for example "Generate Release Notes for 2026-08-20 - #42 - Summer release"
+  - On other major branches, the buttons talk about **promotion notes**, matching the document sfdx-hardis generates there, since only reaching the last branch of the pipeline is a release: **Generate Promotion Notes for \<branch\>** and **Preview Upcoming Promotion Notes from \<branch\>**, with tooltips explaining what is included
 - The **Target orgs** field of a deployment action now makes it obvious whether the selected branches are the ones the action runs on, or the ones it skips
   - Both columns of the branch selector are labelled with what happens there, **Runs here** and **Does not run here**, and they swap when you switch between **Only these branches** and **All except these branches**
   - A sentence below the selector spells out the result with the branch names, for example "This action runs on uat and main only"
-- Hovering a cell in any table now shows its **full value** in a tooltip, so long texts cut off by a narrow column can still be read
 - The **Instructions** field of a manual deployment action now shows a click by click template and explains how to write a step that anyone can replay in every org (exact Setup path, exact item name, value to set, how to check it worked)
 
 ## [8.0.2] 2026-08-22
