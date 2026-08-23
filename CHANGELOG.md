@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- The release notes buttons of the DevOps Pipeline now say exactly what they will generate
+  - On the last branch of the pipeline (like main), the button names the go-live selected in the selector, for example "Generate Release Notes for 2026-08-20 - #42 - Summer release"
+  - On other branches, the buttons state their scope: **Generate Release Notes for Latest Release in \<branch\>** and **Preview Release Notes for Upcoming Release from \<branch\>**, with tooltips explaining what is included
 - The Command Runner now shows **how many records each query returned**
   - SOQL, Tooling API, Bulk API and Data Cloud queries get a chip next to the query text: a running indicator while the query runs, then the **number of records**, or **Query failed**
   - With sfdx-hardis versions that do not send query states yet, the result line of a query is now correctly displayed below the query text (it was never shown before)

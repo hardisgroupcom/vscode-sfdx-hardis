@@ -3016,6 +3016,58 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return this.hasBranchPullRequests && !this.modalIsTopBranch;
   }
 
+  // Selected go-live combobox option (top branches only), if any.
+  get _selectedGoLiveOption() {
+    if (!this.modalIsTopBranch || !this.selectedGoLiveId) {
+      return null;
+    }
+    return (
+      this.modalGoLives.find((g) => g.value === this.selectedGoLiveId) || null
+    );
+  }
+
+  // The "Generate release notes" button states its exact scope: the go-live
+  // selected in the combobox on a top branch, otherwise the latest release
+  // merged into the branch (what --mode post does without --merge-commit).
+  get generateReleaseNotesLabel() {
+    const goLiveOption = this._selectedGoLiveOption;
+    if (goLiveOption) {
+      let goLive = goLiveOption.label || "";
+      if (goLive.length > 50) {
+        goLive = goLive.slice(0, 47) + "…";
+      }
+      return this.t("generateReleaseNotesForGoLive", { goLive });
+    }
+    return this.t("generateReleaseNotesForBranch", {
+      branch: this.modalBranchName,
+    });
+  }
+
+  get generateReleaseNotesTitle() {
+    const goLiveOption = this._selectedGoLiveOption;
+    if (goLiveOption) {
+      return this.t("generateReleaseNotesForGoLiveHelp", {
+        goLive: goLiveOption.label || "",
+        branch: this.modalBranchName,
+      });
+    }
+    return this.t("generateReleaseNotesForBranchHelp", {
+      branch: this.modalBranchName,
+    });
+  }
+
+  get previewReleaseNotesLabel() {
+    return this.t("previewReleaseNotesForBranch", {
+      branch: this.modalBranchName,
+    });
+  }
+
+  get previewReleaseNotesTitle() {
+    return this.t("previewReleaseNotesHelp", {
+      branch: this.modalBranchName,
+    });
+  }
+
   // Show the go-lives selector only for top branches that have at least one
   // go-live to choose from.
   get showGoLivesSelector() {
