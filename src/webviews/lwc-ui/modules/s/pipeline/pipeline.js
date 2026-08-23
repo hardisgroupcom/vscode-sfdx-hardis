@@ -3026,9 +3026,13 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     );
   }
 
-  // The "Generate release notes" button states its exact scope: the go-live
-  // selected in the combobox on a top branch, otherwise the latest release
-  // merged into the branch (what --mode post does without --merge-commit).
+  // The "Generate release notes" button states its exact scope. Merging into
+  // a top branch (no merge target, e.g. main) is a release/go-live; merging
+  // between other major branches (e.g. integ -> uat) is only a promotion, so
+  // the wording differs:
+  // - top branch + go-live selected: that go-live
+  // - top branch fallback: latest release merged into the branch
+  // - other branches: latest promotion merged into the branch
   get generateReleaseNotesLabel() {
     const goLiveOption = this._selectedGoLiveOption;
     if (goLiveOption) {
@@ -3038,7 +3042,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       }
       return this.t("generateReleaseNotesForGoLive", { goLive });
     }
-    return this.t("generateReleaseNotesForBranch", {
+    if (this.modalIsTopBranch) {
+      return this.t("generateReleaseNotesForBranch", {
+        branch: this.modalBranchName,
+      });
+    }
+    return this.t("generateReleaseNotesForPromotion", {
       branch: this.modalBranchName,
     });
   }
@@ -3051,13 +3060,18 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         branch: this.modalBranchName,
       });
     }
-    return this.t("generateReleaseNotesForBranchHelp", {
+    if (this.modalIsTopBranch) {
+      return this.t("generateReleaseNotesForBranchHelp", {
+        branch: this.modalBranchName,
+      });
+    }
+    return this.t("generateReleaseNotesForPromotionHelp", {
       branch: this.modalBranchName,
     });
   }
 
   get previewReleaseNotesLabel() {
-    return this.t("previewReleaseNotesForBranch", {
+    return this.t("previewReleaseNotesForPromotion", {
       branch: this.modalBranchName,
     });
   }
