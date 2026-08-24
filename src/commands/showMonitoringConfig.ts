@@ -15,6 +15,7 @@ import {
   MonitoringCommandEntry,
   NotificationConfigEntry,
   MonitoringUserConfig,
+  AnonymizationConfig,
 } from "../utils/monitoringConfigUtils";
 
 let _gitHeadWatcher: vscode.FileSystemWatcher | null = null;
@@ -49,9 +50,12 @@ export function registerShowMonitoringConfig(commands: Commands) {
           catalog,
           monitoringCommands: userConfig.monitoringCommands,
           notificationConfig: userConfig.notificationConfig,
+          anonymization: userConfig.anonymization,
           branches,
           currentBranch,
           docUrl: DOCSITE_URL + "/salesforce-monitoring-config-home/",
+          anonymizationDocUrl:
+            DOCSITE_URL + "/salesforce-security-privacy/#data-anonymization",
         },
       );
       panel.updateTitle(t("monitoringConfigWorkbench"));
@@ -78,6 +82,7 @@ export function registerShowMonitoringConfig(commands: Commands) {
               currentBranch: newBranch,
               monitoringCommands: newUserConfig.monitoringCommands,
               notificationConfig: newUserConfig.notificationConfig,
+              anonymization: newUserConfig.anonymization,
             },
           });
         } catch (error: any) {
@@ -107,9 +112,14 @@ export function registerShowMonitoringConfig(commands: Commands) {
                 Array.isArray(data?.notificationConfig)
                   ? data.notificationConfig
                   : [];
+              const anonymization: AnonymizationConfig | null =
+                data?.anonymization && typeof data.anonymization === "object"
+                  ? data.anonymization
+                  : null;
               const payload: MonitoringUserConfig = {
                 monitoringCommands,
                 notificationConfig,
+                anonymization,
               };
               await saveMonitoringConfig(payload);
             } catch (error: any) {
@@ -139,7 +149,8 @@ export function registerShowMonitoringConfig(commands: Commands) {
               const branchConfig = await readMonitoringConfigFromBranch(branch);
               if (
                 branchConfig.monitoringCommands.length === 0 &&
-                branchConfig.notificationConfig.length === 0
+                branchConfig.notificationConfig.length === 0 &&
+                !branchConfig.anonymization
               ) {
                 vscode.window.showWarningMessage(
                   t("monitoringConfigBranchEmpty", { branch }),
@@ -151,6 +162,7 @@ export function registerShowMonitoringConfig(commands: Commands) {
                   branch,
                   monitoringCommands: branchConfig.monitoringCommands,
                   notificationConfig: branchConfig.notificationConfig,
+                  anonymization: branchConfig.anonymization,
                 },
               });
             } catch (error: any) {

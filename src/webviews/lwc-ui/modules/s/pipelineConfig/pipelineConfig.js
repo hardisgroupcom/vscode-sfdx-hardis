@@ -79,6 +79,10 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
     return this.mode === "edit";
   }
 
+  get isViewMode() {
+    return this.mode !== "edit";
+  }
+
   get isApexTestsFieldEditMode() {
     return this.apexTestsFieldMode === "edit";
   }
@@ -139,7 +143,8 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
             isArrayObject = false,
             isText = false,
             isBoolean = false,
-            isNumber = false;
+            isNumber = false,
+            isObject = false;
           let options = [];
           let label = schema.title || key;
           let description = schema.description || "";
@@ -196,6 +201,10 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
             isBoolean = true;
           } else if (schema.type === "number" || schema.type === "integer") {
             isNumber = true;
+          } else if (schema.type === "object") {
+            // Nested object properties have no generic form: each one is
+            // rendered by its own editor component (ex: anonymization)
+            isObject = true;
           }
           let valueEdit = this.editedConfig
             ? this.editedConfig[key]
@@ -222,6 +231,9 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
               if (valueEdit === undefined)
                 valueEdit = value !== undefined ? value : false;
             } else if (isNumber) {
+              if (valueEdit === undefined)
+                valueEdit = value !== undefined ? value : null;
+            } else if (isObject) {
               if (valueEdit === undefined)
                 valueEdit = value !== undefined ? value : null;
             }
@@ -349,21 +361,29 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
             : "hardis-chip";
           // Doc links move inline in the field label; array-of-object fields
           // never carried one (they use their own datatable/modal editor).
-          const showDocLink = hasDocUrl && !isArrayObject;
+          // Nested-object editors carry their own doc link inside the component
+          const showDocLink = hasDocUrl && !isArrayObject && !isObject;
           // Arrays/objects need the full row width (chips, dual-listbox,
           // datatable) instead of the compact right-aligned control column.
           // Except when empty in view mode: a lone "Not defined" fits the
           // right column like any scalar, keeping one value placement.
           const hasArrayItems =
             Array.isArray(valueDisplay) && valueDisplay.length > 0;
+          // Nested-object editors (ex: anonymization) always need the full
+          // row width, in view mode as much as in edit mode
           const isWideControl =
-            (isArrayEnum || isArrayText || isArrayObject) &&
-            (this.isEditMode || hasArrayItems);
+            isObject ||
+            ((isArrayEnum || isArrayText || isArrayObject) &&
+              (this.isEditMode || hasArrayItems));
           const fieldRowClass = isWideControl
             ? "hardis-field-row stacked"
             : "hardis-field-row";
+          // Nested objects are edited by a dedicated component, one flag per
+          // supported property so the template can pick the right one
+          const isAnonymization = isObject && key === "anonymization";
           entries.push({
             key,
+            isAnonymization,
             isDeploymentActions,
             isGenericArrayObject: isArrayObject && !isDeploymentActions,
             label,
@@ -386,6 +406,7 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
             isText,
             isBoolean,
             isNumber,
+            isObject,
             options,
             optionsLwc,
             docUrl,
@@ -713,6 +734,30 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
   getInputTypeText(entry) {
     const schema = this.configSchema[entry.key] || { type: "text" };
     return schema.type === "text";
+  }
+
+  /**
+   * Nested-object property edited by its own component (ex: anonymization).
+   * The component emits the whole object, or null when the user reset it to
+   * the sfdx-hardis defaults: storing the null is what makes the save remove
+   * the property from the YAML instead of writing an empty block.
+   */
+  handleObjectEditorChange(event) {
+    const key = event.target.dataset.key;
+    if (!key) {
+      return;
+    }
+    const value = event.detail?.value ?? null;
+    // Guard against a `change` bubbling out of a control nested in the editor
+    // (lightning-combobox and lightning-input dispatch composed events): only
+    // the whole object, or null, may replace the config value
+    if (value !== null && typeof value !== "object") {
+      return;
+    }
+    this.editedConfig = {
+      ...this.editedConfig,
+      [key]: value,
+    };
   }
 
   handleSave() {

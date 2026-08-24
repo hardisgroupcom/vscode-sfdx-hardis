@@ -15,6 +15,30 @@ async function pathExists(targetPath: string): Promise<boolean> {
   }
 }
 
+/**
+ * Applies the values edited in the panel on top of an existing config object.
+ * A key whose value was cleared (null/undefined, or an object editor that
+ * reset itself, ex: `anonymization`) is REMOVED from the YAML instead of being
+ * written as `key: null`, which the sfdx-hardis CLI would read as a value.
+ */
+function applyEditedValues(
+  existingConfig: SfdxHardisConfig,
+  editedValues: SfdxHardisConfig,
+): void {
+  for (const [key, value] of Object.entries(editedValues)) {
+    const isEmptyObject =
+      value !== null &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      Object.keys(value).length === 0;
+    if (value === null || value === undefined || isEmptyObject) {
+      delete existingConfig[key];
+    } else {
+      existingConfig[key] = value;
+    }
+  }
+}
+
 export interface SfdxHardisConfig {
   [key: string]: any;
 }
@@ -121,6 +145,7 @@ export class SfdxHardisConfigHelper {
     { name: "flowDeleteMaxAttempts", scopes: ["global"] },
     { name: "flowDeleteRetryDelayMs", scopes: ["global"] },
     { name: "flowDeleteInterviews", scopes: ["global"] },
+    { name: "anonymization", scopes: ["global"] },
   ];
   static readonly SECTIONS = [
     {
@@ -213,6 +238,12 @@ export class SfdxHardisConfigHelper {
         "initPermissionSets",
         "scratchOrgInitApexScripts",
       ],
+    },
+    {
+      label: "securityPrivacy",
+      description: "",
+      iconName: "utility:privately_shared",
+      keys: ["anonymization"],
     },
     {
       label: "dangerZone",
@@ -327,6 +358,7 @@ export class SfdxHardisConfigHelper {
             type: value.type,
             title: value.title,
             items: value.items,
+            properties: value.properties,
             default: value.default,
             description: value.description,
             examples: value.examples || [],
@@ -506,14 +538,20 @@ export class SfdxHardisConfigHelper {
           (yaml.load(
             await fs.promises.readFile(branchPath, "utf8"),
           ) as SfdxHardisConfig) || {};
-        Object.assign(existingBranchConfig, branchOnly);
+        applyEditedValues(existingBranchConfig, branchOnly);
         await fs.promises.writeFile(
           branchPath,
           yaml.dump(existingBranchConfig),
           "utf8",
         );
       } else {
-        await fs.promises.writeFile(branchPath, yaml.dump(branchOnly), "utf8");
+        const newBranchConfig: SfdxHardisConfig = {};
+        applyEditedValues(newBranchConfig, branchOnly);
+        await fs.promises.writeFile(
+          branchPath,
+          yaml.dump(newBranchConfig),
+          "utf8",
+        );
       }
     } else {
       // Save only global-allowed keys
@@ -535,7 +573,7 @@ export class SfdxHardisConfigHelper {
           (yaml.load(
             await fs.promises.readFile(effectiveGlobalPath, "utf8"),
           ) as SfdxHardisConfig) || {};
-        Object.assign(existingGlobalConfig, globalOnly);
+        applyEditedValues(existingGlobalConfig, globalOnly);
         await fs.promises.writeFile(
           effectiveGlobalPath,
           yaml.dump(existingGlobalConfig),
@@ -543,9 +581,11 @@ export class SfdxHardisConfigHelper {
         );
       } else {
         // If no existing global config, just write the new one
+        const newGlobalConfig: SfdxHardisConfig = {};
+        applyEditedValues(newGlobalConfig, globalOnly);
         await fs.promises.writeFile(
           effectiveGlobalPath,
-          yaml.dump(globalOnly),
+          yaml.dump(newGlobalConfig),
           "utf8",
         );
       }

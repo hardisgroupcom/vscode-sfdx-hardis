@@ -195,7 +195,8 @@ async function shootPanel(
     /** Open and capture even when the name is not in the ONLY filter (used by
      * the recording tests, whose pre-shot must not depend on the filter) */
     force?: boolean;
-    /** Argument passed to the VS Code command (ex: a pipeline deep link) */
+    /** Argument passed to the VS Code command (ex: a pipeline deep link).
+     * An array is spread, for the commands taking several arguments. */
     commandArgs?: any;
   },
 ): Promise<any> {
@@ -206,7 +207,12 @@ async function shootPanel(
   // the earlier tabs out of view
   await vscode.commands.executeCommand("workbench.action.closeAllEditors");
   await sleep(400);
-  if (options.commandArgs !== undefined) {
+  if (Array.isArray(options.commandArgs)) {
+    await vscode.commands.executeCommand(
+      options.command,
+      ...options.commandArgs,
+    );
+  } else if (options.commandArgs !== undefined) {
     await vscode.commands.executeCommand(options.command, options.commandArgs);
   } else {
     await vscode.commands.executeCommand(options.command);
@@ -673,6 +679,39 @@ suite("Documentation screenshots", function () {
       lwcId: "s-pipeline-config",
       settleMs: 3500,
     });
+  });
+
+  // Security & Privacy tab of the same panel: the anonymization editor, opened
+  // through the section deep link of the command (2nd argument = section label)
+  test("pipeline configuration (anonymization)", async function () {
+    if (!shouldTake("anonymization-config")) {
+      this.skip();
+    }
+    // Two zoom levels out, so the three levels, the local runs toggle and the
+    // four channels all fit in one capture
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await sleep(800);
+    try {
+      await shootPanel(panelManager, {
+        name: "anonymization-config",
+        command: "vscode-sfdx-hardis.showPipelineConfig",
+        commandArgs: [null, "Security & Privacy"],
+        lwcId: "s-pipeline-config",
+        settleMs: 3500,
+        force: true,
+      });
+      // Same editor in edit mode: the published screenshot must show the
+      // controls the user operates, not the read-only summary
+      await click(1869, 72); // "Edit" button of the panel header
+      await sleep(1800);
+      await cleanChrome();
+      await captureStable("anonymization-config-edit");
+    } finally {
+      await vscode.commands.executeCommand("workbench.action.zoomIn");
+      await vscode.commands.executeCommand("workbench.action.zoomIn");
+      await sleep(800);
+    }
   });
 
   test("metadata retriever", async function () {

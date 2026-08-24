@@ -1,0 +1,122 @@
+<template>
+  <div class="anonymization-config">
+    <div class="hardis-note">
+      <lightning-icon icon-name="utility:info" size="x-small"></lightning-icon>
+      <p>{i18n.anonymizationCiOnlyNote}</p>
+    </div>
+
+    <div class="hardis-group-label">
+      <span>{i18n.anonymizationLevelTitle}</span>
+      <div class="hardis-group-actions">
+        <button type="button" class="hardis-textlink" onclick={handleOpenDoc}>{i18n.docsLabel} ↗</button>
+        <template if:true={isEditable}>
+          <template if:true={isConfigured}>
+            <lightning-button
+              variant="neutral"
+              size="small"
+              label={i18n.resetToDefault}
+              onclick={handleReset}
+            ></lightning-button>
+          </template>
+        </template>
+      </div>
+    </div>
+    <template if:true={showDefaultHint}>
+      <p class="hardis-group-desc">{i18n.anonymizationNotConfiguredDesc}</p>
+    </template>
+
+    <div
+      class="hardis-card-grid anonymization-levels"
+      role="radiogroup"
+      aria-label={i18n.anonymizationLevelTitle}
+    >
+      <template for:each={levelCards} for:item="card">
+        <div
+          key={card.level}
+          class={card.cardClass}
+          role="radio"
+          aria-checked={card.ariaChecked}
+          tabindex={card.tabIndex}
+          data-level={card.level}
+          onclick={handleLevelClick}
+          onkeydown={handleLevelKeyDown}
+        >
+          <div class="hardis-card-head">
+            <div class={card.tileClass}>
+              <lightning-icon icon-name={card.iconName} size="x-small"></lightning-icon>
+            </div>
+            <h3 class="hardis-card-title">{card.label}</h3>
+          </div>
+          <p class="hardis-card-desc">{card.description}</p>
+        </div>
+      </template>
+    </div>
+
+    <div class="hardis-field-row anonymization-enforce-row">
+      <div class="hardis-field-text">
+        <div class="hardis-field-label">
+          <span>{i18n.anonymizationEnforceLocally}</span>
+        </div>
+        <div class="hardis-field-help">{i18n.anonymizationEnforceLocallyDesc}</div>
+      </div>
+      <div class="hardis-field-control">
+        <template if:true={isEditable}>
+          <lightning-input
+            type="toggle"
+            label={i18n.anonymizationEnforceLocally}
+            variant="label-hidden"
+            checked={enforceLocally}
+            onchange={handleEnforceLocallyChange}
+            message-toggle-active=""
+            message-toggle-inactive=""
+          ></lightning-input>
+        </template>
+        <template if:false={isEditable}>
+          <span class={enforceLocallyPillClass}>
+            <span class="hardis-pill-dot"></span>{enforceLocallyPillLabel}
+          </span>
+        </template>
+      </div>
+    </div>
+
+    <div class="hardis-group-label">
+      <span>{i18n.anonymizationChannelsTitle}</span>
+    </div>
+    <p class="hardis-group-desc">{i18n.anonymizationChannelsDesc}</p>
+    <template if:true={channelsLocked}>
+      <div class="hardis-note">
+        <lightning-icon icon-name="utility:lock" size="x-small"></lightning-icon>
+        <p>{i18n.anonymizationStrictestNote}</p>
+      </div>
+    </template>
+
+    <template for:each={channelRows} for:item="row">
+      <div key={row.channel} class="hardis-field-row">
+        <div class="hardis-field-text">
+          <div class="hardis-field-label">
+            <span>{row.label}</span>
+          </div>
+          <div class="hardis-field-help">{row.description}</div>
+        </div>
+        <div class="hardis-field-control">
+          <template if:true={isEditable}>
+            <lightning-combobox
+              variant="label-hidden"
+              label={row.label}
+              value={row.value}
+              options={row.options}
+              data-channel={row.channel}
+              disabled={row.disabled}
+              onchange={handleChannelChange}
+            ></lightning-combobox>
+          </template>
+          <template if:false={isEditable}>
+            <span class={row.pillClass}>
+              <span class="hardis-pill-dot"></span>{row.displayLabel}
+            </span>
+          </template>
+        </div>
+      </div>
+    </template>
+  </div>
+</template>
