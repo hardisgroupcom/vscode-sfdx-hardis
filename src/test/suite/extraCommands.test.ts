@@ -2,23 +2,12 @@ import * as assert from "assert";
 import * as fs from "fs";
 import * as path from "path";
 import { ExtraCommands } from "../../utils/extraCommands";
-import { REPO_ROOT } from "./lwcSourceUtils";
-
-const LOCALES = ["en", "fr", "es", "de", "it", "nl", "ja", "pl", "pt-BR"];
+import { LOCALES, loadLocale, REPO_ROOT } from "./lwcSourceUtils";
 
 const EXTRA_COMMANDS_SOURCE = fs.readFileSync(
   path.join(REPO_ROOT, "src", "utils", "extraCommands.ts"),
   "utf8",
 );
-
-function loadLocale(locale: string): Record<string, string> {
-  return JSON.parse(
-    fs.readFileSync(
-      path.join(REPO_ROOT, "src", "i18n", `${locale}.json`),
-      "utf8",
-    ),
-  );
-}
 
 /**
  * Extracts the i18n keys used by each catalog entry, from the sources.

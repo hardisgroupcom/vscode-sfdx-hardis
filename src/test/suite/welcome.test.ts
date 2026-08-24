@@ -2,7 +2,7 @@ import * as assert from "assert";
 import * as fs from "fs";
 import * as path from "path";
 import { WELCOME_NAVIGATION_TARGETS } from "../../commands/showWelcome";
-import { REPO_ROOT } from "./lwcSourceUtils";
+import { LOCALES, loadLocale, REPO_ROOT } from "./lwcSourceUtils";
 
 /**
  * Contract tests for the Welcome page (v8 design).
@@ -16,7 +16,6 @@ import { REPO_ROOT } from "./lwcSourceUtils";
  *  - the "essentials" featured row keeps the heavy-use features
  */
 
-const I18N_DIR = path.join(REPO_ROOT, "src", "i18n");
 const WELCOME_DIR = path.join(
   REPO_ROOT,
   "src",
@@ -26,13 +25,6 @@ const WELCOME_DIR = path.join(
   "s",
   "welcome",
 );
-
-const LOCALES = ["en", "fr", "es", "de", "it", "nl", "ja", "pl", "pt-BR"];
-
-function loadLocale(locale: string): Record<string, string> {
-  const filePath = path.join(I18N_DIR, `${locale}.json`);
-  return JSON.parse(fs.readFileSync(filePath, "utf8"));
-}
 
 function extractWelcomeI18nKeys(): string[] {
   const html = fs.readFileSync(path.join(WELCOME_DIR, "welcome.html"), "utf8");

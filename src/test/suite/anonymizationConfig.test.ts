@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
 import yaml from "js-yaml";
-import { REPO_ROOT, readModuleFile } from "./lwcSourceUtils";
+import { LOCALES, loadLocale, readModuleFile } from "./lwcSourceUtils";
 import { SfdxHardisConfigHelper } from "../../utils/pipeline/sfdxHardisConfigHelper";
 
 /**
@@ -21,17 +21,6 @@ import { SfdxHardisConfigHelper } from "../../utils/pipeline/sfdxHardisConfigHel
  *  - every i18n key it uses exists in the 9 locales
  *  - its stylesheet holds no hardcoded color (webviews render in both themes)
  */
-
-const LOCALES = ["en", "fr", "es", "de", "it", "nl", "ja", "pl", "pt-BR"];
-
-function loadLocale(locale: string): Record<string, string> {
-  return JSON.parse(
-    fs.readFileSync(
-      path.join(REPO_ROOT, "src", "i18n", `${locale}.json`),
-      "utf8",
-    ),
-  );
-}
 
 suite("Anonymization configuration contract", () => {
   const js = readModuleFile("anonymizationConfig", "anonymizationConfig.js");
