@@ -121,6 +121,33 @@
                 </div>
             </template>
 
+            <!-- Data anonymization: monitoring jobs run in CI, where the
+                 reports and notifications they produce leave the machine -->
+            <div class="hardis-status-grid single-column monitoring-privacy-card">
+                <div class={anonymizationCardClass}>
+                    <div class="hardis-tile violet">
+                        <lightning-icon icon-name="utility:privately_shared" size="small"></lightning-icon>
+                    </div>
+                    <div class="hardis-status-content">
+                        <h3 class="hardis-status-title">{i18n.anonymizationTitle}</h3>
+                        <p class="hardis-status-meta">
+                            <span class={anonymizationPillClass}>
+                                <span class="hardis-pill-dot"></span>{anonymizationLevelLabel}
+                            </span>
+                        </p>
+                        <p class="hardis-status-desc">{i18n.anonymizationSubtitle}</p>
+                    </div>
+                    <div class="hardis-status-actions">
+                        <lightning-button class="hardis-btn-tinted-blue"
+                            variant="neutral"
+                            label={i18n.anonymizationConfigure}
+                            icon-name="utility:settings"
+                            onclick={handleOpenAnonymization}>
+                        </lightning-button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Category tables -->
             <template for:each={rowsByCategory} for:item="category">
                 <div key={category.key} class="category-section" style={category.sectionStyle}>
@@ -612,6 +639,37 @@
                                 variant="neutral"
                                 label={i18n.applyLabel}
                                 onclick={handleModalSave}>
+                            </lightning-button>
+                        </footer>
+                    </div>
+                </section>
+                <div class="slds-backdrop slds-backdrop_open"></div>
+            </template>
+
+            <!-- Data anonymization modal -->
+            <template if:true={anonymizationModalOpen}>
+                <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+                    <div class="slds-modal__container monitoring-privacy-modal">
+                        <div class="modal-accent-strip"></div>
+                        <header class="slds-modal__header">
+                            <button class="slds-button slds-button_icon slds-modal__close" title={i18n.closeLabel} onclick={handleCloseAnonymization}>
+                                <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
+                                <span class="slds-assistive-text">{i18n.closeLabel}</span>
+                            </button>
+                            <h2 class="slds-modal__title slds-hyphenate">{i18n.anonymizationTitle}</h2>
+                        </header>
+                        <div class="slds-modal__content slds-p-around_medium">
+                            <s-anonymization-config
+                                value={anonymization}
+                                doc-url={anonymizationDocUrl}
+                                onchange={handleAnonymizationChange}
+                            ></s-anonymization-config>
+                        </div>
+                        <footer class="slds-modal__footer">
+                            <lightning-button class="hardis-btn-tinted-blue"
+                                variant="neutral"
+                                label={i18n.closeLabel}
+                                onclick={handleCloseAnonymization}>
                             </lightning-button>
                         </footer>
                     </div>

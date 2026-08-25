@@ -1,7 +1,5 @@
 import * as assert from "assert";
-import * as fs from "fs";
-import * as path from "path";
-import { REPO_ROOT, readModuleFile } from "./lwcSourceUtils";
+import { LOCALES, loadLocale, readModuleFile } from "./lwcSourceUtils";
 
 /**
  * Contract tests for the "Target orgs" selector of the deployment action
@@ -16,17 +14,6 @@ import { REPO_ROOT, readModuleFile } from "./lwcSourceUtils";
  *  - the summary sentence is rendered under the selector
  *  - every i18n key the selector uses exists in the 9 locales
  */
-
-const LOCALES = ["en", "fr", "es", "de", "it", "nl", "ja", "pl", "pt-BR"];
-
-function loadLocale(locale: string): Record<string, string> {
-  return JSON.parse(
-    fs.readFileSync(
-      path.join(REPO_ROOT, "src", "i18n", `${locale}.json`),
-      "utf8",
-    ),
-  );
-}
 
 suite("Deployment action target orgs contract", () => {
   const html = readModuleFile("deploymentAction", "deploymentAction.html");

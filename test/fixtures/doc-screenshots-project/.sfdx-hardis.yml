@@ -56,6 +56,11 @@ installedPackages:
     SubscriberPackageVersionNumber: 1.7.0.1
     installOnScratchOrgs: false
     installDuringDeployments: false
+anonymization:
+  level: standard
+  channels:
+    api: strict
+    email: strict
 customCommands: []
 monitoringRepository: https://github.com/mycompany/salesforce-crm-monitoring
 monitoringCommands:

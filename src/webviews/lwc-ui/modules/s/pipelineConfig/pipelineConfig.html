@@ -305,6 +305,14 @@
                             </template>
                             </template>
                           </template>
+                          <template if:true={entry.isAnonymization}>
+                            <s-anonymization-config
+                              data-key={entry.key}
+                              value={entry.valueEdit}
+                              doc-url={entry.docUrl}
+                              onchange={handleObjectEditorChange}
+                            ></s-anonymization-config>
+                          </template>
                           <template if:true={entry.isBoolean}>
                             <lightning-input
                               type="toggle"
@@ -349,6 +357,13 @@
                             </span>
                           </template>
                           <template if:false={entry.isBoolean}>
+                            <template if:true={entry.isAnonymization}>
+                              <s-anonymization-config
+                                value={entry.value}
+                                doc-url={entry.docUrl}
+                                read-only={isViewMode}
+                              ></s-anonymization-config>
+                            </template>
                             <template if:true={entry.isArrayEnum}>
                               <template if:true={entry.hasArrayEnumValues}>
                                 <template for:each={entry.valueDisplay} for:item="item">

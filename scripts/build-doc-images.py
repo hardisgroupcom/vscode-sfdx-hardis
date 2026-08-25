@@ -170,6 +170,13 @@ BOX_CROPS = {
         "pipeline-edit-action-remove-packagexml-items",
         (760, 239, 1462, 728),
     ),
+    # Security & Privacy tab of the Pipeline Settings panel, in edit mode: the
+    # anonymization editor of SECURITY.md (captured two zoom levels out, so the
+    # three levels, the local runs toggle and the four channels all fit)
+    "screenshot-anonymization-config.jpg": (
+        "anonymization-config-edit",
+        (312, 28, 1905, 900),
+    ),
     # Same editor with the "Target orgs" field restricting the action, for the
     # "Choose the target orgs" section (the branch selector makes it taller)
     "screenshot-deployment-action-target-orgs-include.jpg": (
