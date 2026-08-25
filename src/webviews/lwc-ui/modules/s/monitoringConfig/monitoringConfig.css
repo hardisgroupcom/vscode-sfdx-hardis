@@ -122,3 +122,14 @@
 .monitoring-cell-disabled {
   text-align: center;
 }
+
+/* Data anonymization card, above the monitoring categories */
+.monitoring-privacy-card {
+  margin-bottom: 1rem;
+}
+
+/* The anonymization editor needs more room than a details modal */
+.monitoring-privacy-modal {
+  max-width: 60rem;
+  width: 90%;
+}

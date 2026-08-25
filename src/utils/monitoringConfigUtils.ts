@@ -115,9 +115,24 @@ export interface MonitoringCatalogPayload {
   };
 }
 
+export type AnonymizationLevel = "off" | "standard" | "strict";
+
+/** `anonymization:` property of .sfdx-hardis.yml (see the Security & Privacy doc) */
+export interface AnonymizationConfig {
+  level?: AnonymizationLevel;
+  enforceLocally?: boolean;
+  channels?: {
+    files?: AnonymizationLevel;
+    api?: AnonymizationLevel;
+    email?: AnonymizationLevel;
+    messaging?: AnonymizationLevel;
+  };
+}
+
 export interface MonitoringUserConfig {
   monitoringCommands: MonitoringCommandEntry[];
   notificationConfig: NotificationConfigEntry[];
+  anonymization: AnonymizationConfig | null;
 }
 
 const NOTIFICATION_THRESHOLD_ORDER: NotificationThreshold[] = [
@@ -232,20 +247,33 @@ function buildMonitoringConfig(raw: string): MonitoringUserConfig {
     notificationConfig: Array.isArray(parsed.notificationConfig)
       ? parsed.notificationConfig
       : [],
+    anonymization:
+      parsed.anonymization && typeof parsed.anonymization === "object"
+        ? parsed.anonymization
+        : null,
+  };
+}
+
+/** Empty user config, returned when there is nothing to read */
+function emptyMonitoringConfig(): MonitoringUserConfig {
+  return {
+    monitoringCommands: [],
+    notificationConfig: [],
+    anonymization: null,
   };
 }
 
 export async function readCurrentMonitoringConfig(): Promise<MonitoringUserConfig> {
   const configPath = getRootConfigPath();
   if (!(await pathExists(configPath))) {
-    return { monitoringCommands: [], notificationConfig: [] };
+    return emptyMonitoringConfig();
   }
   try {
     const raw = await fs.promises.readFile(configPath, "utf8");
     return buildMonitoringConfig(raw);
   } catch (e) {
     Logger.log(`Error reading monitoring config from ${configPath}: ${e}`);
-    return { monitoringCommands: [], notificationConfig: [] };
+    return emptyMonitoringConfig();
   }
 }
 
@@ -262,12 +290,12 @@ export async function readMonitoringConfigFromBranch(
   try {
     const raw = await git.raw(["show", `${branch}:${CONFIG_FILE}`]);
     if (!raw) {
-      return { monitoringCommands: [], notificationConfig: [] };
+      return emptyMonitoringConfig();
     }
     return buildMonitoringConfig(raw);
   } catch (e) {
     Logger.log(`No ${CONFIG_FILE} on branch ${branch}: ${e}`);
-    return { monitoringCommands: [], notificationConfig: [] };
+    return emptyMonitoringConfig();
   }
 }
 
@@ -347,6 +375,13 @@ export async function saveMonitoringConfig(
     existing.notificationConfig = config.notificationConfig;
   } else {
     delete existing.notificationConfig;
+  }
+  // An anonymization block back to the sfdx-hardis defaults is removed rather
+  // than written empty, which the CLI would read as an explicit configuration
+  if (config.anonymization && Object.keys(config.anonymization).length > 0) {
+    existing.anonymization = config.anonymization;
+  } else {
+    delete existing.anonymization;
   }
   await fs.promises.mkdir(path.dirname(configPath), { recursive: true });
   await fs.promises.writeFile(configPath, yaml.dump(existing), "utf8");

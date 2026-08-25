@@ -30,3 +30,26 @@ export const MODULES_DIR = path.join(
 export function readModuleFile(module: string, file: string): string {
   return fs.readFileSync(path.join(MODULES_DIR, module, file), "utf8");
 }
+
+/** The 9 locales every user-facing string must be translated into. */
+export const LOCALES = [
+  "en",
+  "fr",
+  "es",
+  "de",
+  "it",
+  "nl",
+  "ja",
+  "pl",
+  "pt-BR",
+];
+
+/** Reads one locale file of src/i18n as a flat key -> translation map. */
+export function loadLocale(locale: string): Record<string, string> {
+  return JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, "src", "i18n", `${locale}.json`),
+      "utf8",
+    ),
+  );
+}

@@ -7,6 +7,10 @@ import { SharedMixin } from "s/sharedMixin";
 
 const DEFAULT_FREQUENCY = "weekly";
 
+// Anonymization level sfdx-hardis applies to CI runs when `anonymization` is
+// not configured (see s/anonymizationConfig)
+const ANONYMIZATION_DEFAULT_LEVEL = "standard";
+
 // Category icon + colorClass for the seven real categories now come from the CLI catalog
 // (`categories[].icon` and `categories[].colorClass`). Per-command and per-notification
 // icons/colorClass also come from the catalog -- see buildCommandRow / buildNotificationRow.
@@ -63,6 +67,11 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
   @track modalEmail = "";
   @track modalApi = "";
   @track modalAvailableThresholds = [];
+  // `anonymization:` of .sfdx-hardis.yml, edited by the s-anonymization-config
+  // modal: monitoring jobs run in CI, where personal data leaves the machine
+  @track anonymization = null;
+  @track anonymizationModalOpen = false;
+  @track anonymizationDocUrl = "";
 
   // Deep-copy monitoringCommands / notificationConfig from a message payload
   // into the local user state when present.
@@ -74,6 +83,11 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       this.userNotifications = JSON.parse(
         JSON.stringify(data.notificationConfig),
       );
+    }
+    if (data && Object.prototype.hasOwnProperty.call(data, "anonymization")) {
+      this.anonymization = data.anonymization
+        ? JSON.parse(JSON.stringify(data.anonymization))
+        : null;
     }
   }
 
@@ -92,6 +106,9 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     if (typeof data?.docUrl === "string") {
       this.docUrl = data.docUrl;
     }
+    if (typeof data?.anonymizationDocUrl === "string") {
+      this.anonymizationDocUrl = data.anonymizationDocUrl;
+    }
   }
 
   @api
@@ -103,11 +120,15 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       const notifs = Array.isArray(data?.notificationConfig)
         ? data.notificationConfig
         : [];
-      if (cmds.length === 0 && notifs.length === 0) {
+      const anonymization = data?.anonymization || null;
+      if (cmds.length === 0 && notifs.length === 0 && !anonymization) {
         return;
       }
       this.userCommands = JSON.parse(JSON.stringify(cmds));
       this.userNotifications = JSON.parse(JSON.stringify(notifs));
+      this.anonymization = anonymization
+        ? JSON.parse(JSON.stringify(anonymization))
+        : null;
       this._autoSave();
     } else if (type === "branchChanged") {
       if (typeof data?.currentBranch === "string") {
@@ -1192,6 +1213,67 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     this.userNotifications = JSON.parse(
       JSON.stringify(cleaned.notificationConfig),
     );
+    this.anonymization = cleaned.anonymization || null;
+  }
+
+  // ----- Data anonymization -----
+
+  /**
+   * Level in force: the configured one, or the level sfdx-hardis applies to CI
+   * runs when the property is absent. The card always states what applies, and
+   * a badge tells whether it comes from the config or from that default.
+   */
+  get anonymizationEffectiveLevel() {
+    const level = this.anonymization?.level;
+    return level === "off" || level === "standard" || level === "strict"
+      ? level
+      : ANONYMIZATION_DEFAULT_LEVEL;
+  }
+
+  get anonymizationIsDefault() {
+    return !this.anonymization?.level;
+  }
+
+  get anonymizationLevelLabel() {
+    const level = this.anonymizationEffectiveLevel;
+    if (level === "off") {
+      return this.i18n.anonymizationLevelOff;
+    }
+    if (level === "strict") {
+      return this.i18n.anonymizationLevelStrict;
+    }
+    return this.i18n.anonymizationLevelStandard;
+  }
+
+  get anonymizationPillClass() {
+    return this.anonymizationEffectiveLevel === "off"
+      ? "hardis-pill hardis-hue-amber"
+      : "hardis-pill hardis-status-success";
+  }
+
+  get anonymizationCardClass() {
+    return this.anonymizationEffectiveLevel === "off"
+      ? "hardis-status-card warning"
+      : "hardis-status-card info";
+  }
+
+  handleOpenAnonymization() {
+    this.anonymizationModalOpen = true;
+  }
+
+  handleCloseAnonymization() {
+    this.anonymizationModalOpen = false;
+  }
+
+  handleAnonymizationChange(event) {
+    const value = event.detail?.value ?? null;
+    // Guard against a `change` bubbling out of a control nested in the editor
+    // (lightning-combobox and lightning-input dispatch composed events)
+    if (value !== null && typeof value !== "object") {
+      return;
+    }
+    this.anonymization = value;
+    this._autoSave();
   }
 
   handleOpenDocs() {
@@ -1290,6 +1372,10 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       }
     }
 
-    return { monitoringCommands: cmdOut, notificationConfig: notifOut };
+    return {
+      monitoringCommands: cmdOut,
+      notificationConfig: notifOut,
+      anonymization: this.anonymization || null,
+    };
   }
 }

@@ -1,0 +1,36 @@
+/* Layout only: every color comes from the hardis kit of global-theme.css */
+
+.anonymization-config {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+/* Three levels side by side as long as the panel is wide enough, then stacked */
+.anonymization-levels {
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  margin-bottom: 0.6rem;
+}
+
+.anonymization-levels .hardis-card-desc {
+  min-height: 3.6em;
+}
+
+.anonymization-enforce-row {
+  margin-bottom: 0.4rem;
+}
+
+/* The Pipeline Settings row hosting this editor is a `.stacked` one, and the
+   global kit stretches EVERY `.hardis-field-control` it contains to the full
+   width. That leaked rule flattens the label column of the rows below, so the
+   two-column layout is restored here. */
+.anonymization-config .hardis-field-control {
+  flex: 0 0 auto;
+  width: auto;
+  max-width: min(50%, 340px);
+  justify-content: flex-end;
+}
+.anonymization-config .hardis-field-control > lightning-input {
+  flex: 0 0 auto;
+}

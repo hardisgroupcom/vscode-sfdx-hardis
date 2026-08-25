@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- You can now configure the **anonymization of personal data** of sfdx-hardis without editing YAML
+  - The Pipeline Settings panel has a new **Security & Privacy** tab, and the Monitoring Config Workbench a new **Data anonymization** card, both opening the same editor
+  - Pick the anonymization level (**Off**, **Standard** or **Strict**), each one explaining exactly what it masks in the reports and notifications your CI jobs produce
+  - Choose whether local runs follow the configured level too, and raise the level of a single channel (**Report files**, **API endpoint**, **Email**, **Messaging**) when one destination must be stricter than the others
+
 ## [8.1.0] 2026-08-23
 
 - The Command Runner now shows **how many records each query returned**
