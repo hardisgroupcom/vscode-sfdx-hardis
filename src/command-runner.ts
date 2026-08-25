@@ -9,6 +9,10 @@ import {
 } from "./utils/sfdx-hardis-config-utils";
 import { spawn } from "child_process";
 import {
+  applySfPerformanceEnv,
+  getSfPerformanceTerminalEnv,
+} from "./utils/sfPerformanceUtils";
+import {
   containsCertificateIssue,
   getGitBashPath,
   promptToDisableTlsIfNeeded,
@@ -519,7 +523,7 @@ export class CommandRunner {
     const spawnOptions: any = {
       shell: true,
       cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd(),
-      env: { ...process.env },
+      env: applySfPerformanceEnv({ ...process.env }, preprocessedCommand),
     };
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     const langSetting = config.get<string>("lang", "auto");
@@ -929,7 +933,12 @@ export class CommandRunner {
    * Returns null when no suitable shell is available (warning shown).
    */
   private createHardisTerminal(): vscode.Terminal | null {
-    const terminalOptions: vscode.TerminalOptions = { name: "SFDX Hardis" };
+    // The terminal env is fixed at creation: the setting is read again for each
+    // new terminal (a change applies once the current terminal is closed)
+    const terminalOptions: vscode.TerminalOptions = {
+      name: "SFDX Hardis",
+      env: getSfPerformanceTerminalEnv(),
+    };
     if (process.platform === "win32") {
       const gitBashPath = getGitBashPath();
       if (gitBashPath) {

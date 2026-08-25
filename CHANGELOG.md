@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- The **sf commands** run by the extension start faster
+  - Every `sf` command launched by the extension skips its log file, its "new version available" check and its autoupdate probe, which saves 400 to 750 ms per call (telemetry is untouched)
+  - **Org info** in the status panel, the org color, and the Dev Hub lookup no longer start a Salesforce CLI process: `sf org display` and `sf config get` are answered in a few milliseconds by the libraries of the Salesforce CLI installed on your machine, and produce the same result
+  - Anything the fast path does not handle (scratch orgs, unusual flags, a CLI install it can not read) silently runs the plain `sf` command as before
+  - New setting **Disable performance enhancements when calling sf commands**, also available in the Extension Settings panel, to restore the plain `sf` commands everywhere (sfdx-hardis commands then receive `SFDX_HARDIS_ENHANCE_PERFORMANCE=false`)
 - The **Data Import/Export Workbench** and the **Files Import/Export Workbench** no longer freeze VS Code while they open
   - The line count of an exported CSV or a log file is now read without loading the file in memory, so a workspace holding large exports opens as fast as an empty one
   - Files above 50 MB show **Not counted** in the Lines column instead of being read from end to end just to display a number
