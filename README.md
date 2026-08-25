@@ -6,7 +6,7 @@
 <!-- The VS Code installs badge is hardcoded: no live badge service exposes the Marketplace install count anymore, so its value is refreshed by the daily Pull Request of .github/workflows/update-badges.yml -->
 
 [![Visual Studio Marketplace Version](https://img.shields.io/github/v/release/hardisgroupcom/vscode-sfdx-hardis?label=VS%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
-[![Visual Studio Marketplace Installs](https://img.shields.io/badge/VS%20Code%20installs-14.3k-blue)](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
+[![Visual Studio Marketplace Installs](https://img.shields.io/badge/VS%20Code%20installs-14.4k-blue)](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 [![Open VSX Downloads](https://img.shields.io/open-vsx/dt/NicolasVuillamy/vscode-sfdx-hardis?label=Open%20VSX%20installs)](https://open-vsx.org/extension/NicolasVuillamy/vscode-sfdx-hardis)
 [![Tests](https://img.shields.io/github/actions/workflow/status/hardisgroupcom/vscode-sfdx-hardis/test.yml?branch=main&label=Tests)](https://github.com/hardisgroupcom/vscode-sfdx-hardis/actions/workflows/test.yml)
 [![Mega-Linter](https://img.shields.io/github/actions/workflow/status/hardisgroupcom/vscode-sfdx-hardis/mega-linter.yml?branch=main&label=Mega-Linter)](https://megalinter.io)
