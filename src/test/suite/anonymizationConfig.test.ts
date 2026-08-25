@@ -85,8 +85,8 @@ suite("Anonymization configuration contract", () => {
   });
 
   test("the level in force is highlighted even when nothing is configured", () => {
-    // Without this, an unconfigured repository showed three unselected cards
-    // and the panel never answered "which level applies today"
+    // Without this, a repository with no anonymization block showed three
+    // unselected cards, and the panel never answered "which level applies"
     assert.match(
       js,
       /const DEFAULT_LEVEL = "standard";/,
