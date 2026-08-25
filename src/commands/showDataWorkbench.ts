@@ -9,6 +9,7 @@ import { Logger } from "../logger";
 import { isQueryValid, parseQuery } from "@jetstreamapp/soql-parser-js";
 import { getJson } from "../utils/httpUtils";
 import { t } from "../i18n/i18n";
+import { loadWorkbenchWorkspaces } from "../utils/workbenchUtils";
 // jscpd:ignore-end
 
 const DATA_TEMPLATES_URL =
@@ -328,96 +329,55 @@ export function registerShowDataWorkbench(commands: Commands) {
 }
 
 async function loadDataWorkspaces(): Promise<DataWorkspace[]> {
-  const workspaceRoot = getWorkspaceRoot();
-  const dataFolder = path.join(workspaceRoot, "scripts", "data");
+  const dataFolder = path.join(getWorkspaceRoot(), "scripts", "data");
 
-  if (!fs.existsSync(dataFolder)) {
-    return [];
-  }
+  return loadWorkbenchWorkspaces<DataWorkspace>(
+    dataFolder,
+    async ({ name, workspacePath, configPath, exportConfig }) => {
+      // Extract script-level settings (all root properties except objects and sfdxHardis metadata)
+      const {
+        objects: _rawObjects,
+        sfdxHardisLabel: _lbl,
+        sfdxHardisDescription: _desc,
+        ...scriptSettings
+      } = exportConfig;
 
-  let folderContents: fs.Dirent[];
-  try {
-    folderContents = await fs.promises.readdir(dataFolder, {
-      withFileTypes: true,
-    });
-  } catch {
-    return [];
-  }
+      const objects: SfdmuObjectConfig[] = Array.isArray(exportConfig.objects)
+        ? exportConfig.objects.map((obj: any) => ({
+            ...obj,
+            query: obj.query || "",
+            operation: obj.operation || "Upsert",
+            externalId: obj.externalId || obj.externalid || "",
+            deleteOldData: asBool(obj.deleteOldData),
+            useQueryAll: asBool(obj.useQueryAll),
+            allOrNone: asBool(obj.allOrNone, true),
+            bulkApiV1BatchSize:
+              obj.bulkApiV1BatchSize ?? obj.batchSize ?? undefined,
+            restApiBatchSize: obj.restApiBatchSize ?? undefined,
+            updateWithMockData: obj.updateWithMockData === true,
+            mockFields: normalizeMockFields(obj.mockFields),
+            objectName: extractObjectName(obj.query || ""),
+          }))
+        : [];
 
-  // Every workspace is scanned concurrently: the listings are I/O bound
-  const loaded = await Promise.all(
-    folderContents.map(async (dirent): Promise<DataWorkspace | null> => {
-      if (!dirent.isDirectory()) {
-        return null;
-      }
-      const workspacePath = path.join(dataFolder, dirent.name);
-      const exportJsonPath = path.join(workspacePath, "export.json");
+      const [exportedFiles, logFiles] = await Promise.all([
+        listExportedFiles(workspacePath),
+        listLogFiles(workspacePath),
+      ]);
 
-      let exportConfigRaw: string;
-      try {
-        exportConfigRaw = await fs.promises.readFile(exportJsonPath, "utf8");
-      } catch {
-        // no export.json: not a data workspace
-        return null;
-      }
-
-      try {
-        const exportConfig = JSON.parse(exportConfigRaw);
-
-        // Extract script-level settings (all root properties except objects and sfdxHardis metadata)
-        const {
-          objects: _rawObjects,
-          sfdxHardisLabel: _lbl,
-          sfdxHardisDescription: _desc,
-          ...scriptSettings
-        } = exportConfig;
-
-        const objects: SfdmuObjectConfig[] = Array.isArray(exportConfig.objects)
-          ? exportConfig.objects.map((obj: any) => ({
-              ...obj,
-              query: obj.query || "",
-              operation: obj.operation || "Upsert",
-              externalId: obj.externalId || obj.externalid || "",
-              deleteOldData: asBool(obj.deleteOldData),
-              useQueryAll: asBool(obj.useQueryAll),
-              allOrNone: asBool(obj.allOrNone, true),
-              bulkApiV1BatchSize:
-                obj.bulkApiV1BatchSize ?? obj.batchSize ?? undefined,
-              restApiBatchSize: obj.restApiBatchSize ?? undefined,
-              updateWithMockData: obj.updateWithMockData === true,
-              mockFields: normalizeMockFields(obj.mockFields),
-              objectName: extractObjectName(obj.query || ""),
-            }))
-          : [];
-
-        const [exportedFiles, logFiles] = await Promise.all([
-          listExportedFiles(workspacePath),
-          listLogFiles(workspacePath),
-        ]);
-
-        return {
-          name: dirent.name,
-          path: workspacePath,
-          configPath: exportJsonPath,
-          label: exportConfig.sfdxHardisLabel || dirent.name,
-          description: exportConfig.sfdxHardisDescription || "",
-          objects: objects,
-          objectsCount: objects.length,
-          exportedFiles: exportedFiles,
-          logFiles: logFiles,
-          scriptSettings: scriptSettings,
-        };
-      } catch (error) {
-        Logger.log(
-          `Error reading export.json for data workspace ${dirent.name}: ${error}`,
-        );
-        return null;
-      }
-    }),
-  );
-
-  return loaded.filter(
-    (workspace): workspace is DataWorkspace => workspace !== null,
+      return {
+        name: name,
+        path: workspacePath,
+        configPath: configPath,
+        label: exportConfig.sfdxHardisLabel || name,
+        description: exportConfig.sfdxHardisDescription || "",
+        objects: objects,
+        objectsCount: objects.length,
+        exportedFiles: exportedFiles,
+        logFiles: logFiles,
+        scriptSettings: scriptSettings,
+      };
+    },
   );
 }
 

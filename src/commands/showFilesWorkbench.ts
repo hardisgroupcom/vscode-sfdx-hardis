@@ -8,6 +8,7 @@ import path from "path";
 import { Logger } from "../logger";
 import { getJson } from "../utils/httpUtils";
 import { t } from "../i18n/i18n";
+import { loadWorkbenchWorkspaces } from "../utils/workbenchUtils";
 // jscpd:ignore-end
 
 const FILE_TEMPLATES_URL =
@@ -178,71 +179,31 @@ export function registerShowFilesWorkbench(commands: Commands) {
 
 // Helper methods for files workspaces
 async function loadFilesWorkspaces(): Promise<any[]> {
-  const workspaceRoot = getWorkspaceRoot();
-  const filesFolder = path.join(workspaceRoot, "scripts", "files");
+  const filesFolder = path.join(getWorkspaceRoot(), "scripts", "files");
 
-  if (!fs.existsSync(filesFolder)) {
-    return [];
-  }
+  return loadWorkbenchWorkspaces<any>(
+    filesFolder,
+    async ({ name, workspacePath, configPath, exportConfig }) => {
+      // Count exported files (recursively count all files except export.json)
+      const exportedFilesCount = await countExportedFiles(workspacePath);
 
-  let folderContents: fs.Dirent[];
-  try {
-    folderContents = await fs.promises.readdir(filesFolder, {
-      withFileTypes: true,
-    });
-  } catch {
-    return [];
-  }
-
-  // Every workspace is scanned concurrently: the walks are I/O bound
-  const loaded = await Promise.all(
-    folderContents.map(async (dirent) => {
-      if (dirent.isDirectory()) {
-        const workspacePath = path.join(filesFolder, dirent.name);
-        const exportJsonPath = path.join(workspacePath, "export.json");
-
-        let exportConfigRaw: string;
-        try {
-          exportConfigRaw = await fs.promises.readFile(exportJsonPath, "utf8");
-        } catch {
-          // no export.json: not a files workspace
-          return null;
-        }
-
-        try {
-          const exportConfig = JSON.parse(exportConfigRaw);
-
-          // Count exported files (recursively count all files except export.json)
-          const exportedFilesCount = await countExportedFiles(workspacePath);
-
-          return {
-            name: dirent.name,
-            path: workspacePath,
-            configPath: exportJsonPath,
-            label: exportConfig.sfdxHardisLabel || dirent.name,
-            description: exportConfig.sfdxHardisDescription || "",
-            soqlQuery: exportConfig.soqlQuery || "",
-            fileTypes: exportConfig.fileTypes || "all",
-            fileSizeMin: exportConfig.fileSizeMin || 0,
-            outputFolderNameField: exportConfig.outputFolderNameField || "Name",
-            outputFileNameFormat: exportConfig.outputFileNameFormat || "title",
-            overwriteParentRecords:
-              exportConfig.overwriteParentRecords !== false,
-            overwriteFiles: exportConfig.overwriteFiles === true,
-            exportedFilesCount: exportedFilesCount,
-          };
-        } catch (error) {
-          // Skip invalid JSON files
-          Logger.log(
-            `Error reading export.json for workspace ${dirent.name}: ${error}`,
-          );
-        }
-      }
-      return null;
-    }),
+      return {
+        name: name,
+        path: workspacePath,
+        configPath: configPath,
+        label: exportConfig.sfdxHardisLabel || name,
+        description: exportConfig.sfdxHardisDescription || "",
+        soqlQuery: exportConfig.soqlQuery || "",
+        fileTypes: exportConfig.fileTypes || "all",
+        fileSizeMin: exportConfig.fileSizeMin || 0,
+        outputFolderNameField: exportConfig.outputFolderNameField || "Name",
+        outputFileNameFormat: exportConfig.outputFileNameFormat || "title",
+        overwriteParentRecords: exportConfig.overwriteParentRecords !== false,
+        overwriteFiles: exportConfig.overwriteFiles === true,
+        exportedFilesCount: exportedFilesCount,
+      };
+    },
   );
-
-  return loaded.filter((workspace) => workspace !== null);
 }
 
 async function createFilesWorkspace(data: any): Promise<string> {
