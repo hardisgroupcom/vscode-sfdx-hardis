@@ -748,9 +748,13 @@ export class HardisColors {
     }
     // Read config files
     if (vscode.workspace.workspaceFolders) {
+      // sfdx-hardis config files live at the root of the project, and the
+      // branch ones in config/branches/. Anchoring the pattern there reads two
+      // directories instead of walking the whole working tree (node_modules,
+      // .git, force-app...) on every org change.
       const sfdxHardisConfigFilesPattern = new vscode.RelativePattern(
         vscode.workspace.workspaceFolders[0],
-        `**/.sfdx-hardis*.yml`,
+        `{.sfdx-hardis*.yml,config/branches/.sfdx-hardis*.yml}`,
       );
       const fileUris = await vscode.workspace.findFiles(
         sfdxHardisConfigFilesPattern,

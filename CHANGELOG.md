@@ -7,6 +7,12 @@
   - Files above 50 MB show **Not counted** in the Lines column instead of being read from end to end just to display a number
   - The exported files of a Files workspace are counted without blocking the interface, so a workspace holding tens of thousands of attachments no longer makes the panel unresponsive
   - All the workspaces of a project are now scanned at the same time instead of one after the other
+- The **Metadata Retriever** is much faster to tell which items already exist locally, on projects holding many metadata types
+  - Checking the local files now reads the sources once per package directory instead of once per metadata type
+  - Deleting local files of removed metadata, and including the missing Report or Dashboard folders of a retrieve, also read the sources once instead of once per item
+- Searching the sources no longer walks folders that hold no Salesforce metadata (`node_modules`, `.git`, `out`, `dist`...)
+  - `.claude` and `.cursor` are skipped too: the example metadata their instructions and skills can hold was picked up as source of the project, for example when listing the Apex test classes to offer in a deployment action
+- Coloring VS Code with the color of the org no longer scans the whole project to find the sfdx-hardis configuration files, which was slow to react on large repositories
 
 ## [8.2.0] 2026-08-25
 

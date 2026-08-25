@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as yaml from "js-yaml";
 import { Logger } from "../logger";
-import { listMetadataTypes } from "./metadataList";
+import { getMetadataTypes } from "./metadataTypes";
 import {
   readSfdxHardisConfig,
   loadExtensionSettingsSfdxHardisConfiguration,
@@ -90,7 +90,7 @@ let KNOWN_METADATA_TYPES: Set<string> | null = null;
 function getKnownMetadataTypes(): Set<string> {
   if (!KNOWN_METADATA_TYPES) {
     KNOWN_METADATA_TYPES = new Set(
-      listMetadataTypes().map((mt: any) => mt.xmlName),
+      getMetadataTypes().map((mt: any) => mt.xmlName),
     );
   }
   return KNOWN_METADATA_TYPES;

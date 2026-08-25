@@ -1,8 +1,25 @@
 import * as vscode from "vscode";
-import * as path from "path";
 import { getWorkspaceRoot, listSfdxProjectPackageDirectories } from "../utils";
-import { listMetadataTypes } from "./metadataList";
+import { getMetadataTypes } from "./metadataTypes";
 import { t } from "../i18n/i18n";
+
+// Folders that never hold Salesforce sources of the project and must be kept
+// out of a walk starting at the repository root. Passing no exclude at all to
+// vscode.workspace.findFiles() is not enough: `null` disables even the default
+// excludes, so node_modules gets walked.
+//
+// .claude and .cursor are in the list for correctness, not only for speed: the
+// instructions and skills they hold can carry example metadata (Apex classes,
+// objects...), which must never be taken for sources of the project.
+export const GLOB_IGNORE_PATTERNS =
+  "**/{node_modules,.git,.github,.claude,.cursor,.sf,.sfdx,.vscode,dist,out,coverage,tmp,temp,logs,hardis-report,mkdocs}/**";
+
+// Same purpose, for a walk already scoped to a package directory. The folders
+// above live at the repository root, never inside force-app, and every ignore
+// pattern is tested against every walked path, so listing them there only costs
+// time. Only node_modules is kept, for the projects holding a JS bundle inside
+// a package directory.
+export const PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS = "**/node_modules/**";
 
 // VS Code's glob matcher (used by vscode.workspace.findFiles / RelativePattern) does not
 // normalize a leading "./" the way fast-glob used to, so a pattern like "./force-app/**/*.cls"
@@ -59,7 +76,7 @@ export async function getMetadataFilePath(
     const packageDirs = await listSfdxProjectPackageDirectories();
     const pkgDirs = packageDirs && packageDirs.length > 0 ? packageDirs : ["."];
 
-    const metadataTypes = listMetadataTypes();
+    const metadataTypes = getMetadataTypes();
     const mt: any = metadataTypes.find((m: any) => m.xmlName === metadataType);
     if (!mt) {
       return null;
@@ -129,44 +146,58 @@ export async function getMetadataFilePath(
     }
     /* jscpd:ignore-end */
 
-    // For each package dir, scan relevant files and try to find a match
+    // Every candidate key is a path suffix ending on a file name, so it goes
+    // straight into the glob expression: one walk for all the package
+    // directories, returning the handful of matching files, instead of one walk
+    // per package directory listing everything under the metadata folder and
+    // filtering the names afterwards. Salesforce API names hold no glob special
+    // character, so they need no escaping here.
+    const keyList = Array.from(candidateKeys);
+    const patterns: string[] = [];
     for (const pkg of pkgDirs) {
-      try {
-        const dirName = mt.directoryName || "";
-        const relativeGlob = dirName ? `**/${dirName}/**/*` : "**/*";
-        const base = path.join(workspaceRoot, pkg);
+      const base = normalizeGlobBase(String(pkg));
+      for (const key of keyList) {
+        const relKey = key.replace(/^\//, "");
+        patterns.push(base ? `${base}/**/${relKey}` : `**/${relKey}`);
+      }
+    }
+    if (patterns.length === 0) {
+      return null;
+    }
+    const combinedPattern =
+      patterns.length > 1 ? `{${patterns.join(",")}}` : patterns[0];
 
-        let files: string[] = [];
-        try {
-          const uris = await vscode.workspace.findFiles(
-            new vscode.RelativePattern(base, relativeGlob),
-            null,
-          );
-          files = uris.map((uri) => uri.fsPath.replace(/\\/g, "/"));
-        } catch {
-          files = [];
-        }
+    let files: string[] = [];
+    try {
+      const uris = await vscode.workspace.findFiles(
+        new vscode.RelativePattern(workspaceRoot, combinedPattern),
+        GLOB_IGNORE_PATTERNS,
+      );
+      files = uris.map((uri) => uri.fsPath.replace(/\\/g, "/"));
+    } catch {
+      return null;
+    }
+    if (files.length === 0) {
+      return null;
+    }
 
-        if (!files || files.length === 0) {
-          continue;
+    // Return the match of the earliest package directory, and within it the
+    // earliest candidate key (the source file before its -meta.xml companion)
+    for (const pkg of pkgDirs) {
+      const base = normalizeGlobBase(String(pkg));
+      const pkgFiles = base
+        ? files.filter((f) => f.includes(`/${base}/`) || f.startsWith(`${base}/`))
+        : files;
+      for (const key of keyList) {
+        const match = pkgFiles.find((f) => f.endsWith(key));
+        if (match) {
+          return match;
         }
-
-        const keyList = Array.from(candidateKeys);
-        for (const f of files) {
-          for (const cand of keyList) {
-            if (f.endsWith(cand)) {
-              return f;
-            }
-          }
-        }
-      } catch {
-        // ignore scanning errors for this package
-        continue;
       }
     }
 
     // nothing found
-    return null;
+    return files[0];
   } catch {
     return null;
   }
