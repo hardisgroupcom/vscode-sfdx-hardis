@@ -2139,7 +2139,9 @@ async function expandWithMissingFolderItems(
 
   let foundPaths: string[] = [];
   const allPatterns = candidates.flatMap((candidate) =>
-    pkgBases.map((base) => (base ? `${base}/**/${candidate.tail}` : `**/${candidate.tail}`)),
+    pkgBases.map((base) =>
+      base ? `${base}/**/${candidate.tail}` : `**/${candidate.tail}`,
+    ),
   );
   if (allPatterns.length > 0) {
     const combinedPattern =

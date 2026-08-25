@@ -412,7 +412,10 @@ async function listExportedFiles(
           extension === ".csv" && rawLineCount !== null && rawLineCount > 0
             ? rawLineCount - 1
             : rawLineCount;
-        if (entry.name === "MissingParentRecordsReport.csv" && lineCount === 0) {
+        if (
+          entry.name === "MissingParentRecordsReport.csv" &&
+          lineCount === 0
+        ) {
           return null;
         }
         return {

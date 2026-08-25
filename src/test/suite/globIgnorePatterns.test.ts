@@ -109,7 +109,10 @@ suite("Metadata registry memoization", () => {
       second,
       "getMetadataTypes() should return the cached array, not rebuild it",
     );
-    assert.ok(first.length > 100, "the registry should hold the metadata types");
+    assert.ok(
+      first.length > 100,
+      "the registry should hold the metadata types",
+    );
   });
 
   test("a type is resolved by its xmlName", () => {

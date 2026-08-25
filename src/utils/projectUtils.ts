@@ -186,7 +186,9 @@ export async function getMetadataFilePath(
     for (const pkg of pkgDirs) {
       const base = normalizeGlobBase(String(pkg));
       const pkgFiles = base
-        ? files.filter((f) => f.includes(`/${base}/`) || f.startsWith(`${base}/`))
+        ? files.filter(
+            (f) => f.includes(`/${base}/`) || f.startsWith(`${base}/`),
+          )
         : files;
       for (const key of keyList) {
         const match = pkgFiles.find((f) => f.endsWith(key));
