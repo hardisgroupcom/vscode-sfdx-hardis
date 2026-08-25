@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [8.2.0] 2026-08-25
+
 - You can now configure the **anonymization of personal data** of sfdx-hardis without editing YAML
   - The Pipeline Settings panel has a new **Security & Privacy** tab, and the Monitoring Config Workbench a new **Data anonymization** card, both opening the same editor
   - Pick the anonymization level (**Off**, **Standard** or **Strict**), each one explaining exactly what it masks in the reports and notifications your CI jobs produce
