@@ -13,14 +13,19 @@ import {
   getReportDirectory,
 } from "../utils";
 import { Logger } from "../logger";
-import { listMetadataTypes } from "../utils/metadataList";
+import { getMetadataTypes } from "../utils/metadataTypes";
 import {
   isSfdxHardisConfigFile,
   listMetadataPresets,
   openMetadataPresetsConfigFile,
 } from "../utils/metadataPresets";
 import { t } from "../i18n/i18n";
-import { normalizeGlobBase, openMetadataFile } from "../utils/projectUtils";
+import {
+  GLOB_IGNORE_PATTERNS,
+  normalizeGlobBase,
+  openMetadataFile,
+  PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS,
+} from "../utils/projectUtils";
 import * as path from "path";
 import * as fs from "fs";
 import { LwcUiPanel } from "../webviews/lwc-ui-panel";
@@ -245,7 +250,7 @@ export function registerShowMetadataRetriever(commands: Commands) {
             : [];
 
           // Get metadata types list
-          const metadataTypes = listMetadataTypes();
+          const metadataTypes = getMetadataTypes();
           const metadataTypeOptions = metadataTypes
             .map((mt) => ({
               label: mt.xmlName,
@@ -742,8 +747,14 @@ async function executeMetadataRetrieve(
     const deletedItems = metadataList.filter((item) => item?.deleted === true);
     if (deletedItems.length > 0) {
       const packages = await listSfdxProjectPackageDirectories();
-      const metadataTypes = listMetadataTypes();
+      const metadataTypes = getMetadataTypes();
       const deletedItemsSuccess: any = [];
+
+      // Resolve the files of every deleted item in a single walk: this used to
+      // run one findFiles() per deleted item, sequentially, so deleting a
+      // handful of items walked the sources a handful of times.
+      const deletionTargets: Array<{ item: any; keys: string[] }> = [];
+      const fileSearchPatterns: string[] = [];
       for (const delItem of deletedItems) {
         const metadataType = metadataTypes.find(
           (mt) => mt.xmlName === delItem.memberType,
@@ -751,31 +762,43 @@ async function executeMetadataRetrieve(
         if (!metadataType) {
           continue;
         }
-        const candidateGlobPatterns = [
-          ...buildMetadataKeys(delItem.memberName, metadataType),
-        ];
-        const fileSearchPatterns = candidateGlobPatterns.flatMap((pattern) => {
-          const relPattern = pattern.replace(/^\//, "");
-          return packages.map((pkgDir) =>
-            path.join(pkgDir, "**", relPattern).replace(/\\/g, "/"),
-          );
-        });
-        let filesToDelete: string[] = [];
-        if (fileSearchPatterns.length > 0) {
-          const combinedPattern =
-            fileSearchPatterns.length > 1
-              ? `{${fileSearchPatterns.join(",")}}`
-              : fileSearchPatterns[0];
-          const uris = await vscode.workspace.findFiles(
-            new vscode.RelativePattern(workspaceRoot, combinedPattern),
-            null,
-          );
-          filesToDelete = uris.map((uri) => uri.fsPath);
+        const keys = [...buildMetadataKeys(delItem.memberName, metadataType)];
+        if (keys.length === 0) {
+          continue;
         }
+        deletionTargets.push({ item: delItem, keys });
+        for (const key of keys) {
+          const relPattern = key.replace(/^\//, "");
+          for (const pkgDir of packages) {
+            fileSearchPatterns.push(
+              path.join(pkgDir, "**", relPattern).replace(/\\/g, "/"),
+            );
+          }
+        }
+      }
+
+      let foundPaths: string[] = [];
+      if (fileSearchPatterns.length > 0) {
+        const combinedPattern =
+          fileSearchPatterns.length > 1
+            ? `{${fileSearchPatterns.join(",")}}`
+            : fileSearchPatterns[0];
+        const uris = await vscode.workspace.findFiles(
+          new vscode.RelativePattern(workspaceRoot, combinedPattern),
+          GLOB_IGNORE_PATTERNS,
+        );
+        foundPaths = uris.map((uri) => uri.fsPath);
+      }
+
+      for (const { item, keys } of deletionTargets) {
+        const filesToDelete = foundPaths.filter((filePath) => {
+          const normalized = filePath.replace(/\\/g, "/");
+          return keys.some((key) => normalized.endsWith(key));
+        });
         for (const filePath of filesToDelete) {
           try {
             await fs.promises.rm(filePath);
-            deletedItemsSuccess.push(delItem);
+            deletedItemsSuccess.push(item);
           } catch (err) {
             Logger.log(`Error deleting file ${filePath}: ${err}`);
           }
@@ -1290,7 +1313,7 @@ async function handleListMetadataTypes(
   //   Logger.log(`Error listing metadata types: ${error.message}`);
   // }
   // // Send default metadata list
-  // const metadataTypes = listMetadataTypes();
+  // const metadataTypes = getMetadataTypes();
   // const metadataTypeOptions = metadataTypes
   //   .map((mt) => ({
   //     label: mt.xmlName,
@@ -1842,7 +1865,7 @@ async function annotateLocalFiles(records: any[]): Promise<any[]> {
   }
 
   try {
-    const metadataTypes = listMetadataTypes();
+    const metadataTypes = getMetadataTypes();
     const typeMap: Record<string, any> = {};
     for (const t of metadataTypes) {
       if (t.xmlName) {
@@ -1865,43 +1888,95 @@ async function annotateLocalFiles(records: any[]): Promise<any[]> {
       }
     }
 
-    // Build index: key => set of normalized candidate strings
-    const index: Map<string, Set<string>> = new Map();
+    // Index: "<pkg>::<type>" => file name => the paths carrying that file name.
+    // Every candidate key of buildMetadataKeys() ends on a file name, so the
+    // file name narrows the comparison to a couple of paths instead of the
+    // whole listing: matching every record against every scanned path used to
+    // cost records x packageDirs x candidates x files string comparisons.
+    const index: Map<string, Map<string, string[]>> = new Map();
 
-    // For each packageDir and each needed type, scan the directory once and populate keys
-    const scanPromises: Promise<void>[] = [];
-    for (const pkg of packageDirs) {
-      for (const tName of Array.from(typesNeeded)) {
-        const mt = typeMap[tName];
-        if (!mt) {
-          continue;
-        }
-        const dirName = mt.directoryName || "";
-        // pattern to list all files under the metadata dir
-        const relativeGlob = dirName ? `**/${dirName}/**/*` : "**/*";
-        const base = path.join(workspaceRoot, pkg);
-        const key = `${pkg}::${tName}`;
+    // Directory name of each needed type, to bucket the scanned paths per type.
+    // Several types can share a directory (and a nested path can sit under two
+    // of them, e.g. objects/ and fields/), so a path can land in more than one
+    // bucket: the candidate key still has to match afterwards.
+    const typesByDirName: Map<string, string[]> = new Map();
+    let scanEverything = false;
+    for (const tName of typesNeeded) {
+      const mt = typeMap[tName];
+      if (!mt) {
+        continue;
+      }
+      const dirName = mt.directoryName || "";
+      if (!dirName) {
+        // A type without a directory can sit anywhere: the walk cannot be scoped
+        scanEverything = true;
+        continue;
+      }
+      const types = typesByDirName.get(dirName) || [];
+      types.push(tName);
+      typesByDirName.set(dirName, types);
+    }
 
-        const prom = (async () => {
+    // One walk per package directory for all the needed types at once, instead
+    // of one walk per (package directory, type) pair
+    const dirNames = Array.from(typesByDirName.keys());
+    if (dirNames.length > 0 || scanEverything) {
+      const relativeGlob =
+        scanEverything || dirNames.length === 0
+          ? "**/*"
+          : dirNames.length === 1
+            ? `**/${dirNames[0]}/**/*`
+            : `**/{${dirNames.join(",")}}/**/*`;
+
+      await Promise.all(
+        packageDirs.map(async (pkg) => {
+          const base = path.join(workspaceRoot, pkg);
+          let paths: string[];
           try {
             const uris = await vscode.workspace.findFiles(
               new vscode.RelativePattern(base, relativeGlob),
-              null,
+              PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS,
             );
-            const set = new Set<string>();
-            for (const uri of uris) {
-              set.add(uri.fsPath.replace(/\\/g, "/"));
-            }
-            index.set(key, set);
+            paths = uris.map((uri) => uri.fsPath.replace(/\\/g, "/"));
           } catch {
             // ignore scanning errors
-            index.set(key, new Set());
+            return;
           }
-        })();
-        scanPromises.push(prom);
-      }
+          for (const filePath of paths) {
+            const segments = filePath.split("/");
+            const fileName = segments[segments.length - 1];
+            // Bucket the path under every needed type whose directory it sits in
+            const bucketTypes = new Set<string>();
+            for (const segment of segments) {
+              for (const tName of typesByDirName.get(segment) || []) {
+                bucketTypes.add(tName);
+              }
+            }
+            if (scanEverything) {
+              for (const tName of typesNeeded) {
+                if (!typeMap[tName]?.directoryName) {
+                  bucketTypes.add(tName);
+                }
+              }
+            }
+            for (const tName of bucketTypes) {
+              const key = `${pkg}::${tName}`;
+              let byFileName = index.get(key);
+              if (!byFileName) {
+                byFileName = new Map();
+                index.set(key, byFileName);
+              }
+              const bucket = byFileName.get(fileName);
+              if (bucket) {
+                bucket.push(filePath);
+              } else {
+                byFileName.set(fileName, [filePath]);
+              }
+            }
+          }
+        }),
+      );
     }
-    await Promise.allSettled(scanPromises);
 
     // Now annotate each record by checking candidate keys against index
     const annotated = records.map((r) => {
@@ -1919,15 +1994,14 @@ async function annotateLocalFiles(records: any[]): Promise<any[]> {
         // check per packageDir index
         let exists = false;
         for (const pkg of packageDirs) {
-          const key = `${pkg}::${mtName}`;
-          const set = index.get(key);
-          if (!set) {
+          const byFileName = index.get(`${pkg}::${mtName}`);
+          if (!byFileName) {
             continue;
           }
-          const setList = [...set];
-          // check normalized comparisons
           for (const cand of candidateKeys) {
-            if (setList.some((p) => p.endsWith(cand))) {
+            const fileName = cand.slice(cand.lastIndexOf("/") + 1);
+            const bucket = byFileName.get(fileName);
+            if (bucket && bucket.some((p) => p.endsWith(cand))) {
               exists = true;
               break;
             }
@@ -2011,7 +2085,7 @@ async function expandWithMissingFolderItems(
 
   // Resolve folder metadata file patterns from the registry, then check each
   // candidate against the package directories. Add it only when missing.
-  const metadataTypes = listMetadataTypes();
+  const metadataTypes = getMetadataTypes();
   const typeMap: Record<string, any> = {};
   for (const t of metadataTypes) {
     if (t.xmlName) {
@@ -2027,48 +2101,76 @@ async function expandWithMissingFolderItems(
   }
   const workspaceRoot = getWorkspaceRoot();
 
-  const additions: any[] = [];
+  // Build the glob pattern of every folder candidate first, then resolve them
+  // all in a single walk: this used to run one findFiles() per candidate,
+  // sequentially, so a retrieve touching a deep Report or Dashboard tree walked
+  // the package directories dozens of times in a row.
+  //   Source format path for a (possibly nested) folder:
+  //     <pkg>/**/<directoryName>/<folderPath>/<leaf>.<suffix>-meta.xml
+  //   where <folderPath> is the full ancestor path (e.g. A/B/C) and <leaf> is
+  //   its last segment (e.g. C).
+  // The pattern of a candidate is "<pkgBase>/**/<tail>", kept as its two parts
+  // so the walked paths can be matched back to the candidate without a glob
+  // matcher: the tail is a path suffix, and the base a path segment before it.
+  const pkgBases = packageDirs.map((pkgDir) => normalizeGlobBase(pkgDir));
+  const candidates: Array<{
+    folderType: string;
+    folderPath: string;
+    tail: string;
+  }> = [];
   for (const [folderType, folderNames] of candidatesByFolderType.entries()) {
     const mt = typeMap[folderType];
     if (!mt) {
       continue;
     }
     for (const folderPath of folderNames) {
-      let existsLocally = false;
-      if (packageDirs.length > 0) {
-        // Source format path for a (possibly nested) folder:
-        //   <pkg>/**/<directoryName>/<folderPath>/<leaf>.<suffix>-meta.xml
-        // where <folderPath> is the full ancestor path (e.g. A/B/C) and
-        // <leaf> is the last segment (e.g. C).
-        const segments = folderPath.split("/");
-        const leafName = segments[segments.length - 1];
-        const patterns = packageDirs.map((pkgDir) =>
-          [
-            normalizeGlobBase(pkgDir),
-            "**",
-            mt.directoryName || "",
-            ...segments,
-            `${leafName}.${mt.suffix}-meta.xml`,
-          ]
-            .filter(Boolean)
-            .join("/"),
-        );
-        const combinedPattern =
-          patterns.length > 1 ? `{${patterns.join(",")}}` : patterns[0];
-        try {
-          const uris = await vscode.workspace.findFiles(
-            new vscode.RelativePattern(workspaceRoot, combinedPattern),
-            null,
-          );
-          existsLocally = uris.length > 0;
-        } catch {
-          existsLocally = false;
-        }
-      }
-      if (!existsLocally) {
-        additions.push({ memberType: folderType, memberName: folderPath });
-        seen.add(`${folderType}::${folderPath}`);
-      }
+      const segments = folderPath.split("/");
+      const leafName = segments[segments.length - 1];
+      const tail = [
+        mt.directoryName || "",
+        ...segments,
+        `${leafName}.${mt.suffix}-meta.xml`,
+      ]
+        .filter(Boolean)
+        .join("/");
+      candidates.push({ folderType, folderPath, tail });
+    }
+  }
+
+  let foundPaths: string[] = [];
+  const allPatterns = candidates.flatMap((candidate) =>
+    pkgBases.map((base) =>
+      base ? `${base}/**/${candidate.tail}` : `**/${candidate.tail}`,
+    ),
+  );
+  if (allPatterns.length > 0) {
+    const combinedPattern =
+      allPatterns.length > 1 ? `{${allPatterns.join(",")}}` : allPatterns[0];
+    try {
+      const uris = await vscode.workspace.findFiles(
+        new vscode.RelativePattern(workspaceRoot, combinedPattern),
+        GLOB_IGNORE_PATTERNS,
+      );
+      foundPaths = uris.map((uri) => uri.fsPath.replace(/\\/g, "/"));
+    } catch {
+      foundPaths = [];
+    }
+  }
+
+  const additions: any[] = [];
+  for (const { folderType, folderPath, tail } of candidates) {
+    const existsLocally =
+      packageDirs.length > 0 &&
+      foundPaths.some(
+        (foundPath) =>
+          foundPath.endsWith(`/${tail}`) &&
+          pkgBases.some(
+            (base) => base === "" || foundPath.includes(`/${base}/`),
+          ),
+      );
+    if (!existsLocally) {
+      additions.push({ memberType: folderType, memberName: folderPath });
+      seen.add(`${folderType}::${folderPath}`);
     }
   }
 

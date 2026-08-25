@@ -701,6 +701,7 @@
   "dwbImportData": "Importuj dane",
   "dwbImportDataMenu": "Importuj dane",
   "dwbImportDataTooltip": "Importuje dane do Salesforce przy użyciu tego obszaru roboczego",
+  "dwbLinesNotCounted": "Nie policzono",
   "dwbLoadingWorkspaces": "Wczytywanie obszarów roboczych...",
   "dwbLogTypeLog": "Log",
   "dwbLogTypeReport": "Raport",

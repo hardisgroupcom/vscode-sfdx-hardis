@@ -6,7 +6,7 @@ import * as vscode from "vscode";
 import { getWorkspaceRoot, listSfdxProjectPackageDirectories } from "../utils";
 import { CacheManager } from "./cache-manager";
 import { PullRequest } from "./gitProviders/types";
-import { normalizeGlobBase } from "./projectUtils";
+import { GLOB_IGNORE_PATTERNS, normalizeGlobBase } from "./projectUtils";
 
 export interface PrePostCommand {
   id: string;
@@ -374,11 +374,10 @@ export async function listProjectApexTestClasses(): Promise<string[]> {
   });
   const combinedPattern =
     patterns.length > 1 ? `{${patterns.join(",")}}` : patterns[0];
-  const excludePattern = "**/{node_modules,.git,dist,out,.sf,.sfdx,.vscode}/**";
 
   const uris = await vscode.workspace.findFiles(
     new vscode.RelativePattern(workspaceRoot, combinedPattern),
-    excludePattern,
+    GLOB_IGNORE_PATTERNS,
   );
   const files = Array.from(new Set(uris.map((uri) => uri.fsPath)));
 
