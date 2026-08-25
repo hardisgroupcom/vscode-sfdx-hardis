@@ -68,6 +68,7 @@
   "anonymizationChannelsTitle": "Niveles por canal",
   "anonymizationCiOnlyNote": "Esta configuración se aplica únicamente a las ejecuciones de CI: las ejecuciones locales conservan la información completa en los registros y los informes. Active «Aplicar en ejecuciones locales» para aplicarla también localmente.",
   "anonymizationConfigure": "Configurar la anonimización",
+  "anonymizationDefaultBadge": "Predeterminado",
   "anonymizationDescApi": "Grafana Loki o cualquier endpoint de registros, también utilizado por el resumen de monitorización con IA",
   "anonymizationDescEmail": "Correos de notificación (los archivos adjuntos siguen el nivel de los archivos de informe)",
   "anonymizationDescFiles": "Informes CSV y XLSX, publicados como artefactos de CI y adjuntados a los correos",

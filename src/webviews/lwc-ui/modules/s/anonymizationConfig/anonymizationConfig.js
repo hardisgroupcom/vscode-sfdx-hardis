@@ -23,6 +23,10 @@ import { SharedMixin } from "s/sharedMixin";
 
 const LEVELS = ["off", "standard", "strict"];
 const CHANNELS = ["files", "api", "email", "messaging"];
+// Level sfdx-hardis applies when the property is not configured. It is the
+// default of CI runs, which is what this configuration governs (local runs are
+// left raw unless enforceLocally is on).
+const DEFAULT_LEVEL = "standard";
 const DEFAULT_DOC_URL =
   "https://sfdx-hardis.cloudity.com/salesforce-security-privacy/#data-anonymization";
 
@@ -52,13 +56,15 @@ export default class AnonymizationConfig extends SharedMixin(LightningElement) {
 
   /**
    * A per-channel level can only RAISE the global one: a weaker value has no
-   * effect at all in sfdx-hardis. Loading it clamped to the global level keeps
-   * the panel showing what the CLI really does, instead of a value that looks
-   * configured but never applies.
+   * effect at all in sfdx-hardis. Loading it clamped to the level in force
+   * keeps the panel showing what the CLI really does, instead of a value that
+   * looks configured but never applies. The level in force is the configured
+   * one, or the default sfdx-hardis applies when there is none.
    */
   _normalize(rawValue) {
     const raw = rawValue && typeof rawValue === "object" ? rawValue : {};
     const level = LEVELS.includes(raw.level) ? raw.level : "";
+    const floor = level || DEFAULT_LEVEL;
     const channels = {};
     const rawChannels =
       raw.channels && typeof raw.channels === "object" ? raw.channels : {};
@@ -68,8 +74,8 @@ export default class AnonymizationConfig extends SharedMixin(LightningElement) {
         continue;
       }
       channels[channel] =
-        level && LEVELS.indexOf(channelLevel) < LEVELS.indexOf(level)
-          ? level
+        LEVELS.indexOf(channelLevel) < LEVELS.indexOf(floor)
+          ? floor
           : channelLevel;
     }
     return {
@@ -122,6 +128,11 @@ export default class AnonymizationConfig extends SharedMixin(LightningElement) {
     return !this._config.level;
   }
 
+  /** Level actually in force: the configured one, or the sfdx-hardis default */
+  get effectiveLevel() {
+    return this._config.level || DEFAULT_LEVEL;
+  }
+
   get levelLabels() {
     return {
       off: this.i18n.anonymizationLevelOff,
@@ -137,8 +148,13 @@ export default class AnonymizationConfig extends SharedMixin(LightningElement) {
       standard: this.i18n.anonymizationLevelStandardDesc,
       strict: this.i18n.anonymizationLevelStrictDesc,
     };
+    // The level in force is highlighted even when nothing is configured, so
+    // the panel always answers "what applies today". A badge then tells the
+    // difference between an explicit choice and the sfdx-hardis default.
+    const effectiveLevel = this.effectiveLevel;
+    const isDefault = !this._config.level;
     return LEVELS.map((level) => {
-      const selected = this._config.level === level;
+      const selected = effectiveLevel === level;
       const classes = ["hardis-card"];
       if (this.isEditable) {
         classes.push("clickable");
@@ -155,21 +171,19 @@ export default class AnonymizationConfig extends SharedMixin(LightningElement) {
         cardClass: classes.join(" "),
         ariaChecked: selected ? "true" : "false",
         tabIndex: this.isEditable ? "0" : "-1",
+        showDefaultBadge: selected && isDefault,
       };
     });
   }
 
-  /** Once the global level is the strictest one, no channel can raise anything */
+  /** Once the level in force is the strictest one, no channel can raise anything */
   get channelsLocked() {
-    return this._config.level === "strict";
+    return this.effectiveLevel === "strict";
   }
 
   get channelOptions() {
     const labels = this.levelLabels;
-    const globalLevel = this._config.level;
-    const allowed = globalLevel
-      ? LEVELS.slice(LEVELS.indexOf(globalLevel))
-      : LEVELS;
+    const allowed = LEVELS.slice(LEVELS.indexOf(this.effectiveLevel));
     return [
       { label: this.i18n.anonymizationInherit, value: "" },
       ...allowed.map((level) => ({ label: labels[level], value: level })),
@@ -235,6 +249,8 @@ export default class AnonymizationConfig extends SharedMixin(LightningElement) {
     if (!LEVELS.includes(level) || this._config.level === level) {
       return;
     }
+    // Picking the highlighted default level is not a no-op: it makes it
+    // explicit in the YAML, so it survives a change of sfdx-hardis default
     // Raising the global level also raises every channel that was set below it
     const channels = {};
     for (const channel of CHANNELS) {

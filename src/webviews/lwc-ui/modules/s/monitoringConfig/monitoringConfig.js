@@ -7,6 +7,10 @@ import { SharedMixin } from "s/sharedMixin";
 
 const DEFAULT_FREQUENCY = "weekly";
 
+// Anonymization level sfdx-hardis applies to CI runs when `anonymization` is
+// not configured (see s/anonymizationConfig)
+const ANONYMIZATION_DEFAULT_LEVEL = "standard";
+
 // Category icon + colorClass for the seven real categories now come from the CLI catalog
 // (`categories[].icon` and `categories[].colorClass`). Per-command and per-notification
 // icons/colorClass also come from the catalog -- see buildCommandRow / buildNotificationRow.
@@ -1214,33 +1218,41 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
 
   // ----- Data anonymization -----
 
-  get anonymizationLevelLabel() {
+  /**
+   * Level in force: the configured one, or the level sfdx-hardis applies to CI
+   * runs when the property is absent. The card always states what applies, and
+   * a badge tells whether it comes from the config or from that default.
+   */
+  get anonymizationEffectiveLevel() {
     const level = this.anonymization?.level;
+    return level === "off" || level === "standard" || level === "strict"
+      ? level
+      : ANONYMIZATION_DEFAULT_LEVEL;
+  }
+
+  get anonymizationIsDefault() {
+    return !this.anonymization?.level;
+  }
+
+  get anonymizationLevelLabel() {
+    const level = this.anonymizationEffectiveLevel;
     if (level === "off") {
       return this.i18n.anonymizationLevelOff;
-    }
-    if (level === "standard") {
-      return this.i18n.anonymizationLevelStandard;
     }
     if (level === "strict") {
       return this.i18n.anonymizationLevelStrict;
     }
-    return this.i18n.anonymizationNotConfigured;
+    return this.i18n.anonymizationLevelStandard;
   }
 
   get anonymizationPillClass() {
-    const level = this.anonymization?.level;
-    if (level === "strict" || level === "standard") {
-      return "hardis-pill hardis-status-success";
-    }
-    if (level === "off") {
-      return "hardis-pill hardis-hue-amber";
-    }
-    return "hardis-pill hardis-status-unknown";
+    return this.anonymizationEffectiveLevel === "off"
+      ? "hardis-pill hardis-hue-amber"
+      : "hardis-pill hardis-status-success";
   }
 
   get anonymizationCardClass() {
-    return this.anonymization?.level === "off"
+    return this.anonymizationEffectiveLevel === "off"
       ? "hardis-status-card warning"
       : "hardis-status-card info";
   }

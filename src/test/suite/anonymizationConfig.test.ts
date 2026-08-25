@@ -55,20 +55,25 @@ suite("Anonymization configuration contract", () => {
     }
   });
 
-  test("a channel level can only raise the global one", () => {
-    // The options offered for a channel start at the global level
+  test("a channel level can only raise the level in force", () => {
+    // The options offered for a channel start at the level in force
     assert.match(
       js,
-      /LEVELS\.slice\(LEVELS\.indexOf\(globalLevel\)\)/,
-      "the channel combobox must only offer levels at or above the global one",
+      /LEVELS\.slice\(LEVELS\.indexOf\(this\.effectiveLevel\)\)/,
+      "the channel combobox must only offer levels at or above the one in force",
     );
     // A stored weaker value is clamped up on load, so the panel shows what the
     // CLI really applies instead of an option that never takes effect
     const normalize = js.substring(js.indexOf("_normalize(rawValue)"));
     assert.match(
-      normalize.substring(0, 900),
-      /LEVELS\.indexOf\(channelLevel\) < LEVELS\.indexOf\(level\)/,
-      "loading must clamp a channel level weaker than the global one",
+      normalize.substring(0, 1100),
+      /const floor = level \|\| DEFAULT_LEVEL;/,
+      "the clamping floor must fall back to the sfdx-hardis default level",
+    );
+    assert.match(
+      normalize.substring(0, 1100),
+      /LEVELS\.indexOf\(channelLevel\) < LEVELS\.indexOf\(floor\)/,
+      "loading must clamp a channel level weaker than the one in force",
     );
     // Raising the global level raises the channels that were below it
     const levelClick = js.substring(js.indexOf("handleLevelClick(event)"));
@@ -76,6 +81,37 @@ suite("Anonymization configuration contract", () => {
       levelClick.substring(0, 900),
       /LEVELS\.indexOf\(channelLevel\) < LEVELS\.indexOf\(level\)/,
       "raising the global level must raise the channels that were below it",
+    );
+  });
+
+  test("the level in force is highlighted even when nothing is configured", () => {
+    // Without this, an unconfigured repository showed three unselected cards
+    // and the panel never answered "which level applies today"
+    assert.match(
+      js,
+      /const DEFAULT_LEVEL = "standard";/,
+      "the sfdx-hardis default level must be known to the editor",
+    );
+    assert.match(
+      js,
+      /get effectiveLevel\(\)\s*\{\s*return this\._config\.level \|\| DEFAULT_LEVEL;/,
+      "the level in force must fall back to the default",
+    );
+    const cards = js.substring(js.indexOf("get levelCards()"));
+    assert.match(
+      cards.substring(0, 1400),
+      /const selected = effectiveLevel === level;/,
+      "the card of the level in force must be the selected one",
+    );
+    // ...but a default is not a choice: the badge keeps the two apart
+    assert.match(
+      cards.substring(0, 1400),
+      /showDefaultBadge: selected && isDefault,/,
+      "the default must be badged instead of passing for an explicit choice",
+    );
+    assert.ok(
+      html.includes("{i18n.anonymizationDefaultBadge}"),
+      "the level card must render the default badge",
     );
   });
 

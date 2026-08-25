@@ -68,6 +68,7 @@
   "anonymizationChannelsTitle": "Stufen pro Kanal",
   "anonymizationCiOnlyNote": "Diese Konfiguration gilt nur für CI-Ausführungen: lokale Ausführungen behalten die vollständigen Informationen in Logs und Berichten. Aktivieren Sie „Auf lokale Ausführungen anwenden“, um sie auch lokal anzuwenden.",
   "anonymizationConfigure": "Anonymisierung konfigurieren",
+  "anonymizationDefaultBadge": "Standardwert",
   "anonymizationDescApi": "Grafana Loki oder ein beliebiger Log-Endpunkt, auch für die KI-Monitoring-Zusammenfassung verwendet",
   "anonymizationDescEmail": "Benachrichtigungs-E-Mails (Anhänge folgen der Stufe der Berichtsdateien)",
   "anonymizationDescFiles": "CSV- und XLSX-Berichte, als CI-Artefakte veröffentlicht und an E-Mails angehängt",

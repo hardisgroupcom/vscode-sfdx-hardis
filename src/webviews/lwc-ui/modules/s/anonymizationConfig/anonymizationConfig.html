@@ -46,6 +46,9 @@
               <lightning-icon icon-name={card.iconName} size="x-small"></lightning-icon>
             </div>
             <h3 class="hardis-card-title">{card.label}</h3>
+            <template if:true={card.showDefaultBadge}>
+              <span class="hardis-chip" title={i18n.anonymizationNotConfigured}>{i18n.anonymizationDefaultBadge}</span>
+            </template>
           </div>
           <p class="hardis-card-desc">{card.description}</p>
         </div>

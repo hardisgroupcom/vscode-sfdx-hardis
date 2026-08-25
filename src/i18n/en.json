@@ -68,6 +68,7 @@
   "anonymizationChannelsTitle": "Per-channel levels",
   "anonymizationCiOnlyNote": "This configuration applies to CI runs only: local runs keep full information in logs and reports. Turn on \"Enforce in local runs\" to apply it locally too.",
   "anonymizationConfigure": "Configure anonymization",
+  "anonymizationDefaultBadge": "Default",
   "anonymizationDescApi": "Grafana Loki or any logs endpoint, also used by the AI monitoring summary",
   "anonymizationDescEmail": "Notification emails (attachments follow the report files level)",
   "anonymizationDescFiles": "CSV and XLSX reports, published as CI artifacts and attached to emails",

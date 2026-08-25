@@ -134,6 +134,9 @@
                             <span class={anonymizationPillClass}>
                                 <span class="hardis-pill-dot"></span>{anonymizationLevelLabel}
                             </span>
+                            <template if:true={anonymizationIsDefault}>
+                                <span class="hardis-chip" title={i18n.anonymizationNotConfigured}>{i18n.anonymizationDefaultBadge}</span>
+                            </template>
                         </p>
                         <p class="hardis-status-desc">{i18n.anonymizationSubtitle}</p>
                     </div>

@@ -68,6 +68,7 @@
   "anonymizationChannelsTitle": "Niveaus per kanaal",
   "anonymizationCiOnlyNote": "Deze configuratie geldt alleen voor CI-runs: lokale runs behouden de volledige informatie in logs en rapporten. Zet \"Toepassen op lokale runs\" aan om ze ook lokaal toe te passen.",
   "anonymizationConfigure": "Anonimisering configureren",
+  "anonymizationDefaultBadge": "Standaard",
   "anonymizationDescApi": "Grafana Loki of een ander logs-endpoint, ook gebruikt door de AI-monitoringsamenvatting",
   "anonymizationDescEmail": "Notificatie-e-mails (bijlagen volgen het niveau van de rapportbestanden)",
   "anonymizationDescFiles": "CSV- en XLSX-rapporten, gepubliceerd als CI-artefacten en als bijlage bij e-mails",

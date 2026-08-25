@@ -68,6 +68,7 @@
   "anonymizationChannelsTitle": "チャネル別のレベル",
   "anonymizationCiOnlyNote": "この設定は CI 実行にのみ適用されます。ローカル実行ではログとレポートに完全な情報が残ります。ローカルにも適用するには「ローカル実行にも適用」をオンにしてください。",
   "anonymizationConfigure": "匿名化を設定",
+  "anonymizationDefaultBadge": "既定",
   "anonymizationDescApi": "Grafana Loki などのログエンドポイント。AI モニタリングサマリーでも使用されます",
   "anonymizationDescEmail": "通知メール（添付ファイルはレポートファイルのレベルに従います）",
   "anonymizationDescFiles": "CSV および XLSX レポート。CI アーティファクトとして公開され、メールに添付されます",

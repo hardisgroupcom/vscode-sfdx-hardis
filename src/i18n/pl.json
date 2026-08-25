@@ -68,6 +68,7 @@
   "anonymizationChannelsTitle": "Poziomy dla poszczególnych kanałów",
   "anonymizationCiOnlyNote": "Ta konfiguracja dotyczy wyłącznie uruchomień CI: uruchomienia lokalne zachowują pełne informacje w logach i raportach. Włącz „Stosuj w uruchomieniach lokalnych”, aby zastosować ją także lokalnie.",
   "anonymizationConfigure": "Skonfiguruj anonimizację",
+  "anonymizationDefaultBadge": "Domyślnie",
   "anonymizationDescApi": "Grafana Loki lub dowolny punkt końcowy logów, używany również przez podsumowanie monitoringu AI",
   "anonymizationDescEmail": "Wiadomości e-mail z powiadomieniami (załączniki podlegają poziomowi plików raportów)",
   "anonymizationDescFiles": "Raporty CSV i XLSX, publikowane jako artefakty CI i dołączane do wiadomości e-mail",
