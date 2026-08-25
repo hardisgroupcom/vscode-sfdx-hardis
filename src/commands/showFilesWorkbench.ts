@@ -8,10 +8,14 @@ import path from "path";
 import { Logger } from "../logger";
 import { getJson } from "../utils/httpUtils";
 import { t } from "../i18n/i18n";
+import { loadWorkbenchWorkspaces } from "../utils/workbenchUtils";
 // jscpd:ignore-end
 
 const FILE_TEMPLATES_URL =
   "https://github.com/hardisgroupcom/sfdx-hardis/raw/refs/heads/main/defaults/templates/file-templates.json";
+
+// Upper bound of the exported files walk: the displayed count stops there
+const COUNT_FILES_MAX_ENTRIES = 100000;
 
 export function registerShowFilesWorkbench(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -175,57 +179,31 @@ export function registerShowFilesWorkbench(commands: Commands) {
 
 // Helper methods for files workspaces
 async function loadFilesWorkspaces(): Promise<any[]> {
-  const workspaceRoot = getWorkspaceRoot();
-  const filesFolder = path.join(workspaceRoot, "scripts", "files");
+  const filesFolder = path.join(getWorkspaceRoot(), "scripts", "files");
 
-  if (!fs.existsSync(filesFolder)) {
-    return [];
-  }
+  return loadWorkbenchWorkspaces<any>(
+    filesFolder,
+    async ({ name, workspacePath, configPath, exportConfig }) => {
+      // Count exported files (recursively count all files except export.json)
+      const exportedFilesCount = await countExportedFiles(workspacePath);
 
-  const workspaces: any[] = [];
-  const folderContents = fs.readdirSync(filesFolder, { withFileTypes: true });
-
-  for (const dirent of folderContents) {
-    if (dirent.isDirectory()) {
-      const workspacePath = path.join(filesFolder, dirent.name);
-      const exportJsonPath = path.join(workspacePath, "export.json");
-
-      if (fs.existsSync(exportJsonPath)) {
-        try {
-          const exportConfig = JSON.parse(
-            fs.readFileSync(exportJsonPath, "utf8"),
-          );
-
-          // Count exported files (recursively count all files except export.json)
-          const exportedFilesCount = countExportedFiles(workspacePath);
-
-          workspaces.push({
-            name: dirent.name,
-            path: workspacePath,
-            configPath: exportJsonPath,
-            label: exportConfig.sfdxHardisLabel || dirent.name,
-            description: exportConfig.sfdxHardisDescription || "",
-            soqlQuery: exportConfig.soqlQuery || "",
-            fileTypes: exportConfig.fileTypes || "all",
-            fileSizeMin: exportConfig.fileSizeMin || 0,
-            outputFolderNameField: exportConfig.outputFolderNameField || "Name",
-            outputFileNameFormat: exportConfig.outputFileNameFormat || "title",
-            overwriteParentRecords:
-              exportConfig.overwriteParentRecords !== false,
-            overwriteFiles: exportConfig.overwriteFiles === true,
-            exportedFilesCount: exportedFilesCount,
-          });
-        } catch (error) {
-          // Skip invalid JSON files
-          Logger.log(
-            `Error reading export.json for workspace ${dirent.name}: ${error}`,
-          );
-        }
-      }
-    }
-  }
-
-  return workspaces;
+      return {
+        name: name,
+        path: workspacePath,
+        configPath: configPath,
+        label: exportConfig.sfdxHardisLabel || name,
+        description: exportConfig.sfdxHardisDescription || "",
+        soqlQuery: exportConfig.soqlQuery || "",
+        fileTypes: exportConfig.fileTypes || "all",
+        fileSizeMin: exportConfig.fileSizeMin || 0,
+        outputFolderNameField: exportConfig.outputFolderNameField || "Name",
+        outputFileNameFormat: exportConfig.outputFileNameFormat || "title",
+        overwriteParentRecords: exportConfig.overwriteParentRecords !== false,
+        overwriteFiles: exportConfig.overwriteFiles === true,
+        exportedFilesCount: exportedFilesCount,
+      };
+    },
+  );
 }
 
 async function createFilesWorkspace(data: any): Promise<string> {
@@ -320,35 +298,46 @@ async function deleteFilesWorkspace(workspacePath: string): Promise<void> {
   }
 }
 
-function countExportedFiles(workspacePath: string): number {
-  if (!fs.existsSync(workspacePath)) {
-    return 0;
-  }
-
+// Count the files of an exported workspace. A Salesforce Files export holds one
+// file per attachment, so a workspace can reach tens of thousands of entries:
+// the walk is asynchronous (it used to be a recursive readdirSync that froze the
+// extension host), reads the sibling directories of a level concurrently, and
+// gives up past COUNT_FILES_MAX_ENTRIES rather than paying for the whole tree.
+async function countExportedFiles(workspacePath: string): Promise<number> {
   let fileCount = 0;
+  let pending: string[] = [workspacePath];
 
-  const countFilesRecursively = (dirPath: string) => {
-    try {
-      const items = fs.readdirSync(dirPath, { withFileTypes: true });
+  while (pending.length > 0 && fileCount < COUNT_FILES_MAX_ENTRIES) {
+    const levels = await Promise.all(
+      pending.map(async (dirPath) => {
+        try {
+          return {
+            dirPath,
+            items: await fs.promises.readdir(dirPath, { withFileTypes: true }),
+          };
+        } catch (error) {
+          // Skip directories that can't be read
+          Logger.log(`Error reading directory ${dirPath}: ${error}`);
+          return { dirPath, items: [] as fs.Dirent[] };
+        }
+      }),
+    );
 
+    const nextLevel: string[] = [];
+    for (const { dirPath, items } of levels) {
       for (const item of items) {
-        const fullPath = path.join(dirPath, item.name);
-
         if (item.isFile()) {
           // Skip export.json as it's not an exported file
           if (item.name !== "export.json") {
             fileCount++;
           }
         } else if (item.isDirectory()) {
-          countFilesRecursively(fullPath);
+          nextLevel.push(path.join(dirPath, item.name));
         }
       }
-    } catch (error) {
-      // Skip directories that can't be read
-      Logger.log(`Error reading directory ${dirPath}: ${error}`);
     }
-  };
+    pending = nextLevel;
+  }
 
-  countFilesRecursively(workspacePath);
   return fileCount;
 }

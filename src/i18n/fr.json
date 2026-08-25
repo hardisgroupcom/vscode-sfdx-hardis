@@ -701,6 +701,7 @@
   "dwbImportData": "Importer les données",
   "dwbImportDataMenu": "Importer les données",
   "dwbImportDataTooltip": "Importer les données vers Salesforce avec cet projet",
+  "dwbLinesNotCounted": "Non compté",
   "dwbLoadingWorkspaces": "Chargement des projets...",
   "dwbLogTypeLog": "Log",
   "dwbLogTypeReport": "Rapport",

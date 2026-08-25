@@ -701,6 +701,7 @@
   "dwbImportData": "データをインポート",
   "dwbImportDataMenu": "データをインポート",
   "dwbImportDataTooltip": "このワークスペースを使用して Salesforce にデータをインポート",
+  "dwbLinesNotCounted": "未カウント",
   "dwbLoadingWorkspaces": "ワークスペースを読み込み中...",
   "dwbLogTypeLog": "ログ",
   "dwbLogTypeReport": "レポート",
