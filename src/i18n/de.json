@@ -701,6 +701,7 @@
   "dwbImportData": "Daten importieren",
   "dwbImportDataMenu": "Daten importieren",
   "dwbImportDataTooltip": "Daten mit diesem Workspace in Salesforce importieren",
+  "dwbLinesNotCounted": "Nicht gezählt",
   "dwbLoadingWorkspaces": "Workspaces werden geladen...",
   "dwbLogTypeLog": "Protokoll",
   "dwbLogTypeReport": "Bericht",

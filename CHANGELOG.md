@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- The **Data Import/Export Workbench** and the **Files Import/Export Workbench** no longer freeze VS Code while they open
+  - The line count of an exported CSV or a log file is now read without loading the file in memory, so a workspace holding large exports opens as fast as an empty one
+  - Files above 50 MB show **Not counted** in the Lines column instead of being read from end to end just to display a number
+  - The exported files of a Files workspace are counted without blocking the interface, so a workspace holding tens of thousands of attachments no longer makes the panel unresponsive
+  - All the workspaces of a project are now scanned at the same time instead of one after the other
+
 ## [8.2.0] 2026-08-25
 
 - You can now configure the **anonymization of personal data** of sfdx-hardis without editing YAML

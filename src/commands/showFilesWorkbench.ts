@@ -13,6 +13,9 @@ import { t } from "../i18n/i18n";
 const FILE_TEMPLATES_URL =
   "https://github.com/hardisgroupcom/sfdx-hardis/raw/refs/heads/main/defaults/templates/file-templates.json";
 
+// Upper bound of the exported files walk: the displayed count stops there
+const COUNT_FILES_MAX_ENTRIES = 100000;
+
 export function registerShowFilesWorkbench(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showFilesWorkbench",
@@ -182,24 +185,37 @@ async function loadFilesWorkspaces(): Promise<any[]> {
     return [];
   }
 
-  const workspaces: any[] = [];
-  const folderContents = fs.readdirSync(filesFolder, { withFileTypes: true });
+  let folderContents: fs.Dirent[];
+  try {
+    folderContents = await fs.promises.readdir(filesFolder, {
+      withFileTypes: true,
+    });
+  } catch {
+    return [];
+  }
 
-  for (const dirent of folderContents) {
-    if (dirent.isDirectory()) {
-      const workspacePath = path.join(filesFolder, dirent.name);
-      const exportJsonPath = path.join(workspacePath, "export.json");
+  // Every workspace is scanned concurrently: the walks are I/O bound
+  const loaded = await Promise.all(
+    folderContents.map(async (dirent) => {
+      if (dirent.isDirectory()) {
+        const workspacePath = path.join(filesFolder, dirent.name);
+        const exportJsonPath = path.join(workspacePath, "export.json");
 
-      if (fs.existsSync(exportJsonPath)) {
+        let exportConfigRaw: string;
         try {
-          const exportConfig = JSON.parse(
-            fs.readFileSync(exportJsonPath, "utf8"),
-          );
+          exportConfigRaw = await fs.promises.readFile(exportJsonPath, "utf8");
+        } catch {
+          // no export.json: not a files workspace
+          return null;
+        }
+
+        try {
+          const exportConfig = JSON.parse(exportConfigRaw);
 
           // Count exported files (recursively count all files except export.json)
-          const exportedFilesCount = countExportedFiles(workspacePath);
+          const exportedFilesCount = await countExportedFiles(workspacePath);
 
-          workspaces.push({
+          return {
             name: dirent.name,
             path: workspacePath,
             configPath: exportJsonPath,
@@ -214,7 +230,7 @@ async function loadFilesWorkspaces(): Promise<any[]> {
               exportConfig.overwriteParentRecords !== false,
             overwriteFiles: exportConfig.overwriteFiles === true,
             exportedFilesCount: exportedFilesCount,
-          });
+          };
         } catch (error) {
           // Skip invalid JSON files
           Logger.log(
@@ -222,10 +238,11 @@ async function loadFilesWorkspaces(): Promise<any[]> {
           );
         }
       }
-    }
-  }
+      return null;
+    }),
+  );
 
-  return workspaces;
+  return loaded.filter((workspace) => workspace !== null);
 }
 
 async function createFilesWorkspace(data: any): Promise<string> {
@@ -320,35 +337,46 @@ async function deleteFilesWorkspace(workspacePath: string): Promise<void> {
   }
 }
 
-function countExportedFiles(workspacePath: string): number {
-  if (!fs.existsSync(workspacePath)) {
-    return 0;
-  }
-
+// Count the files of an exported workspace. A Salesforce Files export holds one
+// file per attachment, so a workspace can reach tens of thousands of entries:
+// the walk is asynchronous (it used to be a recursive readdirSync that froze the
+// extension host), reads the sibling directories of a level concurrently, and
+// gives up past COUNT_FILES_MAX_ENTRIES rather than paying for the whole tree.
+async function countExportedFiles(workspacePath: string): Promise<number> {
   let fileCount = 0;
+  let pending: string[] = [workspacePath];
 
-  const countFilesRecursively = (dirPath: string) => {
-    try {
-      const items = fs.readdirSync(dirPath, { withFileTypes: true });
+  while (pending.length > 0 && fileCount < COUNT_FILES_MAX_ENTRIES) {
+    const levels = await Promise.all(
+      pending.map(async (dirPath) => {
+        try {
+          return {
+            dirPath,
+            items: await fs.promises.readdir(dirPath, { withFileTypes: true }),
+          };
+        } catch (error) {
+          // Skip directories that can't be read
+          Logger.log(`Error reading directory ${dirPath}: ${error}`);
+          return { dirPath, items: [] as fs.Dirent[] };
+        }
+      }),
+    );
 
+    const nextLevel: string[] = [];
+    for (const { dirPath, items } of levels) {
       for (const item of items) {
-        const fullPath = path.join(dirPath, item.name);
-
         if (item.isFile()) {
           // Skip export.json as it's not an exported file
           if (item.name !== "export.json") {
             fileCount++;
           }
         } else if (item.isDirectory()) {
-          countFilesRecursively(fullPath);
+          nextLevel.push(path.join(dirPath, item.name));
         }
       }
-    } catch (error) {
-      // Skip directories that can't be read
-      Logger.log(`Error reading directory ${dirPath}: ${error}`);
     }
-  };
+    pending = nextLevel;
+  }
 
-  countFilesRecursively(workspacePath);
   return fileCount;
 }

@@ -14,6 +14,12 @@ import { t } from "../i18n/i18n";
 const DATA_TEMPLATES_URL =
   "https://github.com/hardisgroupcom/sfdx-hardis/raw/refs/heads/main/defaults/templates/data-templates.json";
 
+// Line counting reads the file, so it is capped: above this size the row count
+// is not displayed rather than paid for (a data export can hold CSV files of
+// several hundred megabytes)
+export const LINE_COUNT_MAX_BYTES = 50 * 1024 * 1024;
+const LINE_COUNT_CHUNK_BYTES = 1024 * 1024;
+
 class SoqlValidationError extends Error {
   soqlErrors: string[];
 
@@ -80,7 +86,8 @@ type ExportedFile = {
   size: number;
   modified: number;
   created: number;
-  lineCount: number;
+  // null when the file is too large to be counted (see LINE_COUNT_MAX_BYTES)
+  lineCount: number | null;
 };
 
 type LogFile = ExportedFile & {
@@ -328,119 +335,148 @@ async function loadDataWorkspaces(): Promise<DataWorkspace[]> {
     return [];
   }
 
-  const workspaces: DataWorkspace[] = [];
-  const folderContents = fs.readdirSync(dataFolder, { withFileTypes: true });
-
-  for (const dirent of folderContents) {
-    if (!dirent.isDirectory()) {
-      continue;
-    }
-    const workspacePath = path.join(dataFolder, dirent.name);
-    const exportJsonPath = path.join(workspacePath, "export.json");
-
-    if (!fs.existsSync(exportJsonPath)) {
-      continue;
-    }
-
-    try {
-      const exportConfig = JSON.parse(fs.readFileSync(exportJsonPath, "utf8"));
-
-      // Extract script-level settings (all root properties except objects and sfdxHardis metadata)
-      const {
-        objects: _rawObjects,
-        sfdxHardisLabel: _lbl,
-        sfdxHardisDescription: _desc,
-        ...scriptSettings
-      } = exportConfig;
-
-      const objects: SfdmuObjectConfig[] = Array.isArray(exportConfig.objects)
-        ? exportConfig.objects.map((obj: any) => ({
-            ...obj,
-            query: obj.query || "",
-            operation: obj.operation || "Upsert",
-            externalId: obj.externalId || obj.externalid || "",
-            deleteOldData: asBool(obj.deleteOldData),
-            useQueryAll: asBool(obj.useQueryAll),
-            allOrNone: asBool(obj.allOrNone, true),
-            bulkApiV1BatchSize:
-              obj.bulkApiV1BatchSize ?? obj.batchSize ?? undefined,
-            restApiBatchSize: obj.restApiBatchSize ?? undefined,
-            updateWithMockData: obj.updateWithMockData === true,
-            mockFields: normalizeMockFields(obj.mockFields),
-            objectName: extractObjectName(obj.query || ""),
-          }))
-        : [];
-
-      const exportedFiles = listExportedFiles(workspacePath);
-      const logFiles = listLogFiles(workspacePath);
-
-      workspaces.push({
-        name: dirent.name,
-        path: workspacePath,
-        configPath: exportJsonPath,
-        label: exportConfig.sfdxHardisLabel || dirent.name,
-        description: exportConfig.sfdxHardisDescription || "",
-        objects: objects,
-        objectsCount: objects.length,
-        exportedFiles: exportedFiles,
-        logFiles: logFiles,
-        scriptSettings: scriptSettings,
-      });
-    } catch (error) {
-      Logger.log(
-        `Error reading export.json for data workspace ${dirent.name}: ${error}`,
-      );
-    }
+  let folderContents: fs.Dirent[];
+  try {
+    folderContents = await fs.promises.readdir(dataFolder, {
+      withFileTypes: true,
+    });
+  } catch {
+    return [];
   }
 
-  return workspaces;
-}
-
-function listExportedFiles(workspacePath: string): ExportedFile[] {
-  const allowedExtensions = new Set([".csv", ".zip"]);
-  const files: ExportedFile[] = [];
-  const entries: fs.Dirent[] = fs.readdirSync(workspacePath, {
-    withFileTypes: true,
-  });
-
-  for (const entry of entries) {
-    if (!entry.isFile()) {
-      continue;
-    }
-    const entryPath = path.join(workspacePath, entry.name);
-    const extension = path.extname(entry.name).toLowerCase();
-    if (!allowedExtensions.has(extension)) {
-      continue;
-    }
-
-    try {
-      const stats = fs.statSync(entryPath);
-      const rawLineCount = countFileLines(entryPath);
-      const lineCount =
-        extension === ".csv" && rawLineCount > 0
-          ? rawLineCount - 1
-          : rawLineCount;
-      if (entry.name === "MissingParentRecordsReport.csv" && lineCount === 0) {
-        continue;
+  // Every workspace is scanned concurrently: the listings are I/O bound
+  const loaded = await Promise.all(
+    folderContents.map(async (dirent): Promise<DataWorkspace | null> => {
+      if (!dirent.isDirectory()) {
+        return null;
       }
-      files.push({
-        name: entry.name,
-        path: entryPath,
-        relativePath: entry.name,
-        size: stats.size,
-        modified: stats.mtimeMs,
-        created: stats.birthtimeMs,
-        lineCount: lineCount,
-      });
-    } catch {
-      // ignore unreadable files
-    }
-  }
+      const workspacePath = path.join(dataFolder, dirent.name);
+      const exportJsonPath = path.join(workspacePath, "export.json");
 
-  return files.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
+      let exportConfigRaw: string;
+      try {
+        exportConfigRaw = await fs.promises.readFile(exportJsonPath, "utf8");
+      } catch {
+        // no export.json: not a data workspace
+        return null;
+      }
+
+      try {
+        const exportConfig = JSON.parse(exportConfigRaw);
+
+        // Extract script-level settings (all root properties except objects and sfdxHardis metadata)
+        const {
+          objects: _rawObjects,
+          sfdxHardisLabel: _lbl,
+          sfdxHardisDescription: _desc,
+          ...scriptSettings
+        } = exportConfig;
+
+        const objects: SfdmuObjectConfig[] = Array.isArray(exportConfig.objects)
+          ? exportConfig.objects.map((obj: any) => ({
+              ...obj,
+              query: obj.query || "",
+              operation: obj.operation || "Upsert",
+              externalId: obj.externalId || obj.externalid || "",
+              deleteOldData: asBool(obj.deleteOldData),
+              useQueryAll: asBool(obj.useQueryAll),
+              allOrNone: asBool(obj.allOrNone, true),
+              bulkApiV1BatchSize:
+                obj.bulkApiV1BatchSize ?? obj.batchSize ?? undefined,
+              restApiBatchSize: obj.restApiBatchSize ?? undefined,
+              updateWithMockData: obj.updateWithMockData === true,
+              mockFields: normalizeMockFields(obj.mockFields),
+              objectName: extractObjectName(obj.query || ""),
+            }))
+          : [];
+
+        const [exportedFiles, logFiles] = await Promise.all([
+          listExportedFiles(workspacePath),
+          listLogFiles(workspacePath),
+        ]);
+
+        return {
+          name: dirent.name,
+          path: workspacePath,
+          configPath: exportJsonPath,
+          label: exportConfig.sfdxHardisLabel || dirent.name,
+          description: exportConfig.sfdxHardisDescription || "",
+          objects: objects,
+          objectsCount: objects.length,
+          exportedFiles: exportedFiles,
+          logFiles: logFiles,
+          scriptSettings: scriptSettings,
+        };
+      } catch (error) {
+        Logger.log(
+          `Error reading export.json for data workspace ${dirent.name}: ${error}`,
+        );
+        return null;
+      }
+    }),
+  );
+
+  return loaded.filter(
+    (workspace): workspace is DataWorkspace => workspace !== null,
+  );
 }
 
-function listLogFiles(workspacePath: string): LogFile[] {
+async function listExportedFiles(
+  workspacePath: string,
+): Promise<ExportedFile[]> {
+  const allowedExtensions = new Set([".csv", ".zip"]);
+  let entries: fs.Dirent[];
+  try {
+    entries = await fs.promises.readdir(workspacePath, {
+      withFileTypes: true,
+    });
+  } catch {
+    return [];
+  }
+
+  const candidates = entries.filter(
+    (entry) =>
+      entry.isFile() &&
+      allowedExtensions.has(path.extname(entry.name).toLowerCase()),
+  );
+
+  const files = await Promise.all(
+    candidates.map(async (entry) => {
+      const entryPath = path.join(workspacePath, entry.name);
+      const extension = path.extname(entry.name).toLowerCase();
+      try {
+        const stats = await fs.promises.stat(entryPath);
+        const rawLineCount = await countFileLines(entryPath, stats.size);
+        // A CSV holds a header line that is not a record
+        const lineCount =
+          extension === ".csv" && rawLineCount !== null && rawLineCount > 0
+            ? rawLineCount - 1
+            : rawLineCount;
+        if (entry.name === "MissingParentRecordsReport.csv" && lineCount === 0) {
+          return null;
+        }
+        return {
+          name: entry.name,
+          path: entryPath,
+          relativePath: entry.name,
+          size: stats.size,
+          modified: stats.mtimeMs,
+          created: stats.birthtimeMs,
+          lineCount: lineCount,
+        };
+      } catch {
+        // ignore unreadable files
+        return null;
+      }
+    }),
+  );
+
+  return files
+    .filter((file): file is ExportedFile => file !== null)
+    .sort((a, b) => a.relativePath.localeCompare(b.relativePath));
+}
+
+async function listLogFiles(workspacePath: string): Promise<LogFile[]> {
   const allowedExtensions = new Set([".csv", ".log"]);
   const logTypeOrder: Record<string, number> = {
     source: 0,
@@ -448,91 +484,64 @@ function listLogFiles(workspacePath: string): LogFile[] {
     log: 2,
     report: 3,
   };
-  const files: LogFile[] = [];
 
-  // Scan /source, /target, /logs and /reports subdirectories
-  const subDirs: Array<{
+  // Scan /source, /target, /logs and /reports subdirectories, plus the
+  // workspace root for its .log files
+  const scanned: Array<{
     dir: string;
     logType: "source" | "target" | "log" | "report";
+    extensions: Set<string>;
   }> = [
-    { dir: "source", logType: "source" },
-    { dir: "target", logType: "target" },
-    { dir: "logs", logType: "log" },
-    { dir: "reports", logType: "report" },
+    { dir: "source", logType: "source", extensions: allowedExtensions },
+    { dir: "target", logType: "target", extensions: allowedExtensions },
+    { dir: "logs", logType: "log", extensions: allowedExtensions },
+    { dir: "reports", logType: "report", extensions: allowedExtensions },
+    { dir: "", logType: "log", extensions: new Set([".log"]) },
   ];
 
-  for (const { dir, logType } of subDirs) {
-    const dirPath = path.join(workspacePath, dir);
-    if (!fs.existsSync(dirPath)) {
-      continue;
-    }
-    let entries: fs.Dirent[];
-    try {
-      entries = fs.readdirSync(dirPath, { withFileTypes: true });
-    } catch {
-      continue;
-    }
-
-    for (const entry of entries) {
-      if (!entry.isFile()) {
-        continue;
-      }
-      const extension = path.extname(entry.name).toLowerCase();
-      if (!allowedExtensions.has(extension)) {
-        continue;
-      }
-      const entryPath = path.join(dirPath, entry.name);
+  // Every directory is read, then every file stat'ed and counted, concurrently
+  const perDir = await Promise.all(
+    scanned.map(async ({ dir, logType, extensions }) => {
+      const dirPath = dir ? path.join(workspacePath, dir) : workspacePath;
+      let entries: fs.Dirent[];
       try {
-        const stats = fs.statSync(entryPath);
-        files.push({
-          name: entry.name,
-          path: entryPath,
-          relativePath: `${dir}/${entry.name}`,
-          size: stats.size,
-          modified: stats.mtimeMs,
-          created: stats.birthtimeMs,
-          lineCount: countFileLines(entryPath),
-          logType: logType,
-        });
+        entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
       } catch {
-        // ignore unreadable files
+        // missing or unreadable directory
+        return [];
       }
-    }
-  }
-
-  // Scan workspace root for .log files
-  try {
-    const rootEntries = fs.readdirSync(workspacePath, { withFileTypes: true });
-    for (const entry of rootEntries) {
-      if (!entry.isFile()) {
-        continue;
-      }
-      if (path.extname(entry.name).toLowerCase() !== ".log") {
-        continue;
-      }
-      const entryPath = path.join(workspacePath, entry.name);
-      try {
-        const stats = fs.statSync(entryPath);
-        files.push({
-          name: entry.name,
-          path: entryPath,
-          relativePath: entry.name,
-          size: stats.size,
-          modified: stats.mtimeMs,
-          created: stats.birthtimeMs,
-          lineCount: countFileLines(entryPath),
-          logType: "log",
-        });
-      } catch {
-        // ignore unreadable files
-      }
-    }
-  } catch {
-    // ignore unreadable root
-  }
+      const candidates = entries.filter(
+        (entry) =>
+          entry.isFile() &&
+          extensions.has(path.extname(entry.name).toLowerCase()),
+      );
+      const files = await Promise.all(
+        candidates.map(async (entry) => {
+          const entryPath = path.join(dirPath, entry.name);
+          try {
+            const stats = await fs.promises.stat(entryPath);
+            return {
+              name: entry.name,
+              path: entryPath,
+              relativePath: dir ? `${dir}/${entry.name}` : entry.name,
+              size: stats.size,
+              modified: stats.mtimeMs,
+              created: stats.birthtimeMs,
+              lineCount: await countFileLines(entryPath, stats.size),
+              logType: logType,
+            };
+          } catch {
+            // ignore unreadable files
+            return null;
+          }
+        }),
+      );
+      return files.filter((file): file is LogFile => file !== null);
+    }),
+  );
 
   // Sort: by logType order (source → target → log), then alphabetically
-  return files.sort((a, b) => {
+  return perDir.flat().sort((a, b) => {
     const typeA = logTypeOrder[a.logType] ?? 99;
     const typeB = logTypeOrder[b.logType] ?? 99;
     if (typeA !== typeB) {
@@ -542,21 +551,58 @@ function listLogFiles(workspacePath: string): LogFile[] {
   });
 }
 
-function countFileLines(filePath: string): number {
+// Count the lines of a file without ever holding it in memory: read it by
+// LINE_COUNT_CHUNK_BYTES chunks and let Buffer.indexOf() (native) find the
+// newlines, instead of walking every byte from JS. Above LINE_COUNT_MAX_BYTES
+// the count is not worth the read and null is returned, which the UI renders
+// as "not counted": SFDMU exports routinely hold CSV files of several hundred
+// megabytes, and reading them all just to display a row count used to freeze
+// the extension host for the whole load.
+// Exported for the unit tests, which exercise the chunk boundaries
+export async function countFileLines(
+  filePath: string,
+  size: number,
+  chunkBytes: number = LINE_COUNT_CHUNK_BYTES,
+): Promise<number | null> {
+  if (size > LINE_COUNT_MAX_BYTES) {
+    return null;
+  }
+  if (size === 0) {
+    return 0;
+  }
+  let fileHandle: fs.promises.FileHandle | undefined;
   try {
-    const buffer = fs.readFileSync(filePath);
+    fileHandle = await fs.promises.open(filePath, "r");
+    const buffer = Buffer.allocUnsafe(chunkBytes);
     let lines = 0;
-    for (let i = 0; i < buffer.length; i++) {
-      if (buffer[i] === 10) {
-        lines += 1;
+    let lastByte = 0;
+    for (;;) {
+      const { bytesRead } = await fileHandle.read(buffer, 0, buffer.length);
+      if (bytesRead === 0) {
+        break;
       }
+      let from = 0;
+      for (;;) {
+        const newlineIndex = buffer.indexOf(10, from);
+        if (newlineIndex === -1 || newlineIndex >= bytesRead) {
+          break;
+        }
+        lines += 1;
+        from = newlineIndex + 1;
+      }
+      lastByte = buffer[bytesRead - 1];
     }
-    if (buffer.length > 0 && buffer[buffer.length - 1] !== 10) {
+    // A file not ending with a newline still holds a last line
+    if (lastByte !== 10) {
       lines += 1;
     }
     return lines;
   } catch {
     return 0;
+  } finally {
+    await fileHandle?.close().catch(() => {
+      // ignore close errors
+    });
   }
 }
 

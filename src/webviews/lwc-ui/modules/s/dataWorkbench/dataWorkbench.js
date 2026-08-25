@@ -122,8 +122,8 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
       },
       {
         label: this.t("dwbColumnLines"),
-        fieldName: "lineCount",
-        type: "number",
+        fieldName: "lineCountLabel",
+        type: "text",
         cellAttributes: { alignment: "right" },
       },
     ];
@@ -165,8 +165,8 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
       },
       {
         label: this.t("dwbColumnLines"),
-        fieldName: "lineCount",
-        type: "number",
+        fieldName: "lineCountLabel",
+        type: "text",
         cellAttributes: { alignment: "right" },
       },
     ];
@@ -634,7 +634,17 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
         : "",
       logTypeLabel: this.getLogTypeLabel(file.logType),
       logTypePillClass: this.getLogTypePillClass(file.logType),
+      lineCountLabel: this.getLineCountLabel(file.lineCount),
     }));
+  }
+
+  // A null line count means the file was too large to be read: the extension
+  // does not count the lines of a file of several hundred megabytes
+  getLineCountLabel(lineCount) {
+    if (lineCount === null || lineCount === undefined) {
+      return this.t("dwbLinesNotCounted");
+    }
+    return Number(lineCount).toLocaleString();
   }
 
   getLogTypeLabel(logType) {
