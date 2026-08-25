@@ -129,20 +129,27 @@ export default class OrgManager extends SharedMixin(LightningElement) {
       instanceLabel: (o.instanceUrl || "")
         .replace(/^https?:\/\//, "")
         .replace(/\/$/, ""),
+      // Connected column: the rows arrive before the orgs are probed
+      // (connectionStatusPending), with a pulsing "Checking..." pill until the
+      // complete list replaces them.
       // more robust connected detection: accept connected/authorized/true etc.
-      connectedLabel: (o.connectedStatus || "")
-        .toString()
-        .toLowerCase()
-        .match(/connected|authorized/)
-        ? this.t("connectedLabel")
-        : this.t("disconnectedStatus"),
+      connectedLabel: o.connectionStatusPending
+        ? this.t("checking")
+        : (o.connectedStatus || "")
+              .toString()
+              .toLowerCase()
+              .match(/connected|authorized/)
+          ? this.t("connectedLabel")
+          : this.t("disconnectedStatus"),
       // Pill CSS class for the Connected column (statusPill cell type)
-      connectedPillClass: (o.connectedStatus || "")
-        .toString()
-        .toLowerCase()
-        .match(/connected|authorized/)
-        ? "hardis-pill hardis-status-success"
-        : "hardis-pill hardis-status-failed",
+      connectedPillClass: o.connectionStatusPending
+        ? "hardis-pill hardis-status-running"
+        : (o.connectedStatus || "")
+              .toString()
+              .toLowerCase()
+              .match(/connected|authorized/)
+          ? "hardis-pill hardis-status-success"
+          : "hardis-pill hardis-status-failed",
       // Initials avatar for the username column (avatarText cell type). The
       // color variant is stable per username (hash of the name).
       usernameInitials: getUsernameInitials(
@@ -162,6 +169,16 @@ export default class OrgManager extends SharedMixin(LightningElement) {
         const isSandbox =
           (o.orgType || "").toString().toLowerCase() === "sandbox";
         const actions = [];
+        if (o.connectionStatusPending) {
+          // Status not known yet: only the actions that need no connection
+          actions.push({
+            label: this.t("removeLabel"),
+            name: "remove",
+            variant: "destructive",
+            iconName: "utility:delete",
+          });
+          return actions;
+        }
         if (isConnected) {
           actions.push({
             label: this.t("openLabel"),
@@ -336,6 +353,10 @@ export default class OrgManager extends SharedMixin(LightningElement) {
     const now = Date.now();
     return (this.orgs || [])
       .filter((o) => {
+        if (o.connectionStatusPending) {
+          // Not probed yet: never recommend removing an org on an unknown status
+          return false;
+        }
         const connected = (o.connectedStatus || "")
           .toString()
           .toLowerCase()

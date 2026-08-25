@@ -13,6 +13,10 @@ import {
   getSfPerformanceTerminalEnv,
 } from "./utils/sfPerformanceUtils";
 import {
+  buildSfDirectSpawn,
+  getResolvedSfDirectLaunch,
+} from "./utils/sfLauncher";
+import {
   containsCertificateIssue,
   getGitBashPath,
   promptToDisableTlsIfNeeded,
@@ -644,7 +648,21 @@ export class CommandRunner {
       }
     }
     try {
-      childProcess = spawn(command!, commandParts.slice(1), spawnOptions);
+      // Shell-less launch of the installed CLI (node run.js ...) when it was
+      // resolved at activation: no Git Bash, no npm shim between the click and
+      // the CLI. Otherwise the historical shell spawn.
+      const directSpawn = buildSfDirectSpawn(
+        preprocessedCommand,
+        getResolvedSfDirectLaunch(),
+      );
+      if (directSpawn) {
+        childProcess = spawn(directSpawn.file, directSpawn.args, {
+          ...spawnOptions,
+          shell: false,
+        });
+      } else {
+        childProcess = spawn(command!, commandParts.slice(1), spawnOptions);
+      }
     } catch (e) {
       const msg =
         e && typeof e === "object" && "message" in e

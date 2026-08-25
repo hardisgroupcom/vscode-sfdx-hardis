@@ -103,7 +103,7 @@
           "type": "boolean",
           "default": false,
           "title": "Disable performance enhancements when calling sf commands",
-          "description": "By default, sf commands run by the extension skip their log file, new version check and autoupdate probe (SF_DISABLE_LOG_FILE, SF_SKIP_NEW_VERSION_CHECK, SF_DISABLE_AUTOUPDATE), and 'sf org display' / 'sf config get' are answered directly from the Salesforce CLI libraries without starting a CLI process. Check this option to always run the plain sf commands (sfdx-hardis commands then receive SFDX_HARDIS_ENHANCE_PERFORMANCE=false). Takes effect for new terminals."
+          "description": "By default, sf commands run by the extension skip their log file, new version check and autoupdate probe (SF_DISABLE_LOG_FILE, SF_SKIP_NEW_VERSION_CHECK, SF_DISABLE_AUTOUPDATE), the Salesforce CLI is started directly with a Node compile cache, and 'sf org display', 'sf config get', 'sf org list', 'sf org list metadata' and 'sf data query' are answered directly from the Salesforce CLI libraries without starting a CLI process. Check this option to always run the plain sf commands (sfdx-hardis commands then receive SFDX_HARDIS_ENHANCE_PERFORMANCE=false). Takes effect for new terminals."
         },
         "vsCodeSfdxHardis.disableGitMergeRequiredCheck": {
           "type": "boolean",

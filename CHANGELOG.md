@@ -3,9 +3,17 @@
 ## Unreleased
 
 - The **sf commands** run by the extension start faster
+  - A command clicked in the menus or in the DevOps Pipeline (for example **New task** / `sf hardis:work:new`) reaches its first prompt about a third faster
+    - The Salesforce CLI is started directly, without going through Git Bash and the npm `sf` launcher script
+    - The compiled code of the CLI is kept in a cache from one command to the next (Node compile cache), so each command spends less time loading
+    - The git and ticketing credentials passed to the command are ready before the first click instead of being collected at click time
   - Every `sf` command launched by the extension skips its log file, its "new version available" check and its autoupdate probe, which saves 400 to 750 ms per call (telemetry is untouched)
   - **Org info** in the status panel, the org color, and the Dev Hub lookup no longer start a Salesforce CLI process: `sf org display` and `sf config get` are answered in a few milliseconds by the libraries of the Salesforce CLI installed on your machine, and produce the same result
+  - The **Orgs Manager** list, the **Metadata Retriever** metadata listings and SOQL queries, and the org type detection work the same way (`sf org list`, `sf org list metadata`, `sf data query`), so each of these operations saves the 2 to 4 seconds of startup of a CLI process
   - Anything the fast path does not handle (scratch orgs, unusual flags, a CLI install it can not read) silently runs the plain `sf` command as before
+- The **Orgs Manager** shows the orgs as soon as they are read from the local files
+  - The **Connected** column shows a pulsing **Checking...** badge until the connection status of the orgs is known, then the rows are refreshed in place
+  - Refreshing the list, forgetting orgs or saving aliases reuse the same two-step display
   - New setting **Disable performance enhancements when calling sf commands**, also available in the Extension Settings panel, to restore the plain `sf` commands everywhere (sfdx-hardis commands then receive `SFDX_HARDIS_ENHANCE_PERFORMANCE=false`)
 - The **Data Import/Export Workbench** and the **Files Import/Export Workbench** no longer freeze VS Code while they open
   - The line count of an exported CSV or a log file is now read without loading the file in memory, so a workspace holding large exports opens as fast as an empty one

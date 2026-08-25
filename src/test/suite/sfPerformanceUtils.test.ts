@@ -3,6 +3,7 @@ import {
   applySfPerformanceEnv,
   getSfPerformanceTerminalEnv,
   isSfHardisCommand,
+  setNodeCompileCacheDir,
 } from "../../utils/sfPerformanceUtils";
 
 suite("sfPerformanceUtils Test Suite", () => {
@@ -54,6 +55,28 @@ suite("sfPerformanceUtils Test Suite", () => {
     assert.strictEqual(isSfHardisCommand("sf org display --json"), false);
     assert.strictEqual(isSfHardisCommand("sf hardisx"), false);
     assert.strictEqual(isSfHardisCommand(undefined), false);
+  });
+
+  test("adds the node compile cache dir once configured, never over a user value", () => {
+    setNodeCompileCacheDir("/cache/dir");
+    try {
+      const env = applySfPerformanceEnv({}, "sf hardis:work:new", false);
+      assert.strictEqual(env.NODE_COMPILE_CACHE, "/cache/dir");
+      const userEnv = applySfPerformanceEnv(
+        { NODE_COMPILE_CACHE: "/mine" },
+        "sf hardis:work:new",
+        false,
+      );
+      assert.strictEqual(userEnv.NODE_COMPILE_CACHE, "/mine");
+      const disabledEnv = applySfPerformanceEnv({}, "sf org display", true);
+      assert.strictEqual(disabledEnv.NODE_COMPILE_CACHE, undefined);
+      assert.strictEqual(
+        getSfPerformanceTerminalEnv({}, false).NODE_COMPILE_CACHE,
+        "/cache/dir",
+      );
+    } finally {
+      setNodeCompileCacheDir(null);
+    }
   });
 
   test("terminal env only holds the flags the extension decides", () => {

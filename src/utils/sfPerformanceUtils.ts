@@ -32,6 +32,20 @@ export const SFDX_HARDIS_ENHANCE_PERFORMANCE_VAR =
 export const DISABLE_SF_PERFORMANCE_SETTING =
   "disablePerformanceEnhancementsForSfCommands";
 
+// Node's on-disk compile cache (Node 22.1+, ignored by older versions): the
+// compiled bytecode of the CLI modules is reused from one command to the next,
+// which removes about a third of the CLI startup time. Set at activation.
+export const NODE_COMPILE_CACHE_VAR = "NODE_COMPILE_CACHE";
+let nodeCompileCacheDir: string | null = null;
+
+export function setNodeCompileCacheDir(dir: string | null): void {
+  nodeCompileCacheDir = dir;
+}
+
+export function getNodeCompileCacheDir(): string | null {
+  return nodeCompileCacheDir;
+}
+
 // Env keys this extension set on its own process.env (see sfCoreInProcess.ts):
 // they must not leak to child processes when the user disabled enhancements.
 const OWNED_PROCESS_ENV_KEYS = new Set<string>();
@@ -89,6 +103,9 @@ export function applySfPerformanceEnv(
       env[key] = value;
     }
   }
+  if (nodeCompileCacheDir && env[NODE_COMPILE_CACHE_VAR] === undefined) {
+    env[NODE_COMPILE_CACHE_VAR] = nodeCompileCacheDir;
+  }
   return env;
 }
 
@@ -105,6 +122,7 @@ export function getSfPerformanceTerminalEnv(
   const terminalEnv: Record<string, string> = {};
   for (const key of [
     ...Object.keys(SF_PERFORMANCE_ENV_FLAGS),
+    NODE_COMPILE_CACHE_VAR,
     SFDX_HARDIS_ENHANCE_PERFORMANCE_VAR,
   ]) {
     const value = env[key];

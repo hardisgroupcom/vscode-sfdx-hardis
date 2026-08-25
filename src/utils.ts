@@ -335,9 +335,10 @@ export async function execShell(
   }
 }
 
-// `sf org display` / `sf config get --json` are answered by @salesforce/core
-// inside the extension host when possible (no CLI startup cost); anything else,
-// or any failure, spawns the real command exactly as before.
+// A few read-only `sf ... --json` commands (org display, config get, org list,
+// org list metadata, data query) are answered by @salesforce/core inside the
+// extension host when possible (no CLI startup cost); anything else, or any
+// failure, spawns the real command exactly as before.
 async function execInProcessOrShell(
   cmd: string,
   execOptions: any,
