@@ -11,6 +11,9 @@
   - **Org info** in the status panel, the org color, and the Dev Hub lookup no longer start a Salesforce CLI process: `sf org display` and `sf config get` are answered in a few milliseconds by the libraries of the Salesforce CLI installed on your machine, and produce the same result
   - The **Orgs Manager** list, the **Metadata Retriever** metadata listings and SOQL queries, and the org type detection work the same way (`sf org list`, `sf org list metadata`, `sf data query`), so each of these operations saves the 2 to 4 seconds of startup of a CLI process
   - Anything the fast path does not handle (scratch orgs, unusual flags, a CLI install it can not read) silently runs the plain `sf` command as before
+- The **Command Runner** switches from **Starting** to **Running** as soon as the command process reaches the extension, instead of several seconds later
+  - Current sfdx-hardis versions load extra code before announcing themselves; the panel now reacts to their connection itself, which arrives seconds earlier
+  - Combined with the next sfdx-hardis release, a command like **New User Story** shows **Running** about one second after the click instead of five
 - The **Orgs Manager** shows the orgs without waiting for their connection to be checked
   - The **Connected** column shows a pulsing **Checking...** badge until the connection status of the orgs is known, then the rows are refreshed in place
   - Refreshing the list, forgetting orgs or saving aliases reuse the same two-step display

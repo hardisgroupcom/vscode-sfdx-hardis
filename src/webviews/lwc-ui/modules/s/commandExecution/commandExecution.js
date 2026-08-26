@@ -366,6 +366,9 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
       case "initializeCommand":
         this.initializeCommand(data);
         break;
+      case "commandCliConnected":
+        this.handleCliConnected();
+        break;
       case "addLogLine":
         // Support for logType 'table'
         if (data && data.logType === "table" && data.message) {
@@ -703,6 +706,16 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     } catch (e) {
       // ignore
     }
+  }
+
+  // The CLI process behind this pending panel has opened its WebSocket
+  // connection: the command is running, even though the initClient message
+  // (which carries the full context and re-initializes the panel) may only
+  // arrive seconds later on sfdx-hardis versions that import the command
+  // class first. Flip the "Starting" badge to "Running" right away.
+  @api
+  handleCliConnected() {
+    this.isStarting = false;
   }
 
   @api

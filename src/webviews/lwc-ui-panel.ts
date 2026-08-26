@@ -30,6 +30,13 @@ export class LwcUiPanel {
   public commandStatus:
     "pending" | "running" | "completed" | "error" | "aborted" | null = null;
 
+  /**
+   * True once the CLI process behind a pending command-execution panel has
+   * opened its WebSocket connection, before the initClient message arrives.
+   * Visual-only: the panel is still "pending" for adoption/cancel purposes.
+   */
+  public cliConnected: boolean = false;
+
   private constructor(
     panel: vscode.WebviewPanel,
     extensionUri: vscode.Uri,
