@@ -215,6 +215,15 @@ export class LocalWebSocketServer {
         },
       );
 
+      // Panels opened at click time usually have their LWC mounted before the
+      // CLI connects: commandLWCReady was posted before the subscription above
+      // existed and will never fire again. Without this immediate answer the
+      // CLI blocks in its init hook for its full 10s safety timeout before
+      // even loading the command module.
+      if (panel.lwcReady) {
+        await this.sendCommandReady(ws);
+      }
+
       // Set the panel title to include command info
       const commandName = data.context.command || "SFDX Hardis Command";
       panel.updateTitle(t("commandTitleRunning", { commandName }));

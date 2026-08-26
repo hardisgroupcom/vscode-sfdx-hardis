@@ -37,6 +37,16 @@ export class LwcUiPanel {
    */
   public cliConnected: boolean = false;
 
+  /**
+   * True once the command-execution LWC has posted commandLWCReady: the
+   * component is mounted and can receive messages. The LWC sends it exactly
+   * once, usually while the CLI is still booting — before the WebSocket
+   * server subscribes to panel messages on initClient — so the flag is
+   * recorded here to let late subscribers know readiness already happened
+   * (a missed signal used to cost the CLI its full 10s init timeout).
+   */
+  public lwcReady: boolean = false;
+
   private constructor(
     panel: vscode.WebviewPanel,
     extensionUri: vscode.Uri,
@@ -377,6 +387,12 @@ export class LwcUiPanel {
               this.sendMessage({ type: "commandCliConnected", data: {} });
             }
           }
+          break;
+        case "commandLWCReady":
+          // Recorded so the WebSocket server can answer a CLI whose
+          // initClient arrives after the LWC was already mounted (the
+          // message itself is also forwarded to regular listeners).
+          this.lwcReady = true;
           break;
         case "checkFileExists":
           await this.handleFileExistsCheck(data.filePath, data.fileType);

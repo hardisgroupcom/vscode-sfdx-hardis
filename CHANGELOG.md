@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Commands launched from the menus or the **DevOps Pipeline** ask their first question about 10 seconds earlier (measured on **Save / Publish my User Story**: first prompt after 5 seconds instead of 16)
+  - The command process silently waited up to 10 seconds for a go-ahead of the extension before doing any work: the extension only sent it when the command panel finished loading after the CLI connection, and a panel that was already open (the usual case, since panels open at click time) was never answered
+  - The extension now answers immediately when the panel is already ready
 - The **sf commands** run by the extension start faster
   - A command clicked in the menus or in the DevOps Pipeline (for example **New task** / `sf hardis:work:new`) reaches its first prompt about a third faster
     - The Salesforce CLI is started directly, without going through Git Bash and the npm `sf` launcher script
