@@ -368,6 +368,14 @@ export class LwcUiPanel {
             (this.commandStatus === null || this.commandStatus === "pending")
           ) {
             this.sendInitializationData(this.initializationData);
+            // A CLI that connects before the webview finishes booting loses
+            // its commandCliConnected message (postMessage has no queue), and
+            // the initialization data re-sent above still says pending: true.
+            // Replay the flip so the badge shows Running (messages are
+            // delivered in order, so it lands after the initialization).
+            if (this.commandStatus === "pending" && this.cliConnected) {
+              this.sendMessage({ type: "commandCliConnected", data: {} });
+            }
           }
           break;
         case "checkFileExists":

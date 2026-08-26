@@ -106,6 +106,12 @@ export class LocalWebSocketServer {
    * can only be its command: flip the visible "Starting" badge to "Running"
    * right away. Purely visual - adoption, cancellation and disposal stay
    * driven by the initClient message and panel.commandStatus.
+   *
+   * Accepted risk: an unrelated connection (e.g. the work:ws ping chained
+   * after a plugin install in the terminal) can flip the badge a moment
+   * before the command's own CLI connects. The panel is repainted as error
+   * if that process then dies without connecting, so the wrong badge is
+   * bounded to the CLI boot window.
    */
   private showSinglePendingPanelAsRunning() {
     if (this.config.get("userInput") !== "ui-lwc") {

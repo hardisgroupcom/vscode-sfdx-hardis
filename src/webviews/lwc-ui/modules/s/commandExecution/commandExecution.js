@@ -715,7 +715,25 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
   // class first. Flip the "Starting" badge to "Running" right away.
   @api
   handleCliConnected() {
-    this.isStarting = false;
+    if (this.isStarting) {
+      this.isStarting = false;
+      // The pill now says Running: upgrade the initial "Starting the
+      // command" timeline entry to its "Started" wording too
+      const section = this.currentSection;
+      if (section && section.actionLog) {
+        const startedMessage = this.t("commandStarted", {
+          command:
+            (this.commandContext && this.commandContext.command) ||
+            this.i18n.sfdxHardisCommand,
+        });
+        section.actionLog = {
+          ...section.actionLog,
+          message: startedMessage,
+          formattedMessage: this.formatMultiLineMessage(startedMessage),
+        };
+        this.logSections = [...this.logSections];
+      }
+    }
   }
 
   @api

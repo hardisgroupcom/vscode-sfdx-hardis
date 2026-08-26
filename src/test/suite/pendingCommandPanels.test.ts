@@ -15,21 +15,25 @@ suite("pendingCommandPanels Test Suite", () => {
       commandId: "hardis:org:mock",
       createdAt: Date.now(),
     });
-    assert.strictEqual(peekSinglePendingCommandPanel(), null);
-    registerPendingCommandPanel(makeEntry(1));
-    assert.strictEqual(
-      peekSinglePendingCommandPanel()?.contextId,
-      "peek-1",
-      "a single pending panel is attributable to a fresh connection",
-    );
-    registerPendingCommandPanel(makeEntry(2));
-    assert.strictEqual(
-      peekSinglePendingCommandPanel(),
-      null,
-      "two pending panels make the connection ambiguous",
-    );
-    removePendingCommandPanel("s-command-execution-peek-1");
-    removePendingCommandPanel("s-command-execution-peek-2");
+    try {
+      assert.strictEqual(peekSinglePendingCommandPanel(), null);
+      registerPendingCommandPanel(makeEntry(1));
+      assert.strictEqual(
+        peekSinglePendingCommandPanel()?.contextId,
+        "peek-1",
+        "a single pending panel is attributable to a fresh connection",
+      );
+      registerPendingCommandPanel(makeEntry(2));
+      assert.strictEqual(
+        peekSinglePendingCommandPanel(),
+        null,
+        "two pending panels make the connection ambiguous",
+      );
+    } finally {
+      // The registry is module-global state shared with the other suites
+      removePendingCommandPanel("s-command-execution-peek-1");
+      removePendingCommandPanel("s-command-execution-peek-2");
+    }
     assert.strictEqual(peekSinglePendingCommandPanel(), null);
   });
 
