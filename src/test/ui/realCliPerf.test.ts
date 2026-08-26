@@ -110,8 +110,12 @@ async function measureFirstPromptMs(
     });
 
     test("New User Story reaches its first prompt fast enough", async function () {
+      // Budgets set by the product owner: 10 s on Windows (antivirus scanning
+      // and slower disk on the thousands of CLI module files), 5 s on macOS
+      // and Linux. Override with SFDX_HARDIS_PERF_MAX_PROMPT_MS.
+      const defaultBudgetMs = process.platform === "win32" ? 10000 : 5000;
       const maxMs = parseInt(
-        process.env.SFDX_HARDIS_PERF_MAX_PROMPT_MS || "15000",
+        process.env.SFDX_HARDIS_PERF_MAX_PROMPT_MS || String(defaultBudgetMs),
         10,
       );
       const first = await measureFirstPromptMs(

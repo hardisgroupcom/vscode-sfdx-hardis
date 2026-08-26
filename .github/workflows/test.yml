@@ -157,25 +157,15 @@ jobs:
       - name: Compile TypeScript
         run: yarn compile
 
+      # Budgets live in realCliPerf.test.ts: 10 s on Windows, 5 s on macOS
+      # and Linux (override with SFDX_HARDIS_PERF_MAX_PROMPT_MS)
       - name: Run Perf Gate (Linux)
         if: runner.os == 'Linux'
         run: xvfb-run -a yarn test:ui:perf
-        env:
-          SFDX_HARDIS_PERF_MAX_PROMPT_MS: "15000"
 
-      - name: Run Perf Gate (macOS)
-        if: runner.os == 'macOS'
+      - name: Run Perf Gate (Windows / macOS)
+        if: runner.os != 'Linux'
         run: yarn test:ui:perf
-        env:
-          SFDX_HARDIS_PERF_MAX_PROMPT_MS: "15000"
-
-      - name: Run Perf Gate (Windows)
-        if: runner.os == 'Windows'
-        run: yarn test:ui:perf
-        env:
-          # Windows runners pay Defender scanning and a slower disk on the
-          # thousands of CLI module files
-          SFDX_HARDIS_PERF_MAX_PROMPT_MS: "20000"
 
   test-windows:
     name: Test Extension (Windows)
