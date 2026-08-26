@@ -53,6 +53,7 @@ suite("sfPerformanceUtils Test Suite", () => {
       true,
     );
     assert.strictEqual(isSfHardisCommand("sf org display --json"), false);
+    // cspell:ignore hardisx
     assert.strictEqual(isSfHardisCommand("sf hardisx"), false);
     assert.strictEqual(isSfHardisCommand(undefined), false);
   });

@@ -8,7 +8,11 @@ suite("sfLauncher Test Suite", () => {
   let tempDir: string;
 
   setup(() => {
-    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "sfdx-hardis-launcher-"));
+    // realpath: on macOS the temp dir lives under /var -> /private/var, and
+    // the resolver returns real paths
+    tempDir = fs.realpathSync(
+      fs.mkdtempSync(path.join(os.tmpdir(), "sfdx-hardis-launcher-")),
+    );
   });
 
   teardown(() => {

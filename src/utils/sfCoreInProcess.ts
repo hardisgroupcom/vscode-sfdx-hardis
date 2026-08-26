@@ -25,7 +25,10 @@ import * as fs from "fs";
 import type { createRequire } from "module";
 import * as path from "path";
 import { Logger } from "../logger";
-import { findExecutable } from "./executableUtils";
+import {
+  findExecutable,
+  findUpwardsFromExecutable,
+} from "./executableUtils";
 import {
   isSfPerformanceEnhancementDisabled,
   markProcessEnvKeyOwned,
@@ -245,17 +248,9 @@ export function parseSfCommand(command: string): ParsedSfCommand | null {
  * `<root>/node_modules`). Returns null when nothing is found.
  */
 export function findSalesforceCoreDir(sfExecutablePath: string): string | null {
-  let start: string;
-  try {
-    start = fs.realpathSync(sfExecutablePath);
-  } catch {
-    start = sfExecutablePath;
-  }
-  let dir = path.dirname(start);
-  const visited = new Set<string>();
-  while (!visited.has(dir)) {
-    visited.add(dir);
-    const candidates = [
+  return findUpwardsFromExecutable(
+    sfExecutablePath,
+    (dir) => [
       path.join(dir, "node_modules", "@salesforce", "core"),
       path.join(
         dir,
@@ -266,19 +261,9 @@ export function findSalesforceCoreDir(sfExecutablePath: string): string | null {
         "@salesforce",
         "core",
       ),
-    ];
-    for (const candidate of candidates) {
-      if (fs.existsSync(path.join(candidate, "package.json"))) {
-        return candidate;
-      }
-    }
-    const parent = path.dirname(dir);
-    if (parent === dir) {
-      break;
-    }
-    dir = parent;
-  }
-  return null;
+    ],
+    (candidate) => fs.existsSync(path.join(candidate, "package.json")),
+  );
 }
 
 let salesforceCorePromise: Promise<any | null> | null = null;
@@ -477,20 +462,25 @@ async function orgDisplayInProcess(
   };
 }
 
-// Same wording as plugin-org for the connection probe of a non-scratch org
+// Same wording as plugin-org for a failed connection probe
+function connectionErrorToStatus(err: any): string {
+  const message: string = err?.message || "";
+  if (message.includes("maintenance")) {
+    return "Down (Maintenance)";
+  }
+  if (message.includes("<html>") || message.includes("<!DOCTYPE HTML>")) {
+    return "Bad Response";
+  }
+  return err?.code ?? message;
+}
+
+// Connection probe of a non-scratch org, as plugin-org does it
 async function determineConnectedStatus(org: any): Promise<string> {
   try {
     await org.refreshAuth();
     return "Connected";
   } catch (err: any) {
-    const message: string = err?.message || "";
-    if (message.includes("maintenance")) {
-      return "Down (Maintenance)";
-    }
-    if (message.includes("<html>") || message.includes("<!DOCTYPE HTML>")) {
-      return "Bad Response";
-    }
-    return err?.code ?? message;
+    return connectionErrorToStatus(err);
   }
 }
 
@@ -820,14 +810,7 @@ async function connectedStatusForOrgList(
     }
     return await determineConnectedStatus(org);
   } catch (err: any) {
-    const message: string = err?.message || "";
-    if (message.includes("maintenance")) {
-      return "Down (Maintenance)";
-    }
-    if (message.includes("<html>") || message.includes("<!DOCTYPE HTML>")) {
-      return "Bad Response";
-    }
-    return err?.code ?? message;
+    return connectionErrorToStatus(err);
   }
 }
 

@@ -90,3 +90,38 @@ function findExecutableSync(name: string): string {
   }
   throw new Error(`not found: ${name}`);
 }
+
+/**
+ * Walks up from the folder of an executable (symlinks resolved) and returns
+ * the first candidate path, among those proposed for each ancestor folder,
+ * that `accept` validates. Used to locate files of the Salesforce CLI install
+ * from the `sf` executable of the PATH.
+ */
+export function findUpwardsFromExecutable(
+  executablePath: string,
+  candidatesForDir: (dir: string) => string[],
+  accept: (candidate: string) => boolean,
+): string | null {
+  let start: string;
+  try {
+    start = fs.realpathSync(executablePath);
+  } catch {
+    start = executablePath;
+  }
+  let dir = path.dirname(start);
+  const visited = new Set<string>();
+  while (!visited.has(dir)) {
+    visited.add(dir);
+    for (const candidate of candidatesForDir(dir)) {
+      if (accept(candidate)) {
+        return candidate;
+      }
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) {
+      break;
+    }
+    dir = parent;
+  }
+  return null;
+}

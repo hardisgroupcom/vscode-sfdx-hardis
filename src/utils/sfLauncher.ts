@@ -14,7 +14,10 @@
 import * as fs from "fs";
 import * as path from "path";
 import { Logger } from "../logger";
-import { findExecutable } from "./executableUtils";
+import {
+  findExecutable,
+  findUpwardsFromExecutable,
+} from "./executableUtils";
 import { tokenizeCommand } from "./sfCoreInProcess";
 
 export type SfDirectLaunch = {
@@ -32,32 +35,15 @@ const SHELL_SYNTAX = /[|<>`$;&*?~()]/;
  * the `@salesforce/cli` package itself).
  */
 export function findSfRunJs(sfExecutablePath: string): string | null {
-  let start: string;
-  try {
-    start = fs.realpathSync(sfExecutablePath);
-  } catch {
-    start = sfExecutablePath;
-  }
-  let dir = path.dirname(start);
-  const visited = new Set<string>();
-  while (!visited.has(dir)) {
-    visited.add(dir);
-    const candidates = [
+  return findUpwardsFromExecutable(
+    sfExecutablePath,
+    (dir) => [
       path.join(dir, "node_modules", "@salesforce", "cli", "bin", "run.js"),
       path.join(dir, "bin", "run.js"),
-    ];
-    for (const candidate of candidates) {
-      if (fs.existsSync(candidate) && isSalesforceCliPackage(candidate)) {
-        return candidate;
-      }
-    }
-    const parent = path.dirname(dir);
-    if (parent === dir) {
-      break;
-    }
-    dir = parent;
-  }
-  return null;
+    ],
+    (candidate) =>
+      fs.existsSync(candidate) && isSalesforceCliPackage(candidate),
+  );
 }
 
 function isSalesforceCliPackage(runJsPath: string): boolean {
