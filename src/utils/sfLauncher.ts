@@ -14,10 +14,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { Logger } from "../logger";
-import {
-  findExecutable,
-  findUpwardsFromExecutable,
-} from "./executableUtils";
+import { findExecutable, findUpwardsFromExecutable } from "./executableUtils";
 import { tokenizeCommand } from "./sfCoreInProcess";
 
 export type SfDirectLaunch = {

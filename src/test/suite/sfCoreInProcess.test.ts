@@ -31,10 +31,12 @@ suite("sfCoreInProcess Test Suite", () => {
       ]);
     });
 
-    test("unescapes \\\" and \\\\ inside double quotes only", () => {
+    test('unescapes \\" and \\\\ inside double quotes only', () => {
       assert.deepStrictEqual(
-        tokenizeCommand('--query "WHERE Name IN (\\"A\\", \\"B\\") AND X = \'\\\\\'"'),
-        ["--query", "WHERE Name IN (\"A\", \"B\") AND X = '\\'"],
+        tokenizeCommand(
+          '--query "WHERE Name IN (\\"A\\", \\"B\\") AND X = \'\\\\\'"',
+        ),
+        ["--query", 'WHERE Name IN ("A", "B") AND X = \'\\\''],
       );
       // Backslashes outside quotes (Windows paths) are kept as-is
       assert.deepStrictEqual(tokenizeCommand("--file C:\\tmp\\q.soql"), [
@@ -123,7 +125,12 @@ suite("sfCoreInProcess Test Suite", () => {
       );
       assert.deepStrictEqual(
         parseSfCommand("sf org list metadata -m Flow --json"),
-        { kind: "list-metadata", metadataType: "Flow", folder: null, targetOrg: null },
+        {
+          kind: "list-metadata",
+          metadataType: "Flow",
+          folder: null,
+          targetOrg: null,
+        },
       );
       assert.strictEqual(parseSfCommand("sf org list metadata --json"), null);
       assert.strictEqual(
@@ -158,7 +165,8 @@ suite("sfCoreInProcess Test Suite", () => {
         ),
         {
           kind: "data-query",
-          query: 'SELECT Id FROM SourceMember WHERE MemberType IN ("ApexClass")',
+          query:
+            'SELECT Id FROM SourceMember WHERE MemberType IN ("ApexClass")',
           targetOrg: "u",
           useToolingApi: true,
         },
@@ -176,7 +184,9 @@ suite("sfCoreInProcess Test Suite", () => {
       );
       assert.strictEqual(parseSfCommand("sf data query --json"), null);
       assert.strictEqual(
-        parseSfCommand('sf data query --query "SELECT Id FROM A" --all-rows --json'),
+        parseSfCommand(
+          'sf data query --query "SELECT Id FROM A" --all-rows --json',
+        ),
         null,
       );
       assert.strictEqual(
@@ -185,11 +195,17 @@ suite("sfCoreInProcess Test Suite", () => {
         ),
         null,
       );
-      assert.strictEqual(parseSfCommand("sf data query --file q.soql --json"), null);
+      assert.strictEqual(
+        parseSfCommand("sf data query --file q.soql --json"),
+        null,
+      );
     });
 
     test("leaves every other shape to the real CLI", () => {
-      assert.strictEqual(parseSfCommand("sf org display --verbose --json"), null);
+      assert.strictEqual(
+        parseSfCommand("sf org display --verbose --json"),
+        null,
+      );
       assert.strictEqual(
         parseSfCommand("sf org display --api-version 60.0"),
         null,
@@ -220,22 +236,46 @@ suite("sfCoreInProcess Test Suite", () => {
         isDefaultDevHubUsername: true,
       };
       const other = { username: "other@x.com", alias: "aaa" };
-      const active = { username: "s1@x.com", status: "Active", expirationDate: "2030-01-01" };
-      const expired = { username: "s2@x.com", status: "Deleted", expirationDate: "2020-01-01" };
+      const active = {
+        username: "s1@x.com",
+        status: "Active",
+        expirationDate: "2030-01-01",
+      };
+      const expired = {
+        username: "s2@x.com",
+        status: "Deleted",
+        expirationDate: "2020-01-01",
+      };
 
-      const result = buildOrgListResult([sandbox, prod, other], [expired, active], false);
+      const result = buildOrgListResult(
+        [sandbox, prod, other],
+        [expired, active],
+        false,
+      );
       assert.deepStrictEqual(
         result.nonScratchOrgs.map((o: any) => o.username),
         ["other@x.com", "prod@x.com", "sb@x.com"],
         "sorted by alias, then username, empty aliases last",
       );
-      assert.deepStrictEqual(result.other.map((o: any) => o.username), ["other@x.com"]);
-      assert.deepStrictEqual(result.sandboxes.map((o: any) => o.username), ["sb@x.com"]);
-      assert.deepStrictEqual(result.devHubs.map((o: any) => o.username), ["prod@x.com"]);
+      assert.deepStrictEqual(
+        result.other.map((o: any) => o.username),
+        ["other@x.com"],
+      );
+      assert.deepStrictEqual(
+        result.sandboxes.map((o: any) => o.username),
+        ["sb@x.com"],
+      );
+      assert.deepStrictEqual(
+        result.devHubs.map((o: any) => o.username),
+        ["prod@x.com"],
+      );
       assert.strictEqual(result.nonScratchOrgs[1].defaultMarker, "(U)");
       assert.strictEqual(result.nonScratchOrgs[2].defaultMarker, "(D)");
       assert.strictEqual(result.nonScratchOrgs[0].defaultMarker, undefined);
-      assert.deepStrictEqual(result.scratchOrgs.map((o: any) => o.username), ["s1@x.com"]);
+      assert.deepStrictEqual(
+        result.scratchOrgs.map((o: any) => o.username),
+        ["s1@x.com"],
+      );
 
       const withAll = buildOrgListResult([], [expired, active], true);
       assert.strictEqual(withAll.scratchOrgs.length, 2);
