@@ -210,6 +210,9 @@ export class LocalWebSocketServer {
             messageUnsubscribe();
           } else if (messageType === "commandLWCReady") {
             // Notify the command that the LWC panel is ready to receive messages
+            Logger.log(
+              `WSS: panel ready for ${data.context?.command}, sending userInput go-ahead to the CLI`,
+            );
             await this.sendCommandReady(ws);
           }
         },
@@ -221,6 +224,9 @@ export class LocalWebSocketServer {
       // CLI blocks in its init hook for its full 10s safety timeout before
       // even loading the command module.
       if (panel.lwcReady) {
+        Logger.log(
+          `WSS: panel already ready for ${data.context?.command}, sending userInput go-ahead to the CLI immediately`,
+        );
         await this.sendCommandReady(ws);
       }
 
