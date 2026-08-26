@@ -1,8 +1,10 @@
 import * as assert from "assert";
 import {
   applySfPerformanceEnv,
+  getLinkedSfdxHardisPreloadArg,
   getSfPerformanceTerminalEnv,
   isSfHardisCommand,
+  setLinkedPluginPreloadScript,
   setNodeCompileCacheDir,
 } from "../../utils/sfPerformanceUtils";
 
@@ -76,7 +78,7 @@ suite("sfPerformanceUtils Test Suite", () => {
       const disabledEnv = applySfPerformanceEnv({}, "sf org display", true);
       assert.strictEqual(disabledEnv.NODE_COMPILE_CACHE, undefined);
       assert.strictEqual(
-        getSfPerformanceTerminalEnv({}, false).NODE_COMPILE_CACHE,
+        getSfPerformanceTerminalEnv({}, false, null).NODE_COMPILE_CACHE,
         "/cache/dir",
       );
     } finally {
@@ -85,20 +87,70 @@ suite("sfPerformanceUtils Test Suite", () => {
   });
 
   test("terminal env only holds the flags the extension decides", () => {
-    assert.deepStrictEqual(getSfPerformanceTerminalEnv({ PATH: "x" }, false), {
+    assert.deepStrictEqual(getSfPerformanceTerminalEnv({ PATH: "x" }, false, null), {
       SF_DISABLE_LOG_FILE: "true",
       SF_SKIP_NEW_VERSION_CHECK: "true",
       SF_DISABLE_AUTOUPDATE: "true",
     });
     assert.deepStrictEqual(
-      getSfPerformanceTerminalEnv({ SF_DISABLE_LOG_FILE: "false" }, false),
+      getSfPerformanceTerminalEnv({ SF_DISABLE_LOG_FILE: "false" }, false, null),
       {
         SF_SKIP_NEW_VERSION_CHECK: "true",
         SF_DISABLE_AUTOUPDATE: "true",
       },
     );
-    assert.deepStrictEqual(getSfPerformanceTerminalEnv({}, true), {
+    assert.deepStrictEqual(getSfPerformanceTerminalEnv({}, true, null), {
       SFDX_HARDIS_ENHANCE_PERFORMANCE: "false",
     });
+  });
+  test("linked plugin preload lands in NODE_OPTIONS, appended and deduplicated", () => {
+    const arg = "--import file:///ext/resources/disable-auto-transpile.mjs";
+    // Fresh env: the preload is the whole value
+    const env = applySfPerformanceEnv({}, "sf hardis:work:new", false, arg);
+    assert.strictEqual(env.NODE_OPTIONS, arg);
+    // Existing NODE_OPTIONS (e.g. the debugger bootloader) is preserved
+    const merged = applySfPerformanceEnv(
+      { NODE_OPTIONS: "--require /bootloader.js" },
+      "sf hardis:work:new",
+      false,
+      arg,
+    );
+    assert.strictEqual(merged.NODE_OPTIONS, `--require /bootloader.js ${arg}`);
+    // Never appended twice
+    const again = applySfPerformanceEnv({ ...merged }, "sf org display", false, arg);
+    assert.strictEqual(again.NODE_OPTIONS, `--require /bootloader.js ${arg}`);
+    // Ignored when performance enhancements are disabled
+    const disabled = applySfPerformanceEnv({}, "sf hardis:work:new", true, arg);
+    assert.strictEqual(disabled.NODE_OPTIONS, undefined);
+  });
+
+  test("terminal env hands over the merged NODE_OPTIONS only when it changed", () => {
+    const arg = "--import file:///ext/resources/disable-auto-transpile.mjs";
+    const withPreload = getSfPerformanceTerminalEnv(
+      { NODE_OPTIONS: "--require /bootloader.js" },
+      false,
+      arg,
+    );
+    assert.strictEqual(
+      withPreload.NODE_OPTIONS,
+      `--require /bootloader.js ${arg}`,
+    );
+    const noPreload = getSfPerformanceTerminalEnv(
+      { NODE_OPTIONS: "--require /bootloader.js" },
+      false,
+      null,
+    );
+    assert.strictEqual(noPreload.NODE_OPTIONS, undefined);
+  });
+
+  test("no preload arg without a registered script or with auto-transpile wanted", () => {
+    setLinkedPluginPreloadScript(null);
+    assert.strictEqual(getLinkedSfdxHardisPreloadArg(false), null);
+    setLinkedPluginPreloadScript("/ext/resources/disable-auto-transpile.mjs");
+    try {
+      assert.strictEqual(getLinkedSfdxHardisPreloadArg(true), null);
+    } finally {
+      setLinkedPluginPreloadScript(null);
+    }
   });
 });

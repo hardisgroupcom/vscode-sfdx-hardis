@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- For sfdx-hardis contributors using `sf plugins link`: commands started by the extension now run the linked plugin from its compiled `lib` folder instead of re-transpiling its TypeScript sources at every launch, saving about 3 seconds per command (measured on **New User Story**: first prompt after 8 seconds instead of 11)
+  - The contribution flow keeps `lib` fresh with `tsc --watch`; the new setting **Run a linked sfdx-hardis from its TypeScript sources** restores the previous behavior when `tsc --watch` is not running
+  - Regular installations are not affected
 - Commands launched from the menus or the **DevOps Pipeline** ask their first question about 10 seconds earlier (measured on **Save / Publish my User Story**: first prompt after 5 seconds instead of 16)
   - The command process silently waited up to 10 seconds for a go-ahead of the extension before doing any work: the extension only sent it when the command panel finished loading after the CLI connection, and a panel that was already open (the usual case, since panels open at click time) was never answered
   - The extension now answers immediately when the panel is already ready

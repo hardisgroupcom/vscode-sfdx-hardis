@@ -18,7 +18,10 @@ import { runSalesforceCliMcpServer } from "./utils/mcpUtils";
 import { SecretsManager } from "./utils/secretsManager";
 import { getExtensionConfigSections } from "./utils/extensionConfigUtils";
 import { startEventLoopMonitor } from "./utils/eventLoopMonitor";
-import { setNodeCompileCacheDir } from "./utils/sfPerformanceUtils";
+import {
+  setLinkedPluginPreloadScript,
+  setNodeCompileCacheDir,
+} from "./utils/sfPerformanceUtils";
 import * as path from "path";
 import * as fs from "fs";
 import {
@@ -50,6 +53,18 @@ export function activate(context: vscode.ExtensionContext) {
     setNodeCompileCacheDir(compileCacheDir);
   } catch (e: any) {
     Logger.log(`Could not prepare the node compile cache: ${e?.message}`);
+  }
+  // Preload that lets a linked sfdx-hardis (contributor setup) run from its
+  // compiled lib folder instead of being re-transpiled at every command
+  try {
+    const preloadScript = context.asAbsolutePath(
+      path.join("resources", "disable-auto-transpile.mjs"),
+    );
+    if (fs.existsSync(preloadScript)) {
+      setLinkedPluginPreloadScript(preloadScript);
+    }
+  } catch (e: any) {
+    Logger.log(`Could not prepare the linked plugin preload: ${e?.message}`);
   }
 
   // Initialize i18n system early

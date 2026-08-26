@@ -83,6 +83,7 @@ export const sectionDefs = [
     description: "Other settings related to the extension.",
     keys: [
       "vsCodeSfdxHardis.disablePerformanceEnhancementsForSfCommands",
+      "vsCodeSfdxHardis.linkedSfdxHardisAutoTranspile",
       "vsCodeSfdxHardis.disableTlsRejectUnauthorized",
       "vsCodeSfdxHardis.disableGitBashCheck",
       "vsCodeSfdxHardis.disableGitMergeRequiredCheck",
