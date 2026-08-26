@@ -198,7 +198,10 @@ export function applySfPerformanceEnv(
   // NODE_OPTIONS is APPENDED to (not replaced): under an Extension
   // Development Host the debugger already injects its bootloader there, and
   // both must coexist
-  if (linkedPreloadArg && !(env.NODE_OPTIONS ?? "").includes(linkedPreloadArg)) {
+  if (
+    linkedPreloadArg &&
+    !(env.NODE_OPTIONS ?? "").includes(linkedPreloadArg)
+  ) {
     env.NODE_OPTIONS = env.NODE_OPTIONS
       ? `${env.NODE_OPTIONS} ${linkedPreloadArg}`
       : linkedPreloadArg;
@@ -235,7 +238,10 @@ export function getSfPerformanceTerminalEnv(
   }
   // NODE_OPTIONS may pre-exist (debugger bootloader): the terminal overlay
   // replaces variables, so hand it the merged value instead of skipping it
-  if (env.NODE_OPTIONS !== undefined && env.NODE_OPTIONS !== baseEnv.NODE_OPTIONS) {
+  if (
+    env.NODE_OPTIONS !== undefined &&
+    env.NODE_OPTIONS !== baseEnv.NODE_OPTIONS
+  ) {
     terminalEnv.NODE_OPTIONS = env.NODE_OPTIONS;
   }
   return terminalEnv;

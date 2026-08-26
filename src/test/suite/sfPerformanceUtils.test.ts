@@ -87,13 +87,20 @@ suite("sfPerformanceUtils Test Suite", () => {
   });
 
   test("terminal env only holds the flags the extension decides", () => {
-    assert.deepStrictEqual(getSfPerformanceTerminalEnv({ PATH: "x" }, false, null), {
-      SF_DISABLE_LOG_FILE: "true",
-      SF_SKIP_NEW_VERSION_CHECK: "true",
-      SF_DISABLE_AUTOUPDATE: "true",
-    });
     assert.deepStrictEqual(
-      getSfPerformanceTerminalEnv({ SF_DISABLE_LOG_FILE: "false" }, false, null),
+      getSfPerformanceTerminalEnv({ PATH: "x" }, false, null),
+      {
+        SF_DISABLE_LOG_FILE: "true",
+        SF_SKIP_NEW_VERSION_CHECK: "true",
+        SF_DISABLE_AUTOUPDATE: "true",
+      },
+    );
+    assert.deepStrictEqual(
+      getSfPerformanceTerminalEnv(
+        { SF_DISABLE_LOG_FILE: "false" },
+        false,
+        null,
+      ),
       {
         SF_SKIP_NEW_VERSION_CHECK: "true",
         SF_DISABLE_AUTOUPDATE: "true",
@@ -117,7 +124,12 @@ suite("sfPerformanceUtils Test Suite", () => {
     );
     assert.strictEqual(merged.NODE_OPTIONS, `--require /bootloader.js ${arg}`);
     // Never appended twice
-    const again = applySfPerformanceEnv({ ...merged }, "sf org display", false, arg);
+    const again = applySfPerformanceEnv(
+      { ...merged },
+      "sf org display",
+      false,
+      arg,
+    );
     assert.strictEqual(again.NODE_OPTIONS, `--require /bootloader.js ${arg}`);
     // Ignored when performance enhancements are disabled
     const disabled = applySfPerformanceEnv({}, "sf hardis:work:new", true, arg);
