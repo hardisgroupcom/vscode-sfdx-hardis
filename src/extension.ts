@@ -413,9 +413,8 @@ export function activate(context: vscode.ExtensionContext) {
   setTimeout(async () => {
     try {
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      const { default: TelemetryReporterClass } = await import(
-        "@vscode/extension-telemetry"
-      );
+      const { default: TelemetryReporterClass } =
+        await import("@vscode/extension-telemetry");
       reporter = new TelemetryReporterClass(
         "cf83e6dc-2621-4cb6-b92b-30905d1c8476", // gitleaks:allow - public Application Insights telemetry key, intentionally embedded
       );
