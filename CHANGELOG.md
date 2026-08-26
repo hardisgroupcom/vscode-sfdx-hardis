@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [8.3.0] 2026-08-26
+
 - For sfdx-hardis contributors using `sf plugins link`: commands started by the extension now run the linked plugin from its compiled `lib` folder instead of re-transpiling its TypeScript sources at every launch, saving about 3 seconds per command (measured on **New User Story**: first prompt after 8 seconds instead of 11)
   - The contribution flow keeps `lib` fresh with `tsc --watch`; the new setting **Run a linked sfdx-hardis from its TypeScript sources** restores the previous behavior when `tsc --watch` is not running
   - Regular installations are not affected
