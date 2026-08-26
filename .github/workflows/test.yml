@@ -103,6 +103,80 @@ jobs:
         if: runner.os != 'Linux'
         run: yarn test:ui
 
+  # Regression gate on the click-to-first-prompt latency, with the REAL
+  # Salesforce CLI and the REAL sfdx-hardis plugin (beta channel): fails when
+  # "New User Story" takes longer than the budget to show its first prompt.
+  # This is the class of regression that once went unnoticed: a lost WebSocket
+  # handshake silently added a 10-second timeout to every command.
+  ui-test-perf:
+    name: UI Perf Gate (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    env:
+      NODE_OPTIONS: --max_old_space_size=4096
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: "yarn"
+
+      - name: Install Dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Cache VS Code download
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: .vscode-test
+          key: vscode-test-${{ runner.os }}
+
+      - name: Install Salesforce CLI + sfdx-hardis (beta)
+        shell: bash
+        run: |
+          npm install --global @salesforce/cli
+          echo y | sf plugins install sfdx-hardis@beta
+          sf plugins
+
+      # Webview assets first (webpack), then tsc last so out/extension.js is
+      # the unbundled build (same module instances as the compiled tests)
+      - name: Build webview assets
+        run: yarn dev
+
+      - name: Compile TypeScript
+        run: yarn compile
+
+      - name: Run Perf Gate (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a yarn test:ui:perf
+        env:
+          SFDX_HARDIS_PERF_MAX_PROMPT_MS: "15000"
+
+      - name: Run Perf Gate (macOS)
+        if: runner.os == 'macOS'
+        run: yarn test:ui:perf
+        env:
+          SFDX_HARDIS_PERF_MAX_PROMPT_MS: "15000"
+
+      - name: Run Perf Gate (Windows)
+        if: runner.os == 'Windows'
+        run: yarn test:ui:perf
+        env:
+          # Windows runners pay Defender scanning and a slower disk on the
+          # thousands of CLI module files
+          SFDX_HARDIS_PERF_MAX_PROMPT_MS: "20000"
+
   test-windows:
     name: Test Extension (Windows)
     runs-on: windows-latest
