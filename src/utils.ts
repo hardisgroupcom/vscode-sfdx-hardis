@@ -12,6 +12,8 @@ import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 import { RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION } from "./constants";
 import { resetSfdxHardisConfigCache } from "./utils/sfdx-hardis-config-utils";
 import { getJson } from "./utils/httpUtils";
+import { applySfPerformanceEnv } from "./utils/sfPerformanceUtils";
+import { tryRunSfCommandInProcess } from "./utils/sfCoreInProcess";
 import {
   InstalledPluginInfo,
   PluginInstallKind,
@@ -333,6 +335,22 @@ export async function execShell(
   }
 }
 
+// A few read-only `sf ... --json` commands (org display, config get, org list,
+// org list metadata, data query) are answered by @salesforce/core inside the
+// extension host when possible (no CLI startup cost); anything else, or any
+// failure, spawns the real command exactly as before.
+async function execInProcessOrShell(
+  cmd: string,
+  execOptions: any,
+  lowPriority: boolean,
+): Promise<{ stdout: string; stderr: string }> {
+  const inProcessResult = await tryRunSfCommandInProcess(cmd, execOptions?.cwd);
+  if (inProcessResult !== null) {
+    return { stdout: JSON.stringify(inProcessResult), stderr: "" };
+  }
+  return await execShell(cmd, execOptions, lowPriority);
+}
+
 function rejectPendingSharedWorkerCallbacks(reason: unknown) {
   const callbacks = Array.from(sharedWorkerCallbacks.values());
   sharedWorkerCallbacks.clear();
@@ -616,7 +634,7 @@ export async function execCommand(
   const execOptions: any = {
     maxBuffer: 10000 * 10000,
     cwd: options.cwd || vscode.workspace.rootPath,
-    env: { ...process.env, FORCE_COLOR: "0" },
+    env: applySfPerformanceEnv({ ...process.env, FORCE_COLOR: "0" }, command),
   };
   const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
   const langSetting = config.get<string>("lang", "auto");
@@ -656,7 +674,11 @@ export async function execCommand(
       Logger.log("[vscode-sfdx-hardis][command] " + command);
       console.time(command);
       const lowPriority = options.lowPriority ?? isLowPriorityCommand(command);
-      const commandResultPromise = execShell(command, execOptions, lowPriority);
+      const commandResultPromise = execInProcessOrShell(
+        command,
+        execOptions,
+        lowPriority,
+      );
       COMMANDS_RESULTS[command] = { promise: commandResultPromise };
       try {
         commandResult = await commandResultPromise;
