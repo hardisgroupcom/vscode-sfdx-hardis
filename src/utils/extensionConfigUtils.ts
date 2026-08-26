@@ -82,6 +82,7 @@ export const sectionDefs = [
     iconName: "utility:settings",
     description: "Other settings related to the extension.",
     keys: [
+      "vsCodeSfdxHardis.disablePerformanceEnhancementsForSfCommands",
       "vsCodeSfdxHardis.disableTlsRejectUnauthorized",
       "vsCodeSfdxHardis.disableGitBashCheck",
       "vsCodeSfdxHardis.disableGitMergeRequiredCheck",

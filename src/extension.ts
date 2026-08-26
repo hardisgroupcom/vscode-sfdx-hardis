@@ -18,6 +18,9 @@ import { runSalesforceCliMcpServer } from "./utils/mcpUtils";
 import { SecretsManager } from "./utils/secretsManager";
 import { getExtensionConfigSections } from "./utils/extensionConfigUtils";
 import { startEventLoopMonitor } from "./utils/eventLoopMonitor";
+import { setNodeCompileCacheDir } from "./utils/sfPerformanceUtils";
+import * as path from "path";
+import * as fs from "fs";
 import {
   getAllTranslations,
   getCurrentLocale,
@@ -37,6 +40,17 @@ export function activate(context: vscode.ExtensionContext) {
   CacheManager.init(context.globalState, context.globalStorageUri.fsPath);
   CacheManager.clearExpired();
   SecretsManager.init(context);
+  // Node compile cache shared by every sf command started by the extension
+  try {
+    const compileCacheDir = path.join(
+      context.globalStorageUri.fsPath,
+      "node-compile-cache",
+    );
+    fs.mkdirSync(compileCacheDir, { recursive: true });
+    setNodeCompileCacheDir(compileCacheDir);
+  } catch (e: any) {
+    Logger.log(`Could not prepare the node compile cache: ${e?.message}`);
+  }
 
   // Initialize i18n system early
   initI18n();
@@ -358,6 +372,28 @@ export function activate(context: vscode.ExtensionContext) {
   console.timeEnd("Hardis_Activate");
   const activationTimeSeconds = (Date.now() - timeInit) / 1000;
 
+  // Warm up what the first command click would otherwise wait for: the
+  // git/ticketing credentials passed to sf hardis commands, the direct launch
+  // path of the installed CLI, and @salesforce/core for the in-process
+  // commands. Deferred and lazily imported so activation itself stays fast.
+  setTimeout(() => {
+    import("./utils/providerCredentials")
+      .then((mod) => mod.refreshProviderCredentialEnvCache())
+      .catch((e: any) =>
+        Logger.log("Could not warm up provider credentials: " + e?.message),
+      );
+    import("./utils/sfLauncher")
+      .then((mod) => mod.prewarmSfDirectLaunch())
+      .catch((e: any) =>
+        Logger.log("Could not resolve the sf direct launch: " + e?.message),
+      );
+    import("./utils/sfCoreInProcess")
+      .then((mod) => mod.prewarmSfCoreWorker())
+      .catch((e: any) =>
+        Logger.log("Could not preload @salesforce/core: " + e?.message),
+      );
+  }, 3000);
+
   // Check for Salesforce Extensions settings killing the performances.
   // Deferred and lazily imported: it must never delay the activation, and runs
   // after the startup notifications so it does not compete with them.
@@ -377,8 +413,9 @@ export function activate(context: vscode.ExtensionContext) {
   setTimeout(async () => {
     try {
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      const { default: TelemetryReporterClass } =
-        await import("@vscode/extension-telemetry");
+      const { default: TelemetryReporterClass } = await import(
+        "@vscode/extension-telemetry"
+      );
       reporter = new TelemetryReporterClass(
         "cf83e6dc-2621-4cb6-b92b-30905d1c8476", // gitleaks:allow - public Application Insights telemetry key, intentionally embedded
       );

@@ -19,15 +19,20 @@ export type SalesforceOrg = {
   connectedStatus?: string;
   status?: string; // For scratch orgs: "Active" | "Expired" | "Deleted"
   name?: string;
+  // true when the list was built without probing the orgs: connectedStatus is
+  // not known yet (a second, complete list follows)
+  connectionStatusPending?: boolean;
 };
 
 export async function listAllOrgs(
   all = false,
   useCache = false,
+  skipConnectionStatus = false,
 ): Promise<SalesforceOrg[]> {
-  // List all orgs
+  // List all orgs. Without the connection probes the list only reads local
+  // auth files, so a panel can show the orgs at once and fill the status later.
   const orgListRes = await execSfdxJson(
-    `sf org list${all ? " --all" : ""}`,
+    `sf org list${all ? " --all" : ""}${skipConnectionStatus ? " --skip-connection-status" : ""}`,
     useCache
       ? { cacheSection: "orgs", cacheExpiration: 1000 * 60 * 60 * 24 * 7 }
       : {}, // 1 week (milliseconds
@@ -94,6 +99,9 @@ export async function listAllOrgs(
       connectedStatus: org.connectedStatus,
       status: org.status, // Pass through scratch org status
       name: org.name,
+      ...(skipConnectionStatus && !org.connectedStatus
+        ? { connectionStatusPending: true }
+        : {}),
     };
     seen.set(key, normalized);
   }
