@@ -13,6 +13,7 @@ export const sectionDefs = [
     keys: [
       "vsCodeSfdxHardis.userInput",
       "vsCodeSfdxHardis.userInputCommandLineIfLWC",
+      "vsCodeSfdxHardis.userModeExpert",
       "vsCodeSfdxHardis.showCommandsDetails",
       "vsCodeSfdxHardis.customCommandsConfiguration",
     ],

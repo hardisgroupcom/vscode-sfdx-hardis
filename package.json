@@ -70,6 +70,12 @@
           ],
           "description": "When userInput is set to ui-lwc, defines if commands are executed in background or in a terminal"
         },
+        "vsCodeSfdxHardis.userModeExpert": {
+          "type": "boolean",
+          "default": false,
+          "title": "Expert user mode",
+          "description": "Skip the confirmation questions of sfdx-hardis commands, for users who already know the answers. For example, hardis:work:save no longer asks if your metadata is committed, which cleanings to apply or if you want to push, and it opens the Pull Request page at the end. Sends SFDX_HARDIS_EXPERT_MODE=true to sfdx-hardis commands."
+        },
         "vsCodeSfdxHardis.customCommandsConfiguration": {
           "type": "string",
           "description": "Absolute path or URL to a .sfdx-hardis.yml file that contains custom commands for the menu\nSee https://github.com/hardisgroupcom/vscode-sfdx-hardis#custom-commands"
