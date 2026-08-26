@@ -49,7 +49,12 @@ function getCore(coreDir: string): any {
 }
 
 async function runSfCoreRequest(
-  request: { coreDir: string; command?: string; cwd?: string; preload?: boolean },
+  request: {
+    coreDir: string;
+    command?: string;
+    cwd?: string;
+    preload?: boolean;
+  },
   requestId: string | undefined,
 ) {
   try {

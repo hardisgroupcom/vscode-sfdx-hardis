@@ -8,7 +8,11 @@ import {
 
 suite("sfPerformanceUtils Test Suite", () => {
   test("adds the three sf flags when enhancements are enabled", () => {
-    const env = applySfPerformanceEnv({ PATH: "x" }, "sf org display --json", false);
+    const env = applySfPerformanceEnv(
+      { PATH: "x" },
+      "sf org display --json",
+      false,
+    );
     assert.strictEqual(env.SF_DISABLE_LOG_FILE, "true");
     assert.strictEqual(env.SF_SKIP_NEW_VERSION_CHECK, "true");
     assert.strictEqual(env.SF_DISABLE_AUTOUPDATE, "true");

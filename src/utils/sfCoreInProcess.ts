@@ -27,10 +27,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { Worker } from "worker_threads";
 import { Logger } from "../logger";
-import {
-  findExecutable,
-  findUpwardsFromExecutable,
-} from "./executableUtils";
+import { findExecutable, findUpwardsFromExecutable } from "./executableUtils";
 import { parseSfCommand } from "./sfCoreCommands";
 import { isSfPerformanceEnhancementDisabled } from "./sfPerformanceUtils";
 

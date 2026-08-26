@@ -494,8 +494,8 @@ async function readOrgListAuthInfos(
   }
   const sfdxDir: string = core.Global.SFDX_DIR;
   await fs.promises.mkdir(sfdxDir, { recursive: true });
-  const orgFileNames = (await fs.promises.readdir(sfdxDir)).filter(
-    (filename) => /^00D.{15}\.json$/.test(filename),
+  const orgFileNames = (await fs.promises.readdir(sfdxDir)).filter((filename) =>
+    /^00D.{15}\.json$/.test(filename),
   );
   const allAuths = await Promise.all(
     usernames.map(async (username) => {
@@ -607,26 +607,33 @@ async function processScratchOrgs(
   ];
   const updatedContents: any[] = (
     await Promise.all(
-      Array.from(orgIdsGroupedByDevHub).map(async ([devHubUsername, orgIds]) => {
-        try {
-          const devHubOrg = await core.Org.create({
-            aliasOrUsername: devHubUsername,
-          });
-          const conn = devHubOrg.getConnection();
-          const data: any[] = await conn
-            .sobject("ScratchOrgInfo")
-            .find({ ScratchOrg: { $in: orgIds } }, scratchOrgInfoFields);
-          return data.map((org) => ({ ...org, devHubOrgId: devHubOrg.getOrgId() }));
-        } catch (e: any) {
-          log(
-            `org list: error querying Dev Hub ${devHubUsername} for ${orgIds.length} scratch orgs (${e?.message})`,
-          );
-          return [];
-        }
-      }),
+      Array.from(orgIdsGroupedByDevHub).map(
+        async ([devHubUsername, orgIds]) => {
+          try {
+            const devHubOrg = await core.Org.create({
+              aliasOrUsername: devHubUsername,
+            });
+            const conn = devHubOrg.getConnection();
+            const data: any[] = await conn
+              .sobject("ScratchOrgInfo")
+              .find({ ScratchOrg: { $in: orgIds } }, scratchOrgInfoFields);
+            return data.map((org) => ({
+              ...org,
+              devHubOrgId: devHubOrg.getOrgId(),
+            }));
+          } catch (e: any) {
+            log(
+              `org list: error querying Dev Hub ${devHubUsername} for ${orgIds.length} scratch orgs (${e?.message})`,
+            );
+            return [];
+          }
+        },
+      ),
     )
   ).flat();
-  const contentMap = new Map(updatedContents.map((org) => [org.SignupUsername, org]));
+  const contentMap = new Map(
+    updatedContents.map((org) => [org.SignupUsername, org]),
+  );
   const contentMapByOrgId = new Map(
     updatedContents.map((org) => [org.ScratchOrg, org]),
   );
@@ -678,9 +685,15 @@ async function orgListInProcess(
     Promise.all(
       grouped.nonScratchOrgs.map(async (fields: any) => {
         if (!skipConnectionStatus && fields.username) {
-          fields.connectedStatus = await connectedStatusForOrgList(core, fields.username);
+          fields.connectedStatus = await connectedStatusForOrgList(
+            core,
+            fields.username,
+          );
           if (!fields.isDevHub && fields.connectedStatus === "Connected") {
-            fields.isDevHub = await checkNonScratchOrgIsDevHub(core, fields.username);
+            fields.isDevHub = await checkNonScratchOrgIsDevHub(
+              core,
+              fields.username,
+            );
           }
         }
         return fields;

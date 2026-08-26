@@ -21,7 +21,10 @@ suite("sfLauncher Test Suite", () => {
 
   function createCli(cliDir: string, name = "@salesforce/cli"): string {
     fs.mkdirSync(path.join(cliDir, "bin"), { recursive: true });
-    fs.writeFileSync(path.join(cliDir, "package.json"), JSON.stringify({ name }));
+    fs.writeFileSync(
+      path.join(cliDir, "package.json"),
+      JSON.stringify({ name }),
+    );
     const runJs = path.join(cliDir, "bin", "run.js");
     fs.writeFileSync(runJs, "");
     return runJs;
