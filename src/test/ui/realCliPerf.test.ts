@@ -76,6 +76,7 @@ async function measureFirstPromptMs(
   function () {
     this.timeout(300000);
     let panelManager: any;
+    let pluginIsLinked = false;
 
     suiteSetup(async function () {
       // Fail loudly (not silently green) when the real CLI is missing
@@ -105,6 +106,7 @@ async function measureFirstPromptMs(
           .filter((line) => line.includes("sfdx-hardis"))
           .join(" | ")}`,
       );
+      pluginIsLinked = /sfdx-hardis[^\n]*link/.test(plugins);
       const api = await activateExtension();
       panelManager = api.getLwcPanelManager();
     });
@@ -114,10 +116,22 @@ async function measureFirstPromptMs(
       // and slower disk on the thousands of CLI module files), 5 s on macOS
       // and Linux. Override with SFDX_HARDIS_PERF_MAX_PROMPT_MS.
       const defaultBudgetMs = process.platform === "win32" ? 10000 : 5000;
+      // A LINKED sfdx-hardis (sf plugins link, the contributor setup) is
+      // structurally slower than an installed one (bigger dev node_modules on
+      // the import path, possibly live TypeScript transpilation): the budget
+      // is doubled so the local gate stays meaningful without crying wolf.
+      // CI always installs the plugin, so it keeps the strict budget.
+      const linkedFactor = pluginIsLinked ? 2 : 1;
       const maxMs = parseInt(
-        process.env.SFDX_HARDIS_PERF_MAX_PROMPT_MS || String(defaultBudgetMs),
+        process.env.SFDX_HARDIS_PERF_MAX_PROMPT_MS ||
+          String(defaultBudgetMs * linkedFactor),
         10,
       );
+      if (pluginIsLinked) {
+        console.log(
+          `Linked sfdx-hardis detected: budget doubled to ${maxMs} ms`,
+        );
+      }
       const first = await measureFirstPromptMs(
         panelManager,
         "sf hardis:work:new",
