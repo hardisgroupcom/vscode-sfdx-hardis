@@ -304,9 +304,12 @@ async function createTargetOrg(
   targetOrg: string | null,
   cwd: string | undefined,
 ): Promise<any | null> {
+  // The aggregator anchored on the project is handed to Org.create so the
+  // connection honors the project's org-api-version (core would otherwise
+  // build one on process.cwd(), which is not the project in the worker)
+  const aggregator = await createConfigAggregator(core, cwd);
   let aliasOrUsername = targetOrg;
   if (!aliasOrUsername) {
-    const aggregator = await createConfigAggregator(core, cwd);
     aliasOrUsername =
       (aggregator.getPropertyValue(
         core.OrgConfigProperties.TARGET_ORG,
@@ -318,7 +321,7 @@ async function createTargetOrg(
   // The worker lives for hours: drop the cached aliases/auth files so an org
   // authenticated or renamed in a terminal since then is seen.
   core.StateAggregator.clearInstance();
-  return await core.Org.create({ aliasOrUsername });
+  return await core.Org.create({ aliasOrUsername, aggregator });
 }
 
 // Mirrors @salesforce/plugin-org `org display` for non-scratch orgs
@@ -331,17 +334,17 @@ async function orgDisplayInProcess(
   if (!org) {
     return null;
   }
-  const authInfo = await core.AuthInfo.create({ username: org.getUsername() });
-  const fields: any = authInfo.getFields(true);
-  if (fields.devHubUsername) {
+  if (org.getField(core.Org.Fields.DEV_HUB_USERNAME)) {
     // Scratch org: `org display` queries the Dev Hub for status and expiration date, keep the real CLI for that
     return null;
   }
+  // Like plugin-org, refresh the auth before reading the fields so a shown access token is the fresh one
   const connectedStatus = await determineConnectedStatus(org);
+  const authInfo = await core.AuthInfo.create({ username: org.getUsername() });
+  const fields: any = authInfo.getFields(true);
   const showSecrets = process.env.SF_TEMP_SHOW_SECRETS === "true";
   const stateAggregator = await core.StateAggregator.getInstance();
-  const aliases: string[] = stateAggregator.aliases.getAll(fields.username);
-  const alias = aliases?.length ? aliases[aliases.length - 1] : undefined;
+  const alias = firstAlias(stateAggregator, fields.username);
   return {
     id: fields.orgId,
     devHubId: undefined,
@@ -362,6 +365,14 @@ async function orgDisplayInProcess(
       ? Object.keys(fields.clientApps).join(",")
       : undefined,
   };
+}
+
+// plugin-org shows the first alias of an org (`aliases.get(username)`)
+function firstAlias(
+  stateAggregator: any,
+  username: string,
+): string | undefined {
+  return stateAggregator.aliases.get(username) ?? undefined;
 }
 
 // Same wording as plugin-org for a failed connection probe
@@ -524,9 +535,7 @@ async function readOrgListAuthInfos(
         }
         return undefined;
       } catch (e: any) {
-        log(
-          `org list: problem reading auth of ${username}, skipping (${e?.message})`,
-        );
+        log(`org list: skipping one unreadable auth file (${e?.message})`);
         return undefined;
       }
     }),
@@ -555,13 +564,12 @@ async function groupOrgListAuths(
       try {
         fields = { ...authInfo.getFields(true) };
       } catch {
-        log(`org list: error decrypting ${authInfo.getUsername()}`);
+        log("org list: could not decrypt the fields of one auth file");
         fields = { ...authInfo.getFields() };
       }
       delete fields.refreshToken;
       delete fields.clientSecret;
-      const aliases: string[] = stateAggregator.aliases.getAll(fields.username);
-      const alias = aliases?.length ? aliases[aliases.length - 1] : undefined;
+      const alias = firstAlias(stateAggregator, fields.username);
       const stat = await fs.promises.stat(
         path.join(sfdxDir, `${fields.username}.json`),
       );
@@ -585,6 +593,7 @@ async function groupOrgListAuths(
 async function processScratchOrgs(
   core: any,
   scratchOrgs: any[],
+  aggregator: any,
   log: LogFn,
 ): Promise<any[]> {
   const orgIdsGroupedByDevHub = new Map<string, string[]>();
@@ -612,6 +621,7 @@ async function processScratchOrgs(
           try {
             const devHubOrg = await core.Org.create({
               aliasOrUsername: devHubUsername,
+              aggregator,
             });
             const conn = devHubOrg.getConnection();
             const data: any[] = await conn
@@ -623,7 +633,7 @@ async function processScratchOrgs(
             }));
           } catch (e: any) {
             log(
-              `org list: error querying Dev Hub ${devHubUsername} for ${orgIds.length} scratch orgs (${e?.message})`,
+              `org list: error querying a Dev Hub for ${orgIds.length} scratch orgs (${e?.message})`,
             );
             return [];
           }
@@ -688,18 +698,20 @@ async function orgListInProcess(
           fields.connectedStatus = await connectedStatusForOrgList(
             core,
             fields.username,
+            aggregator,
           );
           if (!fields.isDevHub && fields.connectedStatus === "Connected") {
             fields.isDevHub = await checkNonScratchOrgIsDevHub(
               core,
               fields.username,
+              aggregator,
             );
           }
         }
         return fields;
       }),
     ),
-    processScratchOrgs(core, grouped.scratchOrgs, log),
+    processScratchOrgs(core, grouped.scratchOrgs, aggregator, log),
   ]);
   const showSecrets = process.env.SF_TEMP_SHOW_SECRETS === "true";
   const redactSecrets = (org: any) => ({
@@ -722,9 +734,13 @@ async function orgListInProcess(
 async function connectedStatusForOrgList(
   core: any,
   username: string,
+  aggregator: any,
 ): Promise<string | undefined> {
   try {
-    const org = await core.Org.create({ aliasOrUsername: username });
+    const org = await core.Org.create({
+      aliasOrUsername: username,
+      aggregator,
+    });
     if (org.getField(core.Org.Fields.DEV_HUB_USERNAME)) {
       return undefined;
     }
@@ -738,9 +754,13 @@ async function connectedStatusForOrgList(
 async function checkNonScratchOrgIsDevHub(
   core: any,
   username: string,
+  aggregator: any,
 ): Promise<boolean> {
   try {
-    const org = await core.Org.create({ aliasOrUsername: username });
+    const org = await core.Org.create({
+      aliasOrUsername: username,
+      aggregator,
+    });
     return await org.determineIfDevHubOrg(true);
   } catch {
     return false;

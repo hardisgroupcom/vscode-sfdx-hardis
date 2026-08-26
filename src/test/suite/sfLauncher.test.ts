@@ -93,6 +93,14 @@ suite("sfLauncher Test Suite", () => {
         buildSfDirectSpawn("sf hardis:work:new --path ~/x", launch),
         null,
       );
+      assert.strictEqual(
+        buildSfDirectSpawn("sf hardis:org:retrieve -m {Apex,Flow}", launch),
+        null,
+      );
+      assert.strictEqual(
+        buildSfDirectSpawn("sf hardis:work:new --path a\\ b", launch),
+        null,
+      );
       assert.strictEqual(buildSfDirectSpawn("sf", launch), null);
     });
   });

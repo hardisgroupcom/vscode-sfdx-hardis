@@ -159,9 +159,27 @@ const CREDENTIAL_ENV_CACHE_TTL_MS = 120000;
 // timeouts (dozens of seconds on unreachable hosts).
 const CREDENTIAL_COLLECT_TIMEOUT_MS = 5000;
 
+// Bumped on every invalidation so a refresh started before a secret change
+// never writes the pre-change credentials back into the cache
+let cacheGeneration = 0;
+
 /** Clears the cached credentials (call after connect/disconnect/token change) */
 export function invalidateProviderCredentialEnvCache(): void {
   credentialEnvCache = null;
+  cacheGeneration++;
+}
+
+function storeCredentialEnvCache(
+  value: Record<string, string>,
+  generation: number,
+): void {
+  if (generation !== cacheGeneration) {
+    return;
+  }
+  credentialEnvCache = {
+    value,
+    expiresAt: Date.now() + CREDENTIAL_ENV_CACHE_TTL_MS,
+  };
 }
 
 let credentialRefreshInProgress: Promise<void> | null = null;
@@ -175,12 +193,10 @@ export function refreshProviderCredentialEnvCache(): Promise<void> {
   if (credentialRefreshInProgress) {
     return credentialRefreshInProgress;
   }
+  const generation = cacheGeneration;
   credentialRefreshInProgress = collectProviderCredentialEnvVarsNow()
     .then((value) => {
-      credentialEnvCache = {
-        value,
-        expiresAt: Date.now() + CREDENTIAL_ENV_CACHE_TTL_MS,
-      };
+      storeCredentialEnvCache(value, generation);
     })
     .catch((e) => {
       Logger.log(
@@ -224,6 +240,7 @@ export async function collectProviderCredentialEnvVars(): Promise<
     }
     return { ...credentialEnvCache.value };
   }
+  const generation = cacheGeneration;
   const collectPromise = collectProviderCredentialEnvVarsNow();
   const collected = await Promise.race([
     collectPromise,
@@ -239,18 +256,12 @@ export async function collectProviderCredentialEnvVars(): Promise<
     // for the next command launch
     collectPromise
       .then((value) => {
-        credentialEnvCache = {
-          value,
-          expiresAt: Date.now() + CREDENTIAL_ENV_CACHE_TTL_MS,
-        };
+        storeCredentialEnvCache(value, generation);
       })
       .catch(() => {});
     return {};
   }
-  credentialEnvCache = {
-    value: collected,
-    expiresAt: Date.now() + CREDENTIAL_ENV_CACHE_TTL_MS,
-  };
+  storeCredentialEnvCache(collected, generation);
   return { ...collected };
 }
 

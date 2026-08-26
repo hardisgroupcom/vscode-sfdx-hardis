@@ -38,9 +38,9 @@ export function registerShowOrgsManager(commandThis: Commands) {
         // Track the last requested 'all' flag so it persists between operations
         let currentAllFlag = false;
 
-        // Two-phase load: the rows appear as soon as the local auth files are
-        // read (connection badge = "Checking..."), then the connection status
-        // of every org is probed and the rows are refreshed in place.
+        // Two-phase load: the rows appear without probing each org's
+        // connection (badge = "Checking..."), then the connection status of
+        // every org is probed and the rows are refreshed in place.
         const loadAndPushOrgs = async (
           all: boolean,
           forceReload: boolean,

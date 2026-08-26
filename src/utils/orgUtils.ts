@@ -29,8 +29,9 @@ export async function listAllOrgs(
   useCache = false,
   skipConnectionStatus = false,
 ): Promise<SalesforceOrg[]> {
-  // List all orgs. Without the connection probes the list only reads local
-  // auth files, so a panel can show the orgs at once and fill the status later.
+  // List all orgs. Skipping the connection probes of each org (scratch orgs are
+  // still checked with their Dev Hub, like the CLI) lets a panel show the orgs
+  // quickly and fill the status later.
   const orgListRes = await execSfdxJson(
     `sf org list${all ? " --all" : ""}${skipConnectionStatus ? " --skip-connection-status" : ""}`,
     useCache

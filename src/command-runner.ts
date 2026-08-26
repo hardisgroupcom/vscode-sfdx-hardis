@@ -656,10 +656,19 @@ export class CommandRunner {
         getResolvedSfDirectLaunch(),
       );
       if (directSpawn) {
-        childProcess = spawn(directSpawn.file, directSpawn.args, {
-          ...spawnOptions,
-          shell: false,
-        });
+        try {
+          childProcess = spawn(directSpawn.file, directSpawn.args, {
+            ...spawnOptions,
+            shell: false,
+          });
+        } catch (directError: any) {
+          // A node binary that can not be spawned without a shell must never
+          // break the command: use the historical shell launch instead
+          Logger.log(
+            `[sfdx-hardis][launcher] direct launch failed (${directError?.message}), using the shell`,
+          );
+          childProcess = spawn(command!, commandParts.slice(1), spawnOptions);
+        }
       } else {
         childProcess = spawn(command!, commandParts.slice(1), spawnOptions);
       }
