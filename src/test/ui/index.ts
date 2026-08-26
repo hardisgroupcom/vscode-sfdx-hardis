@@ -7,10 +7,14 @@ import { runMochaSuite } from "../mochaRunner";
 export async function run(): Promise<void> {
   // Documentation screenshot runs only execute the screenshot suite: the other
   // suites open and close panels, which would pollute the captures.
+  // Real-CLI perf runs only execute the perf gate: the other suites expect
+  // the mocked sf CLI, which is not on the PATH in that mode.
   const pattern =
     process.env.SFDX_HARDIS_DOC_SCREENSHOTS === "true"
       ? "**/docScreenshots.test.js"
-      : "**/*.test.js";
+      : process.env.SFDX_HARDIS_REAL_CLI_PERF === "true"
+        ? "**/realCliPerf.test.js"
+        : "**/*.test.js";
   return runMochaSuite({
     testsRoot: __dirname,
     pattern,

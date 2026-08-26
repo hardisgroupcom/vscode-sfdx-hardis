@@ -9,6 +9,14 @@ import {
 } from "./utils/sfdx-hardis-config-utils";
 import { spawn } from "child_process";
 import {
+  applySfPerformanceEnv,
+  getSfPerformanceTerminalEnv,
+} from "./utils/sfPerformanceUtils";
+import {
+  buildSfDirectSpawn,
+  getResolvedSfDirectLaunch,
+} from "./utils/sfLauncher";
+import {
   containsCertificateIssue,
   getGitBashPath,
   promptToDisableTlsIfNeeded,
@@ -519,7 +527,7 @@ export class CommandRunner {
     const spawnOptions: any = {
       shell: true,
       cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd(),
-      env: { ...process.env },
+      env: applySfPerformanceEnv({ ...process.env }, preprocessedCommand),
     };
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     const langSetting = config.get<string>("lang", "auto");
@@ -640,7 +648,32 @@ export class CommandRunner {
       }
     }
     try {
-      childProcess = spawn(command!, commandParts.slice(1), spawnOptions);
+      // Shell-less launch of the installed CLI (node run.js ...) when it was
+      // resolved at activation: no Git Bash, no npm shim between the click and
+      // the CLI. Otherwise the historical shell spawn.
+      const spawnViaShell = () =>
+        spawn(command!, commandParts.slice(1), spawnOptions);
+      const directSpawn = buildSfDirectSpawn(
+        preprocessedCommand,
+        getResolvedSfDirectLaunch(),
+      );
+      if (directSpawn) {
+        try {
+          childProcess = spawn(directSpawn.file, directSpawn.args, {
+            ...spawnOptions,
+            shell: false,
+          });
+        } catch (directError: any) {
+          // A node binary that can not be spawned without a shell must never
+          // break the command: use the historical shell launch instead
+          Logger.log(
+            `[sfdx-hardis][launcher] direct launch failed (${directError?.message}), using the shell`,
+          );
+          childProcess = spawnViaShell();
+        }
+      } else {
+        childProcess = spawnViaShell();
+      }
     } catch (e) {
       const msg =
         e && typeof e === "object" && "message" in e
@@ -929,7 +962,12 @@ export class CommandRunner {
    * Returns null when no suitable shell is available (warning shown).
    */
   private createHardisTerminal(): vscode.Terminal | null {
-    const terminalOptions: vscode.TerminalOptions = { name: "SFDX Hardis" };
+    // The terminal env is fixed at creation: the setting is read again for each
+    // new terminal (a change applies once the current terminal is closed)
+    const terminalOptions: vscode.TerminalOptions = {
+      name: "SFDX Hardis",
+      env: getSfPerformanceTerminalEnv(),
+    };
     if (process.platform === "win32") {
       const gitBashPath = getGitBashPath();
       if (gitBashPath) {

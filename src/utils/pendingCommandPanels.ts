@@ -120,6 +120,17 @@ export function takePendingCommandPanel(
   return entry;
 }
 
+/**
+ * The pending panel a fresh WebSocket connection can be attributed to, without
+ * removing it from the registry. Only unambiguous when a single panel is
+ * waiting for adoption: with several pending commands the connection could
+ * belong to any of them, so null is returned and the caller waits for the
+ * initClient message (which carries the context id) instead.
+ */
+export function peekSinglePendingCommandPanel(): PendingCommandPanel | null {
+  return pendingPanels.length === 1 ? pendingPanels[0] : null;
+}
+
 /** Removes a pending entry without adopting it (panel closed or process ended) */
 export function removePendingCommandPanel(lwcId: string): void {
   pendingPanels = pendingPanels.filter((entry) => entry.lwcId !== lwcId);

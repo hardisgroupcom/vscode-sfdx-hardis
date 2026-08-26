@@ -99,6 +99,18 @@
           "default": false,
           "description": "Disable check of Git Bash as default terminal"
         },
+        "vsCodeSfdxHardis.disablePerformanceEnhancementsForSfCommands": {
+          "type": "boolean",
+          "default": false,
+          "title": "Disable performance enhancements when calling sf commands",
+          "description": "By default, sf commands run by the extension skip their log file, new version check and autoupdate probe (SF_DISABLE_LOG_FILE, SF_SKIP_NEW_VERSION_CHECK, SF_DISABLE_AUTOUPDATE), the Salesforce CLI is started directly with a Node compile cache, and 'sf org display', 'sf config get', 'sf org list', 'sf org list metadata' and 'sf data query' are answered directly from the Salesforce CLI libraries without starting a CLI process. Check this option to always run the plain sf commands (sfdx-hardis commands then receive SFDX_HARDIS_ENHANCE_PERFORMANCE=false). Takes effect for new terminals."
+        },
+        "vsCodeSfdxHardis.linkedSfdxHardisAutoTranspile": {
+          "type": "boolean",
+          "default": false,
+          "title": "Run a linked sfdx-hardis from its TypeScript sources",
+          "description": "Only relevant for sfdx-hardis contributors using 'sf plugins link'. By default the extension makes a linked sfdx-hardis run from its compiled 'lib' folder (kept fresh by 'tsc --watch'), which starts several seconds faster than oclif's default of re-transpiling the TypeScript sources at every command. Check this option to restore oclif's live TypeScript transpilation (useful when 'tsc --watch' is not running). Takes effect for new terminals."
+        },
         "vsCodeSfdxHardis.disableGitMergeRequiredCheck": {
           "type": "boolean",
           "default": false,
@@ -691,6 +703,7 @@
     "lint:fix": "eslint src --fix",
     "test": "node ./out/test/runTest.js",
     "test:ui": "node ./out/test/runUiTest.js",
+    "test:ui:perf": "node ./out/test/runUiTest.js --real-cli-perf",
     "screenshots": "node ./scripts/take-doc-screenshots.js",
     "vsix": "vsce package --allow-package-secrets github"
   },

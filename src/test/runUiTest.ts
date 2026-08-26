@@ -23,6 +23,13 @@ async function main() {
   // to display, and only the docScreenshots suite runs.
   const docScreenshots = process.env.SFDX_HARDIS_DOC_SCREENSHOTS === "true";
 
+  // Real-CLI performance gate: same Extension Development Host and dummy
+  // project, but the REAL `sf` CLI stays on the PATH (no shim) and only the
+  // realCliPerf suite runs. See src/test/ui/realCliPerf.test.ts.
+  const realCliPerf =
+    process.argv.includes("--real-cli-perf") ||
+    process.env.SFDX_HARDIS_REAL_CLI_PERF === "true";
+
   // 1. Copy the SFDX project fixture into a temp workspace
   const fixtureName = docScreenshots
     ? "doc-screenshots-project"
@@ -204,13 +211,27 @@ async function main() {
         `--user-data-dir=${userDataDir}`,
       ],
       extensionTestsEnv: {
-        PATH: `${shimDir}${path.delimiter}${process.env.PATH || ""}`,
-        Path: `${shimDir}${path.delimiter}${process.env.Path || process.env.PATH || ""}`,
-        SF_MOCK_LOG: mockLogFile,
-        SF_MOCK_NODE_MODULES: path.join(
-          extensionDevelopmentPath,
-          "node_modules",
-        ),
+        // Real-CLI perf mode keeps the actual `sf` on the PATH; every other
+        // mode answers with the instant mocked CLI (test/fixtures/sf-shim)
+        ...(realCliPerf
+          ? {
+              SFDX_HARDIS_REAL_CLI_PERF: "true",
+              // GitHub Actions marks the environment as CI, but sfdx-hardis
+              // skips its WebSocket client (so panels, prompts and this test)
+              // when CI is set: the gate needs the interactive behavior.
+              // An undefined value removes the variable from the child env.
+              CI: undefined,
+              GITHUB_ACTIONS: undefined,
+            }
+          : {
+              PATH: `${shimDir}${path.delimiter}${process.env.PATH || ""}`,
+              Path: `${shimDir}${path.delimiter}${process.env.Path || process.env.PATH || ""}`,
+              SF_MOCK_LOG: mockLogFile,
+              SF_MOCK_NODE_MODULES: path.join(
+                extensionDevelopmentPath,
+                "node_modules",
+              ),
+            }),
         VSCODE_SFDX_HARDIS_UI_TEST: "true",
         ...(docScreenshots
           ? {

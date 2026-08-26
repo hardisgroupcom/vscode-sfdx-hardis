@@ -2,6 +2,17 @@ import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
 import { getAvatarClass, getUsernameInitials } from "s/avatarUtils";
 
+// Connection state of an org row, computed in ONE place so the Connected pill,
+// the row actions and the removal recommendations can never disagree.
+// "pending": the row arrived before the org was probed (two-phase load).
+function orgConnectionState(org) {
+  if (org.connectionStatusPending) {
+    return "pending";
+  }
+  const status = (org.connectedStatus || "").toString().toLowerCase();
+  return status.match(/connected|authorized/) ? "connected" : "disconnected";
+}
+
 export default class OrgManager extends SharedMixin(LightningElement) {
   @track orgs = [];
   @track columns = [];
@@ -129,20 +140,22 @@ export default class OrgManager extends SharedMixin(LightningElement) {
       instanceLabel: (o.instanceUrl || "")
         .replace(/^https?:\/\//, "")
         .replace(/\/$/, ""),
-      // more robust connected detection: accept connected/authorized/true etc.
-      connectedLabel: (o.connectedStatus || "")
-        .toString()
-        .toLowerCase()
-        .match(/connected|authorized/)
-        ? this.t("connectedLabel")
-        : this.t("disconnectedStatus"),
+      // Connected column: the rows arrive before the orgs are probed
+      // ("pending" state), with a pulsing "Checking..." pill until the
+      // complete list replaces them.
+      connectedLabel:
+        orgConnectionState(o) === "pending"
+          ? this.t("checking")
+          : orgConnectionState(o) === "connected"
+            ? this.t("connectedLabel")
+            : this.t("disconnectedStatus"),
       // Pill CSS class for the Connected column (statusPill cell type)
-      connectedPillClass: (o.connectedStatus || "")
-        .toString()
-        .toLowerCase()
-        .match(/connected|authorized/)
-        ? "hardis-pill hardis-status-success"
-        : "hardis-pill hardis-status-failed",
+      connectedPillClass:
+        orgConnectionState(o) === "pending"
+          ? "hardis-pill hardis-status-running"
+          : orgConnectionState(o) === "connected"
+            ? "hardis-pill hardis-status-success"
+            : "hardis-pill hardis-status-failed",
       // Initials avatar for the username column (avatarText cell type). The
       // color variant is stable per username (hash of the name).
       usernameInitials: getUsernameInitials(
@@ -153,15 +166,23 @@ export default class OrgManager extends SharedMixin(LightningElement) {
       ),
       // Compute row actions for the Actions column: Open (connected), Reconnect (disconnected), Remove (always)
       rowActions: (() => {
-        const isConnected = (o.connectedStatus || "")
-          .toString()
-          .toLowerCase()
-          .match(/connected|authorized/);
+        const connectionState = orgConnectionState(o);
+        const isConnected = connectionState === "connected";
         const isScratch =
           (o.orgType || "").toString().toLowerCase() === "scratch";
         const isSandbox =
           (o.orgType || "").toString().toLowerCase() === "sandbox";
         const actions = [];
+        if (connectionState === "pending") {
+          // Status not known yet: only the actions that need no connection
+          actions.push({
+            label: this.t("removeLabel"),
+            name: "remove",
+            variant: "destructive",
+            iconName: "utility:delete",
+          });
+          return actions;
+        }
         if (isConnected) {
           actions.push({
             label: this.t("openLabel"),
@@ -336,10 +357,12 @@ export default class OrgManager extends SharedMixin(LightningElement) {
     const now = Date.now();
     return (this.orgs || [])
       .filter((o) => {
-        const connected = (o.connectedStatus || "")
-          .toString()
-          .toLowerCase()
-          .match(/connected|authorized/);
+        const connectionState = orgConnectionState(o);
+        if (connectionState === "pending") {
+          // Not probed yet: never recommend removing an org on an unknown status
+          return false;
+        }
+        const connected = connectionState === "connected";
         const deleted =
           o.deleted === true ||
           o.isDeleted === true ||

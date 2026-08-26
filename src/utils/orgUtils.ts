@@ -19,15 +19,21 @@ export type SalesforceOrg = {
   connectedStatus?: string;
   status?: string; // For scratch orgs: "Active" | "Expired" | "Deleted"
   name?: string;
+  // true when the list was built without probing the orgs: connectedStatus is
+  // not known yet (a second, complete list follows)
+  connectionStatusPending?: boolean;
 };
 
 export async function listAllOrgs(
   all = false,
   useCache = false,
+  skipConnectionStatus = false,
 ): Promise<SalesforceOrg[]> {
-  // List all orgs
+  // List all orgs. Skipping the connection probes of each org (scratch orgs are
+  // still checked with their Dev Hub, like the CLI) lets a panel show the orgs
+  // quickly and fill the status later.
   const orgListRes = await execSfdxJson(
-    `sf org list${all ? " --all" : ""}`,
+    `sf org list${all ? " --all" : ""}${skipConnectionStatus ? " --skip-connection-status" : ""}`,
     useCache
       ? { cacheSection: "orgs", cacheExpiration: 1000 * 60 * 60 * 24 * 7 }
       : {}, // 1 week (milliseconds
@@ -94,6 +100,11 @@ export async function listAllOrgs(
       connectedStatus: org.connectedStatus,
       status: org.status, // Pass through scratch org status
       name: org.name,
+      // Scratch orgs already carry their final status from the Dev Hub in the
+      // skip pass: only non-scratch orgs are actually waiting for a probe
+      ...(skipConnectionStatus && !org.connectedStatus && !org.status
+        ? { connectionStatusPending: true }
+        : {}),
     };
     seen.set(key, normalized);
   }
