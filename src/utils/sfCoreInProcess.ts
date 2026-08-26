@@ -196,7 +196,7 @@ function runInWorker(
   cwd: string | undefined,
 ): Promise<any | null> {
   return new Promise((resolve, reject) => {
-    const requestId = `sfcore_${Date.now()}_${requestSeq++}`;
+    const requestId = `sf-core-${Date.now()}-${requestSeq++}`;
     const timer = setTimeout(() => {
       if (pendingRequests.delete(requestId)) {
         reject(new Error(`no answer after ${IN_PROCESS_TIMEOUT_MS}ms`));
