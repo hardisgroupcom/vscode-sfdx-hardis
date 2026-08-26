@@ -35,6 +35,23 @@ const log = (message: string) => {
 
 let loadedCore: { coreDir: string; core: any } | null = null;
 
+// NODE_TLS_REJECT_UNAUTHORIZED as inherited from the extension host, restored
+// whenever a request does not ask for relaxed TLS (see applyTlsPreference)
+const INHERITED_TLS_REJECT = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+
+// Mirror the env of the spawned CLI: when the disableTlsRejectUnauthorized
+// setting is on, the CLI runs with NODE_TLS_REJECT_UNAUTHORIZED=0 (corporate
+// SSL-inspection proxies), so the in-process connections must do the same.
+function applyTlsPreference(tlsRejectUnauthorizedDisabled?: boolean): void {
+  if (tlsRejectUnauthorizedDisabled) {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+  } else if (INHERITED_TLS_REJECT === undefined) {
+    delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+  } else {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = INHERITED_TLS_REJECT;
+  }
+}
+
 function getCore(coreDir: string): any {
   if (loadedCore && loadedCore.coreDir === coreDir) {
     return loadedCore.core;
@@ -54,6 +71,7 @@ async function runSfCoreRequest(
     command?: string;
     cwd?: string;
     preload?: boolean;
+    tlsRejectUnauthorizedDisabled?: boolean;
   },
   requestId: string | undefined,
 ) {
@@ -62,6 +80,7 @@ async function runSfCoreRequest(
     if (request.preload || !request.command) {
       return;
     }
+    applyTlsPreference(request.tlsRejectUnauthorizedDisabled);
     const parsed = parseSfCommand(request.command);
     const result =
       parsed === null

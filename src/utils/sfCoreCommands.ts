@@ -288,10 +288,27 @@ export async function runSfCoreCommand(
   return { status: 0, result, warnings };
 }
 
+// The CLI resolves the project (and its local .sf/config.json) by walking up
+// from its cwd to the folder holding sfdx-project.json: do the same, so a
+// workspace opened on a subfolder of a project still sees the project config.
+function findProjectPath(cwd: string): string {
+  let dir = cwd;
+  for (;;) {
+    if (fs.existsSync(path.join(dir, "sfdx-project.json"))) {
+      return dir;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) {
+      return cwd;
+    }
+    dir = parent;
+  }
+}
+
 async function createConfigAggregator(core: any, cwd: string | undefined) {
   // Never rely on process.cwd(): the extension host does not run in the project
   const aggregator = await core.ConfigAggregator.create(
-    cwd ? { projectPath: cwd } : undefined,
+    cwd ? { projectPath: findProjectPath(cwd) } : undefined,
   );
   await aggregator.reload();
   return aggregator;
@@ -344,7 +361,7 @@ async function orgDisplayInProcess(
   const fields: any = authInfo.getFields(true);
   const showSecrets = process.env.SF_TEMP_SHOW_SECRETS === "true";
   const stateAggregator = await core.StateAggregator.getInstance();
-  const alias = firstAlias(stateAggregator, fields.username);
+  const alias = aliasForUsername(stateAggregator, fields.username);
   return {
     id: fields.orgId,
     devHubId: undefined,
@@ -367,12 +384,14 @@ async function orgDisplayInProcess(
   };
 }
 
-// plugin-org shows the first alias of an org (`aliases.get(username)`)
-function firstAlias(
+// plugin-org's getAliasByUsername: "use the most recently added alias for
+// that username" = the LAST entry of aliases.getAll(username)
+function aliasForUsername(
   stateAggregator: any,
   username: string,
 ): string | undefined {
-  return stateAggregator.aliases.get(username) ?? undefined;
+  const aliases: string[] = stateAggregator.aliases.getAll(username);
+  return aliases?.length ? aliases[aliases.length - 1] : undefined;
 }
 
 // Same wording as plugin-org for a failed connection probe
@@ -569,7 +588,7 @@ async function groupOrgListAuths(
       }
       delete fields.refreshToken;
       delete fields.clientSecret;
-      const alias = firstAlias(stateAggregator, fields.username);
+      const alias = aliasForUsername(stateAggregator, fields.username);
       const stat = await fs.promises.stat(
         path.join(sfdxDir, `${fields.username}.json`),
       );

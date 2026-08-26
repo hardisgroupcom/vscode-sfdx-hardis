@@ -30,6 +30,23 @@ import { Logger } from "../logger";
 import { findExecutable, findUpwardsFromExecutable } from "./executableUtils";
 import { parseSfCommand } from "./sfCoreCommands";
 import { isSfPerformanceEnhancementDisabled } from "./sfPerformanceUtils";
+import * as vscode from "vscode";
+
+// The spawned CLI receives NODE_TLS_REJECT_UNAUTHORIZED=0 when the user opted
+// into disableTlsRejectUnauthorized (corporate SSL-inspection proxies): the
+// worker must relax TLS the same way, or its connection probes would wrongly
+// report every org disconnected while the real CLI connects fine.
+function isTlsRejectUnauthorizedDisabled(): boolean {
+  try {
+    return (
+      vscode.workspace
+        .getConfiguration("vsCodeSfdxHardis")
+        .get<boolean>("disableTlsRejectUnauthorized", false) === true
+    );
+  } catch {
+    return false;
+  }
+}
 
 // Pure helpers re-exported for the unit tests and the callers
 export {
@@ -203,7 +220,15 @@ function runInWorker(
       }
     }, IN_PROCESS_TIMEOUT_MS);
     pendingRequests.set(requestId, { resolve, reject, timer });
-    worker.postMessage({ sfCore: { coreDir, command, cwd }, requestId });
+    worker.postMessage({
+      sfCore: {
+        coreDir,
+        command,
+        cwd,
+        tlsRejectUnauthorizedDisabled: isTlsRejectUnauthorizedDisabled(),
+      },
+      requestId,
+    });
   });
 }
 

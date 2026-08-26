@@ -22,9 +22,10 @@ export type SfDirectLaunch = {
   runJsPath: string;
 };
 
-// Characters that would need a shell to be interpreted (redirections, globs,
-// brace expansion, unquoted escapes...): keep the shell launch
-const SHELL_SYNTAX = /[|<>`$;&*?~(){}\\]/;
+// Characters that would need a shell to be interpreted (pipes, globs, brace
+// expansion, unquoted escapes...) or whose quoting differs between shells
+// (single quotes are literal on cmd.exe): keep the shell launch
+const SHELL_SYNTAX = /[|<>`$;&*?~(){}'\\]/;
 
 /**
  * Finds `@salesforce/cli/bin/run.js` from the resolved `sf` executable: the
@@ -75,7 +76,7 @@ export async function findNodeForSf(runJsPath: string): Promise<string | null> {
     if (!nodePath) {
       return null;
     }
-    // A .cmd/.bat shim (nodist, portable setups) cannot be spawned without a
+    // A .cmd/.bat shim (version managers, portable setups) cannot be spawned without a
     // shell on recent Node versions (EINVAL): only a real binary qualifies
     if (
       process.platform === "win32" &&

@@ -651,6 +651,8 @@ export class CommandRunner {
       // Shell-less launch of the installed CLI (node run.js ...) when it was
       // resolved at activation: no Git Bash, no npm shim between the click and
       // the CLI. Otherwise the historical shell spawn.
+      const spawnViaShell = () =>
+        spawn(command!, commandParts.slice(1), spawnOptions);
       const directSpawn = buildSfDirectSpawn(
         preprocessedCommand,
         getResolvedSfDirectLaunch(),
@@ -667,10 +669,10 @@ export class CommandRunner {
           Logger.log(
             `[sfdx-hardis][launcher] direct launch failed (${directError?.message}), using the shell`,
           );
-          childProcess = spawn(command!, commandParts.slice(1), spawnOptions);
+          childProcess = spawnViaShell();
         }
       } else {
-        childProcess = spawn(command!, commandParts.slice(1), spawnOptions);
+        childProcess = spawnViaShell();
       }
     } catch (e) {
       const msg =

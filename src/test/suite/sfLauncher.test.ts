@@ -101,6 +101,10 @@ suite("sfLauncher Test Suite", () => {
         buildSfDirectSpawn("sf hardis:work:new --path a\\ b", launch),
         null,
       );
+      assert.strictEqual(
+        buildSfDirectSpawn("sf hardis:org:data:export --path a'b", launch),
+        null,
+      );
       assert.strictEqual(buildSfDirectSpawn("sf", launch), null);
     });
   });

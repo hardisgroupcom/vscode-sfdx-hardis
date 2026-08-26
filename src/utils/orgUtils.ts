@@ -100,7 +100,9 @@ export async function listAllOrgs(
       connectedStatus: org.connectedStatus,
       status: org.status, // Pass through scratch org status
       name: org.name,
-      ...(skipConnectionStatus && !org.connectedStatus
+      // Scratch orgs already carry their final status from the Dev Hub in the
+      // skip pass: only non-scratch orgs are actually waiting for a probe
+      ...(skipConnectionStatus && !org.connectedStatus && !org.status
         ? { connectionStatusPending: true }
         : {}),
     };
