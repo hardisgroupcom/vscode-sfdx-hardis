@@ -159,9 +159,54 @@ const CREDENTIAL_ENV_CACHE_TTL_MS = 120000;
 // timeouts (dozens of seconds on unreachable hosts).
 const CREDENTIAL_COLLECT_TIMEOUT_MS = 5000;
 
+// Bumped on every invalidation so a refresh started before a secret change
+// never writes the pre-change credentials back into the cache
+let cacheGeneration = 0;
+
 /** Clears the cached credentials (call after connect/disconnect/token change) */
 export function invalidateProviderCredentialEnvCache(): void {
   credentialEnvCache = null;
+  cacheGeneration++;
+}
+
+function storeCredentialEnvCache(
+  value: Record<string, string>,
+  generation: number,
+): void {
+  if (generation !== cacheGeneration) {
+    return;
+  }
+  credentialEnvCache = {
+    value,
+    expiresAt: Date.now() + CREDENTIAL_ENV_CACHE_TTL_MS,
+  };
+}
+
+let credentialRefreshInProgress: Promise<void> | null = null;
+
+/**
+ * Fills (or refreshes) the credential cache without blocking anyone. Called at
+ * activation so the first command click finds the credentials ready, and by
+ * collectProviderCredentialEnvVars() when the cache is stale.
+ */
+export function refreshProviderCredentialEnvCache(): Promise<void> {
+  if (credentialRefreshInProgress) {
+    return credentialRefreshInProgress;
+  }
+  const generation = cacheGeneration;
+  credentialRefreshInProgress = collectProviderCredentialEnvVarsNow()
+    .then((value) => {
+      storeCredentialEnvCache(value, generation);
+    })
+    .catch((e) => {
+      Logger.log(
+        `Could not refresh provider credentials: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    })
+    .finally(() => {
+      credentialRefreshInProgress = null;
+    });
+  return credentialRefreshInProgress;
 }
 
 // Any stored/deleted secret (provider connect, disconnect, token update)
@@ -186,9 +231,16 @@ SecretsManager.onSecretChanged(invalidateProviderCredentialEnvCache);
 export async function collectProviderCredentialEnvVars(): Promise<
   Record<string, string>
 > {
-  if (credentialEnvCache && Date.now() < credentialEnvCache.expiresAt) {
+  if (credentialEnvCache) {
+    if (Date.now() >= credentialEnvCache.expiresAt) {
+      // Stale: serve it right away (tokens rarely change, and any secret
+      // change already wipes the cache) and refresh it in the background so
+      // the command launch never waits on git/ticketing providers
+      void refreshProviderCredentialEnvCache();
+    }
     return { ...credentialEnvCache.value };
   }
+  const generation = cacheGeneration;
   const collectPromise = collectProviderCredentialEnvVarsNow();
   const collected = await Promise.race([
     collectPromise,
@@ -204,18 +256,12 @@ export async function collectProviderCredentialEnvVars(): Promise<
     // for the next command launch
     collectPromise
       .then((value) => {
-        credentialEnvCache = {
-          value,
-          expiresAt: Date.now() + CREDENTIAL_ENV_CACHE_TTL_MS,
-        };
+        storeCredentialEnvCache(value, generation);
       })
       .catch(() => {});
     return {};
   }
-  credentialEnvCache = {
-    value: collected,
-    expiresAt: Date.now() + CREDENTIAL_ENV_CACHE_TTL_MS,
-  };
+  storeCredentialEnvCache(collected, generation);
   return { ...collected };
 }
 

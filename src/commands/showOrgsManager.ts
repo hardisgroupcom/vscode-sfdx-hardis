@@ -3,22 +3,29 @@ import { LwcPanelManager } from "../lwc-panel-manager";
 import { Commands } from "../commands";
 import { execSfdxJson } from "../utils";
 import { Logger } from "../logger";
-import { listAllOrgs } from "../utils/orgUtils";
+import { listAllOrgs, SalesforceOrg } from "../utils/orgUtils";
 import { t } from "../i18n/i18n";
 
-let loadOrgsInProgressPromise: Thenable<any> | null = null;
-let loadOrgsQueue: Array<{
+type LoadOrgsRequest = {
   all: boolean;
+  skipConnectionStatus: boolean;
   resolve: (value: any) => void;
   reject: (error: any) => void;
-}> = [];
+};
+
+let loadOrgsInProgressPromise: Thenable<any> | null = null;
+let loadOrgsQueue: LoadOrgsRequest[] = [];
+// Increments on every new load sequence so a stale two-phase load (for example
+// a refresh started while the previous one was still probing the orgs) never
+// overwrites fresher rows.
+let loadSequence = 0;
 
 export function registerShowOrgsManager(commandThis: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.openOrgsManager",
     async () => {
       const lwcManager = LwcPanelManager.getInstance();
-      let orgs: any = [];
+      let orgs: SalesforceOrg[] = [];
       try {
         // Open the panel immediately with a loading flag so the LWC can render
         // a spinner while orgs are fetched asynchronously.
@@ -31,38 +38,70 @@ export function registerShowOrgsManager(commandThis: Commands) {
         // Track the last requested 'all' flag so it persists between operations
         let currentAllFlag = false;
 
-        // Kick off the initial load in the background; the spinner stays up
-        // until the orgs are sent to the panel.
-        loadOrgsWithProgress(false, t("loadingSalesforceOrgs"))
-          .then((loadedOrgs) => {
-            orgs = loadedOrgs;
+        // Two-phase load: the rows appear without probing each org's
+        // connection (badge = "Checking..."), then the connection status of
+        // every org is probed and the rows are refreshed in place.
+        const loadAndPushOrgs = async (
+          all: boolean,
+          forceReload: boolean,
+        ): Promise<void> => {
+          const sequence = ++loadSequence;
+          panel.sendInitializationData({ loading: true });
+          try {
+            const pendingOrgs = await loadOrgsWithProgress(
+              all,
+              forceReload,
+              true,
+            );
+            if (sequence !== loadSequence) {
+              return;
+            }
+            panel.sendInitializationData({
+              orgs: [...pendingOrgs],
+              loading: false,
+            });
+            const completeOrgs = await loadOrgsWithProgress(all, forceReload);
+            if (sequence !== loadSequence) {
+              return;
+            }
+            orgs = completeOrgs;
             panel.sendInitializationData({
               orgs: [...orgs],
               loading: false,
             });
-          })
-          .catch((error: any) => {
-            panel.sendInitializationData({ orgs: [], loading: false });
-            vscode.window.showErrorMessage(
-              t("failedToOpenOrgManager", { error: error?.message || error }),
-            );
-          });
+          } catch (error) {
+            if (sequence === loadSequence) {
+              panel.sendInitializationData({ loading: false });
+            }
+            throw error;
+          }
+        };
+
+        // Kick off the initial load in the background; the spinner stays up
+        // until the first rows are sent to the panel.
+        loadAndPushOrgs(false, false).catch((error: any) => {
+          panel.sendInitializationData({ orgs: [], loading: false });
+          vscode.window.showErrorMessage(
+            t("failedToOpenOrgManager", { error: error?.message || error }),
+          );
+        });
+
+        // Reload after an operation that changed the auth files (forget, alias)
+        const reloadAfterChange = () => {
+          setTimeout(() => {
+            loadAndPushOrgs(currentAllFlag, true).catch((error: any) => {
+              Logger.log(
+                `Error reloading orgs: ${error?.message || JSON.stringify(error)}`,
+              );
+            });
+          }, 1000);
+        };
 
         panel.onMessage(async (type: string, data: any) => {
           if (type === "refreshOrgsFromUi") {
             const allFlag = !!(data && data.all === true);
             currentAllFlag = allFlag;
-            panel.sendInitializationData({ loading: true });
-            try {
-              orgs = await loadOrgsWithProgress(allFlag);
-              panel.sendInitializationData({
-                orgs: [...orgs],
-                loading: false,
-              });
-            } catch (error: any) {
-              panel.sendInitializationData({ loading: false });
-              throw error;
-            }
+            await loadAndPushOrgs(allFlag, false);
           } else if (type === "connectOrg") {
             // run hardis:org:select to reconnect a disconnected org
             const username = data.username;
@@ -86,25 +125,10 @@ export function registerShowOrgsManager(commandThis: Commands) {
                 usernames,
                 t("forgettingNOrgs", { count: usernames.length }),
               );
-
-              // send back result and refresh list
-              /* jscpd:ignore-start */
-              panel.sendInitializationData({ loading: true });
-              setTimeout(async () => {
-                orgs = await loadOrgsWithProgress(
-                  currentAllFlag,
-                  undefined,
-                  true,
-                );
-                panel.sendInitializationData({
-                  orgs: [...orgs],
-                  loading: false,
-                });
-                /* jscpd:ignore-end */
-                vscode.window.showInformationMessage(
-                  t("forgotNOrgs", { count: result.successUsernames.length }),
-                );
-              }, 1000);
+              reloadAfterChange();
+              vscode.window.showInformationMessage(
+                t("forgotNOrgs", { count: result.successUsernames.length }),
+              );
             } catch (error: any) {
               vscode.window.showErrorMessage(
                 t("errorForgettingOrgs", { error: error?.message || error }),
@@ -120,12 +144,10 @@ export function registerShowOrgsManager(commandThis: Commands) {
             ) {
               usernames = data.usernames.filter(Boolean);
             }
-
             if (usernames.length === 0) {
               vscode.window.showInformationMessage(t("noRecommendedOrgsFound"));
               return;
             }
-
             try {
               const confirm = await vscode.window.showWarningMessage(
                 t("confirmForgetNOrgs", { count: usernames.length }),
@@ -136,7 +158,6 @@ export function registerShowOrgsManager(commandThis: Commands) {
               if (confirm !== t("yesLabel")) {
                 return;
               }
-
               const result = await forgetOrgsWithProgress(
                 usernames,
                 t("forgettingNOrgs", { count: usernames.length }),
@@ -146,19 +167,7 @@ export function registerShowOrgsManager(commandThis: Commands) {
                   count: result.successUsernames.length,
                 }),
               );
-              /* jscpd:ignore-start */
-              panel.sendInitializationData({ loading: true });
-              setTimeout(async () => {
-                orgs = await loadOrgsWithProgress(
-                  currentAllFlag,
-                  undefined,
-                  true,
-                );
-                panel.sendInitializationData({
-                  orgs: [...orgs],
-                  loading: false,
-                });
-              }, 1000);
+              reloadAfterChange();
             } catch (error: any) {
               vscode.window.showErrorMessage(
                 t("errorRemovingRecommendedOrgs", {
@@ -166,16 +175,13 @@ export function registerShowOrgsManager(commandThis: Commands) {
                 }),
               );
             }
-            /* jscpd:ignore-end */
           } else if (type === "saveAliases") {
             try {
               const { aliasChanges } = data;
-
               if (!aliasChanges || aliasChanges.length === 0) {
                 vscode.window.showInformationMessage(t("noAliasChangesToSave"));
                 return;
               }
-
               // Execute all sf alias set commands in parallel with progress
               await vscode.window.withProgress(
                 {
@@ -211,32 +217,17 @@ export function registerShowOrgsManager(commandThis: Commands) {
                   }
                 },
               );
-
               vscode.window.showInformationMessage(
                 t("successfullyUpdatedNAliases", {
                   count: aliasChanges.length,
                 }),
               );
-
-              /* jscpd:ignore-start */
               // Refresh the orgs list to show the updated aliases
-              panel.sendInitializationData({ loading: true });
-              setTimeout(async () => {
-                orgs = await loadOrgsWithProgress(
-                  currentAllFlag,
-                  undefined,
-                  true,
-                );
-                panel.sendInitializationData({
-                  orgs: [...orgs],
-                  loading: false,
-                });
-              }, 1000);
+              reloadAfterChange();
             } catch (error: any) {
               vscode.window.showErrorMessage(
                 t("errorSettingAliases", { error: error?.message || error }),
               );
-              /* jscpd:ignore-end */
             }
           }
         });
@@ -264,12 +255,10 @@ async function forgetOrgsWithProgress(usernames: string[], title: string) {
       const errorUsernames: string[] = [];
       const total = usernames.length;
       let cancelled = false;
-
       // When the user cancels, set a flag so we stop after the current iteration
       token.onCancellationRequested(() => {
         cancelled = true;
       });
-
       for (let i = 0; i < total; i++) {
         if (cancelled) {
           // Stop processing further orgs when cancelled by the user
@@ -293,7 +282,6 @@ async function forgetOrgsWithProgress(usernames: string[], title: string) {
           errorUsernames.push(u);
         }
       }
-
       return { successUsernames, errorUsernames, cancelled };
     },
   );
@@ -303,26 +291,22 @@ async function forgetOrgsWithProgress(usernames: string[], title: string) {
 // LWC renders its own spinner). Deduplicates concurrent requests via a queue.
 async function loadOrgsWithProgress(
   all: boolean = false,
-  _title?: string,
   forceReload: boolean = false,
-): Promise<any> {
-  void _title;
+  skipConnectionStatus: boolean = false,
+): Promise<SalesforceOrg[]> {
   return new Promise((resolve, reject) => {
     // Add this request to the queue
-    loadOrgsQueue.push({ all, resolve, reject });
-
+    loadOrgsQueue.push({ all, skipConnectionStatus, resolve, reject });
     // If forceReload is true, cancel any in-progress operation and force a new load
     if (forceReload && loadOrgsInProgressPromise) {
       // Mark the current promise as cancelled by setting it to null
       // The new processLoadOrgsQueue will pick up all queued requests
       loadOrgsInProgressPromise = null;
     }
-
     // If there's already a load in progress and we're not forcing reload, just wait for it
     if (loadOrgsInProgressPromise && !forceReload) {
       return;
     }
-
     // Start processing the queue
     processLoadOrgsQueue();
   });
@@ -332,18 +316,25 @@ async function processLoadOrgsQueue(): Promise<void> {
   if (loadOrgsQueue.length === 0 || loadOrgsInProgressPromise) {
     return;
   }
-
-  // Get the latest request from the queue (use the most recent parameters)
+  // Get the latest request from the queue (use the most recent parameters).
+  // A complete list satisfies a pending "local only" request too, but not the
+  // other way around: as soon as one queued request needs the connection
+  // status, the whole batch is loaded with it.
   const latestRequest = loadOrgsQueue[loadOrgsQueue.length - 1];
   const allQueuedRequests = [...loadOrgsQueue];
   loadOrgsQueue = []; // Clear the queue
-
-  loadOrgsInProgressPromise = listAllOrgs(latestRequest.all);
+  const skipConnectionStatus = allQueuedRequests.every(
+    (request) => request.skipConnectionStatus,
+  );
+  loadOrgsInProgressPromise = listAllOrgs(
+    latestRequest.all,
+    false,
+    skipConnectionStatus,
+  );
 
   try {
     // Wait for the actual loading to complete
     const result = await loadOrgsInProgressPromise;
-
     // Resolve all queued requests with the same result
     allQueuedRequests.forEach((request) => {
       request.resolve(result);
@@ -356,7 +347,6 @@ async function processLoadOrgsQueue(): Promise<void> {
   } finally {
     // Clear the progress promise
     loadOrgsInProgressPromise = null;
-
     // Process any new requests that may have been queued while we were loading
     if (loadOrgsQueue.length > 0) {
       // Use setTimeout to avoid potential stack overflow with recursive calls

@@ -30,6 +30,23 @@ export class LwcUiPanel {
   public commandStatus:
     "pending" | "running" | "completed" | "error" | "aborted" | null = null;
 
+  /**
+   * True once the CLI process behind a pending command-execution panel has
+   * opened its WebSocket connection, before the initClient message arrives.
+   * Visual-only: the panel is still "pending" for adoption/cancel purposes.
+   */
+  public cliConnected: boolean = false;
+
+  /**
+   * True once the command-execution LWC has posted commandLWCReady: the
+   * component is mounted and can receive messages. The LWC sends it exactly
+   * once, usually while the CLI is still booting — before the WebSocket
+   * server subscribes to panel messages on initClient — so the flag is
+   * recorded here to let late subscribers know readiness already happened
+   * (a missed signal used to cost the CLI its full 10s init timeout).
+   */
+  public lwcReady: boolean = false;
+
   private constructor(
     panel: vscode.WebviewPanel,
     extensionUri: vscode.Uri,
@@ -361,7 +378,21 @@ export class LwcUiPanel {
             (this.commandStatus === null || this.commandStatus === "pending")
           ) {
             this.sendInitializationData(this.initializationData);
+            // A CLI that connects before the webview finishes booting loses
+            // its commandCliConnected message (postMessage has no queue), and
+            // the initialization data re-sent above still says pending: true.
+            // Replay the flip so the badge shows Running (messages are
+            // delivered in order, so it lands after the initialization).
+            if (this.commandStatus === "pending" && this.cliConnected) {
+              this.sendMessage({ type: "commandCliConnected", data: {} });
+            }
           }
+          break;
+        case "commandLWCReady":
+          // Recorded so the WebSocket server can answer a CLI whose
+          // initClient arrives after the LWC was already mounted (the
+          // message itself is also forwarded to regular listeners).
+          this.lwcReady = true;
           break;
         case "checkFileExists":
           await this.handleFileExistsCheck(data.filePath, data.fileType);

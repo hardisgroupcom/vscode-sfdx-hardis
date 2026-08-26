@@ -366,6 +366,9 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
       case "initializeCommand":
         this.initializeCommand(data);
         break;
+      case "commandCliConnected":
+        this.handleCliConnected();
+        break;
       case "addLogLine":
         // Support for logType 'table'
         if (data && data.logType === "table" && data.message) {
@@ -702,6 +705,34 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
       document.body.removeChild(textarea);
     } catch (e) {
       // ignore
+    }
+  }
+
+  // The CLI process behind this pending panel has opened its WebSocket
+  // connection: the command is running, even though the initClient message
+  // (which carries the full context and re-initializes the panel) may only
+  // arrive seconds later on sfdx-hardis versions that import the command
+  // class first. Flip the "Starting" badge to "Running" right away.
+  @api
+  handleCliConnected() {
+    if (this.isStarting) {
+      this.isStarting = false;
+      // The pill now says Running: upgrade the initial "Starting the
+      // command" timeline entry to its "Started" wording too
+      const section = this.currentSection;
+      if (section && section.actionLog) {
+        const startedMessage = this.t("commandStarted", {
+          command:
+            (this.commandContext && this.commandContext.command) ||
+            this.i18n.sfdxHardisCommand,
+        });
+        section.actionLog = {
+          ...section.actionLog,
+          message: startedMessage,
+          formattedMessage: this.formatMultiLineMessage(startedMessage),
+        };
+        this.logSections = [...this.logSections];
+      }
     }
   }
 

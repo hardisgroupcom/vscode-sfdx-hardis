@@ -2,9 +2,41 @@ import * as assert from "assert";
 import {
   extractCommandId,
   extractTargetOrgUsername,
+  peekSinglePendingCommandPanel,
+  registerPendingCommandPanel,
+  removePendingCommandPanel,
 } from "../../utils/pendingCommandPanels";
 
 suite("pendingCommandPanels Test Suite", () => {
+  test("peeks the pending panel only when it is unambiguous", () => {
+    const makeEntry = (index: number) => ({
+      lwcId: `s-command-execution-peek-${index}`,
+      contextId: `peek-${index}`,
+      commandId: "hardis:org:mock",
+      createdAt: Date.now(),
+    });
+    try {
+      assert.strictEqual(peekSinglePendingCommandPanel(), null);
+      registerPendingCommandPanel(makeEntry(1));
+      assert.strictEqual(
+        peekSinglePendingCommandPanel()?.contextId,
+        "peek-1",
+        "a single pending panel is attributable to a fresh connection",
+      );
+      registerPendingCommandPanel(makeEntry(2));
+      assert.strictEqual(
+        peekSinglePendingCommandPanel(),
+        null,
+        "two pending panels make the connection ambiguous",
+      );
+    } finally {
+      // The registry is module-global state shared with the other suites
+      removePendingCommandPanel("s-command-execution-peek-1");
+      removePendingCommandPanel("s-command-execution-peek-2");
+    }
+    assert.strictEqual(peekSinglePendingCommandPanel(), null);
+  });
+
   test("extracts the oclif command id", () => {
     assert.strictEqual(
       extractCommandId(

@@ -637,6 +637,13 @@ async function runHardisCommand(commandId) {
 
     ws.on("open", async () => {
       logInvocation({ event: "wsOpen" });
+      // Commands containing "slow-init" simulate sfdx-hardis versions that
+      // import the whole command class between the WebSocket connection and
+      // the initClient message: the extension must show the panel as running
+      // from the connection, without waiting for initClient
+      if (commandId.includes("slow-init")) {
+        await sleep(4000);
+      }
       send({ event: "initClient" });
       if (commandId.includes("showcase")) {
         // Rich scenario exercising the whole command panel protocol:

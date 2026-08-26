@@ -16,6 +16,7 @@ import { HardisStatusProvider } from "./hardis-status-provider";
 import { refreshDataWorkbenchPanel } from "./commands/showDataWorkbench";
 import {
   extractTargetOrgUsername,
+  peekSinglePendingCommandPanel,
   takePendingCommandPanel,
 } from "./utils/pendingCommandPanels";
 
@@ -89,10 +90,54 @@ export class LocalWebSocketServer {
 
   listen() {
     this.wss.on("connection", (ws) => {
+      this.showSinglePendingPanelAsRunning();
       ws.on("message", (data: any) => {
         this.receiveMessage(ws, JSON.parse(data));
       });
     });
+  }
+
+  /**
+   * A CLI process opens its WebSocket connection well before it sends the
+   * initClient message: sfdx-hardis versions without the HIDDEN_PANEL_COMMANDS
+   * fast path import the whole command class between the two, which can take
+   * several seconds. When a
+   * single pending command panel is waiting for adoption, a fresh connection
+   * can only be its command: flip the visible "Starting" badge to "Running"
+   * right away. Purely visual - adoption, cancellation and disposal stay
+   * driven by the initClient message and panel.commandStatus.
+   *
+   * Accepted risk: an unrelated connection (e.g. the work:ws ping chained
+   * after a plugin install in the terminal) can flip the badge a moment
+   * before the command's own CLI connects. The panel is repainted as error
+   * if that process then dies without connecting, so the wrong badge is
+   * bounded to the CLI boot window.
+   */
+  private showSinglePendingPanelAsRunning() {
+    if (this.config.get("userInput") !== "ui-lwc") {
+      return;
+    }
+    const pending = peekSinglePendingCommandPanel();
+    if (!pending) {
+      return;
+    }
+    try {
+      const panel = LwcPanelManager.getInstance(this.context).getPanel(
+        pending.lwcId,
+      );
+      if (!panel || panel.commandStatus !== "pending" || panel.cliConnected) {
+        return;
+      }
+      panel.cliConnected = true;
+      panel.sendMessage({ type: "commandCliConnected", data: {} });
+      panel.updateTitle(
+        t("commandTitleRunning", {
+          commandName: pending.commandId || "SFDX Hardis Command",
+        }),
+      );
+    } catch {
+      // Cosmetic only: the panel keeps its "Starting" badge until initClient
+    }
   }
 
   async receiveMessage(ws: any, data: any) {
@@ -165,10 +210,25 @@ export class LocalWebSocketServer {
             messageUnsubscribe();
           } else if (messageType === "commandLWCReady") {
             // Notify the command that the LWC panel is ready to receive messages
+            Logger.log(
+              `WSS: panel ready for ${data.context?.command}, sending userInput go-ahead to the CLI`,
+            );
             await this.sendCommandReady(ws);
           }
         },
       );
+
+      // Panels opened at click time usually have their LWC mounted before the
+      // CLI connects: commandLWCReady was posted before the subscription above
+      // existed and will never fire again. Without this immediate answer the
+      // CLI blocks in its init hook for its full 10s safety timeout before
+      // even loading the command module.
+      if (panel.lwcReady) {
+        Logger.log(
+          `WSS: panel already ready for ${data.context?.command}, sending userInput go-ahead to the CLI immediately`,
+        );
+        await this.sendCommandReady(ws);
+      }
 
       // Set the panel title to include command info
       const commandName = data.context.command || "SFDX Hardis Command";

@@ -174,4 +174,47 @@ suite("Command Runner UI tests", function () {
       "all three showcase prompts must have been asked",
     );
   });
+
+  test("pending panel shows Running as soon as the CLI connects, before initClient", async function () {
+    const panelManager = api.getLwcPanelManager();
+
+    // The mock CLI connects right away but sends initClient only 4 seconds
+    // later, like the sfdx-hardis versions that import the command class
+    // between the two
+    const panelId = await runCommandAndWaitForPanel(
+      panelManager,
+      "sf hardis:org:mock-slow-init",
+      10000,
+    );
+    const panel = panelManager.getPanel(panelId);
+    assert.ok(panel, "command execution panel must exist");
+
+    // The connection-time flip must happen while the panel is still waiting
+    // for its initClient adoption
+    let statusAtFlip: string | null = null;
+    await waitFor(
+      () => {
+        const current = panelManager.getPanel(panelId);
+        if (current?.cliConnected === true) {
+          statusAtFlip = current.commandStatus;
+          return true;
+        }
+        return false;
+      },
+      10000,
+      "cliConnected flip after the WebSocket connection",
+    );
+    assert.strictEqual(
+      statusAtFlip,
+      "pending",
+      "the Running badge must be pushed before the initClient adoption",
+    );
+
+    // The delayed initClient then adopts the panel and the command completes
+    await waitFor(
+      () => panelManager.getPanel(panelId)?.commandStatus === "completed",
+      60000,
+      "slow-init command to complete after its delayed initClient",
+    );
+  });
 });

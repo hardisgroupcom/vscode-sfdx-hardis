@@ -8,5 +8,8 @@ export async function run(): Promise<void> {
     testsRoot: path.resolve(__dirname, ".."),
     pattern: "**/**.test.js",
     ignore: "ui/**",
+    // Some unit tests do thousands of small file reads (line counter): the
+    // mocha default of 2 s is regularly exceeded on a busy Windows disk
+    timeout: 10000,
   });
 }

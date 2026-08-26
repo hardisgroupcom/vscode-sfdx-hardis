@@ -1,0 +1,852 @@
+/*
+ * In-process replacements for a few `sf` commands, implemented on top of
+ * `@salesforce/core` / jsforce. This module has NO dependency on `vscode`: it
+ * runs inside a worker thread (see src/worker.ts) so the CPU cost of the CLI
+ * libraries never lands on the extension host main thread.
+ *
+ * Handled: `sf org display`, `sf config get`, `sf org list`,
+ * `sf org list metadata`, `sf data query` (all with `--json`).
+ *
+ * The JSON returned mirrors the `--json` output of the real command, so call
+ * sites are unchanged. Anything not recognized returns null from the parser or
+ * the runner; any exception propagates so the caller spawns the real CLI.
+ */
+import * as fs from "fs";
+import type { createRequire } from "module";
+import * as path from "path";
+
+const REDACTED_ACCESS_TOKEN =
+  "[REDACTED] Use 'sf org auth show-access-token' to view";
+const REDACTED_PASSWORD =
+  "[REDACTED] Use 'sf org auth show-user-password' to view";
+const DEFAULT_MAX_QUERY_LIMIT = 50_000;
+
+export type LogFn = (message: string) => void;
+
+export type ParsedSfCommand =
+  | { kind: "org-display"; targetOrg: string | null }
+  | { kind: "config-get"; keys: string[] }
+  | { kind: "org-list"; all: boolean; skipConnectionStatus: boolean }
+  | {
+      kind: "list-metadata";
+      metadataType: string;
+      folder: string | null;
+      targetOrg: string | null;
+    }
+  | {
+      kind: "data-query";
+      query: string;
+      targetOrg: string | null;
+      useToolingApi: boolean;
+    };
+
+export type SfCoreCommandResult = {
+  status: 0;
+  result: any;
+  warnings: string[];
+};
+
+// Same warning the CLI adds to the --json output of org display / org list
+function secretsHiddenWarning(commandName: string): string {
+  return (
+    `Secrets are now hidden from '${commandName}' command output. Use the 'sf org auth' commands instead. ` +
+    "As a temporary workaround, you can set SF_TEMP_SHOW_SECRETS=true to render these secrets. " +
+    "This workaround will be removed in an upcoming release."
+  );
+}
+
+// Split a command line on spaces, honoring single or double quotes and, inside
+// double quotes, the backslash escapes `\"` and `\\` the extension produces.
+export function tokenizeCommand(command: string): string[] {
+  const tokens: string[] = [];
+  let current = "";
+  let quote: string | null = null;
+  let inToken = false;
+  for (let i = 0; i < command.length; i++) {
+    const char = command[i];
+    if (quote) {
+      if (
+        quote === '"' &&
+        char === "\\" &&
+        i + 1 < command.length &&
+        (command[i + 1] === '"' || command[i + 1] === "\\")
+      ) {
+        current += command[i + 1];
+        i++;
+      } else if (char === quote) {
+        quote = null;
+      } else {
+        current += char;
+      }
+    } else if (char === '"' || char === "'") {
+      quote = char;
+      inToken = true;
+    } else if (/\s/.test(char)) {
+      if (inToken) {
+        tokens.push(current);
+        current = "";
+        inToken = false;
+      }
+    } else {
+      current += char;
+      inToken = true;
+    }
+  }
+  if (inToken) {
+    tokens.push(current);
+  }
+  return tokens;
+}
+
+// Reads `--flag value`, `--flag=value` or `-f value`. Returns the value and the
+// number of tokens consumed, or null when the token is not this flag.
+function readFlagValue(
+  tokens: string[],
+  index: number,
+  longName: string,
+  shortName?: string,
+): { value: string; consumed: number } | null {
+  const token = tokens[index];
+  if (token === longName || (shortName && token === shortName)) {
+    if (index + 1 < tokens.length && !tokens[index + 1].startsWith("-")) {
+      return { value: tokens[index + 1], consumed: 2 };
+    }
+    return null;
+  }
+  if (token.startsWith(`${longName}=`)) {
+    return { value: token.substring(longName.length + 1), consumed: 1 };
+  }
+  return null;
+}
+
+// Recognize the exact command shapes handled in-process. Any other shape returns null.
+export function parseSfCommand(command: string): ParsedSfCommand | null {
+  const tokens = tokenizeCommand(command.trim());
+  if (tokens.length < 3 || tokens[0] !== "sf") {
+    return null;
+  }
+  const topic = tokens[1];
+  const action = tokens[2];
+  const rest = tokens.slice(3).filter((token) => token !== "--json");
+
+  if (topic === "org" && action === "display") {
+    let targetOrg: string | null = null;
+    for (let i = 0; i < rest.length; i++) {
+      const target = readFlagValue(rest, i, "--target-org", "-o");
+      if (target) {
+        targetOrg = target.value;
+        i += target.consumed - 1;
+      } else {
+        // --verbose, --api-version, or anything else: let the real CLI handle it
+        return null;
+      }
+    }
+    return { kind: "org-display", targetOrg };
+  }
+
+  if (topic === "config" && action === "get") {
+    if (
+      rest.length === 0 ||
+      rest.some((token) => token.startsWith("-") && token !== "--verbose")
+    ) {
+      return null;
+    }
+    return {
+      kind: "config-get",
+      keys: rest.filter((token) => token !== "--verbose"),
+    };
+  }
+
+  if (topic === "org" && action === "list") {
+    if (rest[0] === "metadata") {
+      let metadataType: string | null = null;
+      let folder: string | null = null;
+      let targetOrg: string | null = null;
+      for (let i = 1; i < rest.length; i++) {
+        const type = readFlagValue(rest, i, "--metadata-type", "-m");
+        const folderFlag = readFlagValue(rest, i, "--folder");
+        const target = readFlagValue(rest, i, "--target-org", "-o");
+        const flag = type || folderFlag || target;
+        if (!flag) {
+          // --api-version, --output-file, or anything else: real CLI
+          return null;
+        }
+        if (type) {
+          metadataType = type.value;
+        } else if (folderFlag) {
+          folder = folderFlag.value;
+        } else if (target) {
+          targetOrg = target.value;
+        }
+        i += flag.consumed - 1;
+      }
+      if (!metadataType) {
+        return null;
+      }
+      return { kind: "list-metadata", metadataType, folder, targetOrg };
+    }
+    let all = false;
+    let skipConnectionStatus = false;
+    for (const token of rest) {
+      if (token === "--all") {
+        all = true;
+      } else if (token === "--skip-connection-status") {
+        skipConnectionStatus = true;
+      } else {
+        // --clean, --verbose, metadata-types...: real CLI
+        return null;
+      }
+    }
+    return { kind: "org-list", all, skipConnectionStatus };
+  }
+
+  if (topic === "data" && action === "query") {
+    let query: string | null = null;
+    let targetOrg: string | null = null;
+    let useToolingApi = false;
+    for (let i = 0; i < rest.length; i++) {
+      const queryFlag = readFlagValue(rest, i, "--query", "-q");
+      const target = readFlagValue(rest, i, "--target-org", "-o");
+      if (queryFlag) {
+        query = queryFlag.value;
+        i += queryFlag.consumed - 1;
+      } else if (target) {
+        targetOrg = target.value;
+        i += target.consumed - 1;
+      } else if (rest[i] === "--use-tooling-api" || rest[i] === "-t") {
+        useToolingApi = true;
+      } else {
+        // --file, --all-rows, --result-format, --output-file, --api-version...: real CLI
+        return null;
+      }
+    }
+    if (!query) {
+      return null;
+    }
+    return { kind: "data-query", query, targetOrg, useToolingApi };
+  }
+
+  return null;
+}
+
+/**
+ * Loads `@salesforce/core` from the given install folder with a real Node
+ * require anchored there, so core's own dependencies resolve from the CLI
+ * install. webpack statically rewrites both `require(expr)` and
+ * `createRequire(expr)` (the latter to `undefined`): the computed property
+ * name keeps this out of its reach.
+ */
+export function loadSalesforceCoreFrom(coreDir: string): {
+  core: any;
+  version: string;
+} {
+  const nodeModule: any = require("module");
+  const makeRequire: typeof createRequire = nodeModule["create" + "Require"];
+  const nodeRequire = makeRequire(path.join(coreDir, "package.json"));
+  const core = nodeRequire(coreDir);
+  const version = JSON.parse(
+    fs.readFileSync(path.join(coreDir, "package.json"), "utf8"),
+  ).version;
+  return { core, version };
+}
+
+/**
+ * Runs a parsed command with the given core module. Returns null when the
+ * command turns out to need the real CLI (no default org, scratch org display,
+ * structured config value...). Throws on any failure.
+ */
+export async function runSfCoreCommand(
+  core: any,
+  parsed: ParsedSfCommand,
+  cwd: string | undefined,
+  log: LogFn,
+): Promise<SfCoreCommandResult | null> {
+  let result: any = null;
+  const warnings: string[] = [];
+  if (parsed.kind === "org-display") {
+    result = await orgDisplayInProcess(core, parsed.targetOrg, cwd);
+    warnings.push(secretsHiddenWarning("sf org display"));
+  } else if (parsed.kind === "config-get") {
+    result = await configGetInProcess(core, parsed.keys, cwd);
+  } else if (parsed.kind === "org-list") {
+    result = await orgListInProcess(
+      core,
+      parsed.all,
+      parsed.skipConnectionStatus,
+      cwd,
+      log,
+    );
+    warnings.push(secretsHiddenWarning("sf org list"));
+  } else if (parsed.kind === "list-metadata") {
+    result = await listMetadataInProcess(core, parsed, cwd);
+  } else if (parsed.kind === "data-query") {
+    result = await dataQueryInProcess(core, parsed, cwd, log);
+  }
+  if (result === null) {
+    return null;
+  }
+  return { status: 0, result, warnings };
+}
+
+// The CLI resolves the project (and its local .sf/config.json) by walking up
+// from its cwd to the folder holding sfdx-project.json: do the same, so a
+// workspace opened on a subfolder of a project still sees the project config.
+function findProjectPath(cwd: string): string {
+  let dir = cwd;
+  for (;;) {
+    if (fs.existsSync(path.join(dir, "sfdx-project.json"))) {
+      return dir;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) {
+      return cwd;
+    }
+    dir = parent;
+  }
+}
+
+async function createConfigAggregator(core: any, cwd: string | undefined) {
+  // Never rely on process.cwd(): the extension host does not run in the project
+  const aggregator = await core.ConfigAggregator.create(
+    cwd ? { projectPath: findProjectPath(cwd) } : undefined,
+  );
+  await aggregator.reload();
+  return aggregator;
+}
+
+// Resolves the org an explicit --target-org or the project's default org points
+// to. Returns null when there is no default org (the CLI then prints its usual error).
+async function createTargetOrg(
+  core: any,
+  targetOrg: string | null,
+  cwd: string | undefined,
+): Promise<any | null> {
+  // The aggregator anchored on the project is handed to Org.create so the
+  // connection honors the project's org-api-version (core would otherwise
+  // build one on process.cwd(), which is not the project in the worker)
+  const aggregator = await createConfigAggregator(core, cwd);
+  let aliasOrUsername = targetOrg;
+  if (!aliasOrUsername) {
+    aliasOrUsername =
+      (aggregator.getPropertyValue(
+        core.OrgConfigProperties.TARGET_ORG,
+      ) as string) || null;
+    if (!aliasOrUsername) {
+      return null;
+    }
+  }
+  // The worker lives for hours: drop the cached aliases/auth files so an org
+  // authenticated or renamed in a terminal since then is seen.
+  core.StateAggregator.clearInstance();
+  return await core.Org.create({ aliasOrUsername, aggregator });
+}
+
+// Mirrors @salesforce/plugin-org `org display` for non-scratch orgs
+async function orgDisplayInProcess(
+  core: any,
+  targetOrg: string | null,
+  cwd: string | undefined,
+): Promise<any | null> {
+  const org = await createTargetOrg(core, targetOrg, cwd);
+  if (!org) {
+    return null;
+  }
+  if (org.getField(core.Org.Fields.DEV_HUB_USERNAME)) {
+    // Scratch org: `org display` queries the Dev Hub for status and expiration date, keep the real CLI for that
+    return null;
+  }
+  // Like plugin-org, refresh the auth before reading the fields so a shown access token is the fresh one
+  const connectedStatus = await determineConnectedStatus(org);
+  const authInfo = await core.AuthInfo.create({ username: org.getUsername() });
+  const fields: any = authInfo.getFields(true);
+  const showSecrets = process.env.SF_TEMP_SHOW_SECRETS === "true";
+  const stateAggregator = await core.StateAggregator.getInstance();
+  const alias = aliasForUsername(stateAggregator, fields.username);
+  return {
+    id: fields.orgId,
+    devHubId: undefined,
+    apiVersion: fields.instanceApiVersion,
+    accessToken: showSecrets ? fields.accessToken : REDACTED_ACCESS_TOKEN,
+    instanceUrl: fields.instanceUrl,
+    username: fields.username,
+    clientId: fields.clientId,
+    password: fields.password
+      ? showSecrets
+        ? fields.password
+        : REDACTED_PASSWORD
+      : undefined,
+    connectedStatus: connectedStatus,
+    sfdxAuthUrl: undefined,
+    alias: alias,
+    clientApps: fields.clientApps
+      ? Object.keys(fields.clientApps).join(",")
+      : undefined,
+  };
+}
+
+// plugin-org's getAliasByUsername: "use the most recently added alias for
+// that username" = the LAST entry of aliases.getAll(username)
+function aliasForUsername(
+  stateAggregator: any,
+  username: string,
+): string | undefined {
+  const aliases: string[] = stateAggregator.aliases.getAll(username);
+  return aliases?.length ? aliases[aliases.length - 1] : undefined;
+}
+
+// Same wording as plugin-org for a failed connection probe
+function connectionErrorToStatus(err: any): string {
+  const message: string = err?.message || "";
+  if (message.includes("maintenance")) {
+    return "Down (Maintenance)";
+  }
+  if (message.includes("<html>") || message.includes("<!DOCTYPE HTML>")) {
+    return "Bad Response";
+  }
+  return err?.code ?? message;
+}
+
+// Connection probe of a non-scratch org, as plugin-org does it
+async function determineConnectedStatus(org: any): Promise<string> {
+  try {
+    await org.refreshAuth();
+    return "Connected";
+  } catch (err: any) {
+    return connectionErrorToStatus(err);
+  }
+}
+
+// Mirrors @salesforce/plugin-settings `config get`
+async function configGetInProcess(
+  core: any,
+  keys: string[],
+  cwd: string | undefined,
+): Promise<any[] | null> {
+  const aggregator = await createConfigAggregator(core, cwd);
+  const responses: any[] = [];
+  for (const key of keys) {
+    // Throws on unknown key: caller falls back to the real CLI which produces the usual error
+    const info = aggregator.getInfo(key);
+    if (
+      info.value !== undefined &&
+      info.value !== null &&
+      typeof info.value === "object"
+    ) {
+      return null;
+    }
+    responses.push({
+      name: info.key,
+      key: info.key,
+      value: info.value,
+      path: info.path,
+      success: true,
+      location: info.location,
+    });
+  }
+  return responses;
+}
+
+/* ------------------------------------------------------------------------- */
+/* sf org list: port of @salesforce/plugin-org OrgListUtil + list command     */
+/* ------------------------------------------------------------------------- */
+
+const EMPTIES_LAST = "zzzzzzzzzz";
+
+function orgListComparator(a: any, b: any): number {
+  const aliasCompareResult = (a.alias ?? EMPTIES_LAST).localeCompare(
+    b.alias ?? EMPTIES_LAST,
+  );
+  return aliasCompareResult !== 0
+    ? aliasCompareResult
+    : (a.username ?? EMPTIES_LAST).localeCompare(b.username);
+}
+
+function decorateWithDefaultStatus(val: any): any {
+  return {
+    ...val,
+    ...(val.isDefaultDevHubUsername ? { defaultMarker: "(D)" } : {}),
+    ...(val.isDefaultUsername ? { defaultMarker: "(U)" } : {}),
+    ...(val.isDefaultDevHubUsername && val.isDefaultUsername
+      ? { defaultMarker: "(D),(U)" }
+      : {}),
+  };
+}
+
+export function isActiveScratchOrg(org: any): boolean {
+  return "status" in org && org.status === "Active";
+}
+
+/**
+ * Buckets, decorates and sorts the orgs exactly like `sf org list --json`.
+ * Exported (pure) so the shape can be unit-tested without a Salesforce CLI.
+ */
+export function buildOrgListResult(
+  nonScratchOrgs: any[],
+  scratchOrgs: any[],
+  all: boolean,
+): any {
+  const sortedNonScratch = nonScratchOrgs
+    .map(decorateWithDefaultStatus)
+    .sort(orgListComparator);
+  const sortedScratch = scratchOrgs
+    .map(decorateWithDefaultStatus)
+    .sort(orgListComparator);
+  return {
+    other: sortedNonScratch.filter((org) => !org.isSandbox && !org.isDevHub),
+    sandboxes: sortedNonScratch.filter((org) => Boolean(org.isSandbox)),
+    nonScratchOrgs: sortedNonScratch,
+    devHubs: sortedNonScratch.filter((org) => Boolean(org.isDevHub)),
+    scratchOrgs: all ? sortedScratch : sortedScratch.filter(isActiveScratchOrg),
+  };
+}
+
+function trimTo15(id: string | undefined): string | undefined {
+  return id && id.length > 15 ? id.substring(0, 15) : id;
+}
+
+// OrgListUtil.readAuthFiles: one AuthInfo per auth file, keeping a single
+// username per org unless it is the default org
+async function readOrgListAuthInfos(
+  core: any,
+  defaultOrg: string | undefined,
+  log: LogFn,
+): Promise<any[]> {
+  let usernames: string[];
+  try {
+    usernames = ((await core.AuthInfo.listAllAuthorizations()) ?? []).map(
+      (auth: any) => auth.username,
+    );
+  } catch (err: any) {
+    if (err?.name === "NoAuthInfoFound") {
+      return [];
+    }
+    throw err;
+  }
+  const sfdxDir: string = core.Global.SFDX_DIR;
+  await fs.promises.mkdir(sfdxDir, { recursive: true });
+  const orgFileNames = (await fs.promises.readdir(sfdxDir)).filter((filename) =>
+    /^00D.{15}\.json$/.test(filename),
+  );
+  const allAuths = await Promise.all(
+    usernames.map(async (username) => {
+      try {
+        const auth = await core.AuthInfo.create({ username });
+        const fields = auth.getFields();
+        if (!fields.userId) {
+          return auth;
+        }
+        if (!fields.orgId) {
+          throw new Error("No orgId found in auth file");
+        }
+        const orgFileName = `${fields.orgId}.json`;
+        if (!orgFileNames.includes(orgFileName)) {
+          return auth;
+        }
+        const orgFileContent = JSON.parse(
+          await fs.promises.readFile(path.join(sfdxDir, orgFileName), "utf8"),
+        );
+        const orgUsernames: string[] | undefined = orgFileContent.usernames;
+        if (defaultOrg === fields.username) {
+          return auth;
+        }
+        if (orgUsernames && orgUsernames[0] === fields.username) {
+          return auth;
+        }
+        return undefined;
+      } catch (e: any) {
+        log(`org list: skipping one unreadable auth file (${e?.message})`);
+        return undefined;
+      }
+    }),
+  );
+  return allAuths.filter((auth) => auth !== undefined);
+}
+
+// OrgListUtil.groupOrgs: decrypted fields minus secrets, alias, default markers, lastUsed
+async function groupOrgListAuths(
+  core: any,
+  authInfos: any[],
+  aggregator: any,
+  log: LogFn,
+): Promise<{ scratchOrgs: any[]; nonScratchOrgs: any[] }> {
+  const targetOrg = aggregator.getPropertyValue(
+    core.OrgConfigProperties.TARGET_ORG,
+  );
+  const targetDevHub = aggregator.getPropertyValue(
+    core.OrgConfigProperties.TARGET_DEV_HUB,
+  );
+  const stateAggregator = await core.StateAggregator.getInstance();
+  const sfdxDir: string = core.Global.SFDX_DIR;
+  const results = await Promise.all(
+    authInfos.map(async (authInfo: any) => {
+      let fields: any;
+      try {
+        fields = { ...authInfo.getFields(true) };
+      } catch {
+        log("org list: could not decrypt the fields of one auth file");
+        fields = { ...authInfo.getFields() };
+      }
+      delete fields.refreshToken;
+      delete fields.clientSecret;
+      const alias = aliasForUsername(stateAggregator, fields.username);
+      const stat = await fs.promises.stat(
+        path.join(sfdxDir, `${fields.username}.json`),
+      );
+      const possibleDefaults = [alias, fields.username].filter(Boolean);
+      return {
+        ...fields,
+        alias,
+        isDefaultDevHubUsername: possibleDefaults.includes(targetDevHub),
+        isDefaultUsername: possibleDefaults.includes(targetOrg),
+        lastUsed: stat.atime,
+      };
+    }),
+  );
+  return {
+    scratchOrgs: results.filter((result) => "expirationDate" in result),
+    nonScratchOrgs: results.filter((result) => !("expirationDate" in result)),
+  };
+}
+
+// OrgListUtil.processScratchOrgs + reduceScratchOrgInfo: status from the Dev Hubs
+async function processScratchOrgs(
+  core: any,
+  scratchOrgs: any[],
+  aggregator: any,
+  log: LogFn,
+): Promise<any[]> {
+  const orgIdsGroupedByDevHub = new Map<string, string[]>();
+  for (const fields of scratchOrgs) {
+    const ids = orgIdsGroupedByDevHub.get(fields.devHubUsername) ?? [];
+    ids.push(trimTo15(fields.orgId) as string);
+    orgIdsGroupedByDevHub.set(fields.devHubUsername, ids);
+  }
+  const scratchOrgInfoFields = [
+    "CreatedDate",
+    "Edition",
+    "Status",
+    "ExpirationDate",
+    "Namespace",
+    "OrgName",
+    "CreatedBy.Username",
+    "SignupUsername",
+    "LoginUrl",
+    "ScratchOrg",
+  ];
+  const updatedContents: any[] = (
+    await Promise.all(
+      Array.from(orgIdsGroupedByDevHub).map(
+        async ([devHubUsername, orgIds]) => {
+          try {
+            const devHubOrg = await core.Org.create({
+              aliasOrUsername: devHubUsername,
+              aggregator,
+            });
+            const conn = devHubOrg.getConnection();
+            const data: any[] = await conn
+              .sobject("ScratchOrgInfo")
+              .find({ ScratchOrg: { $in: orgIds } }, scratchOrgInfoFields);
+            return data.map((org) => ({
+              ...org,
+              devHubOrgId: devHubOrg.getOrgId(),
+            }));
+          } catch (e: any) {
+            log(
+              `org list: error querying a Dev Hub for ${orgIds.length} scratch orgs (${e?.message})`,
+            );
+            return [];
+          }
+        },
+      ),
+    )
+  ).flat();
+  const contentMap = new Map(
+    updatedContents.map((org) => [org.SignupUsername, org]),
+  );
+  const contentMapByOrgId = new Map(
+    updatedContents.map((org) => [org.ScratchOrg, org]),
+  );
+  const results: any[] = [];
+  for (const scratchOrgInfo of scratchOrgs) {
+    const updated =
+      contentMap.get(scratchOrgInfo.username) ??
+      contentMapByOrgId.get(trimTo15(scratchOrgInfo.orgId));
+    if (!updated) {
+      // Same as the CLI: a scratch org unknown to its Dev Hub is dropped (with a warning in the CLI log)
+      continue;
+    }
+    results.push({
+      ...scratchOrgInfo,
+      signupUsername: updated.SignupUsername,
+      createdBy: updated.CreatedBy?.Username,
+      createdDate: updated.CreatedDate,
+      devHubOrgId: updated.devHubOrgId,
+      devHubId: updated.devHubOrgId,
+      attributes: updated.attributes,
+      orgName: updated.OrgName,
+      edition: updated.Edition,
+      status: updated.Status,
+      expirationDate: updated.ExpirationDate,
+      isExpired: updated.Status === "Deleted",
+      namespace: updated.Namespace,
+    });
+  }
+  return results;
+}
+
+// Mirrors `sf org list [--all] [--skip-connection-status] --json`. Like the CLI,
+// skipping the connection status still asks the Dev Hubs about scratch orgs.
+async function orgListInProcess(
+  core: any,
+  all: boolean,
+  skipConnectionStatus: boolean,
+  cwd: string | undefined,
+  log: LogFn,
+): Promise<any> {
+  const aggregator = await createConfigAggregator(core, cwd);
+  const defaultOrg = aggregator.getPropertyValue(
+    core.OrgConfigProperties.TARGET_ORG,
+  );
+  core.StateAggregator.clearInstance();
+  const authInfos = await readOrgListAuthInfos(core, defaultOrg, log);
+  const grouped = await groupOrgListAuths(core, authInfos, aggregator, log);
+  const [nonScratchOrgs, scratchOrgs] = await Promise.all([
+    Promise.all(
+      grouped.nonScratchOrgs.map(async (fields: any) => {
+        if (!skipConnectionStatus && fields.username) {
+          fields.connectedStatus = await connectedStatusForOrgList(
+            core,
+            fields.username,
+            aggregator,
+          );
+          if (!fields.isDevHub && fields.connectedStatus === "Connected") {
+            fields.isDevHub = await checkNonScratchOrgIsDevHub(
+              core,
+              fields.username,
+              aggregator,
+            );
+          }
+        }
+        return fields;
+      }),
+    ),
+    processScratchOrgs(core, grouped.scratchOrgs, aggregator, log),
+  ]);
+  const showSecrets = process.env.SF_TEMP_SHOW_SECRETS === "true";
+  const redactSecrets = (org: any) => ({
+    ...org,
+    accessToken: showSecrets ? org.accessToken : REDACTED_ACCESS_TOKEN,
+    password: org.password
+      ? showSecrets
+        ? org.password
+        : REDACTED_PASSWORD
+      : undefined,
+  });
+  return buildOrgListResult(
+    nonScratchOrgs.map(redactSecrets),
+    scratchOrgs.map(redactSecrets),
+    all,
+  );
+}
+
+// OrgListUtil.determineConnectedStatusForNonScratchOrg
+async function connectedStatusForOrgList(
+  core: any,
+  username: string,
+  aggregator: any,
+): Promise<string | undefined> {
+  try {
+    const org = await core.Org.create({
+      aliasOrUsername: username,
+      aggregator,
+    });
+    if (org.getField(core.Org.Fields.DEV_HUB_USERNAME)) {
+      return undefined;
+    }
+    return await determineConnectedStatus(org);
+  } catch (err: any) {
+    return connectionErrorToStatus(err);
+  }
+}
+
+// OrgListUtil.checkNonScratchOrgIsDevHub (also updates the auth file, like the CLI)
+async function checkNonScratchOrgIsDevHub(
+  core: any,
+  username: string,
+  aggregator: any,
+): Promise<boolean> {
+  try {
+    const org = await core.Org.create({
+      aliasOrUsername: username,
+      aggregator,
+    });
+    return await org.determineIfDevHubOrg(true);
+  } catch {
+    return false;
+  }
+}
+
+/* ------------------------------------------------------------------------- */
+/* sf org list metadata / sf data query: one API call through jsforce         */
+/* ------------------------------------------------------------------------- */
+
+// Mirrors @salesforce/plugin-org `org list metadata`
+async function listMetadataInProcess(
+  core: any,
+  parsed: {
+    metadataType: string;
+    folder: string | null;
+    targetOrg: string | null;
+  },
+  cwd: string | undefined,
+): Promise<any[] | null> {
+  const org = await createTargetOrg(core, parsed.targetOrg, cwd);
+  if (!org) {
+    return null;
+  }
+  const conn = org.getConnection();
+  const query = parsed.folder
+    ? { type: parsed.metadataType, folder: parsed.folder }
+    : { type: parsed.metadataType };
+  const listResult = await conn.metadata.list(query);
+  if (listResult === undefined || listResult === null) {
+    return [];
+  }
+  return Array.isArray(listResult) ? listResult : [listResult];
+}
+
+// Mirrors @salesforce/plugin-data `data query` (autoFetch up to org-max-query-limit)
+async function dataQueryInProcess(
+  core: any,
+  parsed: { query: string; targetOrg: string | null; useToolingApi: boolean },
+  cwd: string | undefined,
+  log: LogFn,
+): Promise<any | null> {
+  const org = await createTargetOrg(core, parsed.targetOrg, cwd);
+  if (!org) {
+    return null;
+  }
+  const aggregator = await createConfigAggregator(core, cwd);
+  let maxFetch = DEFAULT_MAX_QUERY_LIMIT;
+  try {
+    const limit = aggregator.getInfo("org-max-query-limit")?.value;
+    if (limit !== undefined && limit !== null && Number(limit) > 0) {
+      maxFetch = Number(limit);
+    }
+  } catch {
+    // unknown key on an old core: keep the CLI default
+  }
+  const conn = org.getConnection();
+  const connection = parsed.useToolingApi ? conn.tooling : conn;
+  const result = await connection.query(parsed.query, {
+    autoFetch: true,
+    maxFetch,
+    scanAll: false,
+  });
+  if (result?.records?.length && result.totalSize > result.records.length) {
+    log(
+      `The query result is missing ${result.totalSize - result.records.length} records due to a ${maxFetch} record limit (org-max-query-limit)`,
+    );
+  }
+  return result;
+}
