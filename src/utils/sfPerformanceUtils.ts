@@ -46,14 +46,6 @@ export function getNodeCompileCacheDir(): string | null {
   return nodeCompileCacheDir;
 }
 
-// Env keys this extension set on its own process.env (see sfCoreInProcess.ts):
-// they must not leak to child processes when the user disabled enhancements.
-const OWNED_PROCESS_ENV_KEYS = new Set<string>();
-
-export function markProcessEnvKeyOwned(key: string): void {
-  OWNED_PROCESS_ENV_KEYS.add(key);
-}
-
 export function isSfPerformanceEnhancementDisabled(): boolean {
   try {
     return (
@@ -85,11 +77,6 @@ export function applySfPerformanceEnv(
   disabled: boolean = isSfPerformanceEnhancementDisabled(),
 ): Record<string, string | undefined> {
   if (disabled) {
-    for (const key of Object.keys(SF_PERFORMANCE_ENV_FLAGS)) {
-      if (OWNED_PROCESS_ENV_KEYS.has(key)) {
-        delete env[key];
-      }
-    }
     if (
       (command === undefined || isSfHardisCommand(command)) &&
       env[SFDX_HARDIS_ENHANCE_PERFORMANCE_VAR] === undefined

@@ -18,10 +18,7 @@ import { runSalesforceCliMcpServer } from "./utils/mcpUtils";
 import { SecretsManager } from "./utils/secretsManager";
 import { getExtensionConfigSections } from "./utils/extensionConfigUtils";
 import { startEventLoopMonitor } from "./utils/eventLoopMonitor";
-import {
-  isSfPerformanceEnhancementDisabled,
-  setNodeCompileCacheDir,
-} from "./utils/sfPerformanceUtils";
+import { setNodeCompileCacheDir } from "./utils/sfPerformanceUtils";
 import * as path from "path";
 import * as fs from "fs";
 import {
@@ -391,12 +388,7 @@ export function activate(context: vscode.ExtensionContext) {
         Logger.log("Could not resolve the sf direct launch: " + e?.message),
       );
     import("./utils/sfCoreInProcess")
-      .then((mod) => {
-        if (!isSfPerformanceEnhancementDisabled()) {
-          return mod.loadSalesforceCore();
-        }
-        return null;
-      })
+      .then((mod) => mod.prewarmSfCoreWorker())
       .catch((e: any) =>
         Logger.log("Could not preload @salesforce/core: " + e?.message),
       );
