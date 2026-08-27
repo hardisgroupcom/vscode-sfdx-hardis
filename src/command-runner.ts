@@ -534,6 +534,14 @@ export class CommandRunner {
     if (langSetting && langSetting !== "auto" && !extraEnv?.SFDX_HARDIS_LANG) {
       spawnOptions.env.SFDX_HARDIS_LANG = langSetting;
     }
+    // Expert mode: sfdx-hardis commands skip their confirmation questions
+    if (
+      config.get("userModeExpert") === true &&
+      !extraEnv?.SFDX_HARDIS_EXPERT_MODE &&
+      preprocessedCommand.trimStart().startsWith("sf hardis")
+    ) {
+      spawnOptions.env.SFDX_HARDIS_EXPERT_MODE = "true";
+    }
     if (config.get("disableTlsRejectUnauthorized") === true) {
       spawnOptions.env = {
         ...spawnOptions.env,
@@ -1054,6 +1062,14 @@ export class CommandRunner {
       cmd.trimStart().startsWith("sf hardis")
     ) {
       cmd = `SFDX_HARDIS_LANG=${langSetting} ${cmd}`;
+    }
+    // Expert mode: sfdx-hardis commands skip their confirmation questions
+    if (
+      config.get("userModeExpert") === true &&
+      !extraEnv?.SFDX_HARDIS_EXPERT_MODE &&
+      registeredCmd.trimStart().startsWith("sf hardis")
+    ) {
+      cmd = `SFDX_HARDIS_EXPERT_MODE=true ${cmd}`;
     }
     if (extraEnv && typeof extraEnv === "object") {
       // Filter out secret env vars — they must never appear in the terminal
