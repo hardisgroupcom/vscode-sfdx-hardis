@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [8.3.1] 2026-08-31
+
 - New setting **Expert user mode**: sfdx-hardis commands skip their confirmation questions. **Save / Publish my User Story** no longer asks if your metadata is committed, which cleanings to apply or if you want to push, and it opens the Pull Request page at the end. Requires sfdx-hardis v8.4.0 or later.
 
 ## [8.3.0] 2026-08-26
