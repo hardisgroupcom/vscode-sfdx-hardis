@@ -4,6 +4,7 @@
 
 - **Run Local HTML Doc Pages** now previews the documentation with Zensical, the successor of mkdocs-material used by sfdx-hardis since v8.4.0
   - The command installs `zensical` instead of `mkdocs-material` and serves the site with it, on http://127.0.0.1:8000/ as before
+  - Fixes **Run Local HTML Doc Pages** failing with "This command is not allowed. Only SFDX-Hardis and configured custom/plugin commands can be executed.": the documentation server now starts in the terminal, like the other commands the extension runs for you
 
 ## [8.3.1] 2026-08-31
 
