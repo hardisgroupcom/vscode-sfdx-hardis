@@ -72,13 +72,17 @@ const SF_STANDARD_COMMANDS = [
 // can always be run in the visible integrated terminal, bypassing the
 // background-mode "registered commands only" gate. Patterns are anchored at the
 // start of the (trimmed) command to keep the trust surface tight.
-const INTERNAL_MAINTENANCE_COMMAND_PATTERNS: RegExp[] = [
+export const INTERNAL_MAINTENANCE_COMMAND_PATTERNS: RegExp[] = [
   /^echo\s+y\s*\|\s*sf\s+plugins[ :]install\b/,
   /^sf\s+plugins[ :](install|uninstall)\b/,
   /^npm\s+uninstall\s+sfdx-cli\b/,
   /^npm\s+install\s+@salesforce\/cli\b/,
   /^sf\s+update\b/,
   /^sf\s+git\s+merge\s+driver\s+(enable|disable)\b/,
+  // Local documentation preview (Run Local HTML Doc Pages): installs Zensical
+  // with pip, then serves the site. Chained with && and not an sf command, so
+  // it needs the same terminal path as the other extension-issued commands.
+  /^(python3?|py3?)\s+-m\s+pip\s+install\s+zensical\b/,
 ];
 
 /**

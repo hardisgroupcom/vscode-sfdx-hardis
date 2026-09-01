@@ -9,7 +9,7 @@ import { SharedMixin } from "s/sharedMixin";
  *  - Generate documentation (Markdown, with configurable options)
  *  - Deploy to Cloudflare Pages
  *  - Deploy to Salesforce as Static Resource
- *  - Run locally (MkDocs)
+ *  - Run locally (Zensical)
  *  - Open configuration panel for advanced options
  */
 export default class DocumentationWorkbench extends SharedMixin(

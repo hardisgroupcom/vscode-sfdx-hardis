@@ -295,6 +295,10 @@ In addition to the workbenches, the extension contributes three classic tree vie
 
 VS Code is tinted according to the selected default org, so you never confuse Production with a sandbox, and a badge in the status bar always spells out which kind of org you are working on:
 
+<!-- The shield emoji below is 1 column wide for markdownlint's width model but 2 for markdown-table-formatter,
+     which owns the table layout here, so no amount of padding satisfies both linters. -->
+<!-- markdownlint-disable MD060 -->
+
 | Org type                      | Badge          | Color  |
 |-------------------------------|----------------|--------|
 | Production                    | 🛡️ **PROD**   | red    |
@@ -302,6 +306,8 @@ VS Code is tinted according to the selected default org, so you never confuse Pr
 | Dev sandbox                   | 🧪 **SANDBOX** | green  |
 | Scratch org                   | 🚀 **SCRATCH** | cyan   |
 | Other (Dev org, trial…)       | ☁️ **DEV ORG** | blue   |
+
+<!-- markdownlint-enable MD060 -->
 
 The colors come from the same design system palette as the extension panels, and adapt to your **light or dark** theme. High contrast themes are never recolored, so accessibility settings stay intact.
 

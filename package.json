@@ -784,7 +784,9 @@
     "linkify-it": "5.0.2",
     "webpack-bundle-analyzer/ws": "7.5.11",
     "@azure/opentelemetry-instrumentation-azure-sdk/@opentelemetry/core": "2.8.0",
-    "@opentelemetry/sdk-trace-web": "2.8.0"
+    "@opentelemetry/sdk-trace-web": "2.8.0",
+    "browserslist": "4.28.8",
+    "postcss-selector-parser": "7.1.5"
   },
   "_dependencyNotes": {
     "mermaid": "Pinned to exactly 11.15.0 (not a range): 11.16.x regresses the DevOps Pipeline diagram (the Salesforce Orgs subgraph loses its vertical layout and the deployment links stop at the subgraph border), verified by headless rendering. Because of that pin, five mermaid advisories (GHSA-3rrr-jr9j-h3q3, GHSA-c4c3-pg64-4m4v, GHSA-2v8p-3f2j-5mp7, GHSA-6x64-9x62-f2gx, GHSA-rhh3-jpg6-66xh) stay open; they are triaged with a justification and an expiry date in .trivyignore, osv-scanner.toml and .grype.yaml. Lift the pin and drop those ignores together once mermaid fixes the layout regression. dompurify, the security-sensitive part of the mermaid tree, is force-resolved above independently of the mermaid version."
