@@ -223,7 +223,7 @@ export default class DocumentationConfig extends SharedMixin(LightningElement) {
       this._buildSection(
         this.t("orgMonitoringDeploySection"),
         this.t("orgMonitoringDeployDesc"),
-        ["docDeployToCloudflare", "docDeployToOrg"],
+        ["docDeployToCloudflare", "docDeployToConfluence", "docDeployToOrg"],
         true,
         true, // Show inline descriptions instead of help icons
       ),
