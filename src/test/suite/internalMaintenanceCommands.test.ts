@@ -1,4 +1,6 @@
 import * as assert from "assert";
+import * as fs from "fs";
+import * as path from "path";
 import { INTERNAL_MAINTENANCE_COMMAND_PATTERNS } from "../../command-runner";
 
 /**
@@ -43,6 +45,30 @@ suite("Internal Maintenance Commands Test Suite", () => {
         `${command} must be allowed`,
       );
     }
+  });
+
+  test("the Dependencies panel attaches no placeholder shell command", () => {
+    // A healthy dependency row must carry no command at all: any placeholder
+    // (it used to be `echo "Nothing to do here"`) is neither an sf command nor a
+    // registered custom/plugin command, so clicking the row raised
+    // commandNotAllowedOnlyRegistered in background mode, which is the default.
+    const provider = fs.readFileSync(
+      path.join(
+        __dirname,
+        "..",
+        "..",
+        "..",
+        "src",
+        "hardis-plugins-provider.ts",
+      ),
+      "utf-8",
+    );
+    const placeholders = provider.match(/command:\s*`?echo\s+"/g) || [];
+    assert.deepStrictEqual(
+      placeholders,
+      [],
+      'Use command: "" for a row with nothing to do, not an echo placeholder',
+    );
   });
 
   test("does not open the terminal path to arbitrary commands", () => {
