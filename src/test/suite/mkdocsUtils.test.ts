@@ -88,7 +88,7 @@ suite("mkdocsUtils Test Suite", () => {
         ),
         "utf-8",
       );
-      const result = (await checkMkDocsConfig(dir));
+      const result = await checkMkDocsConfig(dir);
       assert.strictEqual(result.status, "legacyNav");
       if (result.status === "legacyNav") {
         assert.deepStrictEqual(result.menus, ["Objects"]);
