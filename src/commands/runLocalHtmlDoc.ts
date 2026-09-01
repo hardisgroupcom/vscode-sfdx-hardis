@@ -11,7 +11,12 @@ const POLL_INTERVAL_MS = 3000;
 // generous. What matters is that it ENDS, with a hint, instead of spinning for
 // ever on a server that already died in the terminal.
 const SLOW_HINT_AFTER_MS = 45000;
-const GIVE_UP_AFTER_MS = 300000;
+// Zensical reports nothing between "Build started" and "Build finished", so
+// there is no progress to read and no way to tell a slow build from a dead one.
+// A large project (7000+ markdown pages is realistic for a monitoring
+// repository) can build for a long time, so the wait is never ended for the
+// user: after this delay they are ASKED, and can keep waiting.
+const ASK_AGAIN_AFTER_MS = 300000;
 
 const REGENERATE_DOC_COMMAND = "sf hardis:doc:project2markdown";
 
@@ -141,33 +146,49 @@ export async function registerRunLocalHtmlDocPages(commands: Commands) {
             const startedAt = Date.now();
             let isResolved = false;
             let slowHintShown = false;
+            let waitUntil = ASK_AGAIN_AFTER_MS;
+            let interval: ReturnType<typeof setInterval>;
+
             const stop = () => {
               isResolved = true;
               clearInterval(interval);
             };
-            const interval = setInterval(() => {
+
+            const askWhetherToKeepWaiting = () => {
+              const keepWaitingLabel = t("keepWaiting");
+              vscode.window
+                .showWarningMessage(
+                  `🦙 ${t("docServerNotStartedYet")}`,
+                  keepWaitingLabel,
+                  t("showTerminal"),
+                )
+                .then((selection) => {
+                  if (selection === keepWaitingLabel) {
+                    // Another window, counted from now
+                    waitUntil = Date.now() - startedAt + ASK_AGAIN_AFTER_MS;
+                    isResolved = false;
+                    interval = setInterval(poll, POLL_INTERVAL_MS);
+                  }
+                  else if (selection === t("showTerminal")) {
+                    vscode.commands.executeCommand(
+                      "workbench.action.terminal.focus",
+                    );
+                  }
+                });
+            };
+
+            const poll = () => {
               const elapsed = Date.now() - startedAt;
               if (!slowHintShown && elapsed > SLOW_HINT_AFTER_MS) {
                 slowHintShown = true;
                 progress.report({ message: t("docServerStillStarting") });
               }
-              if (elapsed > GIVE_UP_AFTER_MS) {
-                // The server never answered: it most likely failed in the
-                // terminal, so stop here and say where the error is
+              if (elapsed > waitUntil) {
+                // Zensical prints nothing while it builds, so a silent server
+                // is not proof of a failure. Ask rather than declare one.
                 if (!isResolved) {
                   stop();
-                  vscode.window
-                    .showErrorMessage(
-                      `🦙 ${t("docServerNotStarted")}`,
-                      t("showTerminal"),
-                    )
-                    .then((selection) => {
-                      if (selection === t("showTerminal")) {
-                        vscode.commands.executeCommand(
-                          "workbench.action.terminal.focus",
-                        );
-                      }
-                    });
+                  askWhetherToKeepWaiting();
                   resolve();
                 }
                 return;
@@ -176,9 +197,7 @@ export async function registerRunLocalHtmlDocPages(commands: Commands) {
                 .then(() => {
                   if (!isResolved) {
                     stop();
-                    progress.report({
-                      message: t("localDocServerRunning"),
-                    });
+                    progress.report({ message: t("localDocServerRunning") });
                     vscode.env.openExternal(vscode.Uri.parse(DOC_SERVER_URL));
                     resolve();
                   }
@@ -186,7 +205,9 @@ export async function registerRunLocalHtmlDocPages(commands: Commands) {
                 .catch(() => {
                   // Server not started yet or not reachable
                 });
-            }, POLL_INTERVAL_MS);
+            };
+
+            interval = setInterval(poll, POLL_INTERVAL_MS);
             token.onCancellationRequested(() => {
               if (!isResolved) {
                 stop();
