@@ -168,8 +168,7 @@ export async function registerRunLocalHtmlDocPages(commands: Commands) {
                     waitUntil = Date.now() - startedAt + ASK_AGAIN_AFTER_MS;
                     isResolved = false;
                     interval = setInterval(poll, POLL_INTERVAL_MS);
-                  }
-                  else if (selection === t("showTerminal")) {
+                  } else if (selection === t("showTerminal")) {
                     vscode.commands.executeCommand(
                       "workbench.action.terminal.focus",
                     );

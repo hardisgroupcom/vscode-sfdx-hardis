@@ -43,7 +43,10 @@ suite("Documentation config fields contract", () => {
   });
 
   test("every deployment target of the schema is displayed by the editor", () => {
-    const source = readModuleFile("documentationConfig", "documentationConfig.js");
+    const source = readModuleFile(
+      "documentationConfig",
+      "documentationConfig.js",
+    );
     const missing = schemaDeployFields.filter(
       (field) => !source.includes(`"${field}"`),
     );
