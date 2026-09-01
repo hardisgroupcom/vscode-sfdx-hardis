@@ -26,6 +26,9 @@ REPOSITORY_GRYPE_ARGUMENTS: "--config .grype.yaml"
 REPOSITORY_OSV_SCANNER_ARGUMENTS: "--config=osv-scanner.toml"
 REPOSITORY_TRIVY_ARGUMENTS: "--ignorefile .trivyignore"
 FILTER_REGEX_EXCLUDE: (\.vscode|\.claude)
+# Lychee link check: skip the files that only hold placeholder links (mock projects used by the
+# screenshot / UI tests) and the JSON schema synced from upstream sfdx-hardis. Excluded URLs are in .lycheeignore.
+SPELL_LYCHEE_FILTER_REGEX_EXCLUDE: (test/fixtures/|resources/sfdx-hardis\.jsonschema\.json)
 SHOW_ELAPSED_TIME: true
 CONFIG_REPORTER: false
 FILEIO_REPORTER: false
