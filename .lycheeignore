@@ -1,0 +1,26 @@
+# URLs excluded from the lychee link check (MegaLinter SPELL_LYCHEE).
+# One regular expression per line, matched against the extracted link.
+# Files that only contain placeholder links (test fixtures, upstream-synced JSON schema)
+# are excluded through SPELL_LYCHEE_FILTER_REGEX_EXCLUDE in .mega-linter.yml instead.
+
+# Local documentation server started by "Run Local HTML Doc Pages": nothing listens on it in CI
+^http://127\.0\.0\.1:
+^http://localhost:
+
+# LWC template attribute bindings, for example src="{imgFeatureLogo}" or href="{typeAttributes.url}".
+# Lychee resolves them as local files, which never exist.
+^file://.*%7B.*%7D
+
+# Translation strings that lychee mistakes for local file paths (mostly Japanese sentences)
+^file://.*/src/i18n/
+
+# Hosts that answer 403 or 429 to link checkers while being perfectly reachable in a browser
+^https://developer\.salesforce\.com/
+^https://medium\.com/
+^https://nicolas\.vuillamy\.fr/
+^https://www\.npmjs\.com/
+^https://windsurf\.com/
+^https://leblog\.hardis-group\.com/
+
+# Badge target of the README star counter: an action endpoint, not a browsable page
+^https://github\.com/hardisgroupcom/vscode-sfdx-hardis/stargazers

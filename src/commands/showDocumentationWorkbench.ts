@@ -34,6 +34,7 @@ const DOC_CONFIG_KEYS = [
   "genericAgentforcePromptTemplate",
   "genericAgentforcePromptUrl",
   "docDeployToCloudflare",
+  "docDeployToConfluence",
   "docDeployToOrg",
 ];
 
