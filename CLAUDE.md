@@ -162,7 +162,7 @@ Runtime dependencies were deliberately cut from 28 to 14. **Do not add a new npm
 ### External Tools
 - **SFDMU** (Salesforce Data Move Utility) - Data import/export operations
 - **sfdx-git-delta** - Package.xml generation from git diff
-- **MkDocs** - Documentation generation (requires Python)
+- **Zensical** - Documentation site generation, successor of mkdocs-material (requires Python)
 
 ### Key Integration Functions
 - `execSfdxJson(command)` / `execCommandWithProgress(command, message, label)` - Execute CLI commands

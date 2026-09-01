@@ -170,7 +170,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       ? {
           id: `plugin-info-node`,
           label: "Node.js",
-          command: `echo "Nothing to do here 😁"`,
+          command: "",
           tooltip: t("nodeJsInstalled"),
           status: "dependency-ok",
           helpUrl: "https://nodejs.org/en/",
@@ -256,7 +256,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       ? {
           id: `plugin-info-git`,
           label: "Git",
-          command: `echo "Nothing to do here 😁"`,
+          command: "",
           tooltip: t("gitInstalled"),
           status: "dependency-ok",
           helpUrl: "https://git-scm.com/",
@@ -432,7 +432,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     const sfdxCliItemPhase1 = {
       id: `sfdx-cli-info`,
       label: `@salesforce/cli v${sfdxCliVersion}`,
-      command: `echo "Nothing to do here 😁"`,
+      command: "",
       tooltip: t("sfCliRecommendedInstalled"),
       status: "dependency-ok",
       helpUrl:
@@ -481,7 +481,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       phase1Items.push({
         id: `plugin-info-${plugin.name}`,
         label: pluginLabel,
-        command: `echo "Nothing to do here 😁"`,
+        command: "",
         tooltip: pluginTooltip,
         status: pluginStatus,
         helpUrl: plugin.helpUrl,
@@ -591,7 +591,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       const sfdxCliItem = {
         id: `sfdx-cli-info`,
         label: `@salesforce/cli v${sfdxCliVersionDetail}`,
-        command: `echo "Nothing to do here 😁"`,
+        command: "",
         tooltip: t("sfCliRecommendedInstalled"),
         status: "dependency-ok",
         helpUrl:
@@ -745,7 +745,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         const pluginItem = {
           id: `plugin-info-${plugin.name}`,
           label: pluginLabel,
-          command: `echo "Nothing to do here 😁"`,
+          command: "",
           tooltip: t("sfdxPluginLatestInstalled", { plugin: plugin.name }),
           status: "dependency-ok",
           helpUrl: plugin.helpUrl,
@@ -1023,7 +1023,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       const extensionItem = {
         id: extension.id,
         label: extension.label,
-        command: `echo "Nothing to do here 😁"`,
+        command: "",
         tooltip: t("dependencyInstalled", { name: extension.label }),
         status: "dependency-ok",
       };

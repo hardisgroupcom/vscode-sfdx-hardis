@@ -1,22 +1,120 @@
 import * as vscode from "vscode";
 import { Commands } from "../commands";
-import { getPythonCommand } from "../utils";
+import { getPythonCommand, getWorkspaceRoot } from "../utils";
 import { ping } from "../utils/httpUtils";
+import { checkMkDocsConfig } from "../utils/mkdocsUtils";
+import { t } from "../i18n/i18n";
+
+const DOC_SERVER_URL = "http://localhost:8000";
+const POLL_INTERVAL_MS = 3000;
+// Installing Zensical and building a large site takes a while, so the wait is
+// generous. What matters is that it ENDS, with a hint, instead of spinning for
+// ever on a server that already died in the terminal.
+const SLOW_HINT_AFTER_MS = 45000;
+const GIVE_UP_AFTER_MS = 300000;
+
+const REGENERATE_DOC_COMMAND = "sf hardis:doc:project2markdown";
+
+/**
+ * Report a blocking mkdocs.yml before starting the server, with the command that
+ * repairs it, rather than letting Zensical fail in the terminal while the
+ * notification keeps saying "Starting...".
+ */
+function reportConfigProblem(
+  message: string,
+  buttons: { regenerate?: boolean } = {},
+): void {
+  const actions: string[] = [];
+  if (buttons.regenerate) {
+    actions.push(t("regenerateDocumentation"));
+  }
+  actions.push(t("openOnlineHelp"));
+  vscode.window.showErrorMessage(message, ...actions).then((selection) => {
+    if (selection === t("regenerateDocumentation")) {
+      vscode.commands.executeCommand(
+        "vscode-sfdx-hardis.execute-command",
+        REGENERATE_DOC_COMMAND,
+      );
+    } else if (selection === t("openOnlineHelp")) {
+      vscode.env.openExternal(
+        vscode.Uri.parse(
+          "https://sfdx-hardis.cloudity.com/salesforce-project-doc-generate/",
+        ),
+      );
+    }
+  });
+}
 
 export async function registerRunLocalHtmlDocPages(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.runLocalHtmlDocPages",
     async () => {
-      // Check how python is installed
-      const pythonCommand = await getPythonCommand();
+      // The checks below are not instant: getPythonCommand() spawns probe
+      // processes on the low priority shell queue, so it can wait behind
+      // background work. Say what is going on instead of leaving the click
+      // without feedback.
+      //
+      // The configuration is checked FIRST, on purpose: it needs no process at
+      // all, so the common answer (menus Zensical cannot read) comes back
+      // immediately instead of after the Python probe.
+      const preflight = await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: t("checkingDocPrerequisites"),
+          cancellable: false,
+        },
+        async (progress) => {
+          progress.report({ message: t("checkingDocumentationConfig") });
+          const configCheck = await checkMkDocsConfig(getWorkspaceRoot());
+          if (configCheck.status !== "ok") {
+            // Nothing to run: no need to look for Python
+            return { configCheck, pythonCommand: null };
+          }
+          progress.report({ message: t("checkingPythonInstallation") });
+          const pythonCommand = await getPythonCommand();
+          return { configCheck, pythonCommand };
+        },
+      );
+
+      const { configCheck } = preflight;
+      if (configCheck.status === "missing") {
+        reportConfigProblem(`🦙 ${t("mkdocsYmlNotFound")}`, {
+          regenerate: true,
+        });
+        return;
+      }
+      if (configCheck.status === "unreadable") {
+        reportConfigProblem(
+          `🦙 ${t("mkdocsYmlUnreadable", { message: configCheck.message })}`,
+        );
+        return;
+      }
+      if (configCheck.status === "legacyNav") {
+        // A generated site has a dozen or more affected menus: name a few so the
+        // message stays readable, and say how many others there are
+        const shownMenus = configCheck.menus.slice(0, 5);
+        const remaining = configCheck.menus.length - shownMenus.length;
+        const menus =
+          remaining > 0
+            ? `${shownMenus.join(", ")} (+${remaining})`
+            : shownMenus.join(", ");
+        reportConfigProblem(
+          `🦙 ${t("mkdocsYmlLegacyNav", {
+            menus,
+            command: REGENERATE_DOC_COMMAND,
+          })}`,
+          { regenerate: true },
+        );
+        return;
+      }
+
+      const pythonCommand = preflight.pythonCommand;
       if (!pythonCommand) {
+        const downloadLabel = t("downloadAndInstallPython");
         vscode.window
-          .showErrorMessage(
-            "🦙 Python is not installed or not available in PATH. Please install Python to run the local documentation server.",
-            "Download and install Python",
-          )
+          .showErrorMessage(`🦙 ${t("pythonNotInstalled")}`, downloadLabel)
           .then((selection) => {
-            if (selection === "Download and install Python") {
+            if (selection === downloadLabel) {
               vscode.env.openExternal(
                 vscode.Uri.parse("https://www.python.org/downloads/"),
               );
@@ -24,7 +122,9 @@ export async function registerRunLocalHtmlDocPages(commands: Commands) {
           });
         return;
       }
-      const command = `${pythonCommand} -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists && mkdocs serve --verbose`;
+
+      // Zensical is the successor of mkdocs-material, and reads the same mkdocs.yml file
+      const command = `${pythonCommand} -m pip install zensical mdx_truly_sane_lists && ${pythonCommand} -m zensical serve`;
       vscode.commands.executeCommand(
         "vscode-sfdx-hardis.execute-command",
         command,
@@ -33,38 +133,64 @@ export async function registerRunLocalHtmlDocPages(commands: Commands) {
       vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
-          title:
-            "Starting local documentation server...\n(it can take a while 😱)",
+          title: t("startingLocalDocServer"),
           cancellable: true,
         },
         async (progress, token) => {
-          return new Promise<void>((resolve, reject) => {
+          return new Promise<void>((resolve) => {
+            const startedAt = Date.now();
             let isResolved = false;
+            let slowHintShown = false;
+            const stop = () => {
+              isResolved = true;
+              clearInterval(interval);
+            };
             const interval = setInterval(() => {
-              ping("http://localhost:8000", { timeoutMs: 2000 })
+              const elapsed = Date.now() - startedAt;
+              if (!slowHintShown && elapsed > SLOW_HINT_AFTER_MS) {
+                slowHintShown = true;
+                progress.report({ message: t("docServerStillStarting") });
+              }
+              if (elapsed > GIVE_UP_AFTER_MS) {
+                // The server never answered: it most likely failed in the
+                // terminal, so stop here and say where the error is
+                if (!isResolved) {
+                  stop();
+                  vscode.window
+                    .showErrorMessage(
+                      `🦙 ${t("docServerNotStarted")}`,
+                      t("showTerminal"),
+                    )
+                    .then((selection) => {
+                      if (selection === t("showTerminal")) {
+                        vscode.commands.executeCommand(
+                          "workbench.action.terminal.focus",
+                        );
+                      }
+                    });
+                  resolve();
+                }
+                return;
+              }
+              ping(DOC_SERVER_URL, { timeoutMs: 2000 })
                 .then(() => {
                   if (!isResolved) {
-                    isResolved = true;
-                    clearInterval(interval);
+                    stop();
                     progress.report({
-                      message:
-                        "Local documentation server is running at http://localhost:8000",
+                      message: t("localDocServerRunning"),
                     });
-                    vscode.env.openExternal(
-                      vscode.Uri.parse("http://localhost:8000"),
-                    );
+                    vscode.env.openExternal(vscode.Uri.parse(DOC_SERVER_URL));
                     resolve();
                   }
                 })
                 .catch(() => {
                   // Server not started yet or not reachable
                 });
-            }, 3000);
+            }, POLL_INTERVAL_MS);
             token.onCancellationRequested(() => {
               if (!isResolved) {
-                isResolved = true;
-                clearInterval(interval);
-                reject();
+                stop();
+                resolve();
               }
             });
           });
