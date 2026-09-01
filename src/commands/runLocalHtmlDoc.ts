@@ -49,25 +49,34 @@ export async function registerRunLocalHtmlDocPages(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.runLocalHtmlDocPages",
     async () => {
-      // Check how python is installed
-      const pythonCommand = await getPythonCommand();
-      if (!pythonCommand) {
-        const downloadLabel = t("downloadAndInstallPython");
-        vscode.window
-          .showErrorMessage(`🦙 ${t("pythonNotInstalled")}`, downloadLabel)
-          .then((selection) => {
-            if (selection === downloadLabel) {
-              vscode.env.openExternal(
-                vscode.Uri.parse("https://www.python.org/downloads/"),
-              );
-            }
-          });
-        return;
-      }
+      // The checks below are not instant: getPythonCommand() spawns probe
+      // processes on the low priority shell queue, so it can wait behind
+      // background work. Say what is going on instead of leaving the click
+      // without feedback.
+      //
+      // The configuration is checked FIRST, on purpose: it needs no process at
+      // all, so the common answer (menus Zensical cannot read) comes back
+      // immediately instead of after the Python probe.
+      const preflight = await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: t("checkingDocPrerequisites"),
+          cancellable: false,
+        },
+        async (progress) => {
+          progress.report({ message: t("checkingDocumentationConfig") });
+          const configCheck = await checkMkDocsConfig(getWorkspaceRoot());
+          if (configCheck.status !== "ok") {
+            // Nothing to run: no need to look for Python
+            return { configCheck, pythonCommand: null };
+          }
+          progress.report({ message: t("checkingPythonInstallation") });
+          const pythonCommand = await getPythonCommand();
+          return { configCheck, pythonCommand };
+        },
+      );
 
-      // Pre-flight: a configuration Zensical cannot read would only surface as a
-      // stack trace in the terminal, so it is detected and explained here
-      const configCheck = checkMkDocsConfig(getWorkspaceRoot());
+      const { configCheck } = preflight;
       if (configCheck.status === "missing") {
         reportConfigProblem(`🦙 ${t("mkdocsYmlNotFound")}`, {
           regenerate: true,
@@ -96,6 +105,21 @@ export async function registerRunLocalHtmlDocPages(commands: Commands) {
           })}`,
           { regenerate: true },
         );
+        return;
+      }
+
+      const pythonCommand = preflight.pythonCommand;
+      if (!pythonCommand) {
+        const downloadLabel = t("downloadAndInstallPython");
+        vscode.window
+          .showErrorMessage(`🦙 ${t("pythonNotInstalled")}`, downloadLabel)
+          .then((selection) => {
+            if (selection === downloadLabel) {
+              vscode.env.openExternal(
+                vscode.Uri.parse("https://www.python.org/downloads/"),
+              );
+            }
+          });
         return;
       }
 

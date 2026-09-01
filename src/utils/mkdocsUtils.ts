@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import { promises as fsp } from "fs";
 import * as path from "path";
 import * as yaml from "js-yaml";
 
@@ -57,14 +58,19 @@ export type MkDocsCheckResult =
  * blocking configuration is reported with a fix instead of leaving the user in
  * front of a "Starting..." notification that never completes.
  */
-export function checkMkDocsConfig(workspaceRoot: string): MkDocsCheckResult {
+// Async so a large mkdocs.yml (a generated site reaches hundreds of kB) is not
+// read on the extension host thread, which would freeze the UI and stop the
+// progress notification from ever painting.
+export async function checkMkDocsConfig(
+  workspaceRoot: string,
+): Promise<MkDocsCheckResult> {
   const mkdocsYmlFile = path.join(workspaceRoot, "mkdocs.yml");
   if (!fs.existsSync(mkdocsYmlFile)) {
     return { status: "missing", mkdocsYmlFile };
   }
   let mkdocsYml: any;
   try {
-    mkdocsYml = parseMkDocsYml(fs.readFileSync(mkdocsYmlFile, "utf-8"));
+    mkdocsYml = parseMkDocsYml(await fsp.readFile(mkdocsYmlFile, "utf-8"));
   } catch (error: any) {
     return {
       status: "unreadable",

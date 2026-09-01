@@ -69,16 +69,16 @@ suite("mkdocsUtils Test Suite", () => {
     assert.deepStrictEqual(findLegacyNavMenus({ nav: null }), []);
   });
 
-  test("reports a missing mkdocs.yml instead of starting the server", () => {
+  test("reports a missing mkdocs.yml instead of starting the server", async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mkdocs-check-"));
     try {
-      assert.strictEqual(checkMkDocsConfig(dir).status, "missing");
+      assert.strictEqual((await checkMkDocsConfig(dir)).status, "missing");
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
   });
 
-  test("reports a legacy nav with the menus at fault", () => {
+  test("reports a legacy nav with the menus at fault", async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mkdocs-check-"));
     try {
       fs.writeFileSync(
@@ -88,7 +88,7 @@ suite("mkdocsUtils Test Suite", () => {
         ),
         "utf-8",
       );
-      const result = checkMkDocsConfig(dir);
+      const result = (await checkMkDocsConfig(dir));
       assert.strictEqual(result.status, "legacyNav");
       if (result.status === "legacyNav") {
         assert.deepStrictEqual(result.menus, ["Objects"]);
@@ -98,7 +98,7 @@ suite("mkdocsUtils Test Suite", () => {
     }
   });
 
-  test("accepts a valid config", () => {
+  test("accepts a valid config", async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mkdocs-check-"));
     try {
       fs.writeFileSync(
@@ -108,13 +108,13 @@ suite("mkdocsUtils Test Suite", () => {
         ),
         "utf-8",
       );
-      assert.strictEqual(checkMkDocsConfig(dir).status, "ok");
+      assert.strictEqual((await checkMkDocsConfig(dir)).status, "ok");
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
   });
 
-  test("reports an unparseable mkdocs.yml rather than throwing", () => {
+  test("reports an unparseable mkdocs.yml rather than throwing", async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mkdocs-check-"));
     try {
       fs.writeFileSync(
@@ -122,7 +122,7 @@ suite("mkdocsUtils Test Suite", () => {
         "nav:\n  - Home: index.md\n   bad indentation: [",
         "utf-8",
       );
-      assert.strictEqual(checkMkDocsConfig(dir).status, "unreadable");
+      assert.strictEqual((await checkMkDocsConfig(dir)).status, "unreadable");
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
