@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [8.3.2] 2026-09-02
+
 - **Run Local HTML Doc Pages** now previews the documentation with Zensical, the successor of mkdocs-material used by sfdx-hardis since v8.4.0
   - The command installs `zensical` instead of `mkdocs-material` and serves the site with it, on `http://127.0.0.1:8000/` as before
 - Clicking an up-to-date row of the **Dependencies** panel (Node.js, Git, Salesforce CLI, a plugin, an extension) no longer shows "This command is not allowed": these rows have nothing to run, so they are no longer clickable
