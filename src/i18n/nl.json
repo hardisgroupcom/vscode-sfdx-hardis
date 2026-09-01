@@ -1700,7 +1700,7 @@
   "runLocalHtmlDocTooltip": "Voer de lokale webserver voor documentatie uit en open vervolgens http://127.0.0.1:8000/. Je hebt Python nodig op je computer",
   "runLocallyButton": "Lokaal uitvoeren",
   "runLocallySection": "Lokaal uitvoeren",
-  "runLocallySectionDesc": "Start een lokale MkDocs-server om de documentatie in je browser te bekijken (vereist Python).",
+  "runLocallySectionDesc": "Start een lokale Zensical-server om de documentatie in je browser te bekijken (vereist Python).",
   "runOnlyOnceByOrg": "Slechts eenmaal per org uitvoeren",
   "runOnlyOnceByOrgHelp": "Voer deze actie slechts eenmaal per doel-org uit (nuttig voor idempotente post-deploy taken)",
   "runPendingInstalls": "Openstaande installaties uitvoeren",

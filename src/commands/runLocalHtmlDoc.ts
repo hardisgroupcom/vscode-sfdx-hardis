@@ -24,7 +24,8 @@ export async function registerRunLocalHtmlDocPages(commands: Commands) {
           });
         return;
       }
-      const command = `${pythonCommand} -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists && mkdocs serve --verbose`;
+      // Zensical is the successor of mkdocs-material, and reads the same mkdocs.yml file
+      const command = `${pythonCommand} -m pip install zensical mdx_truly_sane_lists && ${pythonCommand} -m zensical serve`;
       vscode.commands.executeCommand(
         "vscode-sfdx-hardis.execute-command",
         command,

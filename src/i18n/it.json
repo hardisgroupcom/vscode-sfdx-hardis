@@ -1700,7 +1700,7 @@
   "runLocalHtmlDocTooltip": "Avvia il server web locale della documentazione, poi apri http://127.0.0.1:8000/ . Hai bisogno di Python sul computer",
   "runLocallyButton": "Esegui localmente",
   "runLocallySection": "Esegui localmente",
-  "runLocallySectionDesc": "Avvia un server MkDocs locale per visualizzare in anteprima la documentazione nel browser (richiede Python).",
+  "runLocallySectionDesc": "Avvia un server Zensical locale per visualizzare in anteprima la documentazione nel browser (richiede Python).",
   "runOnlyOnceByOrg": "Esegui una sola volta per org",
   "runOnlyOnceByOrgHelp": "Esegui questa azione una sola volta per org di destinazione (utile per task post-deployment idempotenti)",
   "runPendingInstalls": "Esegui installazioni in sospeso",

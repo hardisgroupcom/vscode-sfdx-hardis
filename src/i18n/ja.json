@@ -1700,7 +1700,7 @@
   "runLocalHtmlDocTooltip": "ドキュメント用のローカル Web サーバーを起動してから http://127.0.0.1:8000/ を開きます。Python が必要です",
   "runLocallyButton": "ローカルで実行",
   "runLocallySection": "ローカルで実行",
-  "runLocallySectionDesc": "ブラウザでドキュメントをプレビューするため、ローカル MkDocs サーバーを起動します（Python が必要です）。",
+  "runLocallySectionDesc": "ブラウザでドキュメントをプレビューするため、ローカル Zensical サーバーを起動します（Python が必要です）。",
   "runOnlyOnceByOrg": "組織ごとに 1 回だけ実行",
   "runOnlyOnceByOrgHelp": "このアクションを対象組織ごとに 1 回だけ実行します（冪等な post-deploy タスクに便利です）",
   "runPendingInstalls": "保留中のインストールを実行",

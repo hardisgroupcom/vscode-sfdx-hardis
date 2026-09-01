@@ -1700,7 +1700,7 @@
   "runLocalHtmlDocTooltip": "Lance un serveur web de documentation local, puis ouvre http://127.0.0.1:8000/ . Python doit être installé sur votre ordinateur",
   "runLocallyButton": "Exécuter Localement",
   "runLocallySection": "Exécuter Localement",
-  "runLocallySectionDesc": "Démarrer un serveur MkDocs local pour prévisualiser la documentation dans votre navigateur (nécessite Python).",
+  "runLocallySectionDesc": "Démarrer un serveur Zensical local pour prévisualiser la documentation dans votre navigateur (nécessite Python).",
   "runOnlyOnceByOrg": "Exécuter une seule fois par org",
   "runOnlyOnceByOrgHelp": "Exécuter cette action une seule fois par org cible (utile pour les tâches post-déploiement idempotentes)",
   "runPendingInstalls": "Lancer les installations en attente",

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Run Local HTML Doc Pages** now previews the documentation with Zensical, the successor of mkdocs-material used by sfdx-hardis since v8.4.0
+  - The command installs `zensical` instead of `mkdocs-material` and serves the site with it, on http://127.0.0.1:8000/ as before
+
 ## [8.3.1] 2026-08-31
 
 - New setting **Expert user mode**: sfdx-hardis commands skip their confirmation questions. **Save / Publish my User Story** no longer asks if your metadata is committed, which cleanings to apply or if you want to push, and it opens the Pull Request page at the end. Requires sfdx-hardis v8.4.0 or later.
