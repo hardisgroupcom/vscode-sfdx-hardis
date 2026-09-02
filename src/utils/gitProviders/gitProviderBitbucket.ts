@@ -213,12 +213,13 @@ export class GitProviderBitbucket extends GitProvider {
       } catch (err) {
         Logger.log(`Bitbucket repository access check failed: ${String(err)}`);
         this.isActive = false;
-        showAuthFailureGuidance({
+        await showAuthFailureGuidance({
           providerName: "Bitbucket",
           guidance: t("bitbucketAuthInfo"),
           retry: () => this.reauthenticateAndRefresh(),
           docUrl:
             "https://support.atlassian.com/bitbucket-cloud/docs/access-tokens/",
+          onlyIfPipelineConfigured: true,
         });
       }
     } else {

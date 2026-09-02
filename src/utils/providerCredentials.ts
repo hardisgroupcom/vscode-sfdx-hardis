@@ -3,7 +3,7 @@ import { GitProvider } from "./gitProviders/gitProvider";
 import { CreateTokenOption } from "./gitProviders/types";
 import { TicketProvider } from "./ticketProviders/ticketProvider";
 import { SecretsManager } from "./secretsManager";
-import { getConfig } from "./pipeline/sfdxHardisConfig";
+import { getConfig, isPipelineConfigured } from "./pipeline/sfdxHardisConfig";
 import { Logger } from "../logger";
 import { t } from "../i18n/i18n";
 
@@ -92,14 +92,30 @@ export async function promptForToken(options: {
  * provider icon (token-type choice, token creation page with the right scopes, token
  * entry) — unifying the failure path with the proactive one. Otherwise (e.g. ticketing
  * providers) it falls back to a "Create Token" button opening `createTokenUrl`.
+ *
+ * `onlyIfPipelineConfigured` keeps the message for the projects that can actually use
+ * the provider: git provider authentication only powers pipeline features (DevOps
+ * Pipeline, pull requests, CI jobs), so in a project without branch configuration the
+ * failure is only traced in the logs, never shown.
  */
-export function showAuthFailureGuidance(options: {
+export async function showAuthFailureGuidance(options: {
   providerName: string;
   guidance: string;
   createTokenUrl?: string;
   docUrl: string;
   retry?: () => Promise<void> | void;
-}): void {
+  onlyIfPipelineConfigured?: boolean;
+}): Promise<void> {
+  if (
+    options.onlyIfPipelineConfigured === true &&
+    !(await isPipelineConfigured())
+  ) {
+    Logger.log(
+      `${options.providerName} authentication failed, but this project does not define an sfdx-hardis pipeline: not prompting to sign in again`,
+    );
+    return;
+  }
+
   const buttons: string[] = [];
   const urlMap: Record<string, string> = {};
 
