@@ -184,6 +184,35 @@ export async function setInConfigFile(
   );
 }
 
+/**
+ * Tells whether the opened project defines an sfdx-hardis CI/CD pipeline, i.e.
+ * whether it declares major branches in config/branches/.sfdx-hardis.<branch>.yml .
+ *
+ * Without those files there is no major org, no DevOps Pipeline and none of the
+ * features that need an authenticated git provider, so the extension must not
+ * bother the user with git provider authentication.
+ *
+ * Not cached on purpose: it is a single directory read, and the answer changes
+ * as soon as the user configures the pipeline.
+ */
+export async function isPipelineConfigured(): Promise<boolean> {
+  const workspaceRoot = getWorkspaceRoot();
+  if (!workspaceRoot) {
+    return false;
+  }
+  try {
+    const branchConfigFiles = await fs.promises.readdir(
+      path.join(workspaceRoot, "config", "branches"),
+    );
+    return branchConfigFiles.some((file) =>
+      /^\.sfdx-hardis\..+\.ya?ml$/.test(file),
+    );
+  } catch {
+    // No config/branches folder at all: the pipeline is not configured
+    return false;
+  }
+}
+
 let isGitRepoCache: boolean | null = null;
 let isGitRepoInFlight: Promise<boolean> | null = null;
 export async function isGitRepo(): Promise<boolean> {

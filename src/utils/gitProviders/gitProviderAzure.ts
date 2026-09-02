@@ -210,12 +210,13 @@ export class GitProviderAzure extends GitProvider {
       );
       this.gitApi = null;
       this.isActive = false;
-      showAuthFailureGuidance({
+      await showAuthFailureGuidance({
         providerName: "Azure DevOps",
         guidance: t("azureDevOpsAuthInfo"),
         retry: () => this.reauthenticateAndRefresh(),
         docUrl:
           "https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate",
+        onlyIfPipelineConfigured: true,
       });
     }
   }

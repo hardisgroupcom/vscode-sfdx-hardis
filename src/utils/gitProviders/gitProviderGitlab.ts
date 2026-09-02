@@ -147,12 +147,13 @@ export class GitProviderGitlab extends GitProvider {
         );
       }
       if (!this.isActive) {
-        showAuthFailureGuidance({
+        await showAuthFailureGuidance({
           providerName: "GitLab",
           guidance: t("gitlabAuthInfo"),
           retry: () => this.reauthenticateAndRefresh(),
           docUrl:
             "https://docs.gitlab.com/user/profile/personal_access_tokens/",
+          onlyIfPipelineConfigured: true,
         });
       }
     }

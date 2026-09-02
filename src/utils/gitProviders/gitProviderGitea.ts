@@ -101,11 +101,12 @@ export class GitProviderGitea extends GitProviderGitHub {
     } catch {
       this.gitHubClient = null;
       this.isActive = false;
-      showAuthFailureGuidance({
+      await showAuthFailureGuidance({
         providerName: "Gitea",
         guidance: t("giteaAuthInfo"),
         retry: () => this.reauthenticateAndRefresh(),
         docUrl: "https://docs.gitea.com/development/api-usage",
+        onlyIfPipelineConfigured: true,
       });
     }
   }

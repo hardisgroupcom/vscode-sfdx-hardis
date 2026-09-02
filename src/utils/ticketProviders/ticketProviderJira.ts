@@ -288,7 +288,7 @@ export class JiraProvider extends TicketProvider {
       const tokenUrl = isCloud
         ? "https://id.atlassian.com/manage-profile/security/api-tokens"
         : `${this.jiraHost}/secure/ViewProfile.jspa?selectedTab=com.atlassian.pats.pats-plugin:jira-user-personal-access-tokens`;
-      showAuthFailureGuidance({
+      await showAuthFailureGuidance({
         providerName: "Jira",
         guidance: isCloud ? t("jiraCloudAuthInfo") : t("jiraServerAuthInfo"),
         createTokenUrl: tokenUrl,

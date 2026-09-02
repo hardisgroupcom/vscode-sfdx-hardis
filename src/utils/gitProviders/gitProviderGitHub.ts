@@ -196,12 +196,13 @@ export class GitProviderGitHub extends GitProvider {
       this.isActive = false;
       const isEnterprise =
         this.repoInfo?.host && this.repoInfo.host !== "github.com";
-      showAuthFailureGuidance({
+      await showAuthFailureGuidance({
         providerName: isEnterprise ? "GitHub Enterprise" : "GitHub",
         guidance: t("githubEnterpriseAuthInfo"),
         retry: () => this.reauthenticateAndRefresh(),
         docUrl:
           "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens",
+        onlyIfPipelineConfigured: true,
       });
     }
   }
