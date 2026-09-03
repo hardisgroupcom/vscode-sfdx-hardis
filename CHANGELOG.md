@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [8.3.3] 2026-09-03
+
 - The extension no longer asks you to sign in again to your git provider (Azure DevOps, GitHub, GitLab, Bitbucket, Gitea) when the project does not define an sfdx-hardis pipeline: without branch configuration files in `config/branches/`, there is nothing the git provider connection would be used for, so the authentication failure is only written to the logs
 
 ## [8.3.2] 2026-09-02
