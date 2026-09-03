@@ -28,6 +28,25 @@ const SERVICENOW_TABLE_BY_PREFIX: Record<string, string> = {
   KB: "kb_knowledge",
 };
 
+/**
+ * Prefixes scanned by default in commit messages, branch names and Pull Requests.
+ *
+ * Deliberately narrower than the mapping above: TASK, REQ, STORY and KB are ordinary words
+ * followed by digits, and what is collected here gets a work note written on it by the CLI at
+ * the next deployment, so a coincidence must not be enough. A project working in those tables
+ * declares them in serviceNowTablePrefixes, which also opts them into scanning.
+ */
+const SERVICENOW_DEFAULT_SCAN_PREFIXES = [
+  "INC",
+  "PRB",
+  "CHG",
+  "RITM",
+  "SCTASK",
+  "DMND",
+  "STRY",
+  "ENHC",
+];
+
 // Secret keys named after the CI/CD variables of the CLI connector, so a
 // developer who already exported them in their shell is connected without
 // entering anything (SecretsManager.getSecret falls back to process.env).
@@ -74,29 +93,58 @@ export class ServiceNowProvider extends TicketProvider {
    * A prefix declared there overrides the built-in mapping of the same name.
    */
   static prefixTableMap(config: any = {}): Record<string, string> {
-    const map = { ...SERVICENOW_TABLE_BY_PREFIX };
+    return {
+      ...SERVICENOW_TABLE_BY_PREFIX,
+      ...ServiceNowProvider.declaredPrefixTables(config),
+    };
+  }
+
+  /** Only what the project itself declared, which is also what it opts into scanning */
+  private static declaredPrefixTables(
+    config: any = {},
+  ): Record<string, string> {
+    const declared: Record<string, string> = {};
     const raw = config?.serviceNowTablePrefixes || "";
     for (const entry of String(raw).split(",")) {
       const [prefix, table] = entry
         .split(":")
         .map((part) => (part || "").trim());
       if (prefix && table) {
-        map[prefix.toUpperCase()] = table;
+        declared[prefix.toUpperCase()] = table;
       }
     }
-    return map;
+    return declared;
   }
 
   /**
-   * Regex source matching every known prefix, built from the mapping so a custom
-   * table is detected too. The whole record number is capture group 1, the
-   * convention a project writing its own serviceNowTicketRegex has to follow.
+   * The prefixes scanned automatically: the safe defaults, plus every prefix the
+   * project declared. A prefix is scanned because it was declared, not because it
+   * is unknown: `TASK:task` is a project saying it works in that table.
+   */
+  static scanPrefixes(config: any = {}): string[] {
+    return [
+      ...new Set([
+        ...SERVICENOW_DEFAULT_SCAN_PREFIXES,
+        ...Object.keys(ServiceNowProvider.declaredPrefixTables(config)),
+      ]),
+    ];
+  }
+
+  /** A prefix comes from user configuration, so it cannot be dropped into a regex as it is */
+  private static escapeRegex(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  /**
+   * Regex source matching the scanned prefixes. The whole record number is capture
+   * group 1, the convention a project writing its own serviceNowTicketRegex has to
+   * follow.
    */
   static numberRegexSource(config: any = {}): string {
     // Longest prefix first, so SCTASK is not consumed as the shorter TASK
-    const prefixes = Object.keys(
-      ServiceNowProvider.prefixTableMap(config),
-    ).sort((a, b) => b.length - a.length);
+    const prefixes = ServiceNowProvider.scanPrefixes(config)
+      .sort((a, b) => b.length - a.length)
+      .map((prefix) => ServiceNowProvider.escapeRegex(prefix));
     return `\\b((?:${prefixes.join("|")})[0-9]{4,})\\b`;
   }
 
@@ -121,14 +169,25 @@ export class ServiceNowProvider extends TicketProvider {
     return this.instanceUrl || null;
   }
 
-  async initializeConnection(): Promise<boolean | null> {
+  /**
+   * Reads the three stored values into the instance.
+   *
+   * They are only complete together: the CLI connector activates on the same three
+   * variables, and an instance URL alone (exported in the shell for
+   * `sf hardis misc:servicenow-report`, for example) is not a configured connector.
+   */
+  private async loadStoredCredentials(): Promise<boolean> {
     this.instanceUrl = ServiceNowProvider.completeInstanceUrl(
       (await SecretsManager.getSecret(SERVICENOW_URL_KEY)) || "",
     );
     this.user = (await SecretsManager.getSecret(SERVICENOW_USERNAME_KEY)) || "";
     this.password =
       (await SecretsManager.getSecret(SERVICENOW_PASSWORD_KEY)) || "";
-    if (!this.instanceUrl || !this.user || !this.password) {
+    return Boolean(this.instanceUrl && this.user && this.password);
+  }
+
+  async initializeConnection(): Promise<boolean | null> {
+    if (!(await this.loadStoredCredentials())) {
       Logger.log(
         "ServiceNow instance URL, user name or password is missing: not connected",
       );
@@ -176,6 +235,11 @@ export class ServiceNowProvider extends TicketProvider {
     if (!password) {
       return null;
     }
+    const previous = {
+      instanceUrl: this.instanceUrl,
+      user: this.user,
+      password: this.password,
+    };
     this.instanceUrl = ServiceNowProvider.completeInstanceUrl(instanceUrl);
     this.user = user;
     this.password = password;
@@ -183,6 +247,9 @@ export class ServiceNowProvider extends TicketProvider {
       showGuidanceOnFailure: true,
     });
     if (!connected) {
+      // Nothing was stored, so the rejected values must not survive in the cached
+      // provider either: the "Open ServiceNow" action reads the instance URL
+      Object.assign(this, previous);
       return false;
     }
     await SecretsManager.setSecret(SERVICENOW_URL_KEY, this.instanceUrl);
@@ -224,9 +291,11 @@ export class ServiceNowProvider extends TicketProvider {
   /**
    * Validates the credentials with the cheapest authenticated read there is.
    *
-   * A 401 is the only answer that proves the credentials are wrong: an instance
-   * where the integration user may not read `sys_user` answers 403, and that
-   * still means the sign-in itself succeeded.
+   * An instance where the integration user may not read `sys_user` answers 403,
+   * and that still means the sign-in itself succeeded. An error carrying no HTTP
+   * status is the instance not answering at all, which says nothing about the
+   * credentials: it is logged as such, and never turned into the "create a new
+   * token" guidance that would send the user fixing the wrong thing.
    */
   private async checkCredentials(options: {
     showGuidanceOnFailure: boolean;
@@ -250,10 +319,12 @@ export class ServiceNowProvider extends TicketProvider {
         return true;
       }
       Logger.log(
-        `ServiceNow authentication failed: ${error?.message || String(error)}`,
+        status > 0
+          ? `ServiceNow refused the credentials (HTTP ${status}): ${error?.message || String(error)}`
+          : `ServiceNow instance ${this.instanceUrl} could not be reached: ${error?.message || String(error)}`,
       );
       this.isAuthenticated = false;
-      if (options.showGuidanceOnFailure) {
+      if (options.showGuidanceOnFailure && status > 0) {
         await showAuthFailureGuidance({
           providerName: "ServiceNow",
           guidance: t("serviceNowAuthInfo"),
@@ -270,12 +341,21 @@ export class ServiceNowProvider extends TicketProvider {
     // No URL-based regex: a ServiceNow URL carries the record number itself
     // (`incident.do?sysparm_query=number=INC0012345`), so the number regex below
     // already collects the records mentioned as links.
-    return [
-      new RegExp(
-        customRegex || ServiceNowProvider.numberRegexSource(config),
-        "gim",
-      ),
-    ];
+    try {
+      return [
+        new RegExp(
+          customRegex || ServiceNowProvider.numberRegexSource(config),
+          "gim",
+        ),
+      ];
+    } catch (error: any) {
+      // A malformed serviceNowTicketRegex (or table prefix) must cost its own
+      // tickets, not the whole Pull Request load of the DevOps Pipeline
+      Logger.log(
+        `Invalid ServiceNow ticket regex "${customRegex}": ${error?.message || String(error)}`,
+      );
+      return [];
+    }
   }
 
   /**
@@ -288,10 +368,38 @@ export class ServiceNowProvider extends TicketProvider {
    * pointing nowhere.
    */
   async getTicketsFromString(str: string): Promise<Ticket[]> {
-    if (!(await this.getTicketingWebUrl())) {
+    if (!(await this.loadStoredCredentials())) {
       return [];
     }
-    return await super.getTicketsFromString(str);
+    const config = await getConfig("project");
+    const tickets: Ticket[] = [];
+    const seenIds = new Set<string>();
+    for (const regex of await this.getTicketIdentifierRegexes()) {
+      const globalRegex = new RegExp(
+        regex.source,
+        regex.flags.includes("g") ? regex.flags : regex.flags + "g",
+      );
+      for (const match of str.matchAll(globalRegex)) {
+        // The record number is capture group 1 by convention, but a project regex
+        // that splits the prefix from the digits (`(INC|CHG)([0-9]{4,})`) leaves it
+        // in the whole match: keep whichever of the two is a real record number
+        const number = [match[1], match[0]]
+          .map((candidate) => (candidate || "").trim().toUpperCase())
+          .find((candidate) =>
+            ServiceNowProvider.tableOfTicketId(candidate, config),
+          );
+        if (!number || seenIds.has(number)) {
+          continue;
+        }
+        seenIds.add(number);
+        tickets.push({
+          provider: "SERVICENOW",
+          id: number,
+          url: await this.buildTicketUrl(number),
+        });
+      }
+    }
+    return tickets;
   }
 
   /** Link usable before the record has been read: ServiceNow resolves the form from the number */
