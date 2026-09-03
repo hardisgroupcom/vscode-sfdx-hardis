@@ -25,6 +25,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track ticketConnectedVariant = "neutral";
   @track ticketConnectedIconName = "utility:link";
   @track ticketProviderName = "";
+  @track ticketProviderKey = "";
   @track currentBranchPullRequest = null;
   @track autoFixPullRequest = null;
   @track openPullRequests = [];
@@ -518,7 +519,13 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   get ticketProviderIconUrl() {
-    const key = (this.ticketProviderName || "").toLowerCase();
+    // The icon key travels apart from the displayed name: "Azure Boards" is a
+    // brand name, "azureboards" is the file shipped in resources
+    const key = (
+      this.ticketProviderKey ||
+      this.ticketProviderName ||
+      ""
+    ).toLowerCase();
     return this.getImageUrl(key, "ticket");
   }
 
@@ -725,6 +732,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
     if (Object.prototype.hasOwnProperty.call(data, "ticketProviderName")) {
       this.ticketProviderName = data.ticketProviderName || "Ticketing";
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "ticketProviderKey")) {
+      this.ticketProviderKey = data.ticketProviderKey || "";
     }
     this.ticketConnectedLabel = this.ticketAuthenticated
       ? this.t("connectedTo", { platform: this.ticketProviderName })

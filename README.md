@@ -66,7 +66,7 @@ Salesforce DX is powerful, but you have to glue together dozens of `sf` commands
 - 🚦 **CI/CD-ready from day one** - set up a complete [Salesforce CI/CD pipeline](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/) and visualize it inside VS Code.
 - 🩺 **Watch your orgs** - [monitor production and sandbox health](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/), security, and limits, with notifications to Slack, MS Teams, email, Jira, Grafana…
 - 📚 **AI-generated documentation** - turn your metadata into a browsable, diagram-rich knowledge base.
-- 🤝 **Native integrations** - GitHub, GitLab, Azure DevOps, Bitbucket, Gitea · Jira, Azure Boards · Slack, MS Teams, Email · OpenAI, Anthropic, Agentforce, Ollama…
+- 🤝 **Native integrations** - GitHub, GitLab, Azure DevOps, Bitbucket, Gitea · Jira, Azure Boards, ServiceNow · Slack, MS Teams, Email · OpenAI, Anthropic, Agentforce, Ollama…
 
 ![Native integrations](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/integrations.png)
 
@@ -129,7 +129,7 @@ Visualize and manage your entire CI/CD pipeline inside VS Code: branches, enviro
 
 ![DevOps Pipeline UI](https://sfdx-hardis.cloudity.com/assets/images/sfdx-hardis-pipeline-view.gif)
 
-The pipeline supports the major Git platforms out of the box: **GitHub, GitLab, Azure DevOps, Bitbucket, Gitea** - with [merge-request comments](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-handle-merge-request-results/), [Jira / Azure Boards integration](https://sfdx-hardis.cloudity.com/), and notifications to **Slack, MS Teams and Email**.
+The pipeline supports the major Git platforms out of the box: **GitHub, GitLab, Azure DevOps, Bitbucket, Gitea** - with [merge-request comments](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-handle-merge-request-results/), [Jira / Azure Boards / ServiceNow integration](https://sfdx-hardis.cloudity.com/), and notifications to **Slack, MS Teams and Email**.
 
 ### User Story workflow
 

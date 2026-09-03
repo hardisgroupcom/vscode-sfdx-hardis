@@ -56,7 +56,7 @@ export function getHashedPillClass(value) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Ticket statuses (Jira / Azure Boards, free text and localized)      */
+/* Ticket statuses (Jira / Azure Boards / ServiceNow, localized)       */
 /* ------------------------------------------------------------------ */
 
 // Keywords matched (case-insensitive, accents removed) against the status
@@ -121,7 +121,9 @@ const TICKET_STATUS_KEYWORDS = [
       "test",
       "active",
       "development",
-      "implementation",
+      // "implement" also matches "Implementation" and the ServiceNow
+      // change_request state "Implement"
+      "implement",
       "en cours",
       "revue",
       "relecture",
@@ -143,6 +145,10 @@ const TICKET_STATUS_KEYWORDS = [
       "hold",
       "waiting",
       "pending",
+      // ServiceNow change_request states that precede the implementation
+      "assess",
+      "authorize",
+      "scheduled",
       "attente",
       "espera",
       "wartet",
@@ -161,6 +167,7 @@ const TICKET_STATUS_KEYWORDS = [
       "new",
       "open",
       "draft",
+      "ready",
       "a faire",
       "nouveau",
       "ouvert",
@@ -199,9 +206,9 @@ function normalizeLabel(value) {
 
 /**
  * CSS classes of the pill displaying a ticket status. Statuses are free text
- * defined by each Jira / Azure Boards project (and often localized), so the
- * label is matched against keyword families; anything unrecognized still gets
- * a stable hue rather than no color at all.
+ * defined by each Jira / Azure Boards / ServiceNow project (and often
+ * localized), so the label is matched against keyword families; anything
+ * unrecognized still gets a stable hue rather than no color at all.
  * @param {string} statusLabel status label of the ticket
  * @returns {string} pill CSS classes
  */
