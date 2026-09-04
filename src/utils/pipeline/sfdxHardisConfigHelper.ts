@@ -130,6 +130,10 @@ export class SfdxHardisConfigHelper {
     { name: "jiraTicketRegex", scopes: ["global"] },
     { name: "genericTicketingProviderRegex", scopes: ["global"] },
     { name: "genericTicketingProviderUrlBuilder", scopes: ["global"] },
+    { name: "serviceNowTicketRegex", scopes: ["global"] },
+    { name: "serviceNowTablePrefixes", scopes: ["global"] },
+    { name: "serviceNowCommentField", scopes: ["global"] },
+    { name: "serviceNowAddDeploymentTag", scopes: ["global"] },
     { name: "codingAgentAutoFix", scopes: ["global", "branch"] },
     { name: "codingAgent", scopes: ["global", "branch"] },
     { name: "codingAgentModel", scopes: ["global", "branch"] },
@@ -214,6 +218,10 @@ export class SfdxHardisConfigHelper {
         "jiraTicketRegex",
         "genericTicketingProviderRegex",
         "genericTicketingProviderUrlBuilder",
+        "serviceNowTicketRegex",
+        "serviceNowTablePrefixes",
+        "serviceNowCommentField",
+        "serviceNowAddDeploymentTag",
       ],
     },
     {
@@ -365,6 +373,10 @@ export class SfdxHardisConfigHelper {
             docUrl: value.docUrl || null,
             enum: value.enum || null,
             enumNames: value.enumNames || null,
+            // Settings that only apply to one choice of another setting, ex: the
+            // serviceNow* ones belong to ticketingProvider=SERVICENOW. Renamed to
+            // camelCase because the LWC templates cannot read a dashed property.
+            visibleConditions: value["visible-conditions"] || null,
             globalAllowed:
               this.CONFIGURABLE_FIELDS.find(
                 (field) => field.name === key,

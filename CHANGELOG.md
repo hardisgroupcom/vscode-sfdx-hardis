@@ -9,6 +9,15 @@
   - Technical values (regular expressions, paths, API names) use a monospace font so every character stays readable
   - A value that is not written in your configuration files is marked **Default**, so the value sfdx-hardis applies by default is no longer indistinguishable from a value you chose
 - **Extension Settings**: a text or number setting left empty now shows its default value in the field, instead of an empty box
+- **ServiceNow** joins Jira and Azure Boards as a ticketing provider of the **DevOps Pipeline**
+  - Select **ServiceNow** as the ticketing provider in **Pipeline Settings**, then connect from the pipeline header with the URL of your instance and the credentials of your integration user
+  - Record numbers found in commits, branch names and Pull Requests (`INC0012345`, `CHG0042000`, `RITM0001234`...) are shown with their short description, their state and a link to the record
+  - `TASK`, `REQ`, `STORY` and `KB` are ordinary words followed by digits, so they are only collected once the project declares them: a coincidence in a commit message must not put a work note on an unrelated record
+  - Records of a scoped application are reached by declaring their prefixes in the new **ServiceNow Table Prefixes** setting, next to **ServiceNow Ticket Regex**, **ServiceNow Comment Field** and **ServiceNow Add Deployment Tag**
+  - The connection is passed to the sfdx-hardis commands started from the extension, so they enrich Pull Request comments and post their deployment work notes without any local environment variable
+  - `SERVICENOW_TICKET_REGEX` and `SERVICENOW_TABLE_PREFIXES` exported in your shell take precedence over `.sfdx-hardis.yml`, as they do for the sfdx-hardis commands, so both find the same records
+- **Global Pipeline Settings** now only shows the ticketing settings of the provider you selected: the Jira, ServiceNow and Generic settings were all listed at once, whatever the **Ticketing Provider** value, and they now appear and disappear as soon as you change it
+- The ticketing provider is now named after its brand in the DevOps Pipeline ("Jira", "Azure Boards", "ServiceNow" instead of "JIRA", "AZURE"), and Azure Boards shows its own icon instead of the Azure DevOps one
 
 ## [8.3.3] 2026-09-03
 

@@ -3,6 +3,15 @@ import { getConfig } from "../pipeline/sfdxHardisConfig";
 import { SecretsManager } from "../secretsManager";
 import { Ticket, TicketProviderName } from "./types";
 
+// Display name of every supported ticketing provider. GENERIC has no brand of
+// its own: it stands for whatever tool the project configured by hand.
+const TICKET_PROVIDER_LABELS: Record<string, string> = {
+  JIRA: "Jira",
+  AZURE: "Azure Boards",
+  SERVICENOW: "ServiceNow",
+  GENERIC: "Ticketing",
+};
+
 export class TicketProvider {
   static instance: TicketProvider | null = null;
   providerName: TicketProviderName | null = null;
@@ -53,11 +62,14 @@ export class TicketProvider {
         await import("./ticketProviderGeneric");
       // eslint-disable-next-line @typescript-eslint/naming-convention
       const { AzureBoardsProvider } = await import("./ticketProviderAzure");
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      const { ServiceNowProvider } = await import("./ticketProviderServiceNow");
 
       const allTicketProviders = [
         JiraProvider,
         GenericTicketingProvider,
         AzureBoardsProvider,
+        ServiceNowProvider,
       ];
 
       const providerClass = allTicketProviders.find(
@@ -144,6 +156,25 @@ export class TicketProvider {
     return null;
   }
 
+  /**
+   * Brand name displayed in the UI ("Jira", "Azure Boards", "ServiceNow"), where
+   * `providerName` is the technical value stored in `ticketingProvider`. Never
+   * translated: these are product names.
+   */
+  getProviderLabel(): string {
+    return TICKET_PROVIDER_LABELS[this.providerName || ""] || "Ticketing";
+  }
+
+  /** Key of the provider icon shipped in resources/webviews/icons */
+  getProviderIconKey(): string {
+    // AZURE is the Azure DevOps organization for git, but Azure Boards for
+    // ticketing, and each has its own icon
+    if (this.providerName === "AZURE") {
+      return "azureboards";
+    }
+    return (this.providerName || "").toLowerCase();
+  }
+
   async getTicketIdentifierRegexes(): Promise<RegExp[]> {
     Logger.log(
       "getTicketIdentifierRegexes should be implemented on provider class",
@@ -174,7 +205,19 @@ export class TicketProvider {
         regex.flags.includes("g") ? regex.flags : regex.flags + "g",
       );
       while ((match = regexGlobal.exec(str)) !== null) {
+        // Zero-width match: without this the loop would never advance
+        if (match.index === regexGlobal.lastIndex) {
+          regexGlobal.lastIndex++;
+        }
+        // The whole match is the identifier. Capture group 1 is NOT preferred
+        // here, unlike the sfdx-hardis CLI: a project regex that captures a
+        // leading alternation ("(ABC|DEF)-([0-9]+)") would then yield "ABC" and
+        // link to an issue that does not exist. A provider able to tell a real
+        // identifier from a fragment overrides this (see ServiceNowProvider).
         const matchedText = match[0];
+        if (!matchedText) {
+          continue;
+        }
         let ticketId: string;
         let ticketUrl: string;
 

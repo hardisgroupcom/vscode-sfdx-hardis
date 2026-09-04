@@ -160,6 +160,8 @@ export const SECRET_ENV_KEYS = new Set([
   "JIRA_PAT",
   "JIRA_EMAIL",
   "JIRA_TOKEN",
+  "SERVICENOW_USERNAME",
+  "SERVICENOW_PASSWORD",
 ]);
 
 // In-memory cache of collected credentials: they are re-read from secret
@@ -360,12 +362,29 @@ async function collectProviderCredentialEnvVarsNow(): Promise<
     );
   }
 
-  // --- Ticketing provider credentials (JIRA) ---
+  // --- Ticketing provider credentials (JIRA, ServiceNow) ---
   try {
     const ticketProvider = await TicketProvider.getInstance({
       reset: false,
       authenticate: false,
     });
+    if (
+      ticketProvider?.isAuthenticated &&
+      ticketProvider.providerName === "SERVICENOW"
+    ) {
+      // Stored under the names of the CI/CD variables the CLI connector reads,
+      // so they can be forwarded as they are
+      for (const key of [
+        "SERVICENOW_URL",
+        "SERVICENOW_USERNAME",
+        "SERVICENOW_PASSWORD",
+      ]) {
+        const value = await SecretsManager.getSecret(key);
+        if (value) {
+          env[key] = value;
+        }
+      }
+    }
     if (
       ticketProvider?.isAuthenticated &&
       ticketProvider.providerName === "JIRA"

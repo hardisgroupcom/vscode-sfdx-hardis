@@ -222,6 +222,7 @@ export function registerShowPipeline(commands: Commands) {
             gitea: ["icons", "gitea.svg"],
             jira: ["icons", "jira.svg"],
             azureboards: ["icons", "azureboards.svg"],
+            servicenow: ["icons", "servicenow.svg"],
           },
         },
       );
@@ -743,7 +744,7 @@ export function registerShowPipeline(commands: Commands) {
             vscode.window
               .showErrorMessage(
                 t("failedConnectToProvider", {
-                  providerName: ticketProvider.providerName,
+                  providerName: ticketProvider.getProviderLabel(),
                 }),
                 viewLogsLabel,
               )
@@ -756,7 +757,7 @@ export function registerShowPipeline(commands: Commands) {
           }
           vscode.window.showInformationMessage(
             t("successfullyConnectedToProvider", {
-              providerName: ticketProvider.providerName,
+              providerName: ticketProvider.getProviderLabel(),
             }),
           );
           await loadPipelineStaged();
@@ -1084,9 +1085,13 @@ export function registerShowPipeline(commands: Commands) {
       });
       perfStep("TicketProvider.getInstance");
       let ticketAuthenticated = false;
+      // Brand name shown in the UI ("Jira", "ServiceNow"), and the separate key
+      // of its icon: the label is not always a usable file name ("Azure Boards")
       let ticketProviderName = "";
+      let ticketProviderKey = "";
       if (ticketProvider) {
-        ticketProviderName = ticketProvider.providerName || "";
+        ticketProviderName = ticketProvider.getProviderLabel();
+        ticketProviderKey = ticketProvider.getProviderIconKey();
       }
       if (ticketProvider?.isAuthenticated) {
         ticketAuthenticated = true;
@@ -1127,6 +1132,7 @@ export function registerShowPipeline(commands: Commands) {
         gitAuthenticated: gitAuthenticated,
         ticketAuthenticated: ticketAuthenticated,
         ticketProviderName: ticketProviderName,
+        ticketProviderKey: ticketProviderKey,
         currentBranchPullRequest: currentBranchPullRequest,
         autoFixPullRequest: autoFixPullRequest,
         openPullRequests: openPullRequests,
@@ -1167,6 +1173,7 @@ type PipelineInfo = {
   gitAuthenticated: boolean;
   ticketAuthenticated?: boolean;
   ticketProviderName?: string;
+  ticketProviderKey?: string;
   prButtonInfo: any;
   currentBranchPullRequest?: PullRequest | null;
   autoFixPullRequest?: PullRequest | null;
