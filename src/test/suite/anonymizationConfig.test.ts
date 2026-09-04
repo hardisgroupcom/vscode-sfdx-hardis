@@ -3,7 +3,12 @@ import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
 import yaml from "js-yaml";
-import { LOCALES, loadLocale, readModuleFile } from "./lwcSourceUtils";
+import {
+  LOCALES,
+  assertKeysTranslated,
+  loadLocale,
+  readModuleFile,
+} from "./lwcSourceUtils";
 import { SfdxHardisConfigHelper } from "../../utils/pipeline/sfdxHardisConfigHelper";
 
 /**
@@ -219,15 +224,7 @@ suite("Anonymization configuration contract", () => {
       usedKeys.add(match[1]);
     }
     assert.ok(usedKeys.size > 10, "the editor must be fully translated");
-    for (const locale of LOCALES) {
-      const translations = loadLocale(locale);
-      for (const key of usedKeys) {
-        assert.ok(
-          typeof translations[key] === "string" && translations[key].length > 0,
-          `missing i18n key "${key}" in ${locale}.json`,
-        );
-      }
-    }
+    assertKeysTranslated(usedKeys);
   });
 
   test("the Security & Privacy section label is translated in the 9 locales", () => {

@@ -364,6 +364,8 @@
   "debuggerDescription": "Depure el código Apex de Salesforce con análisis de logs integrado y gestión de checkpoints.",
   "debuggingOptions": "Opciones de depuración para la extensión.",
   "defaultOrgLabel": "Org predeterminada",
+  "defaultValueBadge": "Predeterminado",
+  "defaultValueTooltip": "No definido en la configuración: sfdx-hardis aplica este valor predeterminado",
   "deleteDataFromOrgWithSfdmu": "Eliminar datos de la org con SFDMU",
   "deleteDataTooltip": "Eliminar datos de la org usando archivos de configuración SFDMU",
   "deleteLabel": "Eliminar",

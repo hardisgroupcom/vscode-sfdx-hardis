@@ -24,16 +24,6 @@ lightning-datatable {
 	margin-top: 0.5rem;
 }
 
-/* Unset/empty value placeholder ("Not set") */
-.hardis-not-set {
-	font-style: italic;
-}
-
-/* Truncated clickable URL value, full URL available in the title attribute */
-.hardis-url-link {
-	display: inline-block;
-	max-width: 260px;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	vertical-align: bottom;
-}
+/* The read-only value classes (.hardis-field-value, .hardis-not-set,
+   .hardis-field-default, .hardis-url-link) live in global-theme.css so every
+   configuration panel renders a value the same way. */

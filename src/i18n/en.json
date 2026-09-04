@@ -364,6 +364,8 @@
   "debuggerDescription": "Debug Salesforce Apex code with integrated log analysis and checkpoint management.",
   "debuggingOptions": "Debugging options for the extension.",
   "defaultOrgLabel": "Default Org",
+  "defaultValueBadge": "Default",
+  "defaultValueTooltip": "Not set in the configuration: sfdx-hardis applies this default value",
   "deleteDataFromOrgWithSfdmu": "Delete data from org with SFDMU",
   "deleteDataTooltip": "Delete data from org using SFDMU config files",
   "deleteLabel": "Delete",
