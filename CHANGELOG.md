@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [8.4.0] 2026-09-04
+
 - **Global Pipeline Settings** and **Branch Settings** now show the value of every setting, not only the toggles
   - Text, number and list values are displayed in full contrast instead of the pale grey that made them look like the "Not defined" placeholder, and a long value (a regular expression, a path, a URL) wraps instead of being cut off, with the complete value in its tooltip
   - Values that select an option (test level, ticketing provider, manual actions mode, authentication mode...) are displayed as a labelled chip, like the list values
