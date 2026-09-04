@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- **Global Pipeline Settings** and **Branch Settings** now show the value of every setting, not only the toggles
+  - Text, number and list values are displayed in full contrast instead of the pale grey that made them look like the "Not defined" placeholder, and a long value (a regular expression, a path, a URL) wraps instead of being cut off, with the complete value in its tooltip
+  - Values that select an option (test level, ticketing provider, manual actions mode, authentication mode...) are displayed as a labelled chip, like the list values
+  - The development branch is displayed as a branch chip, like the target branches
+  - Technical values (regular expressions, paths, API names) use a monospace font so every character stays readable
+  - A value that is not written in your configuration files is marked **Default**, so the value sfdx-hardis applies by default is no longer indistinguishable from a value you chose
+- **Extension Settings**: a text or number setting left empty now shows its default value in the field, instead of an empty box
+
 ## [8.3.3] 2026-09-03
 
 - The extension no longer asks you to sign in again to your git provider (Azure DevOps, GitHub, GitLab, Bitbucket, Gitea) when the project does not define an sfdx-hardis pipeline: without branch configuration files in `config/branches/`, there is nothing the git provider connection would be used for, so the authentication failure is only written to the logs

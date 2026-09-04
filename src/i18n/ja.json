@@ -364,6 +364,8 @@
   "debuggerDescription": "統合ログ分析とチェックポイント管理を使用して Salesforce Apex コードをデバッグします。",
   "debuggingOptions": "拡張機能のデバッグオプション。",
   "defaultOrgLabel": "デフォルト組織",
+  "defaultValueBadge": "既定",
+  "defaultValueTooltip": "設定ファイルに未設定です。sfdx-hardis はこの既定値を適用します",
   "deleteDataFromOrgWithSfdmu": "SFDMU で組織からデータを削除",
   "deleteDataTooltip": "SFDMU 設定ファイルを使用して組織からデータを削除します",
   "deleteLabel": "削除",

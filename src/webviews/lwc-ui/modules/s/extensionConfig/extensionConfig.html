@@ -94,6 +94,7 @@
                                                               onchange={handleTextChange}
                                                               label={entry.label}
                                                               variant="label-hidden"
+                                                              placeholder={entry.defaultPlaceholder}
                                                           ></lightning-input>
                                                       </template>
                                                       <template if:true={entry.isNumber}>
@@ -104,6 +105,7 @@
                                                               onchange={handleNumberChange}
                                                               label={entry.label}
                                                               variant="label-hidden"
+                                                              placeholder={entry.defaultPlaceholder}
                                                           ></lightning-input>
                                                       </template>
                                                       <template if:true={entry.isArray}>

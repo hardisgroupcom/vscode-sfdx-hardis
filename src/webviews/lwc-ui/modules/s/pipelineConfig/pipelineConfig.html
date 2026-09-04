@@ -347,7 +347,7 @@
                             ></lightning-input>
                           </template>
                           <template if:true={entry.inherited}>
-                            <div class="hardis-field-help">{i18n.globalValueLabel} {entry.globalValue}</div>
+                            <div class="hardis-field-help">{i18n.globalValueLabel} {entry.globalValueDisplay}</div>
                           </template>
                         </template>
                         <template if:false={isEditMode}>
@@ -357,35 +357,25 @@
                             </span>
                           </template>
                           <template if:false={entry.isBoolean}>
-                            <template if:true={entry.isAnonymization}>
-                              <s-anonymization-config
-                                value={entry.value}
-                                doc-url={entry.docUrl}
-                                read-only={isViewMode}
-                              ></s-anonymization-config>
-                            </template>
-                            <template if:true={entry.isArrayEnum}>
-                              <template if:true={entry.hasArrayEnumValues}>
+                            <template if:true={entry.hasReadOnlyValue}>
+                              <template if:true={entry.isAnonymization}>
+                                <s-anonymization-config
+                                  value={entry.value}
+                                  doc-url={entry.docUrl}
+                                  read-only={isViewMode}
+                                ></s-anonymization-config>
+                              </template>
+                              <template if:true={entry.isArrayEnum}>
                                 <template for:each={entry.valueDisplay} for:item="item">
-                                  <span key={item} class={entry.arrayChipClass}>{item}</span>
+                                  <span key={item} class={entry.chipClass} title={item}>{item}</span>
                                 </template>
                               </template>
-                              <template if:false={entry.hasArrayEnumValues}>
-                                <span class="slds-text-color_weak hardis-not-set">{i18n.notDefined}</span>
-                              </template>
-                            </template>
-                            <template if:true={entry.isArrayText}>
-                              <template if:true={entry.hasArrayTextValues}>
+                              <template if:true={entry.isArrayText}>
                                 <template for:each={entry.valueDisplay} for:item="item">
-                                  <span key={item} class={entry.arrayChipClass}>{item}</span>
+                                  <span key={item} class={entry.chipClass} title={item}>{item}</span>
                                 </template>
                               </template>
-                              <template if:false={entry.hasArrayTextValues}>
-                                <span class="slds-text-color_weak hardis-not-set">{i18n.notDefined}</span>
-                              </template>
-                            </template>
-                            <template if:true={entry.isArrayObject}>
-                              <template if:true={entry.hasArrayObjectValues}>
+                              <template if:true={entry.isArrayObject}>
                                 <s-hardis-datatable
                                   key-field="_index"
                                   data={entry.arrayObjectDatatableData}
@@ -397,38 +387,31 @@
                                   class="slds-m-top_x-small"
                                 ></s-hardis-datatable>
                               </template>
-                              <template if:false={entry.hasArrayObjectValues}>
-                                <span class="slds-text-color_weak hardis-not-set">{i18n.notDefined}</span>
+                              <template if:true={entry.isEnum}>
+                                <span class={entry.chipClass} title={entry.valueTitle}>{entry.valueText}</span>
                               </template>
-                            </template>
-                            <template if:true={entry.isEnum}>
-                              <template if:true={entry.value}>
-                                <span class="slds-text-color_weak">{entry.valueDisplay}</span>
-                              </template>
-                              <template if:false={entry.value}>
-                                <span class="slds-text-color_weak hardis-not-set">{i18n.notDefined}</span>
-                              </template>
-                            </template>
-                            <template if:true={entry.isText}>
-                              <template if:true={entry.hasValue}>
+                              <template if:true={entry.isText}>
                                 <template if:true={entry.isUrlValue}>
-                                  <button type="button" class="hardis-textlink hardis-url-link" title={entry.value} onclick={handleOpenDocUrl} data-doc-url={entry.value}>{entry.value}</button>
+                                  <button type="button" class="hardis-textlink hardis-url-link" title={entry.valueTitle} onclick={handleOpenDocUrl} data-doc-url={entry.value}>{entry.valueText}</button>
                                 </template>
                                 <template if:false={entry.isUrlValue}>
-                                  <span class="slds-text-color_weak">{entry.value}</span>
+                                  <template if:true={entry.isBranchTextValue}>
+                                    <span class="hardis-branch-chip" title={entry.valueTitle}>{entry.valueText}</span>
+                                  </template>
+                                  <template if:false={entry.isBranchTextValue}>
+                                    <span class={entry.valueClass} title={entry.valueTitle}>{entry.valueText}</span>
+                                  </template>
                                 </template>
                               </template>
-                              <template if:false={entry.hasValue}>
-                                <span class="slds-text-color_weak hardis-not-set">{i18n.notDefined}</span>
+                              <template if:true={entry.isNumber}>
+                                <span class={entry.valueClass} title={entry.valueTitle}>{entry.valueText}</span>
                               </template>
                             </template>
-                            <template if:true={entry.isNumber}>
-                              <template if:true={entry.hasValue}>
-                                <span class="slds-text-color_weak">{entry.value}</span>
-                              </template>
-                              <template if:false={entry.hasValue}>
-                                <span class="slds-text-color_weak hardis-not-set">{i18n.notDefined}</span>
-                              </template>
+                            <template if:false={entry.hasReadOnlyValue}>
+                              <span class="hardis-field-value hardis-not-set">{i18n.notDefined}</span>
+                            </template>
+                            <template if:true={entry.isDefaultValue}>
+                              <span class="hardis-field-default" title={i18n.defaultValueTooltip}>{i18n.defaultValueBadge}</span>
                             </template>
                           </template>
                           <template if:true={entry.inherited}>

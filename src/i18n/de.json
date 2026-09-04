@@ -364,6 +364,8 @@
   "debuggerDescription": "Salesforce Apex-Code debuggen mit integrierter Protokollanalyse und Checkpoint-Verwaltung.",
   "debuggingOptions": "Debugging-Optionen für die Erweiterung.",
   "defaultOrgLabel": "Standard-Org",
+  "defaultValueBadge": "Standardwert",
+  "defaultValueTooltip": "Nicht in der Konfiguration festgelegt: sfdx-hardis wendet diesen Standardwert an",
   "deleteDataFromOrgWithSfdmu": "Daten aus Org mit SFDMU löschen",
   "deleteDataTooltip": "Daten aus der Org mithilfe von SFDMU-Konfigurationsdateien löschen",
   "deleteLabel": "Löschen",

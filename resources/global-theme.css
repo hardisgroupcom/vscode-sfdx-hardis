@@ -1310,6 +1310,51 @@ lightning-helptext::part(icon) {
   margin-top: 1px;
   max-width: 62ch;
 }
+/* Read-only value of a setting. It must read as a VALUE, not as more help
+   text: the muted slds-text-color_weak it replaces was the exact color of
+   .hardis-field-help and of the "Not defined" placeholder, so a configured
+   setting looked empty. Long values (regexes, URLs, api names) wrap inside
+   the control column instead of overflowing it. */
+.hardis-field-value {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--slds-g-color-neutral-base-10);
+  text-align: right;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+/* Technical values (regex, path, api name): characters that matter stay
+   distinguishable, same monospace stack as .hardis-prop-value.mono. */
+.hardis-field-value.mono {
+  font-family: ui-monospace, "Cascadia Code", Consolas, Menlo, monospace;
+  font-size: 0.8rem;
+}
+/* Placeholder of a setting left empty. */
+.hardis-not-set,
+.hardis-field-value.hardis-not-set {
+  font-weight: 400;
+  font-style: italic;
+  color: var(--slds-g-color-neutral-base-50);
+}
+/* "Default" marker shown next to a value nobody configured, so a default is
+   never passed off as a deliberate choice. Deliberately not a chip: chips
+   carry values in these panels. */
+.hardis-field-default {
+  font-size: 0.76rem;
+  color: var(--slds-g-color-neutral-base-50);
+  text-align: right;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+/* Clickable URL value: truncated to the control column, full URL in the
+   title attribute. */
+.hardis-url-link {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+}
 /* Inline flex label: SLDS form label + trailing helptext icon on one line.
    Replaces the copy-pasted style="display:flex;align-items:center;gap:.25rem". */
 .hardis-label-inline {

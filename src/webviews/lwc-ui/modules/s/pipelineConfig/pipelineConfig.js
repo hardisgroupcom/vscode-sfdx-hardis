@@ -7,15 +7,16 @@ import {
   getActionTypePillClass,
   getActionContextPillClass,
 } from "s/deploymentActionUtils";
+import {
+  configChipClass,
+  configValueClass,
+  formatConfigDefault,
+  formatConfigValue,
+  isBranchNameKey,
+  isEmptyConfigValue,
+  isUrlConfigValue,
+} from "s/configValueUtils";
 
-// Config keys that hold git branch names: rendered as monospace branch chips
-// instead of plain chips in the read-only view.
-const BRANCH_NAME_ARRAY_KEYS = new Set([
-  "mergeTargets",
-  "availableTargetBranches",
-]);
-// Text values starting with http(s) are rendered as a truncated clickable link.
-const URL_VALUE_REGEX = /^https?:\/\//i;
 // A section made only of these keys gets the compact "Salesforce Org" card
 // layout in read-only mode instead of a list of field rows.
 const SALESFORCE_ORG_KEYS = ["instanceUrl", "targetUsername"];
@@ -319,15 +320,7 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
             valueEditText = "[]";
           }
           // Compute hasValue for text and number fields
-          let hasValue = false;
-          if (isText) {
-            hasValue =
-              value !== undefined &&
-              value !== null &&
-              String(value).trim() !== "";
-          } else if (isNumber) {
-            hasValue = value !== undefined && value !== null && value !== "";
-          }
+          const hasValue = (isText || isNumber) && !isEmptyConfigValue(value);
 
           const isApexTestsSelect =
             key === "deploymentApexTestClasses" && isArrayText === true;
@@ -351,14 +344,12 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
           const booleanPillLabel = value
             ? this.i18n.enabledLabel
             : this.i18n.disabledLabel;
-          const isUrlValue =
-            isText &&
-            typeof value === "string" &&
-            URL_VALUE_REGEX.test(value.trim());
-          const isBranchArrayValue = BRANCH_NAME_ARRAY_KEYS.has(key);
-          const arrayChipClass = isBranchArrayValue
-            ? "hardis-branch-chip"
-            : "hardis-chip";
+          const isUrlValue = isText && isUrlConfigValue(value);
+          // A scalar branch name reuses the monospace branch chip of the
+          // branch arrays, so the same kind of value looks the same everywhere
+          const isBranchTextValue =
+            isText && !isUrlValue && isBranchNameKey(key);
+          const entryChipClass = configChipClass(key);
           // Doc links move inline in the field label; array-of-object fields
           // never carried one (they use their own datatable/modal editor).
           // Nested-object editors carry their own doc link inside the component
@@ -381,6 +372,49 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
           // Nested objects are edited by a dedicated component, one flag per
           // supported property so the template can pick the right one
           const isAnonymization = isObject && key === "anonymization";
+          // Read-only value: printed with the strong .hardis-field-value class
+          // (monospace when technical) instead of the muted help-text color,
+          // and always carrying the full value in its tooltip so a wrapped or
+          // truncated one stays reachable.
+          const valueText = isEnum
+            ? formatConfigValue(valueDisplay)
+            : formatConfigValue(value);
+          const valueClass = configValueClass(value);
+          // Enums show their human label: the tooltip recalls the raw value
+          // actually written in .sfdx-hardis.yml
+          const rawValueText = formatConfigValue(value);
+          const valueTitle =
+            isEnum && rawValueText && rawValueText !== valueText
+              ? `${valueText} (${rawValueText})`
+              : valueText;
+          // One single "Not defined" placeholder for every field type. The
+          // nested-object editors render themselves, empty or not.
+          let hasReadOnlyValue = false;
+          if (isAnonymization) {
+            hasReadOnlyValue = true;
+          } else if (isArrayEnum || isArrayText || isArrayObject) {
+            hasReadOnlyValue = hasArrayItems;
+          } else {
+            hasReadOnlyValue = !isEmptyConfigValue(value);
+          }
+          // A value nobody wrote: the panel receives the schema default in
+          // place of the missing value, so the row says where it comes from
+          // instead of passing a default off as a deliberate choice.
+          // Booleans are excluded: "Disabled" already reads as "nothing set".
+          const configuredValue =
+            branchConfig && branchConfig[key] !== undefined
+              ? branchConfig[key]
+              : globalConfig
+                ? globalConfig[key]
+                : undefined;
+          const isDefaultValue =
+            !isBoolean &&
+            hasReadOnlyValue &&
+            configuredValue === undefined &&
+            formatConfigDefault(schema, enumNames) !== "";
+          // Branch settings inheriting from the global config: arrays and
+          // objects used to be printed as "[object Object]"
+          const globalValueDisplay = formatConfigValue(globalValue);
           entries.push({
             key,
             isAnonymization,
@@ -415,18 +449,16 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
             booleanPillClass,
             booleanPillLabel,
             isUrlValue,
-            isBranchArrayValue,
-            arrayChipClass,
+            isBranchTextValue,
+            chipClass: entryChipClass,
+            valueText,
+            valueClass,
+            valueTitle,
+            hasReadOnlyValue,
+            isDefaultValue,
+            globalValueDisplay,
             isWideControl,
             fieldRowClass,
-            hasArrayEnumValues:
-              isArrayEnum &&
-              Array.isArray(valueDisplay) &&
-              valueDisplay.length > 0,
-            hasArrayTextValues:
-              isArrayText &&
-              Array.isArray(valueDisplay) &&
-              valueDisplay.length > 0,
             hasArrayObjectValues:
               isArrayObject &&
               Array.isArray(valueDisplay) &&

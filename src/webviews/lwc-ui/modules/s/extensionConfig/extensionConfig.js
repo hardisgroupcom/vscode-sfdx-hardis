@@ -1,5 +1,6 @@
 import { LightningElement, track, api } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
+import { formatConfigValue } from "s/configValueUtils";
 
 export default class ExtensionConfig extends SharedMixin(LightningElement) {
   @track sections = [];
@@ -65,8 +66,12 @@ export default class ExtensionConfig extends SharedMixin(LightningElement) {
         const description = entry.description || "";
         const isMultilineHelp = description.includes("\n");
         const helpFirstLine = description.split(/\r?\n/)[0] || "";
+        // A setting left empty still tells what applies: its default is shown
+        // as the placeholder of the free-text controls.
+        const defaultPlaceholder = formatConfigValue(entry.default);
         return {
           ...entry,
+          defaultPlaceholder,
           valueString,
           valueBoolean,
           valueEnum,

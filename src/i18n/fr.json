@@ -364,6 +364,8 @@
   "debuggerDescription": "Déboguez le code Apex Salesforce avec l'analyse de journaux intégrée et la gestion des checkpoints.",
   "debuggingOptions": "Options de débogage pour l'extension.",
   "defaultOrgLabel": "Org par défaut",
+  "defaultValueBadge": "Par défaut",
+  "defaultValueTooltip": "Non défini dans la configuration : sfdx-hardis applique cette valeur par défaut",
   "deleteDataFromOrgWithSfdmu": "Supprimer des données de l'org avec SFDMU",
   "deleteDataTooltip": "Supprimer des données de l'org en utilisant les fichiers de configuration SFDMU",
   "deleteLabel": "Supprimer",
