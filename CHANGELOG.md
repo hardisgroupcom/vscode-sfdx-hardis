@@ -16,6 +16,7 @@
   - Records of a scoped application are reached by declaring their prefixes in the new **ServiceNow Table Prefixes** setting, next to **ServiceNow Ticket Regex**, **ServiceNow Comment Field** and **ServiceNow Add Deployment Tag**
   - The connection is passed to the sfdx-hardis commands started from the extension, so they enrich Pull Request comments and post their deployment work notes without any local environment variable
   - `SERVICENOW_TICKET_REGEX` and `SERVICENOW_TABLE_PREFIXES` exported in your shell take precedence over `.sfdx-hardis.yml`, as they do for the sfdx-hardis commands, so both find the same records
+- **Global Pipeline Settings** now only shows the ticketing settings of the provider you selected: the Jira, ServiceNow and Generic settings were all listed at once, whatever the **Ticketing Provider** value, and they now appear and disappear as soon as you change it
 - The ticketing provider is now named after its brand in the DevOps Pipeline ("Jira", "Azure Boards", "ServiceNow" instead of "JIRA", "AZURE"), and Azure Boards shows its own icon instead of the Azure DevOps one
 
 ## [8.3.3] 2026-09-03

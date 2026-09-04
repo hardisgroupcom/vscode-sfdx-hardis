@@ -114,6 +114,66 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
   }
 
   @track configSchema = {};
+
+  /**
+   * Effective value of a setting, as the panel currently shows it.
+   *
+   * Reads the pending edits first so a dependent setting appears (or goes away)
+   * as soon as the user picks another value, without waiting for a save.
+   */
+  configValueOf(key) {
+    if (
+      this.isEditMode &&
+      this.editedConfig &&
+      Object.prototype.hasOwnProperty.call(this.editedConfig, key)
+    ) {
+      return this.editedConfig[key];
+    }
+    return this.config ? this.config[key] : undefined;
+  }
+
+  /**
+   * True when every `visible-conditions` entry of the JSON schema is satisfied.
+   *
+   * A setting without conditions is always visible. An unknown operator makes
+   * the condition pass: a schema that grows a new operator must not silently
+   * hide settings from a version of the extension that predates it.
+   */
+  isVisibilityDriver(key) {
+    return Object.values(this.configSchema || {}).some((schema) =>
+      (schema?.visibleConditions || []).some(
+        (condition) => condition?.property === key,
+      ),
+    );
+  }
+
+  isFieldVisible(schema) {
+    const conditions = schema && schema.visibleConditions;
+    if (!Array.isArray(conditions) || conditions.length === 0) {
+      return true;
+    }
+    return conditions.every((condition) => {
+      if (!condition || !condition.property) {
+        return true;
+      }
+      const actual = this.configValueOf(condition.property);
+      const expected = condition.value;
+      switch (condition.operator) {
+        case "equals":
+          return String(actual ?? "") === String(expected ?? "");
+        case "notEquals":
+          return String(actual ?? "") !== String(expected ?? "");
+        case "in":
+          return (
+            Array.isArray(expected) &&
+            expected.some((one) => String(one) === String(actual ?? ""))
+          );
+        default:
+          return true;
+      }
+    });
+  }
+
   get configSections() {
     // Returns array of { label, description, entries: [...] } for each section, omitting empty ones
     if (!this.config || !this.sections) return [];
@@ -130,6 +190,10 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
         for (const key of section.keys) {
           const schema = configSchema[key];
           if (!schema) continue;
+          // A setting that only applies to another setting's value is hidden
+          // until that value is chosen: the four serviceNow* settings have no
+          // meaning on a Jira project, and the other way round
+          if (!this.isFieldVisible(schema)) continue;
           let inherited = false;
           let branchValue = undefined;
           let globalValue = undefined;
@@ -730,6 +794,12 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
     } else {
       // Fallback: assign value
       this.editedConfig[key] = value;
+    }
+    // Choosing a ticketing provider must show its settings straight away, and
+    // hide the ones of the provider left behind. Only reassigned for the few
+    // settings others depend on, so typing in a text field still re-renders once.
+    if (this.isVisibilityDriver(key)) {
+      this.editedConfig = { ...this.editedConfig };
     }
   }
 

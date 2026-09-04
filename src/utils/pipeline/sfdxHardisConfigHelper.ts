@@ -373,6 +373,10 @@ export class SfdxHardisConfigHelper {
             docUrl: value.docUrl || null,
             enum: value.enum || null,
             enumNames: value.enumNames || null,
+            // Settings that only apply to one choice of another setting, ex: the
+            // serviceNow* ones belong to ticketingProvider=SERVICENOW. Renamed to
+            // camelCase because the LWC templates cannot read a dashed property.
+            visibleConditions: value["visible-conditions"] || null,
             globalAllowed:
               this.CONFIGURABLE_FIELDS.find(
                 (field) => field.name === key,

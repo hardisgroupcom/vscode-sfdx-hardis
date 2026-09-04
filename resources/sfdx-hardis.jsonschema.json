@@ -1641,6 +1641,15 @@
       "title": "Dev Hub Username",
       "type": "string"
     },
+    "disableDeploymentActions": {
+      "$id": "#/properties/disableDeploymentActions",
+      "default": false,
+      "description": "Disable the deployment actions feature: commandsPreDeploy and commandsPostDeploy from the branch config and from Pull Requests are not collected nor run, and no Pull Request scope is computed. Use it when the git provider API cannot handle the Pull Request history processing (very large repositories). Can also be set with the SFDX_HARDIS_DISABLE_DEPLOYMENT_ACTIONS env variable.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-deployment-actions/#disable-deployment-actions",
+      "examples": [true],
+      "title": "Disable deployment actions",
+      "type": "boolean"
+    },
     "docDeployToCloudflare": {
       "$id": "#/properties/docDeployToCloudflare",
       "default": false,
@@ -2799,6 +2808,32 @@
       "title": "Test Coverage not blocking (not recommended)",
       "type": "boolean"
     },
+    "testLevel": {
+      "$id": "#/properties/testLevel",
+      "description": "WARNING: Use with caution, only in branch scoped config! You can override default test level for deployments for special use cases, for example when you have SeeAllData=true you can use RunRepositoryTests associated with a regex in runtests option",
+      "default": "RunLocalTests",
+      "enum": [
+        "RunLocalTests",
+        "RunRelevantTests",
+        "RunRepositoryTests",
+        "RunRepositoryTestsExceptSeeAllData",
+        "RunSpecifiedTests",
+        "RunAllTestsInOrg",
+        "NoTestRun"
+      ],
+      "enumNames": [
+        "Run Local Tests (recommended at least for production deployments)",
+        "Run Relevant Tests (beta since Spring 26, still new so use with caution)",
+        "Run Repository Tests (will run only test classes that are present in the repository)",
+        "Run Repository Tests Except SeeAllData (same than RunRepositoryTests but without test classes with SeeAllData=true)",
+        "Run Specified Tests (never use it, instead use Run Local Tests + deploymentApexTestClasses)",
+        "Run All Tests In Org (never use it)",
+        "No Test Run (not recommended, better use Run Local Tests + deploymentApexTestClasses)"
+      ],
+      "examples": ["RunRepositoryTests", "RunSpecifiedTests"],
+      "title": "Test level for deployments",
+      "type": "string"
+    },
     "serviceNowAddDeploymentTag": {
       "$id": "#/properties/serviceNowAddDeploymentTag",
       "default": false,
@@ -2862,32 +2897,6 @@
           "value": "SERVICENOW"
         }
       ]
-    },
-    "testLevel": {
-      "$id": "#/properties/testLevel",
-      "description": "WARNING: Use with caution, only in branch scoped config! You can override default test level for deployments for special use cases, for example when you have SeeAllData=true you can use RunRepositoryTests associated with a regex in runtests option",
-      "default": "RunLocalTests",
-      "enum": [
-        "RunLocalTests",
-        "RunRelevantTests",
-        "RunRepositoryTests",
-        "RunRepositoryTestsExceptSeeAllData",
-        "RunSpecifiedTests",
-        "RunAllTestsInOrg",
-        "NoTestRun"
-      ],
-      "enumNames": [
-        "Run Local Tests (recommended at least for production deployments)",
-        "Run Relevant Tests (beta since Spring 26, still new so use with caution)",
-        "Run Repository Tests (will run only test classes that are present in the repository)",
-        "Run Repository Tests Except SeeAllData (same than RunRepositoryTests but without test classes with SeeAllData=true)",
-        "Run Specified Tests (never use it, instead use Run Local Tests + deploymentApexTestClasses)",
-        "Run All Tests In Org (never use it)",
-        "No Test Run (not recommended, better use Run Local Tests + deploymentApexTestClasses)"
-      ],
-      "examples": ["RunRepositoryTests", "RunSpecifiedTests"],
-      "title": "Test level for deployments",
-      "type": "string"
     },
     "ticketingProvider": {
       "$id": "#/properties/ticketingProvider",

@@ -319,6 +319,109 @@ suite("Ticket identifiers collected from a string", () => {
 });
 
 /**
+ * A setting that only applies to one ticketing provider must not be shown on a
+ * project using another one. The JSON schema says so with `visible-conditions`,
+ * which the panel used to drop on the floor: every serviceNow* setting, and the
+ * Jira and Generic ones before them, were listed whatever the provider.
+ */
+suite("Provider-specific settings visibility", () => {
+  const schema = JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, "resources", "sfdx-hardis.jsonschema.json"),
+      "utf8",
+    ),
+  );
+
+  test("the schema conditions reach the panel", () => {
+    const helperSource = fs.readFileSync(
+      path.join(
+        REPO_ROOT,
+        "src",
+        "utils",
+        "pipeline",
+        "sfdxHardisConfigHelper.ts",
+      ),
+      "utf8",
+    );
+    assert.ok(
+      helperSource.includes('visibleConditions: value["visible-conditions"]'),
+      "loadSchema drops the visible-conditions of the JSON schema",
+    );
+  });
+
+  test("every conditional setting of the schema is a setting the panel offers", () => {
+    // A condition on a setting nobody can reach would hide it for ever
+    const conditional = Object.entries<any>(schema.properties || {}).filter(
+      ([, property]) => Array.isArray(property["visible-conditions"]),
+    );
+    assert.ok(conditional.length > 0, "no conditional setting in the schema");
+    const configurable = SfdxHardisConfigHelper.CONFIGURABLE_FIELDS.map(
+      (field) => field.name,
+    );
+    for (const [key, property] of conditional) {
+      if (!configurable.includes(key)) {
+        continue;
+      }
+      for (const condition of property["visible-conditions"]) {
+        assert.ok(
+          configurable.includes(condition.property),
+          `${key} is shown depending on ${condition.property}, which the panel does not offer`,
+        );
+      }
+    }
+  });
+
+  test("the four ServiceNow settings depend on the ticketing provider", () => {
+    for (const key of [
+      "serviceNowTicketRegex",
+      "serviceNowTablePrefixes",
+      "serviceNowCommentField",
+      "serviceNowAddDeploymentTag",
+    ]) {
+      assert.deepStrictEqual(
+        schema.properties?.[key]?.["visible-conditions"],
+        [
+          {
+            property: "ticketingProvider",
+            operator: "equals",
+            value: "SERVICENOW",
+          },
+        ],
+        `${key} is not conditioned on ticketingProvider=SERVICENOW`,
+      );
+    }
+  });
+
+  test("the panel evaluates the conditions, on the pending edits too", () => {
+    const source = readModuleFile("pipelineConfig", "pipelineConfig.js");
+    assert.ok(
+      source.includes("if (!this.isFieldVisible(schema)) continue;"),
+      "the sections getter does not filter on the conditions",
+    );
+    // Reading the pending edits is what makes a setting appear as soon as the
+    // provider is picked, instead of only after a save
+    assert.ok(
+      source.includes("configValueOf(key)") &&
+        source.includes("this.editedConfig[key]"),
+      "the conditions are not evaluated against the pending edits",
+    );
+    assert.ok(
+      source.includes("isVisibilityDriver(key)"),
+      "changing the driving setting does not re-render the section",
+    );
+    // An operator this version does not know must not hide a setting
+    const evaluator = source.slice(
+      source.indexOf("isFieldVisible(schema)"),
+      source.indexOf("get configSections()"),
+    );
+    assert.ok(
+      /default:\s*\n?\s*return true;/.test(evaluator),
+      "an unknown operator should leave the setting visible",
+    );
+  });
+});
+
+/**
  * ServiceNow must be reachable from the same places as Jira: the DevOps
  * Pipeline connect button, the Pipeline Settings and the CLI environment.
  */
