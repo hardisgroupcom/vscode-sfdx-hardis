@@ -1886,7 +1886,14 @@
       "description": "Jira host URL (without https://). Example: mycompany.atlassian.net",
       "examples": ["mycompany.atlassian.net", "hardisgroup.atlassian.net"],
       "title": "Jira Host",
-      "type": "string"
+      "type": "string",
+      "visible-conditions": [
+        {
+          "property": "ticketingProvider",
+          "operator": "equals",
+          "value": "JIRA"
+        }
+      ]
     },
     "jiraTicketRegex": {
       "$id": "#/properties/jiraTicketRegex",
