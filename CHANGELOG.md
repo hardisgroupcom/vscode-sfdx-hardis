@@ -15,8 +15,8 @@
   - `TASK`, `REQ`, `STORY` and `KB` are ordinary words followed by digits, so they are only collected once the project declares them: a coincidence in a commit message must not put a work note on an unrelated record
   - Records of a scoped application are reached by declaring their prefixes in the new **ServiceNow Table Prefixes** setting, next to **ServiceNow Ticket Regex**, **ServiceNow Comment Field** and **ServiceNow Add Deployment Tag**
   - The connection is passed to the sfdx-hardis commands started from the extension, so they enrich Pull Request comments and post their deployment work notes without any local environment variable
+  - `SERVICENOW_TICKET_REGEX` and `SERVICENOW_TABLE_PREFIXES` exported in your shell take precedence over `.sfdx-hardis.yml`, as they do for the sfdx-hardis commands, so both find the same records
 - The ticketing provider is now named after its brand in the DevOps Pipeline ("Jira", "Azure Boards", "ServiceNow" instead of "JIRA", "AZURE"), and Azure Boards shows its own icon instead of the Azure DevOps one
-- A ticketing provider regex whose identifier is a capturing group (`(?:CHG|INC)([0-9]{4,})`) now yields the identifier alone, as the sfdx-hardis CLI does, instead of the whole matched text
 
 ## [8.3.3] 2026-09-03
 

@@ -209,10 +209,12 @@ export class TicketProvider {
         if (match.index === regexGlobal.lastIndex) {
           regexGlobal.lastIndex++;
         }
-        // The identifier is the first capturing group when the regex declares
-        // one, as the sfdx-hardis CLI does: it lets a project write a regex
-        // whose surrounding context is not part of the ticket id.
-        const matchedText = match[1] || match[0];
+        // The whole match is the identifier. Capture group 1 is NOT preferred
+        // here, unlike the sfdx-hardis CLI: a project regex that captures a
+        // leading alternation ("(ABC|DEF)-([0-9]+)") would then yield "ABC" and
+        // link to an issue that does not exist. A provider able to tell a real
+        // identifier from a fragment overrides this (see ServiceNowProvider).
+        const matchedText = match[0];
         if (!matchedText) {
           continue;
         }

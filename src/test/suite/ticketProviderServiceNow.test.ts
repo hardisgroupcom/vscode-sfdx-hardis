@@ -131,6 +131,32 @@ suite("ServiceNow ticketing provider", () => {
     );
   });
 
+  test("SERVICENOW_TABLE_PREFIXES wins over the project configuration", () => {
+    // The CLI connector reads `getEnvVar(name) || config?.property`: reading only
+    // the config here would make the extension collect different records than the
+    // commands it launches on the same project
+    const config = { serviceNowTablePrefixes: "DEFECT:from_config" };
+    const previous = process.env.SERVICENOW_TABLE_PREFIXES;
+    process.env.SERVICENOW_TABLE_PREFIXES = "DEFECT:from_env";
+    try {
+      assert.strictEqual(
+        ServiceNowProvider.tableOfTicketId("DEFECT0001", config),
+        "from_env",
+      );
+    } finally {
+      if (previous === undefined) {
+        delete process.env.SERVICENOW_TABLE_PREFIXES;
+      } else {
+        process.env.SERVICENOW_TABLE_PREFIXES = previous;
+      }
+    }
+    // Without the variable, the project configuration is used
+    assert.strictEqual(
+      ServiceNowProvider.tableOfTicketId("DEFECT0001", config),
+      "from_config",
+    );
+  });
+
   test("a prefix coming from the configuration cannot break the regex", () => {
     // serviceNowTablePrefixes is free text: an unescaped metacharacter would make
     // new RegExp() throw, and take every ticket of the Pull Request load with it
@@ -140,6 +166,26 @@ suite("ServiceNow ticketing provider", () => {
     // "A.B" matches a literal dot, not any character
     assert.ok(new RegExp(source, "i").test("A.B0001234"));
     assert.ok(!new RegExp(source, "i").test("AXB0001234"));
+    // What is scanned must also be resolvable, or the setting silently does
+    // nothing: the record is collected and then dropped for want of a table
+    assert.strictEqual(
+      ServiceNowProvider.tableOfTicketId("A.B0001234", config),
+      "x_other",
+    );
+  });
+
+  test("a declared prefix holding a digit resolves to its table", () => {
+    // A fixed [A-Z_]+ prefix class would scan SN20001234 and never resolve it
+    const config = { serviceNowTablePrefixes: "SN2:x_sn_story" };
+    assert.ok(
+      new RegExp(ServiceNowProvider.numberRegexSource(config), "i").test(
+        "SN20001234",
+      ),
+    );
+    assert.strictEqual(
+      ServiceNowProvider.tableOfTicketId("SN20001234", config),
+      "x_sn_story",
+    );
   });
 
   test("the record number is capture group 1, as the CLI expects", () => {
@@ -243,14 +289,17 @@ suite("Ticket identifiers collected from a string", () => {
     }
   }
 
-  test("the first capturing group is the ticket id", async () => {
-    const provider = new RegexTicketProvider([/ticket ([0-9]{4,})/gi]);
-    const tickets = await provider.getTicketsFromString("see ticket 1234 now");
+  test("a regex capturing an alternation still yields the whole identifier", async () => {
+    // The sfdx-hardis CLI keeps capture group 1, but doing that for every
+    // provider would turn an existing "(ABC|DEF)-([0-9]+)" into the id "ABC" and
+    // link to an issue that does not exist
+    const provider = new RegexTicketProvider([/(ABC|DEF)-([0-9]+)/g]);
+    const tickets = await provider.getTicketsFromString("fixes ABC-123 today");
     assert.deepStrictEqual(
       tickets.map((ticket) => ticket.id),
-      ["1234"],
+      ["ABC-123"],
     );
-    assert.strictEqual(tickets[0].url, "https://tickets.example.com/1234");
+    assert.strictEqual(tickets[0].url, "https://tickets.example.com/ABC-123");
   });
 
   test("a regex without a capturing group still yields the whole match", async () => {

@@ -57,6 +57,18 @@ const SERVICENOW_PASSWORD_KEY = "SERVICENOW_PASSWORD";
 const SERVICENOW_DOC_URL =
   "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/";
 
+/**
+ * Value of a setting the CLI connector reads with `getEnvVar(name) || config?.property`.
+ *
+ * Keeping that order matters: a developer who exported SERVICENOW_TICKET_REGEX or
+ * SERVICENOW_TABLE_PREFIXES for `sf hardis` would otherwise see the extension collect
+ * different records than the commands it launches on the same project.
+ */
+function envOrConfig(envVarName: string, configValue: any): string {
+  const fromEnv = (process.env[envVarName] || "").trim();
+  return fromEnv || (configValue ? String(configValue) : "");
+}
+
 const REQUEST_TIMEOUT_MS = 30000;
 // The credential check runs on every pipeline load, so it gives up sooner than
 // a record read: an unreachable instance must not hold the panel back
@@ -104,7 +116,10 @@ export class ServiceNowProvider extends TicketProvider {
     config: any = {},
   ): Record<string, string> {
     const declared: Record<string, string> = {};
-    const raw = config?.serviceNowTablePrefixes || "";
+    const raw = envOrConfig(
+      "SERVICENOW_TABLE_PREFIXES",
+      config?.serviceNowTablePrefixes,
+    );
     for (const entry of String(raw).split(",")) {
       const [prefix, table] = entry
         .split(":")
@@ -148,16 +163,26 @@ export class ServiceNowProvider extends TicketProvider {
     return `\\b((?:${prefixes.join("|")})[0-9]{4,})\\b`;
   }
 
-  /** Table a record number belongs to, or null when its prefix is not mapped */
+  /**
+   * Table a record number belongs to, or null when its prefix is not mapped.
+   *
+   * The prefix is read from the mapping itself rather than from a character
+   * class: `SN2:x_sn_story` and `A.B:x_other` are prefixes a project may declare,
+   * and a fixed `[A-Z_]+` would scan their numbers without ever resolving them,
+   * making the setting look like it does nothing. Longest prefix first, so SCTASK
+   * is not resolved as the shorter TASK.
+   */
   static tableOfTicketId(ticketId: string, config: any = {}): string | null {
-    const match = (ticketId || "")
-      .trim()
-      .toUpperCase()
-      .match(/^([A-Z_]+)([0-9]{4,})$/);
-    if (!match) {
-      return null;
-    }
-    return ServiceNowProvider.prefixTableMap(config)[match[1]] || null;
+    const number = (ticketId || "").trim().toUpperCase();
+    const map = ServiceNowProvider.prefixTableMap(config);
+    const prefix = Object.keys(map)
+      .sort((a, b) => b.length - a.length)
+      .find(
+        (candidate) =>
+          number.startsWith(candidate) &&
+          /^[0-9]{4,}$/.test(number.slice(candidate.length)),
+      );
+    return prefix ? map[prefix] : null;
   }
 
   async getTicketingWebUrl(): Promise<string | null> {
@@ -177,6 +202,13 @@ export class ServiceNowProvider extends TicketProvider {
    * `sf hardis misc:servicenow-report`, for example) is not a configured connector.
    */
   private async loadStoredCredentials(): Promise<boolean> {
+    // Already loaded: getTicketsFromString() runs once per Pull Request of the
+    // DevOps Pipeline, and three OS keychain reads per Pull Request would show
+    // in a path this extension keeps tuned for latency. disconnect() and a
+    // provider reset clear them, so a stale value cannot survive either one.
+    if (this.instanceUrl && this.user && this.password) {
+      return true;
+    }
     this.instanceUrl = ServiceNowProvider.completeInstanceUrl(
       (await SecretsManager.getSecret(SERVICENOW_URL_KEY)) || "",
     );
@@ -335,9 +367,12 @@ export class ServiceNowProvider extends TicketProvider {
     }
   }
 
-  async getTicketIdentifierRegexes(): Promise<RegExp[]> {
-    const config = await getConfig("project");
-    const customRegex = config.serviceNowTicketRegex;
+  async getTicketIdentifierRegexes(projectConfig?: any): Promise<RegExp[]> {
+    const config = projectConfig || (await getConfig("project"));
+    const customRegex = envOrConfig(
+      "SERVICENOW_TICKET_REGEX",
+      config.serviceNowTicketRegex,
+    );
     // No URL-based regex: a ServiceNow URL carries the record number itself
     // (`incident.do?sysparm_query=number=INC0012345`), so the number regex below
     // already collects the records mentioned as links.
@@ -368,13 +403,21 @@ export class ServiceNowProvider extends TicketProvider {
    * pointing nowhere.
    */
   async getTicketsFromString(str: string): Promise<Ticket[]> {
+    // An explicit Disconnect must stop the detection too, and it cannot delete
+    // credentials the developer exported in their own shell: getInstance() has
+    // already forced isAuthenticated to false for a disconnected provider, which
+    // is the only trace of that decision the collection can see.
+    if (this.isAuthenticated === false) {
+      return [];
+    }
     if (!(await this.loadStoredCredentials())) {
       return [];
     }
     const config = await getConfig("project");
+    const instanceUrl = this.instanceUrl;
     const tickets: Ticket[] = [];
     const seenIds = new Set<string>();
-    for (const regex of await this.getTicketIdentifierRegexes()) {
+    for (const regex of await this.getTicketIdentifierRegexes(config)) {
       const globalRegex = new RegExp(
         regex.source,
         regex.flags.includes("g") ? regex.flags : regex.flags + "g",
@@ -392,10 +435,14 @@ export class ServiceNowProvider extends TicketProvider {
           continue;
         }
         seenIds.add(number);
+        // Built here rather than through buildTicketUrl(): the table and the
+        // instance URL are already resolved, where the public method would read
+        // the project configuration and the secret store again for every ticket
+        const table = ServiceNowProvider.tableOfTicketId(number, config);
         tickets.push({
           provider: "SERVICENOW",
           id: number,
-          url: await this.buildTicketUrl(number),
+          url: `${instanceUrl}/${table}.do?sysparm_query=number=${number}`,
         });
       }
     }
