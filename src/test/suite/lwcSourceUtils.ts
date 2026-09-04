@@ -1,3 +1,4 @@
+import * as assert from "assert";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -52,4 +53,21 @@ export function loadLocale(locale: string): Record<string, string> {
       "utf8",
     ),
   );
+}
+
+/**
+ * Asserts that every given key is translated in the 9 locales.
+ * The LWC contract suites all end with this same check.
+ */
+export function assertKeysTranslated(keys: Iterable<string>): void {
+  const keyList = [...keys];
+  for (const locale of LOCALES) {
+    const translations = loadLocale(locale);
+    for (const key of keyList) {
+      assert.ok(
+        typeof translations[key] === "string" && translations[key].length > 0,
+        `missing i18n key "${key}" in ${locale}.json`,
+      );
+    }
+  }
 }

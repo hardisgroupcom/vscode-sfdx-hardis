@@ -2,9 +2,8 @@ import * as assert from "assert";
 import * as fs from "fs";
 import * as path from "path";
 import {
-  LOCALES,
   REPO_ROOT,
-  loadLocale,
+  assertKeysTranslated,
   readModuleFile,
 } from "./lwcSourceUtils";
 
@@ -104,11 +103,11 @@ suite("Configuration value display contract", () => {
     // Every value carries the full text in its tooltip, so a wrapped or
     // truncated one stays reachable
     const rendered = (viewBlock.match(/\{entry\.valueText\}/g) || []).length;
-    const tooltipped = (viewBlock.match(/title=\{entry\.valueTitle\}/g) || [])
+    const withTooltip = (viewBlock.match(/title=\{entry\.valueTitle\}/g) || [])
       .length;
     assert.ok(rendered >= 4, "every scalar type must render entry.valueText");
     assert.strictEqual(
-      tooltipped,
+      withTooltip,
       rendered,
       "every rendered value must carry its full text in a tooltip",
     );
@@ -382,15 +381,7 @@ suite("Configuration value display contract", () => {
   });
 
   test('the "Default" marker is translated in the 9 locales', () => {
-    for (const locale of LOCALES) {
-      const translations = loadLocale(locale);
-      for (const key of ["defaultValueBadge", "defaultValueTooltip"]) {
-        assert.ok(
-          typeof translations[key] === "string" && translations[key].length > 0,
-          `missing i18n key "${key}" in ${locale}.json`,
-        );
-      }
-    }
+    assertKeysTranslated(["defaultValueBadge", "defaultValueTooltip"]);
   });
 
   test("every i18n key of the settings panel exists in the 9 locales", () => {
@@ -402,14 +393,6 @@ suite("Configuration value display contract", () => {
       usedKeys.add(match[1]);
     }
     assert.ok(usedKeys.size > 10, "the panel must be fully translated");
-    for (const locale of LOCALES) {
-      const translations = loadLocale(locale);
-      for (const key of usedKeys) {
-        assert.ok(
-          typeof translations[key] === "string" && translations[key].length > 0,
-          `missing i18n key "${key}" in ${locale}.json`,
-        );
-      }
-    }
+    assertKeysTranslated(usedKeys);
   });
 });
