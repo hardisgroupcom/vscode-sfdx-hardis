@@ -24,14 +24,12 @@
  *   as a deliberate choice
  */
 
-/** Text values starting with http(s): rendered as a clickable link. */
-export const URL_VALUE_REGEX = /^https?:\/\//i;
+// Text values starting with http(s): rendered as a clickable link.
+const URL_VALUE_REGEX = /^https?:\/\//i;
 
-/**
- * Configuration keys holding git branch names (scalar or array): their values
- * are rendered as monospace branch chips instead of plain text.
- */
-export const BRANCH_NAME_KEYS = new Set([
+// Configuration keys holding git branch names (scalar or array): their values
+// are rendered as monospace branch chips instead of plain text.
+const BRANCH_NAME_KEYS = new Set([
   "mergeTargets",
   "availableTargetBranches",
   "developmentBranch",
@@ -118,9 +116,10 @@ export function configValueClass(value) {
 }
 
 /**
- * Printable default of a setting, recalled next to an empty value.
- * Returns "" when the schema has no usable default (unset, empty string,
- * empty array or nested object: none of them tells the user anything).
+ * Printable default of a setting, with the human label of an enum default.
+ * Returns "" when the schema has no default worth telling the user about
+ * (unset, empty string, empty array or nested object), which is also how a
+ * panel decides whether a displayed value can be a substituted default.
  * @param {object} schema the JSON schema of the setting
  * @param {Array} enumNames human labels of schema.enum, when any
  */
