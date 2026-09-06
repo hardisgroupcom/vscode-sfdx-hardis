@@ -137,6 +137,8 @@ export type PullRequest = {
   isPromotion?: boolean;
   // Numbers declared with promotionPullRequests in the description of a promotion Pull Request
   promotionPullRequests?: number[];
+  // Declared numbers that could not be loaded from the git provider (deleted, other repository...)
+  unresolvedPromotionPullRequests?: number[];
   // Set on a story brought into a window by the promotion Pull Request that declares it
   carriedByPullRequest?: {
     number: number;
