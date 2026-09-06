@@ -522,6 +522,17 @@
                             ></lightning-button>
                         </template>
                         <template if:false={isSinglePRMode}>
+                            <template if:true={showCreatePromotionButton}>
+                                <lightning-button
+                                    class="slds-m-right_small hardis-btn-tinted-green"
+                                    variant="neutral"
+                                    label={createPromotionLabel}
+                                    title={createPromotionTitle}
+                                    icon-name="utility:merge"
+                                    icon-position="left"
+                                    onclick={handleCreatePromotion}
+                                ></lightning-button>
+                            </template>
                             <template if:true={showPreviewReleaseNotes}>
                                 <lightning-button
                                     class="hardis-btn-tinted-green"

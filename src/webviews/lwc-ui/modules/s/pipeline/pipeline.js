@@ -2013,6 +2013,37 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     });
   }
 
+  // Promotion branches (sfdx-hardis enablePromotionBranches): a major branch with a merge
+  // target can be promoted story by story with hardis:project:promotion:create, the only
+  // supported way to assemble a promotion branch
+  get showCreatePromotionButton() {
+    return (
+      this.modalMode === "branch" &&
+      !this.modalIsTopBranch &&
+      this.hasBranchPullRequests &&
+      this.pipelineData?.promotionBranches?.enabled === true
+    );
+  }
+
+  get createPromotionLabel() {
+    return this.t("createPromotionFromBranch", { branch: this.modalBranchName });
+  }
+
+  get createPromotionTitle() {
+    return this.t("createPromotionFromBranchHelp", {
+      branch: this.modalBranchName,
+    });
+  }
+
+  handleCreatePromotion() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: `sf hardis:project:promotion:create --source-branch ${this.modalBranchName}`,
+      },
+    });
+  }
+
   handlePreviewReleaseNotes() {
     window.sendMessageToVSCode({
       type: "runCommand",

@@ -321,6 +321,8 @@
   "createNewScratchOrgTooltip": "Crear una nueva scratch org para el trabajo actual",
   "createNewSfdxProjectTooltip": "Crear e inicializar un nuevo proyecto SFDX",
   "createPr": "Crear PR",
+  "createPromotionFromBranch": "Crear promoción desde {{branch}}",
+  "createPromotionFromBranchHelp": "Montar una promotion branch que lleve solo las User Stories que selecciones entre las mergeadas en {{branch}} y abrir su Pull Request (sf hardis:project:promotion:create)",
   "createSandbox": "Crear sandbox",
   "createSandboxTooltip": "Crea e inicializa una nueva org sandbox",
   "createScratchOrg": "Crear scratch org (o reanudar la creación)",

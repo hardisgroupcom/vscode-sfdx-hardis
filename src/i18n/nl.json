@@ -321,6 +321,8 @@
   "createNewScratchOrgTooltip": "Een nieuwe scratch org aanmaken voor het huidige werk",
   "createNewSfdxProjectTooltip": "Een nieuw SFDX-project aanmaken en initialiseren",
   "createPr": "PR aanmaken",
+  "createPromotionFromBranch": "Promotion maken vanuit {{branch}}",
+  "createPromotionFromBranchHelp": "Stel een promotion branch samen met alleen de User Stories die je selecteert uit de in {{branch}} gemergde, en open de Pull Request ervan (sf hardis:project:promotion:create)",
   "createSandbox": "Sandbox aanmaken",
   "createSandboxTooltip": "Maakt een nieuwe sandbox-org aan en initialiseert deze",
   "createScratchOrg": "Scratch org aanmaken (of aanmaak hervatten)",
