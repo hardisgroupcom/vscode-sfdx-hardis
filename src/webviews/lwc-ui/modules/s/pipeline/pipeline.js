@@ -679,9 +679,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.warnings = (this.pipelineData && this.pipelineData.warnings) || [];
     this.hasWarnings = this.warnings.length > 0;
     this.showOnlyMajor = false;
-    if (
-      Object.prototype.hasOwnProperty.call(data, "showAlreadyPromotedPrs")
-    ) {
+    if (Object.prototype.hasOwnProperty.call(data, "showAlreadyPromotedPrs")) {
       this.showAlreadyPromotedPrs = data.showAlreadyPromotedPrs ?? false;
     }
     if (Object.prototype.hasOwnProperty.call(data, "displayFeatureBranches")) {
@@ -2589,7 +2587,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       return;
     }
     const count = this.showAlreadyPromotedPrs
-      ? marker.getAttribute("data-count-all") || marker.getAttribute("data-count")
+      ? marker.getAttribute("data-count-all") ||
+        marker.getAttribute("data-count")
       : marker.getAttribute("data-count");
     if (count === "0") {
       return;

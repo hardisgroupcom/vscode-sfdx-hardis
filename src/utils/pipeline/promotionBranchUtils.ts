@@ -277,7 +277,10 @@ export function buildPromotionIndex(
     return index;
   }
   for (const promotion of promotionPullRequests) {
-    if (!isPromotionPullRequest(promotion, config) || !isMergedPullRequest(promotion)) {
+    if (
+      !isPromotionPullRequest(promotion, config) ||
+      !isMergedPullRequest(promotion)
+    ) {
       continue;
     }
     const parts = parsePromotionBranchName(promotion.sourceBranch);
@@ -289,7 +292,9 @@ export function buildPromotionIndex(
       mergeDate: promotion.mergeDate || "",
     };
     const fromBranch = (parts?.sourceBranch || "").toLowerCase();
-    for (const storyNumber of parsePromotionPullRequestIds(promotion.description) || []) {
+    for (const storyNumber of parsePromotionPullRequestIds(
+      promotion.description,
+    ) || []) {
       if (storyNumber === reference.number) {
         continue; // a promotion never carries itself
       }
@@ -299,7 +304,8 @@ export function buildPromotionIndex(
       }
       index.byStory.set(storyNumber, carriers);
       if (fromBranch) {
-        const promotedOut = index.promotedOutOf.get(fromBranch) || new Set<number>();
+        const promotedOut =
+          index.promotedOutOf.get(fromBranch) || new Set<number>();
         promotedOut.add(storyNumber);
         index.promotedOutOf.set(fromBranch, promotedOut);
       }
