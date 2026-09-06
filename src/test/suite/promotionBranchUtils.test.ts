@@ -52,7 +52,10 @@ suite("promotionBranchUtils", () => {
       date: "2026-09-06",
       counter: 1,
     });
-    assert.strictEqual(isPromotionBranchName("Promotion/UAT/main/2026-12-31-12"), true);
+    assert.strictEqual(
+      isPromotionBranchName("Promotion/UAT/main/2026-12-31-12"),
+      true,
+    );
     for (const name of [
       "promotion/2026-09",
       "promotion/uat/preprod",
@@ -92,7 +95,11 @@ suite("promotionBranchUtils", () => {
   test("needs the flag, the naming convention and the key", () => {
     assert.strictEqual(
       isPromotionPullRequest(
-        pr({ number: 9, sourceBranch: PROMOTION_BRANCH, description: DECLARATION }),
+        pr({
+          number: 9,
+          sourceBranch: PROMOTION_BRANCH,
+          description: DECLARATION,
+        }),
         ENABLED,
       ),
       true,
@@ -107,7 +114,11 @@ suite("promotionBranchUtils", () => {
     // Named by hand: not a promotion branch even with the key
     assert.strictEqual(
       isPromotionPullRequest(
-        pr({ number: 9, sourceBranch: "promotion/2026-09", description: DECLARATION }),
+        pr({
+          number: 9,
+          sourceBranch: "promotion/2026-09",
+          description: DECLARATION,
+        }),
         ENABLED,
       ),
       false,
@@ -121,7 +132,11 @@ suite("promotionBranchUtils", () => {
     );
     assert.strictEqual(
       isPromotionPullRequest(
-        pr({ number: 9, sourceBranch: PROMOTION_BRANCH, description: DECLARATION }),
+        pr({
+          number: 9,
+          sourceBranch: PROMOTION_BRANCH,
+          description: DECLARATION,
+        }),
         DISABLED,
       ),
       false,
@@ -164,7 +179,11 @@ suite("promotionBranchUtils", () => {
 
   test("changes nothing when the feature is disabled", async () => {
     const window = [
-      pr({ number: 900, sourceBranch: PROMOTION_BRANCH, description: DECLARATION }),
+      pr({
+        number: 900,
+        sourceBranch: PROMOTION_BRANCH,
+        description: DECLARATION,
+      }),
     ];
     let fetchCalls = 0;
     const { all, added } = await expandPullRequestsWithPromotions(
