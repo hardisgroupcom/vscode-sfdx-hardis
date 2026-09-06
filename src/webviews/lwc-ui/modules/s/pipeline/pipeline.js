@@ -2026,7 +2026,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   get createPromotionLabel() {
-    return this.t("createPromotionFromBranch", { branch: this.modalBranchName });
+    return this.t("createPromotionFromBranch", {
+      branch: this.modalBranchName,
+    });
   }
 
   get createPromotionTitle() {
