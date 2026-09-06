@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **DevOps Pipeline: merge conflicts on the diagram** - an open Pull Request that no longer merges into its target branch gets a red outline and a warning sign on its merge arrow, and the folded "+N more" group is marked when one of the Pull Requests it hides conflicts
+  - Only reads the verdict the git platform already computed: nothing extra to fetch on GitLab, Azure DevOps and Gitea, a single query for the whole list on GitHub. Bitbucket does not publish it, so its diagram is unchanged
+  - A Pull Request the platform has not finished testing shows nothing rather than a guess
+
 ## [8.4.0] 2026-09-04
 
 - **Global Pipeline Settings** and **Branch Settings** now show the value of every setting, not only the toggles

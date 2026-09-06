@@ -2,6 +2,10 @@ import { sortArray } from "../sortUtils";
 import { prettifyFieldName } from "../stringUtils";
 import { isMajorBranch, isPreprod, isProduction } from "../orgConfigUtils";
 import { PullRequest, JobStatus } from "../gitProviders/types";
+import {
+  anyMergeConflict,
+  hasMergeConflicts,
+} from "../gitProviders/mergeStatus";
 import { GitProvider } from "../gitProviders/gitProvider";
 import { t } from "../../i18n/i18n";
 
@@ -455,7 +459,12 @@ export class BranchStrategyMermaidBuilder {
       source: groupNodeName,
       target: this.sanitizeNodeName(targetBranch) + "Branch",
       type: "gitFeatureMerge",
-      label: this.buildStatusChip(aggregateStatus),
+      label: this.buildStatusChip(
+        aggregateStatus,
+        null,
+        "",
+        anyMergeConflict(foldedPrs),
+      ),
       isFeatureGroup: true,
       jobsStatus: aggregateStatus,
       groupNodeName: groupNodeName,
@@ -813,11 +822,25 @@ export class BranchStrategyMermaidBuilder {
   private buildPrChip(pullRequest: PullRequest): string {
     const status = this.normalizeJobStatus(pullRequest.jobsStatus);
     const text = `#${pullRequest.number || pullRequest.id}`;
-    const title = this.escapeHtmlLabel(pullRequest.title || text);
+    // The colored dot already carries the CI job status, so a merge conflict is shown on a
+    // second axis: a warning glyph and an outline, keeping both readable on the same chip
+    const conflict = hasMergeConflicts(pullRequest);
+    const conflictClass = conflict ? " hardis-chip-conflict" : "";
+    const label = conflict ? `${this.conflictGlyph()}${text}` : text;
+    const title = this.escapeHtmlLabel(
+      conflict
+        ? `${pullRequest.title || text} - ${t("mergeConflictsTooltip")}`
+        : pullRequest.title || text,
+    );
     if (pullRequest.webUrl) {
-      return `<a href='${pullRequest.webUrl}' target='_blank' class='hardis-pill hardis-chip hardis-status-${status}' title='${title}'>${text}</a>`;
+      return `<a href='${pullRequest.webUrl}' target='_blank' class='hardis-pill hardis-chip hardis-status-${status}${conflictClass}' title='${title}'>${label}</a>`;
     }
-    return `<span class='hardis-pill hardis-chip hardis-status-${status}'>${text}</span>`;
+    return `<span class='hardis-pill hardis-chip hardis-status-${status}${conflictClass}' title='${title}'>${label}</span>`;
+  }
+
+  /** Warning glyph prefixed to a chip whose Pull Request(s) no longer merge cleanly. */
+  private conflictGlyph(): string {
+    return "<span class='hardis-conflict-glyph'>&#9888;</span> ";
   }
 
   /**
@@ -828,6 +851,7 @@ export class BranchStrategyMermaidBuilder {
     status: JobStatus,
     url: string | null = null,
     title: string = "",
+    conflict: boolean = false,
   ): string {
     const normalized = this.normalizeJobStatus(status);
     const glyphMap: Record<JobStatus, string> = {
@@ -837,12 +861,20 @@ export class BranchStrategyMermaidBuilder {
       failed: "✕",
       unknown: "?",
     };
-    const glyph = glyphMap[normalized];
-    const titleAttr = title ? ` title='${title}'` : "";
+    const glyph = conflict
+      ? this.conflictGlyph() + glyphMap[normalized]
+      : glyphMap[normalized];
+    const conflictClass = conflict ? " hardis-chip-conflict" : "";
+    const chipTitle = conflict
+      ? [title, t("mergeConflictsTooltip")].filter((part) => part).join(" - ")
+      : title;
+    const titleAttr = chipTitle
+      ? ` title='${this.escapeHtmlLabel(chipTitle)}'`
+      : "";
     if (url) {
-      return `<a href='${url}' target='_blank' class='hardis-pill hardis-chip hardis-status-${normalized}'${titleAttr}>${glyph}</a>`;
+      return `<a href='${url}' target='_blank' class='hardis-pill hardis-chip hardis-status-${normalized}${conflictClass}'${titleAttr}>${glyph}</a>`;
     }
-    return `<span class='hardis-pill hardis-chip hardis-status-${normalized}'${titleAttr}>${glyph}</span>`;
+    return `<span class='hardis-pill hardis-chip hardis-status-${normalized}${conflictClass}'${titleAttr}>${glyph}</span>`;
   }
 
   private normalizeJobStatus(status: any): JobStatus {

@@ -43,6 +43,20 @@ export type ProviderDescription = {
  */
 export type PullRequestStatus = "open" | "closed" | "merged" | "declined";
 
+/**
+ * Whether an open Pull Request can be merged into its target branch as it stands.
+ * Providers compute this in the background, so "unknown" is a normal answer: it means
+ * "not computed yet", or "this provider does not tell", never "no conflict".
+ *
+ * Provider correspondence:
+ * - GitHub:      GraphQL mergeable CONFLICTING / MERGEABLE / UNKNOWN (the REST list does not carry it)
+ * - Gitea:       mergeable boolean of the Pull Request list
+ * - GitLab:      detailed_merge_status conflict|broken_status, else merge_status cannot_be_merged
+ * - Azure DevOps: mergeStatus conflicts (2) / succeeded (3)
+ * - Bitbucket:   not exposed by the API, always unknown
+ */
+export type PullRequestMergeStatus = "mergeable" | "conflicts" | "unknown";
+
 // Job run status for CI workflows associated with a pull request commit
 export type JobStatus =
   "running" | "success" | "failed" | "pending" | "unknown";
@@ -131,6 +145,10 @@ export type PullRequest = {
 
   // Optional list of Apex Test Classes to run during deployments (stored in scripts/actions/.sfdx-hardis.<PR>.yml)
   deploymentApexTestClasses?: string[];
+
+  // Whether the Pull Request still merges cleanly into its target branch. Filled for open Pull
+  // Requests only, from data the provider already computes: see PullRequestMergeStatus.
+  mergeStatus?: PullRequestMergeStatus;
 };
 
 /**
