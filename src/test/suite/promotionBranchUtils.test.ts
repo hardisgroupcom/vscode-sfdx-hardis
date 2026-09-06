@@ -372,6 +372,29 @@ suite("promotionBranchUtils", () => {
     );
   });
 
+  test("the go-live list of a top branch goes through the same toggles as the branch window", () => {
+    const js = fs.readFileSync(
+      path.resolve(__dirname, "../../../src/webviews/lwc-ui/modules/s/pipeline/pipeline.js"),
+      "utf8",
+    );
+    // Selecting a release in the Go Live combobox used to list its Pull Requests unfiltered, so a
+    // preprod -> main merge showed up with "Show promotion Pull Requests" off
+    const goLiveHandler = js.slice(js.indexOf("returnGoLivePullRequests"));
+    assert.ok(
+      js.includes("this._filterModalPullRequests(this.modalSourcePullRequests)"),
+      "the toggle handler must re-filter the current source list",
+    );
+    assert.ok(
+      goLiveHandler.includes("this.modalSourcePullRequests = data?.pullRequests || []"),
+      "the go-live result must become the source list of the modal",
+    );
+    assert.strictEqual(
+      (js.match(/_populateModalFromPrs\(data\?\.pullRequests/g) || []).length,
+      0,
+      "no list may feed the branch modal without the toggles",
+    );
+  });
+
   test("a Pull Request number appears in a single window of the pipeline", () => {
     // promotion/uat/preprod carries 482 out of uat, so 482 is listed in preprod, not in uat
     const promotion = pr({

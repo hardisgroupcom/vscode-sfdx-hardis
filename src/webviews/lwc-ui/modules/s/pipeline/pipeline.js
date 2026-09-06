@@ -39,6 +39,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // Branch modal: ids (key-field) and numbers of the stories ticked for the next promotion
   @track modalSelectedPrIds = [];
   modalSelectedPrNumbers = [];
+  // Branch modal: the unfiltered list behind the current view (the branch window, or the go-live
+  // selected in the combobox), so the toggles can be applied again without reloading anything
+  @track modalSourcePullRequests = [];
   @track mermaidZoomLevel = 1;
   @track mermaidLoading = true;
   @track mermaidRefreshing = false;
@@ -2350,7 +2353,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // The Pull Requests a branch still owns: the ones a promotion carried away are listed in the
   // branch they reached instead, unless the "show already promoted" toggle is on.
   _visibleBranchPullRequests(branchName) {
-    let prs = this.branchPullRequestsMap.get(branchName) || [];
+    this.modalSourcePullRequests =
+      this.branchPullRequestsMap.get(branchName) || [];
+    return this._filterModalPullRequests(this.modalSourcePullRequests);
+  }
+
+  // Every list shown in a branch modal goes through here, whatever its origin (branch window or
+  // selected go-live): the two toggles must apply the same way to both
+  _filterModalPullRequests(pullRequests) {
+    let prs = Array.isArray(pullRequests) ? pullRequests : [];
     if (!this.showAlreadyPromotedPrs) {
       prs = prs.filter((pr) => pr.promotedAway !== true);
     }
@@ -2385,13 +2396,14 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return majors.includes(source) && majors.includes(target);
   }
 
-  // The toggle only shows when the branch holds something to reveal
+  // The toggle only shows when the current view holds something to reveal
   get modalHasPromotionPrs() {
     if (this.modalMode !== "branch" || !this.modalBranchName) {
       return false;
     }
-    const prs = this.branchPullRequestsMap.get(this.modalBranchName) || [];
-    return prs.some((pr) => this._isPromotionOrMajorPr(pr));
+    return (this.modalSourcePullRequests || []).some((pr) =>
+      this._isPromotionOrMajorPr(pr),
+    );
   }
 
   handleToggleModalPromotionPrs(event) {
@@ -2399,7 +2411,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.modalSelectedPrIds = [];
     this.modalSelectedPrNumbers = [];
     this._populateModalFromPrs(
-      this._visibleBranchPullRequests(this.modalBranchName),
+      this._filterModalPullRequests(this.modalSourcePullRequests),
     );
   }
 
@@ -2592,7 +2604,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     ) {
       return;
     }
-    this._populateModalFromPrs(data?.pullRequests || []);
+    // The go-live list is a view of the same branch modal: the toggles apply to it too
+    this.modalSourcePullRequests = data?.pullRequests || [];
+    this._populateModalFromPrs(
+      this._filterModalPullRequests(this.modalSourcePullRequests),
+    );
     this.modalGoLivePrsLoading = false;
     this.isLoadingReleaseDetails = false;
   }
