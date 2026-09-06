@@ -38,6 +38,19 @@
                             message-toggle-inactive=""
                         ></lightning-input>
                     </div>
+                    <template if:true={hasAlreadyPromotedPrs}>
+                        <div class="toggle-wrapper">
+                            <lightning-input
+                                type="toggle"
+                                label={i18n.showAlreadyPromotedPrs}
+                                title={i18n.showAlreadyPromotedPrsHelp}
+                                checked={showAlreadyPromotedPrs}
+                                onchange={handleToggleAlreadyPromoted}
+                                message-toggle-active=""
+                                message-toggle-inactive=""
+                            ></lightning-input>
+                        </div>
+                    </template>
                 </template>
 
                 <lightning-button-group>
@@ -522,6 +535,17 @@
                             ></lightning-button>
                         </template>
                         <template if:false={isSinglePRMode}>
+                            <template if:true={showCreatePromotionButton}>
+                                <lightning-button
+                                    class="slds-m-right_small hardis-btn-tinted-green"
+                                    variant="neutral"
+                                    label={createPromotionLabel}
+                                    title={createPromotionTitle}
+                                    icon-name="utility:merge"
+                                    icon-position="left"
+                                    onclick={handleCreatePromotion}
+                                ></lightning-button>
+                            </template>
                             <template if:true={showPreviewReleaseNotes}>
                                 <lightning-button
                                     class="hardis-btn-tinted-green"
