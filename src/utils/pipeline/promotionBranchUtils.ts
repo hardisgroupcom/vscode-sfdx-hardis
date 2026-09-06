@@ -403,7 +403,7 @@ export function isRetrofitPullRequest(
  * What a user reads as "the work in this branch": the User Story Pull Requests. Promotion,
  * major-to-major and retrofit Pull Requests are the vehicles that move them, so they are left out
  * of the lists and counters unless asked for with `showPromotions`. A promotion Pull Request is
- * recognised whatever the feature switch says, by its naming convention and declaration.
+ * recognized whatever the feature switch says, by its naming convention and declaration.
  */
 export function userStoryPullRequests(
   pullRequests: PullRequest[],
