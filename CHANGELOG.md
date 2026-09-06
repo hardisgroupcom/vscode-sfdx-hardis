@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **DevOps Pipeline: [promotion branches](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/)** (sfdx-hardis `enablePromotionBranches`)
+  - A promotion Pull Request (`promotion/<source>/<target>/<date>-<counter>` branch declaring the User Stories it carries with `promotionPullRequests` in its description) opens in read-only mode, listing the deployment actions, tickets and Apex test classes of the declared Pull Requests
+  - A major branch window expands the promotion Pull Requests it contains with the stories they declare, marked "Carried by", so the `preprod` and `main` lists show what is really promoted
+  - Stories already shipped through a merged promotion branch are marked "Already deployed via" in the window of the branch they are still waiting in
+  - A Pull Request number appears in a single branch of the diagram: a story a promotion carried away is listed in the branch it reached, in the node counter as well as in the list. The **Show already promoted Pull Requests** toggle brings the other places back
+
 ## [8.4.0] 2026-09-04
 
 - **Global Pipeline Settings** and **Branch Settings** now show the value of every setting, not only the toggles

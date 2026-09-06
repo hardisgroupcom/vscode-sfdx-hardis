@@ -4,7 +4,12 @@ import {
   DEFAULT_FEATURE_BRANCH_GROUP_THRESHOLD,
   FeatureBranchGroup,
 } from "./utils/pipeline/branchStrategyMermaidBuilder";
-import { listMajorOrgs, MajorOrg } from "./utils/orgConfigUtils";
+import {
+  getPipelinePromotionBranchConfig,
+  listMajorOrgs,
+  MajorOrg,
+} from "./utils/orgConfigUtils";
+import { PromotionBranchConfig } from "./utils/pipeline/promotionBranchUtils";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 import { PullRequest } from "./utils/gitProviders/types";
 import { GitProvider } from "./utils/gitProviders/gitProvider";
@@ -38,6 +43,8 @@ export interface PipelineData {
   // Folded "+N more" feature-branch groups shown in the full diagram, so the
   // webview can open a PR modal when a group node or its link is clicked.
   featureBranchGroups: FeatureBranchGroup[];
+  // Promotion branches switch of the project (sfdx-hardis enablePromotionBranches)
+  promotionBranches?: PromotionBranchConfig;
 }
 
 export class PipelineDataProvider {
@@ -125,6 +132,10 @@ export class PipelineDataProvider {
         mermaidDiagramMajor,
         warnings: this.warnings,
         featureBranchGroups,
+        promotionBranches: getPipelinePromotionBranchConfig(
+          projectConfig,
+          majorOrgs,
+        ),
       };
     } catch (error: any) {
       vscode.window.showErrorMessage(
