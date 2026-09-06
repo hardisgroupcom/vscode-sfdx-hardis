@@ -403,21 +403,9 @@ export function isMajorToMajorPullRequest(
 }
 
 /**
- * A retrofit Pull Request (retrofit/<name> -> development branch) brings the RUN stream back into
- * the BUILD stream: plumbing as well, the same convention sfdx-hardis uses for the scope of jobs.
- */
-export function isRetrofitPullRequest(
-  pr: Pick<PullRequest, "sourceBranch">,
-): boolean {
-  const source = (pr.sourceBranch || "").toLowerCase();
-  return source === "retrofit" || source.startsWith("retrofit/");
-}
-
-/**
- * What a user reads as "the work in this branch": the User Story Pull Requests. Promotion,
- * major-to-major and retrofit Pull Requests are the vehicles that move them, so they are left out
- * of the lists and counters unless asked for with `showPromotions`. A promotion Pull Request is
- * recognized whatever the feature switch says, by its naming convention and declaration.
+ * What a user reads as "the work in this branch": everything that carries its own change, whatever
+ * the branch is named (feature, fix, retrofit, hotfix...). Only the Pull Requests that move OTHER
+ * Pull Requests are left out, and `showPromotions` brings them back.
  */
 export function userStoryPullRequests(
   pullRequests: PullRequest[],
@@ -425,9 +413,7 @@ export function userStoryPullRequests(
   config: PromotionBranchConfig,
   showPromotions = false,
 ): PullRequest[] {
-  // Splitting the vehicles out of the User Stories is part of the promotion branches feature: a
-  // project that did not opt in must keep the lists and the counters it had before.
-  if (!config.enabled || showPromotions) {
+  if (showPromotions) {
     return pullRequests;
   }
   return pullRequests.filter(
@@ -436,22 +422,23 @@ export function userStoryPullRequests(
 }
 
 /**
- * A Pull Request that moves other Pull Requests rather than carrying work of its own: a promotion,
- * a merge between two major branches, or a retrofit. Same rule as userStoryPullRequests, exposed
- * for the webview, which classifies one row at a time.
+ * A Pull Request that moves other Pull Requests rather than carrying work of its own: a merge
+ * between two major branches, or a promotion. Nothing else: a retrofit brings the RUN stream back
+ * into the BUILD stream, which is work the reader wants to see, like any feature or fix branch.
+ *
+ * A merge between two major branches is plumbing in every pipeline, so it is left out whether or
+ * not the project enabled promotion branches. A promotion Pull Request only exists as such when
+ * the feature is on: without it, a promotion/ branch is an ordinary branch, exactly as the
+ * deployment jobs treat it.
  */
 export function isVehiclePullRequest(
   pr: PullRequest,
   majorBranchNames: string[],
   config: PromotionBranchConfig,
 ): boolean {
-  if (!config.enabled) {
-    return false;
-  }
   return (
-    isPromotionPullRequest(pr, config) ||
     isMajorToMajorPullRequest(pr, majorBranchNames) ||
-    isRetrofitPullRequest(pr)
+    (config.enabled && isPromotionPullRequest(pr, config))
   );
 }
 

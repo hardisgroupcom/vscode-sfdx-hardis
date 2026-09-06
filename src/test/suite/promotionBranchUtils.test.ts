@@ -12,9 +12,9 @@ import {
   getPromotionBranchConfig,
   isMajorToMajorPullRequest,
   isMergedPullRequest,
+  isVehiclePullRequest,
   isPromotionBranchName,
   isPromotionPullRequest,
-  isRetrofitPullRequest,
   parsePromotionBranchName,
   parsePromotionPullRequestIds,
   userStoryPullRequests,
@@ -327,50 +327,45 @@ suite("promotionBranchUtils", () => {
     assert.strictEqual(window[1].alreadyDeployedVia, undefined);
   });
 
-  test("lists and counters show User Stories only, unless promotions are asked for", () => {
+  test("only the Pull Requests that move other Pull Requests are left out", () => {
     const majors = ["integ", "uat", "preprod", "main"];
-    const story = pr({
-      number: 5,
-      sourceBranch: "feature/x",
-      targetBranch: "uat",
-    });
+    const story = pr({ number: 5, sourceBranch: "feature/x", targetBranch: "uat" });
+    const fix = pr({ number: 20, sourceBranch: "fix/PROJ-9", targetBranch: "uat" });
+    // A retrofit brings the RUN stream back into the BUILD stream: that is work the reader wants
+    // to see, like any feature or fix branch
+    const retrofit = pr({ number: 10, sourceBranch: "retrofit/from-main", targetBranch: "integ" });
+    const majorToMajor = pr({ number: 16, sourceBranch: "uat", targetBranch: "preprod" });
     const promotion = pr({
       number: 7,
       sourceBranch: "promotion/integ/uat/2026-09-06-1",
       targetBranch: "uat",
       description: DECLARATION,
     });
-    const majorToMajor = pr({
-      number: 16,
-      sourceBranch: "uat",
-      targetBranch: "preprod",
-    });
-    const retrofit = pr({
-      number: 10,
-      sourceBranch: "retrofit/from-main",
-      targetBranch: "integ",
-    });
+    const all = [story, fix, retrofit, majorToMajor, promotion];
+
     assert.strictEqual(isMajorToMajorPullRequest(majorToMajor, majors), true);
     assert.strictEqual(isMajorToMajorPullRequest(story, majors), false);
-    assert.strictEqual(isRetrofitPullRequest(retrofit), true);
-    assert.strictEqual(
-      isRetrofitPullRequest(pr({ number: 1, sourceBranch: "retrofit-notes" })),
-      false,
-    );
-    const all = [story, promotion, majorToMajor, retrofit];
+
     assert.deepStrictEqual(
       userStoryPullRequests(all, majors, ENABLED).map((p) => p.number),
-      [5],
+      [5, 20, 10],
     );
     assert.deepStrictEqual(
       userStoryPullRequests(all, majors, ENABLED, true).map((p) => p.number),
-      [5, 7, 16, 10],
+      [5, 20, 10, 16, 7],
     );
-    // The split is part of the feature: a project that never enabled it keeps its lists untouched
+
+    // A merge between two major branches is plumbing in every pipeline, so it is left out even
+    // for a project that never enabled promotion branches. The promotion/ branch is an ordinary
+    // branch there, exactly as the deployment jobs treat it.
     assert.deepStrictEqual(
       userStoryPullRequests(all, majors, DISABLED).map((p) => p.number),
-      [5, 7, 16, 10],
+      [5, 20, 10, 7],
     );
+    assert.strictEqual(isVehiclePullRequest(majorToMajor, majors, DISABLED), true);
+    assert.strictEqual(isVehiclePullRequest(promotion, majors, DISABLED), false);
+    assert.strictEqual(isVehiclePullRequest(promotion, majors, ENABLED), true);
+    assert.strictEqual(isVehiclePullRequest(retrofit, majors, ENABLED), false);
   });
 
   test("a story is listed in one branch only, even after the promotion left its window", () => {

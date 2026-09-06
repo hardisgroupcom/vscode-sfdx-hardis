@@ -2398,28 +2398,27 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       .filter(Boolean);
   }
 
-  // A promotion Pull Request (by its naming convention, whatever the feature switch says), a
-  // retrofit Pull Request, or a Pull Request between two major branches: plumbing of the
-  // pipeline, not a User Story (same rules as utils/pipeline/promotionBranchUtils.ts)
+  // A Pull Request that moves other Pull Requests rather than carrying work of its own: a merge
+  // between two major branches, or a promotion. Retrofit, feature, fix and every other branch type
+  // carry their own change and stay listed.
+  // Same rule as utils/pipeline/promotionBranchUtils.ts isVehiclePullRequest.
   _isPromotionOrMajorPr(pr) {
-    // Splitting vehicles out of the User Stories only applies to projects that enabled promotion
-    // branches: everyone else keeps the lists and counters they had before
+    const source = (pr.sourceBranch || "").toLowerCase();
+    const target = (pr.targetBranch || "").toLowerCase();
+    // A merge between two major branches is plumbing in every pipeline, promotion branches or not
+    const majors = this._majorBranchNames();
+    if (majors.includes(source) && majors.includes(target)) {
+      return true;
+    }
+    // A promotion only exists as such when the project enabled the feature: without it, a
+    // promotion/ branch is an ordinary branch, exactly as the deployment jobs treat it
     if (this.pipelineData?.promotionBranches?.enabled !== true) {
       return false;
     }
     if (pr.isPromotion === true) {
       return true;
     }
-    const source = (pr.sourceBranch || "").toLowerCase();
-    const target = (pr.targetBranch || "").toLowerCase();
-    if (/^promotion\/[^/]+\/[^/]+\/\d{4}-\d{2}-\d{2}-\d+$/.test(source)) {
-      return true;
-    }
-    if (source === "retrofit" || source.startsWith("retrofit/")) {
-      return true;
-    }
-    const majors = this._majorBranchNames();
-    return majors.includes(source) && majors.includes(target);
+    return /^promotion\/[^/]+\/[^/]+\/\d{4}-\d{2}-\d{2}-\d+$/.test(source);
   }
 
   // The toggle only shows when the current view holds something to reveal
