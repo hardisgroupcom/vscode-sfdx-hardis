@@ -7,11 +7,13 @@ import {
   getPromotionBranchConfig,
   isPromotionBranchName,
   isPromotionPullRequest,
+  parsePromotionBranchName,
   parsePromotionPullRequestIds,
 } from "../../utils/pipeline/promotionBranchUtils";
 
-const ENABLED = { enabled: true, prefix: "promotion" };
-const DISABLED = { enabled: false, prefix: "promotion" };
+const ENABLED = { enabled: true };
+const DISABLED = { enabled: false };
+const PROMOTION_BRANCH = "promotion/uat/preprod/2026-09-06-1";
 const DECLARATION =
   "Promotion of September\n\n```yaml\npromotionPullRequests: [482, 487]\n```\n";
 
@@ -32,17 +34,10 @@ function pr(overrides: Partial<PullRequest> & { number: number }): PullRequest {
 
 suite("promotionBranchUtils", () => {
   test("reads the switch from the project config or any branch config", () => {
-    assert.deepStrictEqual(getPromotionBranchConfig([{}]), {
-      enabled: false,
-      prefix: "promotion",
-    });
+    assert.deepStrictEqual(getPromotionBranchConfig([{}]), { enabled: false });
     assert.deepStrictEqual(
       getPromotionBranchConfig([{}, { enablePromotionBranches: true }]),
-      { enabled: true, prefix: "promotion" },
-    );
-    assert.strictEqual(
-      getPromotionBranchConfig([{ promotionBranchPrefix: "release/" }]).prefix,
-      "release",
+      { enabled: true },
     );
     assert.strictEqual(
       getPromotionBranchConfig([{ enablePromotionBranches: "true" }]).enabled,
@@ -50,13 +45,26 @@ suite("promotionBranchUtils", () => {
     );
   });
 
-  test("matches the prefix/name convention only", () => {
-    assert.strictEqual(isPromotionBranchName("promotion/2026-09"), true);
-    assert.strictEqual(isPromotionBranchName("Promotion/2026-09"), true);
-    assert.strictEqual(isPromotionBranchName("promotion-notes"), false);
-    assert.strictEqual(isPromotionBranchName("promotion/"), false);
-    assert.strictEqual(isPromotionBranchName("release/1.4", "release"), true);
-    assert.strictEqual(isPromotionBranchName(undefined), false);
+  test("parses promotion/<source>/<target>/<YYYY-MM-DD>-<counter> and nothing else", () => {
+    assert.deepStrictEqual(parsePromotionBranchName(PROMOTION_BRANCH), {
+      sourceBranch: "uat",
+      targetBranch: "preprod",
+      date: "2026-09-06",
+      counter: 1,
+    });
+    assert.strictEqual(isPromotionBranchName("Promotion/UAT/main/2026-12-31-12"), true);
+    for (const name of [
+      "promotion/2026-09",
+      "promotion/uat/preprod",
+      "promotion/uat/preprod/2026-09-06",
+      "promotion/uat/preprod/20260906-1",
+      "feature/promotion/uat/preprod/2026-09-06-1",
+      "promotion-notes",
+      "",
+      undefined,
+    ]) {
+      assert.strictEqual(isPromotionBranchName(name), false, String(name));
+    }
   });
 
   test("parses the declared Pull Request numbers", () => {
@@ -81,21 +89,25 @@ suite("promotionBranchUtils", () => {
     );
   });
 
-  test("needs the flag, the prefix and the key", () => {
+  test("needs the flag, the naming convention and the key", () => {
     assert.strictEqual(
       isPromotionPullRequest(
-        pr({
-          number: 9,
-          sourceBranch: "promotion/x",
-          description: DECLARATION,
-        }),
+        pr({ number: 9, sourceBranch: PROMOTION_BRANCH, description: DECLARATION }),
         ENABLED,
       ),
       true,
     );
     assert.strictEqual(
       isPromotionPullRequest(
-        pr({ number: 9, sourceBranch: "promotion/x", description: "none" }),
+        pr({ number: 9, sourceBranch: PROMOTION_BRANCH, description: "none" }),
+        ENABLED,
+      ),
+      false,
+    );
+    // Named by hand: not a promotion branch even with the key
+    assert.strictEqual(
+      isPromotionPullRequest(
+        pr({ number: 9, sourceBranch: "promotion/2026-09", description: DECLARATION }),
         ENABLED,
       ),
       false,
@@ -109,11 +121,7 @@ suite("promotionBranchUtils", () => {
     );
     assert.strictEqual(
       isPromotionPullRequest(
-        pr({
-          number: 9,
-          sourceBranch: "promotion/x",
-          description: DECLARATION,
-        }),
+        pr({ number: 9, sourceBranch: PROMOTION_BRANCH, description: DECLARATION }),
         DISABLED,
       ),
       false,
@@ -123,7 +131,7 @@ suite("promotionBranchUtils", () => {
   test("expands a window with the declared stories, one level, merged only", async () => {
     const promotion = pr({
       number: 900,
-      sourceBranch: "promotion/x",
+      sourceBranch: PROMOTION_BRANCH,
       targetBranch: "preprod",
       description: DECLARATION,
     });
@@ -147,7 +155,7 @@ suite("promotionBranchUtils", () => {
     assert.strictEqual(added.length, 1);
     assert.deepStrictEqual(added[0].carriedByPullRequest, {
       number: 900,
-      sourceBranch: "promotion/x",
+      sourceBranch: PROMOTION_BRANCH,
       webUrl: promotion.webUrl,
     });
     assert.strictEqual(promotion.isPromotion, true);
@@ -156,11 +164,7 @@ suite("promotionBranchUtils", () => {
 
   test("changes nothing when the feature is disabled", async () => {
     const window = [
-      pr({
-        number: 900,
-        sourceBranch: "promotion/x",
-        description: DECLARATION,
-      }),
+      pr({ number: 900, sourceBranch: PROMOTION_BRANCH, description: DECLARATION }),
     ];
     let fetchCalls = 0;
     const { all, added } = await expandPullRequestsWithPromotions(
@@ -181,14 +185,14 @@ suite("promotionBranchUtils", () => {
   test("flags the stories already shipped by a merged promotion Pull Request", () => {
     const merged = pr({
       number: 900,
-      sourceBranch: "promotion/x",
+      sourceBranch: PROMOTION_BRANCH,
       targetBranch: "preprod",
       description: DECLARATION,
       mergeDate: "2026-09-02T09:00:00Z",
     });
     const open = pr({
       number: 901,
-      sourceBranch: "promotion/y",
+      sourceBranch: "promotion/uat/preprod/2026-09-06-2",
       description: DECLARATION,
       state: "open",
     });
@@ -203,7 +207,7 @@ suite("promotionBranchUtils", () => {
     assert.deepStrictEqual(window[0].alreadyDeployedVia, [
       {
         number: 900,
-        sourceBranch: "promotion/x",
+        sourceBranch: PROMOTION_BRANCH,
         targetBranch: "preprod",
         webUrl: merged.webUrl,
         mergeDate: "2026-09-02T09:00:00Z",

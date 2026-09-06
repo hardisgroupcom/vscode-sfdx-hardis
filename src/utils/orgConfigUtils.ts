@@ -29,7 +29,6 @@ export interface MajorOrg {
   pullRequestsInBranchSinceLastMerge?: PullRequest[];
   // Promotion branches switch, when set at branch level (see promotionBranchUtils.ts)
   enablePromotionBranches?: boolean;
-  promotionBranchPrefix?: string;
 }
 
 export async function listMajorOrgs(
@@ -245,7 +244,6 @@ async function processOrgSfdxHardisConfigFile(
     jobs: jobs,
     jobsStatus: jobsStatus,
     enablePromotionBranches: props.enablePromotionBranches,
-    promotionBranchPrefix: props.promotionBranchPrefix,
   };
 }
 
@@ -262,7 +260,6 @@ export function getPipelinePromotionBranchConfig(
     projectConfig,
     ...majorOrgs.map((org) => ({
       enablePromotionBranches: org.enablePromotionBranches,
-      promotionBranchPrefix: org.promotionBranchPrefix,
     })),
   ]);
 }

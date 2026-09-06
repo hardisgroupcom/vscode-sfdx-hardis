@@ -18,11 +18,17 @@ import { PullRequest } from "../gitProviders/types";
  */
 
 export const PROMOTION_PULL_REQUESTS_KEY = "promotionPullRequests";
-export const DEFAULT_PROMOTION_BRANCH_PREFIX = "promotion";
+export const PROMOTION_BRANCH_PREFIX = "promotion";
 
 export interface PromotionBranchConfig {
   enabled: boolean;
-  prefix: string;
+}
+
+export interface PromotionBranchNameParts {
+  sourceBranch: string;
+  targetBranch: string;
+  date: string;
+  counter: number;
 }
 
 /**
@@ -33,40 +39,48 @@ export interface PromotionBranchConfig {
 export function getPromotionBranchConfig(
   configs: Array<any | null | undefined>,
 ): PromotionBranchConfig {
-  let enabled = false;
-  let prefix = DEFAULT_PROMOTION_BRANCH_PREFIX;
-  for (const config of configs) {
-    if (!config) {
-      continue;
-    }
-    if (config.enablePromotionBranches === true) {
-      enabled = true;
-    }
-    if (typeof config.promotionBranchPrefix === "string") {
-      const candidate = config.promotionBranchPrefix.trim().replace(/\/+$/, "");
-      if (candidate) {
-        prefix = candidate;
-      }
-    }
-  }
-  return { enabled, prefix };
+  const enabled = configs.some(
+    (config) => config && config.enablePromotionBranches === true,
+  );
+  return { enabled };
 }
 
 /**
- * Matches the <prefix>/<name> convention only: promotion-notes is not a promotion branch.
+ * Splits a promotion branch name into its parts. The convention is not configurable:
+ * promotion/<source major branch>/<target major branch>/<YYYY-MM-DD>-<counter>.
+ * Returns null for anything else, including a bare "promotion/xxx".
+ */
+export function parsePromotionBranchName(
+  branchName: string | undefined | null,
+): PromotionBranchNameParts | null {
+  const segments = (branchName || "").trim().split("/");
+  if (
+    segments.length !== 4 ||
+    segments[0].toLowerCase() !== PROMOTION_BRANCH_PREFIX
+  ) {
+    return null;
+  }
+  const [, sourceBranch, targetBranch, suffix] = segments;
+  const suffixMatch = suffix.match(/^(\d{4}-\d{2}-\d{2})-(\d+)$/);
+  if (!sourceBranch || !targetBranch || !suffixMatch) {
+    return null;
+  }
+  return {
+    sourceBranch,
+    targetBranch,
+    date: suffixMatch[1],
+    counter: parseInt(suffixMatch[2], 10),
+  };
+}
+
+/**
+ * True for a branch following the promotion/<source>/<target>/<YYYY-MM-DD>-<counter>
+ * convention: a hand-named promotion/xxx branch is not a promotion branch.
  */
 export function isPromotionBranchName(
   branchName: string | undefined | null,
-  prefix: string = DEFAULT_PROMOTION_BRANCH_PREFIX,
 ): boolean {
-  const name = (branchName || "").toLowerCase();
-  const normalizedPrefix = (
-    prefix || DEFAULT_PROMOTION_BRANCH_PREFIX
-  ).toLowerCase();
-  return (
-    name.startsWith(normalizedPrefix + "/") &&
-    name.length > normalizedPrefix.length + 1
-  );
+  return parsePromotionBranchName(branchName) !== null;
 }
 
 /**
@@ -135,7 +149,7 @@ function extractYamlBlocks(description: string): string[] {
 }
 
 /**
- * A promotion Pull Request needs the flag, the branch prefix and the declared list.
+ * A promotion Pull Request needs the flag, the naming convention and the declared list.
  */
 export function isPromotionPullRequest(
   pr: Pick<PullRequest, "sourceBranch" | "description"> | null | undefined,
@@ -145,7 +159,7 @@ export function isPromotionPullRequest(
     return false;
   }
   return (
-    isPromotionBranchName(pr.sourceBranch, config.prefix) &&
+    isPromotionBranchName(pr.sourceBranch) &&
     parsePromotionPullRequestIds(pr.description) !== null
   );
 }
