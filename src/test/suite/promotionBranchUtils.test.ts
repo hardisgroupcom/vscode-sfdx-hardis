@@ -1,4 +1,7 @@
 import * as assert from "assert";
+import * as fs from "fs";
+import * as path from "path";
+import { SfdxHardisConfigHelper } from "../../utils/pipeline/sfdxHardisConfigHelper";
 import { PullRequest } from "../../utils/gitProviders/types";
 import {
   annotateAlreadyPromoted,
@@ -36,6 +39,32 @@ function pr(overrides: Partial<PullRequest> & { number: number }): PullRequest {
 }
 
 suite("promotionBranchUtils", () => {
+  test("enablePromotionBranches is a setting of the Danger Zone, at project and branch level", () => {
+    const field = SfdxHardisConfigHelper.CONFIGURABLE_FIELDS.find(
+      (entry) => entry.name === "enablePromotionBranches",
+    );
+    assert.ok(field, "enablePromotionBranches must be a configurable field");
+    // The CLI reads the merged branch config, so a single branch file may switch it on
+    assert.deepStrictEqual(field!.scopes, ["global", "branch"]);
+    const section = SfdxHardisConfigHelper.SECTIONS.find(
+      (entry) => entry.label === "dangerZone",
+    );
+    assert.ok(section, "a Danger Zone section must exist");
+    assert.ok(
+      section!.keys.includes("enablePromotionBranches"),
+      "the Danger Zone must hold enablePromotionBranches",
+    );
+    // The bundled schema must know the property, so the panel shows it even while the schema
+    // published by sfdx-hardis main does not have it yet
+    const schema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(__dirname, "../../../resources/sfdx-hardis.jsonschema.json"),
+        "utf8",
+      ),
+    );
+    assert.strictEqual(schema.properties.enablePromotionBranches?.type, "boolean");
+  });
+
   test("a Pull Request closed with a merge date counts as merged (GitHub)", () => {
     // GitHub only returns open/closed, the merge date is what says a Pull Request was merged
     assert.strictEqual(
