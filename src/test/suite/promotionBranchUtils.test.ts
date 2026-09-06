@@ -13,6 +13,7 @@ import {
   isMergedPullRequest,
   isPromotionBranchName,
   isPromotionPullRequest,
+  isRetrofitPullRequest,
   parsePromotionBranchName,
   parsePromotionPullRequestIds,
   userStoryPullRequests,
@@ -334,15 +335,18 @@ suite("promotionBranchUtils", () => {
       description: DECLARATION,
     });
     const majorToMajor = pr({ number: 16, sourceBranch: "uat", targetBranch: "preprod" });
+    const retrofit = pr({ number: 10, sourceBranch: "retrofit/from-main", targetBranch: "integ" });
     assert.strictEqual(isMajorToMajorPullRequest(majorToMajor, majors), true);
     assert.strictEqual(isMajorToMajorPullRequest(story, majors), false);
+    assert.strictEqual(isRetrofitPullRequest(retrofit), true);
+    assert.strictEqual(isRetrofitPullRequest(pr({ number: 1, sourceBranch: "retrofit-notes" })), false);
     assert.deepStrictEqual(
-      userStoryPullRequests([story, promotion, majorToMajor], majors).map((p) => p.number),
+      userStoryPullRequests([story, promotion, majorToMajor, retrofit], majors).map((p) => p.number),
       [5],
     );
     assert.deepStrictEqual(
-      userStoryPullRequests([story, promotion, majorToMajor], majors, true).map((p) => p.number),
-      [5, 7, 16],
+      userStoryPullRequests([story, promotion, majorToMajor, retrofit], majors, true).map((p) => p.number),
+      [5, 7, 16, 10],
     );
   });
 

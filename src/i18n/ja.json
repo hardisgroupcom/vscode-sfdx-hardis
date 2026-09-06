@@ -1853,7 +1853,7 @@
   "showLabel": "表示",
   "showOnlySelected": "選択項目のみ表示",
   "showPromotionPrs": "プロモーション Pull Request を表示",
-  "showPromotionPrsHelp": "プロモーションブランチとメジャーブランチ間の merge は User Story を運ぶものであり、それ自体はストーリーではありません。有効にするとそれらも一覧に表示します。",
+  "showPromotionPrsHelp": "プロモーションブランチ、retrofit、メジャーブランチ間の merge は User Story を運ぶものであり、それ自体はストーリーではありません。有効にするとそれらも一覧に表示します。",
   "showTerminal": "ターミナルを表示",
   "signInAgain": "再度サインイン",
   "singleFlowVisualGitDiff": "単一フローの Visual Git Diff",

@@ -1853,7 +1853,7 @@
   "showLabel": "Weergeven",
   "showOnlySelected": "Alleen geselecteerde tonen",
   "showPromotionPrs": "Promotion Pull Requests weergeven",
-  "showPromotionPrsHelp": "Promotion branches en merges tussen twee major branches verplaatsen de User Stories, ze zijn zelf geen stories. Zet dit aan om ze ook te tonen.",
+  "showPromotionPrsHelp": "Promotion branches, retrofits en merges tussen twee major branches verplaatsen de User Stories, ze zijn zelf geen stories. Zet dit aan om ze ook te tonen.",
   "showTerminal": "Terminal tonen",
   "signInAgain": "Opnieuw aanmelden",
   "singleFlowVisualGitDiff": "Enkele Flow Visual Git Diff",

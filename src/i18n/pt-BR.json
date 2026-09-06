@@ -1853,7 +1853,7 @@
   "showLabel": "Mostrar",
   "showOnlySelected": "Mostrar apenas selecionados",
   "showPromotionPrs": "Mostrar Pull Requests de promoção",
-  "showPromotionPrsHelp": "Branches de promoção e merges entre dois branches principais transportam as User Stories, não são histórias. Ative isto para listá-los também.",
+  "showPromotionPrsHelp": "Branches de promoção, retrofits e merges entre dois branches principais transportam as User Stories, não são histórias. Ative isto para listá-los também.",
   "showTerminal": "Mostrar Terminal",
   "signInAgain": "Entrar novamente",
   "singleFlowVisualGitDiff": "Diff Visual Git de Flow Único",

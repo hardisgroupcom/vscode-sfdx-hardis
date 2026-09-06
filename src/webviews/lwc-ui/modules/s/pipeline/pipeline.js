@@ -2366,8 +2366,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       .filter(Boolean);
   }
 
-  // A promotion Pull Request (by its naming convention, whatever the feature switch says) or a
-  // Pull Request between two major branches: plumbing of the pipeline, not a User Story
+  // A promotion Pull Request (by its naming convention, whatever the feature switch says), a
+  // retrofit Pull Request, or a Pull Request between two major branches: plumbing of the
+  // pipeline, not a User Story (same rules as utils/pipeline/promotionBranchUtils.ts)
   _isPromotionOrMajorPr(pr) {
     if (pr.isPromotion === true) {
       return true;
@@ -2375,6 +2376,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     const source = (pr.sourceBranch || "").toLowerCase();
     const target = (pr.targetBranch || "").toLowerCase();
     if (/^promotion\/[^/]+\/[^/]+\/\d{4}-\d{2}-\d{2}-\d+$/.test(source)) {
+      return true;
+    }
+    if (source === "retrofit" || source.startsWith("retrofit/")) {
       return true;
     }
     const majors = this._majorBranchNames();

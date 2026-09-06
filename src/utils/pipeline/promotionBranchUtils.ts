@@ -389,10 +389,21 @@ export function isMajorToMajorPullRequest(
 }
 
 /**
- * What a user reads as "the work in this branch": the User Story Pull Requests. Promotion Pull
- * Requests and major-to-major Pull Requests are the vehicles that move them, so they are left
- * out of the lists and counters unless asked for with `showPromotions`. A promotion Pull Request
- * is recognised whatever the feature switch says, by its naming convention and declaration.
+ * A retrofit Pull Request (retrofit/<name> -> development branch) brings the RUN stream back into
+ * the BUILD stream: plumbing as well, the same convention sfdx-hardis uses for the scope of jobs.
+ */
+export function isRetrofitPullRequest(
+  pr: Pick<PullRequest, "sourceBranch">,
+): boolean {
+  const source = (pr.sourceBranch || "").toLowerCase();
+  return source === "retrofit" || source.startsWith("retrofit/");
+}
+
+/**
+ * What a user reads as "the work in this branch": the User Story Pull Requests. Promotion,
+ * major-to-major and retrofit Pull Requests are the vehicles that move them, so they are left out
+ * of the lists and counters unless asked for with `showPromotions`. A promotion Pull Request is
+ * recognised whatever the feature switch says, by its naming convention and declaration.
  */
 export function userStoryPullRequests(
   pullRequests: PullRequest[],
@@ -406,6 +417,7 @@ export function userStoryPullRequests(
   return pullRequests.filter(
     (pr) =>
       !isPromotionPullRequest(pr, alwaysOn) &&
-      !isMajorToMajorPullRequest(pr, majorBranchNames),
+      !isMajorToMajorPullRequest(pr, majorBranchNames) &&
+      !isRetrofitPullRequest(pr),
   );
 }
