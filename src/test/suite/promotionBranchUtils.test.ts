@@ -58,11 +58,17 @@ suite("promotionBranchUtils", () => {
     // published by sfdx-hardis main does not have it yet
     const schema = JSON.parse(
       fs.readFileSync(
-        path.resolve(__dirname, "../../../resources/sfdx-hardis.jsonschema.json"),
+        path.resolve(
+          __dirname,
+          "../../../resources/sfdx-hardis.jsonschema.json",
+        ),
         "utf8",
       ),
     );
-    assert.strictEqual(schema.properties.enablePromotionBranches?.type, "boolean");
+    assert.strictEqual(
+      schema.properties.enablePromotionBranches?.type,
+      "boolean",
+    );
   });
 
   test("a Pull Request closed with a merge date counts as merged (GitHub)", () => {
