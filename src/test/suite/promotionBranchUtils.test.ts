@@ -37,11 +37,15 @@ suite("promotionBranchUtils", () => {
   test("a Pull Request closed with a merge date counts as merged (GitHub)", () => {
     // GitHub only returns open/closed, the merge date is what says a Pull Request was merged
     assert.strictEqual(
-      isMergedPullRequest(pr({ number: 1, state: "closed", mergeDate: "2026-09-05T10:00:00Z" })),
+      isMergedPullRequest(
+        pr({ number: 1, state: "closed", mergeDate: "2026-09-05T10:00:00Z" }),
+      ),
       true,
     );
     assert.strictEqual(
-      isMergedPullRequest(pr({ number: 2, state: "closed", mergeDate: undefined })),
+      isMergedPullRequest(
+        pr({ number: 2, state: "closed", mergeDate: undefined }),
+      ),
       false,
     );
     // A story declared by a promotion is carried even when its state is only "closed"
@@ -52,17 +56,26 @@ suite("promotionBranchUtils", () => {
       description: DECLARATION,
     });
     const known = new Map<number, PullRequest>([
-      [482, pr({ number: 482, state: "closed", mergeDate: "2026-09-05T10:00:00Z" })],
-      [487, pr({ number: 487, state: "closed", mergeDate: "2026-09-05T11:00:00Z" })],
+      [
+        482,
+        pr({ number: 482, state: "closed", mergeDate: "2026-09-05T10:00:00Z" }),
+      ],
+      [
+        487,
+        pr({ number: 487, state: "closed", mergeDate: "2026-09-05T11:00:00Z" }),
+      ],
     ]);
-    return expandPullRequestsWithPromotions([promotion], ENABLED, known, async () => null).then(
-      ({ added }) => {
-        assert.deepStrictEqual(
-          added.map((story) => story.number),
-          [482, 487],
-        );
-      },
-    );
+    return expandPullRequestsWithPromotions(
+      [promotion],
+      ENABLED,
+      known,
+      async () => null,
+    ).then(({ added }) => {
+      assert.deepStrictEqual(
+        added.map((story) => story.number),
+        [482, 487],
+      );
+    });
   });
 
   test("reads the switch from the project config or any branch config", () => {
