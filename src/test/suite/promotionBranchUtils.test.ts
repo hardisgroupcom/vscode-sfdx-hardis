@@ -329,12 +329,28 @@ suite("promotionBranchUtils", () => {
 
   test("only the Pull Requests that move other Pull Requests are left out", () => {
     const majors = ["integ", "uat", "preprod", "main"];
-    const story = pr({ number: 5, sourceBranch: "feature/x", targetBranch: "uat" });
-    const fix = pr({ number: 20, sourceBranch: "fix/PROJ-9", targetBranch: "uat" });
+    const story = pr({
+      number: 5,
+      sourceBranch: "feature/x",
+      targetBranch: "uat",
+    });
+    const fix = pr({
+      number: 20,
+      sourceBranch: "fix/PROJ-9",
+      targetBranch: "uat",
+    });
     // A retrofit brings the RUN stream back into the BUILD stream: that is work the reader wants
     // to see, like any feature or fix branch
-    const retrofit = pr({ number: 10, sourceBranch: "retrofit/from-main", targetBranch: "integ" });
-    const majorToMajor = pr({ number: 16, sourceBranch: "uat", targetBranch: "preprod" });
+    const retrofit = pr({
+      number: 10,
+      sourceBranch: "retrofit/from-main",
+      targetBranch: "integ",
+    });
+    const majorToMajor = pr({
+      number: 16,
+      sourceBranch: "uat",
+      targetBranch: "preprod",
+    });
     const promotion = pr({
       number: 7,
       sourceBranch: "promotion/integ/uat/2026-09-06-1",
@@ -362,8 +378,14 @@ suite("promotionBranchUtils", () => {
       userStoryPullRequests(all, majors, DISABLED).map((p) => p.number),
       [5, 20, 10, 7],
     );
-    assert.strictEqual(isVehiclePullRequest(majorToMajor, majors, DISABLED), true);
-    assert.strictEqual(isVehiclePullRequest(promotion, majors, DISABLED), false);
+    assert.strictEqual(
+      isVehiclePullRequest(majorToMajor, majors, DISABLED),
+      true,
+    );
+    assert.strictEqual(
+      isVehiclePullRequest(promotion, majors, DISABLED),
+      false,
+    );
     assert.strictEqual(isVehiclePullRequest(promotion, majors, ENABLED), true);
     assert.strictEqual(isVehiclePullRequest(retrofit, majors, ENABLED), false);
   });
