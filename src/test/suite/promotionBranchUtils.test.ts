@@ -9,11 +9,13 @@ import {
   expandPullRequestsWithPromotions,
   findPromotionsCarrying,
   getPromotionBranchConfig,
+  isMajorToMajorPullRequest,
   isMergedPullRequest,
   isPromotionBranchName,
   isPromotionPullRequest,
   parsePromotionBranchName,
   parsePromotionPullRequestIds,
+  userStoryPullRequests,
   visiblePullRequests,
 } from "../../utils/pipeline/promotionBranchUtils";
 
@@ -320,6 +322,28 @@ suite("promotionBranchUtils", () => {
       },
     ]);
     assert.strictEqual(window[1].alreadyDeployedVia, undefined);
+  });
+
+  test("lists and counters show User Stories only, unless promotions are asked for", () => {
+    const majors = ["integ", "uat", "preprod", "main"];
+    const story = pr({ number: 5, sourceBranch: "feature/x", targetBranch: "uat" });
+    const promotion = pr({
+      number: 7,
+      sourceBranch: "promotion/integ/uat/2026-09-06-1",
+      targetBranch: "uat",
+      description: DECLARATION,
+    });
+    const majorToMajor = pr({ number: 16, sourceBranch: "uat", targetBranch: "preprod" });
+    assert.strictEqual(isMajorToMajorPullRequest(majorToMajor, majors), true);
+    assert.strictEqual(isMajorToMajorPullRequest(story, majors), false);
+    assert.deepStrictEqual(
+      userStoryPullRequests([story, promotion, majorToMajor], majors).map((p) => p.number),
+      [5],
+    );
+    assert.deepStrictEqual(
+      userStoryPullRequests([story, promotion, majorToMajor], majors, true).map((p) => p.number),
+      [5, 7, 16],
+    );
   });
 
   test("a Pull Request number appears in a single window of the pipeline", () => {

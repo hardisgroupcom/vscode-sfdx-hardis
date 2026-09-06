@@ -372,3 +372,40 @@ export function visiblePullRequests(
   }
   return pullRequests.filter((pr) => pr.promotedAway !== true);
 }
+
+/**
+ * A Pull Request between two major branches (ex: uat -> preprod): plumbing of the pipeline,
+ * not a User Story. The stories it moves are listed on their own.
+ */
+export function isMajorToMajorPullRequest(
+  pr: Pick<PullRequest, "sourceBranch" | "targetBranch">,
+  majorBranchNames: string[],
+): boolean {
+  const majors = new Set(majorBranchNames.map((name) => (name || "").toLowerCase()));
+  return (
+    majors.has((pr.sourceBranch || "").toLowerCase()) &&
+    majors.has((pr.targetBranch || "").toLowerCase())
+  );
+}
+
+/**
+ * What a user reads as "the work in this branch": the User Story Pull Requests. Promotion Pull
+ * Requests and major-to-major Pull Requests are the vehicles that move them, so they are left
+ * out of the lists and counters unless asked for with `showPromotions`. A promotion Pull Request
+ * is recognised whatever the feature switch says, by its naming convention and declaration.
+ */
+export function userStoryPullRequests(
+  pullRequests: PullRequest[],
+  majorBranchNames: string[],
+  showPromotions = false,
+): PullRequest[] {
+  if (showPromotions) {
+    return pullRequests;
+  }
+  const alwaysOn: PromotionBranchConfig = { enabled: true };
+  return pullRequests.filter(
+    (pr) =>
+      !isPromotionPullRequest(pr, alwaysOn) &&
+      !isMajorToMajorPullRequest(pr, majorBranchNames),
+  );
+}

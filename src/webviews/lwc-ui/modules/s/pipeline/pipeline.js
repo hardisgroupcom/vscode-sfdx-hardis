@@ -33,6 +33,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // Promotion branches: a Pull Request a promotion took out of a branch is listed in the branch
   // it reached, so a number appears once in the pipeline. This brings the other places back.
   @track showAlreadyPromotedPrs = false;
+  // Branch modal: promotion and major-to-major Pull Requests are the vehicles that move the
+  // User Stories, not stories themselves, so they are hidden unless this toggle is on
+  @track modalShowPromotionPrs = false;
+  // Branch modal: ids (key-field) and numbers of the stories ticked for the next promotion
+  @track modalSelectedPrIds = [];
+  modalSelectedPrNumbers = [];
   @track mermaidZoomLevel = 1;
   @track mermaidLoading = true;
   @track mermaidRefreshing = false;
@@ -2032,6 +2038,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   get createPromotionLabel() {
+    if (this.modalSelectedPrCount > 0) {
+      return this.t("createPromotionFromBranchSelected", {
+        branch: this.modalBranchName,
+        count: this.modalSelectedPrCount,
+      });
+    }
     return this.t("createPromotionFromBranch", {
       branch: this.modalBranchName,
     });
@@ -2044,10 +2056,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   handleCreatePromotion() {
+    // The ticked stories preselect the prompt of the command, the user confirms there
+    const selection =
+      this.modalSelectedPrNumbers.length > 0
+        ? ` --pull-requests ${this.modalSelectedPrNumbers.join(",")}`
+        : "";
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: `sf hardis:project:promotion:create --source-branch ${this.modalBranchName}`,
+        command: `sf hardis:project:promotion:create --source-branch ${this.modalBranchName}${selection}`,
       },
     });
   }
@@ -2304,8 +2321,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   handleShowBranchPRs(branchName) {
     console.log("Showing PRs for branch:", branchName);
-    const prs = this._visibleBranchPullRequests(branchName);
     this.modalBranchName = branchName;
+    this.modalSelectedPrIds = [];
+    this.modalSelectedPrNumbers = [];
+    const prs = this._visibleBranchPullRequests(branchName);
     // Major branch PR lists (pending promotion / go-lives) don't show job status
     // and keep the tickets / deployment actions tabs.
     this.showJobStatusColumn = false;
@@ -2331,11 +2350,86 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // The Pull Requests a branch still owns: the ones a promotion carried away are listed in the
   // branch they reached instead, unless the "show already promoted" toggle is on.
   _visibleBranchPullRequests(branchName) {
-    const prs = this.branchPullRequestsMap.get(branchName) || [];
-    if (this.showAlreadyPromotedPrs) {
-      return prs;
+    let prs = this.branchPullRequestsMap.get(branchName) || [];
+    if (!this.showAlreadyPromotedPrs) {
+      prs = prs.filter((pr) => pr.promotedAway !== true);
     }
-    return prs.filter((pr) => pr.promotedAway !== true);
+    if (!this.modalShowPromotionPrs) {
+      prs = prs.filter((pr) => !this._isPromotionOrMajorPr(pr));
+    }
+    return prs;
+  }
+
+  _majorBranchNames() {
+    return (this.pipelineData?.orgs || [])
+      .map((org) => (org.name || "").toLowerCase())
+      .filter(Boolean);
+  }
+
+  // A promotion Pull Request (by its naming convention, whatever the feature switch says) or a
+  // Pull Request between two major branches: plumbing of the pipeline, not a User Story
+  _isPromotionOrMajorPr(pr) {
+    if (pr.isPromotion === true) {
+      return true;
+    }
+    const source = (pr.sourceBranch || "").toLowerCase();
+    const target = (pr.targetBranch || "").toLowerCase();
+    if (/^promotion\/[^/]+\/[^/]+\/\d{4}-\d{2}-\d{2}-\d+$/.test(source)) {
+      return true;
+    }
+    const majors = this._majorBranchNames();
+    return majors.includes(source) && majors.includes(target);
+  }
+
+  // The toggle only shows when the branch holds something to reveal
+  get modalHasPromotionPrs() {
+    if (this.modalMode !== "branch" || !this.modalBranchName) {
+      return false;
+    }
+    const prs = this.branchPullRequestsMap.get(this.modalBranchName) || [];
+    return prs.some((pr) => this._isPromotionOrMajorPr(pr));
+  }
+
+  handleToggleModalPromotionPrs(event) {
+    this.modalShowPromotionPrs = event.target.checked;
+    this.modalSelectedPrIds = [];
+    this.modalSelectedPrNumbers = [];
+    this._populateModalFromPrs(
+      this._visibleBranchPullRequests(this.modalBranchName),
+    );
+  }
+
+  // Stories that can be ticked for the next promotion from this branch: merged into the branch
+  // itself (a story brought here by a promotion is promoted through that promotion), not yet
+  // carried away, and not a vehicle
+  _isSelectableForPromotion(pr) {
+    return (
+      (pr.targetBranch || "").toLowerCase() ===
+        (this.modalBranchName || "").toLowerCase() &&
+      pr.promotedAway !== true &&
+      !this._isPromotionOrMajorPr(pr) &&
+      typeof pr.number === "number" &&
+      pr.number > 0
+    );
+  }
+
+  get modalHideCheckboxColumn() {
+    return !this.showCreatePromotionButton;
+  }
+
+  get modalSelectedPrCount() {
+    return this.modalSelectedPrNumbers.length;
+  }
+
+  get promotionSelectionHint() {
+    return this.t("promotionSelectionHint");
+  }
+
+  handleModalRowSelection(event) {
+    const rows = (event.detail && event.detail.selectedRows) || [];
+    const eligible = rows.filter((row) => this._isSelectableForPromotion(row));
+    this.modalSelectedPrIds = eligible.map((row) => row.id);
+    this.modalSelectedPrNumbers = eligible.map((row) => row.number);
   }
 
   // Builds the modal content (PR list, tickets, actions, Apex tests by line)

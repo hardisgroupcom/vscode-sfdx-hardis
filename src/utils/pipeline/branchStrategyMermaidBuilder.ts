@@ -1,3 +1,7 @@
+import {
+  userStoryPullRequests,
+  visiblePullRequests,
+} from "./promotionBranchUtils";
 import { sortArray } from "../sortUtils";
 import { prettifyFieldName } from "../stringUtils";
 import { isMajorBranch, isPreprod, isProduction } from "../orgConfigUtils";
@@ -211,11 +215,13 @@ export class BranchStrategyMermaidBuilder {
         });
       }
       const branchPrs = branchAndOrg?.pullRequestsInBranchSinceLastMerge || [];
-      // A Pull Request a promotion took out of this branch belongs to the branch it reached:
-      // counting it here too would show the same number twice in the pipeline. The total is
-      // kept as well, for the "show already promoted" toggle of the webview.
-      const prCount = branchPrs.filter(
-        (pr: { promotedAway?: boolean }) => pr.promotedAway !== true,
+      // The counter says how many User Stories the branch holds: a Pull Request a promotion took
+      // out of this branch belongs to the branch it reached (counting it here too would show the
+      // same number twice), and promotion or major-to-major Pull Requests are vehicles, not
+      // stories. The total is kept as well, for the toggles of the webview.
+      const prCount = userStoryPullRequests(
+        visiblePullRequests(branchPrs),
+        this.branchesAndOrgs.map((entry) => entry.branchName),
       ).length;
       const prCountAll = branchPrs.length;
       // The PR count is embedded as a hidden marker: the webview draws it as
