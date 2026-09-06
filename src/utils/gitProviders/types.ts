@@ -153,6 +153,9 @@ export type PullRequest = {
     webUrl: string;
     mergeDate: string;
   }>;
+  // True when a promotion assembled from the branch of this window carried the story away: it is
+  // listed in the branch it reached instead, so a Pull Request number appears once in the pipeline
+  promotedAway?: boolean;
 };
 
 /**

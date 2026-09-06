@@ -1149,6 +1149,8 @@ export function registerShowPipeline(commands: Commands) {
       // Read displayFeatureBranches configuration
       const displayFeatureBranches =
         config.get<boolean>("pipelineDisplayFeatureBranches") ?? false;
+      const showAlreadyPromotedPrs =
+        config.get<boolean>("pipelineShowAlreadyPromotedPullRequests") ?? false;
 
       const ticketProvider = await TicketProvider.getInstance({
         reset: false,
@@ -1210,6 +1212,7 @@ export function registerShowPipeline(commands: Commands) {
         repoPlatformLabel: repoPlatformLabel,
         repoInfo: gitProvider?.repoInfo || null,
         displayFeatureBranches: displayFeatureBranches,
+        showAlreadyPromotedPrs: showAlreadyPromotedPrs,
         projectApexScripts: projectApexScripts,
         projectSfdmuWorkspaces: projectDataWorkspaces,
         projectCommunities: [],
@@ -1252,6 +1255,7 @@ type PipelineInfo = {
   repoPlatformLabel: string;
   repoInfo?: any;
   displayFeatureBranches: boolean;
+  showAlreadyPromotedPrs: boolean;
   projectApexScripts: any[];
   projectSfdmuWorkspaces: any[];
   projectCommunities: any[];

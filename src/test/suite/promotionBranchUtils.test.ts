@@ -2,6 +2,7 @@ import * as assert from "assert";
 import { PullRequest } from "../../utils/gitProviders/types";
 import {
   annotateAlreadyPromoted,
+  buildPromotionIndex,
   expandPullRequestsWithPromotions,
   findPromotionsCarrying,
   getPromotionBranchConfig,
@@ -10,6 +11,7 @@ import {
   isPromotionPullRequest,
   parsePromotionBranchName,
   parsePromotionPullRequestIds,
+  visiblePullRequests,
 } from "../../utils/pipeline/promotionBranchUtils";
 
 const ENABLED = { enabled: true };
@@ -260,14 +262,19 @@ suite("promotionBranchUtils", () => {
       description: DECLARATION,
       state: "open",
     });
+    // The descriptions are parsed once, whatever the number of stories to annotate
+    const index = buildPromotionIndex([merged, open], ENABLED);
     assert.deepStrictEqual(
-      findPromotionsCarrying(482, [merged, open], ENABLED).map((p) => p.number),
+      findPromotionsCarrying(482, index).map((p) => p.number),
       [900],
     );
-    assert.deepStrictEqual(findPromotionsCarrying(482, [merged], DISABLED), []);
+    assert.deepStrictEqual(
+      findPromotionsCarrying(482, buildPromotionIndex([merged], DISABLED)),
+      [],
+    );
 
     const window = [pr({ number: 482 }), pr({ number: 3 })];
-    annotateAlreadyPromoted(window, [merged, open], ENABLED);
+    annotateAlreadyPromoted(window, "uat", index, ENABLED);
     assert.deepStrictEqual(window[0].alreadyDeployedVia, [
       {
         number: 900,
@@ -278,5 +285,36 @@ suite("promotionBranchUtils", () => {
       },
     ]);
     assert.strictEqual(window[1].alreadyDeployedVia, undefined);
+  });
+
+  test("a Pull Request number appears in a single window of the pipeline", () => {
+    // promotion/uat/preprod carries 482 out of uat, so 482 is listed in preprod, not in uat
+    const promotion = pr({
+      number: 900,
+      sourceBranch: PROMOTION_BRANCH,
+      targetBranch: "preprod",
+      description: DECLARATION,
+      mergeDate: "2026-09-02T09:00:00Z",
+    });
+    const index = buildPromotionIndex([promotion], ENABLED);
+
+    const uatWindow = [pr({ number: 482 }), pr({ number: 500 })];
+    annotateAlreadyPromoted(uatWindow, "uat", index, ENABLED);
+    assert.deepStrictEqual(
+      visiblePullRequests(uatWindow).map((p) => p.number),
+      [500],
+    );
+    assert.deepStrictEqual(
+      visiblePullRequests(uatWindow, true).map((p) => p.number),
+      [482, 500],
+    );
+
+    // The very promotion that carried it, and the story it brought, stay visible in preprod
+    const preprodWindow = [promotion, pr({ number: 482 })];
+    annotateAlreadyPromoted(preprodWindow, "preprod", index, ENABLED);
+    assert.deepStrictEqual(
+      visiblePullRequests(preprodWindow).map((p) => p.number),
+      [900, 482],
+    );
   });
 });

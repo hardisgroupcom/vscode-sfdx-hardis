@@ -210,8 +210,14 @@ export class BranchStrategyMermaidBuilder {
           activePR: activePR,
         });
       }
-      const prCount =
-        branchAndOrg?.pullRequestsInBranchSinceLastMerge?.length || 0;
+      const branchPrs = branchAndOrg?.pullRequestsInBranchSinceLastMerge || [];
+      // A Pull Request a promotion took out of this branch belongs to the branch it reached:
+      // counting it here too would show the same number twice in the pipeline. The total is
+      // kept as well, for the "show already promoted" toggle of the webview.
+      const prCount = branchPrs.filter(
+        (pr: { promotedAway?: boolean }) => pr.promotedAway !== true,
+      ).length;
+      const prCountAll = branchPrs.length;
       // The PR count is embedded as a hidden marker: the webview draws it as
       // a notification-style bubble on the node's top-right corner (see
       // _decorateMermaidNodes in pipeline.js). It cannot be rendered inside
@@ -220,8 +226,8 @@ export class BranchStrategyMermaidBuilder {
         BRANCH_ICON_SVG +
         " " +
         this.escapeHtmlLabel(branchAndOrg.branchName) +
-        (prCount > 0
-          ? `<span class='hardis-node-count' data-count='${prCount}' style='display:none;'></span>`
+        (prCountAll > 0
+          ? `<span class='hardis-node-count' data-count='${prCount}' data-count-all='${prCountAll}' style='display:none;'></span>`
           : "");
       return {
         name: branchAndOrg.branchName,
@@ -230,9 +236,7 @@ export class BranchStrategyMermaidBuilder {
         class: isProduction(branchAndOrg.branchName) ? "gitMain" : "gitMajor",
         level: branchAndOrg.level,
         instanceUrl: branchAndOrg.instanceUrl,
-        hasPullRequests:
-          branchAndOrg?.pullRequestsInBranchSinceLastMerge &&
-          branchAndOrg.pullRequestsInBranchSinceLastMerge.length > 0,
+        hasPullRequests: prCountAll > 0,
       };
     });
 

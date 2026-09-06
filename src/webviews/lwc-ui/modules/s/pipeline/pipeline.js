@@ -30,6 +30,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track autoFixPullRequest = null;
   @track openPullRequests = [];
   @track displayFeatureBranches = false;
+  // Promotion branches: a Pull Request a promotion took out of a branch is listed in the branch
+  // it reached, so a number appears once in the pipeline. This brings the other places back.
+  @track showAlreadyPromotedPrs = false;
   @track mermaidZoomLevel = 1;
   @track mermaidLoading = true;
   @track mermaidRefreshing = false;
@@ -676,6 +679,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.warnings = (this.pipelineData && this.pipelineData.warnings) || [];
     this.hasWarnings = this.warnings.length > 0;
     this.showOnlyMajor = false;
+    if (
+      Object.prototype.hasOwnProperty.call(data, "showAlreadyPromotedPrs")
+    ) {
+      this.showAlreadyPromotedPrs = data.showAlreadyPromotedPrs ?? false;
+    }
     if (Object.prototype.hasOwnProperty.call(data, "displayFeatureBranches")) {
       this.displayFeatureBranches = data.displayFeatureBranches ?? false;
     }
@@ -2105,6 +2113,43 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
   }
 
+  handleToggleAlreadyPromoted(event) {
+    this.showAlreadyPromotedPrs = event.target.checked;
+    window.sendMessageToVSCode({
+      type: "updateVsCodeSfdxHardisConfiguration",
+      data: {
+        configKey: "pipelineShowAlreadyPromotedPullRequests",
+        value: this.showAlreadyPromotedPrs,
+      },
+    });
+    // The diagram itself does not change, only the counters drawn on its nodes
+    this._redrawNodeCountBubbles();
+  }
+
+  // True as soon as one Pull Request of the pipeline was carried away by a promotion: without
+  // one, the toggle would have nothing to show and stays hidden.
+  get hasAlreadyPromotedPrs() {
+    if (!this.pipelineData || !Array.isArray(this.pipelineData.orgs)) {
+      return false;
+    }
+    return this.pipelineData.orgs.some((org) =>
+      (org.pullRequestsInBranchSinceLastMerge || []).some(
+        (pr) => pr.promotedAway === true,
+      ),
+    );
+  }
+
+  _redrawNodeCountBubbles() {
+    const mermaidSvg = this.template.querySelector(".mermaid-container svg");
+    if (!mermaidSvg) {
+      return;
+    }
+    mermaidSvg
+      .querySelectorAll(".hardis-count-bubble")
+      .forEach((bubble) => bubble.remove());
+    this._decorateMermaidNodes(mermaidSvg);
+  }
+
   handleToggleFeatureBranches(event) {
     // Get the new state from the toggle
     this.displayFeatureBranches = event.target.checked;
@@ -2261,7 +2306,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   handleShowBranchPRs(branchName) {
     console.log("Showing PRs for branch:", branchName);
-    const prs = this.branchPullRequestsMap.get(branchName) || [];
+    const prs = this._visibleBranchPullRequests(branchName);
     this.modalBranchName = branchName;
     // Major branch PR lists (pending promotion / go-lives) don't show job status
     // and keep the tickets / deployment actions tabs.
@@ -2283,6 +2328,16 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this._populateModalFromPrs(prs);
     this.modalActiveTabValue = "prs";
     this.showPRModal = true;
+  }
+
+  // The Pull Requests a branch still owns: the ones a promotion carried away are listed in the
+  // branch they reached instead, unless the "show already promoted" toggle is on.
+  _visibleBranchPullRequests(branchName) {
+    const prs = this.branchPullRequestsMap.get(branchName) || [];
+    if (this.showAlreadyPromotedPrs) {
+      return prs;
+    }
+    return prs.filter((pr) => pr.promotedAway !== true);
   }
 
   // Builds the modal content (PR list, tickets, actions, Apex tests by line)
@@ -2533,7 +2588,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (!marker) {
       return;
     }
-    const count = marker.getAttribute("data-count");
+    const count = this.showAlreadyPromotedPrs
+      ? marker.getAttribute("data-count-all") || marker.getAttribute("data-count")
+      : marker.getAttribute("data-count");
+    if (count === "0") {
+      return;
+    }
     if (!count || node.querySelector(".hardis-count-bubble")) {
       return;
     }

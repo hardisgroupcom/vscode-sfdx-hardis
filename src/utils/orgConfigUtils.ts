@@ -9,6 +9,7 @@ import { GitProvider } from "./gitProviders/gitProvider";
 import { getConfig } from "./pipeline/sfdxHardisConfig";
 import {
   annotateAlreadyPromoted,
+  buildPromotionIndex,
   expandPullRequestsWithPromotions,
   getPromotionBranchConfig,
   isMergedPullRequest,
@@ -315,7 +316,8 @@ async function completeMajorOrgsWithPromotionBranches(
     org.pullRequestsInBranchSinceLastMerge = all;
   }
   // A story is "already deployed" when a merged promotion Pull Request, wherever it was
-  // merged, declares it
+  // merged, declares it. The descriptions are parsed once into an index: a pipeline with a
+  // thousand Pull Requests would otherwise re-parse the same YAML blocks for every story.
   const promotions: PullRequest[] = [];
   for (const org of majorOrgs) {
     for (const pr of org.pullRequestsInBranchSinceLastMerge || []) {
@@ -327,10 +329,12 @@ async function completeMajorOrgsWithPromotionBranches(
   if (promotions.length === 0) {
     return;
   }
+  const index = buildPromotionIndex(promotions, config);
   for (const org of majorOrgs) {
     annotateAlreadyPromoted(
       org.pullRequestsInBranchSinceLastMerge || [],
-      promotions,
+      org.branchName,
+      index,
       config,
     );
   }

@@ -1843,6 +1843,8 @@
   "sfdxPluginLatestInstalled": "Neueste Version des SFDX-Plugins {{plugin}} ist installiert",
   "sfdxProjectConfigFile": "Sfdx-Projektkonfigurationsdatei",
   "showAllOptions": "Alle anzeigen",
+  "showAlreadyPromotedPrs": "Bereits promotete Pull Requests anzeigen",
+  "showAlreadyPromotedPrsHelp": "Ein Pull Request, den ein Promotion-Branch mitgenommen hat, wird im erreichten Branch gelistet. Aktivieren Sie dies, um ihn auch im vorherigen Branch zu sehen.",
   "showAtStartup": "Beim Start anzeigen",
   "showFeatureBranches": "Feature-Branches anzeigen",
   "showFilter": "Filter anzeigen",

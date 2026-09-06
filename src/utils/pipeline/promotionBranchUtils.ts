@@ -241,59 +241,128 @@ export async function expandPullRequestsWithPromotions(
 }
 
 /**
- * Merged promotion Pull Requests declaring a story: the story has already been
- * shipped through them. Informational only, the story stays in its window.
+ * One pass over the merged promotion Pull Requests of a pipeline, so the per-story lookups
+ * below cost a Map read instead of parsing every description again. A project with a thousand
+ * Pull Requests would otherwise parse the same YAML blocks thousands of times.
  */
-export function findPromotionsCarrying(
-  storyNumber: number,
+export interface PromotionIndex {
+  // story number -> the merged promotions that declare it
+  byStory: Map<number, PromotionReference[]>;
+  // lowercased source branch -> the story numbers a promotion took out of that branch
+  promotedOutOf: Map<string, Set<number>>;
+}
+
+export interface PromotionReference {
+  number: number;
+  sourceBranch: string;
+  targetBranch: string;
+  webUrl: string;
+  mergeDate: string;
+}
+
+export const EMPTY_PROMOTION_INDEX: PromotionIndex = {
+  byStory: new Map(),
+  promotedOutOf: new Map(),
+};
+
+export function buildPromotionIndex(
   promotionPullRequests: PullRequest[],
   config: PromotionBranchConfig,
-): PullRequest[] {
-  if (!config.enabled || !storyNumber) {
-    return [];
+): PromotionIndex {
+  const index: PromotionIndex = {
+    byStory: new Map(),
+    promotedOutOf: new Map(),
+  };
+  if (!config.enabled) {
+    return index;
   }
-  return promotionPullRequests.filter((pr) => {
-    if (!isPromotionPullRequest(pr, config)) {
-      return false;
+  for (const promotion of promotionPullRequests) {
+    if (!isPromotionPullRequest(promotion, config) || !isMergedPullRequest(promotion)) {
+      continue;
     }
-    if (!isMergedPullRequest(pr)) {
-      return false;
+    const parts = parsePromotionBranchName(promotion.sourceBranch);
+    const reference: PromotionReference = {
+      number: prNumber(promotion),
+      sourceBranch: promotion.sourceBranch || "",
+      targetBranch: promotion.targetBranch || "",
+      webUrl: promotion.webUrl || "",
+      mergeDate: promotion.mergeDate || "",
+    };
+    const fromBranch = (parts?.sourceBranch || "").toLowerCase();
+    for (const storyNumber of parsePromotionPullRequestIds(promotion.description) || []) {
+      if (storyNumber === reference.number) {
+        continue; // a promotion never carries itself
+      }
+      const carriers = index.byStory.get(storyNumber) || [];
+      if (!carriers.some((carrier) => carrier.number === reference.number)) {
+        carriers.push(reference);
+      }
+      index.byStory.set(storyNumber, carriers);
+      if (fromBranch) {
+        const promotedOut = index.promotedOutOf.get(fromBranch) || new Set<number>();
+        promotedOut.add(storyNumber);
+        index.promotedOutOf.set(fromBranch, promotedOut);
+      }
     }
-    return (parsePromotionPullRequestIds(pr.description) || []).includes(
-      storyNumber,
-    );
-  });
+  }
+  return index;
 }
 
 /**
- * Sets `alreadyDeployedVia` on the stories of a window that a merged promotion Pull
- * Request carried. A promotion Pull Request never annotates itself.
+ * Merged promotion Pull Requests declaring a story: the story has already been shipped
+ * through them. Informational only, the story stays in its window.
+ */
+export function findPromotionsCarrying(
+  storyNumber: number,
+  index: PromotionIndex,
+): PromotionReference[] {
+  if (!storyNumber) {
+    return [];
+  }
+  return index.byStory.get(storyNumber) || [];
+}
+
+/**
+ * Annotates the Pull Requests of one branch window.
+ *
+ * `alreadyDeployedVia` says which merged promotions already shipped the story, wherever they
+ * were merged. `promotedAway` is stricter and is what removes the duplicate from the pipeline
+ * diagram: it is set when a promotion assembled **from this very branch** carried the story,
+ * so the story now belongs to the next branch window and must be listed there only.
  */
 export function annotateAlreadyPromoted(
   pullRequests: PullRequest[],
-  promotionPullRequests: PullRequest[],
+  branchName: string,
+  index: PromotionIndex,
   config: PromotionBranchConfig,
 ): void {
   if (!config.enabled) {
     return;
   }
+  const promotedOut = index.promotedOutOf.get((branchName || "").toLowerCase());
   for (const pr of pullRequests) {
-    if (pr.isPromotion) {
-      continue;
-    }
-    const promotions = findPromotionsCarrying(
-      prNumber(pr),
-      promotionPullRequests,
-      config,
-    ).filter((promotion) => prNumber(promotion) !== prNumber(pr));
+    const number = prNumber(pr);
+    const promotions = findPromotionsCarrying(number, index).filter(
+      (promotion) => promotion.number !== number,
+    );
     if (promotions.length > 0) {
-      pr.alreadyDeployedVia = promotions.map((promotion) => ({
-        number: prNumber(promotion),
-        sourceBranch: promotion.sourceBranch || "",
-        targetBranch: promotion.targetBranch || "",
-        webUrl: promotion.webUrl || "",
-        mergeDate: promotion.mergeDate || "",
-      }));
+      pr.alreadyDeployedVia = promotions;
     }
+    pr.promotedAway = promotedOut ? promotedOut.has(number) : false;
   }
+}
+
+/**
+ * The Pull Requests a window shows: the ones a promotion took out of the branch are listed in
+ * the branch they reached instead, so a Pull Request number appears once in the whole pipeline.
+ * `showAlreadyPromoted` brings them back.
+ */
+export function visiblePullRequests(
+  pullRequests: PullRequest[],
+  showAlreadyPromoted = false,
+): PullRequest[] {
+  if (showAlreadyPromoted) {
+    return pullRequests;
+  }
+  return pullRequests.filter((pr) => pr.promotedAway !== true);
 }
