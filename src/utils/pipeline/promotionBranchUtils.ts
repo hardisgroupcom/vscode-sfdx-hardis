@@ -381,7 +381,9 @@ export function isMajorToMajorPullRequest(
   pr: Pick<PullRequest, "sourceBranch" | "targetBranch">,
   majorBranchNames: string[],
 ): boolean {
-  const majors = new Set(majorBranchNames.map((name) => (name || "").toLowerCase()));
+  const majors = new Set(
+    majorBranchNames.map((name) => (name || "").toLowerCase()),
+  );
   return (
     majors.has((pr.sourceBranch || "").toLowerCase()) &&
     majors.has((pr.targetBranch || "").toLowerCase())
