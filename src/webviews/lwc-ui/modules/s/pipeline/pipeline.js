@@ -2032,12 +2032,22 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // target can be promoted story by story with hardis:project:promotion:create, the only
   // supported way to assemble a promotion branch
   get showCreatePromotionButton() {
+    // Only the window of a major branch: the feature-branch modal and the "+N more" group modal
+    // also run with modalMode "branch", and a promotion can only be assembled from a major branch
+    // that has a merge target
     return (
       this.modalMode === "branch" &&
       !this.modalIsTopBranch &&
+      !this.isFeaturePrModal &&
+      this._isMajorBranchName(this.modalBranchName) &&
       this.hasBranchPullRequests &&
       this.pipelineData?.promotionBranches?.enabled === true
     );
+  }
+
+  _isMajorBranchName(branchName) {
+    const name = (branchName || "").toLowerCase();
+    return this._majorBranchNames().includes(name);
   }
 
   get createPromotionLabel() {
@@ -2269,6 +2279,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (pr) {
       // Open the branch modal with a single PR so the "Pull Requests" tab shows
       // it (with the job status column), consistent with the group node modal.
+      this._resetPromotionModalState();
       this.modalMode = "branch";
       this.modalBranchName = pr.sourceBranch || branchName;
       this.showJobStatusColumn = true;
@@ -2307,6 +2318,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (!group) {
       return;
     }
+    this._resetPromotionModalState();
     this.modalMode = "branch";
     this.modalBranchName = group.targetBranch || "";
     this.showJobStatusColumn = true;
@@ -2322,11 +2334,20 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.showPRModal = true;
   }
 
-  handleShowBranchPRs(branchName) {
-    console.log("Showing PRs for branch:", branchName);
-    this.modalBranchName = branchName;
+  // Every promotion-related piece of modal state, cleared whenever a modal opens or closes: a
+  // feature-branch or group modal must never inherit the source list or the ticked stories of the
+  // branch window that was open before it
+  _resetPromotionModalState() {
+    this.modalSourcePullRequests = [];
     this.modalSelectedPrIds = [];
     this.modalSelectedPrNumbers = [];
+    this.modalShowPromotionPrs = false;
+  }
+
+  handleShowBranchPRs(branchName) {
+    console.log("Showing PRs for branch:", branchName);
+    this._resetPromotionModalState();
+    this.modalBranchName = branchName;
     const prs = this._visibleBranchPullRequests(branchName);
     // Major branch PR lists (pending promotion / go-lives) don't show job status
     // and keep the tickets / deployment actions tabs.
@@ -2381,6 +2402,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // retrofit Pull Request, or a Pull Request between two major branches: plumbing of the
   // pipeline, not a User Story (same rules as utils/pipeline/promotionBranchUtils.ts)
   _isPromotionOrMajorPr(pr) {
+    // Splitting vehicles out of the User Stories only applies to projects that enabled promotion
+    // branches: everyone else keeps the lists and counters they had before
+    if (this.pipelineData?.promotionBranches?.enabled !== true) {
+      return false;
+    }
     if (pr.isPromotion === true) {
       return true;
     }
@@ -2419,9 +2445,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // itself (a story brought here by a promotion is promoted through that promotion), not yet
   // carried away, and not a vehicle
   _isSelectableForPromotion(pr) {
+    // A branch window holds the stories merged into the branch AND the ones that arrived through
+    // its child branches (a story merged into integration reaches uat through the integration ->
+    // uat merge, and is waiting in uat for the next promotion). Testing targetBranch against the
+    // modal branch would leave nothing selectable on any branch that has children.
     return (
-      (pr.targetBranch || "").toLowerCase() ===
-        (this.modalBranchName || "").toLowerCase() &&
       pr.promotedAway !== true &&
       !this._isPromotionOrMajorPr(pr) &&
       typeof pr.number === "number" &&
@@ -2803,6 +2831,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   handleClosePRModal() {
     this.showPRModal = false;
+    this._resetPromotionModalState();
     this.modalMode = "branch";
     this.modalBranchName = "";
     this.showJobStatusColumn = false;

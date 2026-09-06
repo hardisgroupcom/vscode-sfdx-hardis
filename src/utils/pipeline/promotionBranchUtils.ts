@@ -207,7 +207,11 @@ export async function expandPullRequestsWithPromotions(
   const all = [...pullRequests];
   const added: PullRequest[] = [];
   const present = new Set(pullRequests.map(prNumber));
-  for (const pr of pullRequests) {
+  // Iterate over `all`, which grows as stories are added: a promotion may carry another promotion
+  // (preprod -> main carrying the uat -> preprod one, which the command itself produces), and the
+  // User Stories are one level further down. `present` makes this terminate.
+  for (let index = 0; index < all.length; index++) {
+    const pr = all[index];
     if (!isPromotionPullRequest(pr, config)) {
       continue;
     }
@@ -351,7 +355,15 @@ export function annotateAlreadyPromoted(
     const promotions = findPromotionsCarrying(number, index).filter(
       (promotion) => promotion.number !== number,
     );
-    if (promotions.length > 0) {
+    // "Already deployed via" belongs to the branch the story is still waiting in, not to the one
+    // the promotion brought it into: there it is simply carried by that promotion, which is what
+    // the pending "Carried by" pill says.
+    const carriedIntoThisBranch = promotions.some(
+      (promotion) =>
+        (promotion.targetBranch || "").toLowerCase() ===
+        (branchName || "").toLowerCase(),
+    );
+    if (promotions.length > 0 && !carriedIntoThisBranch) {
       pr.alreadyDeployedVia = promotions;
     }
     pr.promotedAway = promotedOut ? promotedOut.has(number) : false;
@@ -410,16 +422,75 @@ export function isRetrofitPullRequest(
 export function userStoryPullRequests(
   pullRequests: PullRequest[],
   majorBranchNames: string[],
+  config: PromotionBranchConfig,
   showPromotions = false,
 ): PullRequest[] {
-  if (showPromotions) {
+  // Splitting the vehicles out of the User Stories is part of the promotion branches feature: a
+  // project that did not opt in must keep the lists and the counters it had before.
+  if (!config.enabled || showPromotions) {
     return pullRequests;
   }
-  const alwaysOn: PromotionBranchConfig = { enabled: true };
   return pullRequests.filter(
-    (pr) =>
-      !isPromotionPullRequest(pr, alwaysOn) &&
-      !isMajorToMajorPullRequest(pr, majorBranchNames) &&
-      !isRetrofitPullRequest(pr),
+    (pr) => !isVehiclePullRequest(pr, majorBranchNames, config),
   );
+}
+
+/**
+ * A Pull Request that moves other Pull Requests rather than carrying work of its own: a promotion,
+ * a merge between two major branches, or a retrofit. Same rule as userStoryPullRequests, exposed
+ * for the webview, which classifies one row at a time.
+ */
+export function isVehiclePullRequest(
+  pr: PullRequest,
+  majorBranchNames: string[],
+  config: PromotionBranchConfig,
+): boolean {
+  if (!config.enabled) {
+    return false;
+  }
+  return (
+    isPromotionPullRequest(pr, config) ||
+    isMajorToMajorPullRequest(pr, majorBranchNames) ||
+    isRetrofitPullRequest(pr)
+  );
+}
+
+/**
+ * The documented invariant of the pipeline: a Pull Request number is listed in one branch only,
+ * the one it has reached. Derived from the windows themselves rather than from the promotion
+ * index, so it still holds once a promotion has left the window it was merged into.
+ *
+ * `orderedBranchNames` goes upstream first (integration, uat, preprod, main): of two windows
+ * holding the same number, the downstream one wins, and the upstream copies are marked
+ * `promotedAway` so `visiblePullRequests` leaves them out.
+ */
+export function enforceSinglePlacePerPullRequest(
+  windowsByBranch: Array<{ branchName: string; pullRequests: PullRequest[] }>,
+  config: PromotionBranchConfig,
+): void {
+  if (!config.enabled) {
+    return;
+  }
+  const lastIndexByNumber = new Map<number, number>();
+  windowsByBranch.forEach((entry, index) => {
+    for (const pr of entry.pullRequests) {
+      const number = prNumber(pr);
+      if (number > 0) {
+        lastIndexByNumber.set(number, index);
+      }
+    }
+  });
+  windowsByBranch.forEach((entry, index) => {
+    for (const pr of entry.pullRequests) {
+      const number = prNumber(pr);
+      if (number <= 0) {
+        continue;
+      }
+      // Only a story a promotion moved on is hidden upstream. A vehicle stays where it was merged.
+      const promotedFurther = lastIndexByNumber.get(number) !== index;
+      if (promotedFurther && !isPromotionPullRequest(pr, config)) {
+        pr.promotedAway = true;
+      }
+    }
+  });
 }

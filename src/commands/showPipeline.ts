@@ -27,6 +27,7 @@ import { listAllOrgs } from "../utils/orgUtils";
 import { getChildBranchNames } from "../utils/orgConfigUtils";
 import { readSfdxHardisConfig } from "../utils/sfdx-hardis-config-utils";
 import {
+  isMergedPullRequest,
   isPromotionPullRequest,
   parsePromotionPullRequestIds,
   PromotionBranchConfig,
@@ -534,7 +535,10 @@ export function registerShowPipeline(commands: Commands) {
                     );
                   }
                 }
-                if (story) {
+                // An open or declined Pull Request cannot be in the branch: the CLI skips it
+                // with promotionDeclaredPrNotMerged, and listing its deployment actions as running
+                // with this promotion would be wrong
+                if (story && isMergedPullRequest(story)) {
                   carried.push(story);
                 } else {
                   unresolved.push(number);

@@ -1,4 +1,5 @@
 import {
+  PromotionBranchConfig,
   userStoryPullRequests,
   visiblePullRequests,
 } from "./promotionBranchUtils";
@@ -57,6 +58,9 @@ export class BranchStrategyMermaidBuilder {
   private featureBranchGroupThreshold: number =
     DEFAULT_FEATURE_BRANCH_GROUP_THRESHOLD;
   private featureBranchGroups: FeatureBranchGroup[] = [];
+  // Promotion branches switch: without it the node counters would leave the vehicles out for every
+  // project, including those that never enabled the feature
+  private promotionBranchConfig: PromotionBranchConfig = { enabled: false };
 
   constructor(
     branchesAndOrgs: any[],
@@ -65,7 +69,9 @@ export class BranchStrategyMermaidBuilder {
     gitProvider: GitProvider | null = null,
     colorTheme: string = "light",
     featureBranchGroupThreshold: number = DEFAULT_FEATURE_BRANCH_GROUP_THRESHOLD,
+    promotionBranchConfig: PromotionBranchConfig = { enabled: false },
   ) {
+    this.promotionBranchConfig = promotionBranchConfig;
     this.branchesAndOrgs = branchesAndOrgs;
     this.openPullRequests = openPullRequests;
     this.isAuthenticated = isAuthenticated;
@@ -222,6 +228,7 @@ export class BranchStrategyMermaidBuilder {
       const prCount = userStoryPullRequests(
         visiblePullRequests(branchPrs),
         this.branchesAndOrgs.map((entry) => entry.branchName),
+        this.promotionBranchConfig,
       ).length;
       const prCountAll = branchPrs.length;
       // The PR count is embedded as a hidden marker: the webview draws it as

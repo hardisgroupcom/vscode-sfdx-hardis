@@ -6,6 +6,7 @@ import { PullRequest } from "../../utils/gitProviders/types";
 import {
   annotateAlreadyPromoted,
   buildPromotionIndex,
+  enforceSinglePlacePerPullRequest,
   expandPullRequestsWithPromotions,
   findPromotionsCarrying,
   getPromotionBranchConfig,
@@ -47,8 +48,9 @@ suite("promotionBranchUtils", () => {
       (entry) => entry.name === "enablePromotionBranches",
     );
     assert.ok(field, "enablePromotionBranches must be a configurable field");
-    // The CLI reads the merged branch config, so a single branch file may switch it on
-    assert.deepStrictEqual(field!.scopes, ["global", "branch"]);
+    // Project level only: sfdx-hardis reads the merged config of the branch a job runs on, so a
+    // switch set in a single branch file would not apply to the other branches nor to the command
+    assert.deepStrictEqual(field!.scopes, ["global"]);
     const section = SfdxHardisConfigHelper.SECTIONS.find(
       (entry) => entry.label === "dangerZone",
     );
@@ -355,20 +357,82 @@ suite("promotionBranchUtils", () => {
       isRetrofitPullRequest(pr({ number: 1, sourceBranch: "retrofit-notes" })),
       false,
     );
+    const all = [story, promotion, majorToMajor, retrofit];
     assert.deepStrictEqual(
-      userStoryPullRequests(
-        [story, promotion, majorToMajor, retrofit],
-        majors,
-      ).map((p) => p.number),
+      userStoryPullRequests(all, majors, ENABLED).map((p) => p.number),
       [5],
     );
     assert.deepStrictEqual(
-      userStoryPullRequests(
-        [story, promotion, majorToMajor, retrofit],
-        majors,
-        true,
-      ).map((p) => p.number),
+      userStoryPullRequests(all, majors, ENABLED, true).map((p) => p.number),
       [5, 7, 16, 10],
+    );
+    // The split is part of the feature: a project that never enabled it keeps its lists untouched
+    assert.deepStrictEqual(
+      userStoryPullRequests(all, majors, DISABLED).map((p) => p.number),
+      [5, 7, 16, 10],
+    );
+  });
+
+  test("a story is listed in one branch only, even after the promotion left its window", () => {
+    // The index knows nothing here (no promotion in any loaded window), which is what happens once
+    // a go-live resets the window the promotion was merged into
+    const uatWindow = [pr({ number: 482 }), pr({ number: 500 })];
+    const preprodWindow = [pr({ number: 482 }), pr({ number: 600 })];
+    enforceSinglePlacePerPullRequest(
+      [
+        { branchName: "uat", pullRequests: uatWindow },
+        { branchName: "preprod", pullRequests: preprodWindow },
+      ],
+      ENABLED,
+    );
+    // The downstream window wins: 482 stays in preprod and leaves uat
+    assert.strictEqual(uatWindow[0].promotedAway, true);
+    // Only the upstream copy is flagged: the others are left untouched
+    assert.notStrictEqual(uatWindow[1].promotedAway, true);
+    assert.notStrictEqual(preprodWindow[0].promotedAway, true);
+    assert.deepStrictEqual(
+      visiblePullRequests(uatWindow).map((p) => p.number),
+      [500],
+    );
+    // Nothing happens for a project that did not enable the feature
+    const off = [pr({ number: 482 })];
+    enforceSinglePlacePerPullRequest(
+      [
+        { branchName: "uat", pullRequests: off },
+        { branchName: "preprod", pullRequests: [pr({ number: 482 })] },
+      ],
+      DISABLED,
+    );
+    assert.strictEqual(off[0].promotedAway, undefined);
+  });
+
+  test("a promotion carrying another promotion reaches the User Stories", () => {
+    // preprod -> main declares the uat -> preprod promotion, which declares the stories: the flow
+    // hardis:project:promotion:create produces on a four level pipeline
+    const inner = pr({
+      number: 900,
+      sourceBranch: "promotion/uat/preprod/2026-09-06-1",
+      targetBranch: "preprod",
+      description: DECLARATION,
+    });
+    const outer = pr({
+      number: 901,
+      sourceBranch: "promotion/preprod/main/2026-09-10-1",
+      targetBranch: "main",
+      description: ['```yaml', 'promotionPullRequests: [900]', '```'].join("\n"),
+    });
+    const known = new Map<number, PullRequest>([
+      [900, inner],
+      [482, pr({ number: 482 })],
+      [487, pr({ number: 487 })],
+    ]);
+    return expandPullRequestsWithPromotions([outer], ENABLED, known, async () => null).then(
+      ({ all }) => {
+        assert.deepStrictEqual(
+          all.map((p) => p.number),
+          [901, 900, 482, 487],
+        );
+      },
     );
   });
 

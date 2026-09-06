@@ -10,6 +10,7 @@ import { getConfig } from "./pipeline/sfdxHardisConfig";
 import {
   annotateAlreadyPromoted,
   buildPromotionIndex,
+  enforceSinglePlacePerPullRequest,
   expandPullRequestsWithPromotions,
   getPromotionBranchConfig,
   isMergedPullRequest,
@@ -258,12 +259,13 @@ export function getPipelinePromotionBranchConfig(
   projectConfig: any,
   majorOrgs: MajorOrg[],
 ): PromotionBranchConfig {
-  return getPromotionBranchConfig([
-    projectConfig,
-    ...majorOrgs.map((org) => ({
-      enablePromotionBranches: org.enablePromotionBranches,
-    })),
-  ]);
+  // Deliberately the project config only. sfdx-hardis reads getConfig("branch"), which merges the
+  // project config with the config of the branch a job runs on, so a switch set in a single branch
+  // file is invisible to hardis:project:promotion:create (run from another branch) and to the jobs
+  // of every other branch. Enabling the pipeline from one branch file would promise a behavior the
+  // CLI does not deliver.
+  void majorOrgs;
+  return getPromotionBranchConfig([projectConfig]);
 }
 
 /**
@@ -313,7 +315,10 @@ async function completeMajorOrgsWithPromotionBranches(
         }
       }
     }
-    org.pullRequestsInBranchSinceLastMerge = all;
+    // expandPullRequestsWithPromotions appends the carried stories, and listMajorOrgs had sorted
+    // each window by merge date: without this the newest promoted stories sink to the bottom of
+    // the table, under the row cutoff of the VS Code datatable
+    org.pullRequestsInBranchSinceLastMerge = sortPullRequestsByMergeDateDesc(all);
   }
   // A story is "already deployed" when a merged promotion Pull Request, wherever it was
   // merged, declares it. The descriptions are parsed once into an index: a pipeline with a
@@ -338,6 +343,36 @@ async function completeMajorOrgsWithPromotionBranches(
       config,
     );
   }
+  enforceInvariant(majorOrgs, config);
+}
+
+/**
+ * The index only knows the promotions still inside a loaded window, so it cannot be the only thing
+ * deciding where a story is listed: once a go-live resets a window, the promotion that carried a
+ * story out of uat drops out of it and the story would show up in two branches. The windows
+ * themselves always know, so the invariant is enforced on them directly.
+ */
+function enforceInvariant(
+  majorOrgs: MajorOrg[],
+  config: PromotionBranchConfig,
+): void {
+  enforceSinglePlacePerPullRequest(
+    majorOrgs.map((org) => ({
+      branchName: org.branchName,
+      pullRequests: org.pullRequestsInBranchSinceLastMerge || [],
+    })),
+    config,
+  );
+}
+
+function sortPullRequestsByMergeDateDesc(
+  pullRequests: PullRequest[],
+): PullRequest[] {
+  return [...pullRequests].sort((a, b) => {
+    const dateA = a.mergeDate ? new Date(a.mergeDate).getTime() : 0;
+    const dateB = b.mergeDate ? new Date(b.mergeDate).getTime() : 0;
+    return dateB - dateA;
+  });
 }
 
 /**

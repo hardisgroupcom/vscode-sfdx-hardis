@@ -72,6 +72,11 @@ export class PipelineDataProvider {
         ? await GitProvider.getInstance()
         : null;
       // majorOrgs = await completeOrgsWithPullRequests(majorOrgs);
+      const projectConfig = await getConfig("project");
+      const promotionBranchConfig = getPipelinePromotionBranchConfig(
+        projectConfig,
+        majorOrgs,
+      );
       const mermaidBuilder = new BranchStrategyMermaidBuilder(
         majorOrgs,
         isAuthenticated,
@@ -80,6 +85,7 @@ export class PipelineDataProvider {
         options.colorTheme || "light",
         options.featureBranchGroupThreshold ??
           DEFAULT_FEATURE_BRANCH_GROUP_THRESHOLD,
+        promotionBranchConfig,
       );
       const mermaidDiagram = mermaidBuilder.build({
         format: "string",
@@ -121,7 +127,6 @@ export class PipelineDataProvider {
       this.warnings = majorOrgs.flatMap((org) => org.warnings || []);
 
       // Additional warnings
-      const projectConfig = await getConfig("project");
       this.checkDevelopmentBranchExists(projectConfig, majorOrgs);
       this.checkAvailableTargetBranchesExist(projectConfig, majorOrgs);
 
@@ -132,10 +137,7 @@ export class PipelineDataProvider {
         mermaidDiagramMajor,
         warnings: this.warnings,
         featureBranchGroups,
-        promotionBranches: getPipelinePromotionBranchConfig(
-          projectConfig,
-          majorOrgs,
-        ),
+        promotionBranches: promotionBranchConfig,
       };
     } catch (error: any) {
       vscode.window.showErrorMessage(

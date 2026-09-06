@@ -138,7 +138,7 @@ export class SfdxHardisConfigHelper {
     { name: "codingAgent", scopes: ["global", "branch"] },
     { name: "codingAgentModel", scopes: ["global", "branch"] },
     { name: "codingAgentMaxTurns", scopes: ["global", "branch"] },
-    { name: "enablePromotionBranches", scopes: ["global", "branch"] },
+    { name: "enablePromotionBranches", scopes: ["global"] },
     { name: "enableDeltaDeploymentBetweenMajorBranches", scopes: ["global"] },
     { name: "enableDeploymentApexTestClasses", scopes: ["global"] },
     { name: "deploymentApexTestClasses", scopes: ["global", "branch"] },
