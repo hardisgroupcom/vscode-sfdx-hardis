@@ -516,25 +516,50 @@ export function registerShowPipeline(commands: Commands) {
               ).flatMap(
                 (org: any) => org.pullRequestsInBranchSinceLastMerge || [],
               );
+              // The stories already loaded cost nothing; the others are fetched in parallel and
+              // completed in one batch each. One story at a time meant three serialized provider
+              // round trips per declared Pull Request, and a promotion carrying forty of them
+              // froze the modal.
               const carried: PullRequest[] = [];
               const unresolved: number[] = [];
+              const alreadyLoaded = new Map<number, PullRequest>();
+              const toFetch: number[] = [];
               for (const number of declared) {
-                let story =
-                  loadedPrs.find((pr: PullRequest) => pr.number === number) ||
-                  null;
-                if (!story) {
-                  story = await gitProvider.getPullRequestByNumber(number);
-                  if (story) {
-                    [story] =
-                      await gitProvider.completePullRequestsWithPrePostCommands(
-                        [story],
-                      );
-                    [story] = await gitProvider.completePullRequestsWithTickets(
-                      [story],
-                      { fetchDetails: true },
-                    );
-                  }
+                const known = loadedPrs.find(
+                  (pr: PullRequest) => pr.number === number,
+                );
+                if (known) {
+                  alreadyLoaded.set(number, known);
+                } else {
+                  toFetch.push(number);
                 }
+              }
+              const fetched = await Promise.all(
+                toFetch.map(async (number) => ({
+                  number,
+                  story: await gitProvider.getPullRequestByNumber(number),
+                })),
+              );
+              const fetchedStories = fetched
+                .map((entry) => entry.story)
+                .filter((story): story is PullRequest => !!story);
+              if (fetchedStories.length > 0) {
+                await gitProvider.completePullRequestsWithPrePostCommands(
+                  fetchedStories,
+                );
+                await gitProvider.completePullRequestsWithTickets(
+                  fetchedStories,
+                  { fetchDetails: true },
+                );
+              }
+              const fetchedByNumber = new Map<number, PullRequest>(
+                fetched
+                  .filter((entry) => entry.story)
+                  .map((entry) => [entry.number, entry.story as PullRequest]),
+              );
+              for (const number of declared) {
+                const story =
+                  alreadyLoaded.get(number) || fetchedByNumber.get(number);
                 // An open or declined Pull Request cannot be in the branch: the CLI skips it
                 // with promotionDeclaredPrNotMerged, and listing its deployment actions as running
                 // with this promotion would be wrong

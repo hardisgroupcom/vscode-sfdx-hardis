@@ -321,6 +321,8 @@
   "createNewScratchOrgTooltip": "Een nieuwe scratch org aanmaken voor het huidige werk",
   "createNewSfdxProjectTooltip": "Een nieuw SFDX-project aanmaken en initialiseren",
   "createPr": "PR aanmaken",
+  "createPromotionBranch": "Een promotion branch maken (beta)",
+  "createPromotionBranchTooltip": "Stelt een promotion branch samen die alleen de door jou geselecteerde User Stories bevat uit de branch die in een major branch zijn gemerged, en opent de bijbehorende Pull Request (sf hardis:project:promotion:create)",
   "createPromotionFromBranch": "Promotion maken vanuit {{branch}} (beta)",
   "createPromotionFromBranchHelp": "Stel een promotion branch samen met alleen de User Stories die je selecteert uit de in {{branch}} gemergde, en open de Pull Request ervan (sf hardis:project:promotion:create)",
   "createPromotionFromBranchSelected": "Promotion maken vanuit {{branch}} ({{count}} geselecteerd) (beta)",

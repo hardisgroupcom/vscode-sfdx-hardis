@@ -321,6 +321,8 @@
   "createNewScratchOrgTooltip": "Crear una nueva scratch org para el trabajo actual",
   "createNewSfdxProjectTooltip": "Crear e inicializar un nuevo proyecto SFDX",
   "createPr": "Crear PR",
+  "createPromotionBranch": "Crear una rama de promoción (beta)",
+  "createPromotionBranchTooltip": "Crea una rama de promoción que lleva solo las User Stories que selecciones entre las fusionadas en una rama mayor, y abre su Pull Request (sf hardis:project:promotion:create)",
   "createPromotionFromBranch": "Crear promoción desde {{branch}} (beta)",
   "createPromotionFromBranchHelp": "Montar una promotion branch que lleve solo las User Stories que selecciones entre las mergeadas en {{branch}} y abrir su Pull Request (sf hardis:project:promotion:create)",
   "createPromotionFromBranchSelected": "Crear promoción desde {{branch}} ({{count}} seleccionadas) (beta)",

@@ -321,6 +321,8 @@
   "createNewScratchOrgTooltip": "現在の作業用に新しいスクラッチ組織を作成します",
   "createNewSfdxProjectTooltip": "新しい SFDX プロジェクトを作成して初期化します",
   "createPr": "PR を作成",
+  "createPromotionBranch": "プロモーションブランチを作成 (beta)",
+  "createPromotionBranchTooltip": "メジャーブランチにマージされた User Story のうち選択したものだけを運ぶプロモーションブランチを作成し、その Pull Request を開きます (sf hardis:project:promotion:create)",
   "createPromotionFromBranch": "{{branch}} からプロモーションを作成 (beta)",
   "createPromotionFromBranchHelp": "{{branch}} に merge 済みのユーザーストーリーから選択したものだけを運ぶプロモーションブランチを組み立て、その Pull Request を開きます（sf hardis:project:promotion:create）",
   "createPromotionFromBranchSelected": "{{branch}} からプロモーションを作成 ({{count}} 件選択) (beta)",
