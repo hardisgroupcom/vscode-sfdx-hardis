@@ -254,6 +254,31 @@ export class GitProviderBitbucket extends GitProvider {
     }
   }
 
+  async getPullRequestByNumber(number: number): Promise<PullRequest | null> {
+    if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
+      return null;
+    }
+    try {
+      const response = await this.bitbucketClient.pullrequests.get({
+        workspace: this.workspace,
+        repo_slug: this.repoSlug,
+        pull_request_id: number,
+      });
+      await this.logApiCall("pullrequests.get", {
+        caller: "getPullRequestByNumber",
+        number,
+      });
+      const converted = await this.convertAndCollectJobsList(
+        response?.data ? [response.data as any] : [],
+        { withJobs: false },
+      );
+      return converted[0] || null;
+    } catch (err) {
+      Logger.log(`Error fetching PR #${number}: ${String(err)}`);
+      return null;
+    }
+  }
+
   async getActivePullRequestFromBranch(
     branchName: string,
   ): Promise<PullRequest | null> {

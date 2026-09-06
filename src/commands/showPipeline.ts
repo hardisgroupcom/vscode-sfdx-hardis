@@ -26,6 +26,11 @@ import simpleGit from "simple-git";
 import { listAllOrgs } from "../utils/orgUtils";
 import { getChildBranchNames } from "../utils/orgConfigUtils";
 import { readSfdxHardisConfig } from "../utils/sfdx-hardis-config-utils";
+import {
+  isPromotionPullRequest,
+  parsePromotionPullRequestIds,
+  PromotionBranchConfig,
+} from "../utils/pipeline/promotionBranchUtils";
 
 const GIT_PULL_REFUSAL_COOLDOWN_MS = 60 * 60 * 1000;
 const promptedRemoteUpdatesByBranch = new Map<string, string>();
@@ -490,6 +495,72 @@ export function registerShowPipeline(commands: Commands) {
               prDetails.isMajorToMajor = true;
               prDetails.aggregatedPullRequests =
                 sourceMajorOrg.pullRequestsInBranchSinceLastMerge || [];
+            }
+            // A promotion Pull Request (promotion/ branch declaring the stories it
+            // carries) is read-only like a major-to-major one: it lists the actions,
+            // tickets and test classes of the declared Pull Requests. Those are looked
+            // up in the windows already loaded, the others are fetched by number.
+            const promotionConfig: PromotionBranchConfig | undefined =
+              pipelineProperties?.pipelineData?.promotionBranches;
+            if (
+              prDetails &&
+              !prDetails.isMajorToMajor &&
+              promotionConfig &&
+              isPromotionPullRequest(prDetails, promotionConfig)
+            ) {
+              const declared =
+                parsePromotionPullRequestIds(prDetails.description) || [];
+              const loadedPrs: PullRequest[] = (
+                pipelineProperties?.pipelineData?.orgs || []
+              ).flatMap(
+                (org: any) => org.pullRequestsInBranchSinceLastMerge || [],
+              );
+              const carried: PullRequest[] = [];
+              const unresolved: number[] = [];
+              for (const number of declared) {
+                let story =
+                  loadedPrs.find((pr: PullRequest) => pr.number === number) ||
+                  null;
+                if (!story) {
+                  story = await gitProvider.getPullRequestByNumber(number);
+                  if (story) {
+                    [story] =
+                      await gitProvider.completePullRequestsWithPrePostCommands(
+                        [story],
+                      );
+                    [story] = await gitProvider.completePullRequestsWithTickets(
+                      [story],
+                      { fetchDetails: true },
+                    );
+                  }
+                }
+                if (story) {
+                  carried.push(story);
+                } else {
+                  unresolved.push(number);
+                }
+              }
+              prDetails.isPromotion = true;
+              prDetails.promotionPullRequests = declared;
+              prDetails.aggregatedPullRequests = carried;
+              prDetails.unresolvedPromotionPullRequests = unresolved;
+              // The tickets of the carried stories belong to the promotion as well
+              const seenTickets = new Set(
+                (prDetails.relatedTickets || []).map(
+                  (ticket: any) => ticket.id,
+                ),
+              );
+              for (const story of carried) {
+                for (const ticket of story.relatedTickets || []) {
+                  if (!seenTickets.has(ticket.id)) {
+                    seenTickets.add(ticket.id);
+                    prDetails.relatedTickets = [
+                      ...(prDetails.relatedTickets || []),
+                      ticket,
+                    ];
+                  }
+                }
+              }
             }
             panel.sendMessage({
               type: "returnGetPrInfoForModal",

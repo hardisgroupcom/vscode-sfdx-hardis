@@ -392,6 +392,18 @@ export class GitProvider {
   }
 
   /**
+   * Fetches a single Pull Request by its provider-native number (GitHub number, GitLab
+   * iid, Azure id, Bitbucket id), without its jobs. Used to resolve the stories declared
+   * by a promotion Pull Request when they are no longer in a loaded window.
+   */
+  async getPullRequestByNumber(_number: number): Promise<PullRequest | null> {
+    Logger.log(
+      `getPullRequestByNumber not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
+    );
+    return null;
+  }
+
+  /**
    * Lists the "go lives" (merges/promotions into a top branch such as main/prod),
    * most recent first. Lightweight: no PR contents are loaded — use
    * listPullRequestsInGoLive to fetch the PRs of a selected go live. Powers the
