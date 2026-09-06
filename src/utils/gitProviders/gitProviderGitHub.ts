@@ -17,6 +17,7 @@ import {
   promptForToken,
   showAuthFailureGuidance,
 } from "../providerCredentials";
+import { mapGitHubMergeable } from "./mergeStatus";
 
 export class GitProviderGitHub extends GitProvider {
   gitHubClient: InstanceType<typeof Octokit> | null = null;
@@ -219,9 +220,71 @@ export class GitProviderGitHub extends GitProvider {
       caller: "listOpenPullRequests",
       state: "open",
     });
-    return await this.convertAndCollectJobsList(pullRequests, {
+    const converted = await this.convertAndCollectJobsList(pullRequests, {
       withJobs: true,
     });
+    await this.completeWithMergeStatus(converted);
+    return converted;
+  }
+
+  /**
+   * Fill mergeStatus on open Pull Requests. GitHub keeps mergeable out of the REST list (it is
+   * computed in the background, per Pull Request), but GraphQL returns it for the whole list at
+   * once: one request for the page, whatever the number of Pull Requests. Pull Requests GitHub
+   * has not finished testing come back UNKNOWN and simply show nothing until the next refresh.
+   *
+   * Only for GitHub itself: Gitea reuses this class over a REST-only API, and already carries
+   * mergeable in its list payload.
+   */
+  protected async completeWithMergeStatus(
+    pullRequests: PullRequest[],
+  ): Promise<void> {
+    if (
+      !this.gitHubClient ||
+      !this.repoInfo ||
+      this.repoInfo.providerName !== "github" ||
+      pullRequests.length === 0
+    ) {
+      return;
+    }
+    try {
+      const response: any = await this.gitHubClient.graphql(
+        `query mergeStatus($owner: String!, $repo: String!, $count: Int!) {
+          repository(owner: $owner, name: $repo) {
+            pullRequests(states: OPEN, first: $count, orderBy: { field: CREATED_AT, direction: DESC }) {
+              nodes { number mergeable }
+            }
+          }
+        }`,
+        {
+          owner: this.repoInfo.owner,
+          repo: this.repoInfo.repo,
+          count: Math.min(Math.max(pullRequests.length, 1), 100),
+        },
+      );
+      await this.logApiCall("graphql pullRequests.mergeable", {
+        caller: "completeWithMergeStatus",
+        count: pullRequests.length,
+      });
+      const nodes = response?.repository?.pullRequests?.nodes || [];
+      const mergeableByNumber = new Map<number, any>(
+        nodes.map((node: any) => [node?.number, node?.mergeable]),
+      );
+      for (const pullRequest of pullRequests) {
+        if (!mergeableByNumber.has(Number(pullRequest.number))) {
+          continue;
+        }
+        pullRequest.mergeStatus = mapGitHubMergeable(
+          mergeableByNumber.get(Number(pullRequest.number)),
+        );
+      }
+    } catch (e) {
+      // Merge conflict display is a bonus on the diagram: a token without GraphQL access, or a
+      // GitHub Enterprise without the endpoint, must not cost the pipeline its Pull Requests
+      Logger.log(
+        `Unable to read merge conflict status from GitHub: ${String(e)}`,
+      );
+    }
   }
 
   async getActivePullRequestFromBranch(
@@ -857,6 +920,12 @@ export class GitProviderGitHub extends GitProvider {
       createdAt: pr.created_at || undefined,
       updatedAt: pr.updated_at || undefined,
       jobsStatus: "unknown",
+      // Gitea sends mergeable in its Pull Request list, GitHub does not: on GitHub this stays
+      // undefined and completeWithMergeStatus fills it for the open ones in a single query
+      mergeStatus:
+        pr.merged_at || pr.mergeable === undefined || pr.mergeable === null
+          ? undefined
+          : mapGitHubMergeable(pr.mergeable),
     };
   }
 

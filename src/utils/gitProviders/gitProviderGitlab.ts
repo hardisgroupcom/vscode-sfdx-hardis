@@ -12,6 +12,7 @@ import {
   Job,
   JobStatus,
 } from "./types";
+import { mapGitLabMergeStatus } from "./mergeStatus";
 import { SecretsManager } from "../secretsManager";
 import { CacheManager } from "../cache-manager";
 import { Logger } from "../../logger";
@@ -934,6 +935,9 @@ export class GitProviderGitlab extends GitProvider {
       createdAt: mr.created_at || undefined,
       updatedAt: mr.updated_at || undefined,
       jobsStatus: "unknown",
+      // GitLab computes the merge of open Merge Requests in the background and sends the verdict
+      // in the list payload, so reading it costs nothing
+      mergeStatus: mr.state === "opened" ? mapGitLabMergeStatus(mr) : undefined,
     };
   }
 

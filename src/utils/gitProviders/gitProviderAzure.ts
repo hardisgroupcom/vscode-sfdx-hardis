@@ -8,6 +8,7 @@ import {
   Job,
   JobStatus,
 } from "./types";
+import { mapAzureMergeStatus } from "./mergeStatus";
 import * as azdev from "azure-devops-node-api";
 import { GitApi } from "azure-devops-node-api/GitApi";
 import {
@@ -1004,6 +1005,12 @@ export class GitProviderAzure extends GitProvider {
       createdAt: pr.creationDate ? pr.creationDate.toISOString() : undefined,
       updatedAt: pr.closedDate ? pr.closedDate.toISOString() : undefined,
       jobsStatus: "unknown",
+      // Azure DevOps tests the merge of active Pull Requests on its own and returns the result in
+      // the Pull Request list, so reading it costs nothing
+      mergeStatus:
+        pr.status === PullRequestStatus.Active
+          ? mapAzureMergeStatus(pr)
+          : undefined,
     };
     return prConverted;
   }
