@@ -524,7 +524,12 @@ suite("promotionBranchUtils", () => {
 suite("An open promotion is drawn on the edge between its two branches", () => {
   const BRANCHES_AND_ORGS = [
     { branchName: "uat", level: 2, mergeTargets: ["preprod"], instanceUrl: "" },
-    { branchName: "preprod", level: 1, mergeTargets: ["main"], instanceUrl: "" },
+    {
+      branchName: "preprod",
+      level: 1,
+      mergeTargets: ["main"],
+      instanceUrl: "",
+    },
     { branchName: "main", level: 0, mergeTargets: [], instanceUrl: "" },
   ];
 
@@ -572,7 +577,10 @@ suite("An open promotion is drawn on the edge between its two branches", () => {
         (line) => line.includes("uatBranch ") && line.includes("preprodBranch"),
       );
     assert.ok(edge, "the uat to preprod edge must exist");
-    assert.ok(edge!.includes("#41"), `the promotion belongs on the edge: ${edge}`);
+    assert.ok(
+      edge!.includes("#41"),
+      `the promotion belongs on the edge: ${edge}`,
+    );
     assert.ok(
       !out.includes("promotion_uat_preprod"),
       "no feature node should be created for the promotion branch",
@@ -610,7 +618,8 @@ suite("An open promotion is drawn on the edge between its two branches", () => {
     const preprodToMain = out
       .split("\n")
       .find(
-        (line) => line.includes("preprodBranch ") && line.includes("mainBranch"),
+        (line) =>
+          line.includes("preprodBranch ") && line.includes("mainBranch"),
       );
     assert.ok(!preprodToMain!.includes("#43"), `${preprodToMain}`);
   });

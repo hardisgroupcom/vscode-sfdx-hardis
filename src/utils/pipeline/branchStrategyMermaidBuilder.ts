@@ -435,7 +435,11 @@ export class BranchStrategyMermaidBuilder {
     }
     return this.branchesAndOrgs.some((branchAndOrg) =>
       (branchAndOrg.mergeTargets || []).some((mergeTarget: string) =>
-        this.isPromotionOfStep(pullRequest, branchAndOrg.branchName, mergeTarget),
+        this.isPromotionOfStep(
+          pullRequest,
+          branchAndOrg.branchName,
+          mergeTarget,
+        ),
       ),
     );
   }
