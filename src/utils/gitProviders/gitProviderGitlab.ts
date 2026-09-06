@@ -262,6 +262,30 @@ export class GitProviderGitlab extends GitProvider {
     });
   }
 
+  async getPullRequestByNumber(number: number): Promise<PullRequest | null> {
+    if (!this.gitlabClient || !this.gitlabProjectId) {
+      return null;
+    }
+    try {
+      const mergeRequest = await this.gitlabClient.MergeRequests.show(
+        this.gitlabProjectId,
+        number,
+      );
+      await this.logApiCall("MergeRequests.show", {
+        caller: "getPullRequestByNumber",
+        number,
+      });
+      const converted = await this.convertAndCollectJobsList(
+        [mergeRequest as any],
+        { withJobs: false },
+      );
+      return converted[0] || null;
+    } catch (err) {
+      Logger.log(`Error fetching MR !${number}: ${String(err)}`);
+      return null;
+    }
+  }
+
   async getActivePullRequestFromBranch(
     branchName: string,
   ): Promise<PullRequest | null> {
