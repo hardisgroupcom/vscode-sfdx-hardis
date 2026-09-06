@@ -90,7 +90,7 @@ export async function listMajorOrgs(
             org.branchName,
             majorOrgsSorted,
           );
-          const prs =
+          let prs =
             org.mergeTargets.length === 0
               ? // Top branch (e.g. main/prod): no merge target of its own, so
                 // show the PRs carried by the latest "go live" merge into it
@@ -104,11 +104,7 @@ export async function listMajorOrgs(
                   [...childBranchesNames],
                 );
           // Sort PRs by mergeDate date desc
-          prs.sort((a, b) => {
-            const dateA = a.mergeDate ? new Date(a.mergeDate).getTime() : 0;
-            const dateB = b.mergeDate ? new Date(b.mergeDate).getTime() : 0;
-            return dateB - dateA;
-          });
+          prs = sortPullRequestsByMergeDateDesc(prs);
           org.pullRequestsInBranchSinceLastMerge = prs;
           // Complete with tickets
           await gitProvider.completePullRequestsWithTickets(prs, {
