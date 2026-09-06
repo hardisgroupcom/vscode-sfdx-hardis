@@ -314,7 +314,8 @@ async function completeMajorOrgsWithPromotionBranches(
     // expandPullRequestsWithPromotions appends the carried stories, and listMajorOrgs had sorted
     // each window by merge date: without this the newest promoted stories sink to the bottom of
     // the table, under the row cutoff of the VS Code datatable
-    org.pullRequestsInBranchSinceLastMerge = sortPullRequestsByMergeDateDesc(all);
+    org.pullRequestsInBranchSinceLastMerge =
+      sortPullRequestsByMergeDateDesc(all);
   }
   // A story is "already deployed" when a merged promotion Pull Request, wherever it was
   // merged, declares it. The descriptions are parsed once into an index: a pipeline with a

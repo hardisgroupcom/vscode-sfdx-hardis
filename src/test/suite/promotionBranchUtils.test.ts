@@ -419,21 +419,26 @@ suite("promotionBranchUtils", () => {
       number: 901,
       sourceBranch: "promotion/preprod/main/2026-09-10-1",
       targetBranch: "main",
-      description: ['```yaml', 'promotionPullRequests: [900]', '```'].join("\n"),
+      description: ["```yaml", "promotionPullRequests: [900]", "```"].join(
+        "\n",
+      ),
     });
     const known = new Map<number, PullRequest>([
       [900, inner],
       [482, pr({ number: 482 })],
       [487, pr({ number: 487 })],
     ]);
-    return expandPullRequestsWithPromotions([outer], ENABLED, known, async () => null).then(
-      ({ all }) => {
-        assert.deepStrictEqual(
-          all.map((p) => p.number),
-          [901, 900, 482, 487],
-        );
-      },
-    );
+    return expandPullRequestsWithPromotions(
+      [outer],
+      ENABLED,
+      known,
+      async () => null,
+    ).then(({ all }) => {
+      assert.deepStrictEqual(
+        all.map((p) => p.number),
+        [901, 900, 482, 487],
+      );
+    });
   });
 
   test("the go-live list of a top branch goes through the same toggles as the branch window", () => {
