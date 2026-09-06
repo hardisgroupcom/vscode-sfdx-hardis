@@ -259,6 +259,31 @@ export class GitProviderGitHub extends GitProvider {
     }
   }
 
+  async getPullRequestByNumber(number: number): Promise<PullRequest | null> {
+    if (!this.gitHubClient || !this.repoInfo) {
+      return null;
+    }
+    try {
+      const { data: pullRequest } = await this.gitHubClient.pulls.get({
+        owner: this.repoInfo.owner,
+        repo: this.repoInfo.repo,
+        pull_number: number,
+      });
+      await this.logApiCall("pulls.get", {
+        caller: "getPullRequestByNumber",
+        number,
+      });
+      const converted = await this.convertAndCollectJobsList(
+        [pullRequest as any],
+        { withJobs: false },
+      );
+      return converted[0] || null;
+    } catch (err) {
+      Logger.log(`Error fetching PR #${number}: ${String(err)}`);
+      return null;
+    }
+  }
+
   async listPullRequestsInBranchSinceLastMerge(
     currentBranchName: string,
     targetBranchName: string,
