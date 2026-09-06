@@ -138,6 +138,7 @@ export class SfdxHardisConfigHelper {
     { name: "codingAgent", scopes: ["global", "branch"] },
     { name: "codingAgentModel", scopes: ["global", "branch"] },
     { name: "codingAgentMaxTurns", scopes: ["global", "branch"] },
+    { name: "enablePromotionBranches", scopes: ["global", "branch"] },
     { name: "enableDeltaDeploymentBetweenMajorBranches", scopes: ["global"] },
     { name: "enableDeploymentApexTestClasses", scopes: ["global"] },
     { name: "deploymentApexTestClasses", scopes: ["global", "branch"] },
@@ -259,6 +260,7 @@ export class SfdxHardisConfigHelper {
         "Use these settings with caution, be sure to understand their impact as they drift from DevOps best practices.",
       iconName: "utility:warning",
       keys: [
+        "enablePromotionBranches",
         "enableDeltaDeploymentBetweenMajorBranches",
         "enableDeploymentApexTestClasses",
         "deploymentApexTestClasses",
@@ -343,16 +345,28 @@ export class SfdxHardisConfigHelper {
     } catch (e) {
       console.warn("Failed to load remote schema, falling back to local", e);
     }
-    if (!schema && this.LOCAL_SCHEMA_PATH) {
+    // The bundled copy is always read: it completes the remote schema with the properties this
+    // version of the extension knows and sfdx-hardis main does not publish yet, and it is the
+    // whole schema when offline. The remote definition wins for a property both hold.
+    let localSchema: any = null;
+    if (this.LOCAL_SCHEMA_PATH) {
       try {
         if (await pathExists(this.LOCAL_SCHEMA_PATH)) {
-          schema = JSON.parse(
+          localSchema = JSON.parse(
             await fs.promises.readFile(this.LOCAL_SCHEMA_PATH, "utf8"),
           );
         }
       } catch (e) {
         console.warn("Failed to load local schema", e);
       }
+    }
+    if (schema && localSchema?.properties) {
+      schema = {
+        ...schema,
+        properties: { ...localSchema.properties, ...(schema.properties || {}) },
+      };
+    } else if (!schema) {
+      schema = localSchema;
     }
     if (schema && schema.properties) {
       this.allConfigFields = Object.entries(schema.properties)
