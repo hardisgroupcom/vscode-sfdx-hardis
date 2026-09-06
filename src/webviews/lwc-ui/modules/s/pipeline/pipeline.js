@@ -141,6 +141,23 @@ export default class Pipeline extends SharedMixin(LightningElement) {
           },
         ]
       : [];
+    const promotionColumn = this.modalHasPromotionColumn
+      ? [
+          {
+            key: "promotion",
+            label: this.i18n.promotionLabel,
+            fieldName: "promotionLabel",
+            type: "statusPill",
+            typeAttributes: {
+              label: { fieldName: "promotionLabel" },
+              pillClass: { fieldName: "promotionPillClass" },
+              url: { fieldName: "promotionUrl" },
+            },
+            wrapText: false,
+            initialWidth: 220,
+          },
+        ]
+      : [];
     return [
       {
         key: "number",
@@ -160,6 +177,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         wrapText: true,
       },
       ...statusColumn,
+      ...promotionColumn,
       {
         key: "author",
         label: this.i18n.authorLabel,
@@ -379,6 +397,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // branches: its deployment actions are the ones of the feature Pull
   // Requests it carries, listed read-only with their author and Pull Request
   @track modalIsMajorPr = false;
+  // True for a promotion Pull Request (promotion/ branch declaring the stories it carries)
+  @track modalIsPromotionPr = false;
+  // Declared Pull Request numbers that could not be loaded from the git provider
+  @track modalPromotionUnresolved = [];
   // Deep link received before the pull request data is available, applied as soon
   // as the current branch pull request is known (see _maybeApplyPendingDeepLink).
   _pendingDeepLink = null;
@@ -965,8 +987,42 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       // so the column stays on a single line.
       copy.mergeDateFormatted = this._formatCompactDate(pr.mergeDate);
 
+      // Promotion branches: a story already shipped through a promotion branch, or
+      // brought into the window by one, gets a pill pointing to that promotion
+      copy.promotionLabel = "";
+      copy.promotionPillClass = "";
+      copy.promotionUrl = "";
+      if (Array.isArray(pr.alreadyDeployedVia) && pr.alreadyDeployedVia.length > 0) {
+        const promotion = pr.alreadyDeployedVia[0];
+        copy.promotionLabel = this.t("prAlreadyDeployedViaPromotion", {
+          branch: promotion.sourceBranch || `#${promotion.number}`,
+        });
+        copy.promotionPillClass = "hardis-pill hardis-status-success";
+        copy.promotionUrl = promotion.webUrl || "";
+      } else if (pr.carriedByPullRequest) {
+        copy.promotionLabel = this.t("prCarriedByPromotion", {
+          branch:
+            pr.carriedByPullRequest.sourceBranch ||
+            `#${pr.carriedByPullRequest.number}`,
+        });
+        copy.promotionPillClass = "hardis-pill hardis-status-pending";
+        copy.promotionUrl = pr.carriedByPullRequest.webUrl || "";
+      } else if (pr.isPromotion) {
+        copy.promotionLabel = this.t("prIsPromotion", {
+          count: (pr.promotionPullRequests || []).length,
+        });
+        copy.promotionPillClass = "hardis-pill hardis-status-running";
+        copy.promotionUrl = pr.webUrl || "";
+      }
+
       return copy;
     });
+  }
+
+  // The promotion column only appears when at least one row has something to say,
+  // so projects without promotion branches keep the same table
+  get modalHasPromotionColumn() {
+    return (this.modalPullRequests || []).some((pr) => pr.promotionLabel);
   }
 
   _formatCompactDate(value) {
@@ -2614,7 +2670,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // Single PR details are enriched with tickets / deployment actions, so keep
     // those tabs visible.
     this.isFeaturePrModal = false;
-    this.modalIsMajorPr = pr.isMajorToMajor === true;
+    // A promotion Pull Request (promotion/ branch declaring the stories it carries) is
+    // read-only like a Pull Request between two major branches
+    this.modalIsPromotionPr = pr.isPromotion === true;
+    this.modalPromotionUnresolved = Array.isArray(
+      pr.unresolvedPromotionPullRequests,
+    )
+      ? pr.unresolvedPromotionPullRequests
+      : [];
+    this.modalIsMajorPr = pr.isMajorToMajor === true || this.modalIsPromotionPr;
     // Map through icons so the job status column (statusPill) is populated.
     this.modalPullRequests = this._mapPrsWithIcons([pr]);
 
@@ -3151,6 +3215,24 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   get majorPrActionsHint() {
+    if (this.modalIsPromotionPr) {
+      const carried = (this.modalPullRequests[0] || {}).aggregatedPullRequests || [];
+      let hint = this.t("deploymentActionsPromotionHint", {
+        branch: this.modalBranchName,
+        count: carried.length,
+        prList: carried.map((pr) => `#${pr.number}`).join(", ") || "-",
+      });
+      if (this.modalPromotionUnresolved.length > 0) {
+        hint +=
+          " " +
+          this.t("deploymentActionsPromotionUnresolved", {
+            prList: this.modalPromotionUnresolved
+              .map((number) => `#${number}`)
+              .join(", "),
+          });
+      }
+      return hint;
+    }
     return this.t("deploymentActionsAggregatedHint", {
       branch: this.modalBranchName,
     });

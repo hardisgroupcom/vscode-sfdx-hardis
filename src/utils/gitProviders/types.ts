@@ -131,6 +131,22 @@ export type PullRequest = {
 
   // Optional list of Apex Test Classes to run during deployments (stored in scripts/actions/.sfdx-hardis.<PR>.yml)
   deploymentApexTestClasses?: string[];
+
+  // Promotion branches (sfdx-hardis enablePromotionBranches), see utils/pipeline/promotionBranchUtils.ts
+  // True when this Pull Request comes from a promotion branch and declares the stories it carries
+  isPromotion?: boolean;
+  // Numbers declared with promotionPullRequests in the description of a promotion Pull Request
+  promotionPullRequests?: number[];
+  // Set on a story brought into a window by the promotion Pull Request that declares it
+  carriedByPullRequest?: { number: number; sourceBranch: string; webUrl: string };
+  // Merged promotion Pull Requests that already shipped this story to their target branch
+  alreadyDeployedVia?: Array<{
+    number: number;
+    sourceBranch: string;
+    targetBranch: string;
+    webUrl: string;
+    mergeDate: string;
+  }>;
 };
 
 /**
