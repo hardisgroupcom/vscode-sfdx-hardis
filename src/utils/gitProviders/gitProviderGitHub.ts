@@ -846,7 +846,9 @@ export class GitProviderGitHub extends GitProvider {
       number: pr.number,
       title: pr.title,
       description: pr.body || "",
-      state: pr.state as PullRequest["state"],
+      // GitHub only returns "open" and "closed": a merged Pull Request is a closed one with a
+      // merge date, and every consumer of the aggregated shape expects "merged"
+      state: (pr.merged_at ? "merged" : pr.state) as PullRequest["state"],
       authorLabel: pr.user?.login || pr.user?.name || "unknown",
       webUrl: pr.html_url,
       sourceBranch: pr.head.ref,

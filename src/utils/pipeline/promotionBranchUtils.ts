@@ -164,6 +164,14 @@ export function isPromotionPullRequest(
   );
 }
 
+/**
+ * A Pull Request is merged when the aggregated state says so, or when it carries a merge date:
+ * some providers only expose the date (GitHub closes a merged Pull Request).
+ */
+export function isMergedPullRequest(pr: PullRequest): boolean {
+  return pr.state === "merged" || !!pr.mergeDate;
+}
+
 function prNumber(pr: PullRequest): number {
   const value =
     typeof pr.number === "number" ? pr.number : parseInt(String(pr.id), 10);
@@ -219,7 +227,7 @@ export async function expandPullRequestsWithPromotions(
         }
       }
       // Missing or not merged: its content cannot be in the branch
-      if (!story || (story.state && story.state !== "merged")) {
+      if (!story || !isMergedPullRequest(story)) {
         continue;
       }
       const copy: PullRequest = { ...story };
@@ -248,7 +256,7 @@ export function findPromotionsCarrying(
     if (!isPromotionPullRequest(pr, config)) {
       return false;
     }
-    if (pr.state && pr.state !== "merged") {
+    if (!isMergedPullRequest(pr)) {
       return false;
     }
     return (parsePromotionPullRequestIds(pr.description) || []).includes(

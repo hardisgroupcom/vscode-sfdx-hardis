@@ -11,6 +11,7 @@ import {
   annotateAlreadyPromoted,
   expandPullRequestsWithPromotions,
   getPromotionBranchConfig,
+  isMergedPullRequest,
   isPromotionPullRequest,
   PromotionBranchConfig,
 } from "./pipeline/promotionBranchUtils";
@@ -318,7 +319,7 @@ async function completeMajorOrgsWithPromotionBranches(
   const promotions: PullRequest[] = [];
   for (const org of majorOrgs) {
     for (const pr of org.pullRequestsInBranchSinceLastMerge || []) {
-      if (isPromotionPullRequest(pr, config) && pr.state === "merged") {
+      if (isPromotionPullRequest(pr, config) && isMergedPullRequest(pr)) {
         promotions.push(pr);
       }
     }
