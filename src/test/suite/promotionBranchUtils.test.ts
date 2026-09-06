@@ -374,18 +374,25 @@ suite("promotionBranchUtils", () => {
 
   test("the go-live list of a top branch goes through the same toggles as the branch window", () => {
     const js = fs.readFileSync(
-      path.resolve(__dirname, "../../../src/webviews/lwc-ui/modules/s/pipeline/pipeline.js"),
+      path.resolve(
+        __dirname,
+        "../../../src/webviews/lwc-ui/modules/s/pipeline/pipeline.js",
+      ),
       "utf8",
     );
     // Selecting a release in the Go Live combobox used to list its Pull Requests unfiltered, so a
     // preprod -> main merge showed up with "Show promotion Pull Requests" off
     const goLiveHandler = js.slice(js.indexOf("returnGoLivePullRequests"));
     assert.ok(
-      js.includes("this._filterModalPullRequests(this.modalSourcePullRequests)"),
+      js.includes(
+        "this._filterModalPullRequests(this.modalSourcePullRequests)",
+      ),
       "the toggle handler must re-filter the current source list",
     );
     assert.ok(
-      goLiveHandler.includes("this.modalSourcePullRequests = data?.pullRequests || []"),
+      goLiveHandler.includes(
+        "this.modalSourcePullRequests = data?.pullRequests || []",
+      ),
       "the go-live result must become the source list of the modal",
     );
     assert.strictEqual(
