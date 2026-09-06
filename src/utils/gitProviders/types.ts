@@ -138,7 +138,11 @@ export type PullRequest = {
   // Numbers declared with promotionPullRequests in the description of a promotion Pull Request
   promotionPullRequests?: number[];
   // Set on a story brought into a window by the promotion Pull Request that declares it
-  carriedByPullRequest?: { number: number; sourceBranch: string; webUrl: string };
+  carriedByPullRequest?: {
+    number: number;
+    sourceBranch: string;
+    webUrl: string;
+  };
   // Merged promotion Pull Requests that already shipped this story to their target branch
   alreadyDeployedVia?: Array<{
     number: number;

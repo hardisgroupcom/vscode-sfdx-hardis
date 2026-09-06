@@ -992,7 +992,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       copy.promotionLabel = "";
       copy.promotionPillClass = "";
       copy.promotionUrl = "";
-      if (Array.isArray(pr.alreadyDeployedVia) && pr.alreadyDeployedVia.length > 0) {
+      if (
+        Array.isArray(pr.alreadyDeployedVia) &&
+        pr.alreadyDeployedVia.length > 0
+      ) {
         const promotion = pr.alreadyDeployedVia[0];
         copy.promotionLabel = this.t("prAlreadyDeployedViaPromotion", {
           branch: promotion.sourceBranch || `#${promotion.number}`,
@@ -3216,7 +3219,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   get majorPrActionsHint() {
     if (this.modalIsPromotionPr) {
-      const carried = (this.modalPullRequests[0] || {}).aggregatedPullRequests || [];
+      const carried =
+        (this.modalPullRequests[0] || {}).aggregatedPullRequests || [];
       let hint = this.t("deploymentActionsPromotionHint", {
         branch: this.modalBranchName,
         count: carried.length,

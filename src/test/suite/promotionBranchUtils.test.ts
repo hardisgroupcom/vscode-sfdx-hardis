@@ -84,7 +84,11 @@ suite("promotionBranchUtils", () => {
   test("needs the flag, the prefix and the key", () => {
     assert.strictEqual(
       isPromotionPullRequest(
-        pr({ number: 9, sourceBranch: "promotion/x", description: DECLARATION }),
+        pr({
+          number: 9,
+          sourceBranch: "promotion/x",
+          description: DECLARATION,
+        }),
         ENABLED,
       ),
       true,
@@ -105,7 +109,11 @@ suite("promotionBranchUtils", () => {
     );
     assert.strictEqual(
       isPromotionPullRequest(
-        pr({ number: 9, sourceBranch: "promotion/x", description: DECLARATION }),
+        pr({
+          number: 9,
+          sourceBranch: "promotion/x",
+          description: DECLARATION,
+        }),
         DISABLED,
       ),
       false,
@@ -148,7 +156,11 @@ suite("promotionBranchUtils", () => {
 
   test("changes nothing when the feature is disabled", async () => {
     const window = [
-      pr({ number: 900, sourceBranch: "promotion/x", description: DECLARATION }),
+      pr({
+        number: 900,
+        sourceBranch: "promotion/x",
+        description: DECLARATION,
+      }),
     ];
     let fetchCalls = 0;
     const { all, added } = await expandPullRequestsWithPromotions(

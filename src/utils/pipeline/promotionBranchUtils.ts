@@ -156,7 +156,10 @@ function prNumber(pr: PullRequest): number {
   return Number.isFinite(value) ? value : 0;
 }
 
-export function markCarriedBy(story: PullRequest, promotion: PullRequest): void {
+export function markCarriedBy(
+  story: PullRequest,
+  promotion: PullRequest,
+): void {
   story.carriedByPullRequest = {
     number: prNumber(promotion),
     sourceBranch: promotion.sourceBranch || "",
@@ -187,7 +190,8 @@ export async function expandPullRequestsWithPromotions(
       continue;
     }
     pr.isPromotion = true;
-    pr.promotionPullRequests = parsePromotionPullRequestIds(pr.description) || [];
+    pr.promotionPullRequests =
+      parsePromotionPullRequestIds(pr.description) || [];
     for (const number of pr.promotionPullRequests) {
       if (present.has(number)) {
         continue;

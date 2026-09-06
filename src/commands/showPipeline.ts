@@ -512,7 +512,9 @@ export function registerShowPipeline(commands: Commands) {
                 parsePromotionPullRequestIds(prDetails.description) || [];
               const loadedPrs: PullRequest[] = (
                 pipelineProperties?.pipelineData?.orgs || []
-              ).flatMap((org: any) => org.pullRequestsInBranchSinceLastMerge || []);
+              ).flatMap(
+                (org: any) => org.pullRequestsInBranchSinceLastMerge || [],
+              );
               const carried: PullRequest[] = [];
               const unresolved: number[] = [];
               for (const number of declared) {
@@ -522,8 +524,14 @@ export function registerShowPipeline(commands: Commands) {
                 if (!story) {
                   story = await gitProvider.getPullRequestByNumber(number);
                   if (story) {
-                    [story] = await gitProvider.completePullRequestsWithPrePostCommands([story]);
-                    [story] = await gitProvider.completePullRequestsWithTickets([story], { fetchDetails: true });
+                    [story] =
+                      await gitProvider.completePullRequestsWithPrePostCommands(
+                        [story],
+                      );
+                    [story] = await gitProvider.completePullRequestsWithTickets(
+                      [story],
+                      { fetchDetails: true },
+                    );
                   }
                 }
                 if (story) {
@@ -538,7 +546,9 @@ export function registerShowPipeline(commands: Commands) {
               prDetails.unresolvedPromotionPullRequests = unresolved;
               // The tickets of the carried stories belong to the promotion as well
               const seenTickets = new Set(
-                (prDetails.relatedTickets || []).map((ticket: any) => ticket.id),
+                (prDetails.relatedTickets || []).map(
+                  (ticket: any) => ticket.id,
+                ),
               );
               for (const story of carried) {
                 for (const ticket of story.relatedTickets || []) {
