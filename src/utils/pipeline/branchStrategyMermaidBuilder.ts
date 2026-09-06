@@ -8,6 +8,7 @@ import { prettifyFieldName } from "../stringUtils";
 import { isMajorBranch, isPreprod, isProduction } from "../orgConfigUtils";
 import { PullRequest, JobStatus } from "../gitProviders/types";
 import { GitProvider } from "../gitProviders/gitProvider";
+import { parsePromotionBranchName } from "./promotionBranchUtils";
 import { t } from "../../i18n/i18n";
 
 /**
@@ -168,11 +169,14 @@ export class BranchStrategyMermaidBuilder {
         if (isPreprod(mergeTarget)) {
           branchesMergingInPreprod.push(branchAndOrg.branchName);
         }
-        // Find PRs that match BOTH source and target branches
+        // Find PRs that match BOTH source and target branches. A promotion Pull Request is the
+        // promotion of this very step, so it belongs on this edge rather than on a feature node of
+        // its own: sfdx-hardis keeps a single one open between two branches.
         const openPullRequestsForThisLink = this.openPullRequests.filter(
           (pr) =>
-            pr.sourceBranch === branchAndOrg.branchName &&
-            pr.targetBranch === mergeTarget,
+            (pr.sourceBranch === branchAndOrg.branchName &&
+              pr.targetBranch === mergeTarget) ||
+            this.isPromotionOfStep(pr, branchAndOrg.branchName, mergeTarget),
         );
         // Select only the first PR if multiple exist
         const activePR =
@@ -289,7 +293,10 @@ export class BranchStrategyMermaidBuilder {
       (pullRequest) =>
         !this.branchesAndOrgs.find(
           (b) => b.branchName === pullRequest.sourceBranch,
-        ),
+        ) &&
+        // A promotion already drawn on the edge between its two branches must not also get a
+        // feature node: the same Pull Request number would appear twice in the diagram
+        !this.isPromotionDrawnOnAnEdge(pullRequest),
     );
     // Group feature PRs by their target (major) branch. When a target has more
     // than the threshold, only the newest ones stay as individual nodes and the
@@ -394,6 +401,43 @@ export class BranchStrategyMermaidBuilder {
         (link) => link.isFeatureGroup && link.groupNodeName === group.nodeName,
       );
     }
+  }
+
+  /**
+   * True when this open Pull Request is the promotion of the given pipeline step: its branch is
+   * named promotion/<source>/<target>/... for exactly these two branches, and it really targets
+   * that branch (a promotion retargeted by hand belongs to no step). Only when the project enabled
+   * promotion branches: otherwise such a branch is an ordinary feature branch, which is also how
+   * the deployment jobs treat it.
+   */
+  private isPromotionOfStep(
+    pullRequest: PullRequest,
+    sourceBranch: string,
+    targetBranch: string,
+  ): boolean {
+    if (!this.promotionBranchConfig.enabled) {
+      return false;
+    }
+    const parts = parsePromotionBranchName(pullRequest.sourceBranch || "");
+    return (
+      parts !== null &&
+      parts.sourceBranch.toLowerCase() === (sourceBranch || "").toLowerCase() &&
+      parts.targetBranch.toLowerCase() === (targetBranch || "").toLowerCase() &&
+      (pullRequest.targetBranch || "").toLowerCase() ===
+        (targetBranch || "").toLowerCase()
+    );
+  }
+
+  /** True when a merge edge of the diagram already carries this promotion Pull Request. */
+  private isPromotionDrawnOnAnEdge(pullRequest: PullRequest): boolean {
+    if (!this.promotionBranchConfig.enabled) {
+      return false;
+    }
+    return this.branchesAndOrgs.some((branchAndOrg) =>
+      (branchAndOrg.mergeTargets || []).some((mergeTarget: string) =>
+        this.isPromotionOfStep(pullRequest, branchAndOrg.branchName, mergeTarget),
+      ),
+    );
   }
 
   /**

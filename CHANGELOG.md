@@ -11,6 +11,7 @@
   - Major-to-major merges are filtered for **every** project, promotion branches or not: such a merge is plumbing in any pipeline. A `promotion/` branch is only treated as a vehicle when the feature is enabled
   - In the window of a branch, tick the User Stories to carry and use **Create promotion**: `sf hardis:project:promotion:create` opens with them preselected
   - A Pull Request number appears in a single branch of the diagram, enforced on the windows themselves so it still holds once a promotion has left the window it was merged into: a story a promotion carried away is listed in the branch it reached, in the node counter as well as in the list. The **Show already promoted Pull Requests** toggle brings the other places back
+  - The promotion open between two major branches is drawn **on the arrow between the two branch nodes**, where the merge it replaces would be, instead of getting a branch node of its own. sfdx-hardis keeps a single promotion open per pipeline step, so that arrow always answers "what is being promoted right now"
 
 ## [8.4.0] 2026-09-04
 

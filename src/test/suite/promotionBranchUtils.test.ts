@@ -3,6 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { SfdxHardisConfigHelper } from "../../utils/pipeline/sfdxHardisConfigHelper";
 import { PullRequest } from "../../utils/gitProviders/types";
+import { BranchStrategyMermaidBuilder } from "../../utils/pipeline/branchStrategyMermaidBuilder";
 import {
   annotateAlreadyPromoted,
   buildPromotionIndex,
@@ -517,5 +518,105 @@ suite("promotionBranchUtils", () => {
       visiblePullRequests(preprodWindow).map((p) => p.number),
       [900, 482],
     );
+  });
+});
+
+suite("An open promotion is drawn on the edge between its two branches", () => {
+  const BRANCHES_AND_ORGS = [
+    { branchName: "uat", level: 2, mergeTargets: ["preprod"], instanceUrl: "" },
+    { branchName: "preprod", level: 1, mergeTargets: ["main"], instanceUrl: "" },
+    { branchName: "main", level: 0, mergeTargets: [], instanceUrl: "" },
+  ];
+
+  function openPr(
+    number: number,
+    sourceBranch: string,
+    targetBranch: string,
+  ): PullRequest {
+    return {
+      id: number,
+      number: number,
+      title: `PR ${number}`,
+      description: "",
+      sourceBranch: sourceBranch,
+      targetBranch: targetBranch,
+      authorLabel: "someone",
+      state: "open",
+      webUrl: `https://git.example.com/pr/${number}`,
+      jobsStatus: "success",
+      createdAt: "2026-09-06T10:00:00Z",
+    };
+  }
+
+  function diagram(pullRequests: PullRequest[], enabled: boolean): string {
+    const builder = new BranchStrategyMermaidBuilder(
+      BRANCHES_AND_ORGS,
+      true,
+      pullRequests,
+      null,
+      "light",
+      3,
+      { enabled: enabled },
+    );
+    return builder.build({ format: "string", withMermaidTag: false }) as string;
+  }
+
+  test("the promotion sits on the uat to preprod edge, not on a node of its own", () => {
+    const out = diagram(
+      [openPr(41, "promotion/uat/preprod/2026-09-06-1", "preprod")],
+      true,
+    );
+    const edge = out
+      .split("\n")
+      .find(
+        (line) => line.includes("uatBranch ") && line.includes("preprodBranch"),
+      );
+    assert.ok(edge, "the uat to preprod edge must exist");
+    assert.ok(edge!.includes("#41"), `the promotion belongs on the edge: ${edge}`);
+    assert.ok(
+      !out.includes("promotion_uat_preprod"),
+      "no feature node should be created for the promotion branch",
+    );
+  });
+
+  test("with the feature off it stays an ordinary feature branch", () => {
+    const out = diagram(
+      [openPr(42, "promotion/uat/preprod/2026-09-06-1", "preprod")],
+      false,
+    );
+    const edge = out
+      .split("\n")
+      .find(
+        (line) => line.includes("uatBranch ") && line.includes("preprodBranch"),
+      );
+    assert.ok(!edge!.includes("#42"), `the edge must stay free: ${edge}`);
+    assert.ok(
+      out.includes("#42"),
+      "the Pull Request is still drawn, as a feature branch",
+    );
+  });
+
+  test("a promotion retargeted by hand is not put on any edge", () => {
+    const out = diagram(
+      [openPr(43, "promotion/uat/preprod/2026-09-06-1", "main")],
+      true,
+    );
+    const uatToPreprod = out
+      .split("\n")
+      .find(
+        (line) => line.includes("uatBranch ") && line.includes("preprodBranch"),
+      );
+    assert.ok(!uatToPreprod!.includes("#43"), `${uatToPreprod}`);
+    const preprodToMain = out
+      .split("\n")
+      .find(
+        (line) => line.includes("preprodBranch ") && line.includes("mainBranch"),
+      );
+    assert.ok(!preprodToMain!.includes("#43"), `${preprodToMain}`);
+  });
+
+  test("a User Story targeting a major branch keeps its own node", () => {
+    const out = diagram([openPr(44, "feature/PROJ-1", "preprod")], true);
+    assert.ok(out.includes("feature_PROJ-1Branch"), out);
   });
 });
