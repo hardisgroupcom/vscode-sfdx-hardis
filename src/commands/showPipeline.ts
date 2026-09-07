@@ -26,6 +26,12 @@ import simpleGit from "simple-git";
 import { listAllOrgs } from "../utils/orgUtils";
 import { getChildBranchNames } from "../utils/orgConfigUtils";
 import { readSfdxHardisConfig } from "../utils/sfdx-hardis-config-utils";
+import {
+  isMergedPullRequest,
+  isPromotionPullRequest,
+  parsePromotionPullRequestIds,
+  PromotionBranchConfig,
+} from "../utils/pipeline/promotionBranchUtils";
 
 const GIT_PULL_REFUSAL_COOLDOWN_MS = 60 * 60 * 1000;
 const promptedRemoteUpdatesByBranch = new Map<string, string>();
@@ -490,6 +496,100 @@ export function registerShowPipeline(commands: Commands) {
               prDetails.isMajorToMajor = true;
               prDetails.aggregatedPullRequests =
                 sourceMajorOrg.pullRequestsInBranchSinceLastMerge || [];
+            }
+            // A promotion Pull Request (promotion/ branch declaring the stories it
+            // carries) is read-only like a major-to-major one: it lists the actions,
+            // tickets and test classes of the declared Pull Requests. Those are looked
+            // up in the windows already loaded, the others are fetched by number.
+            const promotionConfig: PromotionBranchConfig | undefined =
+              pipelineProperties?.pipelineData?.promotionBranches;
+            if (
+              prDetails &&
+              !prDetails.isMajorToMajor &&
+              promotionConfig &&
+              isPromotionPullRequest(prDetails, promotionConfig)
+            ) {
+              const declared =
+                parsePromotionPullRequestIds(prDetails.description) || [];
+              const loadedPrs: PullRequest[] = (
+                pipelineProperties?.pipelineData?.orgs || []
+              ).flatMap(
+                (org: any) => org.pullRequestsInBranchSinceLastMerge || [],
+              );
+              // The stories already loaded cost nothing; the others are fetched in parallel and
+              // completed in one batch each. One story at a time meant three serialized provider
+              // round trips per declared Pull Request, and a promotion carrying forty of them
+              // froze the modal.
+              const carried: PullRequest[] = [];
+              const unresolved: number[] = [];
+              const alreadyLoaded = new Map<number, PullRequest>();
+              const toFetch: number[] = [];
+              for (const number of declared) {
+                const known = loadedPrs.find(
+                  (pr: PullRequest) => pr.number === number,
+                );
+                if (known) {
+                  alreadyLoaded.set(number, known);
+                } else {
+                  toFetch.push(number);
+                }
+              }
+              const fetched = await Promise.all(
+                toFetch.map(async (number) => ({
+                  number,
+                  story: await gitProvider.getPullRequestByNumber(number),
+                })),
+              );
+              const fetchedStories = fetched
+                .map((entry) => entry.story)
+                .filter((story): story is PullRequest => !!story);
+              if (fetchedStories.length > 0) {
+                await gitProvider.completePullRequestsWithPrePostCommands(
+                  fetchedStories,
+                );
+                await gitProvider.completePullRequestsWithTickets(
+                  fetchedStories,
+                  { fetchDetails: true },
+                );
+              }
+              const fetchedByNumber = new Map<number, PullRequest>(
+                fetched
+                  .filter((entry) => entry.story)
+                  .map((entry) => [entry.number, entry.story as PullRequest]),
+              );
+              for (const number of declared) {
+                const story =
+                  alreadyLoaded.get(number) || fetchedByNumber.get(number);
+                // An open or declined Pull Request cannot be in the branch: the CLI skips it
+                // with promotionDeclaredPrNotMerged, and listing its deployment actions as running
+                // with this promotion would be wrong
+                if (story && isMergedPullRequest(story)) {
+                  carried.push(story);
+                } else {
+                  unresolved.push(number);
+                }
+              }
+              prDetails.isPromotion = true;
+              prDetails.promotionPullRequests = declared;
+              prDetails.aggregatedPullRequests = carried;
+              prDetails.unresolvedPromotionPullRequests = unresolved;
+              // The tickets of the carried stories belong to the promotion as well
+              const seenTickets = new Set(
+                (prDetails.relatedTickets || []).map(
+                  (ticket: any) => ticket.id,
+                ),
+              );
+              for (const story of carried) {
+                for (const ticket of story.relatedTickets || []) {
+                  if (!seenTickets.has(ticket.id)) {
+                    seenTickets.add(ticket.id);
+                    prDetails.relatedTickets = [
+                      ...(prDetails.relatedTickets || []),
+                      ticket,
+                    ];
+                  }
+                }
+              }
             }
             panel.sendMessage({
               type: "returnGetPrInfoForModal",
@@ -1078,6 +1178,8 @@ export function registerShowPipeline(commands: Commands) {
       // Read displayFeatureBranches configuration
       const displayFeatureBranches =
         config.get<boolean>("pipelineDisplayFeatureBranches") ?? false;
+      const showAlreadyPromotedPrs =
+        config.get<boolean>("pipelineShowAlreadyPromotedPullRequests") ?? false;
 
       const ticketProvider = await TicketProvider.getInstance({
         reset: false,
@@ -1139,6 +1241,7 @@ export function registerShowPipeline(commands: Commands) {
         repoPlatformLabel: repoPlatformLabel,
         repoInfo: gitProvider?.repoInfo || null,
         displayFeatureBranches: displayFeatureBranches,
+        showAlreadyPromotedPrs: showAlreadyPromotedPrs,
         projectApexScripts: projectApexScripts,
         projectSfdmuWorkspaces: projectDataWorkspaces,
         projectCommunities: [],
@@ -1181,6 +1284,7 @@ type PipelineInfo = {
   repoPlatformLabel: string;
   repoInfo?: any;
   displayFeatureBranches: boolean;
+  showAlreadyPromotedPrs: boolean;
   projectApexScripts: any[];
   projectSfdmuWorkspaces: any[];
   projectCommunities: any[];

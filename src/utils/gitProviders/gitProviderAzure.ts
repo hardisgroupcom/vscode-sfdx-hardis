@@ -8,6 +8,7 @@ import {
   Job,
   JobStatus,
 } from "./types";
+import { mapAzureMergeStatus } from "./mergeStatus";
 import * as azdev from "azure-devops-node-api";
 import { GitApi } from "azure-devops-node-api/GitApi";
 import {
@@ -265,6 +266,38 @@ export class GitProviderAzure extends GitProvider {
       });
     } catch {
       return [];
+    }
+  }
+
+  async getPullRequestByNumber(number: number): Promise<PullRequest | null> {
+    if (!this.repoInfo || !this.gitApi) {
+      return null;
+    }
+    try {
+      const pullRequest = await this.gitApi.getPullRequestById(
+        number,
+        this.repoInfo.owner,
+      );
+      await this.logApiCall("getPullRequestById", {
+        caller: "getPullRequestByNumber",
+        number,
+      });
+      if (!pullRequest) {
+        return null;
+      }
+      const branchName = (pullRequest.targetRefName || "").replace(
+        "refs/heads/",
+        "",
+      );
+      const converted = await this.convertAndCollectJobsList(
+        [pullRequest],
+        branchName,
+        { withJobs: false },
+      );
+      return converted[0] || null;
+    } catch (err) {
+      Logger.log(`Error fetching PR ${number}: ${String(err)}`);
+      return null;
     }
   }
 
@@ -972,6 +1005,12 @@ export class GitProviderAzure extends GitProvider {
       createdAt: pr.creationDate ? pr.creationDate.toISOString() : undefined,
       updatedAt: pr.closedDate ? pr.closedDate.toISOString() : undefined,
       jobsStatus: "unknown",
+      // Azure DevOps tests the merge of active Pull Requests on its own and returns the result in
+      // the Pull Request list, so reading it costs nothing
+      mergeStatus:
+        pr.status === PullRequestStatus.Active
+          ? mapAzureMergeStatus(pr)
+          : undefined,
     };
     return prConverted;
   }

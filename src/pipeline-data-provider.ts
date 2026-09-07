@@ -4,7 +4,12 @@ import {
   DEFAULT_FEATURE_BRANCH_GROUP_THRESHOLD,
   FeatureBranchGroup,
 } from "./utils/pipeline/branchStrategyMermaidBuilder";
-import { listMajorOrgs, MajorOrg } from "./utils/orgConfigUtils";
+import {
+  getPipelinePromotionBranchConfig,
+  listMajorOrgs,
+  MajorOrg,
+} from "./utils/orgConfigUtils";
+import { PromotionBranchConfig } from "./utils/pipeline/promotionBranchUtils";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 import { PullRequest } from "./utils/gitProviders/types";
 import { GitProvider } from "./utils/gitProviders/gitProvider";
@@ -38,6 +43,8 @@ export interface PipelineData {
   // Folded "+N more" feature-branch groups shown in the full diagram, so the
   // webview can open a PR modal when a group node or its link is clicked.
   featureBranchGroups: FeatureBranchGroup[];
+  // Promotion branches switch of the project (sfdx-hardis enablePromotionBranches)
+  promotionBranches?: PromotionBranchConfig;
 }
 
 export class PipelineDataProvider {
@@ -65,6 +72,11 @@ export class PipelineDataProvider {
         ? await GitProvider.getInstance()
         : null;
       // majorOrgs = await completeOrgsWithPullRequests(majorOrgs);
+      const projectConfig = await getConfig("project");
+      const promotionBranchConfig = getPipelinePromotionBranchConfig(
+        projectConfig,
+        majorOrgs,
+      );
       const mermaidBuilder = new BranchStrategyMermaidBuilder(
         majorOrgs,
         isAuthenticated,
@@ -73,6 +85,7 @@ export class PipelineDataProvider {
         options.colorTheme || "light",
         options.featureBranchGroupThreshold ??
           DEFAULT_FEATURE_BRANCH_GROUP_THRESHOLD,
+        promotionBranchConfig,
       );
       const mermaidDiagram = mermaidBuilder.build({
         format: "string",
@@ -114,7 +127,6 @@ export class PipelineDataProvider {
       this.warnings = majorOrgs.flatMap((org) => org.warnings || []);
 
       // Additional warnings
-      const projectConfig = await getConfig("project");
       this.checkDevelopmentBranchExists(projectConfig, majorOrgs);
       this.checkAvailableTargetBranchesExist(projectConfig, majorOrgs);
 
@@ -125,6 +137,7 @@ export class PipelineDataProvider {
         mermaidDiagramMajor,
         warnings: this.warnings,
         featureBranchGroups,
+        promotionBranches: promotionBranchConfig,
       };
     } catch (error: any) {
       vscode.window.showErrorMessage(
