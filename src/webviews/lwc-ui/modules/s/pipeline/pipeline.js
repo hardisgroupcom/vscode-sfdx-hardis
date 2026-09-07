@@ -2069,8 +2069,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     const source = (branchName || "").toLowerCase();
     return this._promotionAllowedSteps
       .filter(
-        (step) =>
-          (step.source || "").toLowerCase() === source && !!step.target,
+        (step) => (step.source || "").toLowerCase() === source && !!step.target,
       )
       .map((step) => step.target);
   }
@@ -2107,7 +2106,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // A single allowed target leaves nothing to choose: pass it rather than prompt for it
     const allowedTargets = this._allowedPromotionTargets(this.modalBranchName);
     const target =
-      allowedTargets.length === 1 ? ` --target-branch ${allowedTargets[0]}` : "";
+      allowedTargets.length === 1
+        ? ` --target-branch ${allowedTargets[0]}`
+        : "";
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {

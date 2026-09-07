@@ -131,7 +131,9 @@ suite("promotionBranchUtils", () => {
   });
 
   test("an absent list allows every step, so an existing pipeline is unchanged", () => {
-    const config = getPromotionBranchConfig([{ enablePromotionBranches: true }]);
+    const config = getPromotionBranchConfig([
+      { enablePromotionBranches: true },
+    ]);
     assert.deepStrictEqual(config.allowedSteps, []);
     assert.strictEqual(isPromotionStepAllowed([], "integration", "uat"), true);
     assert.strictEqual(isPromotionSourceAllowed([], "integration"), true);

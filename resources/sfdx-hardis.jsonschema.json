@@ -1706,25 +1706,19 @@
           "source": {
             "$id": "#/properties/allowedPromotionSteps/items/properties/source",
             "description": "Major branch holding the approved User Stories (ex: uat)",
-            "examples": [
-              "uat"
-            ],
+            "examples": ["uat"],
             "title": "Source branch",
             "type": "string"
           },
           "target": {
             "$id": "#/properties/allowedPromotionSteps/items/properties/target",
             "description": "Major branch the promotion goes to (ex: preprod). Leave empty to allow every merge target of the source branch",
-            "examples": [
-              "preprod"
-            ],
+            "examples": ["preprod"],
             "title": "Target branch",
             "type": "string"
           }
         },
-        "required": [
-          "source"
-        ],
+        "required": ["source"],
         "title": "Allowed promotion step",
         "type": "object"
       },
