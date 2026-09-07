@@ -212,6 +212,12 @@
     cursor: pointer;
 }
 
+/* Merge conflict glyph on an edge chip: slightly tighter than the chip text */
+.mermaid .hardis-conflict-glyph {
+    font-size: 10px;
+    margin-right: 1px;
+}
+
 /* Inline SVG icons inside node labels follow the node text color */
 .mermaid .hardis-node-icon {
     vertical-align: -1px;
@@ -261,6 +267,11 @@
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
+}
+
+.legend-item .hardis-conflict-glyph {
+    color: var(--slds-g-color-palette-red-40);
+    font-weight: 700;
 }
 
 .legend-line {
@@ -340,6 +351,30 @@
 .slds-modal__content lightning-datatable {
     width: 100% !important;
     max-width: 100% !important;
+}
+
+/* Modal footer: the branch window carries up to three actions on the left, whose labels
+   hold a branch name and grow with it. Laid out as inline blocks they wrapped one button
+   under another and pushed Close out of its corner, so both sides are flex rows that wrap
+   as a whole, and the gap replaces the per-button margins. */
+.hardis-modal-footer {
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.hardis-modal-footer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.hardis-modal-footer-close {
+    margin-left: auto;
 }
 
 /* ========================================

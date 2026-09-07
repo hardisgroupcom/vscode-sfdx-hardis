@@ -283,6 +283,14 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             requiresProject: true,
             helpUrl: DOCSITE_URL + "/hardis/work/backpromote/",
           },
+          {
+            id: "hardis:project:promotion:create",
+            label: t("createPromotionBranch"),
+            tooltip: t("createPromotionBranchTooltip"),
+            command: "sf hardis:project:promotion:create",
+            requiresProject: true,
+            helpUrl: DOCSITE_URL + "/hardis/project/promotion/create/",
+          },
         ],
       },
       {
