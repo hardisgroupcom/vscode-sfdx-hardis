@@ -144,7 +144,8 @@ suite("Merge conflicts on the DevOps Pipeline diagram", () => {
         `return {
           ${extractMember(js, "get modalPrColumns()")},
           ${extractMember(js, "get modalHasPromotionColumn()")},
-          ${extractMember(js, "get modalHasMergeConflictColumn()")}
+          ${extractMember(js, "get modalHasMergeConflictColumn()")},
+          ${extractMember(js, "_authorColumn()")}
         };`,
       )();
       view.modalPullRequests = rows;

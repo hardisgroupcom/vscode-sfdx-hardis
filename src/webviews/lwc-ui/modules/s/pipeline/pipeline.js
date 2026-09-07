@@ -210,22 +210,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       ...statusColumn,
       ...mergeConflictColumn,
       ...promotionColumn,
-      {
-        key: "author",
-        label: this.i18n.authorLabel,
-        fieldName: "authorLabel",
-        type: "avatarText",
-        wrapText: false,
-        // Every other column of this table states its width, so the automatic mode has this
-        // one alone to absorb what the checkbox column takes: without a width of its own it
-        // collapses to the avatar circle as soon as the stories become tickable, and neither
-        // the author name nor the column header can be read
-        initialWidth: 170,
-        typeAttributes: {
-          initials: { fieldName: "authorInitials" },
-          avatarClass: { fieldName: "authorAvatarClass" },
-        },
-      },
+      // The shared author column, which states a width. This table used to hold a copy of it
+      // without one, and it was then the only column left to absorb what the promotion
+      // checkbox column takes: it collapsed to the avatar circle, hiding both the author name
+      // and the column header
+      this._authorColumn(),
       {
         key: "mergeDate",
         label: this.i18n.mergedLabel,

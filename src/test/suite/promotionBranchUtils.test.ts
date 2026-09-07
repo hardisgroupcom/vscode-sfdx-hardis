@@ -253,7 +253,8 @@ suite("promotionBranchUtils", () => {
       `return {
         ${extractMember(js, "get modalPrColumns()")},
         ${extractMember(js, "get modalHasPromotionColumn()")},
-        ${extractMember(js, "get modalHasMergeConflictColumn()")}
+        ${extractMember(js, "get modalHasMergeConflictColumn()")},
+        ${extractMember(js, "_authorColumn()")}
       };`,
     )();
     view.modalPullRequests = [{ number: 1 }];
@@ -261,12 +262,12 @@ suite("promotionBranchUtils", () => {
     view.i18n = new Proxy({}, { get: (_target, key) => String(key) });
     const columns = view.modalPrColumns;
     // The checkbox column takes its width from the others. Only the last column may be left
-    // without one: any other flexible column collapses to nothing once the checkboxes are on,
-    // which is how the author column became an unreadable sliver
-    const widthless = columns
+    // without one: any other column with no width collapses to nothing once the checkboxes
+    // are shown, which is how the author column became an unreadable sliver
+    const flexible = columns
       .filter((column: any) => !column.initialWidth)
       .map((column: any) => column.key);
-    assert.deepStrictEqual(widthless, [columns[columns.length - 1].key]);
+    assert.deepStrictEqual(flexible, [columns[columns.length - 1].key]);
     const author = columns.find((column: any) => column.key === "author");
     assert.ok(
       author && author.initialWidth >= 150,
