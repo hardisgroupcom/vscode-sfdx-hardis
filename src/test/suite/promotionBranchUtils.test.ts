@@ -173,8 +173,11 @@ suite("promotionBranchUtils", () => {
       let index = js.indexOf("{", start);
       const open = index;
       for (; index < js.length; index++) {
-        if (js[index] === "{") depth++;
-        else if (js[index] === "}" && --depth === 0) break;
+        if (js[index] === "{") {
+          depth++;
+        } else if (js[index] === "}" && --depth === 0) {
+          break;
+        }
       }
       return js.slice(start + 1, open) + js.slice(open, index + 1);
     };
