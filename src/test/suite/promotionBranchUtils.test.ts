@@ -4,6 +4,7 @@ import * as path from "path";
 import { SfdxHardisConfigHelper } from "../../utils/pipeline/sfdxHardisConfigHelper";
 import { PullRequest } from "../../utils/gitProviders/types";
 import { BranchStrategyMermaidBuilder } from "../../utils/pipeline/branchStrategyMermaidBuilder";
+import { readModuleFile } from "./lwcSourceUtils";
 import {
   annotateAlreadyPromoted,
   buildPromotionIndex,
@@ -158,6 +159,103 @@ suite("promotionBranchUtils", () => {
     assert.deepStrictEqual(steps, [{ source: "uat", target: "" }]);
     assert.strictEqual(isPromotionStepAllowed(steps, "uat", "main"), true);
     assert.strictEqual(isPromotionStepAllowed(steps, "preprod", "main"), false);
+  });
+
+  // The DevOps Pipeline modal cannot be instantiated in the extension test host, so the three
+  // members that decide whether a promotion can start from a branch are lifted out of the
+  // component source and run for real.
+  function promotionGate(pipelineData: any): any {
+    const js = readModuleFile("pipeline", "pipeline.js");
+    const member = (signature: string) => {
+      const start = js.indexOf("\n  " + signature);
+      assert.ok(start > -1, `member not found in pipeline.js: ${signature}`);
+      let depth = 0;
+      let index = js.indexOf("{", start);
+      const open = index;
+      for (; index < js.length; index++) {
+        if (js[index] === "{") depth++;
+        else if (js[index] === "}" && --depth === 0) break;
+      }
+      return js.slice(start + 1, open) + js.slice(open, index + 1);
+    };
+    const gate = new Function(
+      `return {
+        ${member("get _promotionAllowedSteps()")},
+        ${member("_isPromotionSourceAllowed(branchName)")},
+        ${member("_mergeTargetsOf(branchName)")},
+        ${member("_allowedPromotionTargets(branchName)")}
+      };`,
+    )();
+    gate.pipelineData = pipelineData;
+    return gate;
+  }
+
+  const PIPELINE_LINKS = [
+    { source: "integration", target: "uat", type: "gitMerge" },
+    { source: "uat", target: "preprod", type: "gitMerge" },
+    { source: "preprod", target: "main", type: "gitMerge" },
+  ];
+
+  test("a promotion can only start from a branch the allowed steps name", () => {
+    const gate = promotionGate({
+      links: PIPELINE_LINKS,
+      promotionBranches: {
+        enabled: true,
+        allowedSteps: [{ source: "uat", target: "preprod" }],
+      },
+    });
+    // showCreatePromotionButton ends with this call, and modalHideCheckboxColumn is its
+    // negation: a branch that answers false gets neither the button nor the checkboxes
+    assert.strictEqual(gate._isPromotionSourceAllowed("uat"), true);
+    assert.strictEqual(gate._isPromotionSourceAllowed("integration"), false);
+    assert.strictEqual(gate._isPromotionSourceAllowed("preprod"), false);
+    // One allowed target: the command is called with it instead of asking
+    assert.deepStrictEqual(gate._allowedPromotionTargets("uat"), ["preprod"]);
+  });
+
+  test("a step whose target is not a merge target of its source opens nothing", () => {
+    const gate = promotionGate({
+      links: PIPELINE_LINKS,
+      promotionBranches: {
+        enabled: true,
+        allowedSteps: [{ source: "uat", target: "main" }],
+      },
+    });
+    // hardis:project:promotion:create could not resolve that target either, so the branch
+    // window must not offer a promotion that ends in an error
+    assert.strictEqual(gate._isPromotionSourceAllowed("uat"), false);
+  });
+
+  test("a step without a target allows the branch, whatever its merge targets", () => {
+    const gate = promotionGate({
+      links: PIPELINE_LINKS,
+      promotionBranches: {
+        enabled: true,
+        allowedSteps: [{ source: "integration", target: "" }],
+      },
+    });
+    assert.strictEqual(gate._isPromotionSourceAllowed("integration"), true);
+    assert.strictEqual(gate._isPromotionSourceAllowed("uat"), false);
+    // Nothing to pass: the command asks between the merge targets it is allowed to use
+    assert.deepStrictEqual(gate._allowedPromotionTargets("integration"), []);
+  });
+
+  test("the checkboxes of the branch window follow the promotion button", () => {
+    const js = readModuleFile("pipeline", "pipeline.js");
+    const getter = js.slice(js.indexOf("get modalHideCheckboxColumn()"));
+    assert.ok(
+      getter
+        .slice(0, getter.indexOf("}"))
+        .includes("return !this.showCreatePromotionButton;"),
+      "the checkbox column must be hidden exactly when the promotion button is",
+    );
+    const button = js.slice(js.indexOf("get showCreatePromotionButton()"));
+    assert.ok(
+      button
+        .slice(0, button.indexOf("\n  }"))
+        .includes("this._isPromotionSourceAllowed(this.modalBranchName)"),
+      "the promotion button must ask the allowed steps about the branch",
+    );
   });
 
   test("a Pull Request closed with a merge date counts as merged (GitHub)", () => {

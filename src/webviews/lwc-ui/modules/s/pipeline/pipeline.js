@@ -2046,20 +2046,43 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     );
   }
 
-  // allowedPromotionSteps: the steps a release manager may assemble. An empty list allows
-  // every step, which is what a project gets until it declares the restriction.
+  // allowedPromotionSteps: the steps a release manager may assemble, from the sfdx-hardis
+  // project config. sfdx-hardis requires the list to use the feature, so an empty one means
+  // the project has not written it yet: the button stays, and the command answers with the
+  // error that names the setting and links to the documentation. Hiding it there would leave
+  // a release manager with a feature that is on and nothing to click.
   get _promotionAllowedSteps() {
     const steps = this.pipelineData?.promotionBranches?.allowedSteps;
     return Array.isArray(steps) ? steps : [];
   }
 
+  // A promotion can start from this branch when a step names it as a source AND the target of
+  // that step is reachable: a merge target of the branch, or any of them when the step leaves
+  // the target out. A step whose target is not a merge target of its source cannot be resolved
+  // by the command either, so offering it here would only lead to an error.
   _isPromotionSourceAllowed(branchName) {
     const steps = this._promotionAllowedSteps;
     if (steps.length === 0) {
       return true;
     }
     const source = (branchName || "").toLowerCase();
-    return steps.some((step) => (step.source || "").toLowerCase() === source);
+    const mergeTargets = this._mergeTargetsOf(branchName);
+    return steps.some(
+      (step) =>
+        (step.source || "").toLowerCase() === source &&
+        (!step.target || mergeTargets.includes(step.target.toLowerCase())),
+    );
+  }
+
+  _mergeTargetsOf(branchName) {
+    const source = (branchName || "").toLowerCase();
+    return (this.pipelineData?.links || [])
+      .filter(
+        (link) =>
+          link.type === "gitMerge" &&
+          (link.source || "").toLowerCase() === source,
+      )
+      .map((link) => (link.target || "").toLowerCase());
   }
 
   // The targets allowed from a branch, when the steps name them. A step without a target
@@ -2491,6 +2514,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     );
   }
 
+  // The checkboxes exist to feed the promotion: they go away with the button, so a branch the
+  // project does not allow a promotion from offers nothing to tick either
   get modalHideCheckboxColumn() {
     return !this.showCreatePromotionButton;
   }
