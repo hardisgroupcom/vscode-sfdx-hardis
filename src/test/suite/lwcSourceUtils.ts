@@ -80,7 +80,10 @@ export function assertKeysTranslated(keys: Iterable<string>): void {
  */
 export function extractMember(source: string, signature: string): string {
   const start = source.indexOf("\n  " + signature);
-  assert.ok(start > -1, `member not found in the component source: ${signature}`);
+  assert.ok(
+    start > -1,
+    `member not found in the component source: ${signature}`,
+  );
   const open = source.indexOf("{", start);
   let depth = 0;
   let index = open;

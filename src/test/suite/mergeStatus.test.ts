@@ -165,7 +165,10 @@ suite("Merge conflicts on the DevOps Pipeline diagram", () => {
         `the merge conflicts column is missing from ${keys.join(", ")}`,
       );
       // Right after the job status, where the reader is already looking for a state
-      assert.strictEqual(keys.indexOf("mergeStatus"), keys.indexOf("status") + 1);
+      assert.strictEqual(
+        keys.indexOf("mergeStatus"),
+        keys.indexOf("status") + 1,
+      );
     });
 
     test("a list where nothing conflicts keeps the table it had", () => {
