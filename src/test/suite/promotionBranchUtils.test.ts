@@ -130,7 +130,9 @@ suite("promotionBranchUtils", () => {
     ]);
   });
 
-  test("an absent list allows every step, so an existing pipeline is unchanged", () => {
+  // hardis:project:promotion:create refuses to run without the list. The pipeline keeps drawing
+  // and listing whatever the project has, so a repository being configured is still readable.
+  test("an absent list is no restriction for the pipeline", () => {
     const config = getPromotionBranchConfig([
       { enablePromotionBranches: true },
     ]);
