@@ -4,7 +4,7 @@ import * as path from "path";
 import { SfdxHardisConfigHelper } from "../../utils/pipeline/sfdxHardisConfigHelper";
 import { PullRequest } from "../../utils/gitProviders/types";
 import { BranchStrategyMermaidBuilder } from "../../utils/pipeline/branchStrategyMermaidBuilder";
-import { readModuleFile } from "./lwcSourceUtils";
+import { extractMember, readModuleFile } from "./lwcSourceUtils";
 import {
   annotateAlreadyPromoted,
   buildPromotionIndex,
@@ -166,21 +166,7 @@ suite("promotionBranchUtils", () => {
   // component source and run for real.
   function promotionGate(pipelineData: any): any {
     const js = readModuleFile("pipeline", "pipeline.js");
-    const member = (signature: string) => {
-      const start = js.indexOf("\n  " + signature);
-      assert.ok(start > -1, `member not found in pipeline.js: ${signature}`);
-      let depth = 0;
-      let index = js.indexOf("{", start);
-      const open = index;
-      for (; index < js.length; index++) {
-        if (js[index] === "{") {
-          depth++;
-        } else if (js[index] === "}" && --depth === 0) {
-          break;
-        }
-      }
-      return js.slice(start + 1, open) + js.slice(open, index + 1);
-    };
+    const member = (signature: string) => extractMember(js, signature);
     const gate = new Function(
       `return {
         ${member("get _promotionAllowedSteps()")},
@@ -258,6 +244,64 @@ suite("promotionBranchUtils", () => {
         .slice(0, button.indexOf("\n  }"))
         .includes("this._isPromotionSourceAllowed(this.modalBranchName)"),
       "the promotion button must ask the allowed steps about the branch",
+    );
+  });
+
+  test("the branch window table survives the promotion checkbox column", () => {
+    const js = readModuleFile("pipeline", "pipeline.js");
+    const view = new Function(
+      `return {
+        ${extractMember(js, "get modalPrColumns()")},
+        ${extractMember(js, "get modalHasPromotionColumn()")},
+        ${extractMember(js, "get modalHasMergeConflictColumn()")}
+      };`,
+    )();
+    view.modalPullRequests = [{ number: 1 }];
+    view.showJobStatusColumn = false;
+    view.i18n = new Proxy({}, { get: (_target, key) => String(key) });
+    const columns = view.modalPrColumns;
+    // The checkbox column takes its width from the others. Only the last column may be left
+    // without one: any other flexible column collapses to nothing once the checkboxes are on,
+    // which is how the author column became an unreadable sliver
+    const widthless = columns
+      .filter((column: any) => !column.initialWidth)
+      .map((column: any) => column.key);
+    assert.deepStrictEqual(widthless, [columns[columns.length - 1].key]);
+    const author = columns.find((column: any) => column.key === "author");
+    assert.ok(
+      author && author.initialWidth >= 150,
+      "the author column needs room for the avatar and the name",
+    );
+  });
+
+  test("the modal footer lays its actions out as a wrapping row", () => {
+    const html = readModuleFile("pipeline", "pipeline.html");
+    const css = readModuleFile("pipeline", "pipeline.css");
+    const footer = html.slice(html.indexOf("slds-modal__footer"));
+    const footerMarkup = footer.slice(0, footer.indexOf("</footer>"));
+    assert.ok(
+      footerMarkup.includes("hardis-modal-footer"),
+      "the footer must carry its layout class",
+    );
+    // The inline flex style used to sit next to inline-block buttons: the third action wrapped
+    // under the others and pushed Close out of its corner
+    assert.ok(
+      !footerMarkup.includes("style="),
+      "the footer layout belongs to the stylesheet, not to an inline style",
+    );
+    assert.ok(
+      !footerMarkup.includes("slds-m-right_small hardis-btn") &&
+        !footerMarkup.includes("slds-m-left_small hardis-btn"),
+      "the flex gap replaces the per-button margins",
+    );
+    const rule = css.slice(css.indexOf(".hardis-modal-footer {"));
+    assert.ok(
+      rule.slice(0, rule.indexOf("}")).includes("flex-wrap: wrap"),
+      "the footer must wrap as a whole rather than let its buttons wrap",
+    );
+    assert.ok(
+      css.includes(".hardis-modal-footer-actions"),
+      "the actions of the left side need their own row",
     );
   });
 

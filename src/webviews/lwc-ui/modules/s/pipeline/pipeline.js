@@ -153,6 +153,25 @@ export default class Pipeline extends SharedMixin(LightningElement) {
           },
         ]
       : [];
+    const mergeConflictColumn = this.modalHasMergeConflictColumn
+      ? [
+          {
+            key: "mergeStatus",
+            label: this.i18n.legendMergeConflicts,
+            fieldName: "mergeConflictLabel",
+            type: "typePill",
+            typeAttributes: {
+              label: { fieldName: "mergeConflictLabel" },
+              pillClass: { fieldName: "mergeConflictPillClass" },
+              tooltip: { fieldName: "mergeConflictTooltip" },
+              iconName: { fieldName: "mergeConflictIcon" },
+              url: { fieldName: "mergeConflictUrl" },
+            },
+            wrapText: false,
+            initialWidth: 180,
+          },
+        ]
+      : [];
     const promotionColumn = this.modalHasPromotionColumn
       ? [
           {
@@ -189,6 +208,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         wrapText: true,
       },
       ...statusColumn,
+      ...mergeConflictColumn,
       ...promotionColumn,
       {
         key: "author",
@@ -196,6 +216,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         fieldName: "authorLabel",
         type: "avatarText",
         wrapText: false,
+        // Every other column of this table states its width, so the automatic mode has this
+        // one alone to absorb what the checkbox column takes: without a width of its own it
+        // collapses to the avatar circle as soon as the stories become tickable, and neither
+        // the author name nor the column header can be read
+        initialWidth: 170,
         typeAttributes: {
           initials: { fieldName: "authorInitials" },
           avatarClass: { fieldName: "authorAvatarClass" },
@@ -1002,6 +1027,23 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       // so the column stays on a single line.
       copy.mergeDateFormatted = this._formatCompactDate(pr.mergeDate);
 
+      // Merge conflicts: the provider says this open Pull Request no longer merges into its
+      // target branch. Only "conflicts" is marked: "unknown" means the provider has not
+      // answered yet (or does not answer at all), never that the merge is clean, and a merged
+      // Pull Request has no verdict, so most rows stay empty.
+      const hasMergeConflicts = pr.mergeStatus === "conflicts";
+      copy.mergeConflictLabel = hasMergeConflicts
+        ? this.t("legendMergeConflicts")
+        : "";
+      copy.mergeConflictTooltip = hasMergeConflicts
+        ? this.t("mergeConflictsTooltip")
+        : "";
+      copy.mergeConflictPillClass = hasMergeConflicts
+        ? "hardis-pill hardis-status-failed"
+        : "";
+      copy.mergeConflictIcon = hasMergeConflicts ? "utility:warning" : "";
+      copy.mergeConflictUrl = hasMergeConflicts ? pr.webUrl || "" : "";
+
       // Promotion branches: a story already shipped through a promotion branch, or
       // brought into the window by one, gets a pill pointing to that promotion
       copy.promotionLabel = "";
@@ -1041,6 +1083,13 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // so projects without promotion branches keep the same table
   get modalHasPromotionColumn() {
     return (this.modalPullRequests || []).some((pr) => pr.promotionLabel);
+  }
+
+  // Same rule for the merge conflicts column: a list where everything merges cleanly, or
+  // where the provider has no verdict to give (Bitbucket, a Pull Request opened seconds
+  // ago, a merged one), keeps exactly the table it had
+  get modalHasMergeConflictColumn() {
+    return (this.modalPullRequests || []).some((pr) => pr.mergeConflictLabel);
   }
 
   _formatCompactDate(value) {

@@ -544,8 +544,8 @@
                     </lightning-tabset>
                     </template>
                 </div>
-                <footer class="slds-modal__footer" style="display: flex; justify-content: space-between;">
-                    <div>
+                <footer class="slds-modal__footer hardis-modal-footer">
+                    <div class="hardis-modal-footer-actions">
                         <template if:true={isSinglePRMode}>
                             <lightning-button class="hardis-btn-tinted-blue"
                                 variant="neutral"
@@ -557,7 +557,7 @@
                         <template if:false={isSinglePRMode}>
                             <template if:true={showCreatePromotionButton}>
                                 <lightning-button
-                                    class="slds-m-right_small hardis-btn-tinted-green"
+                                    class="hardis-btn-tinted-green"
                                     variant="neutral"
                                     label={createPromotionLabel}
                                     title={createPromotionTitle}
@@ -578,7 +578,7 @@
                                 ></lightning-button>
                             </template>
                             <lightning-button
-                                class="slds-m-left_small hardis-btn-tinted-green"
+                                class="hardis-btn-tinted-green"
                                 variant="neutral"
                                 label={generateReleaseNotesLabel}
                                 title={generateReleaseNotesTitle}
@@ -588,7 +588,7 @@
                             ></lightning-button>
                         </template>
                     </div>
-                    <div>
+                    <div class="hardis-modal-footer-close">
                         <lightning-button variant="neutral" label={i18n.close} onclick={handleClosePRModal}></lightning-button>
                     </div>
                 </footer>

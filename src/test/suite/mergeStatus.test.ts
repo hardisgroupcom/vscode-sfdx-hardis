@@ -8,6 +8,7 @@ import {
   mapGitLabMergeStatus,
 } from "../../utils/gitProviders/mergeStatus";
 import { BranchStrategyMermaidBuilder } from "../../utils/pipeline/branchStrategyMermaidBuilder";
+import { extractMember, readModuleFile } from "./lwcSourceUtils";
 
 function pr(overrides: Partial<PullRequest> & { number: number }): PullRequest {
   return {
@@ -130,6 +131,58 @@ suite("Merge conflicts on the DevOps Pipeline diagram", () => {
         true,
       );
       assert.strictEqual(anyMergeConflict([pr({ number: 1 })]), false);
+    });
+  });
+
+  // The branch window of the DevOps Pipeline lists the Pull Requests in a table. The component
+  // cannot be instantiated in the extension test host, so the two members that decide whether
+  // the merge conflicts column is there are lifted out of the source and run for real.
+  suite("branch window table", () => {
+    function modalColumnKeys(rows: any[]): string[] {
+      const js = readModuleFile("pipeline", "pipeline.js");
+      const view = new Function(
+        `return {
+          ${extractMember(js, "get modalPrColumns()")},
+          ${extractMember(js, "get modalHasPromotionColumn()")},
+          ${extractMember(js, "get modalHasMergeConflictColumn()")}
+        };`,
+      )();
+      view.modalPullRequests = rows;
+      view.showJobStatusColumn = true;
+      // The i18n proxy of the component answers every key: here the key is the label
+      view.i18n = new Proxy({}, { get: (_target, key) => String(key) });
+      return view.modalPrColumns.map((column: any) => column.key);
+    }
+
+    test("a conflicting Pull Request adds the merge conflicts column", () => {
+      const keys = modalColumnKeys([
+        { number: 1, mergeConflictLabel: "" },
+        { number: 2, mergeConflictLabel: "Merge conflicts" },
+      ]);
+      assert.ok(
+        keys.includes("mergeStatus"),
+        `the merge conflicts column is missing from ${keys.join(", ")}`,
+      );
+      // Right after the job status, where the reader is already looking for a state
+      assert.strictEqual(keys.indexOf("mergeStatus"), keys.indexOf("status") + 1);
+    });
+
+    test("a list where nothing conflicts keeps the table it had", () => {
+      const keys = modalColumnKeys([
+        { number: 1, mergeConflictLabel: "" },
+        { number: 2 },
+      ]);
+      assert.ok(!keys.includes("mergeStatus"));
+    });
+
+    test("the row pill is built from the provider verdict alone", () => {
+      const js = readModuleFile("pipeline", "pipeline.js");
+      const mapper = js.slice(js.indexOf("_mapPrsWithIcons(prs)"));
+      const body = mapper.slice(0, mapper.indexOf("\n  get "));
+      // "unknown" is "no answer", never "no conflict": only an explicit conflict is marked
+      assert.ok(body.includes('pr.mergeStatus === "conflicts"'));
+      assert.ok(body.includes('this.t("legendMergeConflicts")'));
+      assert.ok(body.includes('this.t("mergeConflictsTooltip")'));
     });
   });
 
