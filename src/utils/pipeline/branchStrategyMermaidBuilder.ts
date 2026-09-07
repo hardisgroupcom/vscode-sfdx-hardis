@@ -65,7 +65,10 @@ export class BranchStrategyMermaidBuilder {
   private featureBranchGroups: FeatureBranchGroup[] = [];
   // Promotion branches switch: without it the node counters would leave the vehicles out for every
   // project, including those that never enabled the feature
-  private promotionBranchConfig: PromotionBranchConfig = { enabled: false };
+  private promotionBranchConfig: PromotionBranchConfig = {
+    enabled: false,
+    allowedSteps: [],
+  };
 
   constructor(
     branchesAndOrgs: any[],
@@ -74,7 +77,10 @@ export class BranchStrategyMermaidBuilder {
     gitProvider: GitProvider | null = null,
     colorTheme: string = "light",
     featureBranchGroupThreshold: number = DEFAULT_FEATURE_BRANCH_GROUP_THRESHOLD,
-    promotionBranchConfig: PromotionBranchConfig = { enabled: false },
+    promotionBranchConfig: PromotionBranchConfig = {
+      enabled: false,
+      allowedSteps: [],
+    },
   ) {
     this.promotionBranchConfig = promotionBranchConfig;
     this.branchesAndOrgs = branchesAndOrgs;

@@ -22,6 +22,19 @@ export const PROMOTION_BRANCH_PREFIX = "promotion";
 
 export interface PromotionBranchConfig {
   enabled: boolean;
+  /**
+   * Steps a promotion may be assembled on (sfdx-hardis `allowedPromotionSteps`). Empty
+   * means every step is allowed, which is what a project gets until it declares the list.
+   */
+  allowedSteps: PromotionStep[];
+}
+
+/**
+ * One authorized promotion step. An empty target means "any target of that source branch".
+ */
+export interface PromotionStep {
+  source: string;
+  target: string;
 }
 
 export interface PromotionBranchNameParts {
@@ -42,7 +55,103 @@ export function getPromotionBranchConfig(
   const enabled = configs.some(
     (config) => config && config.enablePromotionBranches === true,
   );
-  return { enabled };
+  // The first config that declares the list wins: the steps are a project level rule, and
+  // merging the lists of several files would widen a restriction instead of applying it.
+  const declaring = configs.find(
+    (config) => config && Array.isArray(config.allowedPromotionSteps),
+  );
+  return {
+    enabled,
+    allowedSteps: parsePromotionSteps(declaring?.allowedPromotionSteps),
+  };
+}
+
+/**
+ * Read sfdx-hardis `allowedPromotionSteps`: the source and target branches a release
+ * manager may assemble a promotion between. Entries are objects ({ source: uat, target:
+ * preprod }); a "uat > preprod" string is accepted too, since the config file is often
+ * edited by hand. An entry without a target allows every target of that source branch.
+ */
+export function parsePromotionSteps(raw: any): PromotionStep[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  const steps: PromotionStep[] = [];
+  for (const entry of raw) {
+    let source = "";
+    let target = "";
+    if (typeof entry === "string") {
+      const parts = entry.split(/\s*(?:->|→|>)\s*/).map((part) => part.trim());
+      source = parts[0] || "";
+      target = parts.length > 1 ? parts[1] || "" : "";
+    } else if (entry && typeof entry === "object") {
+      source = typeof entry.source === "string" ? entry.source.trim() : "";
+      target = typeof entry.target === "string" ? entry.target.trim() : "";
+    }
+    if (!source) {
+      continue;
+    }
+    const alreadyThere = steps.some(
+      (step) =>
+        step.source.toLowerCase() === source.toLowerCase() &&
+        step.target.toLowerCase() === target.toLowerCase(),
+    );
+    if (!alreadyThere) {
+      steps.push({ source, target });
+    }
+  }
+  return steps;
+}
+
+/**
+ * True when a promotion from source to target is authorized. An empty list authorizes
+ * everything: the restriction is opt-in, so a pipeline that never declared it is unchanged.
+ */
+export function isPromotionStepAllowed(
+  steps: PromotionStep[] | undefined | null,
+  sourceBranch: string | undefined | null,
+  targetBranch: string | undefined | null,
+): boolean {
+  if (!steps || steps.length === 0) {
+    return true;
+  }
+  const source = (sourceBranch || "").toLowerCase();
+  const target = (targetBranch || "").toLowerCase();
+  return steps.some(
+    (step) =>
+      step.source.toLowerCase() === source &&
+      (step.target === "" || step.target.toLowerCase() === target),
+  );
+}
+
+/**
+ * True when a promotion may start from this branch, whatever its target.
+ */
+export function isPromotionSourceAllowed(
+  steps: PromotionStep[] | undefined | null,
+  sourceBranch: string | undefined | null,
+): boolean {
+  if (!steps || steps.length === 0) {
+    return true;
+  }
+  const source = (sourceBranch || "").toLowerCase();
+  return steps.some((step) => step.source.toLowerCase() === source);
+}
+
+/**
+ * The branches of `targetBranches` a promotion from `sourceBranch` may go to.
+ */
+export function allowedPromotionTargetBranches(
+  steps: PromotionStep[] | undefined | null,
+  sourceBranch: string | undefined | null,
+  targetBranches: string[],
+): string[] {
+  if (!steps || steps.length === 0) {
+    return [...targetBranches];
+  }
+  return targetBranches.filter((branch) =>
+    isPromotionStepAllowed(steps, sourceBranch, branch),
+  );
 }
 
 /**

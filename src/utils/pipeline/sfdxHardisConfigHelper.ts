@@ -139,6 +139,7 @@ export class SfdxHardisConfigHelper {
     { name: "codingAgentModel", scopes: ["global", "branch"] },
     { name: "codingAgentMaxTurns", scopes: ["global", "branch"] },
     { name: "enablePromotionBranches", scopes: ["global"] },
+    { name: "allowedPromotionSteps", scopes: ["global"] },
     { name: "enableDeltaDeploymentBetweenMajorBranches", scopes: ["global"] },
     { name: "enableDeploymentApexTestClasses", scopes: ["global"] },
     { name: "deploymentApexTestClasses", scopes: ["global", "branch"] },
@@ -261,6 +262,7 @@ export class SfdxHardisConfigHelper {
       iconName: "utility:warning",
       keys: [
         "enablePromotionBranches",
+        "allowedPromotionSteps",
         "enableDeltaDeploymentBetweenMajorBranches",
         "enableDeploymentApexTestClasses",
         "deploymentApexTestClasses",

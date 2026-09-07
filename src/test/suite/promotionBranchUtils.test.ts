@@ -10,8 +10,12 @@ import {
   enforceSinglePlacePerPullRequest,
   expandPullRequestsWithPromotions,
   findPromotionsCarrying,
+  allowedPromotionTargetBranches,
   getPromotionBranchConfig,
   isMajorToMajorPullRequest,
+  isPromotionSourceAllowed,
+  isPromotionStepAllowed,
+  parsePromotionSteps,
   isMergedPullRequest,
   isVehiclePullRequest,
   isPromotionBranchName,
@@ -22,8 +26,8 @@ import {
   visiblePullRequests,
 } from "../../utils/pipeline/promotionBranchUtils";
 
-const ENABLED = { enabled: true };
-const DISABLED = { enabled: false };
+const ENABLED = { enabled: true, allowedSteps: [] };
+const DISABLED = { enabled: false, allowedSteps: [] };
 const PROMOTION_BRANCH = "promotion/uat/preprod/2026-09-06-1";
 const DECLARATION =
   "Promotion of September\n\n```yaml\npromotionPullRequests: [482, 487]\n```\n";
@@ -77,6 +81,81 @@ suite("promotionBranchUtils", () => {
     );
   });
 
+  test("allowedPromotionSteps is a Danger Zone setting of the project scope", () => {
+    const field = SfdxHardisConfigHelper.CONFIGURABLE_FIELDS.find(
+      (entry) => entry.name === "allowedPromotionSteps",
+    );
+    assert.ok(field, "allowedPromotionSteps must be a configurable field");
+    // Same reason as enablePromotionBranches: hardis:project:promotion:create runs from any
+    // branch, so a restriction written in one branch file would not be seen
+    assert.deepStrictEqual(field!.scopes, ["global"]);
+    const section = SfdxHardisConfigHelper.SECTIONS.find(
+      (entry) => entry.label === "dangerZone",
+    );
+    assert.ok(
+      section!.keys.includes("allowedPromotionSteps"),
+      "the Danger Zone must hold allowedPromotionSteps",
+    );
+    const schema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          __dirname,
+          "../../../resources/sfdx-hardis.jsonschema.json",
+        ),
+        "utf8",
+      ),
+    );
+    // An array of objects: the settings panel builds its add/edit form from items.properties
+    assert.strictEqual(schema.properties.allowedPromotionSteps?.type, "array");
+    assert.strictEqual(
+      schema.properties.allowedPromotionSteps?.items?.properties?.source?.type,
+      "string",
+    );
+    assert.strictEqual(
+      schema.properties.allowedPromotionSteps?.items?.properties?.target?.type,
+      "string",
+    );
+  });
+
+  test("the allowed promotion steps are read from the project config", () => {
+    const config = getPromotionBranchConfig([
+      {
+        enablePromotionBranches: true,
+        allowedPromotionSteps: [{ source: "uat", target: "preprod" }],
+      },
+    ]);
+    assert.strictEqual(config.enabled, true);
+    assert.deepStrictEqual(config.allowedSteps, [
+      { source: "uat", target: "preprod" },
+    ]);
+  });
+
+  test("an absent list allows every step, so an existing pipeline is unchanged", () => {
+    const config = getPromotionBranchConfig([{ enablePromotionBranches: true }]);
+    assert.deepStrictEqual(config.allowedSteps, []);
+    assert.strictEqual(isPromotionStepAllowed([], "integration", "uat"), true);
+    assert.strictEqual(isPromotionSourceAllowed([], "integration"), true);
+  });
+
+  test("a step restricts both the source and the target, whatever the case", () => {
+    const steps = parsePromotionSteps([{ source: "UAT", target: "PreProd" }]);
+    assert.strictEqual(isPromotionSourceAllowed(steps, "uat"), true);
+    assert.strictEqual(isPromotionSourceAllowed(steps, "integration"), false);
+    assert.strictEqual(isPromotionStepAllowed(steps, "uat", "preprod"), true);
+    assert.strictEqual(isPromotionStepAllowed(steps, "uat", "main"), false);
+    assert.deepStrictEqual(
+      allowedPromotionTargetBranches(steps, "uat", ["preprod", "main"]),
+      ["preprod"],
+    );
+  });
+
+  test("an entry without a target allows every target of that branch", () => {
+    const steps = parsePromotionSteps(["uat"]);
+    assert.deepStrictEqual(steps, [{ source: "uat", target: "" }]);
+    assert.strictEqual(isPromotionStepAllowed(steps, "uat", "main"), true);
+    assert.strictEqual(isPromotionStepAllowed(steps, "preprod", "main"), false);
+  });
+
   test("a Pull Request closed with a merge date counts as merged (GitHub)", () => {
     // GitHub only returns open/closed, the merge date is what says a Pull Request was merged
     assert.strictEqual(
@@ -122,10 +201,13 @@ suite("promotionBranchUtils", () => {
   });
 
   test("reads the switch from the project config or any branch config", () => {
-    assert.deepStrictEqual(getPromotionBranchConfig([{}]), { enabled: false });
+    assert.deepStrictEqual(getPromotionBranchConfig([{}]), {
+      enabled: false,
+      allowedSteps: [],
+    });
     assert.deepStrictEqual(
       getPromotionBranchConfig([{}, { enablePromotionBranches: true }]),
-      { enabled: true },
+      { enabled: true, allowedSteps: [] },
     );
     assert.strictEqual(
       getPromotionBranchConfig([{ enablePromotionBranches: "true" }]).enabled,
@@ -561,7 +643,7 @@ suite("An open promotion is drawn on the edge between its two branches", () => {
       null,
       "light",
       3,
-      { enabled: enabled },
+      { enabled: enabled, allowedSteps: [] },
     );
     return builder.build({ format: "string", withMermaidTag: false }) as string;
   }

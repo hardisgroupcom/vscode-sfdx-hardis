@@ -2041,8 +2041,38 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       !this.isFeaturePrModal &&
       this._isMajorBranchName(this.modalBranchName) &&
       this.hasBranchPullRequests &&
-      this.pipelineData?.promotionBranches?.enabled === true
+      this.pipelineData?.promotionBranches?.enabled === true &&
+      this._isPromotionSourceAllowed(this.modalBranchName)
     );
+  }
+
+  // allowedPromotionSteps: the steps a release manager may assemble. An empty list allows
+  // every step, which is what a project gets until it declares the restriction.
+  get _promotionAllowedSteps() {
+    const steps = this.pipelineData?.promotionBranches?.allowedSteps;
+    return Array.isArray(steps) ? steps : [];
+  }
+
+  _isPromotionSourceAllowed(branchName) {
+    const steps = this._promotionAllowedSteps;
+    if (steps.length === 0) {
+      return true;
+    }
+    const source = (branchName || "").toLowerCase();
+    return steps.some((step) => (step.source || "").toLowerCase() === source);
+  }
+
+  // The targets allowed from a branch, when the steps name them. A step without a target
+  // allows every merge target of the branch, so it contributes nothing here and the
+  // command asks for the target itself.
+  _allowedPromotionTargets(branchName) {
+    const source = (branchName || "").toLowerCase();
+    return this._promotionAllowedSteps
+      .filter(
+        (step) =>
+          (step.source || "").toLowerCase() === source && !!step.target,
+      )
+      .map((step) => step.target);
   }
 
   _isMajorBranchName(branchName) {
@@ -2074,10 +2104,14 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       this.modalSelectedPrNumbers.length > 0
         ? ` --pull-requests ${this.modalSelectedPrNumbers.join(",")}`
         : "";
+    // A single allowed target leaves nothing to choose: pass it rather than prompt for it
+    const allowedTargets = this._allowedPromotionTargets(this.modalBranchName);
+    const target =
+      allowedTargets.length === 1 ? ` --target-branch ${allowedTargets[0]}` : "";
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: `sf hardis:project:promotion:create --source-branch ${this.modalBranchName}${selection}`,
+        command: `sf hardis:project:promotion:create --source-branch ${this.modalBranchName}${target}${selection}`,
       },
     });
   }
