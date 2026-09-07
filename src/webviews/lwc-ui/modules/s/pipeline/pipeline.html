@@ -38,6 +38,19 @@
                             message-toggle-inactive=""
                         ></lightning-input>
                     </div>
+                    <template if:true={hasAlreadyPromotedPrs}>
+                        <div class="toggle-wrapper">
+                            <lightning-input
+                                type="toggle"
+                                label={i18n.showAlreadyPromotedPrs}
+                                title={i18n.showAlreadyPromotedPrsHelp}
+                                checked={showAlreadyPromotedPrs}
+                                onchange={handleToggleAlreadyPromoted}
+                                message-toggle-active=""
+                                message-toggle-inactive=""
+                            ></lightning-input>
+                        </div>
+                    </template>
                 </template>
 
                 <lightning-button-group>
@@ -160,6 +173,8 @@
                                         <span class="legend-item"><span class="hardis-pill-dot legend-dot hardis-status-running"></span>{i18n.jobStatusRunning}</span>
                                         <span class="legend-item"><span class="hardis-pill-dot legend-dot hardis-status-pending"></span>{i18n.jobStatusPending}</span>
                                         <span class="legend-item"><span class="hardis-pill-dot legend-dot hardis-status-failed"></span>{i18n.jobStatusFailed}</span>
+                                        <span class="legend-separator"></span>
+                                        <span class="legend-item"><span class="hardis-conflict-glyph">&#9888;</span>{i18n.legendMergeConflicts}</span>
                                 </div>
                                 <template if:true={error}>
                                     <pre class="mermaid-debug" style="color:#888;font-size:10px;max-height:100px;overflow:auto;"></pre>
@@ -348,6 +363,19 @@
                             {modalTitle}
                         </template>
                     </h2>
+                    <template if:true={modalHasPromotionPrs}>
+                        <div class="toggle-wrapper" style="position: absolute; right: 1rem; top: 0.75rem;">
+                            <lightning-input
+                                type="toggle"
+                                label={i18n.showPromotionPrs}
+                                title={i18n.showPromotionPrsHelp}
+                                checked={modalShowPromotionPrs}
+                                onchange={handleToggleModalPromotionPrs}
+                                message-toggle-active=""
+                                message-toggle-inactive=""
+                            ></lightning-input>
+                        </div>
+                    </template>
                 </header>
                 <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
                     <!-- Go-lives selector (top branches such as main/prod) -->
@@ -377,11 +405,16 @@
                     <lightning-tabset active-tab-value={modalActiveTabValue}>
                         <template if:true={showPRTab}>
                             <lightning-tab label={modalPrsTabLabel} value="prs" icon-name="utility:topic2" icon-assistive-text={modalPrsTabLabel}>
+                            <template if:false={modalHideCheckboxColumn}>
+                                <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_x-small">{promotionSelectionHint}</p>
+                            </template>
                             <s-hardis-datatable
                                 key-field="id"
                                 data={modalPullRequests}
                                 columns={modalPrColumns}
-                                hide-checkbox-column
+                                hide-checkbox-column={modalHideCheckboxColumn}
+                                selected-rows={modalSelectedPrIds}
+                                onrowselection={handleModalRowSelection}
                                 column-widths-mode="auto"
                             ></s-hardis-datatable>
                         </lightning-tab>
@@ -522,6 +555,17 @@
                             ></lightning-button>
                         </template>
                         <template if:false={isSinglePRMode}>
+                            <template if:true={showCreatePromotionButton}>
+                                <lightning-button
+                                    class="slds-m-right_small hardis-btn-tinted-green"
+                                    variant="neutral"
+                                    label={createPromotionLabel}
+                                    title={createPromotionTitle}
+                                    icon-name="utility:merge"
+                                    icon-position="left"
+                                    onclick={handleCreatePromotion}
+                                ></lightning-button>
+                            </template>
                             <template if:true={showPreviewReleaseNotes}>
                                 <lightning-button
                                     class="hardis-btn-tinted-green"

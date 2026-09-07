@@ -212,6 +212,12 @@
     cursor: pointer;
 }
 
+/* Merge conflict glyph on an edge chip: slightly tighter than the chip text */
+.mermaid .hardis-conflict-glyph {
+    font-size: 10px;
+    margin-right: 1px;
+}
+
 /* Inline SVG icons inside node labels follow the node text color */
 .mermaid .hardis-node-icon {
     vertical-align: -1px;
@@ -261,6 +267,11 @@
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
+}
+
+.legend-item .hardis-conflict-glyph {
+    color: var(--slds-g-color-palette-red-40);
+    font-weight: 700;
 }
 
 .legend-line {
