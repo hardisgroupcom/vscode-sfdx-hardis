@@ -17,6 +17,11 @@ import {
   GitStatusState,
 } from "azure-devops-node-api/interfaces/GitInterfaces";
 import { Logger } from "../../logger";
+import {
+  getCachedPullRequestDescription,
+  repositoryKeyFromRemoteUrl,
+  setCachedPullRequestDescription,
+} from "../pullRequestDescriptionCache";
 import { SecretsManager } from "../secretsManager";
 import { BuildApi } from "azure-devops-node-api/BuildApi";
 import { t } from "../../i18n/i18n";
@@ -688,6 +693,11 @@ export class GitProviderAzure extends GitProvider {
     if (!this.gitApi || !this.repoInfo) {
       return rawPrs;
     }
+    // One API call per Pull Request whose description was cut adds up fast on a repository with a
+    // long history, and the description of a merged or abandoned Pull Request no longer moves. The
+    // cache is shared with the sfdx-hardis CLI, and keyed on the state seen right now, so a
+    // reopened Pull Request is read again.
+    const repositoryKey = this.pullRequestCacheRepositoryKey();
     return await Promise.all(
       rawPrs.map(async (rawPr) => {
         const listed = rawPr.description || "";
@@ -697,6 +707,15 @@ export class GitProviderAzure extends GitProvider {
         ) {
           return rawPr;
         }
+        const cached = getCachedPullRequestDescription(
+          "azure",
+          repositoryKey,
+          rawPr.pullRequestId,
+          rawPr.status,
+        );
+        if (cached !== null) {
+          return { ...rawPr, description: cached };
+        }
         try {
           const full = await this.gitApi!.getPullRequestById(
             rawPr.pullRequestId,
@@ -704,6 +723,13 @@ export class GitProviderAzure extends GitProvider {
           );
           const fullDescription = full?.description || "";
           if (fullDescription.length > listed.length) {
+            setCachedPullRequestDescription(
+              "azure",
+              repositoryKey,
+              rawPr.pullRequestId,
+              rawPr.status,
+              fullDescription,
+            );
             return { ...rawPr, description: fullDescription };
           }
         } catch (err) {
@@ -714,6 +740,12 @@ export class GitProviderAzure extends GitProvider {
         return rawPr;
       }),
     );
+  }
+
+  // Identifies the repository the cached descriptions belong to, from the git remote of the working
+  // copy: that is the identifier the sfdx-hardis CLI agrees on, so the two share one cache.
+  private pullRequestCacheRepositoryKey(): string {
+    return repositoryKeyFromRemoteUrl(this.repoInfo?.remoteUrl || "");
   }
 
   private async convertAndCollectJobsList(

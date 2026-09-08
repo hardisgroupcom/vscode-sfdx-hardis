@@ -1,5 +1,11 @@
 import * as assert from "assert";
+import * as fs from "fs";
 import { GitProviderAzure } from "../../utils/gitProviders/gitProviderAzure";
+import {
+  pullRequestCacheFile,
+  repositoryKeyFromRemoteUrl,
+  resetPullRequestDescriptionCacheMemory,
+} from "../../utils/pullRequestDescriptionCache";
 
 // Azure DevOps truncates the description of a Pull Request returned by the LIST API at 400
 // characters and says nothing about it. The DevOps Pipeline reads the promotionPullRequests
@@ -111,6 +117,62 @@ suite("GitProviderAzure list description truncation", () => {
 
     assert.deepStrictEqual(calls, []);
     assert.strictEqual(completed[0].description, undefined);
+  });
+
+  // The point of the shared cache: on a repository with many Pull Requests, the second run makes
+  // no API call at all for the descriptions it already knows.
+  test("does not call the API again for a merged Pull Request it has cached", async () => {
+    const truncated = "c".repeat(400);
+    const fullBody = [
+      truncated,
+      "",
+      "```yaml",
+      "promotionPullRequests: [1]",
+      "```",
+    ].join("\n");
+    const remote = "https://dev.azure.com/acme/Cache/_git/first-run";
+    const repoKey = repositoryKeyFromRemoteUrl(remote);
+    try {
+      fs.unlinkSync(pullRequestCacheFile("azure", repoKey));
+    } catch {
+      // not there
+    }
+    resetPullRequestDescriptionCacheMemory();
+
+    const calls: number[] = [];
+    const provider = buildProvider(async () => ({ description: fullBody }), calls);
+    provider.repoInfo = {
+      owner: "Cache",
+      repo: "first-run",
+      remoteUrl: remote,
+      host: "dev.azure.com",
+      webUrl: "https://dev.azure.com/acme/Cache/_git/first-run",
+      providerName: "azure",
+    };
+    const listed = [
+      { pullRequestId: 501, description: truncated, status: "completed" },
+    ];
+
+    const first = await complete(provider, listed);
+    assert.deepStrictEqual(calls, [501], "the first pass must read the Pull Request");
+    assert.strictEqual(first[0].description, fullBody);
+
+    resetPullRequestDescriptionCacheMemory();
+    const second = await complete(provider, listed);
+    assert.deepStrictEqual(calls, [501], "the second pass must be served by the cache");
+    assert.strictEqual(second[0].description, fullBody);
+
+    // ... but an open Pull Request is always read again
+    const open = [{ pullRequestId: 501, description: truncated, status: "active" }];
+    await complete(provider, open);
+    assert.deepStrictEqual(calls, [501, 501], "an open Pull Request must never be cached");
+
+    try {
+      fs.unlinkSync(pullRequestCacheFile("azure", repoKey));
+    } catch {
+      // already gone
+    }
+    resetPullRequestDescriptionCacheMemory();
   });
 
   test("completes several Pull Requests in one pass", async () => {
