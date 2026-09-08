@@ -516,7 +516,7 @@ export class GitProviderBitbucket extends GitProvider {
       childBranchesNames,
       mergeCommitId,
     );
-    const cached = this.latestMergePrCache.get(cacheKey);
+    const cached = this.getCachedLatestMergePrs(cacheKey);
     if (cached) {
       return cached;
     }
@@ -574,7 +574,7 @@ export class GitProviderBitbucket extends GitProvider {
         allBranches,
         commitHashes,
       );
-      this.latestMergePrCache.set(cacheKey, result);
+      this.setCachedLatestMergePrs(cacheKey, result);
       return result;
     } catch (err) {
       Logger.log(`Error in listPullRequestsInGoLive: ${String(err)}`);
