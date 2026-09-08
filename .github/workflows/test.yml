@@ -157,8 +157,8 @@ jobs:
       - name: Compile TypeScript
         run: yarn compile
 
-      # Budgets live in realCliPerf.test.ts: 10 s on Windows, 5 s on macOS
-      # and Linux (override with SFDX_HARDIS_PERF_MAX_PROMPT_MS)
+      # Budgets live in realCliPerf.test.ts: 10 s on Windows, 6 s on macOS,
+      # 5 s on Linux (override with SFDX_HARDIS_PERF_MAX_PROMPT_MS)
       - name: Run Perf Gate (Linux)
         if: runner.os == 'Linux'
         run: xvfb-run -a yarn test:ui:perf

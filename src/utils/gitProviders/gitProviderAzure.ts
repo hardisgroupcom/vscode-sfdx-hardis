@@ -8,6 +8,7 @@ import {
   Job,
   JobStatus,
 } from "./types";
+import { mapAzureMergeStatus } from "./mergeStatus";
 import * as azdev from "azure-devops-node-api";
 import { GitApi } from "azure-devops-node-api/GitApi";
 import {
@@ -260,11 +261,47 @@ export class GitProviderAzure extends GitProvider {
         },
         this.repoInfo.owner,
       );
-      return await this.convertAndCollectJobsList(prs || [], "", {
-        withJobs: true,
-      });
+      return await this.convertAndCollectJobsList(
+        await this.completeTruncatedDescriptions(prs || []),
+        "",
+        {
+          withJobs: true,
+        },
+      );
     } catch {
       return [];
+    }
+  }
+
+  async getPullRequestByNumber(number: number): Promise<PullRequest | null> {
+    if (!this.repoInfo || !this.gitApi) {
+      return null;
+    }
+    try {
+      const pullRequest = await this.gitApi.getPullRequestById(
+        number,
+        this.repoInfo.owner,
+      );
+      await this.logApiCall("getPullRequestById", {
+        caller: "getPullRequestByNumber",
+        number,
+      });
+      if (!pullRequest) {
+        return null;
+      }
+      const branchName = (pullRequest.targetRefName || "").replace(
+        "refs/heads/",
+        "",
+      );
+      const converted = await this.convertAndCollectJobsList(
+        [pullRequest],
+        branchName,
+        { withJobs: false },
+      );
+      return converted[0] || null;
+    } catch (err) {
+      Logger.log(`Error fetching PR ${number}: ${String(err)}`);
+      return null;
     }
   }
 
@@ -622,11 +659,61 @@ export class GitProviderAzure extends GitProvider {
         uniquePRsMap.set(pr.pullRequestId, pr);
       }
     }
-    const uniquePRs = Array.from(uniquePRsMap.values());
+    const uniquePRs = await this.completeTruncatedDescriptions(
+      Array.from(uniquePRsMap.values()),
+    );
 
     return await this.convertAndCollectJobsList(uniquePRs, convertBranchName, {
       withJobs: false,
     });
+  }
+
+  /**
+   * Azure DevOps truncates the description of a Pull Request returned by the LIST API at 400
+   * characters, with no marker saying so. The DevOps Pipeline reads the `promotionPullRequests`
+   * declaration of a promotion branch out of that description, and it sits below the navigation
+   * block and the introduction, so on a promotion carrying more than a story or two it is cut off
+   * entirely: the promotion expands into nothing, its stories are never marked as already
+   * promoted, and the branch counters are wrong.
+   *
+   * The single Pull Request API returns the whole description, so it is read again for every
+   * listed Pull Request whose description is long enough to have been cut. Mirrors
+   * AzureDevopsProvider.completeTruncatedDescription in sfdx-hardis.
+   */
+  private static readonly LIST_DESCRIPTION_TRUNCATION_LENGTH = 400;
+
+  private async completeTruncatedDescriptions(
+    rawPrs: GitPullRequest[],
+  ): Promise<GitPullRequest[]> {
+    if (!this.gitApi || !this.repoInfo) {
+      return rawPrs;
+    }
+    return await Promise.all(
+      rawPrs.map(async (rawPr) => {
+        const listed = rawPr.description || "";
+        if (
+          listed.length < GitProviderAzure.LIST_DESCRIPTION_TRUNCATION_LENGTH ||
+          !rawPr.pullRequestId
+        ) {
+          return rawPr;
+        }
+        try {
+          const full = await this.gitApi!.getPullRequestById(
+            rawPr.pullRequestId,
+            this.repoInfo!.owner,
+          );
+          const fullDescription = full?.description || "";
+          if (fullDescription.length > listed.length) {
+            return { ...rawPr, description: fullDescription };
+          }
+        } catch (err) {
+          Logger.log(
+            `Unable to read the full description of PR #${rawPr.pullRequestId}: ${String(err)}`,
+          );
+        }
+        return rawPr;
+      }),
+    );
   }
 
   private async convertAndCollectJobsList(
@@ -972,6 +1059,12 @@ export class GitProviderAzure extends GitProvider {
       createdAt: pr.creationDate ? pr.creationDate.toISOString() : undefined,
       updatedAt: pr.closedDate ? pr.closedDate.toISOString() : undefined,
       jobsStatus: "unknown",
+      // Azure DevOps tests the merge of active Pull Requests on its own and returns the result in
+      // the Pull Request list, so reading it costs nothing
+      mergeStatus:
+        pr.status === PullRequestStatus.Active
+          ? mapAzureMergeStatus(pr)
+          : undefined,
     };
     return prConverted;
   }

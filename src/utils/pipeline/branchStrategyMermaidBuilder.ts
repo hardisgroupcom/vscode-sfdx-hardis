@@ -1,8 +1,18 @@
+import {
+  PromotionBranchConfig,
+  userStoryPullRequests,
+  visiblePullRequests,
+} from "./promotionBranchUtils";
 import { sortArray } from "../sortUtils";
 import { prettifyFieldName } from "../stringUtils";
 import { isMajorBranch, isPreprod, isProduction } from "../orgConfigUtils";
 import { PullRequest, JobStatus } from "../gitProviders/types";
+import {
+  anyMergeConflict,
+  hasMergeConflicts,
+} from "../gitProviders/mergeStatus";
 import { GitProvider } from "../gitProviders/gitProvider";
+import { parsePromotionBranchName } from "./promotionBranchUtils";
 import { t } from "../../i18n/i18n";
 
 /**
@@ -53,6 +63,12 @@ export class BranchStrategyMermaidBuilder {
   private featureBranchGroupThreshold: number =
     DEFAULT_FEATURE_BRANCH_GROUP_THRESHOLD;
   private featureBranchGroups: FeatureBranchGroup[] = [];
+  // Promotion branches switch: without it the node counters would leave the vehicles out for every
+  // project, including those that never enabled the feature
+  private promotionBranchConfig: PromotionBranchConfig = {
+    enabled: false,
+    allowedSteps: [],
+  };
 
   constructor(
     branchesAndOrgs: any[],
@@ -61,7 +77,12 @@ export class BranchStrategyMermaidBuilder {
     gitProvider: GitProvider | null = null,
     colorTheme: string = "light",
     featureBranchGroupThreshold: number = DEFAULT_FEATURE_BRANCH_GROUP_THRESHOLD,
+    promotionBranchConfig: PromotionBranchConfig = {
+      enabled: false,
+      allowedSteps: [],
+    },
   ) {
+    this.promotionBranchConfig = promotionBranchConfig;
     this.branchesAndOrgs = branchesAndOrgs;
     this.openPullRequests = openPullRequests;
     this.isAuthenticated = isAuthenticated;
@@ -158,11 +179,14 @@ export class BranchStrategyMermaidBuilder {
         if (isPreprod(mergeTarget)) {
           branchesMergingInPreprod.push(branchAndOrg.branchName);
         }
-        // Find PRs that match BOTH source and target branches
+        // Find PRs that match BOTH source and target branches. A promotion Pull Request is the
+        // promotion of this very step, so it belongs on this edge rather than on a feature node of
+        // its own: sfdx-hardis keeps a single one open between two branches.
         const openPullRequestsForThisLink = this.openPullRequests.filter(
           (pr) =>
-            pr.sourceBranch === branchAndOrg.branchName &&
-            pr.targetBranch === mergeTarget,
+            (pr.sourceBranch === branchAndOrg.branchName &&
+              pr.targetBranch === mergeTarget) ||
+            this.isPromotionOfStep(pr, branchAndOrg.branchName, mergeTarget),
         );
         // Select only the first PR if multiple exist
         const activePR =
@@ -210,8 +234,17 @@ export class BranchStrategyMermaidBuilder {
           activePR: activePR,
         });
       }
-      const prCount =
-        branchAndOrg?.pullRequestsInBranchSinceLastMerge?.length || 0;
+      const branchPrs = branchAndOrg?.pullRequestsInBranchSinceLastMerge || [];
+      // The counter says how many User Stories the branch holds: a Pull Request a promotion took
+      // out of this branch belongs to the branch it reached (counting it here too would show the
+      // same number twice), and promotion or major-to-major Pull Requests are vehicles, not
+      // stories. The total is kept as well, for the toggles of the webview.
+      const prCount = userStoryPullRequests(
+        visiblePullRequests(branchPrs),
+        this.branchesAndOrgs.map((entry) => entry.branchName),
+        this.promotionBranchConfig,
+      ).length;
+      const prCountAll = branchPrs.length;
       // The PR count is embedded as a hidden marker: the webview draws it as
       // a notification-style bubble on the node's top-right corner (see
       // _decorateMermaidNodes in pipeline.js). It cannot be rendered inside
@@ -220,8 +253,8 @@ export class BranchStrategyMermaidBuilder {
         BRANCH_ICON_SVG +
         " " +
         this.escapeHtmlLabel(branchAndOrg.branchName) +
-        (prCount > 0
-          ? `<span class='hardis-node-count' data-count='${prCount}' style='display:none;'></span>`
+        (prCountAll > 0
+          ? `<span class='hardis-node-count' data-count='${prCount}' data-count-all='${prCountAll}' style='display:none;'></span>`
           : "");
       return {
         name: branchAndOrg.branchName,
@@ -230,9 +263,7 @@ export class BranchStrategyMermaidBuilder {
         class: isProduction(branchAndOrg.branchName) ? "gitMain" : "gitMajor",
         level: branchAndOrg.level,
         instanceUrl: branchAndOrg.instanceUrl,
-        hasPullRequests:
-          branchAndOrg?.pullRequestsInBranchSinceLastMerge &&
-          branchAndOrg.pullRequestsInBranchSinceLastMerge.length > 0,
+        hasPullRequests: prCountAll > 0,
       };
     });
 
@@ -272,7 +303,10 @@ export class BranchStrategyMermaidBuilder {
       (pullRequest) =>
         !this.branchesAndOrgs.find(
           (b) => b.branchName === pullRequest.sourceBranch,
-        ),
+        ) &&
+        // A promotion already drawn on the edge between its two branches must not also get a
+        // feature node: the same Pull Request number would appear twice in the diagram
+        !this.isPromotionDrawnOnAnEdge(pullRequest),
     );
     // Group feature PRs by their target (major) branch. When a target has more
     // than the threshold, only the newest ones stay as individual nodes and the
@@ -380,6 +414,47 @@ export class BranchStrategyMermaidBuilder {
   }
 
   /**
+   * True when this open Pull Request is the promotion of the given pipeline step: its branch is
+   * named promotion/<source>/<target>/... for exactly these two branches, and it really targets
+   * that branch (a promotion retargeted by hand belongs to no step). Only when the project enabled
+   * promotion branches: otherwise such a branch is an ordinary feature branch, which is also how
+   * the deployment jobs treat it.
+   */
+  private isPromotionOfStep(
+    pullRequest: PullRequest,
+    sourceBranch: string,
+    targetBranch: string,
+  ): boolean {
+    if (!this.promotionBranchConfig.enabled) {
+      return false;
+    }
+    const parts = parsePromotionBranchName(pullRequest.sourceBranch || "");
+    return (
+      parts !== null &&
+      parts.sourceBranch.toLowerCase() === (sourceBranch || "").toLowerCase() &&
+      parts.targetBranch.toLowerCase() === (targetBranch || "").toLowerCase() &&
+      (pullRequest.targetBranch || "").toLowerCase() ===
+        (targetBranch || "").toLowerCase()
+    );
+  }
+
+  /** True when a merge edge of the diagram already carries this promotion Pull Request. */
+  private isPromotionDrawnOnAnEdge(pullRequest: PullRequest): boolean {
+    if (!this.promotionBranchConfig.enabled) {
+      return false;
+    }
+    return this.branchesAndOrgs.some((branchAndOrg) =>
+      (branchAndOrg.mergeTargets || []).some((mergeTarget: string) =>
+        this.isPromotionOfStep(
+          pullRequest,
+          branchAndOrg.branchName,
+          mergeTarget,
+        ),
+      ),
+    );
+  }
+
+  /**
    * Create an individual feature branch node and its merge link to the target
    * major branch (one open pull request = one feature branch).
    */
@@ -455,7 +530,12 @@ export class BranchStrategyMermaidBuilder {
       source: groupNodeName,
       target: this.sanitizeNodeName(targetBranch) + "Branch",
       type: "gitFeatureMerge",
-      label: this.buildStatusChip(aggregateStatus),
+      label: this.buildStatusChip(
+        aggregateStatus,
+        null,
+        "",
+        anyMergeConflict(foldedPrs),
+      ),
       isFeatureGroup: true,
       jobsStatus: aggregateStatus,
       groupNodeName: groupNodeName,
@@ -813,11 +893,25 @@ export class BranchStrategyMermaidBuilder {
   private buildPrChip(pullRequest: PullRequest): string {
     const status = this.normalizeJobStatus(pullRequest.jobsStatus);
     const text = `#${pullRequest.number || pullRequest.id}`;
-    const title = this.escapeHtmlLabel(pullRequest.title || text);
+    // The colored dot already carries the CI job status, so a merge conflict is shown on a
+    // second axis: a warning glyph and an outline, keeping both readable on the same chip
+    const conflict = hasMergeConflicts(pullRequest);
+    const conflictClass = conflict ? " hardis-chip-conflict" : "";
+    const label = conflict ? `${this.conflictGlyph()}${text}` : text;
+    const title = this.escapeHtmlLabel(
+      conflict
+        ? `${pullRequest.title || text} - ${t("mergeConflictsTooltip")}`
+        : pullRequest.title || text,
+    );
     if (pullRequest.webUrl) {
-      return `<a href='${pullRequest.webUrl}' target='_blank' class='hardis-pill hardis-chip hardis-status-${status}' title='${title}'>${text}</a>`;
+      return `<a href='${pullRequest.webUrl}' target='_blank' class='hardis-pill hardis-chip hardis-status-${status}${conflictClass}' title='${title}'>${label}</a>`;
     }
-    return `<span class='hardis-pill hardis-chip hardis-status-${status}'>${text}</span>`;
+    return `<span class='hardis-pill hardis-chip hardis-status-${status}${conflictClass}' title='${title}'>${label}</span>`;
+  }
+
+  /** Warning glyph prefixed to a chip whose Pull Request(s) no longer merge cleanly. */
+  private conflictGlyph(): string {
+    return "<span class='hardis-conflict-glyph'>&#9888;</span> ";
   }
 
   /**
@@ -828,6 +922,7 @@ export class BranchStrategyMermaidBuilder {
     status: JobStatus,
     url: string | null = null,
     title: string = "",
+    conflict: boolean = false,
   ): string {
     const normalized = this.normalizeJobStatus(status);
     const glyphMap: Record<JobStatus, string> = {
@@ -837,12 +932,20 @@ export class BranchStrategyMermaidBuilder {
       failed: "✕",
       unknown: "?",
     };
-    const glyph = glyphMap[normalized];
-    const titleAttr = title ? ` title='${title}'` : "";
+    const glyph = conflict
+      ? this.conflictGlyph() + glyphMap[normalized]
+      : glyphMap[normalized];
+    const conflictClass = conflict ? " hardis-chip-conflict" : "";
+    const chipTitle = conflict
+      ? [title, t("mergeConflictsTooltip")].filter((part) => part).join(" - ")
+      : title;
+    const titleAttr = chipTitle
+      ? ` title='${this.escapeHtmlLabel(chipTitle)}'`
+      : "";
     if (url) {
-      return `<a href='${url}' target='_blank' class='hardis-pill hardis-chip hardis-status-${normalized}'${titleAttr}>${glyph}</a>`;
+      return `<a href='${url}' target='_blank' class='hardis-pill hardis-chip hardis-status-${normalized}${conflictClass}'${titleAttr}>${glyph}</a>`;
     }
-    return `<span class='hardis-pill hardis-chip hardis-status-${normalized}'${titleAttr}>${glyph}</span>`;
+    return `<span class='hardis-pill hardis-chip hardis-status-${normalized}${conflictClass}'${titleAttr}>${glyph}</span>`;
   }
 
   private normalizeJobStatus(status: any): JobStatus {

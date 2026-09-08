@@ -71,3 +71,29 @@ export function assertKeysTranslated(keys: Iterable<string>): void {
     }
   }
 }
+
+/**
+ * Lifts one member out of an LWC component source, so its logic can be run in the
+ * extension test host, where the component itself cannot be instantiated.
+ * @param source the component source, read with readModuleFile
+ * @param signature the member as written, ex: "get modalPrColumns()" or "_mergeTargetsOf(branchName)"
+ */
+export function extractMember(source: string, signature: string): string {
+  const start = source.indexOf("\n  " + signature);
+  assert.ok(
+    start > -1,
+    `member not found in the component source: ${signature}`,
+  );
+  const open = source.indexOf("{", start);
+  let depth = 0;
+  let index = open;
+  for (; index < source.length; index++) {
+    if (source[index] === "{") {
+      depth++;
+    } else if (source[index] === "}" && --depth === 0) {
+      break;
+    }
+  }
+  assert.ok(depth === 0, `unbalanced braces while reading ${signature}`);
+  return source.slice(start + 1, open) + source.slice(open, index + 1);
+}
