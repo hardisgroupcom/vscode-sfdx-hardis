@@ -354,11 +354,31 @@ function enforceInvariant(
   config: PromotionBranchConfig,
 ): void {
   enforceSinglePlacePerPullRequest(
-    majorOrgs.map((org) => ({
+    orderWindowsUpstreamFirst(majorOrgs).map((org) => ({
       branchName: org.branchName,
       pullRequests: org.pullRequestsInBranchSinceLastMerge || [],
     })),
     config,
+  );
+}
+
+/**
+ * The branch windows ordered upstream first (integration, uat, preprod, main), which is what
+ * enforceSinglePlacePerPullRequest needs: of two windows holding the same number, the one that
+ * comes last wins, so the story is listed in the branch it reached.
+ *
+ * listMajorOrgs sorts by level DESCENDING, so it hands them over downstream first. Passing that
+ * order straight through made the UPSTREAM window win: a story a promotion had just carried into
+ * uat was marked promotedAway in uat, while annotateAlreadyPromoted had already marked it in
+ * integration, so it vanished from both windows and from both counters.
+ */
+export function orderWindowsUpstreamFirst<
+  T extends { level: number; branchName: string },
+>(majorOrgs: T[]): T[] {
+  return [...majorOrgs].sort(
+    (a, b) =>
+      (a.level ?? 0) - (b.level ?? 0) ||
+      (a.branchName || "").localeCompare(b.branchName || ""),
   );
 }
 
