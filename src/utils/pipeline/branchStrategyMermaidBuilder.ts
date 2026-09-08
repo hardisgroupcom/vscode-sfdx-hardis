@@ -909,9 +909,18 @@ export class BranchStrategyMermaidBuilder {
     return `<span class='hardis-pill hardis-chip hardis-status-${status}${conflictClass}' title='${title}'>${label}</span>`;
   }
 
-  /** Warning glyph prefixed to a chip whose Pull Request(s) no longer merge cleanly. */
+  /**
+   * Warning glyph prefixed to a chip whose Pull Request(s) no longer merge cleanly.
+   *
+   * The entity is written the MERMAID way, `#9888;` with no ampersand, because mermaid decodes
+   * `#NNN;` in a node label itself before the label ever reaches the browser. Writing the HTML
+   * form `&#9888;` here printed a stray `&` in front of the glyph, since mermaid consumed
+   * `#9888;` and left the ampersand behind as ordinary text.
+   *
+   * The legend in pipeline.html is plain HTML, not a mermaid label, so it keeps `&#9888;`.
+   */
   private conflictGlyph(): string {
-    return "<span class='hardis-conflict-glyph'>&#9888;</span> ";
+    return "<span class='hardis-conflict-glyph'>#9888;</span> ";
   }
 
   /**

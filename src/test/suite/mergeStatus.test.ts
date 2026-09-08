@@ -219,6 +219,16 @@ suite("Merge conflicts on the DevOps Pipeline diagram", () => {
         !cleanChip!.includes("hardis-chip-conflict"),
         `clean chip should stay untouched: ${cleanChip}`,
       );
+      // mermaid decodes `#NNN;` in a node label itself, so the HTML form `&#9888;` left a stray
+      // ampersand in front of the glyph on the diagram: "&⚠ #3544"
+      assert.ok(
+        conflictChip!.includes(">#9888;<"),
+        `the glyph must use the mermaid entity form: ${conflictChip}`,
+      );
+      assert.ok(
+        !conflictChip!.includes("&#9888;"),
+        `the HTML entity form prints a stray ampersand on the diagram: ${conflictChip}`,
+      );
     });
 
     test("the job status of a conflicting Pull Request is kept", () => {
