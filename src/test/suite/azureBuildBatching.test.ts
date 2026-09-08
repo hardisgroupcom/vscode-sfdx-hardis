@@ -1,5 +1,6 @@
 import * as assert from "assert";
 import { GitProviderAzure } from "../../utils/gitProviders/gitProviderAzure";
+import { DEFAULT_CONCURRENCY } from "../../utils/concurrency";
 
 // Every open Pull Request used to cost its own getBuilds call, so a repository with a hundred open
 // Pull Requests made a hundred round trips before the DevOps Pipeline could be drawn. One call now
@@ -19,7 +20,9 @@ suite("Azure Pull Request build batching", () => {
     result: 2, // Succeeded
     sourceBranch: options.sourceBranch,
     sourceVersion: options.sourceVersion,
-    triggerInfo: options.prNumber ? { "pr.number": String(options.prNumber) } : {},
+    triggerInfo: options.prNumber
+      ? { "pr.number": String(options.prNumber) }
+      : {},
     _links: { web: { href: "https://build/1" } },
     queueTime: new Date("2026-09-08T00:00:00Z"),
     finishTime: new Date("2026-09-08T00:05:00Z"),
@@ -71,22 +74,47 @@ suite("Azure Pull Request build batching", () => {
     lastMergeSourceCommit: commitId ? { commitId } : undefined,
   });
 
+  // The batch only earns its place once the direct path would need more than one wave, so every
+  // test that exercises it pads the page past that ceiling. The padding is always covered by the
+  // batch, which leaves the per Pull Request counter free to talk about the Pull Requests under
+  // test.
+  const PADDING_FIRST_PR = 900;
+  const paddingCount = DEFAULT_CONCURRENCY + 1;
+  const paddingPrs = () =>
+    Array.from({ length: paddingCount }, (_, i) => rawPr(PADDING_FIRST_PR + i));
+  const paddingBuilds = () =>
+    Array.from({ length: paddingCount }, (_, i) =>
+      build({
+        prNumber: PADDING_FIRST_PR + i,
+        sourceBranch: `refs/pull/${PADDING_FIRST_PR + i}/merge`,
+        id: PADDING_FIRST_PR + i,
+      }),
+    );
+  const padded = (prs: any[]) => [...prs, ...paddingPrs()];
+
   test("reads the builds of many Pull Requests in a single call", async () => {
     const counters = { batch: 0, single: 0, statuses: 0 };
-    const builds = [1, 2, 3, 4].map((n) =>
-      build({ prNumber: n, sourceBranch: `refs/pull/${n}/merge`, id: n }),
-    );
+    const builds = [
+      ...[1, 2, 3, 4].map((n) =>
+        build({ prNumber: n, sourceBranch: `refs/pull/${n}/merge`, id: n }),
+      ),
+      ...paddingBuilds(),
+    ];
     const provider = buildProvider(builds, counters);
 
     const prs = await provider.convertAndCollectJobsList(
-      [rawPr(1), rawPr(2), rawPr(3), rawPr(4)],
+      padded([rawPr(1), rawPr(2), rawPr(3), rawPr(4)]),
       "integration",
       { withJobs: true },
     );
 
     assert.strictEqual(counters.batch, 1, "exactly one batched call");
-    assert.strictEqual(counters.single, 0, "no per Pull Request call was needed");
-    assert.strictEqual(prs.length, 4);
+    assert.strictEqual(
+      counters.single,
+      0,
+      "no per Pull Request call was needed",
+    );
+    assert.strictEqual(prs.length, 4 + paddingCount);
     for (const pr of prs) {
       assert.strictEqual(pr.jobsStatus, "success", `PR #${pr.number}`);
     }
@@ -99,32 +127,44 @@ suite("Azure Pull Request build batching", () => {
     const builds = [
       build({ sourceBranch: "refs/pull/7/merge", id: 7 }), // no triggerInfo
       build({ prNumber: 8, sourceBranch: "refs/pull/8/merge", id: 8 }),
+      ...paddingBuilds(),
     ];
     const provider = buildProvider(builds, counters);
 
     const prs = await provider.convertAndCollectJobsList(
-      [rawPr(7), rawPr(8)],
+      padded([rawPr(7), rawPr(8)]),
       "integration",
       { withJobs: true },
     );
 
     assert.strictEqual(counters.batch, 1);
-    assert.strictEqual(prs[0].jobsStatus, "success", "matched on refs/pull/7/merge");
+    assert.strictEqual(
+      prs[0].jobsStatus,
+      "success",
+      "matched on refs/pull/7/merge",
+    );
     assert.strictEqual(prs[1].jobsStatus, "success");
   });
 
   test("matches a build by the commit it built", async () => {
     const counters = { batch: 0, single: 0, statuses: 0 };
-    const builds = [build({ sourceVersion: "ABCDEF", id: 9 })];
+    const builds = [
+      build({ sourceVersion: "ABCDEF", id: 9 }),
+      ...paddingBuilds(),
+    ];
     const provider = buildProvider(builds, counters);
 
     const prs = await provider.convertAndCollectJobsList(
-      [rawPr(9, "abcdef"), rawPr(10, "999999")],
+      padded([rawPr(9, "abcdef"), rawPr(10, "999999")]),
       "integration",
       { withJobs: true },
     );
 
-    assert.strictEqual(prs[0].jobsStatus, "success", "matched on the commit id");
+    assert.strictEqual(
+      prs[0].jobsStatus,
+      "success",
+      "matched on the commit id",
+    );
     // #10 is not in the batch, so it falls back to its own call and then to the statuses
     assert.strictEqual(prs[1].jobsStatus, "unknown");
   });
@@ -135,51 +175,75 @@ suite("Azure Pull Request build batching", () => {
       build({ prNumber: 1, sourceBranch: "refs/pull/1/merge", id: 1 }),
       // #2 is older than the batch window and only reachable by its own call
       build({ sourceBranch: "refs/pull/2/merge", id: 2, prNumber: 2 }),
+      ...paddingBuilds(),
     ];
-    // The batch only returns the first one; the single call can still find the second
+    // The batch returns everything but #2; the single call can still find it
     const provider = buildProvider(builds, counters);
     provider.buildApi.getBuilds = async (...args: any[]) => {
       const branchName = args[17];
       if (branchName === undefined) {
         counters.batch++;
-        return [builds[0]];
+        return builds.filter((b) => b.sourceBranch !== "refs/pull/2/merge");
       }
       counters.single++;
       return builds.filter((b) => b.sourceBranch === branchName);
     };
 
     const prs = await provider.convertAndCollectJobsList(
-      [rawPr(1), rawPr(2)],
+      padded([rawPr(1), rawPr(2)]),
       "integration",
       { withJobs: true },
     );
 
     assert.strictEqual(counters.batch, 1);
-    assert.strictEqual(counters.single, 1, "only the uncovered Pull Request pays a call");
+    assert.strictEqual(
+      counters.single,
+      1,
+      "only the uncovered Pull Request pays a call",
+    );
     assert.strictEqual(prs[0].jobsStatus, "success");
     assert.strictEqual(prs[1].jobsStatus, "success");
   });
 
-  test("does not batch for a single Pull Request", async () => {
+  // Below the fan-out ceiling the direct calls all leave in one wave, so a batched call in front
+  // of them would only add a serial round trip. Measured on a repository with 13 open Pull
+  // Requests, that round trip cost more than the batch saved.
+  test("does not batch below the fan-out ceiling", async () => {
     const counters = { batch: 0, single: 0, statuses: 0 };
-    const builds = [build({ prNumber: 3, sourceBranch: "refs/pull/3/merge" })];
+    const numbers = Array.from(
+      { length: DEFAULT_CONCURRENCY },
+      (_, i) => i + 1,
+    );
+    const builds = numbers.map((n) =>
+      build({ prNumber: n, sourceBranch: `refs/pull/${n}/merge`, id: n }),
+    );
     const provider = buildProvider(builds, counters);
 
-    await provider.convertAndCollectJobsList([rawPr(3)], "integration", {
-      withJobs: true,
-    });
+    await provider.convertAndCollectJobsList(
+      numbers.map((n) => rawPr(n)),
+      "integration",
+      { withJobs: true },
+    );
 
-    assert.strictEqual(counters.batch, 0, "one Pull Request is cheaper asked for directly");
-    assert.strictEqual(counters.single, 1);
+    assert.strictEqual(
+      counters.batch,
+      0,
+      "one wave of direct calls is already as fast as it gets",
+    );
+    assert.strictEqual(counters.single, DEFAULT_CONCURRENCY);
   });
 
   test("makes no build call at all when jobs are not requested", async () => {
     const counters = { batch: 0, single: 0, statuses: 0 };
     const provider = buildProvider([], counters);
 
-    await provider.convertAndCollectJobsList([rawPr(1), rawPr(2)], "integration", {
-      withJobs: false,
-    });
+    await provider.convertAndCollectJobsList(
+      [rawPr(1), rawPr(2)],
+      "integration",
+      {
+        withJobs: false,
+      },
+    );
 
     assert.strictEqual(counters.batch, 0);
     assert.strictEqual(counters.single, 0);
@@ -190,6 +254,7 @@ suite("Azure Pull Request build batching", () => {
     const builds = [
       build({ prNumber: 1, sourceBranch: "refs/pull/1/merge" }),
       build({ prNumber: 2, sourceBranch: "refs/pull/2/merge" }),
+      ...paddingBuilds(),
     ];
     const provider = buildProvider(builds, counters);
     provider.buildApi.getBuilds = async (...args: any[]) => {
@@ -203,38 +268,61 @@ suite("Azure Pull Request build batching", () => {
     };
 
     const prs = await provider.convertAndCollectJobsList(
-      [rawPr(1), rawPr(2)],
+      padded([rawPr(1), rawPr(2)]),
       "integration",
       { withJobs: true },
     );
 
-    assert.strictEqual(counters.single, 2, "every Pull Request falls back");
+    assert.strictEqual(
+      counters.single,
+      2 + paddingCount,
+      "every Pull Request falls back",
+    );
     assert.strictEqual(prs[0].jobsStatus, "success");
     assert.strictEqual(prs[1].jobsStatus, "success");
   });
 
   test("the index is dropped on demand, so a running build is re-read", async () => {
     const counters = { batch: 0, single: 0, statuses: 0 };
-    const builds = [1, 2].map((n) =>
-      build({ prNumber: n, sourceBranch: `refs/pull/${n}/merge`, id: n }),
-    );
+    const builds = [
+      ...[1, 2].map((n) =>
+        build({ prNumber: n, sourceBranch: `refs/pull/${n}/merge`, id: n }),
+      ),
+      ...paddingBuilds(),
+    ];
     const provider = buildProvider(builds, counters);
 
-    await provider.convertAndCollectJobsList([rawPr(1), rawPr(2)], "integration", {
-      withJobs: true,
-    });
+    await provider.convertAndCollectJobsList(
+      padded([rawPr(1), rawPr(2)]),
+      "integration",
+      {
+        withJobs: true,
+      },
+    );
     assert.strictEqual(counters.batch, 1);
 
     // Without the reset, a second pass reuses the index and asks for nothing
-    await provider.convertAndCollectJobsList([rawPr(1), rawPr(2)], "integration", {
-      withJobs: true,
-    });
-    assert.strictEqual(counters.batch, 1, "the index is reused within a refresh");
+    await provider.convertAndCollectJobsList(
+      padded([rawPr(1), rawPr(2)]),
+      "integration",
+      {
+        withJobs: true,
+      },
+    );
+    assert.strictEqual(
+      counters.batch,
+      1,
+      "the index is reused within a refresh",
+    );
 
     provider.resetPullRequestBuildIndex();
-    await provider.convertAndCollectJobsList([rawPr(1), rawPr(2)], "integration", {
-      withJobs: true,
-    });
+    await provider.convertAndCollectJobsList(
+      padded([rawPr(1), rawPr(2)]),
+      "integration",
+      {
+        withJobs: true,
+      },
+    );
     assert.strictEqual(counters.batch, 2, "the reset forces a new batch");
   });
 });

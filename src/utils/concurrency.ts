@@ -9,8 +9,10 @@ than a bounded queue, on top of being invisible in the logs when it happens.
 These helpers keep the same shape as Promise.all / Promise.allSettled, with a ceiling.
 */
 
-// Enough to keep the network busy, low enough that no provider treats it as a burst
-export const DEFAULT_CONCURRENCY = 8;
+// Enough that a repository of ordinary size still resolves its Pull Requests in a single wave (a
+// lower ceiling made the common case measurably slower than the unbounded fan-out it replaced),
+// low enough that a repository with hundreds of them never looks like a burst to the provider
+export const DEFAULT_CONCURRENCY = 16;
 
 /**
  * Map over `items` with at most `limit` calls in flight, preserving input order in the result.

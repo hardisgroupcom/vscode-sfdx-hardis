@@ -11,6 +11,7 @@ import {
   JobStatus,
 } from "./types";
 import { Logger } from "../../logger";
+import { DEFAULT_CONCURRENCY, mapWithConcurrency } from "../concurrency";
 import { SecretsManager } from "../secretsManager";
 import { t } from "../../i18n/i18n";
 import {
@@ -20,6 +21,31 @@ import {
 import { mapGitHubMergeable } from "./mergeStatus";
 
 export class GitProviderGitHub extends GitProvider {
+  // A Pull Request updated before the oldest commit of a window cannot belong to it. Widened by a
+  // margin: branches live long and clocks drift.
+  private static readonly PR_WINDOW_MARGIN_DAYS = 7;
+  // GitHub never returns more than 100 per page whatever is asked for
+  private static readonly PR_PAGE_SIZE = 100;
+  // Stop rather than walk a huge closed history when no time bound applies
+  private static readonly PR_MAX_PAGES = 10;
+
+  private oldestCommitDateWithMargin(commits: any[]): Date | undefined {
+    const times = (commits || [])
+      .map((commit) =>
+        new Date(
+          commit?.commit?.committer?.date || commit?.commit?.author?.date || "",
+        ).getTime(),
+      )
+      .filter((time) => !isNaN(time));
+    if (times.length === 0) {
+      return undefined;
+    }
+    return new Date(
+      Math.min(...times) -
+        GitProviderGitHub.PR_WINDOW_MARGIN_DAYS * 24 * 60 * 60 * 1000,
+    );
+  }
+
   gitHubClient: InstanceType<typeof Octokit> | null = null;
 
   handlesNativeGitAuth(): boolean {
@@ -407,7 +433,11 @@ export class GitProviderGitHub extends GitProvider {
       // Step 3-6: Get merged PRs targeting currentBranch and child branches,
       // keep those whose merge commit belongs to our commit list, dedupe, convert
       const allBranches = [currentBranchName, ...childBranchesNames];
-      return await this.collectMergedPRsForCommits(allBranches, commitSHAs);
+      return await this.collectMergedPRsForCommits(
+        allBranches,
+        commitSHAs,
+        this.oldestCommitDateWithMargin(comparison.commits),
+      );
     } catch (err) {
       Logger.log(
         `Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`,
@@ -562,6 +592,7 @@ export class GitProviderGitHub extends GitProvider {
       const result = await this.collectMergedPRsForCommits(
         allBranches,
         commitSHAs,
+        this.oldestCommitDateWithMargin(comparison.commits),
       );
       this.setCachedLatestMergePrs(cacheKey, result);
       return result;
@@ -579,33 +610,67 @@ export class GitProviderGitHub extends GitProvider {
   private async collectMergedPRsForCommits(
     allBranches: string[],
     commitSHAs: Set<string>,
+    // Oldest commit of the window: Pull Requests updated before that cannot belong to it
+    updatedAfter?: Date,
   ): Promise<PullRequest[]> {
     const [owner, repo] = [this.repoInfo!.owner, this.repoInfo!.repo];
 
-    const prPromises = allBranches.map(async (branchName) => {
-      try {
-        const { data: prs } = await this.gitHubClient!.pulls.list({
-          owner,
-          repo,
-          state: "closed",
-          base: branchName,
-          per_page: 1000,
-        });
-        await this.logApiCall("pulls.list", {
-          caller: "collectMergedPRsForCommits",
-          action: "fetchMergedPRs",
-          targetBranch: branchName,
-        });
-        return prs.filter((pr) => pr.merged_at);
-      } catch (err) {
-        Logger.log(
-          `Error fetching merged PRs for branch ${branchName}: ${String(err)}`,
-        );
-        return [];
-      }
-    });
-
-    const prResults = await Promise.all(prPromises);
+    const prResults = await mapWithConcurrency(
+      allBranches,
+      async (branchName) => {
+        try {
+          // GitHub caps a page at 100 whatever is asked for, so the previous per_page: 1000 was
+          // not "everything in one call", it was "the first 100 by creation date and never mind
+          // the rest". Sorted by update date instead, the walk can stop at the first page that
+          // predates the window: correct where the old single call silently truncated, and far
+          // cheaper than reading the whole closed history.
+          const merged: any[] = [];
+          for (let page = 1; page <= GitProviderGitHub.PR_MAX_PAGES; page++) {
+            const { data: prs } = await this.gitHubClient!.pulls.list({
+              owner,
+              repo,
+              state: "closed",
+              base: branchName,
+              per_page: GitProviderGitHub.PR_PAGE_SIZE,
+              sort: "updated",
+              direction: "desc",
+              page,
+            });
+            await this.logApiCall("pulls.list", {
+              caller: "collectMergedPRsForCommits",
+              action: "fetchMergedPRs",
+              targetBranch: branchName,
+              page,
+              received: prs.length,
+            });
+            let reachedBound = false;
+            for (const pr of prs) {
+              const updated = new Date(
+                pr.updated_at || pr.merged_at || 0,
+              ).getTime();
+              if (updatedAfter && updated < updatedAfter.getTime()) {
+                // Sorted newest first, so everything after this point is older still
+                reachedBound = true;
+                break;
+              }
+              if (pr.merged_at) {
+                merged.push(pr);
+              }
+            }
+            if (reachedBound || prs.length < GitProviderGitHub.PR_PAGE_SIZE) {
+              break;
+            }
+          }
+          return merged;
+        } catch (err) {
+          Logger.log(
+            `Error fetching merged PRs for branch ${branchName}: ${String(err)}`,
+          );
+          return [];
+        }
+      },
+      DEFAULT_CONCURRENCY,
+    );
     const allMergedPRs: any[] = prResults.flat();
 
     const relevantPRs = allMergedPRs.filter((pr) => {
@@ -634,8 +699,11 @@ export class GitProviderGitHub extends GitProvider {
     if (!rawPrs || rawPrs.length === 0) {
       return [];
     }
-    const converted: PullRequest[] = await Promise.all(
-      rawPrs.map(async (r) => {
+    // Bounded: Promise.all over every Pull Request fires one status call each at once, and GitHub
+    // answers a burst like that with secondary rate limits that cost more than the queue saves
+    const converted: PullRequest[] = await mapWithConcurrency(
+      rawPrs,
+      async (r) => {
         const converted = this.convertToPullRequest(r);
         if (options.withJobs === true) {
           try {
@@ -649,7 +717,8 @@ export class GitProviderGitHub extends GitProvider {
           }
         }
         return converted;
-      }),
+      },
+      DEFAULT_CONCURRENCY,
     );
     return converted;
   }

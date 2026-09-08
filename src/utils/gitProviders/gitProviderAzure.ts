@@ -203,8 +203,13 @@ export class GitProviderAzure extends GitProvider {
       this.gitApi = await this.connection.getGitApi();
       await this.logApiCall("connection.getGitApi", { caller: "initialize" });
 
-      // Validate token by requesting repository info
-      await this.gitApi.getRepository(this.repoInfo.repo, this.repoInfo.owner);
+      // Validate token by requesting repository info. Its id is kept: the build listings can be
+      // scoped to this repository instead of scanning every pipeline of the project.
+      const repository = await this.gitApi.getRepository(
+        this.repoInfo.repo,
+        this.repoInfo.owner,
+      );
+      this.azureRepositoryId = repository?.id || null;
       await this.logApiCall("gitApi.getRepository", { caller: "initialize" });
 
       this.buildApi = await this.connection.getBuildApi();
@@ -703,8 +708,11 @@ export class GitProviderAzure extends GitProvider {
     // cache is shared with the sfdx-hardis CLI, and keyed on the state seen right now, so a
     // reopened Pull Request is read again.
     const repositoryKey = this.pullRequestCacheRepositoryKey();
-    return await Promise.all(
-      rawPrs.map(async (rawPr) => {
+    // Bounded: a page of Pull Requests with long descriptions would otherwise fire one call each
+    // at the same instant, which Azure answers with throttling
+    return await mapWithConcurrency(
+      rawPrs,
+      async (rawPr) => {
         const listed = rawPr.description || "";
         if (
           listed.length < GitProviderAzure.LIST_DESCRIPTION_TRUNCATION_LENGTH ||
@@ -726,6 +734,10 @@ export class GitProviderAzure extends GitProvider {
             rawPr.pullRequestId,
             this.repoInfo!.owner,
           );
+          await this.logApiCall("gitApi.getPullRequestById", {
+            caller: "completeTruncatedDescriptions",
+            pullRequestId: rawPr.pullRequestId,
+          });
           const fullDescription = full?.description || "";
           if (fullDescription.length > listed.length) {
             setCachedPullRequestDescription(
@@ -743,7 +755,8 @@ export class GitProviderAzure extends GitProvider {
           );
         }
         return rawPr;
-      }),
+      },
+      DEFAULT_CONCURRENCY,
     );
   }
 
@@ -862,6 +875,9 @@ export class GitProviderAzure extends GitProvider {
     );
   }
 
+  // Set by initialize(): scopes the build listings to this repository
+  private azureRepositoryId: string | null = null;
+
   /**
    * Fetch, in ONE call, the most recent Pull Request builds of the project and index them by the
    * Pull Request they belong to.
@@ -876,6 +892,22 @@ export class GitProviderAzure extends GitProvider {
    */
   private pullRequestBuildIndex: Map<string, any[]> | null = null;
 
+  /**
+   * The oldest creation date among a set of Pull Requests, widened by a margin. A build cannot
+   * predate the Pull Request that triggered it, so this is a safe floor for a build listing.
+   */
+  private oldestPullRequestDateWithMargin(
+    rawPrs: GitPullRequest[],
+  ): Date | undefined {
+    const times = (rawPrs || [])
+      .map((pr) => new Date(pr?.creationDate || "").getTime())
+      .filter((time) => !isNaN(time));
+    if (times.length === 0) {
+      return undefined;
+    }
+    return new Date(Math.min(...times) - 24 * 60 * 60 * 1000);
+  }
+
   private async primePullRequestBuildIndex(
     rawPrs: GitPullRequest[],
   ): Promise<void> {
@@ -888,17 +920,22 @@ export class GitProviderAzure extends GitProvider {
     const BATCH_BUILDS_TOP = 500;
     const index = new Map<string, any[]>();
     this.pullRequestBuildIndex = index;
-    if (rawPrs.length <= 1) {
-      // A single Pull Request is cheaper to ask for directly
+    if (rawPrs.length <= DEFAULT_CONCURRENCY) {
+      // Below the fan-out ceiling the per Pull Request calls all leave in one wave, so the batch
+      // would only add a serial round trip in front of them. It earns its place from the point
+      // where the direct path needs a second wave.
       return;
     }
+    // No build can predate the Pull Request that triggered it, so the oldest Pull Request of the
+    // page is the floor. Without this the query walks the whole build history of the project.
+    const minTime = this.oldestPullRequestDateWithMargin(rawPrs);
     try {
       const builds = await this.buildApi.getBuilds(
         this.repoInfo.owner, // project
         undefined, // definitions
         undefined, // queues
         undefined, // buildNumber
-        undefined, // minTime
+        minTime, // minTime
         undefined, // maxTime
         undefined, // requestedFor
         256, // reasonFilter: BuildReason.PullRequest (256)
@@ -911,11 +948,17 @@ export class GitProviderAzure extends GitProvider {
         undefined, // maxBuildsPerDefinition
         undefined, // deletedFilter
         4, // queryOrder: QueueTimeDescending (4), so the newest build of a PR comes first
+        undefined, // branchName
+        undefined, // buildIds
+        // A project can hold many repositories, and their builds are of no use here
+        this.azureRepositoryId || undefined, // repositoryId
+        this.azureRepositoryId ? "TfsGit" : undefined, // repositoryType
       );
       await this.logApiCall("buildApi.getBuilds", {
         caller: "primePullRequestBuildIndex",
         batchSize: rawPrs.length,
         top: BATCH_BUILDS_TOP,
+        minTime: minTime?.toISOString(),
       });
       for (const build of builds || []) {
         for (const key of this.buildIndexKeys(build)) {
@@ -994,7 +1037,8 @@ export class GitProviderAzure extends GitProvider {
       // Served by the one batched call of primePullRequestBuildIndex whenever it covers this Pull
       // Request; only the ones outside that window still cost a call of their own
       const indexed = this.indexedBuildsForPullRequest(rawPr, pr);
-      const builds = indexed ?? (await this.fetchBuildsForSinglePullRequest(pr));
+      const builds =
+        indexed ?? (await this.fetchBuildsForSinglePullRequest(pr));
       return await this.jobsFromBuilds(builds, rawPr, pr);
     } catch (e: any) {
       Logger.log(
@@ -1005,7 +1049,9 @@ export class GitProviderAzure extends GitProvider {
   }
 
   /** The builds of one Pull Request, when the batched index does not cover it. */
-  private async fetchBuildsForSinglePullRequest(pr: PullRequest): Promise<any[]> {
+  private async fetchBuildsForSinglePullRequest(
+    pr: PullRequest,
+  ): Promise<any[]> {
     if (!this.buildApi || !this.repoInfo) {
       return [];
     }
