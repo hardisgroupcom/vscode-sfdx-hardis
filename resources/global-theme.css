@@ -376,6 +376,16 @@ lightning-helptext::part(icon) {
 .slds-scope[data-theme] .hardis-pill-dot.hardis-status-unknown {
   background: var(--slds-g-color-neutral-base-60);
 }
+/* Merge conflicts: a second axis on a chip that already carries the CI job status, so both
+   stay readable. Outline + warning glyph rather than a color swap. */
+.slds-scope[data-theme] .hardis-pill.hardis-chip-conflict {
+  box-shadow: inset 0 0 0 1.5px var(--slds-g-color-palette-red-50);
+}
+.slds-scope[data-theme] .hardis-conflict-glyph {
+  color: var(--slds-g-color-palette-red-40);
+  font-weight: 700;
+}
+
 /* Running status pulses gently (dot only, not the whole pill) */
 .slds-scope[data-theme] .hardis-pill.hardis-status-running .hardis-pill-dot,
 .slds-scope[data-theme] .hardis-pill-dot.hardis-status-running {

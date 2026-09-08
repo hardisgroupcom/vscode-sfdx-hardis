@@ -12,9 +12,11 @@ import {
   Job,
   JobStatus,
 } from "./types";
+import { mapGitLabMergeStatus } from "./mergeStatus";
 import { SecretsManager } from "../secretsManager";
 import { CacheManager } from "../cache-manager";
 import { Logger } from "../../logger";
+import { DEFAULT_CONCURRENCY, mapWithConcurrency } from "../concurrency";
 import { t } from "../../i18n/i18n";
 import {
   promptForToken,
@@ -22,6 +24,38 @@ import {
 } from "../providerCredentials";
 
 export class GitProviderGitlab extends GitProvider {
+  // gitbeaker paginates until exhaustion unless it is told otherwise
+  private static readonly MERGED_MR_MAX_PAGES = 5;
+  // A merge request is updated when it is merged, but branches live long and clocks drift, so the
+  // time bound is widened before it is used
+  private static readonly MR_WINDOW_MARGIN_DAYS = 7;
+
+  /**
+   * The oldest date among a set of commits, widened by a margin, or undefined when none of them
+   * carries a usable date. Bounds a merge request listing in time instead of walking the whole
+   * merged history of a branch.
+   */
+  private oldestCommitDateWithMargin(commits: any[]): Date | undefined {
+    const times = (commits || [])
+      .map((commit) =>
+        new Date(
+          commit?.committedDate ||
+            commit?.committed_date ||
+            commit?.createdAt ||
+            commit?.created_at ||
+            "",
+        ).getTime(),
+      )
+      .filter((time) => !isNaN(time));
+    if (times.length === 0) {
+      return undefined;
+    }
+    return new Date(
+      Math.min(...times) -
+        GitProviderGitlab.MR_WINDOW_MARGIN_DAYS * 24 * 60 * 60 * 1000,
+    );
+  }
+
   gitlabClient: InstanceType<typeof Gitlab> | null = null;
   gitlabProjectPath: string | null = null;
   gitlabProjectId: number | null = null;
@@ -262,6 +296,30 @@ export class GitProviderGitlab extends GitProvider {
     });
   }
 
+  async getPullRequestByNumber(number: number): Promise<PullRequest | null> {
+    if (!this.gitlabClient || !this.gitlabProjectId) {
+      return null;
+    }
+    try {
+      const mergeRequest = await this.gitlabClient.MergeRequests.show(
+        this.gitlabProjectId,
+        number,
+      );
+      await this.logApiCall("MergeRequests.show", {
+        caller: "getPullRequestByNumber",
+        number,
+      });
+      const converted = await this.convertAndCollectJobsList(
+        [mergeRequest as any],
+        { withJobs: false },
+      );
+      return converted[0] || null;
+    } catch (err) {
+      Logger.log(`Error fetching MR !${number}: ${String(err)}`);
+      return null;
+    }
+  }
+
   async getActivePullRequestFromBranch(
     branchName: string,
   ): Promise<PullRequest | null> {
@@ -332,7 +390,11 @@ export class GitProviderGitlab extends GitProvider {
       // Step 3-6: Get merged MRs targeting currentBranch and child branches,
       // keep those whose merge commit belongs to our commit list, dedupe, convert
       const allBranches = [currentBranchName, ...childBranchesNames];
-      return await this.collectMergedMRsForCommits(allBranches, commitSHAs);
+      return await this.collectMergedMRsForCommits(
+        allBranches,
+        commitSHAs,
+        this.oldestCommitDateWithMargin(commitsSinceLastMerge),
+      );
     } catch (err) {
       Logger.log(
         `Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`,
@@ -427,7 +489,7 @@ export class GitProviderGitlab extends GitProvider {
       childBranchesNames,
       mergeCommitSha,
     );
-    const cached = this.latestMergePrCache.get(cacheKey);
+    const cached = this.getCachedLatestMergePrs(cacheKey);
     if (cached) {
       return cached;
     }
@@ -489,8 +551,9 @@ export class GitProviderGitlab extends GitProvider {
       const result = await this.collectMergedMRsForCommits(
         allBranches,
         commitSHAs,
+        this.oldestCommitDateWithMargin(comparedCommits),
       );
-      this.latestMergePrCache.set(cacheKey, result);
+      this.setCachedLatestMergePrs(cacheKey, result);
       return result;
     } catch (err) {
       Logger.log(`Error in listPullRequestsInGoLive: ${String(err)}`);
@@ -507,30 +570,44 @@ export class GitProviderGitlab extends GitProvider {
   private async collectMergedMRsForCommits(
     allBranches: string[],
     commitSHAs: Set<string>,
+    // Oldest commit of the window: the listing is bounded to the merge requests updated since
+    // then rather than walking the whole merged history of the branch
+    updatedAfter?: Date,
   ): Promise<PullRequest[]> {
-    const mrPromises = allBranches.map(async (branchName) => {
-      try {
-        const mergedMRs = await this.gitlabClient!.MergeRequests.all({
-          projectId: this.gitlabProjectId!,
-          targetBranch: branchName,
-          state: "merged",
-          perPage: 100,
-        });
-        await this.logApiCall("MergeRequests.all", {
-          caller: "collectMergedMRsForCommits",
-          action: "fetchMergedMRs",
-          targetBranch: branchName,
-        });
-        return mergedMRs;
-      } catch (err) {
-        Logger.log(
-          `Error fetching merged MRs for branch ${branchName}: ${String(err)}`,
-        );
-        return [];
-      }
-    });
-
-    const mrResults = await Promise.all(mrPromises);
+    const mrResults = await mapWithConcurrency(
+      allBranches,
+      async (branchName) => {
+        try {
+          const mergedMRs = await this.gitlabClient!.MergeRequests.all({
+            projectId: this.gitlabProjectId!,
+            targetBranch: branchName,
+            state: "merged",
+            perPage: 100,
+            // gitbeaker walks EVERY page by default: on a project with hundreds of merged merge
+            // requests that pulled the whole history of the branch to keep the handful that
+            // belong to the window. The window is bounded in time, and the number of pages is
+            // capped so a busy branch cannot turn into an unbounded crawl.
+            maxPages: GitProviderGitlab.MERGED_MR_MAX_PAGES,
+            ...(updatedAfter
+              ? { updatedAfter: updatedAfter.toISOString() }
+              : {}),
+          });
+          await this.logApiCall("MergeRequests.all", {
+            caller: "collectMergedMRsForCommits",
+            action: "fetchMergedMRs",
+            targetBranch: branchName,
+            updatedAfter: updatedAfter?.toISOString(),
+          });
+          return mergedMRs;
+        } catch (err) {
+          Logger.log(
+            `Error fetching merged MRs for branch ${branchName}: ${String(err)}`,
+          );
+          return [];
+        }
+      },
+      DEFAULT_CONCURRENCY,
+    );
     const allMergedMRs: Array<
       | MergeRequestSchemaWithBasicLabels
       | Camelize<MergeRequestSchemaWithBasicLabels>
@@ -655,8 +732,11 @@ export class GitProviderGitlab extends GitProvider {
     if (!rawMrs || rawMrs.length === 0) {
       return [];
     }
-    const converted: PullRequest[] = await Promise.all(
-      rawMrs.map(async (mr) => {
+    // Bounded: Promise.all over every merge request fires one pipeline call per merge request at
+    // once, and GitLab answers a burst like that with 429s that cost more than the queue saves
+    const converted: PullRequest[] = await mapWithConcurrency(
+      rawMrs,
+      async (mr) => {
         const pr = this.convertToPullRequest(mr);
         if (options.withJobs === true) {
           try {
@@ -670,7 +750,8 @@ export class GitProviderGitlab extends GitProvider {
           }
         }
         return pr;
-      }),
+      },
+      DEFAULT_CONCURRENCY,
     );
     return converted;
   }
@@ -910,6 +991,9 @@ export class GitProviderGitlab extends GitProvider {
       createdAt: mr.created_at || undefined,
       updatedAt: mr.updated_at || undefined,
       jobsStatus: "unknown",
+      // GitLab computes the merge of open Merge Requests in the background and sends the verdict
+      // in the list payload, so reading it costs nothing
+      mergeStatus: mr.state === "opened" ? mapGitLabMergeStatus(mr) : undefined,
     };
   }
 

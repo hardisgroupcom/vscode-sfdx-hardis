@@ -12,6 +12,7 @@ import {
 } from "./types";
 import { SecretsManager } from "../secretsManager";
 import { Logger } from "../../logger";
+import { DEFAULT_CONCURRENCY, mapWithConcurrency } from "../concurrency";
 import { t } from "../../i18n/i18n";
 import {
   promptForToken,
@@ -19,6 +20,23 @@ import {
 } from "../providerCredentials";
 
 export class GitProviderBitbucket extends GitProvider {
+  // A Pull Request updated before the oldest commit of a window cannot belong to it. Widened by a
+  // margin: branches live long and clocks drift.
+  private static readonly PR_WINDOW_MARGIN_DAYS = 7;
+
+  private oldestCommitDateWithMargin(commits: any[]): Date | undefined {
+    const times = (commits || [])
+      .map((commit) => new Date(commit?.date || "").getTime())
+      .filter((time) => !isNaN(time));
+    if (times.length === 0) {
+      return undefined;
+    }
+    return new Date(
+      Math.min(...times) -
+        GitProviderBitbucket.PR_WINDOW_MARGIN_DAYS * 24 * 60 * 60 * 1000,
+    );
+  }
+
   bitbucketClient: InstanceType<typeof Bitbucket> | null = null;
   workspace: string | null = null;
   repoSlug: string | null = null;
@@ -254,6 +272,31 @@ export class GitProviderBitbucket extends GitProvider {
     }
   }
 
+  async getPullRequestByNumber(number: number): Promise<PullRequest | null> {
+    if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
+      return null;
+    }
+    try {
+      const response = await this.bitbucketClient.pullrequests.get({
+        workspace: this.workspace,
+        repo_slug: this.repoSlug,
+        pull_request_id: number,
+      });
+      await this.logApiCall("pullrequests.get", {
+        caller: "getPullRequestByNumber",
+        number,
+      });
+      const converted = await this.convertAndCollectJobsList(
+        response?.data ? [response.data as any] : [],
+        { withJobs: false },
+      );
+      return converted[0] || null;
+    } catch (err) {
+      Logger.log(`Error fetching PR #${number}: ${String(err)}`);
+      return null;
+    }
+  }
+
   async getActivePullRequestFromBranch(
     branchName: string,
   ): Promise<PullRequest | null> {
@@ -388,7 +431,11 @@ export class GitProviderBitbucket extends GitProvider {
       // Step 3-6: Get merged PRs targeting currentBranch and child branches,
       // keep those whose merge commit belongs to our commit list, dedupe, convert
       const allBranches = [currentBranchName, ...childBranchesNames];
-      return await this.collectMergedPRsForCommits(allBranches, commitHashes);
+      return await this.collectMergedPRsForCommits(
+        allBranches,
+        commitHashes,
+        this.oldestCommitDateWithMargin(commits),
+      );
     } catch (err) {
       Logger.log(
         `Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`,
@@ -491,7 +538,7 @@ export class GitProviderBitbucket extends GitProvider {
       childBranchesNames,
       mergeCommitId,
     );
-    const cached = this.latestMergePrCache.get(cacheKey);
+    const cached = this.getCachedLatestMergePrs(cacheKey);
     if (cached) {
       return cached;
     }
@@ -548,8 +595,9 @@ export class GitProviderBitbucket extends GitProvider {
       const result = await this.collectMergedPRsForCommits(
         allBranches,
         commitHashes,
+        this.oldestCommitDateWithMargin(commits),
       );
-      this.latestMergePrCache.set(cacheKey, result);
+      this.setCachedLatestMergePrs(cacheKey, result);
       return result;
     } catch (err) {
       Logger.log(`Error in listPullRequestsInGoLive: ${String(err)}`);
@@ -568,35 +616,46 @@ export class GitProviderBitbucket extends GitProvider {
   private async collectMergedPRsForCommits(
     allBranches: string[],
     commitHashes: string[],
+    // Oldest commit of the window: Pull Requests updated before that cannot belong to it
+    updatedAfter?: Date,
   ): Promise<PullRequest[]> {
-    const prPromises = allBranches.map(async (branchName) => {
-      try {
-        const q = `destination.branch.name = "${branchName}" AND state = "MERGED"`;
-        // Paginate: a branch can have more merged PRs than fit on one page
-        const values = await this.fetchAllPages(
-          (params) => this.bitbucketClient!.pullrequests.list(params),
-          {
-            workspace: this.workspace!,
-            repo_slug: this.repoSlug!,
+    // Bounded in time: without it every page of the merged history of the branch was walked to
+    // keep the handful of Pull Requests that belong to the window. Bounded in parallelism too:
+    // one page walk per branch at once makes Bitbucket answer with 429s.
+    const prResults = await mapWithConcurrency(
+      allBranches,
+      async (branchName) => {
+        try {
+          const q =
+            `destination.branch.name = "${branchName}" AND state = "MERGED"` +
+            (updatedAfter
+              ? ` AND updated_on >= ${JSON.stringify(updatedAfter.toISOString())}`
+              : "");
+          // Paginate: a branch can have more merged PRs than fit on one page
+          const values = await this.fetchAllPages(
+            (params) => this.bitbucketClient!.pullrequests.list(params),
+            {
+              workspace: this.workspace!,
+              repo_slug: this.repoSlug!,
+              q,
+              pagelen: 50,
+            },
+          );
+          await this.logApiCall("pullrequests.list", {
+            caller: "collectMergedPRsForCommits",
+            action: "fetchMergedPRs",
             q,
-            pagelen: 50,
-          },
-        );
-        await this.logApiCall("pullrequests.list", {
-          caller: "collectMergedPRsForCommits",
-          action: "fetchMergedPRs",
-          q,
-        });
-        return values;
-      } catch (err) {
-        Logger.log(
-          `Error fetching merged PRs for branch ${branchName}: ${String(err)}`,
-        );
-        return [];
-      }
-    });
-
-    const prResults = await Promise.all(prPromises);
+          });
+          return values;
+        } catch (err) {
+          Logger.log(
+            `Error fetching merged PRs for branch ${branchName}: ${String(err)}`,
+          );
+          return [];
+        }
+      },
+      DEFAULT_CONCURRENCY,
+    );
     const allMergedPRs: any[] = prResults.flat();
 
     const relevantPRs = allMergedPRs.filter((pr) => {
@@ -910,8 +969,11 @@ export class GitProviderBitbucket extends GitProvider {
     if (!rawPrs || rawPrs.length === 0) {
       return [];
     }
-    const converted: PullRequest[] = await Promise.all(
-      rawPrs.map(async (r) => {
+    // Bounded: Promise.all over every Pull Request fires one pipeline call each at once, and
+    // Bitbucket answers a burst like that with 429s that cost more than the queue saves
+    const converted: PullRequest[] = await mapWithConcurrency(
+      rawPrs,
+      async (r) => {
         const conv = this.convertToPullRequest(r);
         if (options.withJobs === true) {
           try {
@@ -925,7 +987,8 @@ export class GitProviderBitbucket extends GitProvider {
           }
         }
         return conv;
-      }),
+      },
+      DEFAULT_CONCURRENCY,
     );
     return converted;
   }

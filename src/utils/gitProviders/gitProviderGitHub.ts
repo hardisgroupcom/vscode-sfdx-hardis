@@ -11,14 +11,41 @@ import {
   JobStatus,
 } from "./types";
 import { Logger } from "../../logger";
+import { DEFAULT_CONCURRENCY, mapWithConcurrency } from "../concurrency";
 import { SecretsManager } from "../secretsManager";
 import { t } from "../../i18n/i18n";
 import {
   promptForToken,
   showAuthFailureGuidance,
 } from "../providerCredentials";
+import { mapGitHubMergeable } from "./mergeStatus";
 
 export class GitProviderGitHub extends GitProvider {
+  // A Pull Request updated before the oldest commit of a window cannot belong to it. Widened by a
+  // margin: branches live long and clocks drift.
+  private static readonly PR_WINDOW_MARGIN_DAYS = 7;
+  // GitHub never returns more than 100 per page whatever is asked for
+  private static readonly PR_PAGE_SIZE = 100;
+  // Stop rather than walk a huge closed history when no time bound applies
+  private static readonly PR_MAX_PAGES = 10;
+
+  private oldestCommitDateWithMargin(commits: any[]): Date | undefined {
+    const times = (commits || [])
+      .map((commit) =>
+        new Date(
+          commit?.commit?.committer?.date || commit?.commit?.author?.date || "",
+        ).getTime(),
+      )
+      .filter((time) => !isNaN(time));
+    if (times.length === 0) {
+      return undefined;
+    }
+    return new Date(
+      Math.min(...times) -
+        GitProviderGitHub.PR_WINDOW_MARGIN_DAYS * 24 * 60 * 60 * 1000,
+    );
+  }
+
   gitHubClient: InstanceType<typeof Octokit> | null = null;
 
   handlesNativeGitAuth(): boolean {
@@ -219,9 +246,71 @@ export class GitProviderGitHub extends GitProvider {
       caller: "listOpenPullRequests",
       state: "open",
     });
-    return await this.convertAndCollectJobsList(pullRequests, {
+    const converted = await this.convertAndCollectJobsList(pullRequests, {
       withJobs: true,
     });
+    await this.completeWithMergeStatus(converted);
+    return converted;
+  }
+
+  /**
+   * Fill mergeStatus on open Pull Requests. GitHub keeps mergeable out of the REST list (it is
+   * computed in the background, per Pull Request), but GraphQL returns it for the whole list at
+   * once: one request for the page, whatever the number of Pull Requests. Pull Requests GitHub
+   * has not finished testing come back UNKNOWN and simply show nothing until the next refresh.
+   *
+   * Only for GitHub itself: Gitea reuses this class over a REST-only API, and already carries
+   * mergeable in its list payload.
+   */
+  protected async completeWithMergeStatus(
+    pullRequests: PullRequest[],
+  ): Promise<void> {
+    if (
+      !this.gitHubClient ||
+      !this.repoInfo ||
+      this.repoInfo.providerName !== "github" ||
+      pullRequests.length === 0
+    ) {
+      return;
+    }
+    try {
+      const response: any = await this.gitHubClient.graphql(
+        `query mergeStatus($owner: String!, $repo: String!, $count: Int!) {
+          repository(owner: $owner, name: $repo) {
+            pullRequests(states: OPEN, first: $count, orderBy: { field: CREATED_AT, direction: DESC }) {
+              nodes { number mergeable }
+            }
+          }
+        }`,
+        {
+          owner: this.repoInfo.owner,
+          repo: this.repoInfo.repo,
+          count: Math.min(Math.max(pullRequests.length, 1), 100),
+        },
+      );
+      await this.logApiCall("graphql pullRequests.mergeable", {
+        caller: "completeWithMergeStatus",
+        count: pullRequests.length,
+      });
+      const nodes = response?.repository?.pullRequests?.nodes || [];
+      const mergeableByNumber = new Map<number, any>(
+        nodes.map((node: any) => [node?.number, node?.mergeable]),
+      );
+      for (const pullRequest of pullRequests) {
+        if (!mergeableByNumber.has(Number(pullRequest.number))) {
+          continue;
+        }
+        pullRequest.mergeStatus = mapGitHubMergeable(
+          mergeableByNumber.get(Number(pullRequest.number)),
+        );
+      }
+    } catch (e) {
+      // Merge conflict display is a bonus on the diagram: a token without GraphQL access, or a
+      // GitHub Enterprise without the endpoint, must not cost the pipeline its Pull Requests
+      Logger.log(
+        `Unable to read merge conflict status from GitHub: ${String(e)}`,
+      );
+    }
   }
 
   async getActivePullRequestFromBranch(
@@ -255,6 +344,31 @@ export class GitProviderGitHub extends GitProvider {
       Logger.log(
         `Error fetching active PR for branch ${branchName}: ${String(err)}`,
       );
+      return null;
+    }
+  }
+
+  async getPullRequestByNumber(number: number): Promise<PullRequest | null> {
+    if (!this.gitHubClient || !this.repoInfo) {
+      return null;
+    }
+    try {
+      const { data: pullRequest } = await this.gitHubClient.pulls.get({
+        owner: this.repoInfo.owner,
+        repo: this.repoInfo.repo,
+        pull_number: number,
+      });
+      await this.logApiCall("pulls.get", {
+        caller: "getPullRequestByNumber",
+        number,
+      });
+      const converted = await this.convertAndCollectJobsList(
+        [pullRequest as any],
+        { withJobs: false },
+      );
+      return converted[0] || null;
+    } catch (err) {
+      Logger.log(`Error fetching PR #${number}: ${String(err)}`);
       return null;
     }
   }
@@ -319,7 +433,11 @@ export class GitProviderGitHub extends GitProvider {
       // Step 3-6: Get merged PRs targeting currentBranch and child branches,
       // keep those whose merge commit belongs to our commit list, dedupe, convert
       const allBranches = [currentBranchName, ...childBranchesNames];
-      return await this.collectMergedPRsForCommits(allBranches, commitSHAs);
+      return await this.collectMergedPRsForCommits(
+        allBranches,
+        commitSHAs,
+        this.oldestCommitDateWithMargin(comparison.commits),
+      );
     } catch (err) {
       Logger.log(
         `Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`,
@@ -416,7 +534,7 @@ export class GitProviderGitHub extends GitProvider {
       childBranchesNames,
       mergeCommitSha,
     );
-    const cached = this.latestMergePrCache.get(cacheKey);
+    const cached = this.getCachedLatestMergePrs(cacheKey);
     if (cached) {
       return cached;
     }
@@ -474,8 +592,9 @@ export class GitProviderGitHub extends GitProvider {
       const result = await this.collectMergedPRsForCommits(
         allBranches,
         commitSHAs,
+        this.oldestCommitDateWithMargin(comparison.commits),
       );
-      this.latestMergePrCache.set(cacheKey, result);
+      this.setCachedLatestMergePrs(cacheKey, result);
       return result;
     } catch (err) {
       Logger.log(`Error in listPullRequestsInGoLive: ${String(err)}`);
@@ -491,33 +610,67 @@ export class GitProviderGitHub extends GitProvider {
   private async collectMergedPRsForCommits(
     allBranches: string[],
     commitSHAs: Set<string>,
+    // Oldest commit of the window: Pull Requests updated before that cannot belong to it
+    updatedAfter?: Date,
   ): Promise<PullRequest[]> {
     const [owner, repo] = [this.repoInfo!.owner, this.repoInfo!.repo];
 
-    const prPromises = allBranches.map(async (branchName) => {
-      try {
-        const { data: prs } = await this.gitHubClient!.pulls.list({
-          owner,
-          repo,
-          state: "closed",
-          base: branchName,
-          per_page: 1000,
-        });
-        await this.logApiCall("pulls.list", {
-          caller: "collectMergedPRsForCommits",
-          action: "fetchMergedPRs",
-          targetBranch: branchName,
-        });
-        return prs.filter((pr) => pr.merged_at);
-      } catch (err) {
-        Logger.log(
-          `Error fetching merged PRs for branch ${branchName}: ${String(err)}`,
-        );
-        return [];
-      }
-    });
-
-    const prResults = await Promise.all(prPromises);
+    const prResults = await mapWithConcurrency(
+      allBranches,
+      async (branchName) => {
+        try {
+          // GitHub caps a page at 100 whatever is asked for, so the previous per_page: 1000 was
+          // not "everything in one call", it was "the first 100 by creation date and never mind
+          // the rest". Sorted by update date instead, the walk can stop at the first page that
+          // predates the window: correct where the old single call silently truncated, and far
+          // cheaper than reading the whole closed history.
+          const merged: any[] = [];
+          for (let page = 1; page <= GitProviderGitHub.PR_MAX_PAGES; page++) {
+            const { data: prs } = await this.gitHubClient!.pulls.list({
+              owner,
+              repo,
+              state: "closed",
+              base: branchName,
+              per_page: GitProviderGitHub.PR_PAGE_SIZE,
+              sort: "updated",
+              direction: "desc",
+              page,
+            });
+            await this.logApiCall("pulls.list", {
+              caller: "collectMergedPRsForCommits",
+              action: "fetchMergedPRs",
+              targetBranch: branchName,
+              page,
+              received: prs.length,
+            });
+            let reachedBound = false;
+            for (const pr of prs) {
+              const updated = new Date(
+                pr.updated_at || pr.merged_at || 0,
+              ).getTime();
+              if (updatedAfter && updated < updatedAfter.getTime()) {
+                // Sorted newest first, so everything after this point is older still
+                reachedBound = true;
+                break;
+              }
+              if (pr.merged_at) {
+                merged.push(pr);
+              }
+            }
+            if (reachedBound || prs.length < GitProviderGitHub.PR_PAGE_SIZE) {
+              break;
+            }
+          }
+          return merged;
+        } catch (err) {
+          Logger.log(
+            `Error fetching merged PRs for branch ${branchName}: ${String(err)}`,
+          );
+          return [];
+        }
+      },
+      DEFAULT_CONCURRENCY,
+    );
     const allMergedPRs: any[] = prResults.flat();
 
     const relevantPRs = allMergedPRs.filter((pr) => {
@@ -546,8 +699,11 @@ export class GitProviderGitHub extends GitProvider {
     if (!rawPrs || rawPrs.length === 0) {
       return [];
     }
-    const converted: PullRequest[] = await Promise.all(
-      rawPrs.map(async (r) => {
+    // Bounded: Promise.all over every Pull Request fires one status call each at once, and GitHub
+    // answers a burst like that with secondary rate limits that cost more than the queue saves
+    const converted: PullRequest[] = await mapWithConcurrency(
+      rawPrs,
+      async (r) => {
         const converted = this.convertToPullRequest(r);
         if (options.withJobs === true) {
           try {
@@ -561,7 +717,8 @@ export class GitProviderGitHub extends GitProvider {
           }
         }
         return converted;
-      }),
+      },
+      DEFAULT_CONCURRENCY,
     );
     return converted;
   }
@@ -821,7 +978,9 @@ export class GitProviderGitHub extends GitProvider {
       number: pr.number,
       title: pr.title,
       description: pr.body || "",
-      state: pr.state as PullRequest["state"],
+      // GitHub only returns "open" and "closed": a merged Pull Request is a closed one with a
+      // merge date, and every consumer of the aggregated shape expects "merged"
+      state: (pr.merged_at ? "merged" : pr.state) as PullRequest["state"],
       authorLabel: pr.user?.login || pr.user?.name || "unknown",
       webUrl: pr.html_url,
       sourceBranch: pr.head.ref,
@@ -830,6 +989,12 @@ export class GitProviderGitHub extends GitProvider {
       createdAt: pr.created_at || undefined,
       updatedAt: pr.updated_at || undefined,
       jobsStatus: "unknown",
+      // Gitea sends mergeable in its Pull Request list, GitHub does not: on GitHub this stays
+      // undefined and completeWithMergeStatus fills it for the open ones in a single query
+      mergeStatus:
+        pr.merged_at || pr.mergeable === undefined || pr.mergeable === null
+          ? undefined
+          : mapGitHubMergeable(pr.mergeable),
     };
   }
 

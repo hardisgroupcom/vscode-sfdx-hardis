@@ -13,6 +13,11 @@ import type {
 import { getReportDirectory, getWorkspaceRoot } from "../../utils";
 import { getConfig } from "../pipeline/sfdxHardisConfig";
 import { Logger } from "../../logger";
+import {
+  getCachedPipelineQuery,
+  setCachedPipelineQuery,
+} from "../pipelineQueryCache";
+import { repositoryKeyFromRemoteUrl } from "../pullRequestDescriptionCache";
 import { SecretsManager } from "../secretsManager";
 import { TicketProvider } from "../ticketProviders/ticketProvider";
 import { Ticket } from "../ticketProviders/types";
@@ -392,6 +397,18 @@ export class GitProvider {
   }
 
   /**
+   * Fetches a single Pull Request by its provider-native number (GitHub number, GitLab
+   * iid, Azure id, Bitbucket id), without its jobs. Used to resolve the stories declared
+   * by a promotion Pull Request when they are no longer in a loaded window.
+   */
+  async getPullRequestByNumber(_number: number): Promise<PullRequest | null> {
+    Logger.log(
+      `getPullRequestByNumber not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
+    );
+    return null;
+  }
+
+  /**
    * Lists the "go lives" (merges/promotions into a top branch such as main/prod),
    * most recent first. Lightweight: no PR contents are loaded — use
    * listPullRequestsInGoLive to fetch the PRs of a selected go live. Powers the
@@ -497,6 +514,58 @@ export class GitProvider {
   ): string {
     const branches = [...childBranchesNames].sort().join(",");
     return `${branchName}::${branches}::${latestMergeCommitId}`;
+  }
+
+  /**
+   * The Pull Requests of a go live, from memory first and from the on-disk cache next.
+   *
+   * The set of Pull Requests a go live carried is fixed the moment its merge commit exists, so it
+   * is worth keeping between sessions: the in-memory map above dies with the provider, which means
+   * every reload of the pipeline recomputed a commit comparison plus one Pull Request listing per
+   * branch for a result that cannot have changed.
+   */
+  protected getCachedLatestMergePrs(
+    cacheKey: string,
+  ): PullRequest[] | undefined {
+    const inMemory = this.latestMergePrCache.get(cacheKey);
+    if (inMemory) {
+      return inMemory;
+    }
+    const repositoryKey = this.pipelineCacheRepositoryKey();
+    if (!repositoryKey) {
+      return undefined;
+    }
+    const persisted = getCachedPipelineQuery<PullRequest[]>(
+      repositoryKey,
+      `latestMergePrs::${cacheKey}`,
+    );
+    if (persisted) {
+      // Re-seed the memory map so the rest of this session does not touch the disk again
+      this.latestMergePrCache.set(cacheKey, persisted);
+    }
+    return persisted;
+  }
+
+  /** Remember the Pull Requests of a go live, in memory and on disk. */
+  protected setCachedLatestMergePrs(
+    cacheKey: string,
+    pullRequests: PullRequest[],
+  ): void {
+    this.latestMergePrCache.set(cacheKey, pullRequests);
+    const repositoryKey = this.pipelineCacheRepositoryKey();
+    if (repositoryKey) {
+      setCachedPipelineQuery(
+        repositoryKey,
+        `latestMergePrs::${cacheKey}`,
+        pullRequests,
+      );
+    }
+  }
+
+  // The repository the cached answers belong to, from the git remote of the working copy
+  private pipelineCacheRepositoryKey(): string | null {
+    const remoteUrl = this.repoInfo?.remoteUrl;
+    return remoteUrl ? repositoryKeyFromRemoteUrl(remoteUrl) : null;
   }
 
   /**
