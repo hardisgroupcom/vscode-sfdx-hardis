@@ -524,7 +524,9 @@ export class GitProvider {
    * every reload of the pipeline recomputed a commit comparison plus one Pull Request listing per
    * branch for a result that cannot have changed.
    */
-  protected getCachedLatestMergePrs(cacheKey: string): PullRequest[] | undefined {
+  protected getCachedLatestMergePrs(
+    cacheKey: string,
+  ): PullRequest[] | undefined {
     const inMemory = this.latestMergePrCache.get(cacheKey);
     if (inMemory) {
       return inMemory;

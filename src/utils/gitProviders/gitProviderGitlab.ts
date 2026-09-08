@@ -615,8 +615,7 @@ export class GitProviderGitlab extends GitProvider {
 
     const relevantMRs = allMergedMRs.filter((mr) => {
       const mergeCommitSha = (mr.mergeCommitSha || mr.merge_commit_sha) as
-        | string
-        | undefined;
+        string | undefined;
       if (mergeCommitSha && commitSHAs.has(mergeCommitSha)) {
         return true;
       }

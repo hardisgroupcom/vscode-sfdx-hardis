@@ -140,7 +140,10 @@ suite("GitProviderAzure list description truncation", () => {
     resetPullRequestDescriptionCacheMemory();
 
     const calls: number[] = [];
-    const provider = buildProvider(async () => ({ description: fullBody }), calls);
+    const provider = buildProvider(
+      async () => ({ description: fullBody }),
+      calls,
+    );
     provider.repoInfo = {
       owner: "Cache",
       repo: "first-run",
@@ -154,18 +157,32 @@ suite("GitProviderAzure list description truncation", () => {
     ];
 
     const first = await complete(provider, listed);
-    assert.deepStrictEqual(calls, [501], "the first pass must read the Pull Request");
+    assert.deepStrictEqual(
+      calls,
+      [501],
+      "the first pass must read the Pull Request",
+    );
     assert.strictEqual(first[0].description, fullBody);
 
     resetPullRequestDescriptionCacheMemory();
     const second = await complete(provider, listed);
-    assert.deepStrictEqual(calls, [501], "the second pass must be served by the cache");
+    assert.deepStrictEqual(
+      calls,
+      [501],
+      "the second pass must be served by the cache",
+    );
     assert.strictEqual(second[0].description, fullBody);
 
     // ... but an open Pull Request is always read again
-    const open = [{ pullRequestId: 501, description: truncated, status: "active" }];
+    const open = [
+      { pullRequestId: 501, description: truncated, status: "active" },
+    ];
     await complete(provider, open);
-    assert.deepStrictEqual(calls, [501, 501], "an open Pull Request must never be cached");
+    assert.deepStrictEqual(
+      calls,
+      [501, 501],
+      "an open Pull Request must never be cached",
+    );
 
     try {
       fs.unlinkSync(pullRequestCacheFile("azure", repoKey));
