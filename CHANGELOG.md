@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- A configuration file left unreadable by git conflict markers (`config/.sfdx-hardis.yml` after a merge or a promotion cherry-pick) no longer breaks the DevOps Pipeline, Pipeline Settings and the status bar: the configuration read earlier in the session is used, with a warning in the output channel naming the file to fix
+
 ## [8.5.0] 2026-09-08
 
 - **DevOps Pipeline: [promotion branches](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/) (experimental)** (sfdx-hardis `enablePromotionBranches`, off by default)
