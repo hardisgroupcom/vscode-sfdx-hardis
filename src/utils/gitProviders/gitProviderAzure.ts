@@ -17,6 +17,7 @@ import {
   GitStatusState,
 } from "azure-devops-node-api/interfaces/GitInterfaces";
 import { Logger } from "../../logger";
+import { DEFAULT_CONCURRENCY, mapWithConcurrency } from "../concurrency";
 import {
   getCachedPullRequestDescription,
   repositoryKeyFromRemoteUrl,
@@ -756,8 +757,16 @@ export class GitProviderAzure extends GitProvider {
     if (rawPrs.length === 0) {
       return [];
     }
-    return await Promise.all(
-      rawPrs.map(async (rawPr) => {
+    // One getBuilds call for the whole batch rather than one per Pull Request: see
+    // primePullRequestBuildIndex. Whatever it could not answer falls back to a per Pull Request
+    // call below, bounded so a repository with hundreds of open Pull Requests does not fire
+    // hundreds of simultaneous requests at the provider.
+    if (options.withJobs === true) {
+      await this.primePullRequestBuildIndex(rawPrs);
+    }
+    return await mapWithConcurrency(
+      rawPrs,
+      async (rawPr) => {
         const pr = this.convertToPullRequest(rawPr, branchName);
         if (options.withJobs === true) {
           try {
@@ -770,8 +779,129 @@ export class GitProviderAzure extends GitProvider {
           }
         }
         return pr;
-      }),
+      },
+      DEFAULT_CONCURRENCY,
     );
+  }
+
+  /**
+   * Fetch, in ONE call, the most recent Pull Request builds of the project and index them by the
+   * Pull Request they belong to.
+   *
+   * Before this, every open Pull Request cost its own getBuilds call - a hundred open Pull
+   * Requests meant a hundred round trips before the diagram could be drawn. Azure DevOps can
+   * return the recent builds of every Pull Request at once (reasonFilter = PullRequest, ordered by
+   * queue time), so one call covers the whole batch and only the Pull Requests missing from that
+   * window still need a call of their own.
+   *
+   * The index is per instance and per refresh: a build that is still running has to be re-read.
+   */
+  private pullRequestBuildIndex: Map<string, any[]> | null = null;
+
+  private async primePullRequestBuildIndex(
+    rawPrs: GitPullRequest[],
+  ): Promise<void> {
+    // Truthiness, not `!== null`: the field is undefined until the first refresh primes it, and
+    // an `undefined !== null` guard would skip the batch for the whole life of the provider
+    if (this.pullRequestBuildIndex || !this.buildApi || !this.repoInfo) {
+      return;
+    }
+    // Enough to cover the recent builds of a busy repository without asking for its whole history
+    const BATCH_BUILDS_TOP = 500;
+    const index = new Map<string, any[]>();
+    this.pullRequestBuildIndex = index;
+    if (rawPrs.length <= 1) {
+      // A single Pull Request is cheaper to ask for directly
+      return;
+    }
+    try {
+      const builds = await this.buildApi.getBuilds(
+        this.repoInfo.owner, // project
+        undefined, // definitions
+        undefined, // queues
+        undefined, // buildNumber
+        undefined, // minTime
+        undefined, // maxTime
+        undefined, // requestedFor
+        256, // reasonFilter: BuildReason.PullRequest (256)
+        undefined, // statusFilter
+        undefined, // resultFilter
+        undefined, // tagFilters
+        undefined, // properties
+        BATCH_BUILDS_TOP, // top
+        undefined, // continuationToken
+        undefined, // maxBuildsPerDefinition
+        undefined, // deletedFilter
+        4, // queryOrder: QueueTimeDescending (4), so the newest build of a PR comes first
+      );
+      await this.logApiCall("buildApi.getBuilds", {
+        caller: "primePullRequestBuildIndex",
+        batchSize: rawPrs.length,
+        top: BATCH_BUILDS_TOP,
+      });
+      for (const build of builds || []) {
+        for (const key of this.buildIndexKeys(build)) {
+          const existing = index.get(key);
+          if (existing) {
+            existing.push(build);
+          } else {
+            index.set(key, [build]);
+          }
+        }
+      }
+    } catch (e: any) {
+      // The batch is an optimization: a failure only means every Pull Request pays its own call
+      Logger.log(
+        `Unable to prime the Pull Request build index: ${e?.message || String(e)}`,
+      );
+    }
+  }
+
+  // A build is looked up by the Pull Request it was triggered by, and by the commit it built, the
+  // same two ways fetchLatestJobsForPullRequest matches them
+  private buildIndexKeys(build: any): string[] {
+    const keys: string[] = [];
+    const prId =
+      build?.triggerInfo?.["pr.number"] || build?.triggerInfo?.pullRequestId;
+    if (prId) {
+      keys.push(`pr:${String(prId)}`);
+    }
+    const sourceBranch = String(build?.sourceBranch || "");
+    const refMatch = sourceBranch.match(/^refs\/pull\/(\d+)\/merge$/);
+    if (refMatch) {
+      keys.push(`pr:${refMatch[1]}`);
+    }
+    if (build?.sourceVersion) {
+      keys.push(`commit:${String(build.sourceVersion).toLowerCase()}`);
+    }
+    return [...new Set(keys)];
+  }
+
+  // The builds the batch already knows for a Pull Request, newest first, or null when the batch
+  // has nothing on it and a dedicated call is still needed
+  private indexedBuildsForPullRequest(
+    rawPr: GitPullRequest,
+    pr: PullRequest,
+  ): any[] | null {
+    if (!this.pullRequestBuildIndex) {
+      return null;
+    }
+    const byPr = pr.number
+      ? this.pullRequestBuildIndex.get(`pr:${pr.number}`)
+      : undefined;
+    if (byPr && byPr.length > 0) {
+      return byPr;
+    }
+    const commitId = rawPr.lastMergeSourceCommit?.commitId;
+    const byCommit = commitId
+      ? this.pullRequestBuildIndex.get(`commit:${commitId.toLowerCase()}`)
+      : undefined;
+    return byCommit && byCommit.length > 0 ? byCommit : null;
+  }
+
+  /** Forget the batched builds, so the next refresh re-reads the ones still running. */
+  public resetPullRequestBuildIndex(): void {
+    this.pullRequestBuildIndex = null;
   }
 
   private async fetchLatestJobsForPullRequest(
@@ -782,6 +912,25 @@ export class GitProviderAzure extends GitProvider {
       return [];
     }
 
+    try {
+      // Served by the one batched call of primePullRequestBuildIndex whenever it covers this Pull
+      // Request; only the ones outside that window still cost a call of their own
+      const indexed = this.indexedBuildsForPullRequest(rawPr, pr);
+      const builds = indexed ?? (await this.fetchBuildsForSinglePullRequest(pr));
+      return await this.jobsFromBuilds(builds, rawPr, pr);
+    } catch (e: any) {
+      Logger.log(
+        `Error fetching jobs for PR #${pr.number}: ${e?.message || String(e)}`,
+      );
+      return [];
+    }
+  }
+
+  /** The builds of one Pull Request, when the batched index does not cover it. */
+  private async fetchBuildsForSinglePullRequest(pr: PullRequest): Promise<any[]> {
+    if (!this.buildApi || !this.repoInfo) {
+      return [];
+    }
     try {
       // Get builds triggered by this specific pull request
       // For PR builds, Azure DevOps uses refs/pull/{prId}/merge as the source branch
@@ -807,10 +956,28 @@ export class GitProviderAzure extends GitProvider {
         pr.number ? `refs/pull/${pr.number}/merge` : undefined, // branchName: PR merge ref
       );
       await this.logApiCall("buildApi.getBuilds", {
-        caller: "fetchLatestJobsForPullRequest",
+        caller: "fetchBuildsForSinglePullRequest",
         prNumber: pr.number,
       });
+      return builds || [];
+    } catch (e: any) {
+      Logger.log(
+        `Error fetching builds for PR #${pr.number}: ${e?.message || String(e)}`,
+      );
+      return [];
+    }
+  }
 
+  /** Turn the builds of a Pull Request into jobs, falling back on its statuses when it has none. */
+  private async jobsFromBuilds(
+    builds: any[],
+    rawPr: GitPullRequest,
+    pr: PullRequest,
+  ): Promise<Job[]> {
+    if (!this.repoInfo) {
+      return [];
+    }
+    {
       // Filter builds that match this specific PR
       const matchingBuilds = (builds || []).filter((b: any) => {
         // Check if build was triggered by this PR
@@ -818,6 +985,14 @@ export class GitProviderAzure extends GitProvider {
           b.triggerInfo?.["pr.number"] || b.triggerInfo?.pullRequestId;
         if (buildPrId && pr.number) {
           return String(buildPrId) === String(pr.number);
+        }
+
+        // Fallback: the merge ref of the Pull Request. Azure names the source branch of a Pull
+        // Request build `refs/pull/<id>/merge`, and some pipelines set no `pr.number` trigger
+        // info at all: without this, their builds were dropped here and the chip showed no status
+        // even though the build was right there.
+        if (pr.number && b.sourceBranch === `refs/pull/${pr.number}/merge`) {
+          return true;
         }
 
         // Fallback: match by commit ID
@@ -884,11 +1059,6 @@ export class GitProviderAzure extends GitProvider {
           raw: build,
         },
       ];
-    } catch (e: any) {
-      Logger.log(
-        `Error fetching jobs for PR #${pr.number}: ${e?.message || String(e)}`,
-      );
-      return [];
     }
   }
 
