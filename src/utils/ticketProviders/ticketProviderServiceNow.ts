@@ -461,28 +461,35 @@ export class ServiceNowProvider extends TicketProvider {
     return `${instanceUrl}/${table}.do?sysparm_query=number=${number}`;
   }
 
-  /** Field values come back as { value, display_value } with sysparm_display_value=all */
-  private static fieldValue(record: any, fieldName: string): string {
+  /**
+   * Field values come back as { value, display_value } with sysparm_display_value=all, so reading
+   * one is a matter of picking the half that is wanted and falling back to the other.
+   */
+  private static readField(
+    record: any,
+    fieldName: string,
+    prefer: "display" | "raw",
+  ): string {
     const field = record?.[fieldName];
     if (field === undefined || field === null) {
       return "";
     }
     if (typeof field === "object") {
-      return String(field.display_value ?? field.value ?? "");
+      return prefer === "display"
+        ? String(field.display_value ?? field.value ?? "")
+        : String(field.value ?? field.display_value ?? "");
     }
     return String(field);
   }
 
+  /** Value of a field as it reads in the ServiceNow UI */
+  private static fieldValue(record: any, fieldName: string): string {
+    return ServiceNowProvider.readField(record, fieldName, "display");
+  }
+
   /** Raw value of a field, used for the identifiers that carry no display value */
   private static rawFieldValue(record: any, fieldName: string): string {
-    const field = record?.[fieldName];
-    if (field === undefined || field === null) {
-      return "";
-    }
-    if (typeof field === "object") {
-      return String(field.value ?? field.display_value ?? "");
-    }
-    return String(field);
+    return ServiceNowProvider.readField(record, fieldName, "raw");
   }
 
   async completeTicketDetails(ticket: Ticket): Promise<Ticket> {

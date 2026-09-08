@@ -6,7 +6,7 @@ carried is fixed the moment that merge commit exists: the commits it introduced 
 the merge commit and its first parent, and neither moves again. Recomputing it costs a
 getCommitsBatch plus one Pull Request listing per branch, on every reload of the pipeline.
 
-The provider already memoises this per instance (`latestMergePrCache`), but that map lives and dies
+The provider already memoizes this per instance (`latestMergePrCache`), but that map lives and dies
 with the provider: opening the pipeline again, refreshing it, or reloading the window pays the full
 price once more. This store keeps it between sessions.
 
@@ -24,10 +24,15 @@ it moves every time someone merges.
 Set NO_CACHE=true, or SFDX_HARDIS_NO_PIPELINE_CACHE=true, to bypass it.
 */
 
-import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { sanitizeRepositoryKey } from "./pullRequestDescriptionCache";
+import {
+  isEntryExpired,
+  pruneCacheEntries,
+  readCacheFileEntries,
+  writeCacheFileAtomically,
+} from "./cacheFileStore";
 
 export const PIPELINE_CACHE_VERSION = 1;
 
@@ -52,7 +57,9 @@ interface PipelineCacheFile {
 const MEMORY_CACHE: Map<string, PipelineCacheFile> = new Map();
 
 export function isPipelineQueryCacheDisabled(): boolean {
-  return !!process.env?.NO_CACHE || !!process.env?.SFDX_HARDIS_NO_PIPELINE_CACHE;
+  return (
+    !!process.env?.NO_CACHE || !!process.env?.SFDX_HARDIS_NO_PIPELINE_CACHE
+  );
 }
 
 export function pipelineCacheDir(): string {
@@ -67,11 +74,7 @@ export function pipelineCacheFile(repositoryKey: string): string {
 }
 
 function isExpired(entry: CacheEntry): boolean {
-  const cachedAt = Date.parse(entry?.cachedAt || "");
-  if (isNaN(cachedAt)) {
-    return true;
-  }
-  return Date.now() - cachedAt > MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+  return isEntryExpired(entry, MAX_AGE_DAYS);
 }
 
 function readCacheFile(repositoryKey: string): PipelineCacheFile {
@@ -82,19 +85,12 @@ function readCacheFile(repositoryKey: string): PipelineCacheFile {
   const loaded: PipelineCacheFile = {
     version: PIPELINE_CACHE_VERSION,
     repository: repositoryKey,
-    entries: {},
+    entries: readCacheFileEntries<CacheEntry>(
+      pipelineCacheFile(repositoryKey),
+      PIPELINE_CACHE_VERSION,
+      "entries",
+    ),
   };
-  try {
-    const file = pipelineCacheFile(repositoryKey);
-    if (fs.existsSync(file)) {
-      const parsed = JSON.parse(fs.readFileSync(file, "utf-8"));
-      if (parsed?.version === PIPELINE_CACHE_VERSION && parsed?.entries) {
-        loaded.entries = parsed.entries;
-      }
-    }
-  } catch {
-    // An unreadable cache only means the next read costs the API calls it would have saved
-  }
   MEMORY_CACHE.set(repositoryKey, loaded);
   return loaded;
 }
@@ -133,18 +129,12 @@ export function setCachedPipelineQuery(
   cache.entries[key] = { value, cachedAt: new Date().toISOString() };
   const file = pipelineCacheFile(repositoryKey);
   try {
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    let onDisk: Record<string, CacheEntry> = {};
-    if (fs.existsSync(file)) {
-      try {
-        const parsed = JSON.parse(fs.readFileSync(file, "utf-8"));
-        if (parsed?.version === PIPELINE_CACHE_VERSION && parsed?.entries) {
-          onDisk = parsed.entries;
-        }
-      } catch {
-        // Corrupted file: this write replaces it
-      }
-    }
+    // Merge with whatever another window wrote since this one loaded the file
+    const onDisk = readCacheFileEntries<CacheEntry>(
+      file,
+      PIPELINE_CACHE_VERSION,
+      "entries",
+    );
     const merged = pruneEntries({ ...onDisk, ...cache.entries });
     cache.entries = merged;
     MEMORY_CACHE.set(repositoryKey, cache);
@@ -153,9 +143,7 @@ export function setCachedPipelineQuery(
       repository: repositoryKey,
       entries: merged,
     };
-    const tempFile = `${file}.${process.pid}.tmp`;
-    fs.writeFileSync(tempFile, JSON.stringify(payload));
-    fs.renameSync(tempFile, file);
+    writeCacheFileAtomically(file, payload);
   } catch {
     // The cache is an optimization: failing to write it must never break the pipeline view
   }
@@ -165,16 +153,7 @@ export function setCachedPipelineQuery(
 export function pruneEntries(
   entries: Record<string, CacheEntry>,
 ): Record<string, CacheEntry> {
-  const alive = Object.entries(entries).filter(
-    ([, entry]) => entry && !isExpired(entry),
-  );
-  if (alive.length <= MAX_ENTRIES_PER_REPOSITORY) {
-    return Object.fromEntries(alive);
-  }
-  const newestFirst = alive.sort(
-    (a, b) => Date.parse(b[1].cachedAt || "") - Date.parse(a[1].cachedAt || ""),
-  );
-  return Object.fromEntries(newestFirst.slice(0, MAX_ENTRIES_PER_REPOSITORY));
+  return pruneCacheEntries(entries, MAX_AGE_DAYS, MAX_ENTRIES_PER_REPOSITORY);
 }
 
 // Testing seam: forget what was loaded so the next read goes back to the file

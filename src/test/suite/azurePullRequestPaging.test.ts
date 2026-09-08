@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import { GitProviderAzure } from "../../utils/gitProviders/gitProviderAzure";
+import { newAzureProviderStub } from "./azureProviderStub";
 
 // Azure DevOps applies its own default page size (about 100) when no $top is passed, and the node
 // API sends none unless it is given one. Every listing was therefore silently capped at that first
@@ -10,15 +10,7 @@ suite("Azure Pull Request listing bounds", () => {
     pagesByCall: (criteria: any, skip: number, top: number) => any[],
     calls: { criteria: any; skip: number; top: number }[] = [],
   ) => {
-    const provider: any = Object.create(GitProviderAzure.prototype);
-    provider.repoInfo = {
-      owner: "Project",
-      repo: "repo",
-      remoteUrl: "https://dev.azure.com/acme/Project/_git/repo",
-      host: "dev.azure.com",
-      webUrl: "https://dev.azure.com/acme/Project/_git/repo",
-      providerName: "azure",
-    };
+    const provider = newAzureProviderStub();
     provider.gitApi = {
       getPullRequests: async (
         _repo: string,
@@ -32,7 +24,6 @@ suite("Azure Pull Request listing bounds", () => {
         return pagesByCall(criteria, skip, top);
       },
     };
-    provider.logApiCall = async () => {};
     return provider;
   };
 
@@ -49,7 +40,10 @@ suite("Azure Pull Request listing bounds", () => {
     const provider = buildProvider(() => [], calls);
     await provider.listPullRequestsPaged({ status: 3 }, "test");
     assert.strictEqual(calls.length, 1);
-    assert.ok(calls[0].top > 0, "a $top must be sent, not left to the server default");
+    assert.ok(
+      calls[0].top > 0,
+      "a $top must be sent, not left to the server default",
+    );
   });
 
   test("walks the pages until a short one", async () => {
@@ -66,15 +60,21 @@ suite("Azure Pull Request listing bounds", () => {
 
     assert.strictEqual(calls.length, 3, "two full pages and the short one");
     assert.strictEqual(all.length, calls[0].top * 2 + 1);
-    assert.strictEqual(calls[1].skip, calls[0].top, "the skip advances by one page");
+    assert.strictEqual(
+      calls[1].skip,
+      calls[0].top,
+      "the skip advances by one page",
+    );
   });
 
   test("stops at the hard cap rather than crawling forever", async () => {
     const calls: any[] = [];
     // Every page is full: without a cap this would never end
-    const provider = buildProvider((_criteria, skip, top) =>
-      Array.from({ length: top }, (_, i) => pullRequest(skip + i)),
-    calls);
+    const provider = buildProvider(
+      (_criteria, skip, top) =>
+        Array.from({ length: top }, (_, i) => pullRequest(skip + i)),
+      calls,
+    );
 
     await provider.listPullRequestsPaged({ status: 3 }, "test");
 
@@ -132,9 +132,15 @@ suite("Azure Pull Request listing bounds", () => {
       ];
       const bound: Date = provider.oldestCommitDateWithMargin(commits);
       const oldest = new Date("2026-02-01T00:00:00Z").getTime();
-      assert.ok(bound.getTime() < oldest, "the bound must be widened, not exact");
+      assert.ok(
+        bound.getTime() < oldest,
+        "the bound must be widened, not exact",
+      );
       const marginDays = (oldest - bound.getTime()) / (24 * 60 * 60 * 1000);
-      assert.ok(marginDays >= 1 && marginDays <= 30, `margin was ${marginDays} days`);
+      assert.ok(
+        marginDays >= 1 && marginDays <= 30,
+        `margin was ${marginDays} days`,
+      );
     });
 
     test("falls back to the author date when there is no committer date", () => {

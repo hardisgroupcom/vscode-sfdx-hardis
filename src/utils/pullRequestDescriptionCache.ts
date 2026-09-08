@@ -33,9 +33,14 @@ by a CLI job is read by the extension, and the other way round:
 Set NO_CACHE=true, or SFDX_HARDIS_NO_PR_CACHE=true, to bypass it entirely.
 */
 
-import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
+import {
+  isEntryExpired,
+  pruneCacheEntries,
+  readCacheFileEntries,
+  writeCacheFileAtomically,
+} from "./cacheFileStore";
 
 export const PR_DESCRIPTION_CACHE_VERSION = 1;
 
@@ -134,11 +139,7 @@ export function pullRequestCacheFile(
 }
 
 function isExpired(entry: CachedPullRequestDescription): boolean {
-  const cachedAt = Date.parse(entry?.cachedAt || "");
-  if (isNaN(cachedAt)) {
-    return true;
-  }
-  return Date.now() - cachedAt > MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+  return isEntryExpired(entry, MAX_AGE_DAYS);
 }
 
 function readCacheFile(
@@ -154,23 +155,12 @@ function readCacheFile(
     version: PR_DESCRIPTION_CACHE_VERSION,
     provider,
     repository: repositoryKey,
-    pullRequests: {},
+    pullRequests: readCacheFileEntries<CachedPullRequestDescription>(
+      pullRequestCacheFile(provider, repositoryKey),
+      PR_DESCRIPTION_CACHE_VERSION,
+      "pullRequests",
+    ),
   };
-  try {
-    const file = pullRequestCacheFile(provider, repositoryKey);
-    if (fs.existsSync(file)) {
-      const parsed = JSON.parse(fs.readFileSync(file, "utf-8"));
-      // A file written by a newer version is left alone rather than misread
-      if (
-        parsed?.version === PR_DESCRIPTION_CACHE_VERSION &&
-        parsed?.pullRequests
-      ) {
-        loaded.pullRequests = parsed.pullRequests;
-      }
-    }
-  } catch {
-    // An unreadable cache is not an error: it only means the next read costs an API call
-  }
   MEMORY_CACHE.set(memoryKey, loaded);
   return loaded;
 }
@@ -230,22 +220,12 @@ export function setCachedPullRequestDescription(
   };
   const file = pullRequestCacheFile(provider, repositoryKey);
   try {
-    fs.mkdirSync(path.dirname(file), { recursive: true });
     // Merge with whatever another process wrote since this one loaded the file
-    let onDisk: Record<string, CachedPullRequestDescription> = {};
-    if (fs.existsSync(file)) {
-      try {
-        const parsed = JSON.parse(fs.readFileSync(file, "utf-8"));
-        if (
-          parsed?.version === PR_DESCRIPTION_CACHE_VERSION &&
-          parsed?.pullRequests
-        ) {
-          onDisk = parsed.pullRequests;
-        }
-      } catch {
-        // Corrupted file: it is replaced by this write
-      }
-    }
+    const onDisk = readCacheFileEntries<CachedPullRequestDescription>(
+      file,
+      PR_DESCRIPTION_CACHE_VERSION,
+      "pullRequests",
+    );
     const merged = pruneEntries({ ...onDisk, ...cache.pullRequests });
     cache.pullRequests = merged;
     MEMORY_CACHE.set(memoryKey, cache);
@@ -255,9 +235,7 @@ export function setCachedPullRequestDescription(
       repository: repositoryKey,
       pullRequests: merged,
     };
-    const tempFile = `${file}.${process.pid}.tmp`;
-    fs.writeFileSync(tempFile, JSON.stringify(payload));
-    fs.renameSync(tempFile, file);
+    writeCacheFileAtomically(file, payload);
   } catch {
     // The cache is an optimization: failing to write it must never break the pipeline view
   }
@@ -267,16 +245,7 @@ export function setCachedPullRequestDescription(
 export function pruneEntries(
   entries: Record<string, CachedPullRequestDescription>,
 ): Record<string, CachedPullRequestDescription> {
-  const alive = Object.entries(entries).filter(
-    ([, entry]) => entry && !isExpired(entry),
-  );
-  if (alive.length <= MAX_ENTRIES_PER_REPOSITORY) {
-    return Object.fromEntries(alive);
-  }
-  const newestFirst = alive.sort(
-    (a, b) => Date.parse(b[1].cachedAt || "") - Date.parse(a[1].cachedAt || ""),
-  );
-  return Object.fromEntries(newestFirst.slice(0, MAX_ENTRIES_PER_REPOSITORY));
+  return pruneCacheEntries(entries, MAX_AGE_DAYS, MAX_ENTRIES_PER_REPOSITORY);
 }
 
 // Testing seam: forget what was loaded so the next read goes back to the file

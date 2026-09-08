@@ -1,6 +1,6 @@
 import * as assert from "assert";
-import { GitProviderAzure } from "../../utils/gitProviders/gitProviderAzure";
 import { DEFAULT_CONCURRENCY } from "../../utils/concurrency";
+import { newAzureProviderStub } from "./azureProviderStub";
 
 // Every open Pull Request used to cost its own getBuilds call, so a repository with a hundred open
 // Pull Requests made a hundred round trips before the DevOps Pipeline could be drawn. One call now
@@ -28,40 +28,44 @@ suite("Azure Pull Request build batching", () => {
     finishTime: new Date("2026-09-08T00:05:00Z"),
   });
 
-  const buildProvider = (
+  type Counters = { batch: number; single: number; statuses: number };
+
+  /**
+   * Installs the getBuilds fake. The batched call passes no branchName (the last argument of the
+   * single-PR call), which is how the fake tells the two halves apart, and `onBatch` decides what
+   * the batched half answers: the whole page by default, something narrower or an error when a
+   * test needs to starve the batch.
+   */
+  const withBuildApi = (
+    provider: any,
     builds: any[],
-    counters: { batch: number; single: number; statuses: number },
+    counters: Counters,
+    onBatch: () => any[] = () => builds,
   ) => {
-    const provider: any = Object.create(GitProviderAzure.prototype);
-    provider.repoInfo = {
-      owner: "Project",
-      repo: "repo",
-      remoteUrl: "https://dev.azure.com/acme/Project/_git/repo",
-      host: "dev.azure.com",
-      webUrl: "https://dev.azure.com/acme/Project/_git/repo",
-      providerName: "azure",
-    };
-    provider.connection = {};
     provider.buildApi = {
       getBuilds: async (...args: any[]) => {
-        // The batched call passes no branchName (the last argument of the single-PR call)
         const branchName = args[17];
         if (branchName === undefined) {
           counters.batch++;
-          return builds;
+          return onBatch();
         }
         counters.single++;
         return builds.filter((b) => b.sourceBranch === branchName);
       },
     };
+    return provider;
+  };
+
+  const buildProvider = (builds: any[], counters: Counters) => {
+    const provider = newAzureProviderStub();
+    provider.connection = {};
     provider.gitApi = {
       getPullRequestStatuses: async () => {
         counters.statuses++;
         return [];
       },
     };
-    provider.logApiCall = async () => {};
-    return provider;
+    return withBuildApi(provider, builds, counters);
   };
 
   const rawPr = (number: number, commitId?: string) => ({
@@ -178,16 +182,12 @@ suite("Azure Pull Request build batching", () => {
       ...paddingBuilds(),
     ];
     // The batch returns everything but #2; the single call can still find it
-    const provider = buildProvider(builds, counters);
-    provider.buildApi.getBuilds = async (...args: any[]) => {
-      const branchName = args[17];
-      if (branchName === undefined) {
-        counters.batch++;
-        return builds.filter((b) => b.sourceBranch !== "refs/pull/2/merge");
-      }
-      counters.single++;
-      return builds.filter((b) => b.sourceBranch === branchName);
-    };
+    const provider = withBuildApi(
+      buildProvider(builds, counters),
+      builds,
+      counters,
+      () => builds.filter((b) => b.sourceBranch !== "refs/pull/2/merge"),
+    );
 
     const prs = await provider.convertAndCollectJobsList(
       padded([rawPr(1), rawPr(2)]),
@@ -256,16 +256,14 @@ suite("Azure Pull Request build batching", () => {
       build({ prNumber: 2, sourceBranch: "refs/pull/2/merge" }),
       ...paddingBuilds(),
     ];
-    const provider = buildProvider(builds, counters);
-    provider.buildApi.getBuilds = async (...args: any[]) => {
-      const branchName = args[17];
-      if (branchName === undefined) {
-        counters.batch++;
+    const provider = withBuildApi(
+      buildProvider(builds, counters),
+      builds,
+      counters,
+      () => {
         throw new Error("the batch is refused");
-      }
-      counters.single++;
-      return builds.filter((b) => b.sourceBranch === branchName);
-    };
+      },
+    );
 
     const prs = await provider.convertAndCollectJobsList(
       padded([rawPr(1), rawPr(2)]),

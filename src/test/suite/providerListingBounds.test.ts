@@ -217,12 +217,18 @@ suite("Pull Request listing bounds and fan-out", () => {
       return provider;
     };
 
-    test("carries the time bound in the query", async () => {
+    // The two bound tests only care about the query Bitbucket is asked, not about its answer
+    const queryRecordingProvider = () => {
       const queries: string[] = [];
       const provider = buildProvider(async (params) => {
         queries.push(params.q);
         return { data: { values: [] } };
       });
+      return { queries, provider };
+    };
+
+    test("carries the time bound in the query", async () => {
+      const { queries, provider } = queryRecordingProvider();
       const since = new Date(Date.now() - 30 * DAY);
       await provider.collectMergedPRsForCommits(["integration"], [], since);
       assert.strictEqual(queries.length, 1);
@@ -234,11 +240,7 @@ suite("Pull Request listing bounds and fan-out", () => {
     });
 
     test("leaves the query alone when the window has no dated commit", async () => {
-      const queries: string[] = [];
-      const provider = buildProvider(async (params) => {
-        queries.push(params.q);
-        return { data: { values: [] } };
-      });
+      const { queries, provider } = queryRecordingProvider();
       await provider.collectMergedPRsForCommits(["integration"], [], undefined);
       assert.ok(!queries[0].includes("updated_on"), queries[0]);
     });

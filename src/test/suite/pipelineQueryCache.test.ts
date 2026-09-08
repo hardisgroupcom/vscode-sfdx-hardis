@@ -57,12 +57,19 @@ suite("Pipeline query cache", () => {
   });
 
   test("answers nothing for a key it never saw", () => {
-    assert.strictEqual(getCachedPipelineQuery(REPO, "never-written"), undefined);
+    assert.strictEqual(
+      getCachedPipelineQuery(REPO, "never-written"),
+      undefined,
+    );
   });
 
   test("keeps two repositories apart", () => {
     setCachedPipelineQuery(REPO, "k", "first");
-    setCachedPipelineQuery("dev.azure.com/acme/project/_git/other", "k", "second");
+    setCachedPipelineQuery(
+      "dev.azure.com/acme/project/_git/other",
+      "k",
+      "second",
+    );
     assert.strictEqual(getCachedPipelineQuery(REPO, "k"), "first");
     try {
       fs.unlinkSync(pipelineCacheFile("dev.azure.com/acme/project/_git/other"));
@@ -146,10 +153,16 @@ suite("Pipeline query cache", () => {
     assert.ok(cacheFile().startsWith(path.join(os.homedir(), ".sfdx")));
   });
 
+  // The two caches share pruneCacheEntries but not the age and the cap they pass it, and those
+  // limits are the point of these tests. They read like the ones of the Pull Request description
+  // cache on purpose: each cache proves its own limits, on its own entry shape.
+  /* jscpd:ignore-start */
   suite("pruneEntries()", () => {
     const entry = (daysAgo: number) => ({
       value: 1,
-      cachedAt: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000).toISOString(),
+      cachedAt: new Date(
+        Date.now() - daysAgo * 24 * 60 * 60 * 1000,
+      ).toISOString(),
     });
 
     test("drops the expired entries", () => {
@@ -170,4 +183,5 @@ suite("Pipeline query cache", () => {
       );
     });
   });
+  /* jscpd:ignore-end */
 });
