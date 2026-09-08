@@ -260,12 +260,9 @@ export class GitProviderAzure extends GitProvider {
       return [];
     }
     try {
-      const prs = await this.gitApi.getPullRequests(
-        this.repoInfo.repo,
-        {
-          status: PullRequestStatus.Active,
-        },
-        this.repoInfo.owner,
+      const prs = await this.listPullRequestsPaged(
+        { status: PullRequestStatus.Active },
+        "listOpenPullRequests",
       );
       return await this.convertAndCollectJobsList(
         await this.completeTruncatedDescriptions(prs || []),
@@ -434,6 +431,7 @@ export class GitProviderAzure extends GitProvider {
         allBranches,
         commitIds,
         currentBranchName,
+        this.oldestCommitDateWithMargin(commits),
       );
     } catch (err) {
       Logger.log(
@@ -598,6 +596,7 @@ export class GitProviderAzure extends GitProvider {
         allBranches,
         commitIds,
         branchName,
+        this.oldestCommitDateWithMargin(commits),
       );
       this.latestMergePrCache.set(cacheKey, result);
       return result;
@@ -617,33 +616,38 @@ export class GitProviderAzure extends GitProvider {
     allBranches: string[],
     commitIds: Set<string>,
     convertBranchName: string,
+    // Oldest commit of the window: the listing is bounded to the Pull Requests closed since then
+    // rather than crawling the whole completed history of the branch
+    closedSince?: Date,
   ): Promise<PullRequest[]> {
-    const prPromises = allBranches.map(async (branchName) => {
-      try {
-        const prs = await this.gitApi!.getPullRequests(
-          this.repoInfo!.repo,
-          {
-            targetRefName: `refs/heads/${branchName}`,
-            status: PullRequestStatus.Completed,
-          },
-          this.repoInfo!.owner,
-        );
-        await this.logApiCall("gitApi.getPullRequests", {
-          caller: "collectMergedPRsForCommits",
-          action: "fetchMergedPRs",
-          targetRefName: `refs/heads/${branchName}`,
-          status: "Completed",
-        });
-        return prs || [];
-      } catch (err) {
-        Logger.log(
-          `Error fetching completed PRs for branch ${branchName}: ${String(err)}`,
-        );
-        return [];
-      }
-    });
-
-    const prResults = await Promise.all(prPromises);
+    const prResults = await mapWithConcurrency(
+      allBranches,
+      async (branchName) => {
+        try {
+          return await this.listPullRequestsPaged(
+            {
+              targetRefName: `refs/heads/${branchName}`,
+              status: PullRequestStatus.Completed,
+              ...(closedSince
+                ? {
+                    minTime: closedSince,
+                    // 2 = Closed: a Pull Request that brought a commit of this window into the
+                    // branch cannot have closed before that commit existed
+                    queryTimeRangeType: 2,
+                  }
+                : {}),
+            },
+            "collectMergedPRsForCommits",
+          );
+        } catch (err) {
+          Logger.log(
+            `Error fetching completed PRs for branch ${branchName}: ${String(err)}`,
+          );
+          return [];
+        }
+      },
+      DEFAULT_CONCURRENCY,
+    );
     const allMergedPRs: any[] = prResults.flat();
 
     const relevantPRs = allMergedPRs.filter((pr) => {
@@ -781,6 +785,80 @@ export class GitProviderAzure extends GitProvider {
         return pr;
       },
       DEFAULT_CONCURRENCY,
+    );
+  }
+
+  /**
+   * Azure DevOps applies its own default page size (about 100) when no $top is passed, and the
+   * node API sends none unless it is given one. Every listing below was therefore silently capped
+   * at that first page with no way to tell a full answer from a truncated one: on a repository
+   * with thousands of Pull Requests a branch window could simply miss the ones it needed.
+   *
+   * These constants make the bound explicit, and listPullRequestsPaged walks the pages.
+   */
+  private static readonly PR_PAGE_SIZE = 200;
+  // A stop so a pathological repository cannot turn one branch window into an unbounded crawl
+  private static readonly PR_MAX_PAGES = 15;
+  // A Pull Request closes after the commits it carries were written, but branches live long and
+  // clocks drift, so the time bound is widened before it is used
+  private static readonly PR_WINDOW_MARGIN_DAYS = 7;
+
+  /** Walk the pages of a Pull Request listing, up to the explicit cap. */
+  private async listPullRequestsPaged(
+    searchCriteria: any,
+    caller: string,
+  ): Promise<GitPullRequest[]> {
+    if (!this.gitApi || !this.repoInfo) {
+      return [];
+    }
+    const all: GitPullRequest[] = [];
+    for (let page = 0; page < GitProviderAzure.PR_MAX_PAGES; page++) {
+      const skip = page * GitProviderAzure.PR_PAGE_SIZE;
+      const prs = await this.gitApi.getPullRequests(
+        this.repoInfo.repo,
+        searchCriteria,
+        this.repoInfo.owner,
+        undefined, // maxCommentLength
+        skip,
+        GitProviderAzure.PR_PAGE_SIZE,
+      );
+      await this.logApiCall("gitApi.getPullRequests", {
+        caller,
+        skip,
+        top: GitProviderAzure.PR_PAGE_SIZE,
+        received: prs?.length || 0,
+      });
+      all.push(...(prs || []));
+      // A short page is the last one
+      if (!prs || prs.length < GitProviderAzure.PR_PAGE_SIZE) {
+        return all;
+      }
+    }
+    Logger.log(
+      `[${caller}] stopped after ${GitProviderAzure.PR_MAX_PAGES} pages (${all.length} Pull Requests): the window may be incomplete`,
+    );
+    return all;
+  }
+
+  /**
+   * The oldest date among a set of commits, widened by a margin, or undefined when none of them
+   * carries a usable date. Used to bound a Pull Request listing in time instead of walking the
+   * whole history of a branch.
+   */
+  private oldestCommitDateWithMargin(commits: any[]): Date | undefined {
+    const times = (commits || [])
+      .map((commit) =>
+        new Date(
+          commit?.committer?.date || commit?.author?.date || "",
+        ).getTime(),
+      )
+      .filter((time) => !isNaN(time));
+    if (times.length === 0) {
+      return undefined;
+    }
+    const oldest = Math.min(...times);
+    return new Date(
+      oldest - GitProviderAzure.PR_WINDOW_MARGIN_DAYS * 24 * 60 * 60 * 1000,
     );
   }
 
