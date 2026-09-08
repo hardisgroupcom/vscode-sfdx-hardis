@@ -8,6 +8,7 @@ import {
   Job,
   JobStatus,
 } from "./types";
+import { mapAzureMergeStatus } from "./mergeStatus";
 import * as azdev from "azure-devops-node-api";
 import { GitApi } from "azure-devops-node-api/GitApi";
 import {
@@ -16,6 +17,12 @@ import {
   GitStatusState,
 } from "azure-devops-node-api/interfaces/GitInterfaces";
 import { Logger } from "../../logger";
+import { DEFAULT_CONCURRENCY, mapWithConcurrency } from "../concurrency";
+import {
+  getCachedPullRequestDescription,
+  repositoryKeyFromRemoteUrl,
+  setCachedPullRequestDescription,
+} from "../pullRequestDescriptionCache";
 import { SecretsManager } from "../secretsManager";
 import { BuildApi } from "azure-devops-node-api/BuildApi";
 import { t } from "../../i18n/i18n";
@@ -196,8 +203,13 @@ export class GitProviderAzure extends GitProvider {
       this.gitApi = await this.connection.getGitApi();
       await this.logApiCall("connection.getGitApi", { caller: "initialize" });
 
-      // Validate token by requesting repository info
-      await this.gitApi.getRepository(this.repoInfo.repo, this.repoInfo.owner);
+      // Validate token by requesting repository info. Its id is kept: the build listings can be
+      // scoped to this repository instead of scanning every pipeline of the project.
+      const repository = await this.gitApi.getRepository(
+        this.repoInfo.repo,
+        this.repoInfo.owner,
+      );
+      this.azureRepositoryId = repository?.id || null;
       await this.logApiCall("gitApi.getRepository", { caller: "initialize" });
 
       this.buildApi = await this.connection.getBuildApi();
@@ -253,18 +265,51 @@ export class GitProviderAzure extends GitProvider {
       return [];
     }
     try {
-      const prs = await this.gitApi.getPullRequests(
-        this.repoInfo.repo,
-        {
-          status: PullRequestStatus.Active,
-        },
-        this.repoInfo.owner,
+      const prs = await this.listPullRequestsPaged(
+        { status: PullRequestStatus.Active },
+        "listOpenPullRequests",
       );
-      return await this.convertAndCollectJobsList(prs || [], "", {
-        withJobs: true,
-      });
+      return await this.convertAndCollectJobsList(
+        await this.completeTruncatedDescriptions(prs || []),
+        "",
+        {
+          withJobs: true,
+        },
+      );
     } catch {
       return [];
+    }
+  }
+
+  async getPullRequestByNumber(number: number): Promise<PullRequest | null> {
+    if (!this.repoInfo || !this.gitApi) {
+      return null;
+    }
+    try {
+      const pullRequest = await this.gitApi.getPullRequestById(
+        number,
+        this.repoInfo.owner,
+      );
+      await this.logApiCall("getPullRequestById", {
+        caller: "getPullRequestByNumber",
+        number,
+      });
+      if (!pullRequest) {
+        return null;
+      }
+      const branchName = (pullRequest.targetRefName || "").replace(
+        "refs/heads/",
+        "",
+      );
+      const converted = await this.convertAndCollectJobsList(
+        [pullRequest],
+        branchName,
+        { withJobs: false },
+      );
+      return converted[0] || null;
+    } catch (err) {
+      Logger.log(`Error fetching PR ${number}: ${String(err)}`);
+      return null;
     }
   }
 
@@ -391,6 +436,7 @@ export class GitProviderAzure extends GitProvider {
         allBranches,
         commitIds,
         currentBranchName,
+        this.oldestCommitDateWithMargin(commits),
       );
     } catch (err) {
       Logger.log(
@@ -489,7 +535,7 @@ export class GitProviderAzure extends GitProvider {
       childBranchesNames,
       mergeCommitId,
     );
-    const cached = this.latestMergePrCache.get(cacheKey);
+    const cached = this.getCachedLatestMergePrs(cacheKey);
     if (cached) {
       return cached;
     }
@@ -555,8 +601,9 @@ export class GitProviderAzure extends GitProvider {
         allBranches,
         commitIds,
         branchName,
+        this.oldestCommitDateWithMargin(commits),
       );
-      this.latestMergePrCache.set(cacheKey, result);
+      this.setCachedLatestMergePrs(cacheKey, result);
       return result;
     } catch (err) {
       Logger.log(`Error in listPullRequestsInGoLive: ${String(err)}`);
@@ -574,33 +621,38 @@ export class GitProviderAzure extends GitProvider {
     allBranches: string[],
     commitIds: Set<string>,
     convertBranchName: string,
+    // Oldest commit of the window: the listing is bounded to the Pull Requests closed since then
+    // rather than crawling the whole completed history of the branch
+    closedSince?: Date,
   ): Promise<PullRequest[]> {
-    const prPromises = allBranches.map(async (branchName) => {
-      try {
-        const prs = await this.gitApi!.getPullRequests(
-          this.repoInfo!.repo,
-          {
-            targetRefName: `refs/heads/${branchName}`,
-            status: PullRequestStatus.Completed,
-          },
-          this.repoInfo!.owner,
-        );
-        await this.logApiCall("gitApi.getPullRequests", {
-          caller: "collectMergedPRsForCommits",
-          action: "fetchMergedPRs",
-          targetRefName: `refs/heads/${branchName}`,
-          status: "Completed",
-        });
-        return prs || [];
-      } catch (err) {
-        Logger.log(
-          `Error fetching completed PRs for branch ${branchName}: ${String(err)}`,
-        );
-        return [];
-      }
-    });
-
-    const prResults = await Promise.all(prPromises);
+    const prResults = await mapWithConcurrency(
+      allBranches,
+      async (branchName) => {
+        try {
+          return await this.listPullRequestsPaged(
+            {
+              targetRefName: `refs/heads/${branchName}`,
+              status: PullRequestStatus.Completed,
+              ...(closedSince
+                ? {
+                    minTime: closedSince,
+                    // 2 = Closed: a Pull Request that brought a commit of this window into the
+                    // branch cannot have closed before that commit existed
+                    queryTimeRangeType: 2,
+                  }
+                : {}),
+            },
+            "collectMergedPRsForCommits",
+          );
+        } catch (err) {
+          Logger.log(
+            `Error fetching completed PRs for branch ${branchName}: ${String(err)}`,
+          );
+          return [];
+        }
+      },
+      DEFAULT_CONCURRENCY,
+    );
     const allMergedPRs: any[] = prResults.flat();
 
     const relevantPRs = allMergedPRs.filter((pr) => {
@@ -622,11 +674,96 @@ export class GitProviderAzure extends GitProvider {
         uniquePRsMap.set(pr.pullRequestId, pr);
       }
     }
-    const uniquePRs = Array.from(uniquePRsMap.values());
+    const uniquePRs = await this.completeTruncatedDescriptions(
+      Array.from(uniquePRsMap.values()),
+    );
 
     return await this.convertAndCollectJobsList(uniquePRs, convertBranchName, {
       withJobs: false,
     });
+  }
+
+  /**
+   * Azure DevOps truncates the description of a Pull Request returned by the LIST API at 400
+   * characters, with no marker saying so. The DevOps Pipeline reads the `promotionPullRequests`
+   * declaration of a promotion branch out of that description, and it sits below the navigation
+   * block and the introduction, so on a promotion carrying more than a story or two it is cut off
+   * entirely: the promotion expands into nothing, its stories are never marked as already
+   * promoted, and the branch counters are wrong.
+   *
+   * The single Pull Request API returns the whole description, so it is read again for every
+   * listed Pull Request whose description is long enough to have been cut. Mirrors
+   * AzureDevopsProvider.completeTruncatedDescription in sfdx-hardis.
+   */
+  private static readonly LIST_DESCRIPTION_TRUNCATION_LENGTH = 400;
+
+  private async completeTruncatedDescriptions(
+    rawPrs: GitPullRequest[],
+  ): Promise<GitPullRequest[]> {
+    if (!this.gitApi || !this.repoInfo) {
+      return rawPrs;
+    }
+    // One API call per Pull Request whose description was cut adds up fast on a repository with a
+    // long history, and the description of a merged or abandoned Pull Request no longer moves. The
+    // cache is shared with the sfdx-hardis CLI, and keyed on the state seen right now, so a
+    // reopened Pull Request is read again.
+    const repositoryKey = this.pullRequestCacheRepositoryKey();
+    // Bounded: a page of Pull Requests with long descriptions would otherwise fire one call each
+    // at the same instant, which Azure answers with throttling
+    return await mapWithConcurrency(
+      rawPrs,
+      async (rawPr) => {
+        const listed = rawPr.description || "";
+        if (
+          listed.length < GitProviderAzure.LIST_DESCRIPTION_TRUNCATION_LENGTH ||
+          !rawPr.pullRequestId
+        ) {
+          return rawPr;
+        }
+        const cached = getCachedPullRequestDescription(
+          "azure",
+          repositoryKey,
+          rawPr.pullRequestId,
+          rawPr.status,
+        );
+        if (cached !== null) {
+          return { ...rawPr, description: cached };
+        }
+        try {
+          const full = await this.gitApi!.getPullRequestById(
+            rawPr.pullRequestId,
+            this.repoInfo!.owner,
+          );
+          await this.logApiCall("gitApi.getPullRequestById", {
+            caller: "completeTruncatedDescriptions",
+            pullRequestId: rawPr.pullRequestId,
+          });
+          const fullDescription = full?.description || "";
+          if (fullDescription.length > listed.length) {
+            setCachedPullRequestDescription(
+              "azure",
+              repositoryKey,
+              rawPr.pullRequestId,
+              rawPr.status,
+              fullDescription,
+            );
+            return { ...rawPr, description: fullDescription };
+          }
+        } catch (err) {
+          Logger.log(
+            `Unable to read the full description of PR #${rawPr.pullRequestId}: ${String(err)}`,
+          );
+        }
+        return rawPr;
+      },
+      DEFAULT_CONCURRENCY,
+    );
+  }
+
+  // Identifies the repository the cached descriptions belong to, from the git remote of the working
+  // copy: that is the identifier the sfdx-hardis CLI agrees on, so the two share one cache.
+  private pullRequestCacheRepositoryKey(): string {
+    return repositoryKeyFromRemoteUrl(this.repoInfo?.remoteUrl || "");
   }
 
   private async convertAndCollectJobsList(
@@ -637,8 +774,16 @@ export class GitProviderAzure extends GitProvider {
     if (rawPrs.length === 0) {
       return [];
     }
-    return await Promise.all(
-      rawPrs.map(async (rawPr) => {
+    // One getBuilds call for the whole batch rather than one per Pull Request: see
+    // primePullRequestBuildIndex. Whatever it could not answer falls back to a per Pull Request
+    // call below, bounded so a repository with hundreds of open Pull Requests does not fire
+    // hundreds of simultaneous requests at the provider.
+    if (options.withJobs === true) {
+      await this.primePullRequestBuildIndex(rawPrs);
+    }
+    return await mapWithConcurrency(
+      rawPrs,
+      async (rawPr) => {
         const pr = this.convertToPullRequest(rawPr, branchName);
         if (options.withJobs === true) {
           try {
@@ -651,8 +796,233 @@ export class GitProviderAzure extends GitProvider {
           }
         }
         return pr;
-      }),
+      },
+      DEFAULT_CONCURRENCY,
     );
+  }
+
+  /**
+   * Azure DevOps applies its own default page size (about 100) when no $top is passed, and the
+   * node API sends none unless it is given one. Every listing below was therefore silently capped
+   * at that first page with no way to tell a full answer from a truncated one: on a repository
+   * with thousands of Pull Requests a branch window could simply miss the ones it needed.
+   *
+   * These constants make the bound explicit, and listPullRequestsPaged walks the pages.
+   */
+  private static readonly PR_PAGE_SIZE = 200;
+  // A stop so a pathological repository cannot turn one branch window into an unbounded crawl
+  private static readonly PR_MAX_PAGES = 15;
+  // A Pull Request closes after the commits it carries were written, but branches live long and
+  // clocks drift, so the time bound is widened before it is used
+  private static readonly PR_WINDOW_MARGIN_DAYS = 7;
+
+  /** Walk the pages of a Pull Request listing, up to the explicit cap. */
+  private async listPullRequestsPaged(
+    searchCriteria: any,
+    caller: string,
+  ): Promise<GitPullRequest[]> {
+    if (!this.gitApi || !this.repoInfo) {
+      return [];
+    }
+    const all: GitPullRequest[] = [];
+    for (let page = 0; page < GitProviderAzure.PR_MAX_PAGES; page++) {
+      const skip = page * GitProviderAzure.PR_PAGE_SIZE;
+      const prs = await this.gitApi.getPullRequests(
+        this.repoInfo.repo,
+        searchCriteria,
+        this.repoInfo.owner,
+        undefined, // maxCommentLength
+        skip,
+        GitProviderAzure.PR_PAGE_SIZE,
+      );
+      await this.logApiCall("gitApi.getPullRequests", {
+        caller,
+        skip,
+        top: GitProviderAzure.PR_PAGE_SIZE,
+        received: prs?.length || 0,
+      });
+      all.push(...(prs || []));
+      // A short page is the last one
+      if (!prs || prs.length < GitProviderAzure.PR_PAGE_SIZE) {
+        return all;
+      }
+    }
+    Logger.log(
+      `[${caller}] stopped after ${GitProviderAzure.PR_MAX_PAGES} pages (${all.length} Pull Requests): the window may be incomplete`,
+    );
+    return all;
+  }
+
+  /**
+   * The oldest date among a set of commits, widened by a margin, or undefined when none of them
+   * carries a usable date. Used to bound a Pull Request listing in time instead of walking the
+   * whole history of a branch.
+   */
+  private oldestCommitDateWithMargin(commits: any[]): Date | undefined {
+    const times = (commits || [])
+      .map((commit) =>
+        new Date(
+          commit?.committer?.date || commit?.author?.date || "",
+        ).getTime(),
+      )
+      .filter((time) => !isNaN(time));
+    if (times.length === 0) {
+      return undefined;
+    }
+    const oldest = Math.min(...times);
+    return new Date(
+      oldest - GitProviderAzure.PR_WINDOW_MARGIN_DAYS * 24 * 60 * 60 * 1000,
+    );
+  }
+
+  // Set by initialize(): scopes the build listings to this repository
+  private azureRepositoryId: string | null = null;
+
+  /**
+   * Fetch, in ONE call, the most recent Pull Request builds of the project and index them by the
+   * Pull Request they belong to.
+   *
+   * Before this, every open Pull Request cost its own getBuilds call - a hundred open Pull
+   * Requests meant a hundred round trips before the diagram could be drawn. Azure DevOps can
+   * return the recent builds of every Pull Request at once (reasonFilter = PullRequest, ordered by
+   * queue time), so one call covers the whole batch and only the Pull Requests missing from that
+   * window still need a call of their own.
+   *
+   * The index is per instance and per refresh: a build that is still running has to be re-read.
+   */
+  private pullRequestBuildIndex: Map<string, any[]> | null = null;
+
+  /**
+   * The oldest creation date among a set of Pull Requests, widened by a margin. A build cannot
+   * predate the Pull Request that triggered it, so this is a safe floor for a build listing.
+   */
+  private oldestPullRequestDateWithMargin(
+    rawPrs: GitPullRequest[],
+  ): Date | undefined {
+    const times = (rawPrs || [])
+      .map((pr) => new Date(pr?.creationDate || "").getTime())
+      .filter((time) => !isNaN(time));
+    if (times.length === 0) {
+      return undefined;
+    }
+    return new Date(Math.min(...times) - 24 * 60 * 60 * 1000);
+  }
+
+  private async primePullRequestBuildIndex(
+    rawPrs: GitPullRequest[],
+  ): Promise<void> {
+    // Truthiness, not `!== null`: the field is undefined until the first refresh primes it, and
+    // an `undefined !== null` guard would skip the batch for the whole life of the provider
+    if (this.pullRequestBuildIndex || !this.buildApi || !this.repoInfo) {
+      return;
+    }
+    // Enough to cover the recent builds of a busy repository without asking for its whole history
+    const BATCH_BUILDS_TOP = 500;
+    const index = new Map<string, any[]>();
+    this.pullRequestBuildIndex = index;
+    if (rawPrs.length <= DEFAULT_CONCURRENCY) {
+      // Below the fan-out ceiling the per Pull Request calls all leave in one wave, so the batch
+      // would only add a serial round trip in front of them. It earns its place from the point
+      // where the direct path needs a second wave.
+      return;
+    }
+    // No build can predate the Pull Request that triggered it, so the oldest Pull Request of the
+    // page is the floor. Without this the query walks the whole build history of the project.
+    const minTime = this.oldestPullRequestDateWithMargin(rawPrs);
+    try {
+      const builds = await this.buildApi.getBuilds(
+        this.repoInfo.owner, // project
+        undefined, // definitions
+        undefined, // queues
+        undefined, // buildNumber
+        minTime, // minTime
+        undefined, // maxTime
+        undefined, // requestedFor
+        256, // reasonFilter: BuildReason.PullRequest (256)
+        undefined, // statusFilter
+        undefined, // resultFilter
+        undefined, // tagFilters
+        undefined, // properties
+        BATCH_BUILDS_TOP, // top
+        undefined, // continuationToken
+        undefined, // maxBuildsPerDefinition
+        undefined, // deletedFilter
+        4, // queryOrder: QueueTimeDescending (4), so the newest build of a PR comes first
+        undefined, // branchName
+        undefined, // buildIds
+        // A project can hold many repositories, and their builds are of no use here
+        this.azureRepositoryId || undefined, // repositoryId
+        this.azureRepositoryId ? "TfsGit" : undefined, // repositoryType
+      );
+      await this.logApiCall("buildApi.getBuilds", {
+        caller: "primePullRequestBuildIndex",
+        batchSize: rawPrs.length,
+        top: BATCH_BUILDS_TOP,
+        minTime: minTime?.toISOString(),
+      });
+      for (const build of builds || []) {
+        for (const key of this.buildIndexKeys(build)) {
+          const existing = index.get(key);
+          if (existing) {
+            existing.push(build);
+          } else {
+            index.set(key, [build]);
+          }
+        }
+      }
+    } catch (e: any) {
+      // The batch is an optimization: a failure only means every Pull Request pays its own call
+      Logger.log(
+        `Unable to prime the Pull Request build index: ${e?.message || String(e)}`,
+      );
+    }
+  }
+
+  // A build is looked up by the Pull Request it was triggered by, and by the commit it built, the
+  // same two ways fetchLatestJobsForPullRequest matches them
+  private buildIndexKeys(build: any): string[] {
+    const keys: string[] = [];
+    const prId =
+      build?.triggerInfo?.["pr.number"] || build?.triggerInfo?.pullRequestId;
+    if (prId) {
+      keys.push(`pr:${String(prId)}`);
+    }
+    const sourceBranch = String(build?.sourceBranch || "");
+    const refMatch = sourceBranch.match(/^refs\/pull\/(\d+)\/merge$/);
+    if (refMatch) {
+      keys.push(`pr:${refMatch[1]}`);
+    }
+    if (build?.sourceVersion) {
+      keys.push(`commit:${String(build.sourceVersion).toLowerCase()}`);
+    }
+    return [...new Set(keys)];
+  }
+
+  // The builds the batch already knows for a Pull Request, newest first, or null when the batch
+  // has nothing on it and a dedicated call is still needed
+  private indexedBuildsForPullRequest(
+    rawPr: GitPullRequest,
+    pr: PullRequest,
+  ): any[] | null {
+    if (!this.pullRequestBuildIndex) {
+      return null;
+    }
+    const byPr = pr.number
+      ? this.pullRequestBuildIndex.get(`pr:${pr.number}`)
+      : undefined;
+    if (byPr && byPr.length > 0) {
+      return byPr;
+    }
+    const commitId = rawPr.lastMergeSourceCommit?.commitId;
+    const byCommit = commitId
+      ? this.pullRequestBuildIndex.get(`commit:${commitId.toLowerCase()}`)
+      : undefined;
+    return byCommit && byCommit.length > 0 ? byCommit : null;
+  }
+
+  /** Forget the batched builds, so the next refresh re-reads the ones still running. */
+  public resetPullRequestBuildIndex(): void {
+    this.pullRequestBuildIndex = null;
   }
 
   private async fetchLatestJobsForPullRequest(
@@ -663,6 +1033,28 @@ export class GitProviderAzure extends GitProvider {
       return [];
     }
 
+    try {
+      // Served by the one batched call of primePullRequestBuildIndex whenever it covers this Pull
+      // Request; only the ones outside that window still cost a call of their own
+      const indexed = this.indexedBuildsForPullRequest(rawPr, pr);
+      const builds =
+        indexed ?? (await this.fetchBuildsForSinglePullRequest(pr));
+      return await this.jobsFromBuilds(builds, rawPr, pr);
+    } catch (e: any) {
+      Logger.log(
+        `Error fetching jobs for PR #${pr.number}: ${e?.message || String(e)}`,
+      );
+      return [];
+    }
+  }
+
+  /** The builds of one Pull Request, when the batched index does not cover it. */
+  private async fetchBuildsForSinglePullRequest(
+    pr: PullRequest,
+  ): Promise<any[]> {
+    if (!this.buildApi || !this.repoInfo) {
+      return [];
+    }
     try {
       // Get builds triggered by this specific pull request
       // For PR builds, Azure DevOps uses refs/pull/{prId}/merge as the source branch
@@ -688,10 +1080,28 @@ export class GitProviderAzure extends GitProvider {
         pr.number ? `refs/pull/${pr.number}/merge` : undefined, // branchName: PR merge ref
       );
       await this.logApiCall("buildApi.getBuilds", {
-        caller: "fetchLatestJobsForPullRequest",
+        caller: "fetchBuildsForSinglePullRequest",
         prNumber: pr.number,
       });
+      return builds || [];
+    } catch (e: any) {
+      Logger.log(
+        `Error fetching builds for PR #${pr.number}: ${e?.message || String(e)}`,
+      );
+      return [];
+    }
+  }
 
+  /** Turn the builds of a Pull Request into jobs, falling back on its statuses when it has none. */
+  private async jobsFromBuilds(
+    builds: any[],
+    rawPr: GitPullRequest,
+    pr: PullRequest,
+  ): Promise<Job[]> {
+    if (!this.repoInfo) {
+      return [];
+    }
+    {
       // Filter builds that match this specific PR
       const matchingBuilds = (builds || []).filter((b: any) => {
         // Check if build was triggered by this PR
@@ -699,6 +1109,14 @@ export class GitProviderAzure extends GitProvider {
           b.triggerInfo?.["pr.number"] || b.triggerInfo?.pullRequestId;
         if (buildPrId && pr.number) {
           return String(buildPrId) === String(pr.number);
+        }
+
+        // Fallback: the merge ref of the Pull Request. Azure names the source branch of a Pull
+        // Request build `refs/pull/<id>/merge`, and some pipelines set no `pr.number` trigger
+        // info at all: without this, their builds were dropped here and the chip showed no status
+        // even though the build was right there.
+        if (pr.number && b.sourceBranch === `refs/pull/${pr.number}/merge`) {
+          return true;
         }
 
         // Fallback: match by commit ID
@@ -765,11 +1183,6 @@ export class GitProviderAzure extends GitProvider {
           raw: build,
         },
       ];
-    } catch (e: any) {
-      Logger.log(
-        `Error fetching jobs for PR #${pr.number}: ${e?.message || String(e)}`,
-      );
-      return [];
     }
   }
 
@@ -972,6 +1385,12 @@ export class GitProviderAzure extends GitProvider {
       createdAt: pr.creationDate ? pr.creationDate.toISOString() : undefined,
       updatedAt: pr.closedDate ? pr.closedDate.toISOString() : undefined,
       jobsStatus: "unknown",
+      // Azure DevOps tests the merge of active Pull Requests on its own and returns the result in
+      // the Pull Request list, so reading it costs nothing
+      mergeStatus:
+        pr.status === PullRequestStatus.Active
+          ? mapAzureMergeStatus(pr)
+          : undefined,
     };
     return prConverted;
   }

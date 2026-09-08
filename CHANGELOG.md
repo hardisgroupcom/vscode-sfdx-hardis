@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+- **DevOps Pipeline: [promotion branches](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/) (experimental)** (sfdx-hardis `enablePromotionBranches`, off by default)
+  - A promotion Pull Request (`promotion/<source>/<target>/<date>-<counter>` branch declaring the User Stories it carries with `promotionPullRequests` in its description) opens in read-only mode, listing the deployment actions, tickets and Apex test classes of the declared Pull Requests
+  - A major branch window expands the promotion Pull Requests it contains with the stories they declare, marked "Carried by", so the `preprod` and `main` lists show what is really promoted
+  - Stories already shipped through a merged promotion branch are marked "Already deployed via" in the window of the branch they are still waiting in
+  - `enablePromotionBranches` is a setting of the **Danger Zone** in Pipeline Settings, read from the project config (the level sfdx-hardis applies to every branch). The settings panel now completes the schema published by sfdx-hardis with the properties bundled in the extension, so a setting this version knows is shown even before sfdx-hardis publishes it
+  - The lists and counters of the pipeline leave out the Pull Requests that **move** other Pull Requests: a merge between two major branches, and a promotion Pull Request. Everything that carries its own change stays listed, whatever the branch is named (`feature/`, `fix/`, `retrofit/`, `hotfix/`...)
+  - The **Show merge and promotion Pull Requests** toggle at the top of the branch window brings the others back
+  - Major-to-major merges are filtered for **every** project, promotion branches or not: such a merge is plumbing in any pipeline. A `promotion/` branch is only treated as a vehicle when the feature is enabled
+  - In the window of a branch, tick the User Stories to carry and use **Create promotion**: `sf hardis:project:promotion:create` opens with them preselected
+  - `allowedPromotionSteps` (Danger Zone) declares the source and target branches a release manager can promote between, and is required to use the feature: **Create promotion** then shows up on those source branches only, and a step with a single allowed target passes it to the command instead of asking
+  - A Pull Request number appears in a single branch of the diagram, enforced on the windows themselves so it still holds once a promotion has left the window it was merged into: a story a promotion carried away is listed in the branch it reached, in the node counter as well as in the list. The **Show already promoted Pull Requests** toggle brings the other places back
+  - The promotion open between two major branches is drawn **on the arrow between the two branch nodes**, where the merge it replaces would be, instead of getting a branch node of its own. sfdx-hardis keeps a single promotion open per pipeline step, so that arrow always answers "what is being promoted right now"
+- **DevOps Pipeline: the diagram appears as soon as the branches are known** - the first pass draws the major branches from the local config, and the Pull Requests, feature branches and counters land on top of it. The veil that marks the second pass as running is translucent, where it used to hide the diagram behind an opaque grey box until everything had loaded
+- **DevOps Pipeline: faster to display, on every git provider** - the branch windows only read the Pull Requests touched since their oldest commit instead of the whole merged history of each branch, the go live of a merged branch is answered from a cache on disk, and the per Pull Request calls are queued instead of fired all at once
+- **DevOps Pipeline: merge conflicts in the branch window** - a Pull Request the git platform cannot merge into its target branch is marked in the table of the branch window, with a warning pill linking to it. The column only appears when a listed Pull Request conflicts
+- **DevOps Pipeline: branch window layout**
+  - The author column no longer collapses to an unreadable sliver when the promotion checkboxes are shown
+  - The footer actions wrap as a row instead of dropping a button under the others and pushing Close out of its corner
+- **DevOps Pipeline: merge conflicts on the diagram** - an open Pull Request that no longer merges into its target branch gets a red outline and a warning sign on its merge arrow, and the folded "+N more" group is marked when one of the Pull Requests it hides conflicts
+  - Only reads the verdict the git platform already computed: nothing extra to fetch on GitLab, Azure DevOps and Gitea, a single query for the whole list on GitHub. Bitbucket does not publish it, so its diagram is unchanged
+  - A Pull Request the platform has not finished testing shows nothing rather than a guess
+
 ## [8.4.0] 2026-09-04
 
 - **Global Pipeline Settings** and **Branch Settings** now show the value of every setting, not only the toggles

@@ -7,6 +7,17 @@ import { getWorkspaceRoot } from "../utils";
 import { Job, JobStatus, PullRequest } from "./gitProviders/types";
 import { GitProvider } from "./gitProviders/gitProvider";
 import { getConfig } from "./pipeline/sfdxHardisConfig";
+import {
+  annotateAlreadyPromoted,
+  buildPromotionIndex,
+  enforceSinglePlacePerPullRequest,
+  expandPullRequestsWithPromotions,
+  getPromotionBranchConfig,
+  isMergedPullRequest,
+  isPromotionPullRequest,
+  PromotionBranchConfig,
+} from "./pipeline/promotionBranchUtils";
+import { Logger } from "../logger";
 
 export interface MajorOrg {
   branchName: string;
@@ -19,6 +30,8 @@ export interface MajorOrg {
   jobs: Job[];
   jobsStatus: JobStatus;
   pullRequestsInBranchSinceLastMerge?: PullRequest[];
+  // Promotion branches switch, when set at branch level (see promotionBranchUtils.ts)
+  enablePromotionBranches?: boolean;
 }
 
 export async function listMajorOrgs(
@@ -77,7 +90,7 @@ export async function listMajorOrgs(
             org.branchName,
             majorOrgsSorted,
           );
-          const prs =
+          let prs =
             org.mergeTargets.length === 0
               ? // Top branch (e.g. main/prod): no merge target of its own, so
                 // show the PRs carried by the latest "go live" merge into it
@@ -91,11 +104,7 @@ export async function listMajorOrgs(
                   [...childBranchesNames],
                 );
           // Sort PRs by mergeDate date desc
-          prs.sort((a, b) => {
-            const dateA = a.mergeDate ? new Date(a.mergeDate).getTime() : 0;
-            const dateB = b.mergeDate ? new Date(b.mergeDate).getTime() : 0;
-            return dateB - dateA;
-          });
+          prs = sortPullRequestsByMergeDateDesc(prs);
           org.pullRequestsInBranchSinceLastMerge = prs;
           // Complete with tickets
           await gitProvider.completePullRequestsWithTickets(prs, {
@@ -104,6 +113,17 @@ export async function listMajorOrgs(
           await gitProvider.completePullRequestsWithPrePostCommands(prs);
         }),
       );
+      try {
+        await completeMajorOrgsWithPromotionBranches(
+          majorOrgsSorted,
+          gitProvider,
+          projectConfig,
+        );
+      } catch (e) {
+        Logger.log(
+          `Error completing pipeline with promotion branches: ${String(e)}`,
+        );
+      }
     }
   }
 
@@ -222,7 +242,134 @@ async function processOrgSfdxHardisConfigFile(
     warnings: warnings,
     jobs: jobs,
     jobsStatus: jobsStatus,
+    enablePromotionBranches: props.enablePromotionBranches,
   };
+}
+
+/**
+ * Promotion branches switch of the pipeline: the project config, or any branch config
+ * (the CLI reads the merged config of the target branch, so enabling it in
+ * .sfdx-hardis.preprod.yml only is a supported layout).
+ */
+export function getPipelinePromotionBranchConfig(
+  projectConfig: any,
+  majorOrgs: MajorOrg[],
+): PromotionBranchConfig {
+  // Deliberately the project config only. sfdx-hardis reads getConfig("branch"), which merges the
+  // project config with the config of the branch a job runs on, so a switch set in a single branch
+  // file is invisible to hardis:project:promotion:create (run from another branch) and to the jobs
+  // of every other branch. Enabling the pipeline from one branch file would promise a behavior the
+  // CLI does not deliver.
+  void majorOrgs;
+  return getPromotionBranchConfig([projectConfig]);
+}
+
+/**
+ * Once every window is loaded: expand the promotion Pull Requests found in them with
+ * the stories they declare (looked up in the other windows first, then fetched), and
+ * flag the stories that a merged promotion Pull Request already shipped.
+ * Nothing happens unless enablePromotionBranches is set.
+ */
+async function completeMajorOrgsWithPromotionBranches(
+  majorOrgs: MajorOrg[],
+  gitProvider: GitProvider,
+  projectConfig: any,
+): Promise<void> {
+  const config = getPipelinePromotionBranchConfig(projectConfig, majorOrgs);
+  if (!config.enabled) {
+    return;
+  }
+  const known = new Map<number, PullRequest>();
+  for (const org of majorOrgs) {
+    for (const pr of org.pullRequestsInBranchSinceLastMerge || []) {
+      if (typeof pr.number === "number" && !known.has(pr.number)) {
+        known.set(pr.number, pr);
+      }
+    }
+  }
+  const fetchByNumber = async (number: number) =>
+    await gitProvider.getPullRequestByNumber(number);
+  for (const org of majorOrgs) {
+    const window = org.pullRequestsInBranchSinceLastMerge || [];
+    if (window.length === 0) {
+      continue;
+    }
+    const { all, added } = await expandPullRequestsWithPromotions(
+      window,
+      config,
+      known,
+      fetchByNumber,
+    );
+    if (added.length > 0) {
+      await gitProvider.completePullRequestsWithTickets(added, {
+        fetchDetails: true,
+      });
+      await gitProvider.completePullRequestsWithPrePostCommands(added);
+      for (const story of added) {
+        if (typeof story.number === "number" && !known.has(story.number)) {
+          known.set(story.number, story);
+        }
+      }
+    }
+    // expandPullRequestsWithPromotions appends the carried stories, and listMajorOrgs had sorted
+    // each window by merge date: without this the newest promoted stories sink to the bottom of
+    // the table, under the row cutoff of the VS Code datatable
+    org.pullRequestsInBranchSinceLastMerge =
+      sortPullRequestsByMergeDateDesc(all);
+  }
+  // A story is "already deployed" when a merged promotion Pull Request, wherever it was
+  // merged, declares it. The descriptions are parsed once into an index: a pipeline with a
+  // thousand Pull Requests would otherwise re-parse the same YAML blocks for every story.
+  const promotions: PullRequest[] = [];
+  for (const org of majorOrgs) {
+    for (const pr of org.pullRequestsInBranchSinceLastMerge || []) {
+      if (isPromotionPullRequest(pr, config) && isMergedPullRequest(pr)) {
+        promotions.push(pr);
+      }
+    }
+  }
+  if (promotions.length === 0) {
+    return;
+  }
+  const index = buildPromotionIndex(promotions, config);
+  for (const org of majorOrgs) {
+    annotateAlreadyPromoted(
+      org.pullRequestsInBranchSinceLastMerge || [],
+      org.branchName,
+      index,
+      config,
+    );
+  }
+  enforceInvariant(majorOrgs, config);
+}
+
+/**
+ * The index only knows the promotions still inside a loaded window, so it cannot be the only thing
+ * deciding where a story is listed: once a go-live resets a window, the promotion that carried a
+ * story out of uat drops out of it and the story would show up in two branches. The windows
+ * themselves always know, so the invariant is enforced on them directly.
+ */
+function enforceInvariant(
+  majorOrgs: MajorOrg[],
+  config: PromotionBranchConfig,
+): void {
+  enforceSinglePlacePerPullRequest(
+    majorOrgs.map((org) => ({
+      branchName: org.branchName,
+      pullRequests: org.pullRequestsInBranchSinceLastMerge || [],
+    })),
+    config,
+  );
+}
+
+function sortPullRequestsByMergeDateDesc(
+  pullRequests: PullRequest[],
+): PullRequest[] {
+  return [...pullRequests].sort((a, b) => {
+    const dateA = a.mergeDate ? new Date(a.mergeDate).getTime() : 0;
+    const dateB = b.mergeDate ? new Date(b.mergeDate).getTime() : 0;
+    return dateB - dateA;
+  });
 }
 
 /**
