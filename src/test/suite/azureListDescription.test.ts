@@ -8,10 +8,8 @@ import { GitProviderAzure } from "../../utils/gitProviders/gitProviderAzure";
 // promotion expands into nothing and its stories are never marked as already promoted.
 suite("GitProviderAzure list description truncation", () => {
   // Reaches the private helper without going near the network
-  const complete = async (
-    provider: any,
-    rawPrs: any[],
-  ): Promise<any[]> => provider.completeTruncatedDescriptions(rawPrs);
+  const complete = async (provider: any, rawPrs: any[]): Promise<any[]> =>
+    provider.completeTruncatedDescriptions(rawPrs);
 
   const buildProvider = (
     getPullRequestById: (id: number, project: string) => Promise<any>,
