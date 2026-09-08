@@ -387,6 +387,11 @@
 }
 
 .pipeline-loading-overlay {
+    /* Translucent on purpose: the diagram under it is the whole point of the staged load. The
+       first pass draws the major branches from the local config, and this veil marks the second
+       pass (Pull Requests, feature branches and counters) as still running without hiding what is
+       already on screen. An opaque fill turned that first paint into a blank grey box. */
     background-color: var(--slds-g-color-neutral-base-95);
+    opacity: 0.4;
 }
 
