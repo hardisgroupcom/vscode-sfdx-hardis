@@ -261,9 +261,13 @@ export class GitProviderAzure extends GitProvider {
         },
         this.repoInfo.owner,
       );
-      return await this.convertAndCollectJobsList(prs || [], "", {
-        withJobs: true,
-      });
+      return await this.convertAndCollectJobsList(
+        await this.completeTruncatedDescriptions(prs || []),
+        "",
+        {
+          withJobs: true,
+        },
+      );
     } catch {
       return [];
     }
@@ -655,11 +659,61 @@ export class GitProviderAzure extends GitProvider {
         uniquePRsMap.set(pr.pullRequestId, pr);
       }
     }
-    const uniquePRs = Array.from(uniquePRsMap.values());
+    const uniquePRs = await this.completeTruncatedDescriptions(
+      Array.from(uniquePRsMap.values()),
+    );
 
     return await this.convertAndCollectJobsList(uniquePRs, convertBranchName, {
       withJobs: false,
     });
+  }
+
+  /**
+   * Azure DevOps truncates the description of a Pull Request returned by the LIST API at 400
+   * characters, with no marker saying so. The DevOps Pipeline reads the `promotionPullRequests`
+   * declaration of a promotion branch out of that description, and it sits below the navigation
+   * block and the introduction, so on a promotion carrying more than a story or two it is cut off
+   * entirely: the promotion expands into nothing, its stories are never marked as already
+   * promoted, and the branch counters are wrong.
+   *
+   * The single Pull Request API returns the whole description, so it is read again for every
+   * listed Pull Request whose description is long enough to have been cut. Mirrors
+   * AzureDevopsProvider.completeTruncatedDescription in sfdx-hardis.
+   */
+  private static readonly LIST_DESCRIPTION_TRUNCATION_LENGTH = 400;
+
+  private async completeTruncatedDescriptions(
+    rawPrs: GitPullRequest[],
+  ): Promise<GitPullRequest[]> {
+    if (!this.gitApi || !this.repoInfo) {
+      return rawPrs;
+    }
+    return await Promise.all(
+      rawPrs.map(async (rawPr) => {
+        const listed = rawPr.description || "";
+        if (
+          listed.length < GitProviderAzure.LIST_DESCRIPTION_TRUNCATION_LENGTH ||
+          !rawPr.pullRequestId
+        ) {
+          return rawPr;
+        }
+        try {
+          const full = await this.gitApi!.getPullRequestById(
+            rawPr.pullRequestId,
+            this.repoInfo!.owner,
+          );
+          const fullDescription = full?.description || "";
+          if (fullDescription.length > listed.length) {
+            return { ...rawPr, description: fullDescription };
+          }
+        } catch (err) {
+          Logger.log(
+            `Unable to read the full description of PR #${rawPr.pullRequestId}: ${String(err)}`,
+          );
+        }
+        return rawPr;
+      }),
+    );
   }
 
   private async convertAndCollectJobsList(
