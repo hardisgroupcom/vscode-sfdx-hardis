@@ -250,6 +250,8 @@
   "communityPluginLabel": "（コミュニティ）",
   "communityPluginTrustExplanation": "これはコミュニティ製プラグインです。利用する場合は、その作者を信頼していることを意味します。",
   "completelyFree": "完全無料",
+  "configFileConflictMarkers": "{{file}} に git のコンフリクトマーカーが含まれているため、解析できません。このファイルのコンフリクトを解決してください。",
+  "configFileUnreadableUsingPrevious": "sfdx-hardis の設定を読み込めません: {{message}} - このコマンドの実行中に読み込み済みの設定を使用します。",
   "configKeyUpdated": "VsCode 設定 '{{configKey}}' を更新しました",
   "configKeyUpdatedAdded": "（追加: {{elements}}）",
   "configKeyUpdatedRemoved": "（削除: {{elements}}）",

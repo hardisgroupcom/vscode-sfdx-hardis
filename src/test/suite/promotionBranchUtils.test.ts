@@ -2,6 +2,7 @@ import * as assert from "assert";
 import * as fs from "fs";
 import * as path from "path";
 import { SfdxHardisConfigHelper } from "../../utils/pipeline/sfdxHardisConfigHelper";
+import { orderWindowsUpstreamFirst } from "../../utils/orgConfigUtils";
 import { PullRequest } from "../../utils/gitProviders/types";
 import { BranchStrategyMermaidBuilder } from "../../utils/pipeline/branchStrategyMermaidBuilder";
 import { extractMember, readModuleFile } from "./lwcSourceUtils";
@@ -654,6 +655,40 @@ suite("promotionBranchUtils", () => {
       DISABLED,
     );
     assert.strictEqual(off[0].promotedAway, undefined);
+  });
+
+  test("the windows reach the invariant upstream first, whatever order listMajorOrgs used", () => {
+    // listMajorOrgs sorts by level DESCENDING, so it hands the windows over downstream first.
+    // Passing that order to enforceSinglePlacePerPullRequest made the upstream window win: a story
+    // a promotion had just carried into uat was marked promotedAway in uat while
+    // annotateAlreadyPromoted had already marked it in integration, so it disappeared from both.
+    const carriedIntoUat = pr({ number: 497 });
+    const leftInIntegration = pr({ number: 497 });
+    const majorOrgsAsListed = [
+      { branchName: "main", level: 100, pullRequests: [] as PullRequest[] },
+      { branchName: "preprod", level: 90, pullRequests: [] as PullRequest[] },
+      { branchName: "uat", level: 70, pullRequests: [carriedIntoUat] },
+      {
+        branchName: "integration",
+        level: 50,
+        pullRequests: [leftInIntegration],
+      },
+    ];
+    assert.deepStrictEqual(
+      orderWindowsUpstreamFirst(majorOrgsAsListed).map((org) => org.branchName),
+      ["integration", "uat", "preprod", "main"],
+    );
+    enforceSinglePlacePerPullRequest(
+      orderWindowsUpstreamFirst(majorOrgsAsListed),
+      ENABLED,
+    );
+    // The branch the promotion reached keeps the story, the one it left does not
+    assert.notStrictEqual(carriedIntoUat.promotedAway, true);
+    assert.strictEqual(leftInIntegration.promotedAway, true);
+    assert.deepStrictEqual(
+      visiblePullRequests([carriedIntoUat]).map((p) => p.number),
+      [497],
+    );
   });
 
   test("a promotion carrying another promotion reaches the User Stories", () => {

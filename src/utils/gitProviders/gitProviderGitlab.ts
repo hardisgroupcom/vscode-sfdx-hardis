@@ -766,6 +766,13 @@ export class GitProviderGitlab extends GitProvider {
     try {
       const projectId = this.gitlabProjectId!;
       const mrIid = mr.iid!;
+      // What the merge request page itself shows: the pipeline of its head commit. When the
+      // response carries it there is nothing to aggregate and no older run can contradict it.
+      const headPipeline: any =
+        (mr as any).head_pipeline || (mr as any).headPipeline;
+      if (headPipeline?.status) {
+        return [this.pipelineToJob(headPipeline)];
+      }
       // Collect pipelines for the merge request (Gitbeaker: MergeRequests.pipelines)
       let pipelines: any[] = [];
       try {
@@ -812,15 +819,11 @@ export class GitProviderGitlab extends GitProvider {
         return [];
       }
 
-      const converted: Job[] = pipelines.map((p: any) => ({
-        name: p.ref || p.sha || String(p.id || ""),
-        status: this.mapGitLabPipelineStatusToJobStatus(p.status),
-        webUrl: p.web_url || p.webUrl || undefined,
-        updatedAt: p.updated_at || p.updatedAt || undefined,
-        raw: p,
-      }));
-
-      return converted;
+      // Only the pipeline the merge request page itself displays, never the whole list: see
+      // pickMergeRequestPipeline. Handing several pipelines to computeJobsStatus made a green
+      // merge request red, since that helper answers "failed" as soon as one entry failed.
+      const pipeline = this.pickMergeRequestPipeline(pipelines);
+      return pipeline ? [this.pipelineToJob(pipeline)] : [];
     } catch (e) {
       Logger.log(`Unexpected error fetching MR pipelines: ${String(e)}`);
       return [];
@@ -907,23 +910,90 @@ export class GitProviderGitlab extends GitProvider {
         }
       }
 
-      // Use the most recent commit-triggered pipeline
-      const pipeline = commitPipelines[0];
-      const converted: Job[] = [
-        {
-          name: pipeline.ref || pipeline.sha || String(pipeline.id || ""),
-          status: this.mapGitLabPipelineStatusToJobStatus(pipeline.status),
-          webUrl: pipeline.web_url || pipeline.webUrl || undefined,
-          updatedAt: pipeline.updated_at || pipeline.updatedAt || undefined,
-          raw: pipeline,
-        },
-      ];
+      // Use the most recent commit-triggered pipeline. The order is recomputed rather than taken
+      // from the API answer, so a retried or canceled older run cannot be picked as the current one
+      const pipeline = this.newestPipeline(commitPipelines);
+      const converted: Job[] = pipeline ? [this.pipelineToJob(pipeline)] : [];
 
       return { jobs: converted, jobsStatus: this.computeJobsStatus(converted) };
     } catch (e) {
       Logger.log(`Unexpected error fetching branch pipelines: ${String(e)}`);
       return null;
     }
+  }
+
+  /** One GitLab pipeline as the Job the pipeline diagram displays. */
+  private pipelineToJob(pipeline: any): Job {
+    return {
+      name: pipeline.ref || pipeline.sha || String(pipeline.id || ""),
+      status: this.mapGitLabPipelineStatusToJobStatus(pipeline.status),
+      webUrl: pipeline.web_url || pipeline.webUrl || undefined,
+      updatedAt: pipeline.updated_at || pipeline.updatedAt || undefined,
+      raw: pipeline,
+    };
+  }
+
+  /**
+   * The one pipeline of a merge request's head commit that its CI status must be read from: the
+   * newest `merge_request_event` one, and the newest of all of them when the project runs no
+   * detached merge request pipelines.
+   *
+   * GitLab keeps every pipeline that ever ran on a commit, and a merge request commonly has two:
+   * the detached merge request pipeline that validates it, and the branch pipeline of the push
+   * that created the branch. They run different jobs and can disagree. This is how GitLab picks
+   * `head_pipeline`, the status its own merge request page shows, and it costs nothing: the merge
+   * request LIST response carries no `head_pipeline` (only the single merge request endpoint
+   * does), so reproducing the choice here saves one API call per merge request.
+   *
+   * Reporting them all instead drew a merge request red while GitLab showed it green, because
+   * computeJobsStatus answers "failed" as soon as one entry failed.
+   *
+   * Deployment pipelines are not concerned: they are read by getJobsForBranchLatestCommit, which
+   * keeps looking at the branch pipelines and leaves the merge request ones out.
+   */
+  private pickMergeRequestPipeline(pipelines: any[]): any | null {
+    const all = (pipelines || []).filter((pipeline) => pipeline);
+    if (all.length === 0) {
+      return null;
+    }
+    const mergeRequestPipelines = all.filter(
+      (pipeline) => pipeline?.source === "merge_request_event",
+    );
+    return this.newestPipeline(
+      mergeRequestPipelines.length > 0 ? mergeRequestPipelines : all,
+    );
+  }
+
+  /**
+   * The most recently updated pipeline of a list. The order is recomputed rather than trusted from
+   * the API answer: `order_by` is a query parameter, and a caller that forgets it would otherwise
+   * silently report a retried or canceled older run as the current one.
+   */
+  private newestPipeline(pipelines: any[]): any | null {
+    let newest: any = null;
+    for (const pipeline of pipelines || []) {
+      if (!pipeline) {
+        continue;
+      }
+      if (!newest || this.pipelineRank(pipeline) > this.pipelineRank(newest)) {
+        newest = pipeline;
+      }
+    }
+    return newest;
+  }
+
+  /** How recent a pipeline is: its update date, and its id when the dates are missing. */
+  private pipelineRank(pipeline: any): number {
+    const raw =
+      pipeline?.updated_at ||
+      pipeline?.updatedAt ||
+      pipeline?.created_at ||
+      pipeline?.createdAt;
+    const time = raw ? new Date(raw).getTime() : NaN;
+    if (Number.isFinite(time)) {
+      return time;
+    }
+    return Number(pipeline?.id) || 0;
   }
 
   private mapGitLabPipelineStatusToJobStatus(status: string): JobStatus {

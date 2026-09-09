@@ -250,6 +250,8 @@
   "communityPluginLabel": "(community)",
   "communityPluginTrustExplanation": "Questo è un plugin della community. Se lo usi, significa che ti fidi del suo autore.",
   "completelyFree": "Completamente gratuito",
+  "configFileConflictMarkers": "{{file}} contiene marcatori di conflitto git e non può essere analizzato. Risolvi i conflitti in questo file.",
+  "configFileUnreadableUsingPrevious": "Impossibile leggere la configurazione sfdx-hardis: {{message}} - viene usata la configurazione letta in precedenza durante questo comando.",
   "configKeyUpdated": "Configurazione VS Code '{{configKey}}' aggiornata",
   "configKeyUpdatedAdded": " (aggiunto: {{elements}})",
   "configKeyUpdatedRemoved": " (rimosso: {{elements}})",

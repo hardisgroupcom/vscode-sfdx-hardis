@@ -20,6 +20,7 @@ import * as path from "path";
 import { simpleGit } from "simple-git";
 import { getWorkspaceRoot } from "../../utils";
 import { Logger } from "../../logger";
+import { t } from "../../i18n/i18n";
 
 const MODULE_NAME = "sfdx-hardis";
 const PROJECT_CONFIG_FILES = [
@@ -118,18 +119,67 @@ export const setConfig = async (
   await setInConfigFile(configSearchPlaces, propValues);
 };
 
+/**
+ * The last configuration successfully read from each set of files, kept for the session.
+ *
+ * A configuration file can stop being readable while the user works: a merge or a cherry-pick
+ * leaves git conflict markers in config/.sfdx-hardis.yml, and sf hardis:project:promotion:create
+ * commits them on purpose when a promotion conflicts. Letting the parse error travel would break
+ * the DevOps Pipeline, the Pipeline Settings and the status bar until the conflict is solved. The
+ * configuration read before the conflict is used instead, with a warning naming the file to fix.
+ */
+const LAST_GOOD_CONFIGS: Map<string, any> = new Map();
+
+/** Configuration files holding git conflict markers, among the ones that were searched */
+function conflictedConfigFiles(searchPlaces: string[]): string[] {
+  const workspaceRoot = getWorkspaceRoot();
+  return searchPlaces.filter((searchPlace) => {
+    try {
+      const file = path.isAbsolute(searchPlace)
+        ? searchPlace
+        : path.join(workspaceRoot || "", searchPlace);
+      return (
+        fs.existsSync(file) &&
+        fs.readFileSync(file, "utf-8").includes("<<<<<<<")
+      );
+    } catch {
+      return false;
+    }
+  });
+}
+
 // Load configuration from file
 async function loadFromConfigFile(searchPlaces: string[]): Promise<any> {
   const workspaceRoot = getWorkspaceRoot();
-  const configExplorer = await cosmiconfig(MODULE_NAME, {
-    searchPlaces,
-  }).search(workspaceRoot);
-  let config = configExplorer !== null ? configExplorer.config : {};
-  if (config.extends) {
-    const remoteConfig = await loadFromRemoteConfigFile(config.extends);
-    config = Object.assign(remoteConfig, config);
+  const cacheKey = searchPlaces.join("|");
+  try {
+    const configExplorer = await cosmiconfig(MODULE_NAME, {
+      searchPlaces,
+    }).search(workspaceRoot);
+    let config = configExplorer !== null ? configExplorer.config : {};
+    if (config.extends) {
+      const remoteConfig = await loadFromRemoteConfigFile(config.extends);
+      config = Object.assign(remoteConfig, config);
+    }
+    // A shallow copy: getConfig merges the layers into the object it gets back, and what is
+    // memorized here must not collect the keys of the layers above it
+    LAST_GOOD_CONFIGS.set(cacheKey, Object.assign({}, config));
+    return config;
+  } catch (e: any) {
+    const conflictedFiles = conflictedConfigFiles(searchPlaces);
+    const detail =
+      conflictedFiles.length > 0
+        ? t("configFileConflictMarkers", { file: conflictedFiles.join(", ") })
+        : e?.message || String(e);
+    if (LAST_GOOD_CONFIGS.has(cacheKey)) {
+      Logger.log(t("configFileUnreadableUsingPrevious", { message: detail }));
+      return Object.assign({}, LAST_GOOD_CONFIGS.get(cacheKey));
+    }
+    throw new Error(
+      "[sfdx-hardis] Unable to read configuration file.\n" + detail,
+      { cause: e },
+    );
   }
-  return config;
 }
 
 async function loadFromRemoteConfigFile(url: string) {

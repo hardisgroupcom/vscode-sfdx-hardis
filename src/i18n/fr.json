@@ -250,6 +250,8 @@
   "communityPluginLabel": "(communauté)",
   "communityPluginTrustExplanation": "Ceci est un plugin de la communauté. Si vous l'utilisez, cela signifie que vous faites confiance à son auteur.",
   "completelyFree": "Entièrement gratuit",
+  "configFileConflictMarkers": "{{file}} contient des marqueurs de conflit git et ne peut pas être analysé. Résolvez les conflits dans ce fichier.",
+  "configFileUnreadableUsingPrevious": "Impossible de lire la configuration sfdx-hardis : {{message}} - utilisation de la configuration lue plus tôt pendant cette commande.",
   "configKeyUpdated": "Configuration VsCode '{{configKey}}' mise à jour",
   "configKeyUpdatedAdded": " (ajouté : {{elements}})",
   "configKeyUpdatedRemoved": " (supprimé : {{elements}})",
