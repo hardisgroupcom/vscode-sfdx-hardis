@@ -2,7 +2,15 @@
 
 ## Unreleased
 
-- A configuration file left unreadable by git conflict markers (`config/.sfdx-hardis.yml` after a merge or a promotion cherry-pick) no longer breaks the DevOps Pipeline, Pipeline Settings and the status bar: the configuration read earlier in the session is used, with a warning in the output channel naming the file to fix
+- A configuration file left unreadable by git conflict markers (`config/.sfdx-hardis.yml` after a merge or a promotion cherry-pick, or committed on purpose by `sf hardis:project:promotion:create --on-conflict commit-with-markers`) no longer breaks the DevOps Pipeline, Pipeline Settings and the status bar: the configuration read earlier in the session is used, with a warning in the output channel naming the file to fix
+  - Only a configuration that was actually read is reused: a project whose configuration is broken from the start still fails as before
+- **DevOps Pipeline on GitLab**: the CI status of a merge request is the one its own page shows, the pipeline of its head commit, instead of the worst of every pipeline that ever ran on it
+  - A merge request commonly has two pipelines on the same commit, the detached merge request pipeline that validates it and the branch pipeline of the push that created the branch: a failed branch pipeline drew the merge request red on the diagram while GitLab showed it green
+  - The newest merge request pipeline wins, the newest of all pipelines when the project runs no merge request pipelines, and nothing when none ran, so the chip stays unknown instead of green
+  - The deployment status of a major branch keeps reading the branch pipelines only, and the newest pipeline is now chosen by its date instead of the order the API answered in, so a retried or canceled older run is never reported as the current one
+- **DevOps Pipeline with promotion branches**: a User Story a promotion has just carried into a branch is listed in that branch, in the table of its window as well as in the node counter
+  - It was marked as already promoted in both the branch it left and the branch it reached, so it vanished from both windows and both counters
+- `js-yaml` upgraded to 4.3.2 to fix [GHSA-2883-xcg3-v3hh](https://github.com/advisories/GHSA-2883-xcg3-v3hh)
 
 ## [8.5.0] 2026-09-08
 
