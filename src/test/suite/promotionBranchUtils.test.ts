@@ -657,7 +657,6 @@ suite("promotionBranchUtils", () => {
     assert.strictEqual(off[0].promotedAway, undefined);
   });
 
-
   test("the windows reach the invariant upstream first, whatever order listMajorOrgs used", () => {
     // listMajorOrgs sorts by level DESCENDING, so it hands the windows over downstream first.
     // Passing that order to enforceSinglePlacePerPullRequest made the upstream window win: a story
@@ -669,7 +668,11 @@ suite("promotionBranchUtils", () => {
       { branchName: "main", level: 100, pullRequests: [] as PullRequest[] },
       { branchName: "preprod", level: 90, pullRequests: [] as PullRequest[] },
       { branchName: "uat", level: 70, pullRequests: [carriedIntoUat] },
-      { branchName: "integration", level: 50, pullRequests: [leftInIntegration] },
+      {
+        branchName: "integration",
+        level: 50,
+        pullRequests: [leftInIntegration],
+      },
     ];
     assert.deepStrictEqual(
       orderWindowsUpstreamFirst(majorOrgsAsListed).map((org) => org.branchName),
