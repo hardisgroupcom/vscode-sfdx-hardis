@@ -500,7 +500,10 @@ suite("pluginsVersionUtils", () => {
 
 suite("resolveRecommendedSfCliVersion", () => {
   test("uses npm latest when no version is pinned", () => {
-    assert.strictEqual(resolveRecommendedSfCliVersion("2.150.6", null), "2.150.6");
+    assert.strictEqual(
+      resolveRecommendedSfCliVersion("2.150.6", null),
+      "2.150.6",
+    );
   });
 
   test("returns null when nothing is known (cold cache, no pin)", () => {
@@ -508,7 +511,10 @@ suite("resolveRecommendedSfCliVersion", () => {
   });
 
   test("returns the pin when npm latest is unknown", () => {
-    assert.strictEqual(resolveRecommendedSfCliVersion(null, "2.151.6"), "2.151.6");
+    assert.strictEqual(
+      resolveRecommendedSfCliVersion(null, "2.151.6"),
+      "2.151.6",
+    );
   });
 
   test("forces the pin while npm latest is still below it", () => {
