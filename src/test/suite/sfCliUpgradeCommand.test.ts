@@ -29,7 +29,7 @@ suite("buildSfCliUpgradeCommand", () => {
     );
   });
 
-  test("falls back to the untargeted commands when no version is known", () => {
+  test("falls back to the generic commands when no version is known", () => {
     assert.strictEqual(buildSfCliUpgradeCommand(NATIVE_PATH, null), "sf update");
     assert.strictEqual(
       buildSfCliUpgradeCommand(NPM_PATH, null),

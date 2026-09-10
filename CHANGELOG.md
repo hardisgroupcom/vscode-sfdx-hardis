@@ -9,7 +9,8 @@
 
 ## [8.5.1] 2026-09-09
 
-- A configuration file left unreadable by git conflict markers (`config/.sfdx-hardis.yml` after a merge or a promotion cherry-pick, or committed on purpose by `sf hardis:project:promotion:create --on-conflict commit-with-markers`) no longer breaks the DevOps Pipeline, Pipeline Settings and the status bar: the configuration read earlier in the session is used, with a warning in the output channel naming the file to fix
+- A configuration file left unreadable by git conflict markers no longer breaks the DevOps Pipeline, Pipeline Settings and the status bar: the configuration read earlier in the session is used, with a warning in the output channel naming the file to fix
+  - Concerns `config/.sfdx-hardis.yml` left with conflict markers after a merge or a promotion cherry-pick, or committed on purpose by `sf hardis:project:promotion:create --on-conflict commit-with-markers`
   - Only a configuration that was actually read is reused: a project whose configuration is broken from the start still fails as before
 - **DevOps Pipeline on GitLab**: the CI status of a merge request is the one its own page shows, the pipeline of its head commit, instead of the worst of every pipeline that ever ran on it
   - A merge request commonly has two pipelines on the same commit, the detached merge request pipeline that validates it and the branch pipeline of the push that created the branch: a failed branch pipeline drew the merge request red on the diagram while GitLab showed it green
