@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Salesforce CLI 2.151.6 is now the version the extension installs and checks against**: the published `latest` (2.150.6) ships a broken `sf plugins` command, which prevents the extension from listing the installed plugins
+  - The recommended version is a floor, not a fixed target: as soon as npm publishes 2.151.6 or a later version as `latest`, that version is used again and no downgrade is ever proposed
+  - The version is also pinned for a Salesforce CLI installed with the Windows, macOS or Linux installer, which used to be upgraded to whatever `sf update` picked
+- Automatic dependency updates no longer run again and again when an upgrade does not take effect: they are attempted once per session, so a broken Salesforce CLI release cannot put the extension in an endless install loop
+
 ## [8.5.1] 2026-09-09
 
 - A configuration file left unreadable by git conflict markers (`config/.sfdx-hardis.yml` after a merge or a promotion cherry-pick, or committed on purpose by `sf hardis:project:promotion:create --on-conflict commit-with-markers`) no longer breaks the DevOps Pipeline, Pipeline Settings and the status bar: the configuration read earlier in the session is used, with a warning in the output channel naming the file to fix

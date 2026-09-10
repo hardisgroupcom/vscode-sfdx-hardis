@@ -10,11 +10,8 @@ import {
   resolveSfCliPath,
 } from "./setupUtils";
 import { LwcPanelManager } from "../lwc-panel-manager";
-import {
-  NODE_JS_MINIMUM_VERSION,
-  RECOMMENDED_SFDX_CLI_VERSION,
-  DOCSITE_URL,
-} from "../constants";
+import { NODE_JS_MINIMUM_VERSION, DOCSITE_URL } from "../constants";
+import { resolveRecommendedSfCliVersion } from "./pluginsVersionUtils";
 
 /**
  * Lightweight, cache-only aggregate of the environment's core prerequisites
@@ -408,7 +405,7 @@ async function computeSfCliStatus(): Promise<PrerequisiteStatus> {
   // getNpmLatestVersion never spawns a process and never rejects: it reads a
   // stale cached value immediately (or null) and refreshes in the background
   const latest = await getNpmLatestVersion("@salesforce/cli");
-  const recommended = RECOMMENDED_SFDX_CLI_VERSION || latest || null;
+  const recommended = resolveRecommendedSfCliVersion(latest);
   const isOutdated = !!(recommended && version !== recommended);
   return {
     id: "sf",
