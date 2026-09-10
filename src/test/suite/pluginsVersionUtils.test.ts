@@ -1,6 +1,7 @@
 import * as assert from "assert";
 import {
   comparePluginVersions,
+  resolveRecommendedSfCliVersion,
   getPluginInstallKindFromInfo,
   getPluginInstallKindFromText,
   mustUpgradeSfdxHardisPlugin,
@@ -494,5 +495,50 @@ suite("pluginsVersionUtils", () => {
       assert.ok(comparePluginVersions("8.0.0-beta.1", "8.0.0") >= 0);
       assert.ok(comparePluginVersions("8.0.0-alpha.2", "8.0.1") < 0);
     });
+  });
+});
+
+suite("resolveRecommendedSfCliVersion", () => {
+  test("uses npm latest when no version is pinned", () => {
+    assert.strictEqual(
+      resolveRecommendedSfCliVersion("2.150.6", null),
+      "2.150.6",
+    );
+  });
+
+  test("returns null when nothing is known (cold cache, no pin)", () => {
+    assert.strictEqual(resolveRecommendedSfCliVersion(null, null), null);
+  });
+
+  test("returns the pin when npm latest is unknown", () => {
+    assert.strictEqual(
+      resolveRecommendedSfCliVersion(null, "2.151.6"),
+      "2.151.6",
+    );
+  });
+
+  test("forces the pin while npm latest is still below it", () => {
+    assert.strictEqual(
+      resolveRecommendedSfCliVersion("2.150.6", "2.151.6"),
+      "2.151.6",
+    );
+  });
+
+  test("lets npm latest win again once it reaches the pin", () => {
+    assert.strictEqual(
+      resolveRecommendedSfCliVersion("2.151.6", "2.151.6"),
+      "2.151.6",
+    );
+  });
+
+  test("never downgrades: npm latest above the pin wins", () => {
+    assert.strictEqual(
+      resolveRecommendedSfCliVersion("2.152.0", "2.151.6"),
+      "2.152.0",
+    );
+    assert.strictEqual(
+      resolveRecommendedSfCliVersion("3.0.0", "2.151.6"),
+      "3.0.0",
+    );
   });
 });

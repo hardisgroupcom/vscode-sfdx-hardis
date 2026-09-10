@@ -10,14 +10,16 @@ import {
   resolvePluginInstallKind,
   stripAnsi,
 } from "../utils";
-import { mustUpgradeSfdxHardisPlugin } from "./pluginsVersionUtils";
+import {
+  mustUpgradeSfdxHardisPlugin,
+  resolveRecommendedSfCliVersion,
+} from "./pluginsVersionUtils";
 import { findExecutable } from "./executableUtils";
 import { isMergeDriverEnabled } from "./gitMergeDriverUtils";
 import { t } from "../i18n/i18n";
 import {
   NODE_JS_MINIMUM_VERSION,
   RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
-  RECOMMENDED_SFDX_CLI_VERSION,
 } from "../constants";
 import { listPluginsProvidingHardisCommands } from "./sfdx-hardis-config-utils";
 
@@ -51,13 +53,18 @@ export function isNativeSfCliInstall(
  * Builds the shell command that upgrades the Salesforce CLI to {@link recommended}.
  * - Native installer (Windows MSI / macOS pkg / Linux apt/rpm): `sf update`
  * - npm/node/nvm/fnm install: `npm install @salesforce/cli@<recommended> -g`
+ *
+ * When a recommended version is known, it is pinned on BOTH paths: the version
+ * check compares the installed version against it, so letting either path
+ * resolve a different version keeps the CLI flagged as outdated forever (and
+ * makes the auto-update loop, see runPluginsDetailPass).
  */
 export function buildSfCliUpgradeCommand(
   sfdxPath: string | null | undefined,
   recommended?: string | null,
 ): string {
   if (isNativeSfCliInstall(sfdxPath)) {
-    return "sf update";
+    return recommended ? `sf update --version ${recommended}` : "sf update";
   }
   return `npm install @salesforce/cli@${recommended || "latest"} -g`;
 }
@@ -468,7 +475,7 @@ export class SetupHelper {
         sfdxPathResult.status === "fulfilled"
           ? sfdxPathResult.value
           : "missing";
-      const recommended = RECOMMENDED_SFDX_CLI_VERSION || latest || null;
+      const recommended = resolveRecommendedSfCliVersion(latest);
 
       // Handle legacy sfdx-cli detection
       const legacyMatch = out ? /sfdx-cli\/(\S+)/.exec(out) : null;
@@ -801,9 +808,9 @@ export class SetupHelper {
     // when no version is provided) can install a version that differs from the
     // one the dependency check compares against, keeping the CLI flagged as
     // outdated; pin the resolved npm latest version instead.
-    const recommended =
-      RECOMMENDED_SFDX_CLI_VERSION ||
-      (await getNpmLatestVersion("@salesforce/cli").catch(() => null));
+    const recommended = resolveRecommendedSfCliVersion(
+      await getNpmLatestVersion("@salesforce/cli").catch(() => null),
+    );
     // A legacy sfdx-cli install cannot be upgraded in place: it must be
     // uninstalled before installing @salesforce/cli, otherwise both global
     // binaries coexist and `sf` keeps resolving to the deprecated one
