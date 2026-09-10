@@ -15,6 +15,7 @@ import {
 import {
   getPluginInstallKindFromText,
   mustUpgradeSfdxHardisPlugin,
+  resolveRecommendedSfCliVersion,
 } from "./utils/pluginsVersionUtils";
 import { Logger } from "./logger";
 import { ThemeUtils } from "./utils/themeUtils";
@@ -31,7 +32,6 @@ import { applyPluginsDetailPassInfo } from "./utils/dependenciesStatus";
 import {
   NODE_JS_MINIMUM_VERSION,
   RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
-  RECOMMENDED_SFDX_CLI_VERSION,
   DOCSITE_URL,
 } from "./constants";
 import {
@@ -56,6 +56,11 @@ let PLUGINS_DETAIL_ITEMS: any[] | null = null;
 // Per-session guards: prevent repeated dialogs across re-renders
 let PLUGINS_OUTDATED_PROMPT_SHOWN = false;
 let PLUGINS_SFDXHARDIS_PROMPT_SHOWN = false;
+// Deliberately NOT reset by refresh(): the auto-upgrade calls refreshPluginsView()
+// when it completes, so resetting it here would re-arm the auto-upgrade on the very
+// refresh it triggers. When the install does not converge (ex: a broken published
+// Salesforce CLI that keeps reporting the previous version), that is an infinite
+// install loop — see https://github.com/hardisgroupcom/sfdx-hardis/issues/2181
 let PLUGINS_AUTO_UPGRADE_STARTED = false;
 // Guard against concurrent background detail passes
 let PLUGINS_DETAIL_IN_FLIGHT = false;
@@ -586,7 +591,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       const recommendedSfdxCliVersion: string | null =
         vsConfig.get("ignoreSfdxCliRecommendedVersion") === true
           ? latestSfdxCliVersion
-          : RECOMMENDED_SFDX_CLI_VERSION || latestSfdxCliVersion;
+          : resolveRecommendedSfCliVersion(latestSfdxCliVersion);
 
       const sfdxCliItem = {
         id: `sfdx-cli-info`,
@@ -1116,7 +1121,6 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       PLUGINS_DETAIL_ITEMS = null;
       PLUGINS_OUTDATED_PROMPT_SHOWN = false;
       PLUGINS_SFDXHARDIS_PROMPT_SHOWN = false;
-      PLUGINS_AUTO_UPGRADE_STARTED = false;
       PLUGINS_DETAIL_IN_FLIGHT = false;
       nodeInstallOk = false;
       gitInstallOk = false;

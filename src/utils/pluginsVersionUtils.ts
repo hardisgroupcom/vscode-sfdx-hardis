@@ -7,6 +7,7 @@
 //   sfdx-hardis \u001b[2m7.23.0\u001b[22m \u001b[2m(link) C:\git\sfdx-hardis\u001b[22m
 import { stripAnsiCodes } from "./ansiColors";
 export { stripAnsiCodes };
+import { RECOMMENDED_SFDX_CLI_VERSION } from "../constants";
 
 /**
  * - `localdev`: installed with `sf plugins link` (developed locally)
@@ -206,4 +207,29 @@ export function mustUpgradeSfdxHardisPlugin(params: {
     return false;
   }
   return comparePluginVersions(installedVersion, minimalVersion) < 0;
+}
+
+/**
+ * Resolves the Salesforce CLI version the extension must recommend / install.
+ *
+ * {@link RECOMMENDED_SFDX_CLI_VERSION} is a FLOOR, not an exact target: it
+ * exists to escape a broken published `latest` (ex: 2.150.6 ships a broken
+ * `sf plugins` command). As soon as npm `latest` reaches the pinned version or
+ * goes beyond it, npm `latest` wins again, so the pin expires on its own
+ * without requiring an extension release — and users are never downgraded.
+ *
+ * Returns null when nothing is known (no pin and a cold/offline npm cache), in
+ * which case callers must skip the version comparison entirely.
+ */
+export function resolveRecommendedSfCliVersion(
+  latest: string | null | undefined,
+  pinned: string | null | undefined = RECOMMENDED_SFDX_CLI_VERSION,
+): string | null {
+  if (!pinned) {
+    return latest || null;
+  }
+  if (!latest) {
+    return pinned;
+  }
+  return comparePluginVersions(latest, pinned) >= 0 ? latest : pinned;
 }

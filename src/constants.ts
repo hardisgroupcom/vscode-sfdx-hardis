@@ -1,5 +1,11 @@
 const showBanner = false;
-export const RECOMMENDED_SFDX_CLI_VERSION = null; //"7.111.6";
+// Pinned when the published `latest` @salesforce/cli is broken. 2.150.6 ships a
+// broken `sf plugins` command, which makes the extension unable to detect the
+// installed plugins: pin the version published as `latest-rc` at the time until
+// `latest` catches up. The pin is a FLOOR, not an exact target (see
+// resolveRecommendedSfCliVersion): as soon as npm `latest` is >= this version,
+// npm `latest` wins again and this constant can be reset to null.
+export const RECOMMENDED_SFDX_CLI_VERSION: string | null = "2.151.6";
 export const NODE_JS_MINIMUM_VERSION = 24.0;
 // Pre-release identifiers are ignored when comparing, so 8.0.0-beta.x satisfies it
 export const RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION: string = "8.4.1";

@@ -2,9 +2,15 @@
 
 ## Unreleased
 
+- **Salesforce CLI 2.151.6 is now the version the extension installs and checks against**: the published `latest` (2.150.6) ships a broken `sf plugins` command, which prevents the extension from listing the installed plugins
+  - The recommended version is a floor, not a fixed target: as soon as npm publishes 2.151.6 or a later version as `latest`, that version is used again and no downgrade is ever proposed
+  - The version is also pinned for a Salesforce CLI installed with the Windows, macOS or Linux installer, which used to be upgraded to whatever `sf update` picked
+- Automatic dependency updates no longer run again and again when an upgrade does not take effect: they are attempted once per session, so a broken Salesforce CLI release cannot put the extension in an endless install loop
+
 ## [8.5.1] 2026-09-09
 
-- A configuration file left unreadable by git conflict markers (`config/.sfdx-hardis.yml` after a merge or a promotion cherry-pick, or committed on purpose by `sf hardis:project:promotion:create --on-conflict commit-with-markers`) no longer breaks the DevOps Pipeline, Pipeline Settings and the status bar: the configuration read earlier in the session is used, with a warning in the output channel naming the file to fix
+- A configuration file left unreadable by git conflict markers no longer breaks the DevOps Pipeline, Pipeline Settings and the status bar: the configuration read earlier in the session is used, with a warning in the output channel naming the file to fix
+  - Concerns `config/.sfdx-hardis.yml` left with conflict markers after a merge or a promotion cherry-pick, or committed on purpose by `sf hardis:project:promotion:create --on-conflict commit-with-markers`
   - Only a configuration that was actually read is reused: a project whose configuration is broken from the start still fails as before
 - **DevOps Pipeline on GitLab**: the CI status of a merge request is the one its own page shows, the pipeline of its head commit, instead of the worst of every pipeline that ever ran on it
   - A merge request commonly has two pipelines on the same commit, the detached merge request pipeline that validates it and the branch pipeline of the push that created the branch: a failed branch pipeline drew the merge request red on the diagram while GitLab showed it green
