@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [8.5.2] 2026-09-10
+
 - **Salesforce CLI 2.151.6 is now the version the extension installs and checks against**: the published `latest` (2.150.6) ships a broken `sf plugins` command, which prevents the extension from listing the installed plugins
   - The recommended version is a floor, not a fixed target: as soon as npm publishes 2.151.6 or a later version as `latest`, that version is used again and no downgrade is ever proposed
   - The version is also pinned for a Salesforce CLI installed with the Windows, macOS or Linux installer, which used to be upgraded to whatever `sf update` picked
