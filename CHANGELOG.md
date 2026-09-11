@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Pipeline Settings: a table of a list setting (`allowedPromotionSteps`, `monitoringCommands`, installed packages...) now takes the whole width of the panel instead of shrinking to its content, which printed branch names one character per line
+
 ## [8.5.2] 2026-09-10
 
 - **Salesforce CLI 2.151.6 is now the version the extension installs and checks against**: the published `latest` (2.150.6) ships a broken `sf plugins` command, which prevents the extension from listing the installed plugins
