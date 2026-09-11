@@ -559,7 +559,8 @@ async function main() {
  * writes a file holding one conflict block into the workspace, like the real
  * 3-way merge. SF_MOCK_BACKPROMOTE_CLI=old simulates an sfdx-hardis version that
  * does not know these flags yet (JSON error printed on stdout, as with
- * SF_JSON_TO_STDOUT).
+ * SF_JSON_TO_STDOUT), SF_MOCK_BACKPROMOTE_CLI=noGitProvider a user who is not
+ * connected to the git provider.
  */
 function answerBackpromote() {
   if (process.env.SF_MOCK_BACKPROMOTE_CLI === "old") {
@@ -582,6 +583,37 @@ function answerBackpromote() {
       "utf8",
     ),
   );
+  // SF_MOCK_BACKPROMOTE_CLI=noGitProvider: the user is not connected to the git
+  // provider, the plan stops at its first check
+  if (process.env.SF_MOCK_BACKPROMOTE_CLI === "noGitProvider") {
+    outputJsonIfRequested(
+      {
+        status: 0,
+        result: {
+          ...plan,
+          status: "blocked",
+          checks: [
+            {
+              id: "gitProvider",
+              ok: false,
+              message:
+                "You are not connected to GitHub: sfdx-hardis reads and writes the backpromote history in Pull Request comments.",
+              details: [],
+            },
+          ],
+          groups: [],
+          items: [],
+          deletions: [],
+          actions: [],
+          reports: [],
+          stateReadErrors: [],
+        },
+        warnings: [],
+      },
+      "",
+    );
+    return 0;
+  }
   if (args.includes("--plan")) {
     outputJsonIfRequested({ status: 0, result: plan, warnings: [] }, "");
     return 0;

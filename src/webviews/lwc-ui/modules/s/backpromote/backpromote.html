@@ -94,6 +94,11 @@
                   <p class="hardis-status-desc">{check.hint}</p>
                 </template>
               </div>
+              <template if:true={check.isGitProvider}>
+                <div class="hardis-status-actions">
+                  <lightning-button variant="neutral" class="hardis-btn-tinted-blue" icon-name="utility:link" label={connectGitProviderLabel} onclick={handleConnectGitProvider}></lightning-button>
+                </div>
+              </template>
               <template if:true={check.isTargetOrg}>
                 <div class="hardis-status-actions">
                   <lightning-button variant="neutral" class="hardis-btn-tinted-blue" label={i18n.backpromoteSelectOrg} onclick={handleSelectOrg}></lightning-button>
@@ -190,8 +195,11 @@
                       <template if:true={group.actionsLabel}>
                         <span class="hardis-pill hardis-hue-violet"><span class="hardis-pill-dot"></span>{group.actionsLabel}</span>
                       </template>
-                      <template if:true={group.isSkipped}>
-                        <span class="hardis-pill hardis-status-unknown"><span class="hardis-pill-dot"></span>{i18n.backpromoteSkippedGroup}</span>
+                      <template if:true={group.isUntrackable}>
+                        <span class="hardis-pill hardis-status-unknown" title={i18n.backpromoteUntrackableGroupTooltip}><span class="hardis-pill-dot"></span>{i18n.backpromoteUntrackableGroup}</span>
+                      </template>
+                      <template if:true={group.otherOrgsLabel}>
+                        <span class="hardis-pill hardis-status-info" title={group.otherOrgsTitle}><span class="hardis-pill-dot"></span>{group.otherOrgsLabel}</span>
                       </template>
                     </span>
                   </span>
@@ -202,6 +210,7 @@
             <template if:true={hasDoneGroups}>
               <button type="button" class="hardis-textlink bp-done-toggle" onclick={handleToggleDoneGroups}>{doneGroupsToggleLabel}</button>
               <template if:true={showDoneGroups}>
+                <p class="hardis-group-desc">{i18n.backpromoteAlreadyInOrgDesc}</p>
                 <div class="hardis-option-list bp-list">
                   <template for:each={doneGroups} for:item="group">
                     <button
@@ -227,7 +236,10 @@
                         </template>
                         <span class="hardis-option-desc">{group.meta}</span>
                         <span class="bp-pills">
-                          <span class="hardis-pill hardis-status-success"><span class="hardis-pill-dot"></span>{i18n.backpromoteDoneGroup}</span>
+                          <span class="hardis-pill hardis-status-success"><span class="hardis-pill-dot"></span>{group.doneLabel}</span>
+                          <template if:true={group.otherOrgsLabel}>
+                            <span class="hardis-pill hardis-status-info" title={group.otherOrgsTitle}><span class="hardis-pill-dot"></span>{group.otherOrgsLabel}</span>
+                          </template>
                         </span>
                       </span>
                     </button>
@@ -236,8 +248,8 @@
               </template>
             </template>
 
-            <template if:true={lastRunLabel}>
-              <p class="hardis-group-desc bp-last-run">{lastRunLabel}</p>
+            <template if:true={stateStorageDesc}>
+              <p class="hardis-group-desc bp-last-run">{stateStorageDesc}</p>
             </template>
           </div>
 
@@ -282,6 +294,12 @@
               </div>
             </div>
 
+            <template if:true={stateReadErrorsWarning}>
+              <div class="hardis-note warning">
+                <lightning-icon icon-name="utility:warning" size="x-small"></lightning-icon>
+                <p>{stateReadErrorsWarning}</p>
+              </div>
+            </template>
             <template if:true={conflictDetectionWarning}>
               <div class="hardis-note warning">
                 <lightning-icon icon-name="utility:warning" size="x-small"></lightning-icon>
@@ -492,6 +510,9 @@
                 <div class="bp-deploy-text">
                   <p class="hardis-status-title bp-deploy-range">{rangeLabel}</p>
                   <p class="hardis-status-desc">{testsLabel}</p>
+                  <template if:true={againLabel}>
+                    <p class="hardis-status-desc">{againLabel}</p>
+                  </template>
                   <template if:true={blockerLabel}>
                     <p class="hardis-status-desc bp-blocker">{blockerLabel}</p>
                   </template>

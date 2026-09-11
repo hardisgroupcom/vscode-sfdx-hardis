@@ -120,8 +120,12 @@ suite("backpromotePanelUtils", () => {
 
   test("normalizeBackpromotePlan accepts the fixture and rejects other payloads", () => {
     const plan = loadPlan();
-    assert.strictEqual(plan.groups.length, 5);
-    assert.strictEqual(plan.items.length, 41);
+    assert.strictEqual(plan.groups.length, 7);
+    assert.strictEqual(plan.items.length, 44);
+    assert.strictEqual(plan.gitProvider.name, "github");
+    assert.strictEqual(plan.stateStorage, "pullRequestComments");
+    assert.deepStrictEqual(plan.stateReadErrors, []);
+    assert.strictEqual(plan.checks[0].id, "gitProvider");
     assert.strictEqual(normalizeBackpromotePlan({ status: 0 }), null);
     assert.strictEqual(normalizeBackpromotePlan(null), null);
     const partial = normalizeBackpromotePlan({
@@ -131,6 +135,63 @@ suite("backpromotePanelUtils", () => {
     assert.ok(partial);
     assert.deepStrictEqual(partial!.groups, []);
     assert.deepStrictEqual(partial!.checks, []);
+    assert.strictEqual(partial!.gitProvider.name, null);
+    assert.deepStrictEqual(partial!.stateReadErrors, []);
+  });
+
+  test("done and untrackable groups are listed but not preselected, other developer orgs are kept", () => {
+    const plan = loadPlan();
+    const done = plan.groups.find((group) => group.status === "done")!;
+    const untrackable = plan.groups.find((group) => !group.trackable)!;
+    assert.ok(done && untrackable);
+    assert.strictEqual(done.selectedByDefault, false);
+    assert.ok(done.backpromotedToThisOrg);
+    // The target org is recorded too, only the other developer orgs are shown
+    assert.strictEqual(done.backpromotedTo.length, 2);
+    assert.deepStrictEqual(
+      done.backpromotedToOtherOrgs.map((record) => record.orgName),
+      ["mycompany--dev-lea"],
+    );
+    assert.strictEqual(untrackable.selectedByDefault, false);
+    assert.strictEqual(untrackable.status, "pending");
+    const group481 = plan.groups.find(
+      (group) => group.hash === hashOfPullRequest(plan, 481),
+    )!;
+    assert.strictEqual(group481.backpromotedToOtherOrgs.length, 1);
+
+    const selectedGroups = buildDefaultSelection(plan).groups;
+    assert.ok(!selectedGroups.includes(done.hash));
+    assert.ok(!selectedGroups.includes(untrackable.hash));
+
+    // Selecting a done group backpromotes it again
+    const again = computeSelectionSummary(
+      plan,
+      selection(plan, { groups: [...selectedGroups, done.hash] }),
+    );
+    assert.strictEqual(again.alreadyInOrgSelectedCount, 1);
+    assert.strictEqual(
+      computeSelectionSummary(plan, buildDefaultSelection(plan))
+        .alreadyInOrgSelectedCount,
+      0,
+    );
+
+    // A partial group gets safe defaults, and an unknown status is pending
+    const legacy = normalizeBackpromotePlan({
+      planVersion: 1,
+      status: "ready",
+      targetOrg: { orgId: "00Dx" },
+      groups: [
+        {
+          hash: "abcdef0123",
+          status: "skipped",
+          backpromotedTo: [{ orgId: "00Dx", orgName: "me" }, { foo: 1 }],
+        },
+      ],
+    })!;
+    assert.strictEqual(legacy.groups[0].status, "pending");
+    assert.strictEqual(legacy.groups[0].trackable, true);
+    assert.strictEqual(legacy.groups[0].backpromotedTo.length, 1);
+    assert.deepStrictEqual(legacy.groups[0].backpromotedToOtherOrgs, []);
   });
 
   test("default selection: every pending group, every item, the actions not done", () => {
@@ -150,9 +211,12 @@ suite("backpromotePanelUtils", () => {
       "InvoiceCalculatorTest",
       "QuoteApprovalTest",
     ]);
+    const shortHashOf = (id: number) =>
+      plan.groups.find((group) => group.hash === hashOfPullRequest(plan, id))!
+        .shortHash;
     assert.deepStrictEqual(summary.range, {
-      oldest: plan.groups[4].shortHash,
-      newest: plan.groups[0].shortHash,
+      oldest: shortHashOf(478),
+      newest: shortHashOf(487),
     });
     assert.strictEqual(summary.alsoInUnselectedCount, 0);
     assert.deepStrictEqual(summary.blockers, []);
@@ -161,8 +225,11 @@ suite("backpromotePanelUtils", () => {
 
   test("an item also changed by an unselected group is flagged", () => {
     const plan = loadPlan();
+    const hash487 = hashOfPullRequest(plan, 487);
     const without487 = selection(plan, {
-      groups: plan.groups.slice(1).map((group) => group.hash),
+      groups: buildDefaultSelection(plan).groups.filter(
+        (hash) => hash !== hash487,
+      ),
     });
     const summary = computeSelectionSummary(plan, without487);
     // #487 brings 5 items, one of them (Flow:Quote_Approval) also comes with #482
@@ -250,10 +317,14 @@ suite("backpromotePanelUtils", () => {
     const plan = loadPlan();
     const group481 = plan.groups.find((group) => group.hash === hashOfPullRequest(plan, 481))!;
     // #481 was merged a second time by another group (ex: a revert of a revert)
-    plan.groups[4].pullRequests.push({ ...group481.pullRequests[0] });
+    plan.groups
+      .find((group) => group.hash === hashOfPullRequest(plan, 478))!
+      .pullRequests.push({ ...group481.pullRequests[0] });
     const command = buildBackpromoteCommand(
       plan,
-      selection(plan, { groups: [group481.hash, plan.groups[0].hash] }),
+      selection(plan, {
+        groups: [group481.hash, hashOfPullRequest(plan, 487)],
+      }),
     );
     assert.ok(command!.includes(`--pull-requests 487`), command!);
     assert.ok(command!.includes(`--commits ${group481.shortHash}`), command!);
@@ -261,13 +332,16 @@ suite("backpromotePanelUtils", () => {
 
   test("a group without Pull Request goes to --commits", () => {
     const plan = loadPlan();
-    plan.groups[1].pullRequests = [];
+    const untrackable = plan.groups.find((group) => !group.trackable)!;
+    assert.deepStrictEqual(untrackable.pullRequests, []);
     const command = buildBackpromoteCommand(
       plan,
-      selection(plan, { groups: [plan.groups[0].hash, plan.groups[1].hash] }),
+      selection(plan, {
+        groups: [hashOfPullRequest(plan, 487), untrackable.hash],
+      }),
     );
     assert.ok(command!.includes("--pull-requests 487 "), command!);
-    assert.ok(command!.includes(`--commits ${plan.groups[1].shortHash}`), command!);
+    assert.ok(command!.includes(`--commits ${untrackable.shortHash}`), command!);
   });
 
   test("an unsafe value of the plan blocks the run instead of reaching the command", () => {
@@ -334,7 +408,9 @@ suite("backpromotePanelUtils", () => {
     assert.strictEqual(none.command, null);
     assert.deepStrictEqual(none.summary.blockers, ["noGroup"]);
 
-    const group478 = plan.groups[4];
+    const group478 = plan.groups.find(
+      (group) => group.hash === hashOfPullRequest(plan, 478),
+    )!;
     const nothing = computeSelectionSummary(
       plan,
       selection(plan, { groups: [group478.hash], excludedItems: group478.items }),
@@ -453,7 +529,16 @@ suite("backpromotePanelUtils", () => {
     assert.strictEqual(getBackpromoteErrorMessage(null), "");
   });
 
-  test("getTargetOrgDisplayName uses the instance URL, then the username", () => {
+  test("getTargetOrgDisplayName uses the org name, the instance URL, then the username", () => {
+    assert.strictEqual(
+      getTargetOrgDisplayName({
+        username: USERNAME,
+        instanceUrl: "https://mycompany--dev-sam.sandbox.my.salesforce.com",
+        orgType: "sandbox",
+        orgName: "dev-sam",
+      }),
+      "dev-sam",
+    );
     assert.strictEqual(
       getTargetOrgDisplayName({
         username: USERNAME,

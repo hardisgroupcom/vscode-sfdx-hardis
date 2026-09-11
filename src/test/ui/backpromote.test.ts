@@ -62,7 +62,9 @@ suite("Backpromote panel UI tests", function () {
       30000,
       "the plan to be pushed to the panel",
     );
-    assert.strictEqual(initData.plan.groups.length, 5);
+    // 5 pending groups, 1 merged without Pull Request, 1 already in the org
+    assert.strictEqual(initData.plan.groups.length, 7);
+    assert.strictEqual(initData.selection.groups.length, 5);
     assert.strictEqual(initData.summary.itemsToDeployCount, 41);
     assert.strictEqual(initData.summary.changedInOrg.length, 3);
     assert.strictEqual(initData.targetOrgLabel, "mycompany--dev-sam");
@@ -225,6 +227,42 @@ suite("Backpromote panel UI tests", function () {
         "the plan error to be pushed",
       );
       assert.strictEqual(errorData.planError.cliTooOld, true);
+    } finally {
+      delete process.env.SF_MOCK_BACKPROMOTE_CLI;
+    }
+  });
+
+  test("without a git provider connection the plan is blocked on its first check", async function () {
+    process.env.SF_MOCK_BACKPROMOTE_CLI = "noGitProvider";
+    try {
+      panel.simulateWebviewMessage({ type: "refresh" });
+      const blocked = await waitFor(
+        () => {
+          const data = panel.getInitializationData();
+          return data && data.plan && data.plan.status === "blocked"
+            ? data
+            : null;
+        },
+        30000,
+        "the blocked plan to be pushed",
+      );
+      assert.strictEqual(blocked.plan.checks[0].id, "gitProvider");
+      assert.strictEqual(blocked.plan.checks[0].ok, false);
+      assert.strictEqual(blocked.summary.canRun, false);
+      assert.strictEqual(blocked.plan.groups.length, 0);
+
+      // The dummy project has no remote: connecting reports that no git provider
+      // is detected and does not reload the plan
+      const planCalls = () =>
+        readMockLog().filter(
+          (entry) =>
+            entry.args[0] === "hardis:work:backpromote" &&
+            entry.args.includes("--plan"),
+        ).length;
+      const callsBefore = planCalls();
+      panel.simulateWebviewMessage({ type: "connectGitProvider" });
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      assert.strictEqual(planCalls(), callsBefore);
     } finally {
       delete process.env.SF_MOCK_BACKPROMOTE_CLI;
     }

@@ -7,6 +7,11 @@ import { LwcUiPanel } from "../webviews/lwc-ui-panel";
 import { execSfdxJson, getWorkspaceRoot } from "../utils";
 import { Logger } from "../logger";
 import { t } from "../i18n/i18n";
+import { GitProvider } from "../utils/gitProviders/gitProvider";
+import {
+  collectProviderCredentialEnvVars,
+  invalidateProviderCredentialEnvCache,
+} from "../utils/providerCredentials";
 import {
   BACKPROMOTE_COMMAND,
   BackpromotePlan,
@@ -95,6 +100,22 @@ async function readConflictBlocks(filePath: string): Promise<number | null> {
   }
 }
 
+/**
+ * sfdx-hardis reads and writes the backpromote history in Pull Request comments and
+ * only finds the git provider credentials in environment variables: pass the ones of
+ * the extension, like the command runner does.
+ */
+async function collectCredentialEnv(): Promise<Record<string, string>> {
+  try {
+    return await collectProviderCredentialEnvVars();
+  } catch (e: any) {
+    Logger.log(
+      `[vscode-sfdx-hardis] Backpromote: provider credentials not collected: ${e?.message || e}`,
+    );
+    return {};
+  }
+}
+
 type PlanFetchResult =
   | { plan: BackpromotePlan }
   | { planError: { message: string; cliTooOld: boolean } };
@@ -106,6 +127,7 @@ async function fetchPlan(parentBranch: string | null): Promise<PlanFetchResult> 
         fail: false,
         output: false,
         reuseRecentResult: false,
+        env: await collectCredentialEnv(),
       }),
     );
     const plan =
@@ -282,6 +304,10 @@ export function registerShowBackpromote(commands: Commands) {
             selectOrg(current, loadAndPush);
             break;
           }
+          case "connectGitProvider": {
+            await connectGitProvider(loadAndPush);
+            break;
+          }
           default:
             break;
         }
@@ -328,6 +354,7 @@ async function prepareMerge(
     fail(String(e?.message || e));
     return;
   }
+  const credentialEnv = await collectCredentialEnv();
   const result = recoverJsonCommandResult(
     await vscode.window.withProgress(
       {
@@ -340,6 +367,7 @@ async function prepareMerge(
           fail: false,
           output: false,
           reuseRecentResult: false,
+          env: credentialEnv,
         }),
     ),
   );
@@ -481,6 +509,48 @@ function runBackpromote(
     "vscode-sfdx-hardis.execute-command",
     payload.command,
   );
+}
+
+function showErrorWithLogs(message: string): void {
+  const viewLogsLabel = t("viewLogs");
+  vscode.window.showErrorMessage(message, viewLogsLabel).then((action) => {
+    if (action === viewLogsLabel) {
+      Logger.showOutputChannel();
+    }
+  });
+}
+
+/**
+ * Connects to the git provider of the repository with the flow of the DevOps Pipeline,
+ * then reloads the plan with the new credentials.
+ */
+async function connectGitProvider(reload: () => Promise<void>): Promise<void> {
+  const gitProvider = await GitProvider.getInstance();
+  if (!gitProvider) {
+    vscode.window.showErrorMessage(t("noGitProviderDetected"));
+    return;
+  }
+  let authenticated: boolean | null;
+  try {
+    authenticated = await gitProvider.authenticate();
+  } catch (e) {
+    Logger.log(
+      `[vscode-sfdx-hardis] Backpromote: git provider authentication failed: ${String(e)}`,
+    );
+    showErrorWithLogs(t("gitProviderAuthError"));
+    return;
+  }
+  if (authenticated === true) {
+    // The credentials collected before the connection are cached: drop them so the
+    // plan is computed with the new ones
+    invalidateProviderCredentialEnvCache();
+    vscode.window.showInformationMessage(
+      t("successfullyConnectedToGitProvider"),
+    );
+    await reload();
+  } else if (authenticated === false) {
+    showErrorWithLogs(t("failedConnectGitProvider"));
+  }
 }
 
 /**

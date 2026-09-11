@@ -139,6 +139,9 @@ export interface ExecCommandOptions {
   // command. Pass false for commands whose answer changes between two clicks
   // (ex: a Refresh button): the command runs again, in-flight runs are still shared.
   reuseRecentResult?: boolean;
+  // Extra environment variables of the child process (ex: provider credentials).
+  // Secrets go here, never on the command line
+  env?: Record<string, string>;
 }
 
 let MULTITHREAD_ACTIVE: boolean | null = null;
@@ -638,7 +641,10 @@ export async function execCommand(
   const execOptions: any = {
     maxBuffer: 10000 * 10000,
     cwd: options.cwd || vscode.workspace.rootPath,
-    env: applySfPerformanceEnv({ ...process.env, FORCE_COLOR: "0" }, command),
+    env: applySfPerformanceEnv(
+      { ...process.env, ...(options.env || {}), FORCE_COLOR: "0" },
+      command,
+    ),
   };
   const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
   const langSetting = config.get<string>("lang", "auto");

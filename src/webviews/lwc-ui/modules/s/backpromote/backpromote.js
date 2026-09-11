@@ -18,6 +18,7 @@ const FAILED_PILL = "hardis-pill hardis-status-failed";
 const UNKNOWN_PILL = "hardis-pill hardis-status-unknown";
 
 const CHECK_TITLE_KEYS = {
+  gitProvider: "backpromoteCheckGitProvider",
   targetOrg: "backpromoteCheckTargetOrg",
   currentBranch: "backpromoteCheckCurrentBranch",
   gitClean: "backpromoteCheckGitClean",
@@ -25,6 +26,7 @@ const CHECK_TITLE_KEYS = {
 };
 
 const CHECK_ICONS = {
+  gitProvider: "utility:link",
   targetOrg: "utility:salesforce1",
   currentBranch: "utility:merge",
   gitClean: "utility:file",
@@ -46,6 +48,14 @@ const ORG_STATE_VIEW = {
     pillClass: UNKNOWN_PILL,
   },
   unknown: { labelKey: "unknownLabel", pillClass: UNKNOWN_PILL },
+};
+
+// Brand names, never translated
+const GIT_PROVIDER_LABELS = {
+  github: "GitHub",
+  gitlab: "GitLab",
+  azure: "Azure DevOps",
+  bitbucket: "Bitbucket",
 };
 
 function nameOfKey(key) {
@@ -292,20 +302,53 @@ export default class Backpromote extends SharedMixin(LightningElement) {
           iconName: CHECK_ICONS[check.id] || "utility:warning",
           details,
           hasDetails: details.length > 0,
+          isGitProvider: check.id === "gitProvider",
           isTargetOrg: check.id === "targetOrg",
           isGitClean: check.id === "gitClean",
-          hint:
-            check.id === "upToDate"
-              ? this.t("backpromoteUpToDateCheckHint", {
-                  parentBranch: this.plan.parentBranch,
-                })
-              : null,
+          hint: this.checkHint(check.id),
         };
       });
   }
 
   get hasFailedChecks() {
     return this.failedChecks.length > 0;
+  }
+
+  checkHint(checkId) {
+    if (checkId === "upToDate") {
+      return this.t("backpromoteUpToDateCheckHint", {
+        parentBranch: this.plan.parentBranch,
+      });
+    }
+    if (checkId === "gitProvider") {
+      return this.t("backpromoteGitProviderHint");
+    }
+    return null;
+  }
+
+  get connectGitProviderLabel() {
+    const name =
+      this.plan && this.plan.gitProvider ? this.plan.gitProvider.name : null;
+    return GIT_PROVIDER_LABELS[name]
+      ? this.t("backpromoteConnectGitProvider", {
+          provider: GIT_PROVIDER_LABELS[name],
+        })
+      : this.t("backpromoteConnectGitProviderGeneric");
+  }
+
+  get stateStorageDesc() {
+    return this.plan && this.plan.stateStorage === "pullRequestComments"
+      ? this.t("backpromoteStateStorageDesc")
+      : null;
+  }
+
+  get stateReadErrorsWarning() {
+    if (!this.isReady || !(this.plan.stateReadErrors || []).length) {
+      return null;
+    }
+    return this.t("backpromoteStateReadErrors", {
+      pullRequests: this.plan.stateReadErrors.join(", "),
+    });
   }
 
   get conflictDetectionWarning() {
@@ -412,9 +455,30 @@ export default class Backpromote extends SharedMixin(LightningElement) {
                 "backpromoteChangedInOrgCount",
               )
             : null,
-        isSkipped: group.status === "skipped",
+        isUntrackable: group.trackable === false,
+        doneLabel:
+          group.backpromotedToThisOrg && group.backpromotedToThisOrg.date
+            ? this.t("backpromoteDoneGroupOn", {
+                date: this.formatDate(group.backpromotedToThisOrg.date),
+              })
+            : this.t("backpromoteAlreadyInOrgLabel"),
+        otherOrgsLabel: this.otherOrgsLabel(group),
+        otherOrgsTitle: (group.backpromotedToOtherOrgs || [])
+          .map((record) =>
+            record.date
+              ? `${record.orgName} (${this.formatDate(record.date)})`
+              : record.orgName,
+          )
+          .join(", "),
       };
     });
+  }
+
+  otherOrgsLabel(group) {
+    const count = (group.backpromotedToOtherOrgs || []).length;
+    return count > 0
+      ? this.countLabel(count, "backpromoteOtherOrgsOne", "backpromoteOtherOrgs")
+      : null;
   }
 
   get railGroups() {
@@ -431,18 +495,10 @@ export default class Backpromote extends SharedMixin(LightningElement) {
 
   get doneGroupsToggleLabel() {
     return this.showDoneGroups
-      ? this.t("backpromoteHideDoneGroups")
-      : this.t("backpromoteShowDoneGroups", { count: this.doneGroups.length });
-  }
-
-  get lastRunLabel() {
-    if (!this.plan || !this.plan.lastState || !this.plan.lastState.lastCommit) {
-      return null;
-    }
-    return this.t("backpromoteLastRun", {
-      date: this.formatDate(this.plan.lastState.lastTimestamp),
-      commit: String(this.plan.lastState.lastCommit).slice(0, 7),
-    });
+      ? this.t("backpromoteHideAlreadyInOrg")
+      : this.t("backpromoteShowAlreadyInOrg", {
+          count: this.doneGroups.length,
+        });
   }
 
   get parentBranchOptions() {
@@ -1119,6 +1175,13 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     );
   }
 
+  get againLabel() {
+    const count = this.summary ? this.summary.alreadyInOrgSelectedCount : 0;
+    return count > 0
+      ? this.countLabel(count, "backpromoteAgainCountOne", "backpromoteAgainCount")
+      : null;
+  }
+
   get runDisabled() {
     return this.isReadOnly || !this.summary || !this.summary.canRun;
   }
@@ -1217,6 +1280,10 @@ export default class Backpromote extends SharedMixin(LightningElement) {
 
   handleSelectOrg() {
     window.sendMessageToVSCode({ type: "selectOrg" });
+  }
+
+  handleConnectGitProvider() {
+    window.sendMessageToVSCode({ type: "connectGitProvider" });
   }
 
   handleOpenSourceControl() {

@@ -4,6 +4,8 @@
 
 - **Backpromote (Beta) panel**: bring the Pull Requests merged in your parent branch into your developer sandbox or scratch org, from the commands menu or the DevOps Pipeline
   - Select or unselect each Pull Request and see what it brings: metadata, deletions and deployment actions
+  - The backpromote history is shared with your team in Pull Request comments: see which Pull Requests are already in your org and which other developer orgs received them, a refreshed sandbox starting from scratch
+  - A connection to your git provider (GitHub, GitLab, Azure DevOps or Bitbucket) is required, and the panel offers to connect
   - Items changed in your org since their last deployment come first: compare them, keep the org version, or merge both versions and copy a prompt for your coding agent
   - Untick deletions, deployment actions or any metadata, and check the exact command before running it
   - Production orgs and orgs linked to a major branch are refused

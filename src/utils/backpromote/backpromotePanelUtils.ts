@@ -14,7 +14,26 @@ import { stripAnsiCodes } from "../ansiColors";
 export const BACKPROMOTE_COMMAND = "sf hardis:work:backpromote";
 
 export type BackpromotePlanStatus = "ready" | "blocked" | "upToDate";
-export type BackpromoteGroupStatus = "pending" | "skipped" | "done";
+export type BackpromoteGroupStatus = "pending" | "done";
+export type BackpromoteGitProviderName =
+  | "github"
+  | "gitlab"
+  | "azure"
+  | "bitbucket";
+
+const GIT_PROVIDER_NAMES: BackpromoteGitProviderName[] = [
+  "github",
+  "gitlab",
+  "azure",
+  "bitbucket",
+];
+
+/** A developer org recorded in the backpromote comment of a Pull Request */
+export interface BackpromoteOrgRecord {
+  orgId: string;
+  orgName: string;
+  date: string;
+}
 export type BackpromoteOrgState =
   | "changedInOrg"
   | "deletedLocally"
@@ -37,7 +56,16 @@ export interface BackpromoteGroup {
   author: string;
   date: string;
   status: BackpromoteGroupStatus;
+  /** Pending and trackable */
   selectedByDefault: boolean;
+  /** False for a merge without Pull Request number: it can never be remembered */
+  trackable: boolean;
+  /** When this group was backpromoted to the target org, read from the Pull Request comments */
+  backpromotedToThisOrg: { date: string; commit: string } | null;
+  /** Every developer org recorded in the comments of its Pull Requests, the target org included */
+  backpromotedTo: BackpromoteOrgRecord[];
+  /** backpromotedTo without the target org (computed by normalizeBackpromotePlan) */
+  backpromotedToOtherOrgs: BackpromoteOrgRecord[];
   pullRequests: BackpromotePullRequest[];
   items: string[];
   deletions: string[];
@@ -76,7 +104,13 @@ export interface BackpromoteAction {
 }
 
 export interface BackpromoteCheck {
-  id: "targetOrg" | "currentBranch" | "gitClean" | "upToDate" | string;
+  id:
+    | "gitProvider"
+    | "targetOrg"
+    | "currentBranch"
+    | "gitClean"
+    | "upToDate"
+    | string;
   ok: boolean;
   message: string;
   details?: string[];
@@ -92,14 +126,18 @@ export interface BackpromotePlan {
     username: string;
     instanceUrl: string;
     orgType: "sandbox" | "scratch" | "production" | string;
+    /** Salesforce Organization Id: a refreshed sandbox gets a new one */
+    orgId: string;
+    /** Short name, ex: mycompany--dev-sam */
+    orgName: string;
   };
+  /** The first check is gitProvider: when it fails nothing else is computed */
   checks: BackpromoteCheck[];
-  lastState: {
-    lastCommit: string;
-    lastTimestamp: string;
-    parentBranch: string;
-    skippedCommits: string[];
-  } | null;
+  gitProvider: { name: BackpromoteGitProviderName | null };
+  /** Where the backpromote history lives: "pullRequestComments" */
+  stateStorage: string;
+  /** Pull Requests whose backpromote comment could not be read */
+  stateReadErrors: string[];
   groups: BackpromoteGroup[];
   items: BackpromoteItem[];
   deletions: BackpromoteDeletion[];
@@ -148,7 +186,7 @@ export interface BackpromoteSummaryItem extends BackpromoteItem {
   merged: boolean;
   /** Conflict blocks left in the merged file, null when not known yet */
   conflictBlocks: number | null;
-  /** Pending or skipped groups touching the item that are not selected */
+  /** Pending groups touching the item that are not selected */
   alsoInUnselected: Array<{
     hash: string;
     shortHash: string;
@@ -186,6 +224,8 @@ export interface BackpromoteSelectionSummary {
   actionsToRunCount: number;
   actionsAlreadyDoneCount: number;
   manualActionsCount: number;
+  /** Selected groups already backpromoted to the target org, run again */
+  alreadyInOrgSelectedCount: number;
   testClasses: string[];
   alsoInUnselectedCount: number;
   /** Merged items whose file still holds conflict markers (or not checked yet) */
@@ -308,39 +348,77 @@ export function normalizeBackpromotePlan(raw: any): BackpromotePlan | null {
   ) {
     return null;
   }
+  const targetOrg = {
+    username: String(raw.targetOrg?.username || ""),
+    instanceUrl: String(raw.targetOrg?.instanceUrl || ""),
+    orgType: String(raw.targetOrg?.orgType || ""),
+    orgId: String(raw.targetOrg?.orgId || ""),
+    orgName: String(raw.targetOrg?.orgName || ""),
+  };
+  const isTargetOrg = (record: BackpromoteOrgRecord) =>
+    targetOrg.orgId
+      ? record.orgId === targetOrg.orgId
+      : !!targetOrg.orgName && record.orgName === targetOrg.orgName;
   return {
     ...raw,
     currentBranch: String(raw.currentBranch || ""),
     parentBranch: String(raw.parentBranch || ""),
     parentBranchChoices: asStringArray(raw.parentBranchChoices),
-    targetOrg: {
-      username: String(raw.targetOrg?.username || ""),
-      instanceUrl: String(raw.targetOrg?.instanceUrl || ""),
-      orgType: String(raw.targetOrg?.orgType || ""),
-    },
+    targetOrg,
     checks: asArray(raw.checks).map((check: any) => ({
       ...check,
       ok: check?.ok === true,
       message: String(check?.message || ""),
       details: asStringArray(check?.details),
     })),
-    lastState: raw.lastState
-      ? {
-          ...raw.lastState,
-          skippedCommits: asStringArray(raw.lastState.skippedCommits),
-        }
-      : null,
+    gitProvider: {
+      name: GIT_PROVIDER_NAMES.includes(raw.gitProvider?.name)
+        ? raw.gitProvider.name
+        : null,
+    },
+    stateStorage: String(raw.stateStorage || ""),
+    stateReadErrors: asStringArray(raw.stateReadErrors),
     groups: asArray(raw.groups)
       .filter((group: any) => typeof group?.hash === "string")
-      .map((group: any) => ({
-        ...group,
-        shortHash: String(group.shortHash || group.hash.slice(0, 7)),
-        pullRequests: asArray(group.pullRequests),
-        items: asStringArray(group.items),
-        deletions: asStringArray(group.deletions),
-        testClasses: asStringArray(group.testClasses),
-        actionIds: asStringArray(group.actionIds),
-      })),
+      .map((group: any) => {
+        const backpromotedTo: BackpromoteOrgRecord[] = asArray(
+          group.backpromotedTo,
+        )
+          .filter(
+            (record: any) =>
+              typeof record?.orgId === "string" ||
+              typeof record?.orgName === "string",
+          )
+          .map((record: any) => ({
+            orgId: String(record.orgId || ""),
+            orgName: String(record.orgName || record.orgId || ""),
+            date: String(record.date || ""),
+          }));
+        const thisOrg = group.backpromotedToThisOrg;
+        return {
+          ...group,
+          shortHash: String(group.shortHash || group.hash.slice(0, 7)),
+          status: group.status === "done" ? "done" : "pending",
+          selectedByDefault: group.selectedByDefault === true,
+          trackable: group.trackable !== false,
+          backpromotedToThisOrg:
+            thisOrg && typeof thisOrg === "object"
+              ? {
+                  date: String(thisOrg.date || ""),
+                  commit: String(thisOrg.commit || ""),
+                }
+              : null,
+          backpromotedTo,
+          backpromotedToOtherOrgs: backpromotedTo.filter(
+            (record) => !isTargetOrg(record),
+          ),
+          pullRequests: asArray(group.pullRequests),
+          items: asStringArray(group.items),
+          deletions: asStringArray(group.deletions),
+          testClasses: asStringArray(group.testClasses),
+          actionIds: asStringArray(group.actionIds),
+        };
+      }),
     items: asArray(raw.items)
       .filter((item: any) => typeof item?.key === "string")
       .map((item: any) => ({
@@ -583,6 +661,9 @@ export function computeSelectionSummary(
       .length,
     manualActionsCount: actionsToRun.filter((action) => isManualAction(action))
       .length,
+    alreadyInOrgSelectedCount: selectedGroups.filter(
+      (group) => group.status === "done",
+    ).length,
     testClasses: [
       ...new Set(selectedGroups.flatMap((group) => group.testClasses)),
     ].sort(),
@@ -871,18 +952,21 @@ export function getBackpromoteErrorMessage(result: any): string {
 }
 
 /**
- * Short name of the target org for the panel header: the first label of its
- * instance URL (`mycompany--dev-sam` for `https://mycompany--dev-sam.sandbox.my.salesforce.com`),
- * or its username.
+ * Short name of the target org for the panel header: the `orgName` sent by
+ * sfdx-hardis, else the first label of its instance URL (`mycompany--dev-sam` for
+ * `https://mycompany--dev-sam.sandbox.my.salesforce.com`), else its username.
  */
 export function getTargetOrgDisplayName(
-  targetOrg: BackpromotePlan["targetOrg"] | null | undefined,
+  targetOrg: Partial<BackpromotePlan["targetOrg"]> | null | undefined,
 ): string {
   if (!targetOrg) {
     return "";
   }
+  if (targetOrg.orgName) {
+    return targetOrg.orgName;
+  }
   try {
-    const host = new URL(targetOrg.instanceUrl).hostname;
+    const host = new URL(targetOrg.instanceUrl || "").hostname;
     const label = host.split(".")[0];
     if (label && !["login", "test", "www"].includes(label)) {
       return label;
