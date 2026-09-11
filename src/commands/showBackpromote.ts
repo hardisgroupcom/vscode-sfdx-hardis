@@ -52,6 +52,8 @@ interface BackpromotePanelState {
   plan: BackpromotePlan | null;
   /** Parent branch picked in the panel, null for the one sfdx-hardis resolves */
   parentBranch: string | null;
+  /** Commit passed as --from to list the Pull Requests merged before the default window */
+  from: string | null;
   selection: BackpromoteSelection | null;
   /** Revision of the last selection received from the webview */
   revision: number;
@@ -66,6 +68,7 @@ function createState(): BackpromotePanelState {
   return {
     plan: null,
     parentBranch: null,
+    from: null,
     selection: null,
     revision: 0,
     conflictBlocksByKey: {},
@@ -74,6 +77,36 @@ function createState(): BackpromotePanelState {
     orgSelectionWatcher: null,
     loadCounter: 0,
   };
+}
+
+/**
+ * sfdx-hardis runs one backpromote command at a time: two of them race on the git index, on the
+ * backpromote branch they create and on the `.git/config` lock of sfdx-git-delta. Every background
+ * call of the panel goes through this queue, so a second Merge waits for the first one.
+ */
+let backgroundQueue: Promise<unknown> = Promise.resolve();
+function queueBackgroundRun<T>(task: () => Promise<T>): Promise<T> {
+  const next = backgroundQueue.then(task, task);
+  backgroundQueue = next.then(
+    () => undefined,
+    () => undefined,
+  );
+  return next;
+}
+
+/** The items whose local file holds a merge written by sfdx-hardis */
+function preparedMergeKeys(panelState: BackpromotePanelState): string[] {
+  return Object.keys(panelState.preparedMerges);
+}
+
+/** Forgets the merges of a plan that no longer applies (another parent branch, another org) */
+function forgetPreparedMerges(panelState: BackpromotePanelState): void {
+  for (const watcher of panelState.mergeWatchers.values()) {
+    watcher.dispose();
+  }
+  panelState.mergeWatchers.clear();
+  panelState.preparedMerges = {};
+  panelState.conflictBlocksByKey = {};
 }
 
 // The panel is a singleton: its state lives as long as the panel
@@ -126,6 +159,7 @@ type PlanFetchResult =
 
 async function fetchPlan(
   parentBranch: string | null,
+  options: { mergedItems?: string[]; from?: string | null } = {},
   onProgress?: (progress: BackpromotePlanProgress) => void,
 ): Promise<PlanFetchResult> {
   // sfdx-hardis appends each step of the plan to this file (SFDX_HARDIS_PROGRESS_FILE):
@@ -155,16 +189,19 @@ async function fetchPlan(
   };
   const progressTimer = setInterval(readProgress, 500);
   try {
+    const credentialEnv = await collectCredentialEnv();
     const result = recoverJsonCommandResult(
-      await execSfdxJson(buildPlanCommand(parentBranch), {
-        fail: false,
-        output: false,
-        reuseRecentResult: false,
-        env: {
-          ...(await collectCredentialEnv()),
-          SFDX_HARDIS_PROGRESS_FILE: progressFile,
-        },
-      }),
+      await queueBackgroundRun(() =>
+        execSfdxJson(buildPlanCommand(parentBranch, options), {
+          fail: false,
+          output: false,
+          reuseRecentResult: false,
+          env: {
+            ...credentialEnv,
+            SFDX_HARDIS_PROGRESS_FILE: progressFile,
+          },
+        }),
+      ),
     );
     const plan =
       result?.status === 0 ? normalizeBackpromotePlan(result.result) : null;
@@ -264,15 +301,19 @@ export function registerShowBackpromote(commands: Commands) {
         const current = state;
         const loadId = ++current.loadCounter;
         panel.sendInitializationData({ loading: true });
-        const fetched = await fetchPlan(current.parentBranch, (progress) => {
-          if (
-            state === current &&
-            loadId === current.loadCounter &&
-            !panel.isDisposed()
-          ) {
-            panel.sendMessage({ type: "planProgress", data: progress });
-          }
-        });
+        const fetched = await fetchPlan(
+          current.parentBranch,
+          { mergedItems: preparedMergeKeys(current), from: current.from },
+          (progress) => {
+            if (
+              state === current &&
+              loadId === current.loadCounter &&
+              !panel.isDisposed()
+            ) {
+              panel.sendMessage({ type: "planProgress", data: progress });
+            }
+          },
+        );
         // A newer load started meanwhile, or the panel was closed
         if (
           state !== current ||
@@ -326,6 +367,18 @@ export function registerShowBackpromote(commands: Commands) {
               isSafeCommandValue(parentBranch)
             ) {
               current.parentBranch = parentBranch;
+              // The merges were written against the other parent branch: keeping them would name
+              // files that hold a merge of a branch this plan knows nothing about
+              forgetPreparedMerges(current);
+              current.from = null;
+              await loadAndPush();
+            }
+            break;
+          }
+          case "showOlderPullRequests": {
+            // The plan gives the commit to start from: the webview never sends one
+            if (current.plan?.olderFrom) {
+              current.from = current.plan.olderFrom;
               await loadAndPush();
             }
             break;
@@ -344,7 +397,12 @@ export function registerShowBackpromote(commands: Commands) {
             break;
           }
           case "runInTerminal": {
-            commands.commandRunner.executeCommandTerminal(BACKPROMOTE_COMMAND);
+            // With the same git provider credentials as the panel: the history lives in Pull
+            // Request comments, and without a token the command stops on its first check
+            commands.commandRunner.executeCommandTerminal(
+              BACKPROMOTE_COMMAND,
+              await collectCredentialEnv(),
+            );
             break;
           }
           case "selectOrg": {
@@ -410,12 +468,14 @@ async function prepareMerge(
         cancellable: false,
       },
       () =>
-        execSfdxJson(command, {
-          fail: false,
-          output: false,
-          reuseRecentResult: false,
-          env: credentialEnv,
-        }),
+        queueBackgroundRun(() =>
+          execSfdxJson(command, {
+            fail: false,
+            output: false,
+            reuseRecentResult: false,
+            env: credentialEnv,
+          }),
+        ),
     ),
   );
   if (state !== current || panel.isDisposed()) {
@@ -556,6 +616,10 @@ function runBackpromote(
     "vscode-sfdx-hardis.execute-command",
     payload.command,
   );
+  // The plan describes the org as it was before this run: what it deploys, the Pull Requests it
+  // records and the actions it runs are all about to change. Running the same selection twice
+  // would deploy it again and rerun its deployment actions, which are not all repeatable.
+  panel.sendMessage({ type: "runStarted", data: { command: payload.command } });
 }
 
 function showErrorWithLogs(message: string): void {
@@ -607,6 +671,9 @@ function selectOrg(
   current: BackpromotePanelState,
   reload: () => Promise<void>,
 ): void {
+  // Another org received other Pull Requests, and the merges were written against this one
+  forgetPreparedMerges(current);
+  current.from = null;
   current.orgSelectionWatcher?.dispose();
   const watcher = vscode.workspace.createFileSystemWatcher(
     new vscode.RelativePattern(getWorkspaceRoot(), ".sf/config.json"),

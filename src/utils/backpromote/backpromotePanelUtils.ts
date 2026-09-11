@@ -148,6 +148,10 @@ export interface BackpromotePlan {
   };
   /** The first check is gitProvider: when it fails nothing else is computed */
   checks: BackpromoteCheck[];
+  /** Commit to pass as --from to also list the Pull Requests merged before the ones listed */
+  olderFrom: string | null;
+  /** Nothing was ever backpromoted to this org: only the newest Pull Request is preselected */
+  noHistory: boolean;
   gitProvider: { name: BackpromoteGitProviderName | null };
   /** Where the backpromote history lives: "pullRequestComments" */
   stateStorage: string;
@@ -415,6 +419,9 @@ export function normalizeBackpromotePlan(raw: any): BackpromotePlan | null {
         : null,
     },
     stateStorage: String(raw.stateStorage || ""),
+    olderFrom:
+      typeof raw.olderFrom === "string" && raw.olderFrom ? raw.olderFrom : null,
+    noHistory: raw.noHistory === true,
     stateReadErrors: asStringArray(raw.stateReadErrors),
     groups: asArray(raw.groups)
       .filter((group: any) => typeof group?.hash === "string")
@@ -774,18 +781,16 @@ function buildGroupSelectionFlags(
 }
 
 /**
- * The exact run command for a selection, or null when no group is selected. Throws
- * when a value of the plan cannot be put safely in a command.
+ * What the user decided about the items, the deletions and the actions, as flags. Every command the
+ * panel builds carries them: a `--prepare-merge` run that left them out would tell the CLI that
+ * nothing is kept, nothing is already merged and every action must run, and the command written in
+ * the coding agent prompt ("run this once the conflicts are solved") would deploy exactly that.
  */
-export function buildBackpromoteCommand(
-  plan: BackpromotePlan,
-  selection: BackpromoteSelection,
-): string | null {
-  const summary = computeSelectionSummary(plan, selection);
-  if (summary.selectedGroupCount === 0) {
-    return null;
-  }
-  const parts = [BACKPROMOTE_COMMAND, ...buildGroupSelectionFlags(plan, selection)];
+function buildSelectionOptionFlags(
+  summary: BackpromoteSelectionSummary,
+  mergedKeys: string[],
+): string[] {
+  const parts: string[] = [];
   for (const item of summary.items) {
     if (item.excluded) {
       parts.push(`--exclude-metadata ${quoteCommandValue(item.key)}`);
@@ -803,10 +808,8 @@ export function buildBackpromoteCommand(
       }
     }
   }
-  for (const item of summary.items) {
-    if (item.merged) {
-      parts.push(`--merged-metadata ${quoteCommandValue(item.key)}`);
-    }
+  for (const key of mergedKeys) {
+    parts.push(`--merged-metadata ${quoteCommandValue(key)}`);
   }
   if (summary.actions.length > 0) {
     const actionIds = summary.actions
@@ -818,7 +821,30 @@ export function buildBackpromoteCommand(
         : "--skip-actions",
     );
   }
-  parts.push(`--target-org ${quoteCommandValue(plan.targetOrg.username)}`);
+  return parts;
+}
+
+/**
+ * The exact run command for a selection, or null when no group is selected. Throws
+ * when a value of the plan cannot be put safely in a command.
+ */
+export function buildBackpromoteCommand(
+  plan: BackpromotePlan,
+  selection: BackpromoteSelection,
+): string | null {
+  const summary = computeSelectionSummary(plan, selection);
+  if (summary.selectedGroupCount === 0) {
+    return null;
+  }
+  const mergedKeys = summary.items
+    .filter((item) => item.merged)
+    .map((item) => item.key);
+  const parts = [
+    BACKPROMOTE_COMMAND,
+    ...buildGroupSelectionFlags(plan, selection),
+    ...buildSelectionOptionFlags(summary, mergedKeys),
+    `--target-org ${quoteCommandValue(plan.targetOrg.username)}`,
+  ];
   return parts.join(" ");
 }
 
@@ -847,11 +873,25 @@ export function buildSelectionPayload(
 
 /**
  * Read-only plan command, with the parent branch the user chose in the panel.
+ *
+ * The items holding a prepared merge are named: their files are modified, and without them the CLI
+ * answers a blocked plan (the working directory is not clean), which would leave the panel
+ * read-only with the merge still waiting to be deployed. `from` lists the Pull Requests merged
+ * before the ones of the default window.
  */
-export function buildPlanCommand(parentBranch?: string | null): string {
+export function buildPlanCommand(
+  parentBranch?: string | null,
+  options: { mergedItems?: string[]; from?: string | null } = {},
+): string {
   const parts = [BACKPROMOTE_COMMAND, "--plan"];
   if (parentBranch) {
     parts.push(`--parentbranch ${quoteCommandValue(parentBranch)}`);
+  }
+  for (const key of options.mergedItems || []) {
+    parts.push(`--merged-metadata ${quoteCommandValue(key)}`);
+  }
+  if (options.from) {
+    parts.push(`--from ${quoteCommandValue(options.from)}`);
   }
   parts.push("--json");
   return parts.join(" ");
@@ -878,26 +918,40 @@ export function buildPrepareMergeCommand(
   if (selection.groups.length === 0) {
     throw new Error("No group selected");
   }
+  const summary = computeSelectionSummary(plan, selection);
+  // The merges already prepared are named too: their files are modified, and the CLI refuses to
+  // work on a dirty working directory unless it knows which files hold a merge. Without them, a
+  // second Merge in the panel fails with "branch is not clean".
+  const alreadyMerged = summary.items
+    .filter((item) => item.merged && !keysToMerge.includes(item.key))
+    .map((item) => item.key);
   return [
     BACKPROMOTE_COMMAND,
     ...keysToMerge.map((key) => `--prepare-merge ${quoteCommandValue(key)}`),
     ...buildGroupSelectionFlags(plan, selection),
+    ...buildSelectionOptionFlags(summary, alreadyMerged),
     `--target-org ${quoteCommandValue(plan.targetOrg.username)}`,
     "--json",
   ].join(" ");
 }
 
 /**
- * Number of conflict blocks (lines opening with `<<<<<<<`) left in a file. For display
+ * Number of conflict blocks left in a file. Every marker line counts, not only the opening one: a
+ * file where the `<<<<<<<` line was removed and the rest left still holds a conflict. For display
  * only: the CLI checks the markers again before deploying.
  */
 export function countConflictBlocks(content: string): number {
   if (typeof content !== "string" || content.length === 0) {
     return 0;
   }
-  return content
-    .split(/\r?\n/)
-    .filter((line) => /^<{7}(?!<)/.test(line)).length;
+  const lines = content.split(/\r?\n/);
+  const count = (marker: RegExp) =>
+    lines.filter((line) => marker.test(line)).length;
+  return Math.max(
+    count(/^<{7}(?!<)/),
+    count(/^\|{7}(?!\|)/),
+    count(/^>{7}(?!>)/),
+  );
 }
 
 /**

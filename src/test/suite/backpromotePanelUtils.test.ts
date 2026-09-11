@@ -439,9 +439,17 @@ suite("backpromotePanelUtils", () => {
       'sf hardis:work:backpromote --plan --parentbranch "main;rm -rf" --json',
     );
     assert.throws(() => buildPlanCommand("main$(id)"));
+    // A plan asked while merges are waiting names them, otherwise the CLI answers "not clean"
+    assert.strictEqual(
+      buildPlanCommand("integration", {
+        mergedItems: ["ApexClass:InvoiceCalculator"],
+        from: "0123456789abcdef",
+      }),
+      "sf hardis:work:backpromote --plan --parentbranch integration --merged-metadata ApexClass:InvoiceCalculator --from 0123456789abcdef --json",
+    );
   });
 
-  test("buildPrepareMergeCommand keeps mergeable items and the group selection", () => {
+  test("buildPrepareMergeCommand keeps mergeable items, the group selection and the decisions", () => {
     const plan = loadPlan();
     assert.strictEqual(
       buildPrepareMergeCommand(plan, buildDefaultSelection(plan), [
@@ -450,7 +458,7 @@ suite("backpromotePanelUtils", () => {
         // not mergeable
         "ApexClass:InvoiceCalculatorTest",
       ]),
-      `sf hardis:work:backpromote --prepare-merge ApexClass:InvoiceCalculator --prepare-merge "Layout:Opportunity-Sales Layout" --parentbranch integration --pull-requests 478,481,482,485,487 --target-org ${USERNAME} --json`,
+      `sf hardis:work:backpromote --prepare-merge ApexClass:InvoiceCalculator --prepare-merge "Layout:Opportunity-Sales Layout" --parentbranch integration --pull-requests 478,481,482,485,487 --actions load-approval-matrix,assign-sales-manager --target-org ${USERNAME} --json`,
     );
     assert.throws(() =>
       buildPrepareMergeCommand(plan, buildDefaultSelection(plan), [
@@ -462,6 +470,45 @@ suite("backpromotePanelUtils", () => {
         "ApexClass:InvoiceCalculator",
       ]),
     );
+  });
+
+  test("a second merge names the first one, so the CLI accepts the modified file", () => {
+    const plan = loadPlan();
+    const command = buildPrepareMergeCommand(
+      plan,
+      selection(plan, {
+        mergedItems: ["ApexClass:InvoiceCalculator"],
+        excludedItems: ["Layout:Opportunity-Sales Layout"],
+      }),
+      ["Flow:Quote_Approval"],
+    );
+    assert.ok(command.includes("--prepare-merge Flow:Quote_Approval"), command);
+    assert.ok(
+      command.includes("--merged-metadata ApexClass:InvoiceCalculator"),
+      command,
+    );
+    assert.ok(
+      command.includes(
+        '--exclude-metadata "Layout:Opportunity-Sales Layout"',
+      ),
+      command,
+    );
+    assert.ok(
+      !command.includes("--prepare-merge ApexClass:InvoiceCalculator"),
+      command,
+    );
+  });
+
+  test("countConflictBlocks still counts a half-removed conflict", () => {
+    const halfSolved = [
+      "public class InvoiceCalculator {",
+      "  Decimal scale = 2;",
+      "=======",
+      "  Decimal scale = 4;",
+      ">>>>>>> integration",
+      "}",
+    ].join("\n");
+    assert.strictEqual(countConflictBlocks(halfSolved), 1);
   });
 
   test("countConflictBlocks counts the opening markers", () => {

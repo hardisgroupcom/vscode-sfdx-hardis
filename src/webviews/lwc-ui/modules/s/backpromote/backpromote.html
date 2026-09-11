@@ -260,6 +260,10 @@
               </template>
             </template>
 
+            <template if:true={hasOlderPullRequests}>
+              <button type="button" class="hardis-textlink bp-done-toggle" onclick={handleShowOlder}>{i18n.backpromoteShowOlder}</button>
+            </template>
+
             <template if:true={stateStorageDesc}>
               <p class="hardis-group-desc bp-last-run">{stateStorageDesc}</p>
             </template>
@@ -306,6 +310,12 @@
               </div>
             </div>
 
+            <template if:true={newOrgNote}>
+              <div class="hardis-note">
+                <lightning-icon icon-name="utility:info" size="x-small"></lightning-icon>
+                <p>{newOrgNote}</p>
+              </div>
+            </template>
             <template if:true={stateReadErrorsWarning}>
               <div class="hardis-note warning">
                 <lightning-icon icon-name="utility:warning" size="x-small"></lightning-icon>
@@ -527,6 +537,9 @@
                   </template>
                   <template if:true={blockerLabel}>
                     <p class="hardis-status-desc bp-blocker">{blockerLabel}</p>
+                  </template>
+                  <template if:true={runStartedNote}>
+                    <p class="hardis-status-desc bp-blocker">{runStartedNote}</p>
                   </template>
                 </div>
                 <button type="button" class="hardis-textlink" onclick={handleToggleCommand} disabled={noCommand}>{commandToggleLabel}</button>

@@ -78,6 +78,8 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   showCommand = false;
   // Set once a merge was written on a new backpromote branch
   backpromoteBranchNotice = null;
+  // A run was started: the plan on screen describes the org as it was before it
+  runStarted = false;
   // Steps sfdx-hardis reported while computing the plan
   planProgress = null;
   showDoneGroups = false;
@@ -114,6 +116,7 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       this.mergeErrors = {};
       this.preparingKeys = [];
       this.backpromoteBranchNotice = null;
+      this.runStarted = false;
       if (typeof payload.revision === "number") {
         this.revision = Math.max(this.revision, payload.revision);
       }
@@ -137,6 +140,9 @@ export default class Backpromote extends SharedMixin(LightningElement) {
         break;
       case "mergePrepareFailed":
         this.handleMergePrepareFailed(data || {});
+        break;
+      case "runStarted":
+        this.runStarted = true;
         break;
       case "mergeMarkers":
         if (data && typeof data.key === "string") {
@@ -529,6 +535,28 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       : this.t("backpromoteShowAlreadyInOrg", {
           count: this.doneGroups.length,
         });
+  }
+
+  // sfdx-hardis lists a window of Pull Requests: the ones merged before it, including any this org
+  // was never given, are one click away
+  get hasOlderPullRequests() {
+    return this.isReady && !this.loading && !!this.plan.olderFrom;
+  }
+
+  handleShowOlder() {
+    if (!this.hasOlderPullRequests) {
+      return;
+    }
+    this.loading = true;
+    this.planError = null;
+    window.sendMessageToVSCode({ type: "showOlderPullRequests" });
+  }
+
+  // Nothing was ever backpromoted to this org: only the newest Pull Request is ticked
+  get newOrgNote() {
+    return this.isReady && this.plan.noHistory
+      ? this.t("backpromoteNewOrgNote")
+      : null;
   }
 
   get parentBranchOptions() {
@@ -1233,7 +1261,15 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   }
 
   get runDisabled() {
-    return this.isReadOnly || !this.summary || !this.summary.canRun;
+    return (
+      this.isReadOnly || !this.summary || !this.summary.canRun || this.runStarted
+    );
+  }
+
+  // What is on screen was computed before the run started: deploying it again would redeploy the
+  // same Pull Requests and rerun their deployment actions
+  get runStartedNote() {
+    return this.runStarted ? this.t("backpromoteRunStartedRefresh") : null;
   }
 
   get blockerLabel() {
