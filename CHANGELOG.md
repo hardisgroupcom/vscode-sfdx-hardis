@@ -2,18 +2,12 @@
 
 ## Unreleased
 
-- **Backpromote (Beta) panel**: bring the Pull Requests merged in your parent branch into your developer sandbox or scratch org, from the commands menu or the DevOps Pipeline
-  - Select or unselect each Pull Request and see what it brings: metadata, deletions and deployment actions
-  - The backpromote history is shared with your team in Pull Request comments: see which Pull Requests are already in your org and which other developer orgs received them, a refreshed sandbox starting from scratch
-  - A connection to your git provider (GitHub, GitLab, Azure DevOps or Bitbucket) is required, and the panel offers to connect
-  - Items changed in your org since their last deployment come first: compare them, keep the org version, or merge both versions and copy a prompt for your coding agent
-  - Untick deletions, deployment actions or any metadata, and check the exact command before running it
-  - Production orgs and orgs linked to a major branch are refused
-  - Pick the major branch to backpromote from: the run stays on your User Story branch when it is up to date, and otherwise works on a local backpromote branch it creates, then brings you back
-  - See what sfdx-hardis is doing while the plan is computed, with a progress bar on the longest steps
-  - Merge several items one after the other, and see the Pull Requests merged before the ones listed with **Show older Pull Requests**
-  - After a backpromote, the panel asks for a refresh before running again, so a deployment action never runs twice
-  - Changing the parent branch or the org forgets the merges prepared for the previous one, and Run in Terminal gets the same git provider credentials as the panel
+- **Backpromote (Beta) panel**: bring what your teammates merged in the parent branch into your User Story branch and your developer sandbox or scratch org, from the commands menu or the DevOps Pipeline
+  - See the Pull Requests the merge brings in, the metadata it deploys, the deletions and the deployment actions, and untick what you do not want yet
+  - Files changed both by the Pull Requests and in your branch or your org are listed first: for each one, choose to overwrite with the parent branch version, keep yours, or merge by hand with a prompt for your coding agent
+  - Your pending org changes are saved in your branch before the merge, and a merge that stopped on conflicts is finished from the panel once the markers are solved
+  - Production orgs and orgs linked to a major branch are refused, and the run must start from a User Story branch
+  - See what sfdx-hardis is doing while the plan is computed
 - Pipeline Settings: a table of a list setting (`allowedPromotionSteps`, `monitoringCommands`, installed packages...) now takes the whole width of the panel instead of shrinking to its content, which printed branch names one character per line
 - DevOps Pipeline: promotion branches named `promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM>` by sfdx-hardis (with `-2`, `-3`... when the name was taken) are recognized, next to the `<YYYY-MM-DD>-<counter>` names of earlier promotions
 

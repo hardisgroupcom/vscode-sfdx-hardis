@@ -40,10 +40,6 @@
   min-width: 12rem;
 }
 
-.bp-working-branch {
-  margin-top: 0.35rem;
-}
-
 /* Rail */
 
 .bp-list {
@@ -58,18 +54,6 @@
 .bp-group-row .hardis-check,
 .bp-action-row .hardis-check {
   margin-top: 0.15rem;
-}
-
-.bp-pills {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.3rem;
-  margin-top: 0.3rem;
-}
-
-.bp-done-toggle {
-  margin-top: 0.5rem;
 }
 
 .bp-last-run {
@@ -157,10 +141,6 @@
 .bp-deploy-text {
   flex: 1 1 18rem;
   min-width: 0;
-}
-
-.bp-deploy-range {
-  overflow-wrap: anywhere;
 }
 
 .bp-command {

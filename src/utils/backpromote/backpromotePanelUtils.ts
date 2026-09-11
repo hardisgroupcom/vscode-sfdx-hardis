@@ -3,43 +3,27 @@ import { stripAnsiCodes } from "../ansiColors";
 /**
  * Pure logic of the Backpromote panel (vscode-sfdx-hardis.showBackpromote).
  *
- * sfdx-hardis computes a plan with `sf hardis:work:backpromote --plan --json`. The
- * panel lets the user pick the groups to bring in (first-parent commits of the parent
- * branch, with the Pull Requests they merged), the items to keep as they are in the
- * org or to merge, the deletions and the deployment actions. These helpers turn that
- * selection into the counters of the panel and into the exact command given to the
- * command runner. No VS Code API here: they are unit tested directly.
+ * sfdx-hardis computes a plan with `sf hardis:work:backpromote --plan --json`: the Pull
+ * Requests a merge of the parent branch brings in, the items and deletions it deploys, the
+ * files the merge may stop on, and the deployment actions. The panel lets the user untick
+ * items, deletions and actions, and decide what to do with each conflicting file. These
+ * helpers turn that selection into the counters of the panel and into the exact command
+ * given to the command runner. No VS Code API here: they are unit tested directly.
  */
 
 export const BACKPROMOTE_COMMAND = "sf hardis:work:backpromote";
 
-export type BackpromotePlanStatus = "ready" | "blocked" | "upToDate";
-export type BackpromoteGroupStatus = "pending" | "done";
-export type BackpromoteGitProviderName =
-  | "github"
-  | "gitlab"
-  | "azure"
-  | "bitbucket";
-
-const GIT_PROVIDER_NAMES: BackpromoteGitProviderName[] = [
-  "github",
-  "gitlab",
-  "azure",
-  "bitbucket",
+export type BackpromotePlanStatus =
+  | "ready"
+  | "blocked"
+  | "upToDate"
+  | "mergeInProgress";
+export type BackpromoteConflictChoice = "overwrite" | "merge" | "keep";
+export const BACKPROMOTE_CONFLICT_CHOICES: BackpromoteConflictChoice[] = [
+  "overwrite",
+  "merge",
+  "keep",
 ];
-
-/** A developer org recorded in the backpromote comment of a Pull Request */
-export interface BackpromoteOrgRecord {
-  orgId: string;
-  orgName: string;
-  date: string;
-}
-export type BackpromoteOrgState =
-  | "changedInOrg"
-  | "deletedLocally"
-  | "newToOrg"
-  | "noOrgChange"
-  | "unknown";
 
 export interface BackpromotePullRequest {
   id: number;
@@ -47,48 +31,28 @@ export interface BackpromotePullRequest {
   author: string;
   webUrl: string;
   sourceBranch: string;
+  date: string;
+  commit: string;
 }
 
-export interface BackpromoteGroup {
-  hash: string;
-  shortHash: string;
-  message: string;
-  author: string;
-  date: string;
-  status: BackpromoteGroupStatus;
-  /** Pending and trackable */
-  selectedByDefault: boolean;
-  /** False for a merge without Pull Request number: it can never be remembered */
-  trackable: boolean;
-  /** When this group was backpromoted to the target org, read from the Pull Request comments */
-  backpromotedToThisOrg: { date: string; commit: string } | null;
-  /** Every developer org recorded in the comments of its Pull Requests, the target org included */
-  backpromotedTo: BackpromoteOrgRecord[];
-  /** backpromotedTo without the target org (computed by normalizeBackpromotePlan) */
-  backpromotedToOtherOrgs: BackpromoteOrgRecord[];
-  pullRequests: BackpromotePullRequest[];
-  items: string[];
-  deletions: string[];
-  testClasses: string[];
-  actionIds: string[];
+export interface BackpromotePredictedConflict {
+  path: string;
+  changedInBranch: boolean;
+  changedInOrg: boolean;
 }
 
 export interface BackpromoteItem {
   key: string;
   type: string;
   name: string;
-  commits: string[];
-  orgState: BackpromoteOrgState;
-  localPath: string | null;
-  orgPath: string | null;
-  mergeable: boolean;
+  path: string | null;
+  conflict: BackpromotePredictedConflict | null;
 }
 
 export interface BackpromoteDeletion {
   key: string;
   type: string;
   name: string;
-  commits: string[];
 }
 
 export interface BackpromoteAction {
@@ -96,37 +60,22 @@ export interface BackpromoteAction {
   label: string;
   type: string;
   when: "pre" | "post";
-  commits: string[];
   pullRequestId: number;
   customUsername: string | null;
-  alreadyDone: { date: string } | null;
-  selectedByDefault: boolean;
+}
+
+export interface BackpromoteConflict extends BackpromotePredictedConflict {
+  /** Type:Name items the file belongs to */
+  items: string[];
+  /** Markers left in the file when a merge is in progress, null before the merge */
+  conflictBlocks: number | null;
 }
 
 export interface BackpromoteCheck {
-  id:
-    | "gitProvider"
-    | "targetOrg"
-    | "parentBranch"
-    | "currentBranch"
-    | "gitClean"
-    | string;
+  id: "currentBranch" | "gitClean" | "targetOrg" | "parentBranch" | string;
   ok: boolean;
   message: string;
   details?: string[];
-}
-
-/**
- * Where a run works, as the CLI decides it: on the checked out branch, or on a
- * new local backpromote/<parent>/<date> branch created from the remote parent
- * branch (never on a major branch itself).
- */
-export interface BackpromoteWorkingBranch {
-  mode: "currentBranch" | "newBackpromoteBranch";
-  /** userStoryBranch, backpromoteBranch, majorBranch, promotionBranch, retrofitBranch or notUpToDate */
-  reason: string;
-  /** The branch the run brings the user back to */
-  returnBranch: string | null;
 }
 
 export interface BackpromotePlan {
@@ -135,124 +84,61 @@ export interface BackpromotePlan {
   currentBranch: string;
   parentBranch: string;
   parentBranchChoices: string[];
-  /** Null with an older sfdx-hardis, or when the plan stopped before knowing */
-  workingBranch: BackpromoteWorkingBranch | null;
   targetOrg: {
     username: string;
     instanceUrl: string;
     orgType: "sandbox" | "scratch" | "production" | string;
-    /** Salesforce Organization Id: a refreshed sandbox gets a new one */
     orgId: string;
     /** Short name, ex: mycompany--dev-sam */
     orgName: string;
+    /** The org tracks its sources: its pending changes are saved before the merge */
+    tracksSource: boolean;
   };
-  /** The first check is gitProvider: when it fails nothing else is computed */
   checks: BackpromoteCheck[];
-  /** Commit to pass as --from to also list the Pull Requests merged before the ones listed */
-  olderFrom: string | null;
-  /** Nothing was ever backpromoted to this org: only the newest Pull Request is preselected */
-  noHistory: boolean;
-  gitProvider: { name: BackpromoteGitProviderName | null };
-  /** Where the backpromote history lives: "pullRequestComments" */
-  stateStorage: string;
-  /** Pull Requests whose backpromote comment could not be read */
-  stateReadErrors: string[];
-  groups: BackpromoteGroup[];
+  pullRequests: BackpromotePullRequest[];
+  commitCount: number;
   items: BackpromoteItem[];
   deletions: BackpromoteDeletion[];
   actions: BackpromoteAction[];
-  conflictDetection: { success: boolean; errorMessage: string | null };
+  testClasses: string[];
+  conflicts: BackpromoteConflict[];
+  orgChanges: { tracked: boolean; files: string[] };
   reports: string[];
 }
 
-export interface BackpromotePrepareMergeFile {
-  key: string;
-  localPath: string;
-  basePath: string | null;
-  orgPath: string;
-  conflictBlocks: number;
-}
-
-export interface BackpromotePrepareMergeResult {
-  files: BackpromotePrepareMergeFile[];
-  prompt: string;
-  promptFile: string;
-  nextCommand: string;
-  /** The backpromote branch the merge was written on: the working tree is on it */
-  backpromoteBranch: string | null;
-  /** The branch the run of nextCommand brings the user back to */
-  returnBranch: string | null;
-}
-
 /**
- * What the user picked in the panel. Only hashes, keys and ids that exist in the plan
- * are kept (see normalizeSelection), so a message from the webview cannot inject
- * anything into the command.
+ * What the user picked in the panel. Only keys, paths and ids that exist in the plan are kept
+ * (see normalizeSelection), so a message from the webview cannot inject anything into the command.
  */
 export interface BackpromoteSelection {
-  /** Hashes of the selected groups */
-  groups: string[];
-  /** `Type:Name` items not to deploy ("Keep org version", unticked rows) */
+  /** `Type:Name` items not to deploy now */
   excludedItems: string[];
-  /** `Type:Name` items whose local file holds a merge prepared by the CLI */
-  mergedItems: string[];
   /** `Type:Name` deletions not to run */
   excludedDeletions: string[];
   /** Ids of the deployment actions to run */
   actions: string[];
+  /** File path -> what to do when git cannot merge it */
+  conflictDecisions: Record<string, BackpromoteConflictChoice>;
 }
 
-export interface BackpromoteSummaryItem extends BackpromoteItem {
-  /** Pull Requests of the selected groups that touch the item */
-  pullRequestIds: number[];
-  excluded: boolean;
-  merged: boolean;
-  /** Conflict blocks left in the merged file, null when not known yet */
-  conflictBlocks: number | null;
-  /** Pending groups touching the item that are not selected */
-  alsoInUnselected: Array<{
-    hash: string;
-    shortHash: string;
-    pullRequestIds: number[];
-  }>;
-}
-
-export interface BackpromoteSummaryDeletion extends BackpromoteDeletion {
-  pullRequestIds: number[];
-  excluded: boolean;
-}
-
-export interface BackpromoteSummaryAction extends BackpromoteAction {
-  selected: boolean;
+export interface BackpromoteSummaryConflict extends BackpromoteConflict {
+  choice: BackpromoteConflictChoice;
 }
 
 export type BackpromoteBlocker =
   | "notReady"
-  | "noGroup"
   | "nothingToDo"
   | "conflictMarkers"
   | "invalidCommand";
 
 export interface BackpromoteSelectionSummary {
-  selectedGroupCount: number;
-  pullRequestIds: number[];
-  /** Short hashes of the oldest and newest selected groups */
-  range: { oldest: string; newest: string } | null;
-  items: BackpromoteSummaryItem[];
   itemsToDeployCount: number;
-  changedInOrg: BackpromoteSummaryItem[];
-  deletions: BackpromoteSummaryDeletion[];
   deletionsToDeleteCount: number;
-  actions: BackpromoteSummaryAction[];
   actionsToRunCount: number;
-  actionsAlreadyDoneCount: number;
   manualActionsCount: number;
-  /** Selected groups already backpromoted to the target org, run again */
-  alreadyInOrgSelectedCount: number;
-  testClasses: string[];
-  alsoInUnselectedCount: number;
-  /** Merged items whose file still holds conflict markers (or not checked yet) */
-  conflictKeys: string[];
+  conflicts: BackpromoteSummaryConflict[];
+  /** Files of a merge in progress that still hold markers */
+  markersLeft: Array<{ path: string; conflictBlocks: number }>;
   blockers: BackpromoteBlocker[];
   canRun: boolean;
 }
@@ -271,10 +157,6 @@ function asStringArray(value: unknown): string[] {
   return asArray(value).filter(
     (entry): entry is string => typeof entry === "string",
   );
-}
-
-function uniqueSortedNumbers(values: number[]): number[] {
-  return [...new Set(values)].sort((a, b) => a - b);
 }
 
 /**
@@ -303,14 +185,12 @@ const UNSAFE_COMMAND_VALUE = /["\\`']/;
 // Command and variable substitution: refused whatever the quoting
 const UNSAFE_SUBSTITUTION = /\$[({]/;
 // A lone dollar sign is part of Salesforce folder names (unfiled$public): the value
-// is single quoted, which bash and PowerShell both take literally, instead of being
-// refused and blocking the run of every selection holding such an item
+// is single quoted, which bash and PowerShell both take literally
 const NEEDS_LITERAL_QUOTES = /\$/;
 
 /**
  * A value built from the plan can go into a command when it holds no quote, no
- * backslash, no variable or command substitution, no control character and no
- * command chaining.
+ * backslash, no substitution, no control character and no command chaining.
  */
 export function isSafeCommandValue(value: unknown): value is string {
   if (typeof value !== "string" || value.length === 0) {
@@ -334,7 +214,7 @@ export function isSafeCommandValue(value: unknown): value is string {
 
 /**
  * Returns the value as a command argument: as it is when it only holds plain
- * characters, double-quoted otherwise. Throws on an unsafe value.
+ * characters, quoted otherwise. Throws on an unsafe value.
  */
 export function quoteCommandValue(value: string): string {
   if (!isSafeCommandValue(value)) {
@@ -345,8 +225,6 @@ export function quoteCommandValue(value: string): string {
   if (PLAIN_COMMAND_VALUE.test(value)) {
     return value;
   }
-  // A dollar sign keeps its meaning inside double quotes in bash and in PowerShell,
-  // and the command runner tokenizer strips both quote characters the same way
   return NEEDS_LITERAL_QUOTES.test(value) ? `'${value}'` : `"${value}"`;
 }
 
@@ -371,200 +249,136 @@ export function isAllowedBackpromoteCommand(command: unknown): boolean {
   );
 }
 
+function normalizeConflict(raw: any): BackpromoteConflict | null {
+  if (!raw || typeof raw.path !== "string" || raw.path === "") {
+    return null;
+  }
+  return {
+    path: raw.path,
+    changedInBranch: raw.changedInBranch === true,
+    changedInOrg: raw.changedInOrg === true,
+    items: asStringArray(raw.items),
+    conflictBlocks: Number.isFinite(raw.conflictBlocks)
+      ? Number(raw.conflictBlocks)
+      : null,
+  };
+}
+
 /**
  * Checks the shape of the `--plan --json` result and fills the missing arrays, so
  * the panel never crashes on a partial plan. Returns null when it is not a plan.
  */
-function normalizeWorkingBranch(raw: any): BackpromoteWorkingBranch | null {
-  if (
-    !raw ||
-    typeof raw !== "object" ||
-    !["currentBranch", "newBackpromoteBranch"].includes(raw.mode)
-  ) {
-    return null;
-  }
-  return {
-    mode: raw.mode,
-    reason: String(raw.reason || ""),
-    returnBranch:
-      typeof raw.returnBranch === "string" && raw.returnBranch
-        ? raw.returnBranch
-        : null,
-  };
-}
-
 export function normalizeBackpromotePlan(raw: any): BackpromotePlan | null {
   if (
     !raw ||
     typeof raw !== "object" ||
     typeof raw.planVersion !== "number" ||
-    raw.planVersion < 1 ||
-    !["ready", "blocked", "upToDate"].includes(raw.status)
+    raw.planVersion < 2 ||
+    !["ready", "blocked", "upToDate", "mergeInProgress"].includes(raw.status)
   ) {
     return null;
   }
-  const targetOrg = {
-    username: String(raw.targetOrg?.username || ""),
-    instanceUrl: String(raw.targetOrg?.instanceUrl || ""),
-    orgType: String(raw.targetOrg?.orgType || ""),
-    orgId: String(raw.targetOrg?.orgId || ""),
-    orgName: String(raw.targetOrg?.orgName || ""),
+  const entry = (item: any) => {
+    const parsed = parseMetadataKey(item?.key) || { type: "", name: "" };
+    return {
+      key: String(item.key),
+      type: String(item?.type || parsed.type),
+      name: String(item?.name || parsed.name),
+    };
   };
-  const isTargetOrg = (record: BackpromoteOrgRecord) =>
-    targetOrg.orgId
-      ? record.orgId === targetOrg.orgId
-      : !!targetOrg.orgName && record.orgName === targetOrg.orgName;
   return {
-    ...raw,
+    planVersion: raw.planVersion,
+    status: raw.status,
     currentBranch: String(raw.currentBranch || ""),
     parentBranch: String(raw.parentBranch || ""),
     parentBranchChoices: asStringArray(raw.parentBranchChoices),
-    workingBranch: normalizeWorkingBranch(raw.workingBranch),
-    targetOrg,
+    targetOrg: {
+      username: String(raw.targetOrg?.username || ""),
+      instanceUrl: String(raw.targetOrg?.instanceUrl || ""),
+      orgType: String(raw.targetOrg?.orgType || ""),
+      orgId: String(raw.targetOrg?.orgId || ""),
+      orgName: String(raw.targetOrg?.orgName || ""),
+      tracksSource: raw.targetOrg?.tracksSource === true,
+    },
     checks: asArray(raw.checks).map((check: any) => ({
-      ...check,
+      id: String(check?.id || ""),
       ok: check?.ok === true,
       message: String(check?.message || ""),
       details: asStringArray(check?.details),
     })),
-    gitProvider: {
-      name: GIT_PROVIDER_NAMES.includes(raw.gitProvider?.name)
-        ? raw.gitProvider.name
-        : null,
-    },
-    stateStorage: String(raw.stateStorage || ""),
-    olderFrom:
-      typeof raw.olderFrom === "string" && raw.olderFrom ? raw.olderFrom : null,
-    noHistory: raw.noHistory === true,
-    stateReadErrors: asStringArray(raw.stateReadErrors),
-    groups: asArray(raw.groups)
-      .filter((group: any) => typeof group?.hash === "string")
-      .map((group: any) => {
-        const backpromotedTo: BackpromoteOrgRecord[] = asArray(
-          group.backpromotedTo,
-        )
-          .filter(
-            (record: any) =>
-              typeof record?.orgId === "string" ||
-              typeof record?.orgName === "string",
-          )
-          .map((record: any) => ({
-            orgId: String(record.orgId || ""),
-            orgName: String(record.orgName || record.orgId || ""),
-            date: String(record.date || ""),
-          }));
-        const thisOrg = group.backpromotedToThisOrg;
-        return {
-          ...group,
-          shortHash: String(group.shortHash || group.hash.slice(0, 7)),
-          status: group.status === "done" ? "done" : "pending",
-          selectedByDefault: group.selectedByDefault === true,
-          trackable: group.trackable !== false,
-          backpromotedToThisOrg:
-            thisOrg && typeof thisOrg === "object"
-              ? {
-                  date: String(thisOrg.date || ""),
-                  commit: String(thisOrg.commit || ""),
-                }
-              : null,
-          backpromotedTo,
-          backpromotedToOtherOrgs: backpromotedTo.filter(
-            (record) => !isTargetOrg(record),
-          ),
-          pullRequests: asArray(group.pullRequests),
-          items: asStringArray(group.items),
-          deletions: asStringArray(group.deletions),
-          testClasses: asStringArray(group.testClasses),
-          actionIds: asStringArray(group.actionIds),
-        };
-      }),
+    pullRequests: asArray(raw.pullRequests)
+      .filter((pr: any) => pr && typeof pr === "object")
+      .map((pr: any) => ({
+        id: Number.isInteger(pr.id) ? pr.id : 0,
+        title: String(pr.title || ""),
+        author: String(pr.author || ""),
+        webUrl: String(pr.webUrl || ""),
+        sourceBranch: String(pr.sourceBranch || ""),
+        date: String(pr.date || ""),
+        commit: String(pr.commit || ""),
+      })),
+    commitCount: Number.isFinite(raw.commitCount) ? Number(raw.commitCount) : 0,
     items: asArray(raw.items)
       .filter((item: any) => typeof item?.key === "string")
       .map((item: any) => ({
-        ...item,
-        commits: asStringArray(item.commits),
-        mergeable: item.mergeable === true,
+        ...entry(item),
+        path: typeof item.path === "string" && item.path ? item.path : null,
+        conflict:
+          item.conflict && typeof item.conflict.path === "string"
+            ? {
+                path: item.conflict.path,
+                changedInBranch: item.conflict.changedInBranch === true,
+                changedInOrg: item.conflict.changedInOrg === true,
+              }
+            : null,
       })),
     deletions: asArray(raw.deletions)
       .filter((deletion: any) => typeof deletion?.key === "string")
-      .map((deletion: any) => ({
-        ...deletion,
-        commits: asStringArray(deletion.commits),
-      })),
+      .map(entry),
     actions: asArray(raw.actions)
       .filter((action: any) => typeof action?.id === "string")
       .map((action: any) => ({
-        ...action,
-        commits: asStringArray(action.commits),
+        id: action.id,
+        label: String(action.label || action.id),
+        type: String(action.type || ""),
+        when: action.when === "pre" ? "pre" : "post",
+        pullRequestId: Number.isInteger(action.pullRequestId)
+          ? action.pullRequestId
+          : 0,
+        customUsername:
+          typeof action.customUsername === "string" && action.customUsername
+            ? action.customUsername
+            : null,
       })),
-    conflictDetection: raw.conflictDetection || {
-      success: true,
-      errorMessage: null,
+    testClasses: asStringArray(raw.testClasses),
+    conflicts: asArray(raw.conflicts)
+      .map(normalizeConflict)
+      .filter((conflict): conflict is BackpromoteConflict => !!conflict),
+    orgChanges: {
+      tracked: raw.orgChanges?.tracked === true,
+      files: asStringArray(raw.orgChanges?.files),
     },
     reports: asStringArray(raw.reports),
   };
 }
 
 /**
- * Checks the shape of the `--prepare-merge --json` result. Returns null when it
- * holds no file.
- */
-export function normalizePrepareMergeResult(
-  raw: any,
-): BackpromotePrepareMergeResult | null {
-  if (!raw || typeof raw !== "object") {
-    return null;
-  }
-  const files = asArray(raw.files)
-    .filter(
-      (file: any) =>
-        typeof file?.key === "string" && typeof file?.localPath === "string",
-    )
-    .map((file: any) => ({
-      key: file.key,
-      localPath: file.localPath,
-      basePath: typeof file.basePath === "string" ? file.basePath : null,
-      orgPath: String(file.orgPath || ""),
-      conflictBlocks: Number.isFinite(file.conflictBlocks)
-        ? Number(file.conflictBlocks)
-        : 0,
-    }));
-  if (files.length === 0) {
-    return null;
-  }
-  return {
-    files,
-    prompt: String(raw.prompt || ""),
-    promptFile: String(raw.promptFile || ""),
-    nextCommand: String(raw.nextCommand || ""),
-    backpromoteBranch:
-      typeof raw.backpromoteBranch === "string" && raw.backpromoteBranch
-        ? raw.backpromoteBranch
-        : null,
-    returnBranch:
-      typeof raw.returnBranch === "string" && raw.returnBranch
-        ? raw.returnBranch
-        : null,
-  };
-}
-
-/**
- * Default selection of a freshly loaded plan: the pending groups, every item
- * deployed, every deletion run, the actions not already done.
+ * Default selection of a freshly loaded plan: every item deployed, every deletion run,
+ * every action run, every conflicting file merged by hand (nothing is overwritten or
+ * dropped without the user saying so).
  */
 export function buildDefaultSelection(
   plan: BackpromotePlan,
 ): BackpromoteSelection {
+  const conflictDecisions: Record<string, BackpromoteConflictChoice> = {};
+  for (const conflict of plan.conflicts) {
+    conflictDecisions[conflict.path] = "merge";
+  }
   return {
-    groups: plan.groups
-      .filter((group) => group.selectedByDefault === true)
-      .map((group) => group.hash),
     excludedItems: [],
-    mergedItems: [],
     excludedDeletions: [],
-    actions: plan.actions
-      .filter((action) => action.selectedByDefault === true)
-      .map((action) => action.id),
+    actions: plan.actions.map((action) => action.id),
+    conflictDecisions,
   };
 }
 
@@ -580,22 +394,19 @@ export function normalizeSelection(
     const wanted = new Set(asStringArray(value));
     return known.filter((entry) => wanted.has(entry));
   };
-  const excludedItems = pick(
-    raw?.excludedItems,
-    plan.items.map((item) => item.key),
-  );
-  const excludedSet = new Set(excludedItems);
+  const conflictDecisions: Record<string, BackpromoteConflictChoice> = {};
+  for (const conflict of plan.conflicts) {
+    const choice = raw?.conflictDecisions?.[conflict.path];
+    conflictDecisions[conflict.path] = BACKPROMOTE_CONFLICT_CHOICES.includes(
+      choice,
+    )
+      ? choice
+      : "merge";
+  }
   return {
-    groups: pick(
-      raw?.groups,
-      plan.groups.map((group) => group.hash),
-    ),
-    excludedItems,
-    mergedItems: pick(
-      raw?.mergedItems,
-      plan.items
-        .filter((item) => item.mergeable && !excludedSet.has(item.key))
-        .map((item) => item.key),
+    excludedItems: pick(
+      raw?.excludedItems,
+      plan.items.map((item) => item.key),
     ),
     excludedDeletions: pick(
       raw?.excludedDeletions,
@@ -605,260 +416,121 @@ export function normalizeSelection(
       raw?.actions,
       plan.actions.map((action) => action.id),
     ),
+    conflictDecisions,
   };
 }
 
 /**
- * Counters, rows and blockers of the panel for a selection.
+ * A deployment action that may need the user: a manual step, or an action run as
+ * another user that sfdx-hardis may not be able to log in as on the org.
+ */
+export function isManualAction(
+  action: Pick<BackpromoteAction, "type" | "customUsername">,
+): boolean {
+  return action.type === "manual" || !!action.customUsername;
+}
+
+/**
+ * Counters and blockers of the panel for a selection.
  */
 export function computeSelectionSummary(
   plan: BackpromotePlan,
   selection: BackpromoteSelection,
-  conflictBlocksByKey: Record<string, number> = {},
 ): BackpromoteSelectionSummary {
-  const selectedHashes = new Set(selection.groups);
-  const groupByHash = new Map(plan.groups.map((group) => [group.hash, group]));
-  const selectedGroups = plan.groups.filter((group) =>
-    selectedHashes.has(group.hash),
-  );
-  const isSelected = (hash: string) => selectedHashes.has(hash);
-  const pullRequestIdsOf = (hashes: string[]) =>
-    uniqueSortedNumbers(
-      hashes.flatMap((hash) =>
-        (groupByHash.get(hash)?.pullRequests || []).map((pr) => pr.id),
-      ),
-    );
-
   const excluded = new Set(selection.excludedItems);
-  const merged = new Set(selection.mergedItems);
-  const items: BackpromoteSummaryItem[] = plan.items
-    .filter((item) => item.commits.some(isSelected))
-    .map((item) => {
-      const isExcluded = excluded.has(item.key);
-      const isMerged = !isExcluded && item.mergeable && merged.has(item.key);
-      const knownBlocks = conflictBlocksByKey[item.key];
-      return {
-        ...item,
-        pullRequestIds: pullRequestIdsOf(item.commits.filter(isSelected)),
-        excluded: isExcluded,
-        merged: isMerged,
-        conflictBlocks:
-          isMerged && typeof knownBlocks === "number" ? knownBlocks : null,
-        alsoInUnselected: item.commits
-          .filter((hash) => !isSelected(hash))
-          .map((hash) => groupByHash.get(hash))
-          .filter(
-            (group): group is BackpromoteGroup =>
-              !!group && group.status !== "done",
-          )
-          .map((group) => ({
-            hash: group.hash,
-            shortHash: group.shortHash,
-            pullRequestIds: uniqueSortedNumbers(
-              group.pullRequests.map((pr) => pr.id),
-            ),
-          })),
-      };
-    });
-
   const excludedDeletions = new Set(selection.excludedDeletions);
-  const deletions: BackpromoteSummaryDeletion[] = plan.deletions
-    .filter((deletion) => deletion.commits.some(isSelected))
-    .map((deletion) => ({
-      ...deletion,
-      pullRequestIds: pullRequestIdsOf(deletion.commits.filter(isSelected)),
-      excluded: excludedDeletions.has(deletion.key),
+  const selectedActions = new Set(selection.actions);
+  const itemsToDeployCount = plan.items.filter(
+    (item) => !excluded.has(item.key),
+  ).length;
+  const deletionsToDeleteCount = plan.deletions.filter(
+    (deletion) => !excludedDeletions.has(deletion.key),
+  ).length;
+  const actionsToRun = plan.actions.filter((action) =>
+    selectedActions.has(action.id),
+  );
+  const conflicts = plan.conflicts.map((conflict) => ({
+    ...conflict,
+    choice: selection.conflictDecisions[conflict.path] || "merge",
+  }));
+  const markersLeft = plan.conflicts
+    .filter(
+      (conflict) =>
+        typeof conflict.conflictBlocks === "number" &&
+        conflict.conflictBlocks > 0,
+    )
+    .map((conflict) => ({
+      path: conflict.path,
+      conflictBlocks: conflict.conflictBlocks as number,
     }));
 
-  const selectedActions = new Set(selection.actions);
-  const actions: BackpromoteSummaryAction[] = plan.actions
-    .filter((action) => action.commits.some(isSelected))
-    .map((action) => ({ ...action, selected: selectedActions.has(action.id) }));
-
-  const itemsToDeployCount = items.filter((item) => !item.excluded).length;
-  const deletionsToDeleteCount = deletions.filter(
-    (deletion) => !deletion.excluded,
-  ).length;
-  const actionsToRun = actions.filter((action) => action.selected);
-  const conflictKeys = items
-    .filter(
-      (item) =>
-        item.merged && (item.conflictBlocks === null || item.conflictBlocks > 0),
-    )
-    .map((item) => item.key);
-
   const blockers: BackpromoteBlocker[] = [];
-  if (plan.status !== "ready") {
+  if (plan.status !== "ready" && plan.status !== "mergeInProgress") {
     blockers.push("notReady");
   }
-  if (selectedGroups.length === 0) {
-    blockers.push("noGroup");
-  } else if (
+  if (
+    plan.status === "ready" &&
     itemsToDeployCount === 0 &&
     deletionsToDeleteCount === 0 &&
     actionsToRun.length === 0
   ) {
     blockers.push("nothingToDo");
   }
-  if (conflictKeys.length > 0) {
+  if (plan.status === "mergeInProgress" && markersLeft.length > 0) {
     blockers.push("conflictMarkers");
   }
-
   return {
-    selectedGroupCount: selectedGroups.length,
-    pullRequestIds: pullRequestIdsOf(selection.groups),
-    range:
-      selectedGroups.length > 0
-        ? {
-            oldest: selectedGroups[selectedGroups.length - 1].shortHash,
-            newest: selectedGroups[0].shortHash,
-          }
-        : null,
-    items,
     itemsToDeployCount,
-    changedInOrg: items.filter(
-      (item) =>
-        item.orgState === "changedInOrg" || item.orgState === "deletedLocally",
-    ),
-    deletions,
     deletionsToDeleteCount,
-    actions,
     actionsToRunCount: actionsToRun.length,
-    actionsAlreadyDoneCount: actions.filter((action) => !!action.alreadyDone)
-      .length,
     manualActionsCount: actionsToRun.filter((action) => isManualAction(action))
       .length,
-    alreadyInOrgSelectedCount: selectedGroups.filter(
-      (group) => group.status === "done",
-    ).length,
-    testClasses: [
-      ...new Set(selectedGroups.flatMap((group) => group.testClasses)),
-    ].sort(),
-    alsoInUnselectedCount: items.filter(
-      (item) => !item.excluded && item.alsoInUnselected.length > 0,
-    ).length,
-    conflictKeys,
+    conflicts,
+    markersLeft,
     blockers,
     canRun: blockers.length === 0,
   };
 }
 
 /**
- * `--parentbranch`, `--pull-requests` and `--commits` for the selected groups. A group
- * goes to `--pull-requests` when it merged Pull Requests that no other group of the
- * plan also brought in; otherwise it is named by its commit, so the CLI cannot pick
- * an unselected group sharing the same Pull Request number.
- */
-function buildGroupSelectionFlags(
-  plan: BackpromotePlan,
-  selection: BackpromoteSelection,
-): string[] {
-  const selectedHashes = new Set(selection.groups);
-  const selectedGroups = plan.groups.filter((group) =>
-    selectedHashes.has(group.hash),
-  );
-  const otherPullRequestIds = new Set(
-    plan.groups
-      .filter((group) => !selectedHashes.has(group.hash))
-      .flatMap((group) => group.pullRequests.map((pr) => pr.id)),
-  );
-  const pullRequestIds = new Set<number>();
-  const commits: string[] = [];
-  // Oldest first, the order of the history
-  for (const group of [...selectedGroups].reverse()) {
-    const ids = group.pullRequests
-      .map((pr) => pr.id)
-      .filter((id) => Number.isInteger(id) && id > 0);
-    if (ids.length > 0 && ids.every((id) => !otherPullRequestIds.has(id))) {
-      ids.forEach((id) => pullRequestIds.add(id));
-    } else {
-      const commit =
-        group.shortHash && group.shortHash.length >= 7
-          ? group.shortHash
-          : group.hash;
-      if (!/^[0-9a-f]{7,40}$/i.test(commit)) {
-        throw new Error(`Invalid commit in the plan: ${JSON.stringify(commit)}`);
-      }
-      commits.push(commit);
-    }
-  }
-  const flags = [`--parentbranch ${quoteCommandValue(plan.parentBranch)}`];
-  if (pullRequestIds.size > 0) {
-    flags.push(
-      `--pull-requests ${[...pullRequestIds].sort((a, b) => a - b).join(",")}`,
-    );
-  }
-  if (commits.length > 0) {
-    flags.push(`--commits ${commits.join(",")}`);
-  }
-  return flags;
-}
-
-/**
- * What the user decided about the items, the deletions and the actions, as flags. Every command the
- * panel builds carries them: a `--prepare-merge` run that left them out would tell the CLI that
- * nothing is kept, nothing is already merged and every action must run, and the command written in
- * the coding agent prompt ("run this once the conflicts are solved") would deploy exactly that.
- */
-function buildSelectionOptionFlags(
-  summary: BackpromoteSelectionSummary,
-  mergedKeys: string[],
-): string[] {
-  const parts: string[] = [];
-  for (const item of summary.items) {
-    if (item.excluded) {
-      parts.push(`--exclude-metadata ${quoteCommandValue(item.key)}`);
-    }
-  }
-  if (
-    summary.deletions.length > 0 &&
-    summary.deletions.every((deletion) => deletion.excluded)
-  ) {
-    parts.push("--skip-destructive");
-  } else {
-    for (const deletion of summary.deletions) {
-      if (deletion.excluded) {
-        parts.push(`--exclude-metadata ${quoteCommandValue(deletion.key)}`);
-      }
-    }
-  }
-  for (const key of mergedKeys) {
-    parts.push(`--merged-metadata ${quoteCommandValue(key)}`);
-  }
-  if (summary.actions.length > 0) {
-    const actionIds = summary.actions
-      .filter((action) => action.selected)
-      .map((action) => action.id);
-    parts.push(
-      actionIds.length > 0
-        ? `--actions ${quoteCommandValue(actionIds.join(","))}`
-        : "--skip-actions",
-    );
-  }
-  return parts;
-}
-
-/**
- * The exact run command for a selection, or null when no group is selected. Throws
- * when a value of the plan cannot be put safely in a command.
+ * The exact run command for a selection. Throws when a value of the plan cannot be put
+ * safely in a command.
  */
 export function buildBackpromoteCommand(
   plan: BackpromotePlan,
   selection: BackpromoteSelection,
-): string | null {
-  const summary = computeSelectionSummary(plan, selection);
-  if (summary.selectedGroupCount === 0) {
-    return null;
-  }
-  const mergedKeys = summary.items
-    .filter((item) => item.merged)
-    .map((item) => item.key);
+): string {
   const parts = [
     BACKPROMOTE_COMMAND,
-    ...buildGroupSelectionFlags(plan, selection),
-    ...buildSelectionOptionFlags(summary, mergedKeys),
-    `--target-org ${quoteCommandValue(plan.targetOrg.username)}`,
+    `--parentbranch ${quoteCommandValue(plan.parentBranch)}`,
+    "--auto",
   ];
+  for (const key of selection.excludedItems) {
+    parts.push(`--exclude-metadata ${quoteCommandValue(key)}`);
+  }
+  if (
+    plan.deletions.length > 0 &&
+    plan.deletions.every((deletion) =>
+      selection.excludedDeletions.includes(deletion.key),
+    )
+  ) {
+    parts.push("--skip-destructive");
+  } else {
+    for (const key of selection.excludedDeletions) {
+      parts.push(`--exclude-metadata ${quoteCommandValue(key)}`);
+    }
+  }
+  for (const [file, choice] of Object.entries(selection.conflictDecisions)) {
+    parts.push(`--on-conflict ${quoteCommandValue(`${file}=${choice}`)}`);
+  }
+  if (plan.actions.length > 0) {
+    parts.push(
+      selection.actions.length > 0
+        ? `--actions ${quoteCommandValue(selection.actions.join(","))}`
+        : "--skip-actions",
+    );
+  }
+  parts.push(`--target-org ${quoteCommandValue(plan.targetOrg.username)}`);
   return parts.join(" ");
 }
 
@@ -868,9 +540,8 @@ export function buildBackpromoteCommand(
 export function buildSelectionPayload(
   plan: BackpromotePlan,
   selection: BackpromoteSelection,
-  conflictBlocksByKey: Record<string, number> = {},
 ): BackpromoteSelectionPayload {
-  const summary = computeSelectionSummary(plan, selection, conflictBlocksByKey);
+  const summary = computeSelectionSummary(plan, selection);
   let command: string | null = null;
   let commandError: string | null = null;
   try {
@@ -887,95 +558,14 @@ export function buildSelectionPayload(
 
 /**
  * Read-only plan command, with the parent branch the user chose in the panel.
- *
- * The items holding a prepared merge are named: their files are modified, and without them the CLI
- * answers a blocked plan (the working directory is not clean), which would leave the panel
- * read-only with the merge still waiting to be deployed. `from` lists the Pull Requests merged
- * before the ones of the default window.
  */
-export function buildPlanCommand(
-  parentBranch?: string | null,
-  options: { mergedItems?: string[]; from?: string | null } = {},
-): string {
+export function buildPlanCommand(parentBranch?: string | null): string {
   const parts = [BACKPROMOTE_COMMAND, "--plan"];
   if (parentBranch) {
     parts.push(`--parentbranch ${quoteCommandValue(parentBranch)}`);
   }
-  for (const key of options.mergedItems || []) {
-    parts.push(`--merged-metadata ${quoteCommandValue(key)}`);
-  }
-  if (options.from) {
-    parts.push(`--from ${quoteCommandValue(options.from)}`);
-  }
   parts.push("--json");
   return parts.join(" ");
-}
-
-/**
- * Command writing the 3-way merge of some items into their local files. The group
- * selection flags define the merge base.
- */
-export function buildPrepareMergeCommand(
-  plan: BackpromotePlan,
-  selection: BackpromoteSelection,
-  keys: string[],
-): string {
-  const mergeableKeys = new Set(
-    plan.items.filter((item) => item.mergeable).map((item) => item.key),
-  );
-  const keysToMerge = [...new Set(asStringArray(keys))].filter((key) =>
-    mergeableKeys.has(key),
-  );
-  if (keysToMerge.length === 0) {
-    throw new Error("No mergeable item to prepare");
-  }
-  if (selection.groups.length === 0) {
-    throw new Error("No group selected");
-  }
-  const summary = computeSelectionSummary(plan, selection);
-  // The merges already prepared are named too: their files are modified, and the CLI refuses to
-  // work on a dirty working directory unless it knows which files hold a merge. Without them, a
-  // second Merge in the panel fails with "branch is not clean".
-  const alreadyMerged = summary.items
-    .filter((item) => item.merged && !keysToMerge.includes(item.key))
-    .map((item) => item.key);
-  return [
-    BACKPROMOTE_COMMAND,
-    ...keysToMerge.map((key) => `--prepare-merge ${quoteCommandValue(key)}`),
-    ...buildGroupSelectionFlags(plan, selection),
-    ...buildSelectionOptionFlags(summary, alreadyMerged),
-    `--target-org ${quoteCommandValue(plan.targetOrg.username)}`,
-    "--json",
-  ].join(" ");
-}
-
-/**
- * Number of conflict blocks left in a file. Every marker line counts, not only the opening one: a
- * file where the `<<<<<<<` line was removed and the rest left still holds a conflict. For display
- * only: the CLI checks the markers again before deploying.
- */
-export function countConflictBlocks(content: string): number {
-  if (typeof content !== "string" || content.length === 0) {
-    return 0;
-  }
-  const lines = content.split(/\r?\n/);
-  const count = (marker: RegExp) =>
-    lines.filter((line) => marker.test(line)).length;
-  return Math.max(
-    count(/^<{7}(?!<)/),
-    count(/^\|{7}(?!\|)/),
-    count(/^>{7}(?!>)/),
-  );
-}
-
-/**
- * A deployment action that may need the user: a manual step, or an action run as
- * another user that sfdx-hardis may not be able to log in as on the org.
- */
-export function isManualAction(
-  action: Pick<BackpromoteAction, "type" | "customUsername">,
-): boolean {
-  return action.type === "manual" || !!action.customUsername;
 }
 
 /**
@@ -1025,14 +615,21 @@ function collectResultText(result: any): string {
 }
 
 /**
- * True when the installed sfdx-hardis does not know the flags of the panel yet: the
- * CLI then answers with a "Nonexistent flag" parsing error.
+ * True when the installed sfdx-hardis does not know the flags of the panel yet, or answers
+ * an older plan: the CLI then answers with a "Nonexistent flag" parsing error, or a plan
+ * of another version.
  */
 export function isCliTooOldForBackpromotePanel(result: any): boolean {
   const text = collectResultText(result);
-  return /NonexistentFlagsError|Nonexistent flags?:?\s*--|Unexpected argument:?\s*--(plan|prepare-merge)/i.test(
-    text,
-  );
+  if (
+    /NonexistentFlagsError|Nonexistent flags?:?\s*--|Unexpected argument:?\s*--(plan|auto)/i.test(
+      text,
+    )
+  ) {
+    return true;
+  }
+  const planVersion = result?.result?.planVersion;
+  return typeof planVersion === "number" && planVersion < 2;
 }
 
 /**

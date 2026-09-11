@@ -8,31 +8,24 @@ import { LwcUiPanel } from "../webviews/lwc-ui-panel";
 import { execSfdxJson, getWorkspaceRoot } from "../utils";
 import { Logger } from "../logger";
 import { t } from "../i18n/i18n";
-import { GitProvider } from "../utils/gitProviders/gitProvider";
-import {
-  collectProviderCredentialEnvVars,
-  invalidateProviderCredentialEnvCache,
-} from "../utils/providerCredentials";
+import { collectProviderCredentialEnvVars } from "../utils/providerCredentials";
 import {
   BACKPROMOTE_COMMAND,
   BackpromotePlan,
+  BackpromotePlanProgress,
   BackpromoteSelection,
   buildDefaultSelection,
   buildPlanCommand,
-  buildPrepareMergeCommand,
+  buildPlanProgress,
   buildSelectionPayload,
-  countConflictBlocks,
   getBackpromoteErrorMessage,
   getTargetOrgDisplayName,
-  BackpromotePlanProgress,
-  buildPlanProgress,
   isAllowedBackpromoteCommand,
   isCliTooOldForBackpromotePanel,
   isSafeCommandValue,
-  parseProgressEvents,
   normalizeBackpromotePlan,
-  normalizePrepareMergeResult,
   normalizeSelection,
+  parseProgressEvents,
   recoverJsonCommandResult,
 } from "../utils/backpromote/backpromotePanelUtils";
 
@@ -41,25 +34,13 @@ const BACKPROMOTE_LWC_ID = "s-backpromote";
 // during this delay
 const ORG_SELECTION_WATCH_MS = 10 * 60 * 1000;
 
-interface PreparedMerge {
-  prompt: string;
-  promptFile: string;
-  nextCommand: string;
-  localPath: string;
-}
-
 interface BackpromotePanelState {
   plan: BackpromotePlan | null;
   /** Parent branch picked in the panel, null for the one sfdx-hardis resolves */
   parentBranch: string | null;
-  /** Commit passed as --from to list the Pull Requests merged before the default window */
-  from: string | null;
   selection: BackpromoteSelection | null;
   /** Revision of the last selection received from the webview */
   revision: number;
-  conflictBlocksByKey: Record<string, number>;
-  preparedMerges: Record<string, PreparedMerge>;
-  mergeWatchers: Map<string, vscode.Disposable>;
   orgSelectionWatcher: vscode.Disposable | null;
   loadCounter: number;
 }
@@ -68,79 +49,25 @@ function createState(): BackpromotePanelState {
   return {
     plan: null,
     parentBranch: null,
-    from: null,
     selection: null,
     revision: 0,
-    conflictBlocksByKey: {},
-    preparedMerges: {},
-    mergeWatchers: new Map(),
     orgSelectionWatcher: null,
     loadCounter: 0,
   };
 }
 
-/**
- * sfdx-hardis runs one backpromote command at a time: two of them race on the git index, on the
- * backpromote branch they create and on the `.git/config` lock of sfdx-git-delta. Every background
- * call of the panel goes through this queue, so a second Merge waits for the first one.
- */
-let backgroundQueue: Promise<unknown> = Promise.resolve();
-function queueBackgroundRun<T>(task: () => Promise<T>): Promise<T> {
-  const next = backgroundQueue.then(task, task);
-  backgroundQueue = next.then(
-    () => undefined,
-    () => undefined,
-  );
-  return next;
-}
-
-/** The items whose local file holds a merge written by sfdx-hardis */
-function preparedMergeKeys(panelState: BackpromotePanelState): string[] {
-  return Object.keys(panelState.preparedMerges);
-}
-
-/** Forgets the merges of a plan that no longer applies (another parent branch, another org) */
-function forgetPreparedMerges(panelState: BackpromotePanelState): void {
-  for (const watcher of panelState.mergeWatchers.values()) {
-    watcher.dispose();
-  }
-  panelState.mergeWatchers.clear();
-  panelState.preparedMerges = {};
-  panelState.conflictBlocksByKey = {};
-}
-
 // The panel is a singleton: its state lives as long as the panel
 let state: BackpromotePanelState = createState();
 
-function disposeStateWatchers(panelState: BackpromotePanelState): void {
-  for (const watcher of panelState.mergeWatchers.values()) {
-    watcher.dispose();
-  }
-  panelState.mergeWatchers.clear();
+function disposeState(panelState: BackpromotePanelState): void {
   panelState.orgSelectionWatcher?.dispose();
   panelState.orgSelectionWatcher = null;
 }
 
-function samePath(left: string, right: string): boolean {
-  const normalize = (value: string) => {
-    const resolved = path.resolve(value);
-    return process.platform === "win32" ? resolved.toLowerCase() : resolved;
-  };
-  return normalize(left) === normalize(right);
-}
-
-async function readConflictBlocks(filePath: string): Promise<number | null> {
-  try {
-    return countConflictBlocks(await fs.promises.readFile(filePath, "utf8"));
-  } catch {
-    return null;
-  }
-}
-
 /**
- * sfdx-hardis reads and writes the backpromote history in Pull Request comments and
- * only finds the git provider credentials in environment variables: pass the ones of
- * the extension, like the command runner does.
+ * sfdx-hardis names the Pull Requests it brings in from the git log, and completes their
+ * titles from the git provider when it can reach it: pass the credentials of the extension,
+ * like the command runner does.
  */
 async function collectCredentialEnv(): Promise<Record<string, string>> {
   try {
@@ -159,7 +86,6 @@ type PlanFetchResult =
 
 async function fetchPlan(
   parentBranch: string | null,
-  options: { mergedItems?: string[]; from?: string | null } = {},
   onProgress?: (progress: BackpromotePlanProgress) => void,
 ): Promise<PlanFetchResult> {
   // sfdx-hardis appends each step of the plan to this file (SFDX_HARDIS_PROGRESS_FILE):
@@ -189,19 +115,16 @@ async function fetchPlan(
   };
   const progressTimer = setInterval(readProgress, 500);
   try {
-    const credentialEnv = await collectCredentialEnv();
     const result = recoverJsonCommandResult(
-      await queueBackgroundRun(() =>
-        execSfdxJson(buildPlanCommand(parentBranch, options), {
-          fail: false,
-          output: false,
-          reuseRecentResult: false,
-          env: {
-            ...credentialEnv,
-            SFDX_HARDIS_PROGRESS_FILE: progressFile,
-          },
-        }),
-      ),
+      await execSfdxJson(buildPlanCommand(parentBranch), {
+        fail: false,
+        output: false,
+        reuseRecentResult: false,
+        env: {
+          ...(await collectCredentialEnv()),
+          SFDX_HARDIS_PROGRESS_FILE: progressFile,
+        },
+      }),
     );
     const plan =
       result?.status === 0 ? normalizeBackpromotePlan(result.result) : null;
@@ -238,10 +161,9 @@ function buildPanelData(panelState: BackpromotePanelState): any {
     plan,
     selection,
     revision: panelState.revision,
-    ...buildSelectionPayload(plan, selection, panelState.conflictBlocksByKey),
+    ...buildSelectionPayload(plan, selection),
     targetOrgLabel: getTargetOrgDisplayName(plan.targetOrg),
-    conflictBlocksByKey: panelState.conflictBlocksByKey,
-    preparedMerges: panelState.preparedMerges,
+    workspaceRoot: getWorkspaceRoot(),
   };
 }
 
@@ -257,11 +179,7 @@ function sendSelectionSummary(
     data: {
       revision: panelState.revision,
       selection: panelState.selection,
-      ...buildSelectionPayload(
-        panelState.plan,
-        panelState.selection,
-        panelState.conflictBlocksByKey,
-      ),
+      ...buildSelectionPayload(panelState.plan, panelState.selection),
     },
   });
 }
@@ -282,18 +200,18 @@ export function registerShowBackpromote(commands: Commands) {
     async () => {
       const lwcManager = LwcPanelManager.getInstance();
       if (!lwcManager.getPanel(BACKPROMOTE_LWC_ID)) {
-        disposeStateWatchers(state);
+        disposeState(state);
         state = createState();
       }
 
-      // Open the panel at once: computing the plan retrieves metadata from the
-      // org and takes a while
+      // Open the panel at once: computing the plan previews the org and takes a
+      // few seconds
       const panel = lwcManager.getOrCreatePanel(BACKPROMOTE_LWC_ID, {
         loading: true,
       });
       panel.updateTitle(t("backpromote"));
       lwcManager.setDisposalCallback(BACKPROMOTE_LWC_ID, () => {
-        disposeStateWatchers(state);
+        disposeState(state);
         state = createState();
       });
 
@@ -301,19 +219,15 @@ export function registerShowBackpromote(commands: Commands) {
         const current = state;
         const loadId = ++current.loadCounter;
         panel.sendInitializationData({ loading: true });
-        const fetched = await fetchPlan(
-          current.parentBranch,
-          { mergedItems: preparedMergeKeys(current), from: current.from },
-          (progress) => {
-            if (
-              state === current &&
-              loadId === current.loadCounter &&
-              !panel.isDisposed()
-            ) {
-              panel.sendMessage({ type: "planProgress", data: progress });
-            }
-          },
-        );
+        const fetched = await fetchPlan(current.parentBranch, (progress) => {
+          if (
+            state === current &&
+            loadId === current.loadCounter &&
+            !panel.isDisposed()
+          ) {
+            panel.sendMessage({ type: "planProgress", data: progress });
+          }
+        });
         // A newer load started meanwhile, or the panel was closed
         if (
           state !== current ||
@@ -330,23 +244,14 @@ export function registerShowBackpromote(commands: Commands) {
           return;
         }
         const plan = fetched.plan;
-        // Groups and actions start again from the plan defaults (a run may have
-        // backpromoted some groups), the decisions taken on items are kept
+        // The decisions taken on items, deletions, actions and conflicts are kept
+        // across a refresh of the same plan
         const previous =
           current.plan && current.selection
             ? normalizeSelection(plan, current.selection)
             : null;
         current.plan = plan;
-        current.selection = {
-          ...buildDefaultSelection(plan),
-          ...(previous
-            ? {
-                excludedItems: previous.excludedItems,
-                mergedItems: previous.mergedItems,
-                excludedDeletions: previous.excludedDeletions,
-              }
-            : {}),
-        };
+        current.selection = previous || buildDefaultSelection(plan);
         panel.sendInitializationData(buildPanelData(current));
       };
 
@@ -367,18 +272,9 @@ export function registerShowBackpromote(commands: Commands) {
               isSafeCommandValue(parentBranch)
             ) {
               current.parentBranch = parentBranch;
-              // The merges were written against the other parent branch: keeping them would name
-              // files that hold a merge of a branch this plan knows nothing about
-              forgetPreparedMerges(current);
-              current.from = null;
-              await loadAndPush();
-            }
-            break;
-          }
-          case "showOlderPullRequests": {
-            // The plan gives the commit to start from: the webview never sends one
-            if (current.plan?.olderFrom) {
-              current.from = current.plan.olderFrom;
+              // The decisions were about another merge
+              current.selection = null;
+              current.plan = null;
               await loadAndPush();
             }
             break;
@@ -388,17 +284,11 @@ export function registerShowBackpromote(commands: Commands) {
             sendSelectionSummary(panel, current);
             break;
           }
-          case "prepareMerge": {
-            await prepareMerge(panel, current, data);
-            break;
-          }
           case "runBackpromote": {
             runBackpromote(panel, current, data);
             break;
           }
           case "runInTerminal": {
-            // With the same git provider credentials as the panel: the history lives in Pull
-            // Request comments, and without a token the command stops on its first check
             commands.commandRunner.executeCommandTerminal(
               BACKPROMOTE_COMMAND,
               await collectCredentialEnv(),
@@ -407,10 +297,6 @@ export function registerShowBackpromote(commands: Commands) {
           }
           case "selectOrg": {
             selectOrg(current, loadAndPush);
-            break;
-          }
-          case "connectGitProvider": {
-            await connectGitProvider(loadAndPush);
             break;
           }
           default:
@@ -422,167 +308,6 @@ export function registerShowBackpromote(commands: Commands) {
     },
   );
   commands.disposables.push(disposable);
-}
-
-/**
- * Asks sfdx-hardis to write the 3-way merge of some items into their local files,
- * opens them, then follows their conflict markers to tell the panel when they are
- * solved.
- */
-async function prepareMerge(
-  panel: LwcUiPanel,
-  current: BackpromotePanelState,
-  data: any,
-): Promise<void> {
-  const keys: string[] = Array.isArray(data?.keys)
-    ? data.keys.filter((key: unknown) => typeof key === "string")
-    : [];
-  const fail = (message: string, cliTooOld = false) => {
-    panel.sendMessage({
-      type: "mergePrepareFailed",
-      data: { keys, message, cliTooOld },
-    });
-  };
-  if (!current.plan) {
-    fail(t("backpromotePlanUnreadable"));
-    return;
-  }
-  acceptSelection(current, data);
-  let command: string;
-  try {
-    command = buildPrepareMergeCommand(
-      current.plan,
-      current.selection as BackpromoteSelection,
-      keys,
-    );
-  } catch (e: any) {
-    fail(String(e?.message || e));
-    return;
-  }
-  const credentialEnv = await collectCredentialEnv();
-  const result = recoverJsonCommandResult(
-    await vscode.window.withProgress(
-      {
-        location: vscode.ProgressLocation.Notification,
-        title: t("backpromotePreparingMerge"),
-        cancellable: false,
-      },
-      () =>
-        queueBackgroundRun(() =>
-          execSfdxJson(command, {
-            fail: false,
-            output: false,
-            reuseRecentResult: false,
-            env: credentialEnv,
-          }),
-        ),
-    ),
-  );
-  if (state !== current || panel.isDisposed()) {
-    return;
-  }
-  const mergeResult =
-    result?.status === 0 ? normalizePrepareMergeResult(result.result) : null;
-  if (!mergeResult) {
-    const cliTooOld = isCliTooOldForBackpromotePanel(result);
-    fail(
-      getBackpromoteErrorMessage(result) || t("backpromoteMergeFailed"),
-      cliTooOld,
-    );
-    return;
-  }
-
-  const workspaceRoot = getWorkspaceRoot();
-  const absolutePaths: string[] = [];
-  for (const file of mergeResult.files) {
-    const absolutePath = path.isAbsolute(file.localPath)
-      ? file.localPath
-      : path.join(workspaceRoot, file.localPath);
-    absolutePaths.push(absolutePath);
-    current.preparedMerges[file.key] = {
-      prompt: mergeResult.prompt,
-      promptFile: mergeResult.promptFile,
-      nextCommand: mergeResult.nextCommand,
-      localPath: file.localPath,
-    };
-    const blocks = await readConflictBlocks(absolutePath);
-    current.conflictBlocksByKey[file.key] = blocks ?? file.conflictBlocks;
-    watchMergedFile(panel, current, file.key, absolutePath);
-  }
-  panel.sendMessage({
-    type: "mergePrepared",
-    data: {
-      requestedKeys: keys,
-      keys: mergeResult.files.map((file) => file.key),
-      result: mergeResult,
-      conflictBlocksByKey: current.conflictBlocksByKey,
-    },
-  });
-  sendSelectionSummary(panel, current);
-
-  // sfdx-hardis opens the files itself when it is connected to VS Code, which a
-  // --json call run by the extension is not
-  for (const [index, absolutePath] of absolutePaths.entries()) {
-    try {
-      const document = await vscode.workspace.openTextDocument(
-        vscode.Uri.file(absolutePath),
-      );
-      await vscode.window.showTextDocument(document, {
-        preview: false,
-        preserveFocus: index > 0,
-      });
-    } catch (e: any) {
-      Logger.log(
-        `[vscode-sfdx-hardis] Unable to open merged file ${absolutePath}: ${e?.message || e}`,
-      );
-    }
-  }
-}
-
-function watchMergedFile(
-  panel: LwcUiPanel,
-  current: BackpromotePanelState,
-  key: string,
-  absolutePath: string,
-): void {
-  current.mergeWatchers.get(key)?.dispose();
-  const refreshCount = async () => {
-    const blocks = await readConflictBlocks(absolutePath);
-    if (
-      blocks === null ||
-      state !== current ||
-      panel.isDisposed() ||
-      current.conflictBlocksByKey[key] === blocks
-    ) {
-      return;
-    }
-    current.conflictBlocksByKey[key] = blocks;
-    panel.sendMessage({
-      type: "mergeMarkers",
-      data: { key, conflictBlocks: blocks },
-    });
-    sendSelectionSummary(panel, current);
-  };
-  const watcher = vscode.workspace.createFileSystemWatcher(
-    new vscode.RelativePattern(
-      vscode.Uri.file(path.dirname(absolutePath)),
-      path.basename(absolutePath),
-    ),
-  );
-  current.mergeWatchers.set(
-    key,
-    vscode.Disposable.from(
-      watcher,
-      watcher.onDidChange(refreshCount),
-      watcher.onDidCreate(refreshCount),
-      // Saves from the editor are caught even where file watching is limited
-      vscode.workspace.onDidSaveTextDocument((document) => {
-        if (samePath(document.uri.fsPath, absolutePath)) {
-          void refreshCount();
-        }
-      }),
-    ),
-  );
 }
 
 /**
@@ -601,7 +326,6 @@ function runBackpromote(
   const payload = buildSelectionPayload(
     current.plan,
     current.selection as BackpromoteSelection,
-    current.conflictBlocksByKey,
   );
   if (
     !payload.summary.canRun ||
@@ -616,52 +340,9 @@ function runBackpromote(
     "vscode-sfdx-hardis.execute-command",
     payload.command,
   );
-  // The plan describes the org as it was before this run: what it deploys, the Pull Requests it
-  // records and the actions it runs are all about to change. Running the same selection twice
-  // would deploy it again and rerun its deployment actions, which are not all repeatable.
+  // The plan describes the branch and the org as they were before this run: it must be
+  // computed again before running another one
   panel.sendMessage({ type: "runStarted", data: { command: payload.command } });
-}
-
-function showErrorWithLogs(message: string): void {
-  const viewLogsLabel = t("viewLogs");
-  vscode.window.showErrorMessage(message, viewLogsLabel).then((action) => {
-    if (action === viewLogsLabel) {
-      Logger.showOutputChannel();
-    }
-  });
-}
-
-/**
- * Connects to the git provider of the repository with the flow of the DevOps Pipeline,
- * then reloads the plan with the new credentials.
- */
-async function connectGitProvider(reload: () => Promise<void>): Promise<void> {
-  const gitProvider = await GitProvider.getInstance();
-  if (!gitProvider) {
-    vscode.window.showErrorMessage(t("noGitProviderDetected"));
-    return;
-  }
-  let authenticated: boolean | null;
-  try {
-    authenticated = await gitProvider.authenticate();
-  } catch (e) {
-    Logger.log(
-      `[vscode-sfdx-hardis] Backpromote: git provider authentication failed: ${String(e)}`,
-    );
-    showErrorWithLogs(t("gitProviderAuthError"));
-    return;
-  }
-  if (authenticated === true) {
-    // The credentials collected before the connection are cached: drop them so the
-    // plan is computed with the new ones
-    invalidateProviderCredentialEnvCache();
-    vscode.window.showInformationMessage(
-      t("successfullyConnectedToGitProvider"),
-    );
-    await reload();
-  } else if (authenticated === false) {
-    showErrorWithLogs(t("failedConnectGitProvider"));
-  }
 }
 
 /**
@@ -671,9 +352,6 @@ function selectOrg(
   current: BackpromotePanelState,
   reload: () => Promise<void>,
 ): void {
-  // Another org received other Pull Requests, and the merges were written against this one
-  forgetPreparedMerges(current);
-  current.from = null;
   current.orgSelectionWatcher?.dispose();
   const watcher = vscode.workspace.createFileSystemWatcher(
     new vscode.RelativePattern(getWorkspaceRoot(), ".sf/config.json"),
@@ -694,6 +372,9 @@ function selectOrg(
   function onConfigChange() {
     stop();
     if (state === current) {
+      // Another org: the decisions were about this one
+      current.selection = null;
+      current.plan = null;
       void reload();
     }
   }

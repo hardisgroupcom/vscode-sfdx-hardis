@@ -536,10 +536,10 @@ async function main() {
     return 0;
   }
 
-  // Backpromote panel: read-only plan and merge preparation
+  // Backpromote panel: read-only plan
   if (
     first === "hardis:work:backpromote" &&
-    (args.includes("--plan") || args.includes("--prepare-merge"))
+    args.includes("--plan")
   ) {
     return answerBackpromote();
   }
@@ -555,25 +555,23 @@ async function main() {
 
 /**
  * `sf hardis:work:backpromote --plan --json` answers the plan of
- * test/fixtures/backpromote/backpromote-plan.json. `--prepare-merge <Type:Name>`
- * writes a file holding one conflict block into the workspace, like the real
- * 3-way merge. SF_MOCK_BACKPROMOTE_CLI=old simulates an sfdx-hardis version that
- * does not know these flags yet (JSON error printed on stdout, as with
- * SF_JSON_TO_STDOUT), SF_MOCK_BACKPROMOTE_CLI=noGitProvider a user who is not
- * connected to the git provider, SF_MOCK_BACKPROMOTE_CLI=parentNotMajor a parent
- * branch that is not a major branch until --parentbranch names one.
+ * test/fixtures/backpromote/backpromote-plan.json, with the parent branch of
+ * --parentbranch when given. SF_MOCK_BACKPROMOTE_CLI=old simulates an sfdx-hardis
+ * version that does not know the panel flags yet (JSON error printed on stdout, as
+ * with SF_JSON_TO_STDOUT), =notUserStory a run started from a major branch,
+ * =parentNotMajor a parent branch that is not a major branch until --parentbranch
+ * names one, and =mergeInProgress a previous backpromote that stopped on a conflict.
  */
 function answerBackpromote() {
-  if (process.env.SF_MOCK_BACKPROMOTE_CLI === "old") {
-    const flag = args.includes("--plan") ? "--plan" : "--prepare-merge";
+  const variant = process.env.SF_MOCK_BACKPROMOTE_CLI || "";
+  if (variant === "old") {
     console.log(
       JSON.stringify({
         code: "NonexistentFlagsError",
         name: "NonexistentFlagsError",
-        message: `Nonexistent flag: ${flag}\nSee more help with --help`,
+        message: "Nonexistent flag: --plan\nSee more help with --help",
         status: 2,
-        exitCode: 2,
-        warnings: [],
+        stack: "",
       }),
     );
     return 2;
@@ -584,150 +582,60 @@ function answerBackpromote() {
       "utf8",
     ),
   );
-  // SF_MOCK_BACKPROMOTE_CLI=noGitProvider: the user is not connected to the git
-  // provider, the plan stops at its first check
-  if (process.env.SF_MOCK_BACKPROMOTE_CLI === "noGitProvider") {
-    outputJsonIfRequested(
-      {
-        status: 0,
-        result: {
-          ...plan,
-          status: "blocked",
-          checks: [
-            {
-              id: "gitProvider",
-              ok: false,
-              message:
-                "You are not connected to GitHub: sfdx-hardis reads and writes the backpromote history in Pull Request comments.",
-              details: [],
-            },
-          ],
-          groups: [],
-          items: [],
-          deletions: [],
-          actions: [],
-          reports: [],
-          stateReadErrors: [],
-        },
-        warnings: [],
-      },
-      "",
-    );
-    return 0;
+  const parentIndex = args.indexOf("--parentbranch");
+  const parentBranch = parentIndex >= 0 ? args[parentIndex + 1] : null;
+  if (parentBranch) {
+    plan.parentBranch = parentBranch;
   }
-  // SF_MOCK_BACKPROMOTE_CLI=parentNotMajor: the plan stops on the parentBranch
-  // check until --parentbranch names the last major branch of the fixture (the
-  // panel may already pass the default one)
-  const parentBranchFlag = args.includes("--parentbranch")
-    ? args[args.indexOf("--parentbranch") + 1]
-    : null;
-  const majorBranches = plan.parentBranchChoices || [plan.parentBranch];
-  if (
-    process.env.SF_MOCK_BACKPROMOTE_CLI === "parentNotMajor" &&
-    args.includes("--plan") &&
-    parentBranchFlag !== majorBranches[majorBranches.length - 1]
-  ) {
-    outputJsonIfRequested(
-      {
-        status: 0,
-        result: {
-          ...plan,
-          status: "blocked",
-          parentBranch: "feature/other",
-          parentBranchChoices: majorBranches,
-          checks: [
-            ...plan.checks.filter(
-              (check) => check.id === "gitProvider" || check.id === "targetOrg",
-            ),
-            {
-              id: "parentBranch",
-              ok: false,
-              message: `feature/other is not a major branch. A backpromote brings what was merged in a major branch into your User Story branch: choose one of ${majorBranches.join(", ")}.`,
-            },
-          ],
-          groups: [],
-          items: [],
-          deletions: [],
-          actions: [],
-          reports: [],
-          stateReadErrors: [],
-        },
-        warnings: [],
-      },
-      "",
-    );
-    return 0;
-  }
-  if (args.includes("--plan") && process.env.SFDX_HARDIS_PROGRESS_FILE) {
-    // The steps sfdx-hardis reports while it computes a plan
-    const steps = [
-      { step: "listing", message: "Listing the Pull Requests merged in integration" },
-      { step: "delta", message: "Computing what #487 deploys (1 of 2)", current: 1, total: 2 },
-      { step: "delta", message: "Computing what #485 deploys (2 of 2)", current: 2, total: 2 },
-      { step: "orgCompare", message: "Retrieving 12 item(s) from your org to find the ones changed there" },
-    ];
-    const pause = new Int32Array(new SharedArrayBuffer(4));
-    for (const event of steps) {
-      fs.appendFileSync(
-        process.env.SFDX_HARDIS_PROGRESS_FILE,
-        JSON.stringify({ time: new Date().toISOString(), ...event }) + "\n",
-      );
-      Atomics.wait(pause, 0, 0, 300);
-    }
-  }
-  if (args.includes("--plan")) {
-    outputJsonIfRequested({ status: 0, result: plan, warnings: [] }, "");
-    return 0;
-  }
-  const parentBranch = plan.parentBranch;
-  const keys = args.filter(
-    (arg, index) => index > 0 && args[index - 1] === "--prepare-merge",
-  );
-  const files = [];
-  for (const key of keys) {
-    const item = plan.items.find((entry) => entry.key === key && entry.mergeable);
-    if (!item) {
-      continue;
-    }
-    const localFile = path.join(process.cwd(), item.localPath);
-    fs.mkdirSync(path.dirname(localFile), { recursive: true });
-    fs.writeFileSync(
-      localFile,
-      [
-        `// ${item.name}`,
-        "<<<<<<< your org",
-        "Decimal scale = 2;",
-        "||||||| last backpromoted",
-        "Decimal scale = 3;",
-        "=======",
-        "Decimal scale = 4;",
-        `>>>>>>> ${parentBranch}`,
-        "",
-      ].join("\n"),
-    );
-    files.push({
-      key,
-      localPath: item.localPath,
-      basePath: null,
-      orgPath: item.orgPath,
-      conflictBlocks: 1,
+  const blocked = (check) => ({
+    ...plan,
+    status: "blocked",
+    checks: plan.checks.map((entry) => (entry.id === check.id ? check : entry)),
+    pullRequests: [],
+    commitCount: 0,
+    items: [],
+    deletions: [],
+    actions: [],
+    testClasses: [],
+    conflicts: [],
+    orgChanges: { tracked: true, files: [] },
+  });
+  let answer = plan;
+  if (variant === "notUserStory") {
+    answer = blocked({
+      id: "currentBranch",
+      ok: false,
+      message:
+        "integration is a major branch, deployed by the CI/CD pipeline. Create a User Story branch first (sf hardis:work:new), then backpromote from it.",
     });
+    answer.currentBranch = "integration";
+  } else if (variant === "parentNotMajor" && !parentBranch) {
+    answer = blocked({
+      id: "parentBranch",
+      ok: false,
+      message:
+        "feature/other is not a major branch. A backpromote brings what was merged in a major branch into your User Story branch: choose one of integration, uat, preprod.",
+    });
+    answer.parentBranch = "feature/other";
+  } else if (variant === "mergeInProgress") {
+    answer = {
+      ...plan,
+      status: "mergeInProgress",
+      items: [],
+      deletions: [],
+      actions: [],
+      conflicts: [
+        {
+          path: "force-app/main/default/classes/InvoiceCalculator.cls",
+          changedInBranch: true,
+          changedInOrg: false,
+          items: ["ApexClass:InvoiceCalculator"],
+          conflictBlocks: 1,
+        },
+      ],
+    };
   }
-  outputJsonIfRequested(
-    {
-      status: 0,
-      result: {
-        files,
-        prompt: `Solve the conflict markers of ${keys.join(", ")}`,
-        promptFile: "hardis-report/backpromote-merge-prompt.md",
-        nextCommand: `sf hardis:work:backpromote ${keys
-          .map((key) => `--merged-metadata "${key}"`)
-          .join(" ")}`,
-      },
-      warnings: [],
-    },
-    "",
-  );
+  outputJsonIfRequested({ status: 0, result: answer, warnings: [] }, "");
   return 0;
 }
 
