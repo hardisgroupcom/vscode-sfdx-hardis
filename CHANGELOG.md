@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Backpromote (Beta) panel**: bring the Pull Requests merged in your parent branch into your developer sandbox or scratch org, from the commands menu or the DevOps Pipeline
+  - Select or unselect each Pull Request and see what it brings: metadata, deletions and deployment actions
+  - Items changed in your org since their last deployment come first: compare them, keep the org version, or merge both versions and copy a prompt for your coding agent
+  - Untick deletions, deployment actions or any metadata, and check the exact command before running it
+  - Production orgs and orgs linked to a major branch are refused
 - Pipeline Settings: a table of a list setting (`allowedPromotionSteps`, `monitoringCommands`, installed packages...) now takes the whole width of the panel instead of shrinking to its content, which printed branch names one character per line
 - DevOps Pipeline: promotion branches named `promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM>` by sfdx-hardis (with `-2`, `-3`... when the name was taken) are recognized, next to the `<YYYY-MM-DD>-<counter>` names of earlier promotions
 

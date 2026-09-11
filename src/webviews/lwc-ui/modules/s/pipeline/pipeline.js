@@ -2015,9 +2015,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   handleBackpromote() {
     window.sendMessageToVSCode({
-      type: "runCommand",
+      type: "runVsCodeCommand",
       data: {
-        command: "sf hardis:work:backpromote",
+        command: "vscode-sfdx-hardis.showBackpromote",
       },
     });
   }

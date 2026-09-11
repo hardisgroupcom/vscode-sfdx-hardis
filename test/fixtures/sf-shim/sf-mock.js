@@ -536,12 +536,105 @@ async function main() {
     return 0;
   }
 
+  // Backpromote panel: read-only plan and merge preparation
+  if (
+    first === "hardis:work:backpromote" &&
+    (args.includes("--plan") || args.includes("--prepare-merge"))
+  ) {
+    return answerBackpromote();
+  }
+
   if (first.startsWith("hardis")) {
     return await runHardisCommand(first);
   }
 
   // Any other sf command: succeed silently
   outputJsonIfRequested({ status: 0, result: {} }, "OK");
+  return 0;
+}
+
+/**
+ * `sf hardis:work:backpromote --plan --json` answers the plan of
+ * test/fixtures/backpromote/backpromote-plan.json. `--prepare-merge <Type:Name>`
+ * writes a file holding one conflict block into the workspace, like the real
+ * 3-way merge. SF_MOCK_BACKPROMOTE_CLI=old simulates an sfdx-hardis version that
+ * does not know these flags yet (JSON error printed on stdout, as with
+ * SF_JSON_TO_STDOUT).
+ */
+function answerBackpromote() {
+  if (process.env.SF_MOCK_BACKPROMOTE_CLI === "old") {
+    const flag = args.includes("--plan") ? "--plan" : "--prepare-merge";
+    console.log(
+      JSON.stringify({
+        code: "NonexistentFlagsError",
+        name: "NonexistentFlagsError",
+        message: `Nonexistent flag: ${flag}\nSee more help with --help`,
+        status: 2,
+        exitCode: 2,
+        warnings: [],
+      }),
+    );
+    return 2;
+  }
+  const plan = JSON.parse(
+    fs.readFileSync(
+      path.join(__dirname, "..", "backpromote", "backpromote-plan.json"),
+      "utf8",
+    ),
+  );
+  if (args.includes("--plan")) {
+    outputJsonIfRequested({ status: 0, result: plan, warnings: [] }, "");
+    return 0;
+  }
+  const parentBranch = plan.parentBranch;
+  const keys = args.filter(
+    (arg, index) => index > 0 && args[index - 1] === "--prepare-merge",
+  );
+  const files = [];
+  for (const key of keys) {
+    const item = plan.items.find((entry) => entry.key === key && entry.mergeable);
+    if (!item) {
+      continue;
+    }
+    const localFile = path.join(process.cwd(), item.localPath);
+    fs.mkdirSync(path.dirname(localFile), { recursive: true });
+    fs.writeFileSync(
+      localFile,
+      [
+        `// ${item.name}`,
+        "<<<<<<< your org",
+        "Decimal scale = 2;",
+        "||||||| last backpromoted",
+        "Decimal scale = 3;",
+        "=======",
+        "Decimal scale = 4;",
+        `>>>>>>> ${parentBranch}`,
+        "",
+      ].join("\n"),
+    );
+    files.push({
+      key,
+      localPath: item.localPath,
+      basePath: null,
+      orgPath: item.orgPath,
+      conflictBlocks: 1,
+    });
+  }
+  outputJsonIfRequested(
+    {
+      status: 0,
+      result: {
+        files,
+        prompt: `Solve the conflict markers of ${keys.join(", ")}`,
+        promptFile: "hardis-report/backpromote-merge-prompt.md",
+        nextCommand: `sf hardis:work:backpromote ${keys
+          .map((key) => `--merged-metadata "${key}"`)
+          .join(" ")}`,
+      },
+      warnings: [],
+    },
+    "",
+  );
   return 0;
 }
 

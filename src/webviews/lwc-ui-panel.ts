@@ -188,6 +188,7 @@ export class LwcUiPanel {
       [key: string]: string;
     } = {
       "s-apex-tests-select": t("apexTests"),
+      "s-backpromote": t("backpromote"),
       "s-command-execution": t("commandExecution"),
       "s-data-workbench": t("dataImportExportWorkbench"),
       "s-deployment-action": t("deploymentActionDetails"),

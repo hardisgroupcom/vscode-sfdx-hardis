@@ -1,0 +1,175 @@
+/* Backpromote panel: layout only. Colors, pills, chips, checkboxes, cards and
+   buttons come from resources/global-theme.css and SLDS. */
+
+.bp-spinner {
+  height: 3rem;
+  width: 100%;
+}
+
+.bp-error-message {
+  max-width: 60ch;
+  text-align: left;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.bp-block {
+  margin-bottom: 1rem;
+}
+
+.bp-check-details {
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+/* Rail */
+.bp-parent {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.bp-parent-picker {
+  display: block;
+  margin-top: 0.5rem;
+}
+
+.bp-list {
+  max-height: none;
+}
+
+.bp-group-row,
+.bp-action-row {
+  align-items: flex-start;
+}
+
+.bp-group-row .hardis-check,
+.bp-action-row .hardis-check {
+  margin-top: 0.15rem;
+}
+
+.bp-pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
+}
+
+.bp-done-toggle {
+  margin-top: 0.5rem;
+}
+
+.bp-last-run {
+  margin-top: 0.75rem;
+}
+
+/* Main pane */
+.bp-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.bp-counters {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+}
+
+.bp-counter-value {
+  font-size: 1.4rem;
+  line-height: 1.1;
+}
+
+.bp-section {
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+}
+
+.bp-section-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.3rem 0;
+  color: inherit;
+  text-align: left;
+}
+
+.bp-section-summary {
+  margin-left: auto;
+  text-align: right;
+}
+
+.bp-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.bp-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--slds-g-color-neutral-base-95);
+}
+
+.bp-row-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.bp-row-meta {
+  margin-top: 0.25rem;
+}
+
+.bp-row-name {
+  flex: 1 1 12rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Deploy bar */
+.bp-deploy-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.bp-deploy-text {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.bp-deploy-range {
+  overflow-wrap: anywhere;
+}
+
+.bp-command {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.bp-command-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--slds-g-color-neutral-base-90);
+  background: var(--slds-g-color-neutral-base-95);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

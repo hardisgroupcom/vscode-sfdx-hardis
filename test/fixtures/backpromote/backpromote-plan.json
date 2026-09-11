@@ -1,0 +1,770 @@
+{
+  "planVersion": 1,
+  "status": "ready",
+  "currentBranch": "feature/CRM-1432-quote-discounts",
+  "parentBranch": "integration",
+  "parentBranchChoices": [
+    "integration",
+    "uat",
+    "preprod",
+    "main"
+  ],
+  "targetOrg": {
+    "username": "sam.dubois@mycompany.com.dev-sam",
+    "instanceUrl": "https://mycompany--dev-sam.sandbox.my.salesforce.com",
+    "orgType": "sandbox"
+  },
+  "checks": [
+    {
+      "id": "targetOrg",
+      "ok": true,
+      "message": "mycompany--dev-sam is a developer sandbox, not linked to a major branch"
+    },
+    {
+      "id": "currentBranch",
+      "ok": true,
+      "message": "feature/CRM-1432-quote-discounts is not a major branch"
+    },
+    {
+      "id": "gitClean",
+      "ok": true,
+      "message": "Working tree clean"
+    },
+    {
+      "id": "upToDate",
+      "ok": true,
+      "message": "Up to date with integration"
+    }
+  ],
+  "lastState": {
+    "lastCommit": "e9b6b62ff3adcdc1bb7e803e8214828e9b157b6b",
+    "lastTimestamp": "2026-08-28T17:05:00.000Z",
+    "parentBranch": "integration",
+    "skippedCommits": []
+  },
+  "groups": [
+    {
+      "hash": "ad085f1f3ace42c70e9e3ae729cb04a1b400a3a8",
+      "shortHash": "ad085f1",
+      "message": "Merge pull request #487 from mycompany/feature/CRM-1466-quote-manager-threshold",
+      "author": "Alex Martin",
+      "date": "2026-09-10T15:12:00.000Z",
+      "status": "pending",
+      "selectedByDefault": true,
+      "pullRequests": [
+        {
+          "id": 487,
+          "title": "Quote approval: manager threshold",
+          "author": "Alex Martin",
+          "webUrl": "https://github.com/mycompany/salesforce-crm/pull/487",
+          "sourceBranch": "feature/CRM-1466-quote-manager-threshold"
+        }
+      ],
+      "items": [
+        "Flow:Quote_Approval",
+        "CustomField:Quote.Manager_Threshold__c",
+        "CustomMetadata:Approval_Threshold.Manager",
+        "ApexClass:QuoteApprovalService",
+        "PermissionSet:Quote_Manager"
+      ],
+      "deletions": [],
+      "testClasses": [],
+      "actionIds": [
+        "recalculate-quote-sharing"
+      ]
+    },
+    {
+      "hash": "8594d993d0921da48796df570f7c0587b348c9d6",
+      "shortHash": "8594d99",
+      "message": "Merge pull request #485 from mycompany/fix/CRM-1450-opportunity-stage-history",
+      "author": "Nora Idrissi",
+      "date": "2026-09-08T09:47:00.000Z",
+      "status": "pending",
+      "selectedByDefault": true,
+      "pullRequests": [
+        {
+          "id": 485,
+          "title": "Opportunity trigger: stage history",
+          "author": "Nora Idrissi",
+          "webUrl": "https://github.com/mycompany/salesforce-crm/pull/485",
+          "sourceBranch": "fix/CRM-1450-opportunity-stage-history"
+        }
+      ],
+      "items": [
+        "ApexTrigger:OpportunityTrigger",
+        "ApexClass:OpportunityTriggerHandler",
+        "ApexClass:OpportunityStageHistoryService",
+        "CustomObject:Opportunity_Stage_History__c",
+        "CustomField:Opportunity_Stage_History__c.Stage__c",
+        "CustomField:Opportunity_Stage_History__c.Changed_On__c",
+        "Layout:Opportunity-Sales Layout",
+        "CustomTab:Opportunity_Stage_History__c"
+      ],
+      "deletions": [
+        "CustomField:Opportunity.Legacy_Score__c"
+      ],
+      "testClasses": [],
+      "actionIds": []
+    },
+    {
+      "hash": "201e993ad35dc5e64009c0948fe6fefa4445573b",
+      "shortHash": "201e993",
+      "message": "Merge pull request #482 from mycompany/feature/CRM-1418-quote-approval-process",
+      "author": "Alex Martin",
+      "date": "2026-09-03T14:05:00.000Z",
+      "status": "pending",
+      "selectedByDefault": true,
+      "pullRequests": [
+        {
+          "id": 482,
+          "title": "Quote approval process",
+          "author": "Alex Martin",
+          "webUrl": "https://github.com/mycompany/salesforce-crm/pull/482",
+          "sourceBranch": "feature/CRM-1418-quote-approval-process"
+        }
+      ],
+      "items": [
+        "Flow:Quote_Approval",
+        "ApprovalProcess:Quote.Quote_Approval",
+        "ApexClass:QuoteApprovalController",
+        "ApexClass:QuoteApprovalTest",
+        "CustomField:Quote.Approval_Status__c",
+        "CustomField:Quote.Approver__c",
+        "CustomField:Quote.Discount_Percent__c",
+        "Layout:Quote-Quote Layout",
+        "FlexiPage:Quote_Record_Page",
+        "PermissionSet:Sales_Manager",
+        "CustomLabel:Quote_Approval_Submitted",
+        "CustomLabel:Quote_Approval_Rejected",
+        "EmailTemplate:Quotes/Quote_Approval_Request",
+        "ValidationRule:Quote.Discount_Requires_Approval"
+      ],
+      "deletions": [],
+      "testClasses": [
+        "QuoteApprovalTest"
+      ],
+      "actionIds": [
+        "load-approval-matrix",
+        "assign-sales-manager"
+      ]
+    },
+    {
+      "hash": "4e8083490e420594c6c40def6921b3a108dbe986",
+      "shortHash": "4e80834",
+      "message": "Merge pull request #481 from mycompany/fix/CRM-1427-invoice-rounding",
+      "author": "Léa Fontaine",
+      "date": "2026-09-01T11:30:00.000Z",
+      "status": "pending",
+      "selectedByDefault": true,
+      "pullRequests": [
+        {
+          "id": 481,
+          "title": "Invoice rounding on multi-currency quotes",
+          "author": "Léa Fontaine",
+          "webUrl": "https://github.com/mycompany/salesforce-crm/pull/481",
+          "sourceBranch": "fix/CRM-1427-invoice-rounding"
+        }
+      ],
+      "items": [
+        "ApexClass:InvoiceCalculator",
+        "ApexClass:InvoiceCalculatorTest",
+        "ApexClass:CurrencyRoundingUtils",
+        "CustomField:Invoice__c.Rounded_Total__c",
+        "CustomMetadata:Currency_Rounding.EUR",
+        "CustomMetadata:Currency_Rounding.USD"
+      ],
+      "deletions": [],
+      "testClasses": [
+        "InvoiceCalculatorTest"
+      ],
+      "actionIds": []
+    },
+    {
+      "hash": "44af7b850f8be6f9e1550dab7b0b35a77541cfb8",
+      "shortHash": "44af7b8",
+      "message": "Merge pull request #478 from mycompany/feature/CRM-1409-account-hierarchy-rollup",
+      "author": "Alex Martin",
+      "date": "2026-08-29T16:20:00.000Z",
+      "status": "pending",
+      "selectedByDefault": true,
+      "pullRequests": [
+        {
+          "id": 478,
+          "title": "Account hierarchy: rollup of open opportunities",
+          "author": "Alex Martin",
+          "webUrl": "https://github.com/mycompany/salesforce-crm/pull/478",
+          "sourceBranch": "feature/CRM-1409-account-hierarchy-rollup"
+        }
+      ],
+      "items": [
+        "ApexClass:AccountHierarchyRollup",
+        "ApexClass:AccountHierarchyRollupTest",
+        "ApexClass:AccountHierarchyRollupBatch",
+        "CustomField:Account.Open_Opportunities_Rollup__c",
+        "CustomField:Account.Hierarchy_Level__c",
+        "LightningComponentBundle:accountHierarchyTree",
+        "FlexiPage:Account_Record_Page",
+        "PermissionSet:Account_Hierarchy_Viewer",
+        "StaticResource:hierarchyIcons"
+      ],
+      "deletions": [],
+      "testClasses": [
+        "AccountHierarchyRollupTest"
+      ],
+      "actionIds": []
+    }
+  ],
+  "items": [
+    {
+      "key": "Flow:Quote_Approval",
+      "type": "Flow",
+      "name": "Quote_Approval",
+      "commits": [
+        "201e993ad35dc5e64009c0948fe6fefa4445573b",
+        "ad085f1f3ace42c70e9e3ae729cb04a1b400a3a8"
+      ],
+      "orgState": "changedInOrg",
+      "localPath": "force-app/main/default/flows/Quote_Approval.flow-meta.xml",
+      "orgPath": "/tmp/sfdx-hardis-backpromote/org/force-app/main/default/flows/Quote_Approval.flow-meta.xml",
+      "mergeable": true
+    },
+    {
+      "key": "CustomField:Quote.Manager_Threshold__c",
+      "type": "CustomField",
+      "name": "Quote.Manager_Threshold__c",
+      "commits": [
+        "ad085f1f3ace42c70e9e3ae729cb04a1b400a3a8"
+      ],
+      "orgState": "newToOrg",
+      "localPath": "force-app/main/default/objects/Quote/fields/Manager_Threshold__c.field-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "CustomMetadata:Approval_Threshold.Manager",
+      "type": "CustomMetadata",
+      "name": "Approval_Threshold.Manager",
+      "commits": [
+        "ad085f1f3ace42c70e9e3ae729cb04a1b400a3a8"
+      ],
+      "orgState": "newToOrg",
+      "localPath": "force-app/main/default/customMetadata/Approval_Threshold.Manager.md-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "ApexClass:QuoteApprovalService",
+      "type": "ApexClass",
+      "name": "QuoteApprovalService",
+      "commits": [
+        "ad085f1f3ace42c70e9e3ae729cb04a1b400a3a8"
+      ],
+      "orgState": "newToOrg",
+      "localPath": "force-app/main/default/classes/QuoteApprovalService.cls",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "PermissionSet:Quote_Manager",
+      "type": "PermissionSet",
+      "name": "Quote_Manager",
+      "commits": [
+        "ad085f1f3ace42c70e9e3ae729cb04a1b400a3a8"
+      ],
+      "orgState": "newToOrg",
+      "localPath": "force-app/main/default/permissionsets/Quote_Manager.permissionset-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "ApexTrigger:OpportunityTrigger",
+      "type": "ApexTrigger",
+      "name": "OpportunityTrigger",
+      "commits": [
+        "8594d993d0921da48796df570f7c0587b348c9d6"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/triggers/OpportunityTrigger.trigger",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "ApexClass:OpportunityTriggerHandler",
+      "type": "ApexClass",
+      "name": "OpportunityTriggerHandler",
+      "commits": [
+        "8594d993d0921da48796df570f7c0587b348c9d6"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/classes/OpportunityTriggerHandler.cls",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "ApexClass:OpportunityStageHistoryService",
+      "type": "ApexClass",
+      "name": "OpportunityStageHistoryService",
+      "commits": [
+        "8594d993d0921da48796df570f7c0587b348c9d6"
+      ],
+      "orgState": "newToOrg",
+      "localPath": "force-app/main/default/classes/OpportunityStageHistoryService.cls",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "CustomObject:Opportunity_Stage_History__c",
+      "type": "CustomObject",
+      "name": "Opportunity_Stage_History__c",
+      "commits": [
+        "8594d993d0921da48796df570f7c0587b348c9d6"
+      ],
+      "orgState": "newToOrg",
+      "localPath": "force-app/main/default/objects/Opportunity_Stage_History__c/Opportunity_Stage_History__c.object-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "CustomField:Opportunity_Stage_History__c.Stage__c",
+      "type": "CustomField",
+      "name": "Opportunity_Stage_History__c.Stage__c",
+      "commits": [
+        "8594d993d0921da48796df570f7c0587b348c9d6"
+      ],
+      "orgState": "newToOrg",
+      "localPath": "force-app/main/default/objects/Opportunity_Stage_History__c/fields/Stage__c.field-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "CustomField:Opportunity_Stage_History__c.Changed_On__c",
+      "type": "CustomField",
+      "name": "Opportunity_Stage_History__c.Changed_On__c",
+      "commits": [
+        "8594d993d0921da48796df570f7c0587b348c9d6"
+      ],
+      "orgState": "newToOrg",
+      "localPath": "force-app/main/default/objects/Opportunity_Stage_History__c/fields/Changed_On__c.field-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "Layout:Opportunity-Sales Layout",
+      "type": "Layout",
+      "name": "Opportunity-Sales Layout",
+      "commits": [
+        "8594d993d0921da48796df570f7c0587b348c9d6"
+      ],
+      "orgState": "changedInOrg",
+      "localPath": "force-app/main/default/layouts/Opportunity-Sales Layout.layout-meta.xml",
+      "orgPath": "/tmp/sfdx-hardis-backpromote/org/force-app/main/default/layouts/Opportunity-Sales Layout.layout-meta.xml",
+      "mergeable": true
+    },
+    {
+      "key": "CustomTab:Opportunity_Stage_History__c",
+      "type": "CustomTab",
+      "name": "Opportunity_Stage_History__c",
+      "commits": [
+        "8594d993d0921da48796df570f7c0587b348c9d6"
+      ],
+      "orgState": "newToOrg",
+      "localPath": "force-app/main/default/tabs/Opportunity_Stage_History__c.tab-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "ApprovalProcess:Quote.Quote_Approval",
+      "type": "ApprovalProcess",
+      "name": "Quote.Quote_Approval",
+      "commits": [
+        "201e993ad35dc5e64009c0948fe6fefa4445573b"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/approvalProcesses/Quote.Quote_Approval.approvalProcess-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "ApexClass:QuoteApprovalController",
+      "type": "ApexClass",
+      "name": "QuoteApprovalController",
+      "commits": [
+        "201e993ad35dc5e64009c0948fe6fefa4445573b"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/classes/QuoteApprovalController.cls",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "ApexClass:QuoteApprovalTest",
+      "type": "ApexClass",
+      "name": "QuoteApprovalTest",
+      "commits": [
+        "201e993ad35dc5e64009c0948fe6fefa4445573b"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/classes/QuoteApprovalTest.cls",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "CustomField:Quote.Approval_Status__c",
+      "type": "CustomField",
+      "name": "Quote.Approval_Status__c",
+      "commits": [
+        "201e993ad35dc5e64009c0948fe6fefa4445573b"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/objects/Quote/fields/Approval_Status__c.field-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "CustomField:Quote.Approver__c",
+      "type": "CustomField",
+      "name": "Quote.Approver__c",
+      "commits": [
+        "201e993ad35dc5e64009c0948fe6fefa4445573b"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/objects/Quote/fields/Approver__c.field-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "CustomField:Quote.Discount_Percent__c",
+      "type": "CustomField",
+      "name": "Quote.Discount_Percent__c",
+      "commits": [
+        "201e993ad35dc5e64009c0948fe6fefa4445573b"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/objects/Quote/fields/Discount_Percent__c.field-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "Layout:Quote-Quote Layout",
+      "type": "Layout",
+      "name": "Quote-Quote Layout",
+      "commits": [
+        "201e993ad35dc5e64009c0948fe6fefa4445573b"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/layouts/Quote-Quote Layout.layout-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "FlexiPage:Quote_Record_Page",
+      "type": "FlexiPage",
+      "name": "Quote_Record_Page",
+      "commits": [
+        "201e993ad35dc5e64009c0948fe6fefa4445573b"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/flexipages/Quote_Record_Page.flexipage-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "PermissionSet:Sales_Manager",
+      "type": "PermissionSet",
+      "name": "Sales_Manager",
+      "commits": [
+        "201e993ad35dc5e64009c0948fe6fefa4445573b"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/permissionsets/Sales_Manager.permissionset-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "CustomLabel:Quote_Approval_Submitted",
+      "type": "CustomLabel",
+      "name": "Quote_Approval_Submitted",
+      "commits": [
+        "201e993ad35dc5e64009c0948fe6fefa4445573b"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/labels/CustomLabels.labels-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "CustomLabel:Quote_Approval_Rejected",
+      "type": "CustomLabel",
+      "name": "Quote_Approval_Rejected",
+      "commits": [
+        "201e993ad35dc5e64009c0948fe6fefa4445573b"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/labels/CustomLabels.labels-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "EmailTemplate:Quotes/Quote_Approval_Request",
+      "type": "EmailTemplate",
+      "name": "Quotes/Quote_Approval_Request",
+      "commits": [
+        "201e993ad35dc5e64009c0948fe6fefa4445573b"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/email/Quotes/Quote_Approval_Request.email-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "ValidationRule:Quote.Discount_Requires_Approval",
+      "type": "ValidationRule",
+      "name": "Quote.Discount_Requires_Approval",
+      "commits": [
+        "201e993ad35dc5e64009c0948fe6fefa4445573b"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/objects/Quote/validationRules/Discount_Requires_Approval.validationRule-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "ApexClass:InvoiceCalculator",
+      "type": "ApexClass",
+      "name": "InvoiceCalculator",
+      "commits": [
+        "4e8083490e420594c6c40def6921b3a108dbe986"
+      ],
+      "orgState": "changedInOrg",
+      "localPath": "force-app/main/default/classes/InvoiceCalculator.cls",
+      "orgPath": "/tmp/sfdx-hardis-backpromote/org/force-app/main/default/classes/InvoiceCalculator.cls",
+      "mergeable": true
+    },
+    {
+      "key": "ApexClass:InvoiceCalculatorTest",
+      "type": "ApexClass",
+      "name": "InvoiceCalculatorTest",
+      "commits": [
+        "4e8083490e420594c6c40def6921b3a108dbe986"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/classes/InvoiceCalculatorTest.cls",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "ApexClass:CurrencyRoundingUtils",
+      "type": "ApexClass",
+      "name": "CurrencyRoundingUtils",
+      "commits": [
+        "4e8083490e420594c6c40def6921b3a108dbe986"
+      ],
+      "orgState": "newToOrg",
+      "localPath": "force-app/main/default/classes/CurrencyRoundingUtils.cls",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "CustomField:Invoice__c.Rounded_Total__c",
+      "type": "CustomField",
+      "name": "Invoice__c.Rounded_Total__c",
+      "commits": [
+        "4e8083490e420594c6c40def6921b3a108dbe986"
+      ],
+      "orgState": "newToOrg",
+      "localPath": "force-app/main/default/objects/Invoice__c/fields/Rounded_Total__c.field-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "CustomMetadata:Currency_Rounding.EUR",
+      "type": "CustomMetadata",
+      "name": "Currency_Rounding.EUR",
+      "commits": [
+        "4e8083490e420594c6c40def6921b3a108dbe986"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/customMetadata/Currency_Rounding.EUR.md-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "CustomMetadata:Currency_Rounding.USD",
+      "type": "CustomMetadata",
+      "name": "Currency_Rounding.USD",
+      "commits": [
+        "4e8083490e420594c6c40def6921b3a108dbe986"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/customMetadata/Currency_Rounding.USD.md-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "ApexClass:AccountHierarchyRollup",
+      "type": "ApexClass",
+      "name": "AccountHierarchyRollup",
+      "commits": [
+        "44af7b850f8be6f9e1550dab7b0b35a77541cfb8"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/classes/AccountHierarchyRollup.cls",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "ApexClass:AccountHierarchyRollupTest",
+      "type": "ApexClass",
+      "name": "AccountHierarchyRollupTest",
+      "commits": [
+        "44af7b850f8be6f9e1550dab7b0b35a77541cfb8"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/classes/AccountHierarchyRollupTest.cls",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "ApexClass:AccountHierarchyRollupBatch",
+      "type": "ApexClass",
+      "name": "AccountHierarchyRollupBatch",
+      "commits": [
+        "44af7b850f8be6f9e1550dab7b0b35a77541cfb8"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/classes/AccountHierarchyRollupBatch.cls",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "CustomField:Account.Open_Opportunities_Rollup__c",
+      "type": "CustomField",
+      "name": "Account.Open_Opportunities_Rollup__c",
+      "commits": [
+        "44af7b850f8be6f9e1550dab7b0b35a77541cfb8"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/objects/Account/fields/Open_Opportunities_Rollup__c.field-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "CustomField:Account.Hierarchy_Level__c",
+      "type": "CustomField",
+      "name": "Account.Hierarchy_Level__c",
+      "commits": [
+        "44af7b850f8be6f9e1550dab7b0b35a77541cfb8"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/objects/Account/fields/Hierarchy_Level__c.field-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "LightningComponentBundle:accountHierarchyTree",
+      "type": "LightningComponentBundle",
+      "name": "accountHierarchyTree",
+      "commits": [
+        "44af7b850f8be6f9e1550dab7b0b35a77541cfb8"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/lwc/accountHierarchyTree",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "FlexiPage:Account_Record_Page",
+      "type": "FlexiPage",
+      "name": "Account_Record_Page",
+      "commits": [
+        "44af7b850f8be6f9e1550dab7b0b35a77541cfb8"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/flexipages/Account_Record_Page.flexipage-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "PermissionSet:Account_Hierarchy_Viewer",
+      "type": "PermissionSet",
+      "name": "Account_Hierarchy_Viewer",
+      "commits": [
+        "44af7b850f8be6f9e1550dab7b0b35a77541cfb8"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/permissionsets/Account_Hierarchy_Viewer.permissionset-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    },
+    {
+      "key": "StaticResource:hierarchyIcons",
+      "type": "StaticResource",
+      "name": "hierarchyIcons",
+      "commits": [
+        "44af7b850f8be6f9e1550dab7b0b35a77541cfb8"
+      ],
+      "orgState": "noOrgChange",
+      "localPath": "force-app/main/default/staticresources/hierarchyIcons.resource-meta.xml",
+      "orgPath": null,
+      "mergeable": false
+    }
+  ],
+  "deletions": [
+    {
+      "key": "CustomField:Opportunity.Legacy_Score__c",
+      "type": "CustomField",
+      "name": "Opportunity.Legacy_Score__c",
+      "commits": [
+        "8594d993d0921da48796df570f7c0587b348c9d6"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "load-approval-matrix",
+      "label": "Load approval matrix data",
+      "type": "data",
+      "when": "pre",
+      "commits": [
+        "201e993ad35dc5e64009c0948fe6fefa4445573b"
+      ],
+      "pullRequestId": 482,
+      "customUsername": "integration.user@mycompany.com.dev-sam",
+      "alreadyDone": null,
+      "selectedByDefault": true
+    },
+    {
+      "id": "assign-sales-manager",
+      "label": "Assign Sales_Manager permission set",
+      "type": "apex",
+      "when": "post",
+      "commits": [
+        "201e993ad35dc5e64009c0948fe6fefa4445573b"
+      ],
+      "pullRequestId": 482,
+      "customUsername": null,
+      "alreadyDone": null,
+      "selectedByDefault": true
+    },
+    {
+      "id": "recalculate-quote-sharing",
+      "label": "Recalculate quote sharing",
+      "type": "apex",
+      "when": "post",
+      "commits": [
+        "ad085f1f3ace42c70e9e3ae729cb04a1b400a3a8"
+      ],
+      "pullRequestId": 487,
+      "customUsername": null,
+      "alreadyDone": {
+        "date": "2026-09-10T16:42:00.000Z"
+      },
+      "selectedByDefault": false
+    }
+  ],
+  "conflictDetection": {
+    "success": true,
+    "errorMessage": null
+  },
+  "reports": []
+}

@@ -396,6 +396,11 @@
         "icon": "$(download)"
       },
       {
+        "command": "vscode-sfdx-hardis.showBackpromote",
+        "title": "SFDX Hardis: Backpromote (Beta)",
+        "icon": "$(git-merge)"
+      },
+      {
         "command": "vscode-sfdx-hardis.showPipelineConfig",
         "title": "SFDX Hardis: Show Pipeline Settings",
         "icon": "$(settings-gear)"

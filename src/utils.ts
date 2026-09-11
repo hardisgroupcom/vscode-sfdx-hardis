@@ -135,6 +135,10 @@ export interface ExecCommandOptions {
   // When omitted, it is auto-detected from the command (version / plugins
   // checks are low priority). Pass false to force normal priority.
   lowPriority?: boolean;
+  // A completed result stays reusable for 20 seconds by callers issuing the same
+  // command. Pass false for commands whose answer changes between two clicks
+  // (ex: a Refresh button): the command runs again, in-flight runs are still shared.
+  reuseRecentResult?: boolean;
 }
 
 let MULTITHREAD_ACTIVE: boolean | null = null;
@@ -660,7 +664,12 @@ export async function execCommand(
     }
   }
   try {
-    if (COMMANDS_RESULTS[command]) {
+    if (
+      COMMANDS_RESULTS[command] &&
+      !(
+        options.reuseRecentResult === false && COMMANDS_RESULTS[command].result
+      )
+    ) {
       // use in-flight or completed result
       Logger.log(
         `[vscode-sfdx-hardis][command] Waiting for promise already started for command ${command}`,
