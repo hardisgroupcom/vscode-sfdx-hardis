@@ -325,6 +325,39 @@ suite("Backpromote panel UI tests", function () {
     }
   });
 
+  test("the loading state shows the steps sfdx-hardis reports while it computes the plan", async function () {
+    const sent = recordSentMessages(panel);
+    panel.simulateWebviewMessage({ type: "refresh" });
+    await waitFor(
+      () => {
+        const data = panel.getInitializationData();
+        return sent.some((message) => message.type === "planProgress") &&
+          data &&
+          data.plan &&
+          !data.loading
+          ? data
+          : null;
+      },
+      30000,
+      "the progress then the plan to be pushed",
+    );
+    const progress = sent
+      .filter((message) => message.type === "planProgress")
+      .map((message) => message.data);
+    const last = progress[progress.length - 1];
+    assert.ok(last.message.length > 0, "a step message");
+    assert.ok(
+      progress.some((item) => typeof item.percent === "number"),
+      "a counted step gives a percentage",
+    );
+    assert.ok(
+      progress.some((item) =>
+        item.doneSteps.some((step: any) => step.key === "listing"),
+      ),
+      "the steps done are listed",
+    );
+  });
+
   test("the commands tree and the DevOps Pipeline open the panel", async function () {
     const commandIds = await vscode.commands.getCommands(true);
     assert.ok(commandIds.includes("vscode-sfdx-hardis.showBackpromote"));

@@ -43,7 +43,25 @@
             <lightning-spinner alternative-text={i18n.loadingLabel} size="medium"></lightning-spinner>
           </div>
           <h3 class="hardis-empty-title">{i18n.backpromoteLoadingTitle}</h3>
-          <p class="hardis-empty-desc">{i18n.backpromoteLoadingDesc}</p>
+          <template if:true={hasPlanProgress}>
+            <p class="hardis-empty-desc">{planProgressMessage}</p>
+            <template if:true={hasPlanProgressPercent}>
+              <div class="hardis-progress-track bp-progress-track">
+                <div class="hardis-progress-fill active" style={planProgressFillStyle}></div>
+              </div>
+            </template>
+            <ul class="bp-progress-steps">
+              <template for:each={planProgressDoneSteps} for:item="step">
+                <li key={step.key} class="bp-progress-step">
+                  <lightning-icon icon-name="utility:check" size="xx-small"></lightning-icon>
+                  <span>{step.message}</span>
+                </li>
+              </template>
+            </ul>
+          </template>
+          <template if:false={hasPlanProgress}>
+            <p class="hardis-empty-desc">{i18n.backpromoteLoadingDesc}</p>
+          </template>
         </div>
       </div>
     </template>

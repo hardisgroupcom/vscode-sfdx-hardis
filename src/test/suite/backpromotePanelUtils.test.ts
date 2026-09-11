@@ -27,6 +27,8 @@ import {
   parseMetadataKey,
   quoteCommandValue,
   recoverJsonCommandResult,
+  buildPlanProgress,
+  parseProgressEvents,
 } from "../../utils/backpromote/backpromotePanelUtils";
 
 const USERNAME = "sam.dubois@mycompany.com.dev-sam";
@@ -682,5 +684,44 @@ suite("backpromote working branch", () => {
     });
     assert.strictEqual(older?.backpromoteBranch, null);
     assert.strictEqual(older?.returnBranch, null);
+  });
+});
+
+suite("backpromote plan progress", () => {
+  test("reads the progress lines, skipping a line not written completely", () => {
+    const events = parseProgressEvents(
+      '{"step":"listing","message":"Listing"}\n{"step":"delta","message":"Delta 1","current":1,"total":4}\n{"step":"del',
+    );
+    assert.deepStrictEqual(events, [
+      { step: "listing", message: "Listing", current: null, total: null },
+      { step: "delta", message: "Delta 1", current: 1, total: 4 },
+    ]);
+  });
+
+  test("shows the last step with its percentage, and the steps done before it", () => {
+    const content = [
+      '{"step":"fetch","message":"Fetching integration"}',
+      '{"step":"listing","message":"Listing the Pull Requests merged in integration"}',
+      '{"step":"delta","message":"Computing what #487 deploys (1 of 4)","current":1,"total":4}',
+      '{"step":"delta","message":"Computing what #485 deploys (2 of 4)","current":2,"total":4}',
+    ].join("\n");
+    assert.deepStrictEqual(buildPlanProgress(parseProgressEvents(content)), {
+      message: "Computing what #485 deploys (2 of 4)",
+      percent: 50,
+      doneSteps: [
+        { key: "fetch", message: "Fetching integration" },
+        {
+          key: "listing",
+          message: "Listing the Pull Requests merged in integration",
+        },
+      ],
+    });
+    assert.strictEqual(buildPlanProgress([]), null);
+    assert.strictEqual(
+      buildPlanProgress(
+        parseProgressEvents('{"step":"history","message":"Reading"}'),
+      )?.percent,
+      null,
+    );
   });
 });

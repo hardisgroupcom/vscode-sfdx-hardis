@@ -78,6 +78,8 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   showCommand = false;
   // Set once a merge was written on a new backpromote branch
   backpromoteBranchNotice = null;
+  // Steps sfdx-hardis reported while computing the plan
+  planProgress = null;
   showDoneGroups = false;
   openSections = {
     changed: true,
@@ -99,6 +101,9 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   initialize(data) {
     const payload = data || {};
     this.loading = payload.loading === true;
+    if (this.loading) {
+      this.planProgress = null;
+    }
     this.planError = payload.planError || null;
     if (payload.plan) {
       this.plan = payload.plan;
@@ -118,6 +123,9 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   @api
   handleMessage(type, data) {
     switch (type) {
+      case "planProgress":
+        this.planProgress = this.loading ? data || null : null;
+        break;
       case "selectionSummary":
         // Ignore the answer to a selection the user already changed again
         if (data && data.revision === this.revision) {
@@ -220,6 +228,30 @@ export default class Backpromote extends SharedMixin(LightningElement) {
 
   get isLoadingState() {
     return this.loading;
+  }
+
+  get hasPlanProgress() {
+    return !!this.planProgress;
+  }
+
+  get planProgressMessage() {
+    return this.planProgress ? this.planProgress.message : "";
+  }
+
+  get hasPlanProgressPercent() {
+    return (
+      !!this.planProgress && typeof this.planProgress.percent === "number"
+    );
+  }
+
+  get planProgressFillStyle() {
+    return this.hasPlanProgressPercent
+      ? `width: ${this.planProgress.percent}%`
+      : "";
+  }
+
+  get planProgressDoneSteps() {
+    return this.planProgress ? this.planProgress.doneSteps || [] : [];
   }
 
   get hasPlanError() {

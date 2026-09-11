@@ -9,6 +9,8 @@
   - Items changed in your org since their last deployment come first: compare them, keep the org version, or merge both versions and copy a prompt for your coding agent
   - Untick deletions, deployment actions or any metadata, and check the exact command before running it
   - Production orgs and orgs linked to a major branch are refused
+  - Pick the major branch to backpromote from: the run stays on your User Story branch when it is up to date, and otherwise works on a local backpromote branch it creates, then brings you back
+  - See what sfdx-hardis is doing while the plan is computed, with a progress bar on the longest steps
 - Pipeline Settings: a table of a list setting (`allowedPromotionSteps`, `monitoringCommands`, installed packages...) now takes the whole width of the panel instead of shrinking to its content, which printed branch names one character per line
 - DevOps Pipeline: promotion branches named `promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM>` by sfdx-hardis (with `-2`, `-3`... when the name was taken) are recognized, next to the `<YYYY-MM-DD>-<counter>` names of earlier promotions
 

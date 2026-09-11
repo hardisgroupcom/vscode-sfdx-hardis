@@ -1022,3 +1022,82 @@ export function getTargetOrgDisplayName(
   }
   return targetOrg.username || "";
 }
+
+/** One step sfdx-hardis reported in the progress file of a background command */
+export interface BackpromoteProgressEvent {
+  step: string;
+  message: string;
+  current: number | null;
+  total: number | null;
+}
+
+/** What the loading state shows while the plan is computed */
+export interface BackpromotePlanProgress {
+  /** What sfdx-hardis is doing now */
+  message: string;
+  /** 0 to 100 when the current step is counted, null otherwise */
+  percent: number | null;
+  /** The steps done before it, oldest first, each with its last message */
+  doneSteps: Array<{ key: string; message: string }>;
+}
+
+/**
+ * The events of a progress file, one JSON line each. A line sfdx-hardis is still
+ * writing is skipped: the next read gets it.
+ */
+export function parseProgressEvents(content: string): BackpromoteProgressEvent[] {
+  const events: BackpromoteProgressEvent[] = [];
+  for (const line of (content || "").split(/\r?\n/)) {
+    if (!line.trim()) {
+      continue;
+    }
+    try {
+      const raw = JSON.parse(line);
+      if (typeof raw?.step !== "string" || typeof raw?.message !== "string") {
+        continue;
+      }
+      const counted =
+        Number.isFinite(raw.current) &&
+        Number.isFinite(raw.total) &&
+        raw.total > 0;
+      events.push({
+        step: raw.step,
+        message: raw.message,
+        current: counted ? Number(raw.current) : null,
+        total: counted ? Number(raw.total) : null,
+      });
+    } catch {
+      // A line not written completely yet
+    }
+  }
+  return events;
+}
+
+/** The last step with its percentage, and the steps done before it */
+export function buildPlanProgress(
+  events: BackpromoteProgressEvent[],
+): BackpromotePlanProgress | null {
+  if (events.length === 0) {
+    return null;
+  }
+  const last = events[events.length - 1];
+  const lastMessageByStep = new Map<string, string>();
+  const stepOrder: string[] = [];
+  for (const event of events) {
+    if (!lastMessageByStep.has(event.step)) {
+      stepOrder.push(event.step);
+    }
+    lastMessageByStep.set(event.step, event.message);
+  }
+  const percent =
+    last.current !== null && last.total
+      ? Math.max(0, Math.min(100, Math.round((last.current / last.total) * 100)))
+      : null;
+  return {
+    message: last.message,
+    percent,
+    doneSteps: stepOrder
+      .filter((step) => step !== last.step)
+      .map((step) => ({ key: step, message: lastMessageByStep.get(step) as string })),
+  };
+}

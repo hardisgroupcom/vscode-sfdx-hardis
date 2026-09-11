@@ -658,6 +658,23 @@ function answerBackpromote() {
     );
     return 0;
   }
+  if (args.includes("--plan") && process.env.SFDX_HARDIS_PROGRESS_FILE) {
+    // The steps sfdx-hardis reports while it computes a plan
+    const steps = [
+      { step: "listing", message: "Listing the Pull Requests merged in integration" },
+      { step: "delta", message: "Computing what #487 deploys (1 of 2)", current: 1, total: 2 },
+      { step: "delta", message: "Computing what #485 deploys (2 of 2)", current: 2, total: 2 },
+      { step: "orgCompare", message: "Retrieving 12 item(s) from your org to find the ones changed there" },
+    ];
+    const pause = new Int32Array(new SharedArrayBuffer(4));
+    for (const event of steps) {
+      fs.appendFileSync(
+        process.env.SFDX_HARDIS_PROGRESS_FILE,
+        JSON.stringify({ time: new Date().toISOString(), ...event }) + "\n",
+      );
+      Atomics.wait(pause, 0, 0, 300);
+    }
+  }
   if (args.includes("--plan")) {
     outputJsonIfRequested({ status: 0, result: plan, warnings: [] }, "");
     return 0;

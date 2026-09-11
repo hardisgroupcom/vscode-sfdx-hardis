@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 import { Commands } from "../commands";
 import { LwcPanelManager } from "../lwc-panel-manager";
@@ -23,9 +24,12 @@ import {
   countConflictBlocks,
   getBackpromoteErrorMessage,
   getTargetOrgDisplayName,
+  BackpromotePlanProgress,
+  buildPlanProgress,
   isAllowedBackpromoteCommand,
   isCliTooOldForBackpromotePanel,
   isSafeCommandValue,
+  parseProgressEvents,
   normalizeBackpromotePlan,
   normalizePrepareMergeResult,
   normalizeSelection,
@@ -120,14 +124,46 @@ type PlanFetchResult =
   | { plan: BackpromotePlan }
   | { planError: { message: string; cliTooOld: boolean } };
 
-async function fetchPlan(parentBranch: string | null): Promise<PlanFetchResult> {
+async function fetchPlan(
+  parentBranch: string | null,
+  onProgress?: (progress: BackpromotePlanProgress) => void,
+): Promise<PlanFetchResult> {
+  // sfdx-hardis appends each step of the plan to this file (SFDX_HARDIS_PROGRESS_FILE):
+  // the loading state shows it while the JSON result is not there yet
+  const progressFile = path.join(
+    os.tmpdir(),
+    `sfdx-hardis-backpromote-plan-${process.pid}-${Date.now()}.jsonl`,
+  );
+  let lastProgressLength = -1;
+  const readProgress = () => {
+    try {
+      if (!onProgress || !fs.existsSync(progressFile)) {
+        return;
+      }
+      const content = fs.readFileSync(progressFile, "utf8");
+      if (content.length === lastProgressLength) {
+        return;
+      }
+      lastProgressLength = content.length;
+      const progress = buildPlanProgress(parseProgressEvents(content));
+      if (progress) {
+        onProgress(progress);
+      }
+    } catch {
+      // Read again at the next tick
+    }
+  };
+  const progressTimer = setInterval(readProgress, 500);
   try {
     const result = recoverJsonCommandResult(
       await execSfdxJson(buildPlanCommand(parentBranch), {
         fail: false,
         output: false,
         reuseRecentResult: false,
-        env: await collectCredentialEnv(),
+        env: {
+          ...(await collectCredentialEnv()),
+          SFDX_HARDIS_PROGRESS_FILE: progressFile,
+        },
       }),
     );
     const plan =
@@ -150,6 +186,9 @@ async function fetchPlan(parentBranch: string | null): Promise<PlanFetchResult> 
     return {
       planError: { cliTooOld: false, message: String(e?.message || e) },
     };
+  } finally {
+    clearInterval(progressTimer);
+    fs.promises.unlink(progressFile).catch(() => undefined);
   }
 }
 
@@ -225,7 +264,15 @@ export function registerShowBackpromote(commands: Commands) {
         const current = state;
         const loadId = ++current.loadCounter;
         panel.sendInitializationData({ loading: true });
-        const fetched = await fetchPlan(current.parentBranch);
+        const fetched = await fetchPlan(current.parentBranch, (progress) => {
+          if (
+            state === current &&
+            loadId === current.loadCounter &&
+            !panel.isDisposed()
+          ) {
+            panel.sendMessage({ type: "planProgress", data: progress });
+          }
+        });
         // A newer load started meanwhile, or the panel was closed
         if (
           state !== current ||

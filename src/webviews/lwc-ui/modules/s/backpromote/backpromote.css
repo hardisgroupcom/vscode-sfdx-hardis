@@ -180,3 +180,27 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* Progress of the plan computation */
+.bp-progress-track {
+  width: min(24rem, 100%);
+  margin: 0.5rem auto 0;
+}
+
+.bp-progress-steps {
+  margin: 0.75rem auto 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 36rem;
+  text-align: left;
+}
+
+.bp-progress-step {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  opacity: 0.75;
+}
