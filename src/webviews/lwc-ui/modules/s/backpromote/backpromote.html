@@ -99,6 +99,11 @@
                   <lightning-button variant="neutral" class="hardis-btn-tinted-blue" icon-name="utility:link" label={connectGitProviderLabel} onclick={handleConnectGitProvider}></lightning-button>
                 </div>
               </template>
+              <template if:true={check.hasNewUserStory}>
+                <div class="hardis-status-actions">
+                  <lightning-button variant="neutral" class="hardis-btn-tinted-blue" icon-name="utility:add" label={i18n.newUserStory} onclick={handleNewUserStory}></lightning-button>
+                </div>
+              </template>
               <template if:true={check.isTargetOrg}>
                 <div class="hardis-status-actions">
                   <lightning-button variant="neutral" class="hardis-btn-tinted-blue" label={i18n.backpromoteSelectOrg} onclick={handleSelectOrg}></lightning-button>

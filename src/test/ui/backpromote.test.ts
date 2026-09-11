@@ -325,6 +325,78 @@ suite("Backpromote panel UI tests", function () {
     }
   });
 
+  test("a branch that cannot receive a backpromote offers a New User Story, and Back to backpromote reloads the plan", async function () {
+    const planCalls = () =>
+      readMockLog().filter(
+        (entry) =>
+          entry.args[0] === "hardis:work:backpromote" &&
+          entry.args.includes("--plan"),
+      );
+    process.env.SF_MOCK_BACKPROMOTE_CLI = "promotionBranch";
+    let blocked: any;
+    try {
+      panel.simulateWebviewMessage({ type: "refresh" });
+      blocked = await waitFor(
+        () => {
+          const data = panel.getInitializationData();
+          return data && data.plan && data.plan.status === "blocked"
+            ? data
+            : null;
+        },
+        30000,
+        "the blocked plan to be pushed",
+      );
+      const check = blocked.plan.checks.find(
+        (item: any) => item.id === "currentBranch",
+      );
+      assert.ok(check && check.ok === false, "currentBranch check failed");
+      assert.strictEqual(
+        check.nextCommand,
+        `sf hardis:work:new --backpromote ${blocked.plan.parentBranch}`,
+      );
+
+      // New User Story runs the command of the plan in the command runner
+      panel.simulateWebviewMessage({ type: "newUserStory" });
+      const newUserStoryCall = await waitFor(
+        () =>
+          readMockLog().find(
+            (entry) =>
+              entry.args[0] === "hardis:work:new" &&
+              entry.args.includes("--backpromote"),
+          ) || null,
+        30000,
+        "the New User Story command to run",
+      );
+      assert.strictEqual(
+        newUserStoryCall.args[newUserStoryCall.args.indexOf("--backpromote") + 1],
+        blocked.plan.parentBranch,
+      );
+    } finally {
+      delete process.env.SF_MOCK_BACKPROMOTE_CLI;
+    }
+
+    // Back to backpromote, the button the CLI sends at the end of the New User
+    // Story, reloads the plan from the target branch of that User Story
+    const targetBranch = blocked.plan.parentBranchChoices[1];
+    const callsBefore = planCalls().length;
+    await vscode.commands.executeCommand("vscode-sfdx-hardis.showBackpromote", {
+      parentBranch: targetBranch,
+    });
+    const reloadCall = await waitFor(
+      () => {
+        const calls = planCalls();
+        const last = calls[calls.length - 1];
+        return calls.length > callsBefore &&
+          last.args[last.args.indexOf("--parentbranch") + 1] === targetBranch
+          ? last
+          : null;
+      },
+      30000,
+      "the plan of the User Story target branch to be loaded",
+    );
+    assert.ok(reloadCall);
+  });
+
   test("the commands tree and the DevOps Pipeline open the panel", async function () {
     const commandIds = await vscode.commands.getCommands(true);
     assert.ok(commandIds.includes("vscode-sfdx-hardis.showBackpromote"));

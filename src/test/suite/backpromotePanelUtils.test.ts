@@ -18,6 +18,7 @@ import {
   computeSelectionSummary,
   countConflictBlocks,
   getBackpromoteErrorMessage,
+  isAllowedBackpromoteNewUserStoryCommand,
   getTargetOrgDisplayName,
   isAllowedBackpromoteCommand,
   isCliTooOldForBackpromotePanel,
@@ -635,5 +636,42 @@ suite("backpromotePanelUtils", () => {
       "manual";
     const summary = computeSelectionSummary(plan, buildDefaultSelection(plan));
     assert.strictEqual(summary.manualActionsCount, 2);
+  });
+});
+
+suite("isAllowedBackpromoteNewUserStoryCommand", () => {
+  test("accepts the New User Story command of a backpromote", () => {
+    assert.strictEqual(
+      isAllowedBackpromoteNewUserStoryCommand(
+        "sf hardis:work:new --backpromote integration",
+      ),
+      true,
+    );
+    assert.strictEqual(
+      isAllowedBackpromoteNewUserStoryCommand(
+        'sf hardis:work:new --backpromote "release/2026 Q3"',
+      ),
+      true,
+    );
+  });
+
+  test("refuses any other command, flag or chained value", () => {
+    for (const command of [
+      "sf hardis:work:new",
+      "sf hardis:work:new --backpromote ",
+      "sf hardis:work:new --agent --backpromote integration",
+      "sf hardis:work:backpromote --backpromote integration",
+      "sf hardis:work:new --backpromote integration --agent",
+      "sf hardis:work:new --backpromote integration && rm -rf /",
+      'sf hardis:work:new --backpromote "a$(whoami)"',
+      null,
+      42,
+    ]) {
+      assert.strictEqual(
+        isAllowedBackpromoteNewUserStoryCommand(command),
+        false,
+        String(command),
+      );
+    }
   });
 });
