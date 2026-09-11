@@ -114,8 +114,6 @@ export interface BackpromoteCheck {
   ok: boolean;
   message: string;
   details?: string[];
-  /** Command solving the check, given by the CLI: a New User Story receiving the backpromote */
-  nextCommand?: string;
 }
 
 export interface BackpromotePlan {
@@ -334,28 +332,6 @@ export function isAllowedBackpromoteCommand(command: unknown): boolean {
     !command.includes("\n") &&
     !command.includes("\r")
   );
-}
-
-/**
- * The New User Story command a blocked plan offers in the nextCommand of its
- * failed currentBranch check: `sf hardis:work:new --backpromote <parent branch>`
- * and nothing else, the parent branch being a plain or a safely quoted value.
- */
-export function isAllowedBackpromoteNewUserStoryCommand(
-  command: unknown,
-): command is string {
-  if (typeof command !== "string") {
-    return false;
-  }
-  const prefix = "sf hardis:work:new --backpromote ";
-  if (!command.startsWith(prefix)) {
-    return false;
-  }
-  const value = command.substring(prefix.length);
-  const quoted = /^"([^"]+)"$/.exec(value);
-  return quoted
-    ? isSafeCommandValue(quoted[1])
-    : PLAIN_COMMAND_VALUE.test(value);
 }
 
 /**

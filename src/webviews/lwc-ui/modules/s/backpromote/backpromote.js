@@ -308,8 +308,7 @@ export default class Backpromote extends SharedMixin(LightningElement) {
           isTargetOrg: check.id === "targetOrg",
           isGitClean: check.id === "gitClean",
           isParentBranch: check.id === "parentBranch",
-          hasNewUserStory: !!check.nextCommand,
-          hint: this.checkHint(check.id, check),
+          hint: this.checkHint(check.id),
         };
       });
   }
@@ -318,7 +317,7 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     return this.failedChecks.length > 0;
   }
 
-  checkHint(checkId, check) {
+  checkHint(checkId) {
     if (checkId === "upToDate") {
       return this.t("backpromoteUpToDateCheckHint", {
         parentBranch: this.plan.parentBranch,
@@ -328,9 +327,7 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       return this.t("backpromoteGitProviderHint");
     }
     if (checkId === "currentBranch") {
-      return check && check.nextCommand
-        ? this.t("backpromoteNewUserStoryHint")
-        : this.t("backpromoteCurrentBranchHint");
+      return this.t("backpromoteCurrentBranchHint");
     }
     if (checkId === "parentBranch") {
       return this.t("backpromoteParentBranchHint");
@@ -1292,12 +1289,6 @@ export default class Backpromote extends SharedMixin(LightningElement) {
 
   handleSelectOrg() {
     window.sendMessageToVSCode({ type: "selectOrg" });
-  }
-
-  // Runs the New User Story command of the plan: the extension reads it from the
-  // plan it holds, the webview never sends a command
-  handleNewUserStory() {
-    window.sendMessageToVSCode({ type: "newUserStory" });
   }
 
   handleConnectGitProvider() {

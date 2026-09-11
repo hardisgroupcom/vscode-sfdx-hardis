@@ -561,9 +561,7 @@ async function main() {
  * does not know these flags yet (JSON error printed on stdout, as with
  * SF_JSON_TO_STDOUT), SF_MOCK_BACKPROMOTE_CLI=noGitProvider a user who is not
  * connected to the git provider, SF_MOCK_BACKPROMOTE_CLI=parentNotMajor a parent
- * branch that is not a major branch until --parentbranch names one,
- * SF_MOCK_BACKPROMOTE_CLI=promotionBranch a current branch that cannot receive a
- * backpromote (the plan offers the New User Story command).
+ * branch that is not a major branch until --parentbranch names one.
  */
 function answerBackpromote() {
   if (process.env.SF_MOCK_BACKPROMOTE_CLI === "old") {
@@ -602,44 +600,6 @@ function answerBackpromote() {
               message:
                 "You are not connected to GitHub: sfdx-hardis reads and writes the backpromote history in Pull Request comments.",
               details: [],
-            },
-          ],
-          groups: [],
-          items: [],
-          deletions: [],
-          actions: [],
-          reports: [],
-          stateReadErrors: [],
-        },
-        warnings: [],
-      },
-      "",
-    );
-    return 0;
-  }
-  // SF_MOCK_BACKPROMOTE_CLI=promotionBranch: the current branch cannot receive a
-  // backpromote, the plan offers the New User Story command creating one
-  if (
-    process.env.SF_MOCK_BACKPROMOTE_CLI === "promotionBranch" &&
-    args.includes("--plan")
-  ) {
-    outputJsonIfRequested(
-      {
-        status: 0,
-        result: {
-          ...plan,
-          status: "blocked",
-          currentBranch: "promotion/integration/uat/2026-09-11-0859",
-          checks: [
-            ...plan.checks.filter(
-              (check) => check.id === "gitProvider" || check.id === "targetOrg",
-            ),
-            {
-              id: "currentBranch",
-              ok: false,
-              message:
-                "Backpromote is not allowed on promotion branch promotion/integration/uat/2026-09-11-0859. A promotion branch only carries User Stories from one major branch to the next and is never deployed to a developer org: run the backpromote from your User Story branch.",
-              nextCommand: `sf hardis:work:new --backpromote ${plan.parentBranch}`,
             },
           ],
           groups: [],

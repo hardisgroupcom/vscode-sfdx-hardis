@@ -24,7 +24,6 @@ import {
   getBackpromoteErrorMessage,
   getTargetOrgDisplayName,
   isAllowedBackpromoteCommand,
-  isAllowedBackpromoteNewUserStoryCommand,
   isCliTooOldForBackpromotePanel,
   isSafeCommandValue,
   normalizeBackpromotePlan,
@@ -204,20 +203,11 @@ function acceptSelection(panelState: BackpromotePanelState, data: any): void {
 export function registerShowBackpromote(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showBackpromote",
-    async (options?: { parentBranch?: unknown }) => {
+    async () => {
       const lwcManager = LwcPanelManager.getInstance();
       if (!lwcManager.getPanel(BACKPROMOTE_LWC_ID)) {
         disposeStateWatchers(state);
         state = createState();
-      }
-      // Back to backpromote, sent by the CLI at the end of a New User Story: the
-      // plan comes from the target branch of that User Story
-      if (
-        options &&
-        typeof options === "object" &&
-        isSafeCommandValue(options.parentBranch)
-      ) {
-        state.parentBranch = options.parentBranch;
       }
 
       // Open the panel at once: computing the plan retrieves metadata from the
@@ -304,23 +294,6 @@ export function registerShowBackpromote(commands: Commands) {
           }
           case "runBackpromote": {
             runBackpromote(panel, current, data);
-            break;
-          }
-          case "newUserStory": {
-            // The command comes from the plan the CLI computed, never from the webview
-            const nextCommand = current.plan?.checks.find(
-              (check) => !check.ok && check.nextCommand,
-            )?.nextCommand;
-            if (isAllowedBackpromoteNewUserStoryCommand(nextCommand)) {
-              vscode.commands.executeCommand(
-                "vscode-sfdx-hardis.execute-command",
-                nextCommand,
-              );
-            } else {
-              vscode.window.showWarningMessage(
-                t("backpromoteCannotCreateUserStory"),
-              );
-            }
             break;
           }
           case "runInTerminal": {
