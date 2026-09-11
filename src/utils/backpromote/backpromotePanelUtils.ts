@@ -107,13 +107,26 @@ export interface BackpromoteCheck {
   id:
     | "gitProvider"
     | "targetOrg"
+    | "parentBranch"
     | "currentBranch"
     | "gitClean"
-    | "upToDate"
     | string;
   ok: boolean;
   message: string;
   details?: string[];
+}
+
+/**
+ * Where a run works, as the CLI decides it: on the checked out branch, or on a
+ * new local backpromote/<parent>/<date> branch created from the remote parent
+ * branch (never on a major branch itself).
+ */
+export interface BackpromoteWorkingBranch {
+  mode: "currentBranch" | "newBackpromoteBranch";
+  /** userStoryBranch, backpromoteBranch, majorBranch, promotionBranch, retrofitBranch or notUpToDate */
+  reason: string;
+  /** The branch the run brings the user back to */
+  returnBranch: string | null;
 }
 
 export interface BackpromotePlan {
@@ -122,6 +135,8 @@ export interface BackpromotePlan {
   currentBranch: string;
   parentBranch: string;
   parentBranchChoices: string[];
+  /** Null with an older sfdx-hardis, or when the plan stopped before knowing */
+  workingBranch: BackpromoteWorkingBranch | null;
   targetOrg: {
     username: string;
     instanceUrl: string;
@@ -159,6 +174,10 @@ export interface BackpromotePrepareMergeResult {
   prompt: string;
   promptFile: string;
   nextCommand: string;
+  /** The backpromote branch the merge was written on: the working tree is on it */
+  backpromoteBranch: string | null;
+  /** The branch the run of nextCommand brings the user back to */
+  returnBranch: string | null;
 }
 
 /**
@@ -338,6 +357,24 @@ export function isAllowedBackpromoteCommand(command: unknown): boolean {
  * Checks the shape of the `--plan --json` result and fills the missing arrays, so
  * the panel never crashes on a partial plan. Returns null when it is not a plan.
  */
+function normalizeWorkingBranch(raw: any): BackpromoteWorkingBranch | null {
+  if (
+    !raw ||
+    typeof raw !== "object" ||
+    !["currentBranch", "newBackpromoteBranch"].includes(raw.mode)
+  ) {
+    return null;
+  }
+  return {
+    mode: raw.mode,
+    reason: String(raw.reason || ""),
+    returnBranch:
+      typeof raw.returnBranch === "string" && raw.returnBranch
+        ? raw.returnBranch
+        : null,
+  };
+}
+
 export function normalizeBackpromotePlan(raw: any): BackpromotePlan | null {
   if (
     !raw ||
@@ -364,6 +401,7 @@ export function normalizeBackpromotePlan(raw: any): BackpromotePlan | null {
     currentBranch: String(raw.currentBranch || ""),
     parentBranch: String(raw.parentBranch || ""),
     parentBranchChoices: asStringArray(raw.parentBranchChoices),
+    workingBranch: normalizeWorkingBranch(raw.workingBranch),
     targetOrg,
     checks: asArray(raw.checks).map((check: any) => ({
       ...check,
@@ -478,6 +516,14 @@ export function normalizePrepareMergeResult(
     prompt: String(raw.prompt || ""),
     promptFile: String(raw.promptFile || ""),
     nextCommand: String(raw.nextCommand || ""),
+    backpromoteBranch:
+      typeof raw.backpromoteBranch === "string" && raw.backpromoteBranch
+        ? raw.backpromoteBranch
+        : null,
+    returnBranch:
+      typeof raw.returnBranch === "string" && raw.returnBranch
+        ? raw.returnBranch
+        : null,
   };
 }
 

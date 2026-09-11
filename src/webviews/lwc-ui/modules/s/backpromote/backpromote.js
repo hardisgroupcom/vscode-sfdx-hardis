@@ -20,19 +20,15 @@ const UNKNOWN_PILL = "hardis-pill hardis-status-unknown";
 const CHECK_TITLE_KEYS = {
   gitProvider: "backpromoteCheckGitProvider",
   targetOrg: "backpromoteCheckTargetOrg",
-  currentBranch: "backpromoteCheckCurrentBranch",
   parentBranch: "backpromoteCheckParentBranch",
   gitClean: "backpromoteCheckGitClean",
-  upToDate: "backpromoteCheckUpToDate",
 };
 
 const CHECK_ICONS = {
   gitProvider: "utility:link",
   targetOrg: "utility:salesforce1",
-  currentBranch: "utility:merge",
   parentBranch: "utility:hierarchy",
   gitClean: "utility:file",
-  upToDate: "utility:sync",
 };
 
 const ORG_STATE_VIEW = {
@@ -80,7 +76,8 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   preparingKeys = [];
   revision = 0;
   showCommand = false;
-  showParentPicker = false;
+  // Set once a merge was written on a new backpromote branch
+  backpromoteBranchNotice = null;
   showDoneGroups = false;
   openSections = {
     changed: true,
@@ -111,7 +108,7 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       this.mergeResults = payload.preparedMerges || {};
       this.mergeErrors = {};
       this.preparingKeys = [];
-      this.showParentPicker = false;
+      this.backpromoteBranchNotice = null;
       if (typeof payload.revision === "number") {
         this.revision = Math.max(this.revision, payload.revision);
       }
@@ -271,7 +268,8 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       return [];
     }
     return this.plan.checks
-      .filter((check) => check.ok)
+      // The currentBranch check says where the run works: shown under the parent branch
+      .filter((check) => check.ok && check.id !== "currentBranch")
       .map((check) => ({
         id: check.id,
         label:
@@ -307,7 +305,6 @@ export default class Backpromote extends SharedMixin(LightningElement) {
           isGitProvider: check.id === "gitProvider",
           isTargetOrg: check.id === "targetOrg",
           isGitClean: check.id === "gitClean",
-          isParentBranch: check.id === "parentBranch",
           hint: this.checkHint(check.id),
         };
       });
@@ -318,16 +315,8 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   }
 
   checkHint(checkId) {
-    if (checkId === "upToDate") {
-      return this.t("backpromoteUpToDateCheckHint", {
-        parentBranch: this.plan.parentBranch,
-      });
-    }
     if (checkId === "gitProvider") {
       return this.t("backpromoteGitProviderHint");
-    }
-    if (checkId === "currentBranch") {
-      return this.t("backpromoteCurrentBranchHint");
     }
     if (checkId === "parentBranch") {
       return this.t("backpromoteParentBranchHint");
@@ -520,8 +509,24 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     }));
   }
 
-  get canChangeParentBranch() {
-    return this.parentBranchOptions.length > 1;
+  get hasParentBranchChoices() {
+    return this.parentBranchOptions.length > 0;
+  }
+
+  // Where the run works, as the CLI says it: the current branch, or a new local
+  // backpromote branch created from the parent branch
+  get workingBranchText() {
+    if (!this.plan) {
+      return "";
+    }
+    const check = (this.plan.checks || []).find(
+      (item) => item.id === "currentBranch" && item.ok,
+    );
+    return check ? check.message : "";
+  }
+
+  get hasWorkingBranchText() {
+    return !!this.workingBranchText;
   }
 
   handleToggleGroup(event) {
@@ -564,13 +569,8 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     this.showDoneGroups = !this.showDoneGroups;
   }
 
-  handleToggleParentPicker() {
-    this.showParentPicker = !this.showParentPicker;
-  }
-
   handleParentBranchChange(event) {
     const parentBranch = event.detail.value;
-    this.showParentPicker = false;
     if (!parentBranch || !this.plan || parentBranch === this.plan.parentBranch) {
       return;
     }
@@ -772,6 +772,15 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   handleMergePrepared(data) {
     const requestedKeys = data.requestedKeys || [];
     const result = data.result || {};
+    if (result.backpromoteBranch) {
+      this.backpromoteBranchNotice = this.t(
+        "backpromoteMergeOnBackpromoteBranch",
+        {
+          branch: result.backpromoteBranch,
+          returnBranch: result.returnBranch || "",
+        },
+      );
+    }
     const files = result.files || [];
     const mergedKeys = files.map((file) => file.key);
     this.preparingKeys = this.preparingKeys.filter(

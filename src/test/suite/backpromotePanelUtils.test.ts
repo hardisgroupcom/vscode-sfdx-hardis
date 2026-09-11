@@ -637,3 +637,50 @@ suite("backpromotePanelUtils", () => {
     assert.strictEqual(summary.manualActionsCount, 2);
   });
 });
+
+suite("backpromote working branch", () => {
+  test("keeps where the run works, and drops an unknown shape", () => {
+    const base = { planVersion: 1, status: "ready" };
+    const workingBranch = {
+      mode: "newBackpromoteBranch",
+      reason: "promotionBranch",
+      returnBranch: "promotion/integration/uat/2026-09-11-0859",
+    };
+    assert.deepStrictEqual(
+      normalizeBackpromotePlan({ ...base, workingBranch })?.workingBranch,
+      workingBranch,
+    );
+    assert.strictEqual(
+      normalizeBackpromotePlan({ ...base, workingBranch: { mode: "major" } })
+        ?.workingBranch,
+      null,
+    );
+    assert.strictEqual(normalizeBackpromotePlan(base)?.workingBranch, null);
+  });
+
+  test("keeps the backpromote branch a merge was written on", () => {
+    const result = normalizePrepareMergeResult({
+      files: [
+        {
+          key: "ApexClass:PromoE2EAlphaTest",
+          localPath: "force-app/main/default/classes/PromoE2EAlphaTest.cls",
+          conflictBlocks: 1,
+        },
+      ],
+      nextCommand:
+        "sf hardis:work:backpromote --merged-metadata ApexClass:PromoE2EAlphaTest",
+      backpromoteBranch: "backpromote/integration/2026-09-11-0859",
+      returnBranch: "feature/E2E-401-dev",
+    });
+    assert.strictEqual(
+      result?.backpromoteBranch,
+      "backpromote/integration/2026-09-11-0859",
+    );
+    assert.strictEqual(result?.returnBranch, "feature/E2E-401-dev");
+    const older = normalizePrepareMergeResult({
+      files: [{ key: "ApexClass:A", localPath: "a.cls" }],
+    });
+    assert.strictEqual(older?.backpromoteBranch, null);
+    assert.strictEqual(older?.returnBranch, null);
+  });
+});

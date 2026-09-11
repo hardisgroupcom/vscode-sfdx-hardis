@@ -7,6 +7,18 @@
       <div class="hardis-page-head-text">
         <h1 class="hardis-page-title">{i18n.backpromote}</h1>
         <p class="hardis-page-subtitle">{i18n.backpromotePanelSubtitle}</p>
+        <template if:true={hasParentBranchChoices}>
+          <div class="bp-from">
+            <span class="muted">{i18n.backpromoteFromBranch}</span>
+            <lightning-combobox class="bp-parent-picker" label={i18n.backpromoteParentBranchLabel} variant="label-hidden" options={parentBranchOptions} value={plan.parentBranch} onchange={handleParentBranchChange} disabled={loading}></lightning-combobox>
+          </div>
+        </template>
+        <template if:true={hasWorkingBranchText}>
+          <p class="hardis-page-subtitle bp-working-branch">{workingBranchText}</p>
+        </template>
+        <template if:true={backpromoteBranchNotice}>
+          <p class="hardis-page-subtitle bp-working-branch">{backpromoteBranchNotice}</p>
+        </template>
         <template if:true={hasPassedChecks}>
           <div class="hardis-chip-row">
             <template for:each={passedChecks} for:item="check">
@@ -109,18 +121,6 @@
                   <lightning-button variant="neutral" label={i18n.backpromoteOpenSourceControl} onclick={handleOpenSourceControl}></lightning-button>
                 </div>
               </template>
-              <template if:true={check.isParentBranch}>
-                <div class="hardis-status-actions">
-                  <lightning-combobox
-                    class="bp-parent-picker"
-                    label={i18n.backpromoteParentBranchLabel}
-                    variant="label-hidden"
-                    options={parentBranchOptions}
-                    value={plan.parentBranch}
-                    onchange={handleParentBranchChange}
-                  ></lightning-combobox>
-                </div>
-              </template>
             </div>
           </template>
         </div>
@@ -145,24 +145,6 @@
         <div class="hardis-split">
           <!-- Rail: the Pull Requests merged in the parent branch -->
           <div class="hardis-panel-body hardis-split-rail">
-            <div class="bp-parent">
-              <span class="muted">{i18n.backpromoteFromBranch}</span>
-              <span class="hardis-branch-chip">{plan.parentBranch}</span>
-              <template if:true={canChangeParentBranch}>
-                <button type="button" class="hardis-textlink" onclick={handleToggleParentPicker} disabled={loading}>{i18n.backpromoteChangeParentBranch}</button>
-              </template>
-            </div>
-            <template if:true={showParentPicker}>
-              <lightning-combobox
-                class="bp-parent-picker"
-                label={i18n.backpromoteParentBranchLabel}
-                variant="label-hidden"
-                options={parentBranchOptions}
-                value={plan.parentBranch}
-                onchange={handleParentBranchChange}
-              ></lightning-combobox>
-            </template>
-
             <div class="hardis-group-label">
               {i18n.pullRequests}
               <div class="hardis-group-actions">

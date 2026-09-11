@@ -26,18 +26,25 @@
   gap: 0.3rem;
 }
 
-/* Rail */
-.bp-parent {
+/* Parent branch and where the run works */
+.bp-from {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
 }
 
 .bp-parent-picker {
   display: block;
-  margin-top: 0.5rem;
+  min-width: 12rem;
 }
+
+.bp-working-branch {
+  margin-top: 0.35rem;
+}
+
+/* Rail */
 
 .bp-list {
   max-height: none;

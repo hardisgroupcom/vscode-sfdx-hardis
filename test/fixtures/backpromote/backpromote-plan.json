@@ -9,6 +9,11 @@
     "preprod",
     "main"
   ],
+  "workingBranch": {
+    "mode": "currentBranch",
+    "reason": "userStoryBranch",
+    "returnBranch": null
+  },
   "gitProvider": {
     "name": "github"
   },
@@ -35,17 +40,12 @@
     {
       "id": "currentBranch",
       "ok": true,
-      "message": "feature/CRM-1432-quote-discounts is not a major branch"
+      "message": "The backpromote runs on feature/CRM-1432-quote-discounts, which contains the latest commit of integration"
     },
     {
       "id": "gitClean",
       "ok": true,
       "message": "Working tree clean"
-    },
-    {
-      "id": "upToDate",
-      "ok": true,
-      "message": "Up to date with integration"
     }
   ],
   "groups": [
