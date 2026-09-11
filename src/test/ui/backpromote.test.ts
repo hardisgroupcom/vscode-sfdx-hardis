@@ -268,6 +268,63 @@ suite("Backpromote panel UI tests", function () {
     }
   });
 
+  test("a parent branch that is not a major branch blocks the plan until a major branch is picked", async function () {
+    process.env.SF_MOCK_BACKPROMOTE_CLI = "parentNotMajor";
+    try {
+      panel.simulateWebviewMessage({ type: "refresh" });
+      const blocked = await waitFor(
+        () => {
+          const data = panel.getInitializationData();
+          return data && data.plan && data.plan.status === "blocked"
+            ? data
+            : null;
+        },
+        30000,
+        "the blocked plan to be pushed",
+      );
+      const failed = blocked.plan.checks.filter((check: any) => !check.ok);
+      assert.deepStrictEqual(
+        failed.map((check: any) => check.id),
+        ["parentBranch"],
+      );
+      assert.strictEqual(blocked.summary.canRun, false);
+      const choices = blocked.plan.parentBranchChoices;
+      assert.ok(choices.length > 1);
+
+      // Picking a major branch in the check card reloads the plan with it
+      const majorBranch = choices[choices.length - 1];
+      panel.simulateWebviewMessage({
+        type: "changeParentBranch",
+        data: { parentBranch: majorBranch },
+      });
+      const ready = await waitFor(
+        () => {
+          const data = panel.getInitializationData();
+          return data && data.plan && data.plan.status !== "blocked"
+            ? data
+            : null;
+        },
+        30000,
+        "the plan of the major branch to be pushed",
+      );
+      assert.strictEqual(ready.plan.status, "ready");
+      const lastPlanCall = readMockLog()
+        .filter(
+          (entry) =>
+            entry.args[0] === "hardis:work:backpromote" &&
+            entry.args.includes("--plan"),
+        )
+        .pop();
+      assert.ok(lastPlanCall, "a plan call is logged");
+      assert.strictEqual(
+        lastPlanCall.args[lastPlanCall.args.indexOf("--parentbranch") + 1],
+        majorBranch,
+      );
+    } finally {
+      delete process.env.SF_MOCK_BACKPROMOTE_CLI;
+    }
+  });
+
   test("the commands tree and the DevOps Pipeline open the panel", async function () {
     const commandIds = await vscode.commands.getCommands(true);
     assert.ok(commandIds.includes("vscode-sfdx-hardis.showBackpromote"));

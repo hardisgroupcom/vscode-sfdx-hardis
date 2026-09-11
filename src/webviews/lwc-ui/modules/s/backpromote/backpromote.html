@@ -109,6 +109,18 @@
                   <lightning-button variant="neutral" label={i18n.backpromoteOpenSourceControl} onclick={handleOpenSourceControl}></lightning-button>
                 </div>
               </template>
+              <template if:true={check.isParentBranch}>
+                <div class="hardis-status-actions">
+                  <lightning-combobox
+                    class="bp-parent-picker"
+                    label={i18n.backpromoteParentBranchLabel}
+                    variant="label-hidden"
+                    options={parentBranchOptions}
+                    value={plan.parentBranch}
+                    onchange={handleParentBranchChange}
+                  ></lightning-combobox>
+                </div>
+              </template>
             </div>
           </template>
         </div>

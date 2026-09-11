@@ -21,6 +21,7 @@ const CHECK_TITLE_KEYS = {
   gitProvider: "backpromoteCheckGitProvider",
   targetOrg: "backpromoteCheckTargetOrg",
   currentBranch: "backpromoteCheckCurrentBranch",
+  parentBranch: "backpromoteCheckParentBranch",
   gitClean: "backpromoteCheckGitClean",
   upToDate: "backpromoteCheckUpToDate",
 };
@@ -29,6 +30,7 @@ const CHECK_ICONS = {
   gitProvider: "utility:link",
   targetOrg: "utility:salesforce1",
   currentBranch: "utility:merge",
+  parentBranch: "utility:hierarchy",
   gitClean: "utility:file",
   upToDate: "utility:sync",
 };
@@ -305,6 +307,7 @@ export default class Backpromote extends SharedMixin(LightningElement) {
           isGitProvider: check.id === "gitProvider",
           isTargetOrg: check.id === "targetOrg",
           isGitClean: check.id === "gitClean",
+          isParentBranch: check.id === "parentBranch",
           hint: this.checkHint(check.id),
         };
       });
@@ -322,6 +325,12 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     }
     if (checkId === "gitProvider") {
       return this.t("backpromoteGitProviderHint");
+    }
+    if (checkId === "currentBranch") {
+      return this.t("backpromoteCurrentBranchHint");
+    }
+    if (checkId === "parentBranch") {
+      return this.t("backpromoteParentBranchHint");
     }
     return null;
   }

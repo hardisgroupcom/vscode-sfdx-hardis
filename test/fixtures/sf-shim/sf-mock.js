@@ -560,7 +560,8 @@ async function main() {
  * 3-way merge. SF_MOCK_BACKPROMOTE_CLI=old simulates an sfdx-hardis version that
  * does not know these flags yet (JSON error printed on stdout, as with
  * SF_JSON_TO_STDOUT), SF_MOCK_BACKPROMOTE_CLI=noGitProvider a user who is not
- * connected to the git provider.
+ * connected to the git provider, SF_MOCK_BACKPROMOTE_CLI=parentNotMajor a parent
+ * branch that is not a major branch until --parentbranch names one.
  */
 function answerBackpromote() {
   if (process.env.SF_MOCK_BACKPROMOTE_CLI === "old") {
@@ -599,6 +600,49 @@ function answerBackpromote() {
               message:
                 "You are not connected to GitHub: sfdx-hardis reads and writes the backpromote history in Pull Request comments.",
               details: [],
+            },
+          ],
+          groups: [],
+          items: [],
+          deletions: [],
+          actions: [],
+          reports: [],
+          stateReadErrors: [],
+        },
+        warnings: [],
+      },
+      "",
+    );
+    return 0;
+  }
+  // SF_MOCK_BACKPROMOTE_CLI=parentNotMajor: the plan stops on the parentBranch
+  // check until --parentbranch names the last major branch of the fixture (the
+  // panel may already pass the default one)
+  const parentBranchFlag = args.includes("--parentbranch")
+    ? args[args.indexOf("--parentbranch") + 1]
+    : null;
+  const majorBranches = plan.parentBranchChoices || [plan.parentBranch];
+  if (
+    process.env.SF_MOCK_BACKPROMOTE_CLI === "parentNotMajor" &&
+    args.includes("--plan") &&
+    parentBranchFlag !== majorBranches[majorBranches.length - 1]
+  ) {
+    outputJsonIfRequested(
+      {
+        status: 0,
+        result: {
+          ...plan,
+          status: "blocked",
+          parentBranch: "feature/other",
+          parentBranchChoices: majorBranches,
+          checks: [
+            ...plan.checks.filter(
+              (check) => check.id === "gitProvider" || check.id === "targetOrg",
+            ),
+            {
+              id: "parentBranch",
+              ok: false,
+              message: `feature/other is not a major branch. A backpromote brings what was merged in a major branch into your User Story branch: choose one of ${majorBranches.join(", ")}.`,
             },
           ],
           groups: [],
