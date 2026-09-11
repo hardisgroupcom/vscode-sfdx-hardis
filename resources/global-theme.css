@@ -1422,9 +1422,16 @@ lightning-helptext::part(icon) {
   max-width: 100%;
   justify-content: flex-start;
 }
+/* s-hardis-datatable belongs in that list too, and not only to look right:
+   lightning-datatable sizes its columns in JS from the width of its own host
+   element, and a flex item left at "flex: 0 1 auto" is only as wide as its
+   content. The table of a list setting came back 220px wide, its columns at
+   their minimum, printing a branch name one character per line
+   (allowedPromotionSteps: source + target). */
 .hardis-field-row.stacked .hardis-field-control > lightning-input,
 .hardis-field-row.stacked .hardis-field-control > lightning-textarea,
-.hardis-field-row.stacked .hardis-field-control > lightning-dual-listbox {
+.hardis-field-row.stacked .hardis-field-control > lightning-dual-listbox,
+.hardis-field-row.stacked .hardis-field-control > s-hardis-datatable {
   flex: 1 1 100%;
   min-width: 0;
 }
