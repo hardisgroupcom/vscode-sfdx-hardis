@@ -41,6 +41,12 @@ export interface PromotionBranchNameParts {
   sourceBranch: string;
   targetBranch: string;
   date: string;
+  /**
+   * UTC hour and minutes the promotion was assembled at (HHMM). Null for a name of the
+   * first releases of the feature, which carried a counter after the date instead.
+   */
+  time: string | null;
+  /** 1 unless the name ends with -2, -3... because the same name was already taken */
   counter: number;
 }
 
@@ -154,10 +160,18 @@ export function allowedPromotionTargetBranches(
   );
 }
 
+// HHMM of a valid time of day: 0000 to 2359
+const PROMOTION_BRANCH_TIME_REGEX = /^([01]\d|2[0-3])[0-5]\d$/;
+
 /**
  * Splits a promotion branch name into its parts. The convention is not configurable:
- * promotion/<source major branch>/<target major branch>/<YYYY-MM-DD>-<counter>.
+ * promotion/<source major branch>/<target major branch>/<YYYY-MM-DD>-<HHMM> (UTC), with
+ * -2, -3... added by sfdx-hardis only when that name is already taken.
  * Returns null for anything else, including a bare "promotion/xxx".
+ *
+ * Same rules as parsePromotionBranchName in sfdx-hardis: the <YYYY-MM-DD>-<counter> names
+ * of the first releases are still recognized, since those promotions can still be open or
+ * waiting in a branch, and a group of four digits that is a valid time of day is the time.
  */
 export function parsePromotionBranchName(
   branchName: string | undefined | null,
@@ -170,21 +184,39 @@ export function parsePromotionBranchName(
     return null;
   }
   const [, sourceBranch, targetBranch, suffix] = segments;
-  const suffixMatch = suffix.match(/^(\d{4}-\d{2}-\d{2})-(\d+)$/);
+  const suffixMatch = suffix.match(/^(\d{4}-\d{2}-\d{2})-(\d+)(?:-(\d+))?$/);
   if (!sourceBranch || !targetBranch || !suffixMatch) {
     return null;
+  }
+  const [, date, first, second] = suffixMatch;
+  if (second !== undefined) {
+    // <HHMM>-<n>: the part before the counter must really be a time
+    return PROMOTION_BRANCH_TIME_REGEX.test(first)
+      ? {
+          sourceBranch,
+          targetBranch,
+          date,
+          time: first,
+          counter: parseInt(second, 10),
+        }
+      : null;
+  }
+  if (PROMOTION_BRANCH_TIME_REGEX.test(first)) {
+    return { sourceBranch, targetBranch, date, time: first, counter: 1 };
   }
   return {
     sourceBranch,
     targetBranch,
-    date: suffixMatch[1],
-    counter: parseInt(suffixMatch[2], 10),
+    date,
+    time: null,
+    counter: parseInt(first, 10),
   };
 }
 
 /**
- * True for a branch following the promotion/<source>/<target>/<YYYY-MM-DD>-<counter>
- * convention: a hand-named promotion/xxx branch is not a promotion branch.
+ * True for a branch following the promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM>
+ * convention (or the <YYYY-MM-DD>-<counter> one of the first releases): a hand-named
+ * promotion/xxx branch is not a promotion branch.
  */
 export function isPromotionBranchName(
   branchName: string | undefined | null,

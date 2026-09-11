@@ -366,11 +366,38 @@ suite("promotionBranchUtils", () => {
     );
   });
 
-  test("parses promotion/<source>/<target>/<YYYY-MM-DD>-<counter> and nothing else", () => {
+  test("parses promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM>, the <YYYY-MM-DD>-<counter> names of the first releases, and nothing else", () => {
+    assert.deepStrictEqual(
+      parsePromotionBranchName("promotion/uat/preprod/2026-09-06-1430"),
+      {
+        sourceBranch: "uat",
+        targetBranch: "preprod",
+        date: "2026-09-06",
+        time: "1430",
+        counter: 1,
+      },
+    );
+    assert.deepStrictEqual(
+      parsePromotionBranchName("promotion/uat/preprod/2026-09-06-0005-2"),
+      {
+        sourceBranch: "uat",
+        targetBranch: "preprod",
+        date: "2026-09-06",
+        time: "0005",
+        counter: 2,
+      },
+    );
+    // A counter only follows a real time of day
+    assert.strictEqual(
+      isPromotionBranchName("promotion/uat/preprod/2026-09-06-2460-2"),
+      false,
+    );
+    // Promotions of the first releases can still be open or waiting in a branch
     assert.deepStrictEqual(parsePromotionBranchName(PROMOTION_BRANCH), {
       sourceBranch: "uat",
       targetBranch: "preprod",
       date: "2026-09-06",
+      time: null,
       counter: 1,
     });
     assert.strictEqual(

@@ -2514,7 +2514,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (pr.isPromotion === true) {
       return true;
     }
-    return /^promotion\/[^/]+\/[^/]+\/\d{4}-\d{2}-\d{2}-\d+$/.test(source);
+    // <YYYY-MM-DD>-<HHMM>, with -<n> when the name was taken, and the <YYYY-MM-DD>-<counter>
+    // names of the first releases (parsePromotionBranchName checks the time, a fallback does not)
+    return /^promotion\/[^/]+\/[^/]+\/\d{4}-\d{2}-\d{2}-\d+(?:-\d+)?$/.test(source);
   }
 
   // The toggle only shows when the current view holds something to reveal
