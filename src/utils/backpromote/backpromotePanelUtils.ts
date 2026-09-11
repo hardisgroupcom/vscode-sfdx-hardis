@@ -296,8 +296,16 @@ export function parseMetadataKey(
 
 const PLAIN_COMMAND_VALUE = /^[A-Za-z0-9_.@:/+=,-]+$/;
 // Characters whose meaning differs between the shell-less spawn, bash, cmd.exe
-// and PowerShell, even inside double quotes: such a value is refused, never escaped
-const UNSAFE_COMMAND_VALUE = /["\\`$]/;
+// and PowerShell, even inside double quotes: such a value is refused, never escaped.
+// A single quote is refused too, because single quotes are what protects a value
+// carrying a dollar sign.
+const UNSAFE_COMMAND_VALUE = /["\\`']/;
+// Command and variable substitution: refused whatever the quoting
+const UNSAFE_SUBSTITUTION = /\$[({]/;
+// A lone dollar sign is part of Salesforce folder names (unfiled$public): the value
+// is single quoted, which bash and PowerShell both take literally, instead of being
+// refused and blocking the run of every selection holding such an item
+const NEEDS_LITERAL_QUOTES = /\$/;
 
 /**
  * A value built from the plan can go into a command when it holds no quote, no
@@ -310,6 +318,7 @@ export function isSafeCommandValue(value: unknown): value is string {
   }
   if (
     UNSAFE_COMMAND_VALUE.test(value) ||
+    UNSAFE_SUBSTITUTION.test(value) ||
     value.includes("&&") ||
     value.includes("||")
   ) {
@@ -333,7 +342,12 @@ export function quoteCommandValue(value: string): string {
       `Value not allowed in a backpromote command: ${JSON.stringify(value)}`,
     );
   }
-  return PLAIN_COMMAND_VALUE.test(value) ? value : `"${value}"`;
+  if (PLAIN_COMMAND_VALUE.test(value)) {
+    return value;
+  }
+  // A dollar sign keeps its meaning inside double quotes in bash and in PowerShell,
+  // and the command runner tokenizer strips both quote characters the same way
+  return NEEDS_LITERAL_QUOTES.test(value) ? `'${value}'` : `"${value}"`;
 }
 
 /**

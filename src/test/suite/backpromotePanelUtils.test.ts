@@ -21,6 +21,7 @@ import {
   getTargetOrgDisplayName,
   isAllowedBackpromoteCommand,
   isCliTooOldForBackpromotePanel,
+  isSafeCommandValue,
   normalizeBackpromotePlan,
   normalizePrepareMergeResult,
   normalizeSelection,
@@ -85,9 +86,13 @@ suite("backpromotePanelUtils", () => {
       quoteCommandValue("Layout:Opportunity-Sales Layout"),
       '"Layout:Opportunity-Sales Layout"',
     );
+    // A lone dollar sign is part of the unfiled$public folder names: single quoted, never refused
+    assert.strictEqual(quoteCommandValue("a$b"), "'a$b'");
     for (const unsafe of [
       'a"b',
-      "a$b",
+      "a'b",
+      "a$(b)",
+      "a${b}",
       "a`b",
       "a\\b",
       "a && b",
@@ -344,6 +349,25 @@ suite("backpromotePanelUtils", () => {
     );
     assert.ok(command!.includes("--pull-requests 487 "), command!);
     assert.ok(command!.includes(`--commits ${untrackable.shortHash}`), command!);
+  });
+
+  test("a folder name holding a dollar sign is quoted instead of blocking the run", () => {
+    // Reports, Dashboards and Email Templates of the default folder are named
+    // unfiled$public: the panel used to refuse the whole command as soon as such an
+    // item was kept or merged
+    assert.strictEqual(
+      quoteCommandValue("Report:unfiled$public/Pipeline"),
+      "'Report:unfiled$public/Pipeline'",
+    );
+    assert.strictEqual(quoteCommandValue("Report:unfiled$public/My Report"), "'Report:unfiled$public/My Report'");
+    const tokens = tokenizeCommand(
+      `sf hardis:work:backpromote --exclude-metadata ${quoteCommandValue("Report:unfiled$public/My Report")}`,
+    );
+    assert.ok(tokens.includes("Report:unfiled$public/My Report"), tokens.join("|"));
+    // Substitutions and quotes stay refused
+    assert.strictEqual(isSafeCommandValue("user$(whoami)@example.com"), false);
+    assert.strictEqual(isSafeCommandValue("Report:${HOME}/x"), false);
+    assert.strictEqual(isSafeCommandValue("Report:it's mine"), false);
   });
 
   test("an unsafe value of the plan blocks the run instead of reaching the command", () => {
