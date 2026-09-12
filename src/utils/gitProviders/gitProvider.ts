@@ -13,6 +13,7 @@ import type {
 import { getReportDirectory, getWorkspaceRoot } from "../../utils";
 import { getConfig } from "../pipeline/sfdxHardisConfig";
 import { Logger } from "../../logger";
+import { DEFAULT_CONCURRENCY, mapWithConcurrencySettled } from "../concurrency";
 import {
   getCachedPipelineQuery,
   setCachedPipelineQuery,
@@ -634,21 +635,18 @@ export class GitProvider {
       }
       // Fetch details for each unique ticket
       const uniqueTickets = Array.from(uniqueTicketsMap.values());
-      const detailedResults = await Promise.all(
-        uniqueTickets.map(async (t) => {
-          try {
-            const updated = await ticketProvider.completeTicketDetails(t);
-            return updated ?? t;
-          } catch (err: any) {
-            Logger.log(
-              `completeTicketDetails failed for ticket=${t.id}: ${err?.message || err}`,
-            );
-            return t;
-          }
-        }),
+      // Adaptive batches: 20 tickets at a time, 10 then 5 then 1 after a failure
+      const detailedResults = await mapWithConcurrencySettled(
+        uniqueTickets,
+        async (t) => (await ticketProvider.completeTicketDetails(t)) ?? t,
+        DEFAULT_CONCURRENCY,
+        (err: any, t) =>
+          Logger.log(
+            `completeTicketDetails failed for ticket=${t.id}: ${err?.message || err}`,
+          ),
       );
-      for (const ticket of detailedResults) {
-        uniqueTicketsMap.set(ticket.id, ticket);
+      for (const [index, ticket] of uniqueTickets.entries()) {
+        uniqueTicketsMap.set(ticket.id, detailedResults[index] ?? ticket);
       }
       // Update details back to PRs
       for (const pr of _pullRequests) {
