@@ -2322,6 +2322,51 @@ lightning-helptext::part(icon) {
   width: 10px;
   height: 10px;
 }
+/* Same ticked state, for rows that are not .hardis-option-row (item lists with several controls per line) */
+.slds-scope[data-theme] .hardis-check.on {
+  background: var(--slds-g-color-palette-cloud-blue-50);
+  border-color: var(--slds-g-color-palette-cloud-blue-50);
+  color: #ffffff;
+}
+/* Main label of a row in such a list */
+.slds-scope[data-theme] .hardis-row-label {
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+/* Segmented select button (one choice among a few, e.g. Overwrite / Keep org version / Merge):
+   <span class="hardis-segmented"><button class="hardis-seg on">A</button><button class="hardis-seg">B</button></span>
+   .on is the choice taken, .warn-on a choice taken that still needs work (same white text rationale as .hardis-check). */
+.slds-scope[data-theme] .hardis-segmented {
+  display: inline-flex;
+  border: 1px solid var(--slds-g-color-neutral-base-80);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.slds-scope[data-theme] .hardis-seg {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 0.74rem;
+  padding: 0.2rem 0.55rem;
+  cursor: pointer;
+  border-right: 1px solid var(--slds-g-color-neutral-base-80);
+}
+.slds-scope[data-theme] .hardis-seg:last-child {
+  border-right: 0;
+}
+.slds-scope[data-theme] .hardis-seg:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.slds-scope[data-theme] .hardis-seg.on {
+  background: var(--slds-g-color-palette-cloud-blue-50);
+  color: #ffffff;
+}
+.slds-scope[data-theme] .hardis-seg.warn-on {
+  background: var(--slds-g-color-palette-orange-60);
+  color: #ffffff;
+}
 .slds-scope[data-theme] .hardis-option-list-more {
   text-align: center;
   font-size: 0.7rem;

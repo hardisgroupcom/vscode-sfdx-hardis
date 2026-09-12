@@ -197,6 +197,23 @@ const DOCS_ORGS = {
   ],
 };
 
+const TEST_ORGS = {
+  nonScratchOrgs: [
+    {
+      username: "sam.dubois@mycompany.com.dev1",
+      alias: "dev1",
+      orgId: "00D5g000004ABCDEAA",
+      instanceUrl: "https://mycompany--dev1.sandbox.my.salesforce.com",
+      instanceApiVersion: "67.0",
+      loginUrl: "https://test.salesforce.com",
+      connectedStatus: "Connected",
+      isDefaultUsername: true,
+      isSandbox: true,
+      isScratch: false,
+    },
+  ],
+};
+
 // A few metadata items per type, for the Metadata Retriever panel
 const DOCS_METADATA = {
   ApexClass: [
@@ -392,8 +409,10 @@ async function main() {
   }
 
   if (first === "org" && args[1] === "list") {
+    // Outside the docs profile, one developer sandbox (the default org): the target of the
+    // Backpromote panel tests, whose plan fixture names it
     outputJsonIfRequested(
-      { status: 0, result: DOCS_PROFILE ? DOCS_ORGS : {} },
+      { status: 0, result: DOCS_PROFILE ? DOCS_ORGS : TEST_ORGS },
       "",
     );
     return 0;
@@ -536,10 +555,14 @@ async function main() {
     return 0;
   }
 
-  // Backpromote panel: read-only plan
+  // Backpromote panel: plan, prepare, run, confirm and reset answer plan documents
   if (
     first === "hardis:work:backpromote" &&
-    args.includes("--plan")
+    (args.includes("--plan") ||
+      args.includes("--prepare") ||
+      args.includes("--auto") ||
+      args.includes("--confirm-action") ||
+      args.includes("--reset"))
   ) {
     return answerBackpromote();
   }
@@ -554,13 +577,16 @@ async function main() {
 }
 
 /**
- * `sf hardis:work:backpromote --plan --json` answers the plan of
- * test/fixtures/backpromote/backpromote-plan.json, with the parent branch of
- * --parentbranch when given. SF_MOCK_BACKPROMOTE_CLI=old simulates an sfdx-hardis
- * version that does not know the panel flags yet (JSON error printed on stdout, as
- * with SF_JSON_TO_STDOUT), =notUserStory a run started from a major branch,
- * =parentNotMajor a parent branch that is not a major branch until --parentbranch
- * names one, and =mergeInProgress a previous backpromote that stopped on a conflict.
+ * `sf hardis:work:backpromote` answers the plan (version 3) of
+ * test/fixtures/backpromote/backpromote-plan.json, with the parent branch of --parent-branch
+ * and the start Pull Request of --from-pull-request when given. --prepare marks the files of
+ * the --on-diff flags as prepared with one marker left and a prompt file, --auto answers the
+ * run result, --confirm-action records the manual action, --reset empties the pending merges.
+ * SF_MOCK_BACKPROMOTE_CLI=old simulates an sfdx-hardis version that does not know the panel
+ * flags yet, =tokenMissing a plan blocked on the git provider check, =noHistory a sandbox
+ * with no backpromote row within the scan limit (nothing selected, no window), =dirty a
+ * working tree with uncommitted changes, =conflictsRemaining a run refused because a
+ * prepared file still holds markers, =deployFailed a run whose deployment failed.
  */
 function answerBackpromote() {
   const variant = process.env.SF_MOCK_BACKPROMOTE_CLI || "";
@@ -569,7 +595,7 @@ function answerBackpromote() {
       JSON.stringify({
         code: "NonexistentFlagsError",
         name: "NonexistentFlagsError",
-        message: "Nonexistent flag: --plan\nSee more help with --help",
+        message: "Nonexistent flag: --parent-branch\nSee more help with --help",
         status: 2,
         stack: "",
       }),
@@ -582,60 +608,208 @@ function answerBackpromote() {
       "utf8",
     ),
   );
-  const parentIndex = args.indexOf("--parentbranch");
-  const parentBranch = parentIndex >= 0 ? args[parentIndex + 1] : null;
+  const flagValue = (name) => {
+    const index = args.indexOf(name);
+    return index >= 0 ? args[index + 1] : null;
+  };
+  const flagValues = (name) => {
+    const values = [];
+    for (let index = 0; index < args.length; index++) {
+      if (args[index] === name && args[index + 1] !== undefined) {
+        values.push(args[index + 1]);
+      }
+    }
+    return values;
+  };
+  const parentBranch = flagValue("--parent-branch");
   if (parentBranch) {
     plan.parentBranch = parentBranch;
+    plan.backpromoteBranch.name = `backpromote/${parentBranch}/${plan.targetOrg.sandboxName}`;
   }
-  const blocked = (check) => ({
-    ...plan,
-    status: "blocked",
-    checks: plan.checks.map((entry) => (entry.id === check.id ? check : entry)),
-    pullRequests: [],
-    commitCount: 0,
-    items: [],
-    deletions: [],
-    actions: [],
-    testClasses: [],
-    conflicts: [],
-    orgChanges: { tracked: true, files: [] },
-  });
-  let answer = plan;
-  if (variant === "notUserStory") {
-    answer = blocked({
-      id: "currentBranch",
-      ok: false,
-      message:
-        "integration is a major branch, deployed by the CI/CD pipeline. Create a User Story branch first (sf hardis:work:new), then backpromote from it.",
-    });
-    answer.currentBranch = "integration";
-  } else if (variant === "parentNotMajor" && !parentBranch) {
-    answer = blocked({
-      id: "parentBranch",
-      ok: false,
-      message:
-        "feature/other is not a major branch. A backpromote brings what was merged in a major branch into your User Story branch: choose one of integration, uat, preprod.",
-    });
-    answer.parentBranch = "feature/other";
-  } else if (variant === "mergeInProgress") {
-    answer = {
-      ...plan,
-      status: "mergeInProgress",
-      items: [],
-      deletions: [],
-      actions: [],
-      conflicts: [
-        {
-          path: "force-app/main/default/classes/InvoiceCalculator.cls",
-          changedInBranch: true,
-          changedInOrg: false,
-          items: ["ApexClass:InvoiceCalculator"],
-          conflictBlocks: 1,
-        },
-      ],
+  const runId = flagValue("--run-id");
+  if (runId) {
+    plan.runId = runId;
+  }
+  const progressFile = process.env.SFDX_HARDIS_PROGRESS_FILE;
+  const progress = (step, message) => {
+    if (progressFile) {
+      fs.appendFileSync(
+        progressFile,
+        JSON.stringify({ time: new Date().toISOString(), step, message }) + "\n",
+      );
+    }
+  };
+  progress("targetOrg", "Reading the target sandbox");
+  progress("listing", "Listing the Pull Requests merged in " + plan.parentBranch);
+  const fromPullRequest = Number(flagValue("--from-pull-request"));
+  if (fromPullRequest > 0) {
+    plan.window.startPullRequest = fromPullRequest;
+    let after = true;
+    for (const pr of plan.pullRequests) {
+      pr.selected = pr.number === fromPullRequest;
+      pr.inWindow = after;
+      if (pr.number === fromPullRequest) {
+        after = false;
+      }
+    }
+  }
+  if (variant === "tokenMissing") {
+    plan.status = "blocked";
+    plan.checks = [
+      { id: "gitProvider", ok: false, message: "No git provider token: set GITHUB_TOKEN", details: [] },
+    ];
+    plan.pullRequests = [];
+    plan.items = [];
+    plan.deletions = [];
+    plan.actions = [];
+    plan.comparison = [];
+    plan.window = null;
+  } else if (variant === "noHistory" && !(fromPullRequest > 0)) {
+    plan.scan = { read: 5, limit: 100, found: false, hasMore: true };
+    plan.window = null;
+    plan.items = [];
+    plan.deletions = [];
+    plan.actions = [];
+    plan.comparison = [];
+    for (const pr of plan.pullRequests) {
+      pr.selected = false;
+      pr.inWindow = false;
+      pr.backpromote = null;
+      pr.scanned = true;
+    }
+  } else if (variant === "dirty") {
+    plan.checkout.clean = false;
+    plan.checkout.dirtyFiles = [
+      "force-app/main/default/classes/LeadRouter.cls",
+      "NOTES.md",
+    ];
+  }
+  const mergedFiles = flagValues("--on-diff")
+    .filter((value) => value.endsWith("=merge"))
+    .map((value) => value.substring(0, value.length - "=merge".length));
+  if (args.includes("--prepare")) {
+    progress("checkout", "Checking out " + plan.backpromoteBranch.name);
+    progress("merges", "Writing " + mergedFiles.length + " merged file(s)");
+    plan.mode = "prepare";
+    plan.checkout.onBackpromoteBranch = true;
+    plan.checkout.currentBranch = plan.backpromoteBranch.name;
+    plan.checkout.stashed = args.includes("stash");
+    plan.checkout.stashMessage = plan.checkout.stashed
+      ? "sfdx-hardis backpromote " + plan.runId + " from " + plan.checkout.originalBranch
+      : null;
+    for (const comparison of plan.comparison) {
+      if (mergedFiles.includes(comparison.file)) {
+        comparison.decision = "merge";
+        comparison.prepared = true;
+        comparison.markersRemaining = 1;
+      }
+    }
+    plan.promptFile = path.join(
+      process.cwd(),
+      "hardis-report",
+      "backpromote-merge-prompt-" + plan.runId + ".md",
+    );
+    plan.runCommand =
+      "sf hardis:work:backpromote --auto --target-org " +
+      plan.targetOrg.username +
+      " --parent-branch " +
+      plan.parentBranch +
+      " --run-id " +
+      plan.runId +
+      " --json";
+    outputJsonIfRequested({ status: 0, result: plan, warnings: [] }, "");
+    return 0;
+  }
+  if (args.includes("--auto") && !args.includes("--reset")) {
+    plan.mode = "run";
+    if (variant === "conflictsRemaining") {
+      plan.status = "conflictsRemaining";
+      plan.message =
+        "1 prepared file still holds conflict markers: force-app/main/default/classes/InvoiceCalculator.cls";
+      console.log(
+        JSON.stringify({
+          status: 1,
+          name: "BackpromoteConflictsRemaining",
+          message: plan.message,
+          data: plan,
+          warnings: [],
+        }),
+      );
+      return 1;
+    }
+    if (variant === "deployFailed") {
+      for (const step of ["checkout", "preActions", "deploy"]) {
+        progress(step, "Mock step " + step);
+      }
+      plan.status = "deployFailed";
+      plan.message =
+        "Deployment to dev1 failed: InvoiceCalculator: Unexpected token '}' (line 12)";
+      plan.checkout.onBackpromoteBranch = true;
+      plan.checkout.currentBranch = plan.backpromoteBranch.name;
+      console.log(
+        JSON.stringify({
+          status: 1,
+          name: "BackpromoteDeployFailed",
+          message: plan.message,
+          data: plan,
+          warnings: [],
+        }),
+      );
+      return 1;
+    }
+    for (const step of ["checkout", "preActions", "deploy", "destructive", "postActions", "comments", "push"]) {
+      progress(step, "Mock step " + step);
+    }
+    plan.checkout.onBackpromoteBranch = true;
+    plan.checkout.currentBranch = plan.backpromoteBranch.name;
+    const excluded = flagValues("--exclude-metadata").filter((key) =>
+      plan.items.some((item) => item.key === key),
+    );
+    const actions = flagValue("--actions");
+    plan.result = {
+      deployed: plan.items.filter((item) => !item.noOverwrite && !excluded.includes(item.key)).length,
+      deleted: args.includes("--skip-destructive") ? 0 : plan.deletions.length,
+      excluded: excluded.map((key) => ({ key, reason: "excluded" })),
+      actions: {
+        run: args.includes("--skip-actions")
+          ? []
+          : ["load-sla-thresholds"].filter((id) => !actions || actions.split(",").includes(id)),
+        skipped: ["recalculate-quote-sharing"],
+        failed: [],
+        pending: args.includes("--skip-actions") ? [] : ["enable-sla-approval"],
+      },
+      conflictPending: [],
+      commentedPullRequests: [415, 417, 418],
+      pushed: mergedFiles.length > 0,
+      pushRejected: false,
+      deployReport: path.join(process.cwd(), "hardis-report", "backpromote-deploy.log"),
+      orgUrl: plan.targetOrg.instanceUrl,
     };
+    outputJsonIfRequested({ status: 0, result: plan, warnings: [] }, "");
+    return 0;
   }
-  outputJsonIfRequested({ status: 0, result: answer, warnings: [] }, "");
+  if (args.includes("--confirm-action")) {
+    plan.mode = "confirm";
+    for (const id of flagValues("--confirm-action")) {
+      const action = plan.actions.find((entry) => entry.id === id);
+      if (action) {
+        action.alreadyRunOn = new Date().toISOString();
+      }
+    }
+    outputJsonIfRequested({ status: 0, result: plan, warnings: [] }, "");
+    return 0;
+  }
+  if (args.includes("--reset")) {
+    plan.mode = "reset";
+    plan.backpromoteBranch.existsOnOrigin = false;
+    plan.backpromoteBranch.head = null;
+    plan.backpromoteBranch.pendingMerges = [];
+    outputJsonIfRequested({ status: 0, result: plan, warnings: [] }, "");
+    return 0;
+  }
+  progress("delta", "Computing the delta");
+  progress("compare", "Comparing with the sandbox");
+  outputJsonIfRequested({ status: 0, result: plan, warnings: [] }, "");
   return 0;
 }
 

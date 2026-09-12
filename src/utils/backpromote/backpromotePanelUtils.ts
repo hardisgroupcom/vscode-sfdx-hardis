@@ -3,50 +3,103 @@ import { stripAnsiCodes } from "../ansiColors";
 /**
  * Pure logic of the Backpromote panel (vscode-sfdx-hardis.showBackpromote).
  *
- * sfdx-hardis computes a plan with `sf hardis:work:backpromote --plan --json`: the Pull
- * Requests a merge of the parent branch brings in, the items and deletions it deploys, the
- * files the merge may stop on, and the deployment actions. The panel lets the user untick
- * items, deletions and actions, and decide what to do with each conflicting file. These
- * helpers turn that selection into the counters of the panel and into the exact command
- * given to the command runner. No VS Code API here: they are unit tested directly.
+ * sfdx-hardis is the engine: `sf hardis:work:backpromote --plan --json` returns the plan
+ * (version 3) of a backpromote of a parent branch into a target sandbox, `--prepare` writes
+ * the merged files a user wants to solve by hand, `--auto` runs the backpromote with the
+ * decisions passed as flags. These helpers turn the decisions taken in the panel into those
+ * exact commands, and the plan into the counters of the page. No VS Code API here: they are
+ * unit tested directly.
  */
 
 export const BACKPROMOTE_COMMAND = "sf hardis:work:backpromote";
+export const BACKPROMOTE_PLAN_VERSION = 3;
+export const BACKPROMOTE_SCAN_PAGE = 100;
+export const BACKPROMOTE_DOC_URL =
+  "https://sfdx-hardis.cloudity.com/hardis/work/backpromote/";
 
-export type BackpromotePlanStatus =
-  | "ready"
-  | "blocked"
-  | "upToDate"
-  | "mergeInProgress";
-export type BackpromoteConflictChoice = "overwrite" | "merge" | "keep";
-export const BACKPROMOTE_CONFLICT_CHOICES: BackpromoteConflictChoice[] = [
-  "overwrite",
-  "merge",
-  "keep",
+/** Environment variables sfdx-hardis reads to find the git provider token */
+export const GIT_PROVIDER_TOKEN_VARIABLES = [
+  "GITHUB_TOKEN",
+  "CI_SFDX_HARDIS_GITHUB_TOKEN",
+  "CI_SFDX_HARDIS_GITLAB_TOKEN",
+  "SYSTEM_ACCESSTOKEN",
+  "CI_SFDX_HARDIS_AZURE_TOKEN",
+  "AZURE_DEVOPS_EXT_PAT",
+  "CI_SFDX_HARDIS_BITBUCKET_TOKEN",
 ];
 
-export interface BackpromotePullRequest {
-  id: number;
-  title: string;
-  author: string;
-  webUrl: string;
-  sourceBranch: string;
-  date: string;
-  commit: string;
+export type BackpromoteStatus =
+  | "ok"
+  | "blocked"
+  | "nothingToDo"
+  | "waitingForMerges"
+  | "conflictsRemaining"
+  | "refused"
+  | "pushRejected"
+  | "deployFailed";
+export const BACKPROMOTE_STATUSES: BackpromoteStatus[] = [
+  "ok",
+  "blocked",
+  "nothingToDo",
+  "waitingForMerges",
+  "conflictsRemaining",
+  "refused",
+  "pushRejected",
+  "deployFailed",
+];
+
+export type BackpromoteDiffChoice = "git" | "org" | "merge";
+export const BACKPROMOTE_DIFF_CHOICES: BackpromoteDiffChoice[] = [
+  "git",
+  "org",
+  "merge",
+];
+
+export type BackpromoteComparisonStatus =
+  | "same"
+  | "different"
+  | "missingInOrg"
+  | "pendingInOrg"
+  | "notCompared";
+
+export interface BackpromoteLeftOutItem {
+  key: string;
+  reason: "excluded" | "keptOrg" | "conflictPending" | "noOverwrite";
+  commit?: string;
 }
 
-export interface BackpromotePredictedConflict {
-  path: string;
-  changedInBranch: boolean;
-  changedInOrg: boolean;
+export interface BackpromotePullRequest {
+  number: number;
+  title: string;
+  author: string;
+  mergeDate: string;
+  sourceBranch: string;
+  commit: string;
+  webUrl: string;
+  itemCount: number;
+  actionCount: number;
+  backpromote: {
+    date: string;
+    user: string;
+    status: "complete" | "partial";
+    leftOut: BackpromoteLeftOutItem[];
+  } | null;
+  beforeRefresh: boolean;
+  /** Older than the newest Pull Request backpromoted to this sandbox: counted as backpromoted */
+  beforeLastBackpromote: boolean;
+  selected: boolean;
+  inWindow: boolean;
+  scanned: boolean;
 }
 
 export interface BackpromoteItem {
   key: string;
   type: string;
   name: string;
-  path: string | null;
-  conflict: BackpromotePredictedConflict | null;
+  files: string[];
+  pullRequests: number[];
+  excludedLastTime: boolean;
+  noOverwrite: boolean;
 }
 
 export interface BackpromoteDeletion {
@@ -59,55 +112,106 @@ export interface BackpromoteAction {
   id: string;
   label: string;
   type: string;
-  when: "pre" | "post";
-  pullRequestId: number;
+  phase: "pre" | "post";
+  context: string;
+  pullRequest: number;
+  alreadyRunOn: string | null;
+  manual: boolean;
   customUsername: string | null;
+  runnable: boolean;
+  runOnlyOnceByOrg: boolean;
 }
 
-export interface BackpromoteConflict extends BackpromotePredictedConflict {
-  /** Type:Name items the file belongs to */
-  items: string[];
-  /** Markers left in the file when a merge is in progress, null before the merge */
-  conflictBlocks: number | null;
+export interface BackpromoteComparison {
+  file: string;
+  item: string;
+  status: BackpromoteComparisonStatus;
+  versions: {
+    base: string | null;
+    sandbox: string | null;
+    parentHead: string | null;
+  };
+  diffLines: number;
+  pullRequests: number[];
+  decision: BackpromoteDiffChoice | null;
+  prepared: boolean;
+  markersRemaining: number;
+  conflictPending: boolean;
+  threeWay: boolean;
 }
 
 export interface BackpromoteCheck {
-  id: "currentBranch" | "gitClean" | "targetOrg" | "parentBranch" | string;
+  id: string;
   ok: boolean;
   message: string;
-  details?: string[];
+  details: string[];
+}
+
+export interface BackpromoteRunResult {
+  deployed: number;
+  deleted: number;
+  excluded: BackpromoteLeftOutItem[];
+  actions: { run: string[]; skipped: string[]; failed: string[]; pending: string[] };
+  conflictPending: string[];
+  commentedPullRequests: number[];
+  pushed: boolean;
+  pushRejected: boolean;
+  deployReport: string | null;
+  orgUrl: string | null;
 }
 
 export interface BackpromotePlan {
-  planVersion: number;
-  status: BackpromotePlanStatus;
-  currentBranch: string;
-  parentBranch: string;
-  parentBranchChoices: string[];
+  version: number;
+  runId: string;
+  mode: string;
+  status: BackpromoteStatus;
+  message: string | null;
   targetOrg: {
+    alias: string | null;
     username: string;
     instanceUrl: string;
-    orgType: "sandbox" | "scratch" | "production" | string;
     orgId: string;
-    /** Short name, ex: mycompany--dev-sam */
-    orgName: string;
-    /** The org tracks its sources: its pending changes are saved before the merge */
+    sandboxName: string;
+    orgType: string;
     tracksSource: boolean;
+    refusal: "production" | "majorOrg" | null;
   };
-  checks: BackpromoteCheck[];
+  parentBranch: string;
+  allowedParentBranches: string[];
+  backpromoteBranch: {
+    name: string;
+    existsOnOrigin: boolean;
+    head: string | null;
+    pendingMerges: string[];
+  };
+  checkout: {
+    originalBranch: string;
+    currentBranch: string;
+    clean: boolean;
+    dirtyFiles: string[];
+    stashed: boolean;
+    stashMessage: string | null;
+    onBackpromoteBranch: boolean;
+  };
   pullRequests: BackpromotePullRequest[];
-  commitCount: number;
+  scan: { read: number; limit: number; found: boolean; hasMore: boolean };
+  window: {
+    fromCommit: string;
+    toCommit: string;
+    startPullRequest: number | null;
+  } | null;
   items: BackpromoteItem[];
   deletions: BackpromoteDeletion[];
   actions: BackpromoteAction[];
-  testClasses: string[];
-  conflicts: BackpromoteConflict[];
-  orgChanges: { tracked: boolean; files: string[] };
-  reports: string[];
+  comparison: BackpromoteComparison[];
+  checks: BackpromoteCheck[];
+  promptFile: string | null;
+  runCommand: string | null;
+  result: BackpromoteRunResult | null;
 }
 
 /**
- * What the user picked in the panel. Only keys, paths and ids that exist in the plan are kept
+ * What the user picked in the panel. Only keys and ids that exist in the plan are kept
  * (see normalizeSelection), so a message from the webview cannot inject anything into the command.
  */
 export interface BackpromoteSelection {
@@ -117,18 +221,22 @@ export interface BackpromoteSelection {
   excludedDeletions: string[];
   /** Ids of the deployment actions to run */
   actions: string[];
-  /** File path -> what to do when git cannot merge it */
-  conflictDecisions: Record<string, BackpromoteConflictChoice>;
+  /** Item key -> what to deploy for its files whose sandbox version differs */
+  diffDecisions: Record<string, BackpromoteDiffChoice>;
 }
 
-export interface BackpromoteSummaryConflict extends BackpromoteConflict {
-  choice: BackpromoteConflictChoice;
+/** Commit or stash the working tree before the checkout switches to the backpromote branch */
+export interface BackpromoteDirtyTreeChoice {
+  action: "commit" | "stash";
+  message: string | null;
 }
 
 export type BackpromoteBlocker =
   | "notReady"
+  | "noWindow"
   | "nothingToDo"
   | "conflictMarkers"
+  | "preparedMarkers"
   | "invalidCommand";
 
 export interface BackpromoteSelectionSummary {
@@ -136,9 +244,20 @@ export interface BackpromoteSelectionSummary {
   deletionsToDeleteCount: number;
   actionsToRunCount: number;
   manualActionsCount: number;
-  conflicts: BackpromoteSummaryConflict[];
-  /** Files of a merge in progress that still hold markers */
-  markersLeft: Array<{ path: string; conflictBlocks: number }>;
+  keptOrgCount: number;
+  mergedFilesCount: number;
+  /**
+   * Files that still hold markers: the files of a Merge decision (not prepared yet, or
+   * prepared with markers left), and every prepared file of the checkout whatever the
+   * decision taken since, because sfdx-hardis refuses the run while one holds markers.
+   */
+  markersLeft: Array<{
+    file: string;
+    item: string;
+    markersRemaining: number;
+    /** True when the item is deployed as a merge, false for a prepared file switched to another decision */
+    merging: boolean;
+  }>;
   blockers: BackpromoteBlocker[];
   canRun: boolean;
 }
@@ -159,6 +278,16 @@ function asStringArray(value: unknown): string[] {
   );
 }
 
+function asNumberArray(value: unknown): number[] {
+  return asArray(value).filter(
+    (entry): entry is number => Number.isInteger(entry),
+  );
+}
+
+function asStringOrNull(value: unknown): string | null {
+  return typeof value === "string" && value ? value : null;
+}
+
 /**
  * Splits a `Type:Name` key on its FIRST colon (names may contain colons, spaces,
  * dots and dashes).
@@ -174,6 +303,30 @@ export function parseMetadataKey(
     return null;
   }
   return { type: key.slice(0, index), name: key.slice(index + 1) };
+}
+
+/**
+ * Number of git conflict blocks left in a file content, mirror of the sfdx-hardis rule: every
+ * marker line counts, so a half removed block is still a conflict.
+ */
+export function countConflictMarkerBlocks(content: string): number {
+  const lines = (content || "").split(/\r?\n/);
+  const count = (marker: RegExp) =>
+    lines.filter((line) => marker.test(line)).length;
+  return Math.max(
+    count(/^<{7}(?!<)/),
+    count(/^\|{7}(?!\|)/),
+    count(/^>{7}(?!>)/),
+  );
+}
+
+/** True when the environment holds a token sfdx-hardis can read the Pull Request comments with */
+export function hasGitProviderToken(
+  env: Record<string, string | undefined>,
+): boolean {
+  return GIT_PROVIDER_TOKEN_VARIABLES.some(
+    (name) => typeof env[name] === "string" && env[name]!.trim() !== "",
+  );
 }
 
 const PLAIN_COMMAND_VALUE = /^[A-Za-z0-9_.@:/+=,-]+$/;
@@ -229,7 +382,7 @@ export function quoteCommandValue(value: string): string {
 }
 
 /**
- * The only commands the panel hands to the command runner.
+ * The only commands the panel hands to sfdx-hardis.
  */
 export function isAllowedBackpromoteCommand(command: unknown): boolean {
   if (typeof command !== "string") {
@@ -249,32 +402,36 @@ export function isAllowedBackpromoteCommand(command: unknown): boolean {
   );
 }
 
-function normalizeConflict(raw: any): BackpromoteConflict | null {
-  if (!raw || typeof raw.path !== "string" || raw.path === "") {
-    return null;
-  }
-  return {
-    path: raw.path,
-    changedInBranch: raw.changedInBranch === true,
-    changedInOrg: raw.changedInOrg === true,
-    items: asStringArray(raw.items),
-    conflictBlocks: Number.isFinite(raw.conflictBlocks)
-      ? Number(raw.conflictBlocks)
-      : null,
-  };
+// ---------------------------------------------------------------------------
+// Plan
+// ---------------------------------------------------------------------------
+
+function normalizeLeftOut(value: unknown): BackpromoteLeftOutItem[] {
+  return asArray(value)
+    .filter((entry: any) => entry && typeof entry.key === "string")
+    .map((entry: any) => ({
+      key: entry.key,
+      reason: ["excluded", "keptOrg", "conflictPending", "noOverwrite"].includes(
+        entry.reason,
+      )
+        ? entry.reason
+        : "excluded",
+      ...(typeof entry.commit === "string" && entry.commit
+        ? { commit: entry.commit }
+        : {}),
+    }));
 }
 
 /**
- * Checks the shape of the `--plan --json` result and fills the missing arrays, so
- * the panel never crashes on a partial plan. Returns null when it is not a plan.
+ * Checks the shape of a plan document and fills the missing arrays, so the panel
+ * never crashes on a partial plan. Returns null when it is not a version 3 plan.
  */
 export function normalizeBackpromotePlan(raw: any): BackpromotePlan | null {
   if (
     !raw ||
     typeof raw !== "object" ||
-    typeof raw.planVersion !== "number" ||
-    raw.planVersion < 2 ||
-    !["ready", "blocked", "upToDate", "mergeInProgress"].includes(raw.status)
+    raw.version !== BACKPROMOTE_PLAN_VERSION ||
+    !BACKPROMOTE_STATUSES.includes(raw.status)
   ) {
     return null;
   }
@@ -286,51 +443,102 @@ export function normalizeBackpromotePlan(raw: any): BackpromotePlan | null {
       name: String(item?.name || parsed.name),
     };
   };
+  const targetOrg = raw.targetOrg || {};
+  const branch = raw.backpromoteBranch || {};
+  const checkout = raw.checkout || {};
+  const scan = raw.scan || {};
   return {
-    planVersion: raw.planVersion,
+    version: raw.version,
+    runId: String(raw.runId || ""),
+    mode: String(raw.mode || "plan"),
     status: raw.status,
-    currentBranch: String(raw.currentBranch || ""),
-    parentBranch: String(raw.parentBranch || ""),
-    parentBranchChoices: asStringArray(raw.parentBranchChoices),
+    message: asStringOrNull(raw.message),
     targetOrg: {
-      username: String(raw.targetOrg?.username || ""),
-      instanceUrl: String(raw.targetOrg?.instanceUrl || ""),
-      orgType: String(raw.targetOrg?.orgType || ""),
-      orgId: String(raw.targetOrg?.orgId || ""),
-      orgName: String(raw.targetOrg?.orgName || ""),
-      tracksSource: raw.targetOrg?.tracksSource === true,
+      alias: asStringOrNull(targetOrg.alias),
+      username: String(targetOrg.username || ""),
+      instanceUrl: String(targetOrg.instanceUrl || ""),
+      orgId: String(targetOrg.orgId || ""),
+      sandboxName: String(targetOrg.sandboxName || ""),
+      orgType: String(targetOrg.orgType || ""),
+      tracksSource: targetOrg.tracksSource === true,
+      refusal:
+        targetOrg.refusal === "production" || targetOrg.refusal === "majorOrg"
+          ? targetOrg.refusal
+          : null,
     },
-    checks: asArray(raw.checks).map((check: any) => ({
-      id: String(check?.id || ""),
-      ok: check?.ok === true,
-      message: String(check?.message || ""),
-      details: asStringArray(check?.details),
-    })),
+    parentBranch: String(raw.parentBranch || ""),
+    allowedParentBranches: asStringArray(raw.allowedParentBranches),
+    backpromoteBranch: {
+      name: String(branch.name || ""),
+      existsOnOrigin: branch.existsOnOrigin === true,
+      head: asStringOrNull(branch.head),
+      pendingMerges: asStringArray(branch.pendingMerges),
+    },
+    checkout: {
+      originalBranch: String(checkout.originalBranch || ""),
+      currentBranch: String(checkout.currentBranch || ""),
+      clean: checkout.clean !== false,
+      dirtyFiles: asStringArray(checkout.dirtyFiles),
+      stashed: checkout.stashed === true,
+      stashMessage: asStringOrNull(checkout.stashMessage),
+      onBackpromoteBranch: checkout.onBackpromoteBranch === true,
+    },
     pullRequests: asArray(raw.pullRequests)
       .filter((pr: any) => pr && typeof pr === "object")
       .map((pr: any) => ({
-        id: Number.isInteger(pr.id) ? pr.id : 0,
+        number: Number.isInteger(pr.number) ? pr.number : 0,
         title: String(pr.title || ""),
         author: String(pr.author || ""),
-        webUrl: String(pr.webUrl || ""),
+        mergeDate: String(pr.mergeDate || ""),
         sourceBranch: String(pr.sourceBranch || ""),
-        date: String(pr.date || ""),
         commit: String(pr.commit || ""),
+        webUrl: String(pr.webUrl || ""),
+        itemCount: Number.isFinite(pr.itemCount) ? Number(pr.itemCount) : 0,
+        actionCount: Number.isFinite(pr.actionCount)
+          ? Number(pr.actionCount)
+          : 0,
+        backpromote:
+          pr.backpromote && typeof pr.backpromote === "object"
+            ? {
+                date: String(pr.backpromote.date || ""),
+                user: String(pr.backpromote.user || ""),
+                status:
+                  pr.backpromote.status === "partial" ? "partial" : "complete",
+                leftOut: normalizeLeftOut(pr.backpromote.leftOut),
+              }
+            : null,
+        beforeRefresh: pr.beforeRefresh === true,
+        beforeLastBackpromote: pr.beforeLastBackpromote === true,
+        selected: pr.selected === true,
+        inWindow: pr.inWindow === true,
+        scanned: pr.scanned === true,
       })),
-    commitCount: Number.isFinite(raw.commitCount) ? Number(raw.commitCount) : 0,
+    scan: {
+      read: Number.isFinite(scan.read) ? Number(scan.read) : 0,
+      limit: Number.isFinite(scan.limit)
+        ? Number(scan.limit)
+        : BACKPROMOTE_SCAN_PAGE,
+      found: scan.found === true,
+      hasMore: scan.hasMore === true,
+    },
+    window:
+      raw.window && typeof raw.window === "object"
+        ? {
+            fromCommit: String(raw.window.fromCommit || ""),
+            toCommit: String(raw.window.toCommit || ""),
+            startPullRequest: Number.isInteger(raw.window.startPullRequest)
+              ? raw.window.startPullRequest
+              : null,
+          }
+        : null,
     items: asArray(raw.items)
       .filter((item: any) => typeof item?.key === "string")
       .map((item: any) => ({
         ...entry(item),
-        path: typeof item.path === "string" && item.path ? item.path : null,
-        conflict:
-          item.conflict && typeof item.conflict.path === "string"
-            ? {
-                path: item.conflict.path,
-                changedInBranch: item.conflict.changedInBranch === true,
-                changedInOrg: item.conflict.changedInOrg === true,
-              }
-            : null,
+        files: asStringArray(item.files),
+        pullRequests: asNumberArray(item.pullRequests),
+        excludedLastTime: item.excludedLastTime === true,
+        noOverwrite: item.noOverwrite === true,
       })),
     deletions: asArray(raw.deletions)
       .filter((deletion: any) => typeof deletion?.key === "string")
@@ -341,50 +549,248 @@ export function normalizeBackpromotePlan(raw: any): BackpromotePlan | null {
         id: action.id,
         label: String(action.label || action.id),
         type: String(action.type || ""),
-        when: action.when === "pre" ? "pre" : "post",
-        pullRequestId: Number.isInteger(action.pullRequestId)
-          ? action.pullRequestId
+        phase: action.phase === "pre" ? "pre" : "post",
+        context: String(action.context || "all"),
+        pullRequest: Number.isInteger(action.pullRequest)
+          ? action.pullRequest
           : 0,
-        customUsername:
-          typeof action.customUsername === "string" && action.customUsername
-            ? action.customUsername
-            : null,
+        alreadyRunOn: asStringOrNull(action.alreadyRunOn),
+        manual: action.manual === true || action.type === "manual",
+        customUsername: asStringOrNull(action.customUsername),
+        runnable: action.runnable !== false,
+        runOnlyOnceByOrg: action.runOnlyOnceByOrg !== false,
       })),
-    testClasses: asStringArray(raw.testClasses),
-    conflicts: asArray(raw.conflicts)
-      .map(normalizeConflict)
-      .filter((conflict): conflict is BackpromoteConflict => !!conflict),
-    orgChanges: {
-      tracked: raw.orgChanges?.tracked === true,
-      files: asStringArray(raw.orgChanges?.files),
-    },
-    reports: asStringArray(raw.reports),
+    comparison: asArray(raw.comparison)
+      .filter(
+        (comparison: any) =>
+          typeof comparison?.file === "string" && comparison.file !== "",
+      )
+      .map((comparison: any) => ({
+        file: comparison.file,
+        item: String(comparison.item || ""),
+        status: [
+          "same",
+          "different",
+          "missingInOrg",
+          "pendingInOrg",
+          "notCompared",
+        ].includes(comparison.status)
+          ? comparison.status
+          : "notCompared",
+        versions: {
+          base: asStringOrNull(comparison.versions?.base),
+          sandbox: asStringOrNull(comparison.versions?.sandbox),
+          parentHead: asStringOrNull(comparison.versions?.parentHead),
+        },
+        diffLines: Number.isFinite(comparison.diffLines)
+          ? Number(comparison.diffLines)
+          : 0,
+        pullRequests: asNumberArray(comparison.pullRequests),
+        decision: BACKPROMOTE_DIFF_CHOICES.includes(comparison.decision)
+          ? comparison.decision
+          : null,
+        prepared: comparison.prepared === true,
+        markersRemaining: Number.isFinite(comparison.markersRemaining)
+          ? Number(comparison.markersRemaining)
+          : 0,
+        conflictPending: comparison.conflictPending === true,
+        threeWay: comparison.threeWay === true,
+      })),
+    checks: asArray(raw.checks).map((check: any) => ({
+      id: String(check?.id || ""),
+      ok: check?.ok === true,
+      message: String(check?.message || ""),
+      details: asStringArray(check?.details),
+    })),
+    promptFile: asStringOrNull(raw.promptFile),
+    runCommand: asStringOrNull(raw.runCommand),
+    result:
+      raw.result && typeof raw.result === "object"
+        ? {
+            deployed: Number(raw.result.deployed) || 0,
+            deleted: Number(raw.result.deleted) || 0,
+            excluded: normalizeLeftOut(raw.result.excluded),
+            actions: {
+              run: asStringArray(raw.result.actions?.run),
+              skipped: asStringArray(raw.result.actions?.skipped),
+              failed: asStringArray(raw.result.actions?.failed),
+              pending: asStringArray(raw.result.actions?.pending),
+            },
+            conflictPending: asStringArray(raw.result.conflictPending),
+            commentedPullRequests: asNumberArray(
+              raw.result.commentedPullRequests,
+            ),
+            pushed: raw.result.pushed === true,
+            pushRejected: raw.result.pushRejected === true,
+            deployReport: asStringOrNull(raw.result.deployReport),
+            orgUrl: asStringOrNull(raw.result.orgUrl),
+          }
+        : null,
   };
 }
 
 /**
- * Default selection of a freshly loaded plan: every item deployed, every deletion run,
- * every action run, every conflicting file merged by hand (nothing is overwritten or
- * dropped without the user saying so).
+ * The plan document of a `--json` answer: the result of a successful run, or the `data` of the
+ * error sfdx-hardis raises with the plan attached (conflictsRemaining, refused, deployFailed...).
+ */
+export function extractPlanDocument(result: any): BackpromotePlan | null {
+  if (!result || typeof result !== "object") {
+    return null;
+  }
+  for (const candidate of [result.result, result.data, result.result?.data]) {
+    const plan = normalizeBackpromotePlan(candidate);
+    if (plan) {
+      return plan;
+    }
+  }
+  return null;
+}
+
+/** True when the plan holds the check sfdx-hardis makes on the git provider token, failed */
+export function isGitProviderMissing(plan: BackpromotePlan | null): boolean {
+  return !!plan?.checks.some(
+    (check) => check.id === "gitProvider" && check.ok === false,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Items and comparison
+// ---------------------------------------------------------------------------
+
+/** The comparison entries of an item's files whose sandbox version differs */
+export function differingComparisons(
+  plan: BackpromotePlan,
+  itemKey: string,
+): BackpromoteComparison[] {
+  return plan.comparison.filter(
+    (comparison) =>
+      comparison.item === itemKey &&
+      (comparison.status === "different" ||
+        comparison.status === "pendingInOrg"),
+  );
+}
+
+export interface BackpromoteItemState {
+  key: string;
+  /** Worst state of the files of the item */
+  status: BackpromoteComparisonStatus | "noComparison";
+  pendingInOrg: boolean;
+  /** The item has a file whose sandbox version differs: a decision is offered */
+  differs: boolean;
+  decision: BackpromoteDiffChoice;
+  prepared: boolean;
+  markersRemaining: number;
+  threeWay: boolean;
+  diffLines: number;
+  files: string[];
+  comparisons: BackpromoteComparison[];
+}
+
+/**
+ * What one line of the What block shows for an item: the state of its files in the sandbox,
+ * the decision taken, and where its manual merge stands. `markers` holds the marker counts the
+ * extension read after each save of a prepared file, which win over the counts of the plan.
+ */
+export function computeItemState(
+  plan: BackpromotePlan,
+  selection: BackpromoteSelection,
+  itemKey: string,
+  markers: Record<string, number> = {},
+): BackpromoteItemState {
+  const comparisons = plan.comparison.filter(
+    (comparison) => comparison.item === itemKey,
+  );
+  const differing = differingComparisons(plan, itemKey);
+  const priority: Array<BackpromoteComparisonStatus> = [
+    "pendingInOrg",
+    "different",
+    "notCompared",
+    "missingInOrg",
+    "same",
+  ];
+  let status: BackpromoteItemState["status"] = "noComparison";
+  for (const candidate of priority) {
+    if (comparisons.some((comparison) => comparison.status === candidate)) {
+      status = candidate;
+      break;
+    }
+  }
+  const decision = BACKPROMOTE_DIFF_CHOICES.includes(
+    selection.diffDecisions[itemKey],
+  )
+    ? selection.diffDecisions[itemKey]
+    : "git";
+  const prepared = differing.some((comparison) => comparison.prepared);
+  const markersRemaining = differing.reduce(
+    (total, comparison) =>
+      total +
+      (comparison.prepared
+        ? typeof markers[comparison.file] === "number"
+          ? markers[comparison.file]
+          : comparison.markersRemaining
+        : 0),
+    0,
+  );
+  return {
+    key: itemKey,
+    status,
+    pendingInOrg: comparisons.some(
+      (comparison) => comparison.status === "pendingInOrg",
+    ),
+    differs: differing.length > 0,
+    decision,
+    prepared,
+    markersRemaining,
+    threeWay: differing.some((comparison) => comparison.threeWay),
+    diffLines: differing.reduce(
+      (total, comparison) => total + comparison.diffLines,
+      0,
+    ),
+    files: comparisons.map((comparison) => comparison.file),
+    comparisons,
+  };
+}
+
+/**
+ * Default selection of a freshly loaded plan: every item deployed (the parent branch version
+ * overwrites a differing sandbox version), every deletion run, every action that can run ticked.
  */
 export function buildDefaultSelection(
   plan: BackpromotePlan,
 ): BackpromoteSelection {
-  const conflictDecisions: Record<string, BackpromoteConflictChoice> = {};
-  for (const conflict of plan.conflicts) {
-    conflictDecisions[conflict.path] = "merge";
+  const diffDecisions: Record<string, BackpromoteDiffChoice> = {};
+  for (const item of plan.items) {
+    const differing = differingComparisons(plan, item.key);
+    if (differing.length > 0) {
+      // A decision already applied by sfdx-hardis (a prepared merge) is kept
+      const applied = differing.find((comparison) => comparison.decision);
+      diffDecisions[item.key] = applied?.decision || "git";
+    }
   }
   return {
-    excludedItems: [],
+    excludedItems: plan.items
+      .filter((item) => item.noOverwrite)
+      .map((item) => item.key),
     excludedDeletions: [],
-    actions: plan.actions.map((action) => action.id),
-    conflictDecisions,
+    actions: plan.actions
+      .filter((action) => isActionRunnable(action))
+      .map((action) => action.id),
+    diffDecisions,
   };
+}
+
+/** An action the panel offers to run: not already run in this sandbox (unless it runs every time), and runnable from here */
+export function isActionRunnable(action: BackpromoteAction): boolean {
+  if (!action.runnable) {
+    return false;
+  }
+  return action.alreadyRunOn === null || !action.runOnlyOnceByOrg;
 }
 
 /**
  * Keeps from a selection received from the webview only what exists in the plan,
- * in plan order and without duplicates.
+ * in plan order and without duplicates. Items held back by package-no-overwrite.xml
+ * stay excluded whatever the webview says.
  */
 export function normalizeSelection(
   plan: BackpromotePlan,
@@ -394,41 +800,49 @@ export function normalizeSelection(
     const wanted = new Set(asStringArray(value));
     return known.filter((entry) => wanted.has(entry));
   };
-  const conflictDecisions: Record<string, BackpromoteConflictChoice> = {};
-  for (const conflict of plan.conflicts) {
-    const choice = raw?.conflictDecisions?.[conflict.path];
-    conflictDecisions[conflict.path] = BACKPROMOTE_CONFLICT_CHOICES.includes(
-      choice,
-    )
+  const diffDecisions: Record<string, BackpromoteDiffChoice> = {};
+  for (const item of plan.items) {
+    if (differingComparisons(plan, item.key).length === 0) {
+      continue;
+    }
+    const choice = raw?.diffDecisions?.[item.key];
+    diffDecisions[item.key] = BACKPROMOTE_DIFF_CHOICES.includes(choice)
       ? choice
-      : "merge";
+      : "git";
+  }
+  const noOverwrite = plan.items
+    .filter((item) => item.noOverwrite)
+    .map((item) => item.key);
+  const excludedItems = pick(
+    raw?.excludedItems,
+    plan.items.map((item) => item.key),
+  );
+  for (const key of noOverwrite) {
+    if (!excludedItems.includes(key)) {
+      excludedItems.push(key);
+    }
   }
   return {
-    excludedItems: pick(
-      raw?.excludedItems,
-      plan.items.map((item) => item.key),
-    ),
+    excludedItems: plan.items
+      .map((item) => item.key)
+      .filter((key) => excludedItems.includes(key)),
     excludedDeletions: pick(
       raw?.excludedDeletions,
       plan.deletions.map((deletion) => deletion.key),
     ),
     actions: pick(
       raw?.actions,
-      plan.actions.map((action) => action.id),
+      plan.actions
+        .filter((action) => isActionRunnable(action))
+        .map((action) => action.id),
     ),
-    conflictDecisions,
+    diffDecisions,
   };
 }
 
-/**
- * A deployment action that may need the user: a manual step, or an action run as
- * another user that sfdx-hardis may not be able to log in as on the org.
- */
-export function isManualAction(
-  action: Pick<BackpromoteAction, "type" | "customUsername">,
-): boolean {
-  return action.type === "manual" || !!action.customUsername;
-}
+// ---------------------------------------------------------------------------
+// Summary and commands
+// ---------------------------------------------------------------------------
 
 /**
  * Counters and blockers of the panel for a selection.
@@ -436,60 +850,184 @@ export function isManualAction(
 export function computeSelectionSummary(
   plan: BackpromotePlan,
   selection: BackpromoteSelection,
+  markers: Record<string, number> = {},
 ): BackpromoteSelectionSummary {
   const excluded = new Set(selection.excludedItems);
   const excludedDeletions = new Set(selection.excludedDeletions);
   const selectedActions = new Set(selection.actions);
-  const itemsToDeployCount = plan.items.filter(
-    (item) => !excluded.has(item.key),
-  ).length;
+  const tickedItems = plan.items.filter((item) => !excluded.has(item.key));
+  const states = tickedItems.map((item) =>
+    computeItemState(plan, selection, item.key, markers),
+  );
+  const keptOrg = states.filter(
+    (state) => state.differs && state.decision === "org",
+  );
+  const merged = states.filter(
+    (state) => state.differs && state.decision === "merge",
+  );
+  const markersOf = (comparison: BackpromoteComparison): number =>
+    typeof markers[comparison.file] === "number"
+      ? markers[comparison.file]
+      : comparison.markersRemaining;
+  const markersLeft: BackpromoteSelectionSummary["markersLeft"] = [];
+  for (const state of merged) {
+    for (const comparison of state.comparisons) {
+      if (
+        comparison.status !== "different" &&
+        comparison.status !== "pendingInOrg"
+      ) {
+        continue;
+      }
+      // Not prepared yet: the merge editor did not open, the file is not solved
+      const count = comparison.prepared ? markersOf(comparison) : 1;
+      if (count > 0) {
+        markersLeft.push({
+          file: comparison.file,
+          item: state.key,
+          markersRemaining: count,
+          merging: true,
+        });
+      }
+    }
+  }
+  // A prepared file whose item was switched back to Overwrite or Keep org version, or
+  // unticked, still sits in the checkout with its markers: sfdx-hardis refuses the run
+  const listed = new Set(markersLeft.map((entry) => entry.file));
+  for (const comparison of plan.comparison) {
+    if (!comparison.prepared || listed.has(comparison.file)) {
+      continue;
+    }
+    const count = markersOf(comparison);
+    if (count > 0) {
+      markersLeft.push({
+        file: comparison.file,
+        item: comparison.item,
+        markersRemaining: count,
+        merging: false,
+      });
+    }
+  }
+  const itemsToDeployCount = tickedItems.length - keptOrg.length;
   const deletionsToDeleteCount = plan.deletions.filter(
     (deletion) => !excludedDeletions.has(deletion.key),
   ).length;
-  const actionsToRun = plan.actions.filter((action) =>
-    selectedActions.has(action.id),
+  const actionsToRun = plan.actions.filter(
+    (action) => isActionRunnable(action) && selectedActions.has(action.id),
   );
-  const conflicts = plan.conflicts.map((conflict) => ({
-    ...conflict,
-    choice: selection.conflictDecisions[conflict.path] || "merge",
-  }));
-  const markersLeft = plan.conflicts
-    .filter(
-      (conflict) =>
-        typeof conflict.conflictBlocks === "number" &&
-        conflict.conflictBlocks > 0,
-    )
-    .map((conflict) => ({
-      path: conflict.path,
-      conflictBlocks: conflict.conflictBlocks as number,
-    }));
-
   const blockers: BackpromoteBlocker[] = [];
-  if (plan.status !== "ready" && plan.status !== "mergeInProgress") {
+  if (plan.status === "blocked" || plan.status === "refused") {
     blockers.push("notReady");
-  }
-  if (
-    plan.status === "ready" &&
+  } else if (!plan.window) {
+    blockers.push("noWindow");
+  } else if (
     itemsToDeployCount === 0 &&
     deletionsToDeleteCount === 0 &&
     actionsToRun.length === 0
   ) {
     blockers.push("nothingToDo");
   }
-  if (plan.status === "mergeInProgress" && markersLeft.length > 0) {
+  if (markersLeft.some((entry) => entry.merging)) {
     blockers.push("conflictMarkers");
+  }
+  if (markersLeft.some((entry) => !entry.merging)) {
+    blockers.push("preparedMarkers");
   }
   return {
     itemsToDeployCount,
     deletionsToDeleteCount,
     actionsToRunCount: actionsToRun.length,
-    manualActionsCount: actionsToRun.filter((action) => isManualAction(action))
-      .length,
-    conflicts,
+    manualActionsCount: actionsToRun.filter((action) => action.manual).length,
+    keptOrgCount: keptOrg.length,
+    mergedFilesCount: merged.reduce(
+      (total, state) =>
+        total +
+        state.comparisons.filter(
+          (comparison) =>
+            comparison.status === "different" ||
+            comparison.status === "pendingInOrg",
+        ).length,
+      0,
+    ),
     markersLeft,
     blockers,
     canRun: blockers.length === 0,
   };
+}
+
+export interface BackpromoteCommandTarget {
+  targetOrg: string;
+  parentBranch: string;
+  fromPullRequest?: number | null;
+  runId?: string | null;
+}
+
+function targetParts(target: BackpromoteCommandTarget): string[] {
+  const parts: string[] = [];
+  if (target.runId) {
+    parts.push(`--run-id ${quoteCommandValue(target.runId)}`);
+  }
+  parts.push(`--target-org ${quoteCommandValue(target.targetOrg)}`);
+  parts.push(`--parent-branch ${quoteCommandValue(target.parentBranch)}`);
+  if (target.fromPullRequest && target.fromPullRequest > 0) {
+    parts.push(`--from-pull-request ${Math.trunc(target.fromPullRequest)}`);
+  }
+  return parts;
+}
+
+function dirtyTreeParts(choice?: BackpromoteDirtyTreeChoice | null): string[] {
+  if (!choice) {
+    return [];
+  }
+  const parts = [`--dirty-tree ${choice.action === "commit" ? "commit" : "stash"}`];
+  if (choice.action === "commit" && choice.message) {
+    parts.push(`--commit-message ${quoteCommandValue(choice.message)}`);
+  }
+  return parts;
+}
+
+/**
+ * Read-only plan command: the org and the parent branch the user chose, the start Pull
+ * Request when the user picked one, the run id of the previous plan so sfdx-hardis reuses its
+ * cache, and a wider scan when the user asked to see earlier Pull Requests.
+ */
+export function buildPlanCommand(
+  target: BackpromoteCommandTarget,
+  options: { scanLimit?: number | null } = {},
+): string {
+  const parts = [BACKPROMOTE_COMMAND, "--plan", ...targetParts(target)];
+  if (options.scanLimit && options.scanLimit > BACKPROMOTE_SCAN_PAGE) {
+    parts.push(`--scan-limit ${Math.trunc(options.scanLimit)}`);
+  }
+  parts.push("--json");
+  return parts.join(" ");
+}
+
+/**
+ * The command that writes the merged files (with markers) of the items the user wants to
+ * merge by hand, and switches the checkout to the backpromote branch.
+ */
+export function buildPrepareCommand(
+  plan: BackpromotePlan,
+  target: BackpromoteCommandTarget,
+  itemKeys: string[],
+  dirtyTree?: BackpromoteDirtyTreeChoice | null,
+): string {
+  const parts = [BACKPROMOTE_COMMAND, "--prepare", ...targetParts(target)];
+  const files = new Set<string>();
+  for (const key of itemKeys) {
+    for (const comparison of differingComparisons(plan, key)) {
+      files.add(comparison.file);
+    }
+  }
+  if (files.size === 0) {
+    throw new Error("No file to merge for the given items");
+  }
+  for (const file of files) {
+    parts.push(`--on-diff ${quoteCommandValue(`${file}=merge`)}`);
+  }
+  parts.push(...dirtyTreeParts(dirtyTree));
+  parts.push("--json");
+  return parts.join(" ");
 }
 
 /**
@@ -499,12 +1037,10 @@ export function computeSelectionSummary(
 export function buildBackpromoteCommand(
   plan: BackpromotePlan,
   selection: BackpromoteSelection,
+  target: BackpromoteCommandTarget,
+  dirtyTree?: BackpromoteDirtyTreeChoice | null,
 ): string {
-  const parts = [
-    BACKPROMOTE_COMMAND,
-    `--parentbranch ${quoteCommandValue(plan.parentBranch)}`,
-    "--auto",
-  ];
+  const parts = [BACKPROMOTE_COMMAND, "--auto", ...targetParts(target)];
   for (const key of selection.excludedItems) {
     parts.push(`--exclude-metadata ${quoteCommandValue(key)}`);
   }
@@ -520,18 +1056,52 @@ export function buildBackpromoteCommand(
       parts.push(`--exclude-metadata ${quoteCommandValue(key)}`);
     }
   }
-  for (const [file, choice] of Object.entries(selection.conflictDecisions)) {
-    parts.push(`--on-conflict ${quoteCommandValue(`${file}=${choice}`)}`);
+  const excluded = new Set(selection.excludedItems);
+  for (const [key, choice] of Object.entries(selection.diffDecisions)) {
+    if (choice === "git" || excluded.has(key)) {
+      continue;
+    }
+    for (const comparison of differingComparisons(plan, key)) {
+      parts.push(`--on-diff ${quoteCommandValue(`${comparison.file}=${choice}`)}`);
+    }
   }
-  if (plan.actions.length > 0) {
+  const runnableActions = plan.actions.filter((action) =>
+    isActionRunnable(action),
+  );
+  if (runnableActions.length > 0) {
     parts.push(
       selection.actions.length > 0
         ? `--actions ${quoteCommandValue(selection.actions.join(","))}`
         : "--skip-actions",
     );
   }
-  parts.push(`--target-org ${quoteCommandValue(plan.targetOrg.username)}`);
+  parts.push(...dirtyTreeParts(dirtyTree));
+  parts.push("--json");
   return parts.join(" ");
+}
+
+/** Records that manual actions were done in the sandbox */
+export function buildConfirmActionCommand(
+  target: BackpromoteCommandTarget,
+  actionIds: string[],
+): string {
+  const parts = [BACKPROMOTE_COMMAND];
+  for (const actionId of actionIds) {
+    parts.push(`--confirm-action ${quoteCommandValue(actionId)}`);
+  }
+  parts.push(...targetParts(target), "--json");
+  return parts.join(" ");
+}
+
+/** Deletes the backpromote branch and its pending manual merges */
+export function buildResetCommand(target: BackpromoteCommandTarget): string {
+  return [
+    BACKPROMOTE_COMMAND,
+    "--reset",
+    "--auto",
+    ...targetParts({ ...target, runId: null, fromPullRequest: null }),
+    "--json",
+  ].join(" ");
 }
 
 /**
@@ -540,12 +1110,14 @@ export function buildBackpromoteCommand(
 export function buildSelectionPayload(
   plan: BackpromotePlan,
   selection: BackpromoteSelection,
+  target: BackpromoteCommandTarget,
+  markers: Record<string, number> = {},
 ): BackpromoteSelectionPayload {
-  const summary = computeSelectionSummary(plan, selection);
+  const summary = computeSelectionSummary(plan, selection, markers);
   let command: string | null = null;
   let commandError: string | null = null;
   try {
-    command = buildBackpromoteCommand(plan, selection);
+    command = buildBackpromoteCommand(plan, selection, target);
   } catch (error: any) {
     commandError = String(error?.message || error);
   }
@@ -556,24 +1128,9 @@ export function buildSelectionPayload(
   return { summary, command, commandError };
 }
 
-/**
- * Read-only plan command, with the parent branch and the org the user chose in the panel.
- * Without them sfdx-hardis guesses the parent branch and takes the default org.
- */
-export function buildPlanCommand(
-  parentBranch?: string | null,
-  options: { targetOrg?: string | null } = {},
-): string {
-  const parts = [BACKPROMOTE_COMMAND, "--plan"];
-  if (parentBranch) {
-    parts.push(`--parentbranch ${quoteCommandValue(parentBranch)}`);
-  }
-  if (options.targetOrg) {
-    parts.push(`--target-org ${quoteCommandValue(options.targetOrg)}`);
-  }
-  parts.push("--json");
-  return parts.join(" ");
-}
+// ---------------------------------------------------------------------------
+// Setup: orgs and parent branches
+// ---------------------------------------------------------------------------
 
 /** An authenticated org the panel offers as target */
 export interface BackpromoteOrgChoice {
@@ -581,47 +1138,148 @@ export interface BackpromoteOrgChoice {
   /** Alias when there is one, else the username */
   label: string;
   isDefault: boolean;
+  /** Why the org cannot be a target, null when it can */
+  disabledReason: "production" | "majorOrg" | "expired" | null;
+  /** The major branch the org belongs to, for the label of a disabled org */
+  majorBranch: string | null;
 }
 
-/**
- * What the panel asks before computing a plan: the org and the parent branch. Empty lists are
- * fine, sfdx-hardis then takes the default org and guesses the parent branch.
- */
 export interface BackpromoteSetup {
   currentBranch: string;
   orgs: BackpromoteOrgChoice[];
-  parentBranchChoices: string[];
-  /** The parent branch preselected: the development branch, else the first major branch */
+  /** developmentBranch first, then availableTargetBranches */
+  allowedParentBranches: string[];
   defaultParentBranch: string | null;
 }
 
 /**
- * The orgs a backpromote may target, from `sf org list`: developer sandboxes and scratch orgs
- * that are still alive, the default org first. Production orgs are refused by the command anyway.
+ * The sandbox a Salesforce username belongs to (user@company.com.dev1 gives dev1), mirror of
+ * the sfdx-hardis rule. Null for a production username.
+ */
+function parseSandboxOfUsername(
+  username: string,
+): { base: string; sandbox: string } | null {
+  const value = (username || "").trim().toLowerCase();
+  const at = value.lastIndexOf("@");
+  if (at <= 0) {
+    return null;
+  }
+  const parts = value.substring(at + 1).split(".");
+  if (parts.length < 3) {
+    return null;
+  }
+  return {
+    base: parts.slice(0, -1).join("."),
+    sandbox: parts[parts.length - 1],
+  };
+}
+
+function normalizeUrl(url: string | undefined | null): string {
+  return (url || "").trim().toLowerCase().replace(/\/+$/, "");
+}
+
+/**
+ * The orgs of `sf org list`, the default org first: developer sandboxes and scratch orgs are
+ * selectable, the orgs of the major branches (matched on username, on the sandbox of the
+ * username, or on the instance URL) and the production orgs are listed disabled with the reason.
  */
 export function buildOrgChoices(
   orgs: Array<{
     username?: string;
     alias?: string;
+    instanceUrl?: string;
     isDefaultUsername?: boolean;
     isScratch?: boolean;
     isSandbox?: boolean;
     orgType?: string;
     status?: string;
-    connectedStatus?: string;
   }>,
+  majorOrgs: Array<{
+    branchName?: string;
+    targetUsername?: string;
+    instanceUrl?: string;
+  }> = [],
 ): BackpromoteOrgChoice[] {
   return orgs
     .filter((org) => !!org.username && isSafeCommandValue(org.username))
-    .filter((org) => org.isScratch || org.isSandbox || org.orgType === "sandbox" || org.orgType === "scratch")
-    .filter((org) => !["Expired", "Deleted"].includes(String(org.status || "")))
-    .map((org) => ({
-      username: org.username as string,
-      label: org.alias ? `${org.alias} (${org.username})` : (org.username as string),
-      isDefault: org.isDefaultUsername === true,
-    }))
-    .sort((a, b) => Number(b.isDefault) - Number(a.isDefault) || a.label.localeCompare(b.label));
+    .map((org) => {
+      const username = (org.username as string).toLowerCase();
+      const sandbox = parseSandboxOfUsername(username);
+      const instanceUrl = normalizeUrl(org.instanceUrl);
+      const majorOrg = majorOrgs.find((major) => {
+        const majorUsername = (major.targetUsername || "").trim().toLowerCase();
+        if (majorUsername && majorUsername === username) {
+          return true;
+        }
+        const majorSandbox = parseSandboxOfUsername(majorUsername);
+        if (
+          sandbox &&
+          majorSandbox &&
+          sandbox.base === majorSandbox.base &&
+          sandbox.sandbox === majorSandbox.sandbox
+        ) {
+          return true;
+        }
+        const majorUrl = normalizeUrl(major.instanceUrl);
+        return (
+          majorUrl !== "" &&
+          majorUrl === instanceUrl &&
+          !majorUrl.includes("test.salesforce.com")
+        );
+      });
+      const isSandboxOrg =
+        org.isScratch === true ||
+        org.isSandbox === true ||
+        org.orgType === "sandbox" ||
+        org.orgType === "scratch" ||
+        instanceUrl.includes(".sandbox.") ||
+        instanceUrl.includes(".scratch.");
+      let disabledReason: BackpromoteOrgChoice["disabledReason"] = null;
+      if (["Expired", "Deleted"].includes(String(org.status || ""))) {
+        disabledReason = "expired";
+      } else if (majorOrg) {
+        disabledReason = "majorOrg";
+      } else if (!isSandboxOrg) {
+        disabledReason = "production";
+      }
+      return {
+        username: org.username as string,
+        label: org.alias
+          ? `${org.alias} (${org.username})`
+          : (org.username as string),
+        isDefault: org.isDefaultUsername === true,
+        disabledReason,
+        majorBranch: majorOrg?.branchName || null,
+      };
+    })
+    .filter((org) => org.disabledReason !== "expired")
+    .sort(
+      (a, b) =>
+        Number(!!a.disabledReason) - Number(!!b.disabledReason) ||
+        Number(b.isDefault) - Number(a.isDefault) ||
+        a.label.localeCompare(b.label),
+    );
 }
+
+/** developmentBranch first, then availableTargetBranches, without duplicates: nothing else */
+export function listAllowedParentBranches(config: any): string[] {
+  const branches: string[] = [];
+  const add = (branch: unknown) => {
+    const value = typeof branch === "string" ? branch.trim() : "";
+    if (value && isSafeCommandValue(value) && !branches.includes(value)) {
+      branches.push(value);
+    }
+  };
+  add(config?.developmentBranch);
+  for (const branch of asArray(config?.availableTargetBranches)) {
+    add(branch);
+  }
+  return branches;
+}
+
+// ---------------------------------------------------------------------------
+// Command results
+// ---------------------------------------------------------------------------
 
 /**
  * Older sfdx-hardis versions print a log line (`WS Client started`) before the JSON
@@ -677,14 +1335,14 @@ function collectResultText(result: any): string {
 export function isCliTooOldForBackpromotePanel(result: any): boolean {
   const text = collectResultText(result);
   if (
-    /NonexistentFlagsError|Nonexistent flags?:?\s*--|Unexpected argument:?\s*--(plan|auto)/i.test(
+    /NonexistentFlagsError|Nonexistent flags?:?\s*--|Unexpected argument:?\s*--(plan|auto|prepare|parent-branch|run-id)/i.test(
       text,
     )
   ) {
     return true;
   }
-  const planVersion = result?.result?.planVersion;
-  return typeof planVersion === "number" && planVersion < 2;
+  const version = result?.result?.version ?? result?.result?.planVersion;
+  return typeof version === "number" && version < BACKPROMOTE_PLAN_VERSION;
 }
 
 /**
@@ -718,9 +1376,8 @@ export function getBackpromoteErrorMessage(result: any): string {
 }
 
 /**
- * Short name of the target org for the panel header: the `orgName` sent by
- * sfdx-hardis, else the first label of its instance URL (`mycompany--dev-sam` for
- * `https://mycompany--dev-sam.sandbox.my.salesforce.com`), else its username.
+ * Short name of the target sandbox for the panel: the `sandboxName` of the plan, else the
+ * first label of its instance URL, else its username.
  */
 export function getTargetOrgDisplayName(
   targetOrg: Partial<BackpromotePlan["targetOrg"]> | null | undefined,
@@ -728,8 +1385,8 @@ export function getTargetOrgDisplayName(
   if (!targetOrg) {
     return "";
   }
-  if (targetOrg.orgName) {
-    return targetOrg.orgName;
+  if (targetOrg.sandboxName) {
+    return targetOrg.sandboxName;
   }
   try {
     const host = new URL(targetOrg.instanceUrl || "").hostname;
@@ -740,8 +1397,12 @@ export function getTargetOrgDisplayName(
   } catch {
     // Not a URL
   }
-  return targetOrg.username || "";
+  return targetOrg.alias || targetOrg.username || "";
 }
+
+// ---------------------------------------------------------------------------
+// Progress file
+// ---------------------------------------------------------------------------
 
 /** One step sfdx-hardis reported in the progress file of a background command */
 export interface BackpromoteProgressEvent {
@@ -749,6 +1410,7 @@ export interface BackpromoteProgressEvent {
   message: string;
   current: number | null;
   total: number | null;
+  time: string | null;
 }
 
 /** What the loading state shows while the plan is computed */
@@ -785,6 +1447,7 @@ export function parseProgressEvents(content: string): BackpromoteProgressEvent[]
         message: raw.message,
         current: counted ? Number(raw.current) : null,
         total: counted ? Number(raw.total) : null,
+        time: typeof raw.time === "string" ? raw.time : null,
       });
     } catch {
       // A line not written completely yet

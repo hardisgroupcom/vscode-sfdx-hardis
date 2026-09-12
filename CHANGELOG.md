@@ -2,13 +2,11 @@
 
 ## Unreleased
 
-- **Backpromote (Beta) panel**: bring what your teammates merged in the parent branch into your User Story branch and your developer sandbox or scratch org, from the commands menu or the DevOps Pipeline
-  - Pick the target org and the parent branch first, then compute the plan; both stay changeable in the header
-  - See the Pull Requests the merge brings in, the metadata it deploys, the deletions and the deployment actions, and untick what you do not want yet
-  - Files changed both by the Pull Requests and in your branch or your org are listed first: for each one, choose to overwrite with the parent branch version, keep yours, or merge by hand with a prompt for your coding agent
-  - Your pending org changes are saved in your branch before the merge, and a merge that stopped on conflicts is finished from the panel once the markers are solved
-  - Production orgs and orgs linked to a major branch are refused, and the run must start from a User Story branch
-  - See what sfdx-hardis is doing while the plan is computed
+- **Backpromote (Beta) panel**: deploy into your developer sandbox or scratch org what your teammates merged in the parent branch, from the commands menu or the Backpromote card of the DevOps Pipeline
+  - One page: pick the target sandbox and the parent branch, the start Pull Request (the ones already backpromoted to that sandbox are greyed), then the metadata, deletions and deployment actions to backpromote
+  - An item whose sandbox version differs from the parent branch version is decided on its own line: Overwrite, Keep org version, or Merge with the VS Code merge editor, with a Compare button and one prompt for your coding agent covering every merge
+  - The backpromote is enabled only once every merge is solved, runs in the background with its progress, and ends with the result, the Pull Requests updated and a Back to my branch button
+  - Production orgs and the orgs of the major branches are refused, and the panel asks for a git provider token before anything else
 - Pipeline Settings: a table of a list setting (`allowedPromotionSteps`, `monitoringCommands`, installed packages...) now takes the whole width of the panel instead of shrinking to its content, which printed branch names one character per line
 - DevOps Pipeline: promotion branches named `promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM>` by sfdx-hardis (with `-2`, `-3`... when the name was taken) are recognized, next to the `<YYYY-MM-DD>-<counter>` names of earlier promotions
 

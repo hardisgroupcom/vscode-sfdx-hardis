@@ -12,7 +12,10 @@ import {
   hasMergeConflicts,
 } from "../gitProviders/mergeStatus";
 import { GitProvider } from "../gitProviders/gitProvider";
-import { parsePromotionBranchName } from "./promotionBranchUtils";
+import {
+  isBackpromoteBranchName,
+  parsePromotionBranchName,
+} from "./promotionBranchUtils";
 import { t } from "../../i18n/i18n";
 
 /**
@@ -306,7 +309,9 @@ export class BranchStrategyMermaidBuilder {
         ) &&
         // A promotion already drawn on the edge between its two branches must not also get a
         // feature node: the same Pull Request number would appear twice in the diagram
-        !this.isPromotionDrawnOnAnEdge(pullRequest),
+        !this.isPromotionDrawnOnAnEdge(pullRequest) &&
+        // A backpromote branch never carries work of its own: nothing to draw
+        !isBackpromoteBranchName(pullRequest.sourceBranch),
     );
     // Group feature PRs by their target (major) branch. When a target has more
     // than the threshold, only the newest ones stay as individual nodes and the
