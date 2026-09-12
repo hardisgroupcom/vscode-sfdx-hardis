@@ -30,22 +30,25 @@ export const PROVIDER_BATCH_PROFILES: Record<
   ProviderBatchProfileName,
   readonly number[]
 > = {
-  // 100 concurrent requests allowed, 900 points per minute per endpoint
-  github: [50, 20, 10, 5, 1],
-  // 2,000 requests per minute per user, no concurrency cap
-  gitlab: [50, 20, 10, 5, 1],
-  // A budget of server time in a sliding window: a burst is delayed, then throttled
-  azure: [10, 5, 2, 1],
-  // An hourly quota; bursts add nothing, a smaller first wave keeps the run smooth
-  bitbucket: [10, 5, 1],
-  gitea: [10, 5, 1],
-  // A dynamic per user budget, meant for a handful of concurrent calls
-  jiraCloud: [5, 2, 1],
+  // Sized on what the provider serves concurrently, not on its quota: the quota is spent either
+  // way, a throttling only means the smaller sizes below are tried, after the pause the provider
+  // asks for.
+  // 100 concurrent requests allowed
+  github: [80, 40, 20, 10, 5, 1],
+  // No concurrency cap
+  gitlab: [80, 40, 20, 10, 5, 1],
+  // No concurrency cap; a burst is throttled with a Retry-After when the budget runs out
+  azure: [50, 20, 10, 5, 1],
+  // No concurrency cap; an hourly quota
+  bitbucket: [50, 20, 10, 5, 1],
+  gitea: [20, 10, 5, 1],
+  // A dynamic per user budget, answered with 429 and Retry-After
+  jiraCloud: [20, 10, 5, 1],
   // No limit by default, a token bucket when the admin enables one
-  jiraServer: [20, 10, 5, 1],
-  // Bounded by the REST semaphores of the node: more only queues
-  serviceNow: [4, 2, 1],
-  default: [10, 5, 1],
+  jiraServer: [40, 20, 10, 5, 1],
+  // Bounded by the REST semaphores of the node (a few per node): more only queues
+  serviceNow: [8, 4, 2, 1],
+  default: [20, 10, 5, 1],
 };
 
 /** The largest first batch of the ladders, the fan-out ceiling below which a batched provider call is not worth it */

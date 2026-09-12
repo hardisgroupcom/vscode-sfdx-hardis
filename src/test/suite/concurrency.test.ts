@@ -42,14 +42,14 @@ suite("Adaptive batches of provider calls", () => {
   };
 
   test("has one ladder per provider", () => {
-    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.github], [50, 20, 10, 5, 1]);
-    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.gitlab], [50, 20, 10, 5, 1]);
-    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.azure], [10, 5, 2, 1]);
-    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.bitbucket], [10, 5, 1]);
-    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.jiraCloud], [5, 2, 1]);
-    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.jiraServer], [20, 10, 5, 1]);
-    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.serviceNow], [4, 2, 1]);
-    assert.strictEqual(DEFAULT_CONCURRENCY, 50);
+    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.github], [80, 40, 20, 10, 5, 1]);
+    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.gitlab], [80, 40, 20, 10, 5, 1]);
+    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.azure], [50, 20, 10, 5, 1]);
+    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.bitbucket], [50, 20, 10, 5, 1]);
+    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.jiraCloud], [20, 10, 5, 1]);
+    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.jiraServer], [40, 20, 10, 5, 1]);
+    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.serviceNow], [8, 4, 2, 1]);
+    assert.strictEqual(DEFAULT_CONCURRENCY, 80);
   });
 
   test("tells a throttling from the answer of the provider", () => {
@@ -83,7 +83,7 @@ suite("Adaptive batches of provider calls", () => {
   });
 
   test("reads a full batch of the ladder at a time", async () => {
-    const items = Array.from({ length: 120 }, (_, i) => i);
+    const items = Array.from({ length: 200 }, (_, i) => i);
     const { state, mapper } = trackingMapper(items.map(() => 5));
     const results = await mapWithConcurrency(
       items,
@@ -91,7 +91,7 @@ suite("Adaptive batches of provider calls", () => {
       PROVIDER_BATCH_PROFILES.github,
     );
     assert.deepStrictEqual(results, items.map((value) => value * 2));
-    assert.strictEqual(state.peak, 50);
+    assert.strictEqual(state.peak, 80);
   });
 
   test("never exceeds the ceiling a caller asks for", async () => {
@@ -103,7 +103,7 @@ suite("Adaptive batches of provider calls", () => {
 
   test("backs off to the smaller sizes on a throttling and waits the delay asked for", async () => {
     const items = Array.from({ length: 30 }, (_, i) => i);
-    // Item 3 is throttled at 50 and at 20, item 7 three times (down to size 5 where it passes)
+    // Item 3 is throttled at 80 and at 40, item 7 three times (down to size 10 where it passes)
     const { state, mapper } = trackingMapper(
       items.map(() => 1),
       new Map([
@@ -123,12 +123,12 @@ suite("Adaptive batches of provider calls", () => {
     );
     assert.deepStrictEqual(results, items.map((value) => value * 2));
     assert.deepStrictEqual(backoffs, [
+      [40, 1000],
       [20, 1000],
-      [10, 1000],
-      [5, 0],
+      [10, 0],
     ]);
     assert.strictEqual(state.peak, 30);
-    // 30 first calls, then 2 retries at 20, 2 at 10, 1 at 5
+    // 30 first calls, then 2 retries at 40, 2 at 20, 1 at 10
     assert.strictEqual(state.calls, 35);
   });
 

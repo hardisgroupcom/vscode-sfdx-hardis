@@ -1,3 +1,4 @@
+import { PROVIDER_BATCH_PROFILES } from "../../utils/concurrency";
 import * as assert from "assert";
 import { GitProviderGitHub } from "../../utils/gitProviders/gitProviderGitHub";
 import { GitProviderGitlab } from "../../utils/gitProviders/gitProviderGitlab";
@@ -27,7 +28,8 @@ suite("Pull Request listing bounds and fan-out", () => {
     };
   };
 
-  const manyBranches = Array.from({ length: 30 }, (_, i) => `branch-${i}`);
+  // More branches than the first batch of any ladder, so that the bound is visible
+  const manyBranches = Array.from({ length: 200 }, (_, i) => `branch-${i}`);
 
   suite("GitHub", () => {
     const buildProvider = (list: (params: any) => Promise<{ data: any[] }>) => {
@@ -129,8 +131,8 @@ suite("Pull Request listing bounds and fan-out", () => {
         undefined,
       );
       assert.ok(
-        tracker.state.peak < manyBranches.length,
-        `all ${manyBranches.length} listings were in flight at once`,
+        tracker.state.peak <= PROVIDER_BATCH_PROFILES.github[0],
+        `${tracker.state.peak} listings were in flight at once`,
       );
     });
   });
@@ -186,8 +188,8 @@ suite("Pull Request listing bounds and fan-out", () => {
         undefined,
       );
       assert.ok(
-        tracker.state.peak < manyBranches.length,
-        `all ${manyBranches.length} listings were in flight at once`,
+        tracker.state.peak <= PROVIDER_BATCH_PROFILES.gitlab[0],
+        `${tracker.state.peak} listings were in flight at once`,
       );
     });
 
@@ -252,8 +254,8 @@ suite("Pull Request listing bounds and fan-out", () => {
       );
       await provider.collectMergedPRsForCommits(manyBranches, [], undefined);
       assert.ok(
-        tracker.state.peak < manyBranches.length,
-        `all ${manyBranches.length} page walks were in flight at once`,
+        tracker.state.peak <= PROVIDER_BATCH_PROFILES.bitbucket[0],
+        `${tracker.state.peak} page walks were in flight at once`,
       );
     });
   });
