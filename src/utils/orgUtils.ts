@@ -1,4 +1,5 @@
 import { execSfdxJson } from "../utils";
+import { CacheManager } from "./cache-manager";
 
 export type SalesforceOrg = {
   username?: string;
@@ -23,6 +24,21 @@ export type SalesforceOrg = {
   // not known yet (a second, complete list follows)
   connectionStatusPending?: boolean;
 };
+
+/**
+ * Forget the cached `sf org list` answers: an org authenticated or set as default since would not
+ * be in them for a week.
+ */
+export async function forgetCachedOrgList(): Promise<void> {
+  for (const all of [false, true]) {
+    for (const skipConnectionStatus of [false, true]) {
+      await CacheManager.delete(
+        "orgs",
+        `sf org list${all ? " --all" : ""}${skipConnectionStatus ? " --skip-connection-status" : ""} --json`,
+      );
+    }
+  }
+}
 
 export async function listAllOrgs(
   all = false,

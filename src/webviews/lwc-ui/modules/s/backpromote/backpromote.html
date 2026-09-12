@@ -126,7 +126,7 @@
           </template>
         </div>
         <template if:true={hasNoAllowedOrg}>
-          <div class="hardis-note warning"><lightning-icon icon-name="utility:warning" size="x-small"></lightning-icon><p>{i18n.backpromoteNoAllowedOrg}</p></div>
+          <div class="hardis-note warning"><lightning-icon icon-name="utility:warning" size="x-small"></lightning-icon><p>{i18n.backpromoteNoAllowedOrg} <button type="button" class="hardis-textlink" onclick={handleConnectAnotherOrg}>{i18n.backpromoteConnectOtherOrg}</button></p></div>
         </template>
         <template if:true={hasNoAllowedBranch}>
           <div class="hardis-note warning"><lightning-icon icon-name="utility:warning" size="x-small"></lightning-icon><p>{i18n.backpromoteNoAllowedBranch}</p></div>

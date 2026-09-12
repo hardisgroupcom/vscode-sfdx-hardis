@@ -7,13 +7,11 @@
             <s-cloudity-logo class="cloudity-title-logo"></s-cloudity-logo>
         </button>
         </div>
-        <div class="hardis-page-head-text">
+        <div class="hardis-page-head-text pipeline-head-text">
             <h1 class="hardis-page-title">{i18n.devOpsPipelineTitle}</h1>
             <p class="hardis-page-subtitle">{i18n.devOpsPipelineSubtitle}</p>
         </div>
         <div class="hardis-page-head-actions">
-        <div class="actions-row">
-            <div class="provider-actions">
                 <!-- Provider icon button for Git -->
                 <template if:true={gitProviderIconUrl}>
                     <button class="slds-button provider-button" title={connectedLabel} onclick={handleGitConnect}>
@@ -97,8 +95,6 @@
                         onclick={handleRefresh}
                     ></lightning-button>
                 </lightning-button-group>
-            </div>
-        </div>
         </div>
     </div>
 

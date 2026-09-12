@@ -121,50 +121,25 @@
     display: block;
 }
 
-/* Layout helpers for action row in card header */
-.actions-row {
-    display: flex;
-    align-items: center; /* vertical center alignment */
-    gap: 0.5rem;
-}
-
-.left-actions {
-    display: flex;
-    align-items: center;
-    margin-right: 0.5rem;
-}
-
-.right-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-/* The header row is wide (provider icons, two toggles, the settings buttons):
-   the title and subtitle give way first, down to 16rem, before that row has
-   to wrap */
-.hardis-page-head-text {
+/* The header actions are wide (provider icons, the toggle, the settings
+   buttons): the title and subtitle give way first, down to 16rem, before the
+   actions row (.hardis-page-head-actions, which wraps) has to wrap. A modifier
+   next to the kit class: a kit class is never redefined in a component */
+.pipeline-head-text {
     flex-shrink: 100;
     min-width: 16rem;
-}
-
-/* Provider icons, toggles and the settings buttons. The row wraps as a whole
-   when the header is tight (two toggles on a 1300px window) instead of
-   squeezing every item */
-.provider-actions {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 0.5rem;
 }
 
 .toggle-wrapper {
     display: flex;
     align-items: center;
     margin-top: 0.6rem;
-    /* One line per toggle: a flex row shrinks the toggle before anything else,
-       its label then wrapped on two lines and the switch drifted away from its words */
+}
+
+/* The header toggle stays on one line: in a flex row the toggle shrank before anything else,
+   its label wrapped on two lines and the switch drifted away from its words. The branch modal
+   toggle (absolutely positioned) keeps the right to wrap in a narrow modal */
+.hardis-page-head-actions .toggle-wrapper {
     white-space: nowrap;
     flex-shrink: 0;
 }

@@ -350,8 +350,13 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   // Where: sandbox, parent branch, start Pull Request
   // ---------------------------------------------------------------------------
 
-  // The last entry of the list opens the Orgs Manager to authenticate another org
+  // The last entry of the list opens the Orgs Manager to authenticate another org. The array is
+  // built once per setup (and language): a new array on every render makes the combobox rebuild
+  // its items and moves the highlight of an open list back to the first entry
   get targetOrgOptions() {
+    if (this._targetOrgOptions && this._targetOrgOptionsSetup === this.setup && this._targetOrgOptionsI18n === this.i18n) {
+      return this._targetOrgOptions;
+    }
     const orgs = this.setup ? this.setup.orgs : [];
     const options = orgs.map((org) => {
       let suffix = "";
@@ -366,6 +371,9 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       label: this.t("backpromoteConnectOtherOrg"),
       value: CONNECT_ANOTHER_ORG,
     });
+    this._targetOrgOptions = options;
+    this._targetOrgOptionsSetup = this.setup;
+    this._targetOrgOptionsI18n = this.i18n;
     return options;
   }
 
@@ -399,34 +407,23 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     return this.parentBranch || "";
   }
 
-  // The combobox already shows the entry the user picked: the value is set to it and back so
-  // the rendered value follows the tracked one again
-  _restorePickerValue(previous) {
-    this.targetOrg = CONNECT_ANOTHER_ORG;
-    // eslint-disable-next-line @lwc/lwc/no-async-operation
-    setTimeout(() => {
-      this.targetOrg = previous;
-    }, 0);
-  }
-
   handleTargetOrgChange(event) {
     const targetOrg = event.detail.value || null;
-    const choice = (this.setup ? this.setup.orgs : []).find(
-      (org) => org.username === targetOrg,
-    );
     if (!targetOrg || targetOrg === this.targetOrg) {
       return;
     }
-    if (targetOrg === CONNECT_ANOTHER_ORG) {
-      // The picker goes back to the current org while the Orgs Manager opens: the org
-      // authenticated there becomes the target once it is the default org
-      this._restorePickerValue(this.targetOrg);
-      window.sendMessageToVSCode({ type: "selectOrg" });
-      return;
-    }
-    if (choice && choice.disabledReason) {
-      // The picker goes back to the current org: a major org is never a target
-      this._restorePickerValue(this.targetOrg);
+    const choice = (this.setup ? this.setup.orgs : []).find(
+      (org) => org.username === targetOrg,
+    );
+    if (targetOrg === CONNECT_ANOTHER_ORG || (choice && choice.disabledReason)) {
+      // The picker shows the current org again, set on the element itself: the tracked value
+      // did not change, so a re-render would not bring it back. A major org is never a target;
+      // the last entry opens the Orgs Manager, and the org authenticated there becomes the
+      // target once it is the default org
+      event.target.value = this.targetOrgValue;
+      if (targetOrg === CONNECT_ANOTHER_ORG) {
+        this.handleConnectAnotherOrg();
+      }
       return;
     }
     this.targetOrg = targetOrg;
@@ -1506,6 +1503,10 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       type: "runVsCodeCommand",
       data: { command: "vscode-sfdx-hardis.showSetup" },
     });
+  }
+
+  handleConnectAnotherOrg() {
+    window.sendMessageToVSCode({ type: "selectOrg" });
   }
 
   handleOpenDoc() {

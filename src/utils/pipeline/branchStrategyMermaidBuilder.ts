@@ -247,7 +247,6 @@ export class BranchStrategyMermaidBuilder {
         this.branchesAndOrgs.map((entry) => entry.branchName),
         this.promotionBranchConfig,
       ).length;
-      const prCountAll = branchPrs.length;
       // The PR count is embedded as a hidden marker: the webview draws it as
       // a notification-style bubble on the node's top-right corner (see
       // _decorateMermaidNodes in pipeline.js). It cannot be rendered inside
@@ -256,7 +255,7 @@ export class BranchStrategyMermaidBuilder {
         BRANCH_ICON_SVG +
         " " +
         this.escapeHtmlLabel(branchAndOrg.branchName) +
-        (prCountAll > 0
+        (prCount > 0
           ? `<span class='hardis-node-count' data-count='${prCount}' style='display:none;'></span>`
           : "");
       return {
@@ -266,7 +265,6 @@ export class BranchStrategyMermaidBuilder {
         class: isProduction(branchAndOrg.branchName) ? "gitMain" : "gitMajor",
         level: branchAndOrg.level,
         instanceUrl: branchAndOrg.instanceUrl,
-        hasPullRequests: prCountAll > 0,
       };
     });
 

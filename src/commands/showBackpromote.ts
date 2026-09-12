@@ -6,11 +6,12 @@ import simpleGit from "simple-git";
 import { Commands } from "../commands";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { LwcUiPanel } from "../webviews/lwc-ui-panel";
-import { execSfdxJson, getWorkspaceRoot } from "../utils";
+import { execSfdxJson, getDefaultTargetOrgUsername, getWorkspaceRoot } from "../utils";
+import { onOrgsChanged } from "../utils/orgChangeEvents";
 import { Logger } from "../logger";
 import { t } from "../i18n/i18n";
 import { collectProviderCredentialEnvVars } from "../utils/providerCredentials";
-import { listAllOrgs } from "../utils/orgUtils";
+import { forgetCachedOrgList, listAllOrgs } from "../utils/orgUtils";
 import { listMajorOrgs } from "../utils/orgConfigUtils";
 import {
   getConfig,
@@ -53,10 +54,6 @@ import {
 } from "../utils/backpromote/backpromotePanelUtils";
 
 const BACKPROMOTE_LWC_ID = "s-backpromote";
-// After "Connect another org" (last entry of the sandbox list), the org list reloads when the
-// default org changes
-// during this delay
-const ORG_SELECTION_WATCH_MS = 10 * 60 * 1000;
 // A save in the editor and the file watcher report the same write: one read per file
 const MARKER_READ_DEBOUNCE_MS = 200;
 const PROGRESS_POLL_MS = 500;
@@ -91,7 +88,14 @@ interface BackpromotePanelState {
   runLog: BackpromoteProgressEvent[];
   runResult: BackpromoteRunOutcome | null;
   runError: { message: string; status: string | null } | null;
-  orgSelectionWatcher: vscode.Disposable | null;
+  /** "Connect another org" was picked: the next change of the orgs reloads the org list */
+  awaitingOrgSelection: boolean;
+  /** The default org when "Connect another org" was picked, to tell a new default from a new org */
+  defaultOrgAtConnect: string | null;
+  /** A change of the orgs arrived while a run or a prepare worked on the checkout */
+  pendingOrgChange: boolean;
+  orgChangeSubscription: { dispose: () => void } | null;
+  applyOrgChange: (() => Promise<void>) | null;
   loadCounter: number;
 }
 
@@ -115,7 +119,11 @@ function createState(panel: LwcUiPanel): BackpromotePanelState {
     runLog: [],
     runResult: null,
     runError: null,
-    orgSelectionWatcher: null,
+    awaitingOrgSelection: false,
+    defaultOrgAtConnect: null,
+    pendingOrgChange: false,
+    orgChangeSubscription: null,
+    applyOrgChange: null,
     loadCounter: 0,
   };
 }
@@ -124,8 +132,9 @@ function createState(panel: LwcUiPanel): BackpromotePanelState {
 let state: BackpromotePanelState | null = null;
 
 function disposeState(panelState: BackpromotePanelState): void {
-  panelState.orgSelectionWatcher?.dispose();
-  panelState.orgSelectionWatcher = null;
+  panelState.orgChangeSubscription?.dispose();
+  panelState.orgChangeSubscription = null;
+  panelState.applyOrgChange = null;
   for (const watcher of panelState.fileWatchers) {
     watcher.dispose();
   }
@@ -657,7 +666,8 @@ export function registerShowBackpromote(commands: Commands) {
         }
       };
 
-      const startOver = async () => {
+      // Another org, another branch or another start: nothing of the previous window is kept
+      const clearWindow = () => {
         current.plan = null;
         current.selection = null;
         current.runId = null;
@@ -667,8 +677,48 @@ export function registerShowBackpromote(commands: Commands) {
         current.runResult = null;
         current.runError = null;
         current.runLog = [];
+      };
+
+      const startOver = async () => {
+        clearWindow();
         await loadPlan();
       };
+
+      // The orgs changed after "Connect another org": the org list is read again without its
+      // cache. A new default org becomes the target and gets its own plan; an org authenticated
+      // without becoming the default is only added to the list, the plan on screen stays.
+      const applyOrgChange = async () => {
+        if (!current.awaitingOrgSelection || isStale(current)) {
+          return;
+        }
+        if (isBusy(current)) {
+          current.pendingOrgChange = true;
+          return;
+        }
+        current.pendingOrgChange = false;
+        await forgetCachedOrgList();
+        const newDefault = await getDefaultTargetOrgUsername().catch(() => null);
+        if (newDefault !== current.defaultOrgAtConnect) {
+          current.awaitingOrgSelection = false;
+          current.defaultOrgAtConnect = newDefault;
+          current.targetOrg = null;
+          clearWindow();
+          await refreshPlan();
+          return;
+        }
+        const targetBefore = current.targetOrg;
+        const ready = await showSetup();
+        if (isStale(current)) {
+          return;
+        }
+        if (ready && current.targetOrg !== targetBefore) {
+          // The target left the list (an org removed in the Orgs Manager)
+          await startOver();
+        } else {
+          pushData(current);
+        }
+      };
+      current.applyOrgChange = applyOrgChange;
 
       // A new plan while --auto or --prepare works on the same checkout and run id would
       // answer about a state the checkout is leaving: the message is ignored, the panel gets
@@ -750,7 +800,7 @@ export function registerShowBackpromote(commands: Commands) {
             break;
           }
           case "selectOrg": {
-            connectAnotherOrg(current, showSetup, loadPlan);
+            await connectAnotherOrg(current);
             break;
           }
           default:
@@ -857,6 +907,7 @@ async function prepareMerge(current: BackpromotePanelState, data: any): Promise<
     outcome = await runBackpromoteJson(command);
   } finally {
     current.preparing -= 1;
+    applyPendingOrgChange(current);
   }
   // The panel was closed, or another plan (other org, branch or start) replaced this one meanwhile
   if (isStale(current, loadId)) {
@@ -951,6 +1002,13 @@ async function runBackpromote(current: BackpromotePanelState, data: any): Promis
   }
   pushData(current);
   current.panel.sendMessage({ type: "runFinished" });
+  applyPendingOrgChange(current);
+}
+
+function applyPendingOrgChange(current: BackpromotePanelState): void {
+  if (current.pendingOrgChange && !isBusy(current)) {
+    void current.applyOrgChange?.();
+  }
 }
 
 /**
@@ -1110,43 +1168,19 @@ async function resetBranch(current: BackpromotePanelState, reloadPlan: () => Pro
 }
 
 /**
- * Opens the Orgs Manager to authenticate another org, then offers it: the org list reloads once
- * the default org changed, and the plan is computed again.
+ * Opens the Orgs Manager to authenticate another org. The panel then listens to the changes of the
+ * orgs (see applyOrgChange in the panel handler): no file watcher and no time limit, the listener
+ * lives as long as the panel.
  */
-function connectAnotherOrg(
-  current: BackpromotePanelState,
-  showSetup: () => Promise<boolean>,
-  reloadPlan: () => Promise<void>,
-): void {
-  current.orgSelectionWatcher?.dispose();
-  const watcher = vscode.workspace.createFileSystemWatcher(
-    new vscode.RelativePattern(getWorkspaceRoot(), ".sf/config.json"),
-  );
-  let timer: ReturnType<typeof setTimeout> | undefined = undefined;
-  const subscription = vscode.Disposable.from(
-    watcher,
-    watcher.onDidChange(() => onConfigChange()),
-    watcher.onDidCreate(() => onConfigChange()),
-    new vscode.Disposable(() => clearTimeout(timer)),
-  );
-  const stop = () => {
-    subscription.dispose();
-    if (current.orgSelectionWatcher === subscription) {
-      current.orgSelectionWatcher = null;
-    }
-  };
-  function onConfigChange() {
-    stop();
-    if (!isStale(current) && !isBusy(current)) {
-      // The new default org becomes the target
-      current.targetOrg = null;
-      current.plan = null;
-      current.selection = null;
-      current.runId = null;
-      void showSetup().then((ready) => (ready ? reloadPlan() : undefined));
-    }
+async function connectAnotherOrg(current: BackpromotePanelState): Promise<void> {
+  if (!current.awaitingOrgSelection) {
+    current.defaultOrgAtConnect = await getDefaultTargetOrgUsername().catch(() => null);
   }
-  timer = setTimeout(stop, ORG_SELECTION_WATCH_MS);
-  current.orgSelectionWatcher = subscription;
-  vscode.commands.executeCommand("vscode-sfdx-hardis.openOrgsManager");
+  current.awaitingOrgSelection = true;
+  if (!current.orgChangeSubscription) {
+    current.orgChangeSubscription = onOrgsChanged(() => {
+      void current.applyOrgChange?.();
+    });
+  }
+  await vscode.commands.executeCommand("vscode-sfdx-hardis.openOrgsManager");
 }

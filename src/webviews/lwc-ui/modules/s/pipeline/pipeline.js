@@ -30,8 +30,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track autoFixPullRequest = null;
   @track openPullRequests = [];
   @track displayFeatureBranches = false;
-  // Promotion branches: a Pull Request a promotion took out of a branch is listed in the branch
-  // it reached, so a number appears once in the pipeline. This brings the other places back.
   // Branch modal: promotion and major-to-major Pull Requests are the vehicles that move the
   // User Stories, not stories themselves, so they are hidden unless this toggle is on
   @track modalShowPromotionPrs = false;
@@ -2233,17 +2231,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
   }
 
-  _redrawNodeCountBubbles() {
-    const mermaidSvg = this.template.querySelector(".mermaid-container svg");
-    if (!mermaidSvg) {
-      return;
-    }
-    mermaidSvg
-      .querySelectorAll(".hardis-count-bubble")
-      .forEach((bubble) => bubble.remove());
-    this._decorateMermaidNodes(mermaidSvg);
-  }
-
   handleToggleFeatureBranches(event) {
     // Get the new state from the toggle
     this.displayFeatureBranches = event.target.checked;
@@ -2438,7 +2425,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   // The Pull Requests a branch still owns: the ones a promotion carried away are listed in the
-  // branch they reached instead, unless the "show already promoted" toggle is on.
+  // branch they reached instead (see _filterModalPullRequests)
   _visibleBranchPullRequests(branchName) {
     this.modalSourcePullRequests =
       this.branchPullRequestsMap.get(branchName) || [];
@@ -2803,10 +2790,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       return;
     }
     const count = marker.getAttribute("data-count");
-    if (count === "0") {
-      return;
-    }
-    if (!count || node.querySelector(".hardis-count-bubble")) {
+    if (!count || count === "0" || node.querySelector(".hardis-count-bubble")) {
       return;
     }
     const shape = node.querySelector("rect, polygon, path");
