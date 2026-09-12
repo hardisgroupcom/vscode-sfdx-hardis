@@ -586,7 +586,8 @@ async function main() {
  * flags yet, =tokenMissing a plan blocked on the git provider check, =noHistory a sandbox
  * with no backpromote row within the scan limit (nothing selected, no window), =dirty a
  * working tree with uncommitted changes, =conflictsRemaining a run refused because a
- * prepared file still holds markers, =deployFailed a run whose deployment failed.
+ * prepared file still holds markers, =deployFailed a run whose deployment failed,
+ * =confirmIgnored a manual action confirmation that records nothing.
  */
 function answerBackpromote() {
   const variant = process.env.SF_MOCK_BACKPROMOTE_CLI || "";
@@ -626,6 +627,8 @@ function answerBackpromote() {
     plan.parentBranch = parentBranch;
     plan.backpromoteBranch.name = `backpromote/${parentBranch}/${plan.targetOrg.sandboxName}`;
   }
+  // The relative paths of the plan are relative to the git root: the workspace here
+  plan.gitRoot = process.cwd();
   const runId = flagValue("--run-id");
   if (runId) {
     plan.runId = runId;
@@ -675,6 +678,7 @@ function answerBackpromote() {
       pr.selected = false;
       pr.inWindow = false;
       pr.backpromote = null;
+      pr.beforeLastBackpromote = false;
       pr.scanned = true;
     }
   } else if (variant === "dirty") {
@@ -790,10 +794,14 @@ function answerBackpromote() {
   }
   if (args.includes("--confirm-action")) {
     plan.mode = "confirm";
-    for (const id of flagValues("--confirm-action")) {
-      const action = plan.actions.find((entry) => entry.id === id);
-      if (action) {
-        action.alreadyRunOn = new Date().toISOString();
+    // =confirmIgnored: the Pull Request of the action is outside the scan, sfdx-hardis
+    // answers ok with a warning and records nothing
+    if (variant !== "confirmIgnored") {
+      for (const id of flagValues("--confirm-action")) {
+        const action = plan.actions.find((entry) => entry.id === id);
+        if (action) {
+          action.alreadyRunOn = new Date().toISOString();
+        }
       }
     }
     outputJsonIfRequested({ status: 0, result: plan, warnings: [] }, "");

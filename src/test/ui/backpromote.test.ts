@@ -33,6 +33,11 @@ function lastOfType(sent: any[], type: string): any {
   return [...sent].reverse().find((message) => message.type === type);
 }
 
+/** The first message of a type sent after a point of the recording: the panel may have run before */
+function sentAfter(sent: any[], from: number, type: string): any {
+  return sent.slice(from).find((message) => message.type === type);
+}
+
 function backpromoteCalls(): any[] {
   return readMockLog().filter((entry) => entry.args[0] === "hardis:work:backpromote");
 }
@@ -140,6 +145,50 @@ suite("Backpromote panel UI tests", function () {
     assert.ok(planCall!.args.includes("--json"));
     assert.ok(planCall!.args.includes("--parent-branch"));
     assert.ok(planCall!.args.includes("--target-org"));
+    // The relative paths of the plan are relative to the git root sfdx-hardis reports
+    assert.ok(initData.plan.gitRoot, "the git root of the plan is known");
+  });
+
+  test("Backpromote runs the command rebuilt by the extension, never one sent by the webview", async function () {
+    panel.simulateWebviewMessage({
+      type: "runBackpromote",
+      data: {
+        command: "sf hardis:evil",
+        selection: { ...initData.selection, command: "sf hardis:evil" },
+        revision: 2,
+      },
+    });
+    const started = await waitFor(() => lastOfType(sent, "runStarted"), 5000, "the run to start");
+    // The exact command the panel showed, built from the plan and the selection
+    assert.strictEqual(started.data.command, initData.command);
+    assert.ok(started.data.command.startsWith("sf hardis:work:backpromote --auto --run-id mock7f3a --target-org "), started.data.command);
+    assert.ok(!started.data.command.includes("evil"));
+    await waitFor(() => lastOfType(sent, "runFinished"), 40000, "the run to finish");
+    const runCall = [...backpromoteCalls()].reverse().find((entry) => entry.args.includes("--auto"));
+    assert.ok(runCall, "sf hardis:work:backpromote --auto must be called");
+    assert.ok(!runCall!.args.some((arg: string) => arg.includes("evil")), JSON.stringify(runCall!.args));
+    const data = panel.getInitializationData();
+    assert.strictEqual(data.runError, null);
+    assert.strictEqual(data.runResult.result.deployed, 5);
+    assert.ok(data.runLog.length > 0, "the progress lines of the run are shown");
+  });
+
+  test("Refresh, Show earlier and the start Pull Request are ignored while a run works on the checkout", async function () {
+    const planCalls = () => backpromoteCalls().filter((entry) => entry.args.includes("--plan")).length;
+    const plansBefore = planCalls();
+    const sentBefore = sent.length;
+    panel.simulateWebviewMessage({ type: "runBackpromote", data: { selection: panel.getInitializationData().selection, revision: 3 } });
+    // The run is marked as started before its first await: these arrive while it runs
+    panel.simulateWebviewMessage({ type: "refresh" });
+    panel.simulateWebviewMessage({ type: "showEarlier" });
+    panel.simulateWebviewMessage({ type: "changeStartPullRequest", data: { number: 417 } });
+    await waitFor(() => sent.slice(sentBefore).find((entry) => entry.type === "runFinished"), 40000, "the run to finish");
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    assert.strictEqual(planCalls(), plansBefore, "no --plan call while the run works on the checkout");
+    const data = panel.getInitializationData();
+    assert.strictEqual(data.running, false);
+    assert.strictEqual(data.plan.window.startPullRequest, 415);
+    assert.ok(data.runResult?.result, "the run result is shown");
   });
 
   test("the extension summarizes every selection change", async function () {
@@ -241,7 +290,8 @@ suite("Backpromote panel UI tests", function () {
       data: { selection: { ...panel.getInitializationData().selection, diffDecisions: { "ApexClass:InvoiceCalculator": "merge", "Layout:Case-Case Layout": "git" } }, revision: 11 },
     });
     await waitFor(() => sent.find((entry) => entry.type === "selectionSummary" && entry.data.revision === 11), 5000, "the summary of the merge decision");
-    const absolute = path.join(initData.workspaceRoot, INVOICE_CALCULATOR_FILE);
+    // The prepared file is watched under the git root of the plan
+    const absolute = path.join(panel.getInitializationData().plan.gitRoot, INVOICE_CALCULATOR_FILE);
     writeWorkspaceFile(absolute, "public with sharing class InvoiceCalculator {\n}\n");
     const document = await vscode.workspace.openTextDocument(vscode.Uri.file(absolute));
     const edit = new vscode.WorkspaceEdit();
@@ -257,16 +307,17 @@ suite("Backpromote panel UI tests", function () {
     assert.deepStrictEqual(solved.data.summary.blockers, []);
     await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
 
+    const sentBefore = sent.length;
     panel.simulateWebviewMessage({
       type: "runBackpromote",
       data: { selection: { ...solved.data.selection, command: "sf hardis:evil" }, revision: 11 },
     });
-    const started = await waitFor(() => lastOfType(sent, "runStarted"), 5000, "the run to start");
+    const started = await waitFor(() => sentAfter(sent, sentBefore, "runStarted"), 5000, "the run to start");
     assert.ok(started.data.command.startsWith("sf hardis:work:backpromote --auto --run-id"), started.data.command);
     assert.ok(started.data.command.includes(`--on-diff ${INVOICE_CALCULATOR_FILE}=merge`), started.data.command);
     assert.ok(started.data.command.includes("--from-pull-request 417"), started.data.command);
     assert.ok(!started.data.command.includes("evil"));
-    await waitFor(() => lastOfType(sent, "runFinished"), 40000, "the run to finish");
+    await waitFor(() => sentAfter(sent, sentBefore, "runFinished"), 40000, "the run to finish");
     const data = panel.getInitializationData();
     assert.strictEqual(data.running, false);
     assert.strictEqual(data.runError, null);
@@ -281,6 +332,7 @@ suite("Backpromote panel UI tests", function () {
   });
 
   test("Done in the sandbox records the manual action with sfdx-hardis", async function () {
+    const sentBefore = sent.length;
     panel.simulateWebviewMessage({ type: "confirmAction", data: { actionId: "enable-sla-approval" } });
     const data = await waitFor(
       () => {
@@ -296,7 +348,24 @@ suite("Backpromote panel UI tests", function () {
     assert.ok(call, "sf hardis:work:backpromote --confirm-action must be called");
     // The result of the run stays on screen, the button is given back to the webview
     assert.ok(data.runResult, "the run result is kept");
-    await waitFor(() => lastOfType(sent, "confirmActionFinished"), 5000, "the confirmation to be released");
+    await waitFor(() => sentAfter(sent, sentBefore, "confirmActionFinished"), 5000, "the confirmation to be released");
+  });
+
+  test("Done in the sandbox is refused while a run works on the checkout: both write the Pull Request comment", async function () {
+    const confirmCalls = () => backpromoteCalls().filter((entry) => entry.args.includes("--confirm-action")).length;
+    const confirmsBefore = confirmCalls();
+    const sentBefore = sent.length;
+    // The plan answered by the run holds no prepared file: Overwrite both differing items so that the run is allowed
+    const selection = {
+      ...panel.getInitializationData().selection,
+      diffDecisions: { "ApexClass:InvoiceCalculator": "git", "Layout:Case-Case Layout": "git" },
+    };
+    panel.simulateWebviewMessage({ type: "runBackpromote", data: { selection, revision: 12 } });
+    panel.simulateWebviewMessage({ type: "confirmAction", data: { actionId: "load-sla-thresholds" } });
+    // The button is given back at once, nothing is called
+    await waitFor(() => sentAfter(sent, sentBefore, "confirmActionFinished"), 5000, "the confirmation to be released");
+    await waitFor(() => sentAfter(sent, sentBefore, "runFinished"), 40000, "the run to finish");
+    assert.strictEqual(confirmCalls(), confirmsBefore, "no --confirm-action call during the run");
   });
 
   test("after a successful run, Refresh no longer pins the start Pull Request and drops the result", async function () {
@@ -323,6 +392,40 @@ suite("Backpromote panel UI tests", function () {
     assert.ok(call.args.includes("--scan-limit"), JSON.stringify(call.args));
     // The fixture scan limit is 100: one page more
     assert.strictEqual(call.args[call.args.indexOf("--scan-limit") + 1], "200");
+    // A manual action of a Pull Request found by the wider scan is confirmed with the same scan
+    const sentBefore = sent.length;
+    panel.simulateWebviewMessage({ type: "confirmAction", data: { actionId: "enable-sla-approval" } });
+    await waitFor(() => sentAfter(sent, sentBefore, "confirmActionFinished"), 20000, "the confirmation to be released");
+    const confirmCall = [...backpromoteCalls()].reverse().find((entry) => entry.args.includes("--confirm-action"));
+    assert.strictEqual(confirmCall!.args[confirmCall!.args.indexOf("--scan-limit") + 1], "200", JSON.stringify(confirmCall!.args));
+    assert.ok(panel.getInitializationData().plan.actions.find((entry: any) => entry.id === "enable-sla-approval").alreadyRunOn);
+  });
+
+  test("a manual action sfdx-hardis did not record is reported, not shown as done", async function () {
+    process.env.SF_MOCK_BACKPROMOTE_CLI = "confirmIgnored";
+    const original = vscode.window.showErrorMessage;
+    const errors: string[] = [];
+    try {
+      (vscode.window as any).showErrorMessage = async (message: string) => {
+        errors.push(message);
+        return undefined;
+      };
+    } catch {
+      delete process.env.SF_MOCK_BACKPROMOTE_CLI;
+      this.skip();
+    }
+    try {
+      await openPanel();
+      const sentBefore = sent.length;
+      panel.simulateWebviewMessage({ type: "confirmAction", data: { actionId: "enable-sla-approval" } });
+      await waitFor(() => sentAfter(sent, sentBefore, "confirmActionFinished"), 20000, "the confirmation to be released");
+      assert.ok(errors.some((message) => message.includes("Enable SLA approval in Setup")), JSON.stringify(errors));
+      const action = panel.getInitializationData().plan.actions.find((entry: any) => entry.id === "enable-sla-approval");
+      assert.strictEqual(action.alreadyRunOn, null);
+    } finally {
+      (vscode.window as any).showErrorMessage = original;
+      delete process.env.SF_MOCK_BACKPROMOTE_CLI;
+    }
   });
 
   test("picking another start Pull Request after a run drops the previous result", async function () {
@@ -448,6 +551,8 @@ suite("Backpromote panel UI tests", function () {
       assert.strictEqual(initData.plan.scan.found, false);
       assert.strictEqual(initData.plan.window, null);
       assert.deepStrictEqual(initData.summary.blockers, ["noWindow"]);
+      // No backpromote found: no Pull Request is counted as backpromoted either
+      assert.ok(initData.plan.pullRequests.every((pr: any) => pr.beforeLastBackpromote === false && pr.backpromote === null));
       panel.simulateWebviewMessage({ type: "changeStartPullRequest", data: { number: 412 } });
       const data = await waitFor(
         () => {
@@ -541,5 +646,25 @@ suite("Backpromote panel UI tests", function () {
     assert.strictEqual(initData.running, false);
     assert.strictEqual(initData.runResult, null);
     assert.strictEqual(initData.summary.canRun, true);
+  });
+
+  test("the commands tree and the DevOps Pipeline open the panel", async function () {
+    // The commands tree entry runs the command of the panel
+    const commands = await vscode.commands.getCommands(true);
+    assert.ok(commands.includes("vscode-sfdx-hardis.showBackpromote"), "the command of the tree entry is registered");
+    await openPanel();
+    const opened = panel;
+    assert.strictEqual(initData.plan.status, "ok");
+    const plansBefore = backpromoteCalls().filter((entry) => entry.args.includes("--plan")).length;
+    // The Backpromote card of the DevOps Pipeline posts the same command through runVsCodeCommand:
+    // with the panel already open, it only brings it back, no new plan is computed
+    panel.simulateWebviewMessage({
+      type: "runVsCodeCommand",
+      data: { command: "vscode-sfdx-hardis.showBackpromote" },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    assert.strictEqual(panelManager.getPanel(LWC_ID), opened, "the same panel");
+    assert.strictEqual(backpromoteCalls().filter((entry) => entry.args.includes("--plan")).length, plansBefore);
+    assert.strictEqual(panel.getInitializationData().plan.status, "ok");
   });
 });

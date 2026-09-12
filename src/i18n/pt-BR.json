@@ -187,6 +187,7 @@
   "backpromoteCompare": "Comparar",
   "backpromoteCompareTooltip": "Abrir o editor de diff do VS Code: versão da sandbox e versão da branch pai. Flows também abrem no diff de texto.",
   "backpromoteConfirmActionFailed": "A ação manual não pôde ser registrada: {{message}}",
+  "backpromoteConfirmActionNotRecorded": "O sfdx-hardis não registrou a ação manual {{label}}: seu Pull Request pode estar fora do histórico verificado. Procure Pull Requests anteriores e tente novamente.",
   "backpromoteConflictLeft": "{{count}} conflitos restantes",
   "backpromoteConflictLeftOne": "1 conflito restante",
   "backpromoteConnectOtherOrg": "Conectar outra org",

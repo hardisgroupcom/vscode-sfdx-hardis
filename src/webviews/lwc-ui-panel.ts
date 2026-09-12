@@ -295,6 +295,28 @@ export class LwcUiPanel {
   }
 
   /**
+   * Pushes a new state of the panel, once it is initialized: the data becomes the
+   * initialization data (a webview that boots later gets it with the translations and
+   * the theme, and UI tests read it), and travels as a `state` message that the LWC
+   * merges like an initialization, without the translations bundle.
+   * @param data The whole state of the panel, or the part that changed
+   */
+  public sendStateUpdate(data: any): void {
+    if (this._isDisposed) {
+      return;
+    }
+    this.initializationData = LwcUiPanel.resolveImagePathsInData(
+      this.panel.webview,
+      this.extensionUri,
+      data,
+    );
+    this.panel.webview.postMessage({
+      type: "state",
+      data: this.initializationData,
+    });
+  }
+
+  /**
    * Send a message to the webview
    * @param message The message to send
    */
@@ -512,8 +534,16 @@ export class LwcUiPanel {
       );
       return;
     }
-    // Arguments are only forwarded to this extension's own commands
-    const args = isOwnCommand && Array.isArray(data.args) ? data.args : [];
+    // Arguments are only forwarded to this extension's own commands, and to the
+    // settings editor as the query that filters it (a string)
+    const args = Array.isArray(data.args)
+      ? isOwnCommand
+        ? data.args
+        : data.command === "workbench.action.openSettings" &&
+            typeof data.args[0] === "string"
+          ? [data.args[0]]
+          : []
+      : [];
     try {
       await vscode.commands.executeCommand(data.command, ...args);
     } catch (error) {

@@ -187,6 +187,7 @@
   "backpromoteCompare": "Porównaj",
   "backpromoteCompareTooltip": "Otwórz edytor diff VS Code: wersja z sandbox i wersja z branch nadrzędnego. Flow również otwierają się w diff tekstowym.",
   "backpromoteConfirmActionFailed": "Nie udało się zapisać ręcznej akcji: {{message}}",
+  "backpromoteConfirmActionNotRecorded": "sfdx-hardis nie zapisał ręcznej akcji {{label}}: jej Pull Request może znajdować się poza przeszukaną historią. Należy wyszukać wcześniejsze Pull Requesty i spróbować ponownie.",
   "backpromoteConflictLeft": "Pozostało {{count}} konfliktów",
   "backpromoteConflictLeftOne": "Pozostał 1 konflikt",
   "backpromoteConnectOtherOrg": "Połącz z inną org",

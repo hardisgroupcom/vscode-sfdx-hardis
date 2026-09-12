@@ -25,6 +25,24 @@ function fileName(filePath) {
   return String(filePath).split("/").pop();
 }
 
+function isDifferingComparison(comparison) {
+  return (
+    comparison.status === "different" || comparison.status === "pendingInOrg"
+  );
+}
+
+// The comparison entries of a plan grouped by item, built once per plan
+function groupComparisonsByItem(plan) {
+  const byItem = new Map();
+  for (const comparison of plan ? plan.comparison : []) {
+    if (!byItem.has(comparison.item)) {
+      byItem.set(comparison.item, []);
+    }
+    byItem.get(comparison.item).push(comparison);
+  }
+  return byItem;
+}
+
 export default class Backpromote extends SharedMixin(LightningElement) {
   loading = true;
   planError = null;
@@ -36,6 +54,7 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   targetOrg = null;
   parentBranch = null;
   plan = null;
+  comparisonsByItem = new Map();
   selection = null;
   summary = null;
   command = null;
@@ -96,11 +115,13 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     }
     if (payload.plan === null) {
       this.plan = null;
+      this.comparisonsByItem = new Map();
       this.summary = null;
       this.command = null;
     }
     if (payload.plan) {
       this.plan = payload.plan;
+      this.comparisonsByItem = groupComparisonsByItem(payload.plan);
       this.parentBranch = payload.plan.parentBranch;
       this.applySelectionPayload(payload);
       this.targetOrgLabel = payload.targetOrgLabel || "";
@@ -128,6 +149,10 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   @api
   handleMessage(type, data) {
     switch (type) {
+      case "state":
+        // A state push of the extension: same merge as the initialization, without the translations
+        this.initialize(data);
+        break;
       case "planProgress":
         this.planProgress = this.loading ? data || null : null;
         break;
@@ -159,7 +184,8 @@ export default class Backpromote extends SharedMixin(LightningElement) {
         this.runError = null;
         break;
       case "runProgress":
-        this.runLog = (data && data.events) || [];
+        // Only the steps appended since the last message travel
+        this.runLog = [...this.runLog, ...((data && data.appended) || [])];
         break;
       case "runFinished":
         this.running = false;
@@ -305,8 +331,13 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     );
   }
 
+  // A new plan is refused by the extension while a run or a prepare works on the checkout
   get pickersDisabled() {
     return this.running || this.preparing.length > 0;
+  }
+
+  get refreshDisabled() {
+    return this.loading || this.pickersDisabled;
   }
 
   get tokenVariablesLabel() {
@@ -536,6 +567,9 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   }
 
   handleScanEarlier() {
+    if (this.pickersDisabled) {
+      return;
+    }
     this.loading = true;
     window.sendMessageToVSCode({ type: "showEarlier" });
   }
@@ -641,16 +675,11 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   }
 
   itemComparisons(key) {
-    return this.plan
-      ? this.plan.comparison.filter((comparison) => comparison.item === key)
-      : [];
+    return this.comparisonsByItem.get(key) || [];
   }
 
   itemDiffers(key) {
-    return this.itemComparisons(key).some(
-      (comparison) =>
-        comparison.status === "different" || comparison.status === "pendingInOrg",
-    );
+    return this.itemComparisons(key).some(isDifferingComparison);
   }
 
   itemMarkers(key) {
@@ -867,10 +896,23 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     });
   }
 
+  // The VS Code diff editor between the sandbox version and the parent branch version of
+  // each differing file of the item (both kept in the cache of sfdx-hardis)
   handleCompare(event) {
     const key = event.currentTarget.dataset.key;
-    if (key) {
-      window.sendMessageToVSCode({ type: "compareItem", data: { itemKey: key } });
+    for (const comparison of this.itemComparisons(key)) {
+      const { sandbox, parentHead } = comparison.versions;
+      if (!isDifferingComparison(comparison) || !sandbox || !parentHead) {
+        continue;
+      }
+      window.sendMessageToVSCode({
+        type: "openVscodeDiff",
+        data: {
+          leftPath: sandbox,
+          rightPath: parentHead,
+          title: `${fileName(comparison.file)}: ${this.targetOrgLabel} (org) <-> ${this.plan.parentBranch} (git)`,
+        },
+      });
     }
   }
 
@@ -990,7 +1032,8 @@ export default class Backpromote extends SharedMixin(LightningElement) {
         stateLabel,
         stateClass,
         showConfirm,
-        confirming: this.confirmingActions.includes(action.id),
+        // The extension refuses the confirmation while a run or a prepare works on the checkout
+        confirmDisabled: this.confirmingActions.includes(action.id) || this.pickersDisabled,
       };
     });
   }
@@ -1017,7 +1060,7 @@ export default class Backpromote extends SharedMixin(LightningElement) {
 
   handleConfirmAction(event) {
     const id = event.currentTarget.dataset.id;
-    if (!id) {
+    if (!id || this.pickersDisabled) {
       return;
     }
     this.confirmingActions = [...this.confirmingActions, id];
@@ -1126,10 +1169,11 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     );
   }
 
-  // After a successful run, or when nothing prepared waits in the checkout: a merged file not
-  // committed yet would be refused by the checkout, or carried onto the story branch
+  // After a successful run (the plan is then the answer of the run), or when nothing prepared
+  // waits in the checkout: a merged file not committed yet would be refused by the checkout,
+  // or carried onto the story branch
   get showBackToBranch() {
-    const plan = this.runResult || this.plan;
+    const plan = this.plan;
     return (
       !!plan &&
       plan.checkout.onBackpromoteBranch &&
@@ -1140,8 +1184,9 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   }
 
   get backToBranchLabel() {
-    const plan = this.runResult || this.plan;
-    return plan ? this.t("backpromoteBackToBranch", { branch: plan.checkout.originalBranch }) : "";
+    return this.plan
+      ? this.t("backpromoteBackToBranch", { branch: this.plan.checkout.originalBranch })
+      : "";
   }
 
   get runLogRows() {
@@ -1264,7 +1309,7 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       lines.push({
         key: "pushed",
         icon: "utility:upload",
-        text: this.t("backpromoteResultPushed", { branch: this.runResult.backpromoteBranch.name }),
+        text: this.t("backpromoteResultPushed", { branch: this.plan.backpromoteBranch.name }),
       });
     }
     return lines;
@@ -1424,18 +1469,16 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   // Page actions
   // ---------------------------------------------------------------------------
 
+  // Refresh, and Try again of the error states: the setup and the plan are loaded again
   handleRefresh() {
+    if (this.pickersDisabled) {
+      return;
+    }
     this.loading = true;
     this.planError = null;
     this.runResult = null;
     this.runError = null;
     window.sendMessageToVSCode({ type: "refresh" });
-  }
-
-  handleRetry() {
-    this.loading = true;
-    this.planError = null;
-    window.sendMessageToVSCode({ type: "retryInit" });
   }
 
   handleOpenSetup() {
@@ -1453,8 +1496,12 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     window.sendMessageToVSCode({ type: "selectOrg" });
   }
 
+  // The git provider tokens can be set in the extension settings
   handleOpenSettings() {
-    window.sendMessageToVSCode({ type: "openSettings" });
+    window.sendMessageToVSCode({
+      type: "runVsCodeCommand",
+      data: { command: "workbench.action.openSettings", args: ["vsCodeSfdxHardis"] },
+    });
   }
 
   handleOpenSourceControl() {

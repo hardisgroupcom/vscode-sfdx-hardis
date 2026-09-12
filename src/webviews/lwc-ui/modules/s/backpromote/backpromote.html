@@ -9,7 +9,7 @@
         <p class="hardis-page-subtitle">{i18n.backpromotePanelSubtitle}</p>
       </div>
       <div class="hardis-page-head-actions">
-        <lightning-button variant="neutral" icon-name="utility:refresh" label={i18n.refreshLabel} onclick={handleRefresh} disabled={loading}></lightning-button>
+        <lightning-button variant="neutral" icon-name="utility:refresh" label={i18n.refreshLabel} onclick={handleRefresh} disabled={refreshDisabled}></lightning-button>
       </div>
     </div>
 
@@ -26,7 +26,7 @@
           <div class="hardis-empty-actions">
             <button type="button" class="hardis-textlink" onclick={handleOpenDoc}>{i18n.backpromoteReadDoc}</button>
             <lightning-button variant="neutral" icon-name="utility:settings" label={i18n.backpromoteOpenSettings} onclick={handleOpenSettings}></lightning-button>
-            <lightning-button variant="neutral" class="hardis-btn-tinted-blue" icon-name="utility:refresh" label={i18n.tryAgainLabel} onclick={handleRetry}></lightning-button>
+            <lightning-button variant="neutral" class="hardis-btn-tinted-blue" icon-name="utility:refresh" label={i18n.tryAgainLabel} onclick={handleRefresh}></lightning-button>
           </div>
         </div>
       </div>
@@ -90,7 +90,7 @@
             <p>{planErrorMessage}</p>
           </div>
           <div class="hardis-empty-actions">
-            <lightning-button variant="neutral" class="hardis-btn-tinted-blue" label={i18n.tryAgainLabel} onclick={handleRetry}></lightning-button>
+            <lightning-button variant="neutral" class="hardis-btn-tinted-blue" label={i18n.tryAgainLabel} onclick={handleRefresh}></lightning-button>
           </div>
         </div>
       </div>
@@ -175,7 +175,7 @@
                   <button type="button" class="hardis-textlink" onclick={handleShowAllPullRequests}>{i18n.backpromoteShowEarlier}</button>
                 </template>
                 <template if:true={canScanEarlier}>
-                  <button type="button" class="hardis-textlink" onclick={handleScanEarlier}>{i18n.backpromoteScanEarlier}</button>
+                  <button type="button" class="hardis-textlink" onclick={handleScanEarlier} disabled={pickersDisabled}>{i18n.backpromoteScanEarlier}</button>
                 </template>
               </div>
             </template>
@@ -302,7 +302,7 @@
                       <span class={row.stateClass}><span class="hardis-pill-dot"></span>{row.stateLabel}</span>
                     </template>
                     <template if:true={row.showConfirm}>
-                      <lightning-button variant="neutral" class="hardis-btn-tinted-green" icon-name="utility:check" label={i18n.backpromoteDoneInSandbox} title={i18n.backpromoteDoneInSandboxTooltip} data-id={row.id} onclick={handleConfirmAction} disabled={row.confirming}></lightning-button>
+                      <lightning-button variant="neutral" class="hardis-btn-tinted-green" icon-name="utility:check" label={i18n.backpromoteDoneInSandbox} title={i18n.backpromoteDoneInSandboxTooltip} data-id={row.id} onclick={handleConfirmAction} disabled={row.confirmDisabled}></lightning-button>
                     </template>
                   </span>
                 </div>

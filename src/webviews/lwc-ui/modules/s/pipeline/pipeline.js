@@ -2506,6 +2506,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (majors.includes(source) && majors.includes(target)) {
       return true;
     }
+    // A backpromote/<parent>/<sandbox> branch carries a sandbox merge, never a story
+    if (/^backpromote\/.+\/[^/]+$/.test(source)) {
+      return true;
+    }
     // A promotion only exists as such when the project enabled the feature: without it, a
     // promotion/ branch is an ordinary branch, exactly as the deployment jobs treat it
     if (this.pipelineData?.promotionBranches?.enabled !== true) {
@@ -2514,9 +2518,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (pr.isPromotion === true) {
       return true;
     }
-    // <YYYY-MM-DD>-<HHMM>, with -<n> when the name was taken, and the <YYYY-MM-DD>-<counter>
-    // names of the first releases (parsePromotionBranchName checks the time, a fallback does not)
-    return /^promotion\/[^/]+\/[^/]+\/\d{4}-\d{2}-\d{2}-\d+(?:-\d+)?$/.test(
+    // <YYYY-MM-DD>-<HHMM> where HHMM is a time of day, with -<n> when the name was taken,
+    // or the <YYYY-MM-DD>-<counter> names of the first releases (no second counter then)
+    return /^promotion\/[^/]+\/[^/]+\/\d{4}-\d{2}-\d{2}-(?:([01]\d|2[0-3])[0-5]\d(?:-\d+)?|\d+)$/.test(
       source,
     );
   }

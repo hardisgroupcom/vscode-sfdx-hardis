@@ -19,9 +19,11 @@ import {
   buildPrepareCommand,
   buildResetCommand,
   buildSelectionPayload,
+  comparisonsByItem,
   computeItemState,
   computeSelectionSummary,
   countConflictMarkerBlocks,
+  differingComparisons,
   extractPlanDocument,
   getBackpromoteErrorMessage,
   getTargetOrgDisplayName,
@@ -84,18 +86,49 @@ suite("backpromotePanelUtils", () => {
     assert.strictEqual(parseMetadataKey(":x"), null);
   });
 
-  test("quoteCommandValue quotes spaces and refuses shell syntax", () => {
-    assert.strictEqual(quoteCommandValue("integration"), "integration");
-    assert.strictEqual(
-      quoteCommandValue("Layout:Opportunity-Sales Layout"),
-      '"Layout:Opportunity-Sales Layout"',
-    );
-    // A lone dollar sign is part of the unfiled$public folder names: single quoted, never refused
-    assert.strictEqual(quoteCommandValue("Report:unfiled$public/Pipeline"), "'Report:unfiled$public/Pipeline'");
-    for (const unsafe of ['a"b', "a'b", "a$(b)", "a${b}", "a`b", "a\\b", "a && b", "a || b", "a\nb", ""]) {
-      assert.throws(() => quoteCommandValue(unsafe), `${JSON.stringify(unsafe)} must be refused`);
+  test("quoteCommandValue quotes spaces and refuses shell syntax, by platform", () => {
+    for (const platform of ["win32", "linux", "darwin"]) {
+      assert.strictEqual(quoteCommandValue("integration", platform), "integration");
+      assert.strictEqual(
+        quoteCommandValue("Layout:Opportunity-Sales Layout", platform),
+        '"Layout:Opportunity-Sales Layout"',
+        platform,
+      );
+      for (const unsafe of ['a"b', "a$(b)", "a${b}", "a`b", "a\\b", "a && b", "a || b", "a\nb", "a\tb", ""]) {
+        assert.throws(() => quoteCommandValue(unsafe, platform), `${JSON.stringify(unsafe)} must be refused on ${platform}`);
+      }
+      assert.strictEqual(isSafeCommandValue("user$(whoami)@example.com", platform), false);
+      // A single quote is a plain character for cmd.exe and inside double quotes for /bin/sh
+      assert.strictEqual(quoteCommandValue("Layout:Sam's Layout", platform), "\"Layout:Sam's Layout\"", platform);
     }
-    assert.strictEqual(isSafeCommandValue("user$(whoami)@example.com"), false);
+    // A lone dollar sign is part of the unfiled$public folder names. cmd.exe (the shell of
+    // child_process.exec on Windows) never expands it and takes single quotes literally:
+    // double quotes there, single quotes for /bin/sh which expands $ inside double quotes
+    assert.strictEqual(quoteCommandValue("Report:unfiled$public/Pipeline", "win32"), '"Report:unfiled$public/Pipeline"');
+    assert.strictEqual(quoteCommandValue("Report:unfiled$public/Pipeline", "linux"), "'Report:unfiled$public/Pipeline'");
+    assert.strictEqual(quoteCommandValue("Report:unfiled$public/Pipeline", "darwin"), "'Report:unfiled$public/Pipeline'");
+    // A dollar sign next to a single quote cannot be protected by /bin/sh: refused there only
+    assert.strictEqual(quoteCommandValue("Report:unfiled$public/Sam's", "win32"), "\"Report:unfiled$public/Sam's\"");
+    assert.throws(() => quoteCommandValue("Report:unfiled$public/Sam's", "linux"));
+    assert.strictEqual(isSafeCommandValue("Report:unfiled$public/Sam's", "linux"), false);
+    assert.strictEqual(isSafeCommandValue("Report:unfiled$public/Sam's", "win32"), true);
+    // The default platform is the one of the extension host
+    assert.strictEqual(quoteCommandValue("a b"), '"a b"');
+  });
+
+  test("the comparison entries of a plan are grouped by item once", () => {
+    const plan = loadPlan();
+    const byItem = comparisonsByItem(plan);
+    assert.strictEqual(byItem, comparisonsByItem(plan), "the same map for the same plan");
+    assert.deepStrictEqual(
+      byItem.get("ApexClass:InvoiceCalculator")?.map((comparison) => comparison.file),
+      [INVOICE_CALCULATOR_FILE, `${INVOICE_CALCULATOR_FILE}-meta.xml`],
+    );
+    assert.strictEqual(byItem.get("Profile:Admin"), undefined);
+    assert.deepStrictEqual(differingComparisons(plan, "ApexClass:InvoiceCalculator").map((comparison) => comparison.file), [INVOICE_CALCULATOR_FILE]);
+    assert.deepStrictEqual(differingComparisons(plan, "Profile:Admin"), []);
+    // Another plan object (a new answer of sfdx-hardis) gets its own map
+    assert.notStrictEqual(comparisonsByItem(loadPlan()), byItem);
   });
 
   test("only sf hardis:work:backpromote commands without chaining are allowed", () => {
@@ -131,7 +164,13 @@ suite("backpromotePanelUtils", () => {
     assert.strictEqual(plan.comparison.length, 6);
     assert.strictEqual(plan.window?.startPullRequest, 415);
     assert.strictEqual(plan.targetOrg.sandboxName, "dev1");
+    assert.strictEqual(plan.gitRoot, "/tmp/mock-workspace");
     assert.strictEqual(plan.pullRequests[3].backpromote?.user, "Sam Dubois");
+    // #409 is older than #412, the newest Pull Request backpromoted to dev1: counted as backpromoted
+    assert.deepStrictEqual(
+      plan.pullRequests.map((pr) => [pr.number, pr.beforeLastBackpromote]),
+      [[418, false], [417, false], [415, false], [412, false], [409, true]],
+    );
     assert.strictEqual(normalizeBackpromotePlan({ planVersion: 2, status: "ready" }), null);
     assert.strictEqual(normalizeBackpromotePlan({ version: 3, status: "weird" }), null);
     // A partial plan never crashes the panel
@@ -140,6 +179,7 @@ suite("backpromotePanelUtils", () => {
     assert.deepStrictEqual(partial?.comparison, []);
     assert.strictEqual(partial?.window, null);
     assert.strictEqual(partial?.checkout.clean, true);
+    assert.strictEqual(partial?.gitRoot, "");
   });
 
   test("extractPlanDocument reads the plan of a success and the plan attached to an error", () => {
@@ -370,6 +410,12 @@ suite("backpromotePanelUtils", () => {
       buildConfirmActionCommand(TARGET, ["enable-sla-approval"]),
       `sf hardis:work:backpromote --confirm-action enable-sla-approval --run-id mock7f3a --target-org ${USERNAME} --parent-branch integration --from-pull-request 415 --json`,
     );
+    // The scan the plan was made with: sfdx-hardis only records an action of a Pull Request within its scan
+    assert.strictEqual(
+      buildConfirmActionCommand(TARGET, ["enable-sla-approval"], { scanLimit: 200 }),
+      `sf hardis:work:backpromote --confirm-action enable-sla-approval --run-id mock7f3a --target-org ${USERNAME} --parent-branch integration --from-pull-request 415 --scan-limit 200 --json`,
+    );
+    assert.ok(!buildConfirmActionCommand(TARGET, ["enable-sla-approval"], { scanLimit: 100 }).includes("--scan-limit"));
     assert.strictEqual(
       buildResetCommand(TARGET),
       `sf hardis:work:backpromote --reset --auto --target-org ${USERNAME} --parent-branch integration --json`,
@@ -396,14 +442,19 @@ suite("backpromotePanelUtils", () => {
     ];
     const choices = buildOrgChoices(
       [
-        { username: "sam@mycompany.com.dev1", alias: "dev1", isSandbox: true, isDefaultUsername: true },
-        { username: "alex@mycompany.com.dev2", isSandbox: true },
+        { username: "sam@mycompany.com.dev1", alias: "dev1", orgType: "sandbox", isSandbox: true, isDefaultUsername: true },
+        { username: "alex@mycompany.com.dev2", orgType: "sandbox", isSandbox: true },
         // Another user of the UAT sandbox: still the UAT org
-        { username: "sam@mycompany.com.uat", alias: "UAT-sam", isSandbox: true },
-        { username: "deploy@mycompany.com", alias: "PROD", isSandbox: false },
-        { username: "test-x@example.com", alias: "scratch", isScratch: true },
-        { username: "old@mycompany.com.dead", isSandbox: true, status: "Expired" },
-        { username: "bad$(x)@mycompany.com.dev3", isSandbox: true },
+        { username: "sam@mycompany.com.uat", alias: "UAT-sam", orgType: "sandbox", isSandbox: true },
+        { username: "deploy@mycompany.com", alias: "PROD", orgType: "production", isSandbox: false },
+        { username: "test-x@example.com", alias: "scratch", orgType: "scratch", isScratch: true },
+        // A Developer Edition org is "other" for listAllOrgs: selectable
+        { username: "dev@example.com", alias: "devEd", orgType: "other", instanceUrl: "https://mycompany-dev-ed.develop.my.salesforce.com" },
+        { username: "old@mycompany.com.dead", orgType: "sandbox", isSandbox: true, status: "Expired" },
+        { username: "bad$(x)@mycompany.com.dev3", orgType: "sandbox", isSandbox: true },
+        // Without the orgType of listAllOrgs, the same rule is applied on the flags and the URL
+        { username: "legacy@mycompany.com", isSandbox: false, instanceUrl: "https://mycompany.my.salesforce.com" },
+        { username: "legacy-dev@example.com", isSandbox: false, instanceUrl: "https://legacy-dev-ed.develop.my.salesforce.com" },
       ],
       majorOrgs,
     );
@@ -412,7 +463,10 @@ suite("backpromotePanelUtils", () => {
       [
         ["sam@mycompany.com.dev1", null, null],
         ["alex@mycompany.com.dev2", null, null],
+        ["dev@example.com", null, null],
+        ["legacy-dev@example.com", null, null],
         ["test-x@example.com", null, null],
+        ["legacy@mycompany.com", "production", null],
         ["deploy@mycompany.com", "production", null],
         ["sam@mycompany.com.uat", "majorOrg", "uat"],
       ],
@@ -458,10 +512,12 @@ suite("backpromotePanelUtils", () => {
     assert.strictEqual(getBackpromoteErrorMessage(null), "");
   });
 
-  test("getTargetOrgDisplayName prefers the sandbox name, then the instance URL label", () => {
+  test("getTargetOrgDisplayName prefers the sandbox name, then the short host of the status bar", () => {
     assert.strictEqual(getTargetOrgDisplayName(loadPlan().targetOrg), "dev1");
     assert.strictEqual(getTargetOrgDisplayName({ instanceUrl: "https://mycompany--dev-sam.sandbox.my.salesforce.com", username: USERNAME }), "mycompany--dev-sam");
+    assert.strictEqual(getTargetOrgDisplayName({ instanceUrl: "https://mycompany-dev-ed.develop.my.salesforce.com", username: USERNAME }), "mycompany-dev-ed");
     assert.strictEqual(getTargetOrgDisplayName({ instanceUrl: "https://test.salesforce.com", username: USERNAME }), USERNAME);
+    assert.strictEqual(getTargetOrgDisplayName({ instanceUrl: "", alias: "dev1", username: USERNAME }), "dev1");
     assert.strictEqual(getTargetOrgDisplayName(null), "");
   });
 

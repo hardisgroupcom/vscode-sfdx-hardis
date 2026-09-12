@@ -187,6 +187,7 @@
   "backpromoteCompare": "比較",
   "backpromoteCompareTooltip": "VS Code の diff エディターを開きます: sandbox 版と親 branch 版。フローもテキスト diff で開きます。",
   "backpromoteConfirmActionFailed": "手動アクションを記録できませんでした: {{message}}",
+  "backpromoteConfirmActionNotRecorded": "sfdx-hardis は手動アクション {{label}} を記録しませんでした。その Pull Request は走査した履歴の範囲外の可能性があります。以前の Pull Request を検索してから、もう一度お試しください。",
   "backpromoteConflictLeft": "残り {{count}} 件の競合",
   "backpromoteConflictLeftOne": "残り 1 件の競合",
   "backpromoteConnectOtherOrg": "別の組織に接続",

@@ -16,6 +16,7 @@
   },
   "parentBranch": "integration",
   "allowedParentBranches": ["integration", "uat"],
+  "gitRoot": "/tmp/mock-workspace",
   "backpromoteBranch": {
     "name": "backpromote/integration/dev1",
     "existsOnOrigin": true,
@@ -44,6 +45,7 @@
       "actionCount": 1,
       "backpromote": null,
       "beforeRefresh": false,
+      "beforeLastBackpromote": false,
       "selected": false,
       "inWindow": true,
       "scanned": true
@@ -60,6 +62,7 @@
       "actionCount": 0,
       "backpromote": null,
       "beforeRefresh": false,
+      "beforeLastBackpromote": false,
       "selected": false,
       "inWindow": true,
       "scanned": true
@@ -76,6 +79,7 @@
       "actionCount": 2,
       "backpromote": null,
       "beforeRefresh": false,
+      "beforeLastBackpromote": false,
       "selected": true,
       "inWindow": true,
       "scanned": true
@@ -97,6 +101,7 @@
         "leftOut": []
       },
       "beforeRefresh": false,
+      "beforeLastBackpromote": false,
       "selected": false,
       "inWindow": false,
       "scanned": true
@@ -113,6 +118,7 @@
       "actionCount": 0,
       "backpromote": null,
       "beforeRefresh": false,
+      "beforeLastBackpromote": true,
       "selected": false,
       "inWindow": false,
       "scanned": false

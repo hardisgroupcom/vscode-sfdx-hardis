@@ -23,8 +23,8 @@ import {
   BackpromoteCommandTarget,
   BackpromoteDirtyTreeChoice,
   BackpromotePlan,
-  BackpromotePlanProgress,
   BackpromoteProgressEvent,
+  BackpromoteRunResult,
   BackpromoteSelection,
   BackpromoteSetup,
   buildBackpromoteCommand,
@@ -56,8 +56,18 @@ const BACKPROMOTE_LWC_ID = "s-backpromote";
 // After "Connect another org", the org list reloads when the default org changes
 // during this delay
 const ORG_SELECTION_WATCH_MS = 10 * 60 * 1000;
+// A save in the editor and the file watcher report the same write: one read per file
+const MARKER_READ_DEBOUNCE_MS = 200;
+const PROGRESS_POLL_MS = 500;
+
+/** What the panel shows of the last successful run: the plan itself is in `plan` */
+interface BackpromoteRunOutcome {
+  result: BackpromoteRunResult | null;
+  message: string | null;
+}
 
 interface BackpromotePanelState {
+  panel: LwcUiPanel;
   setup: BackpromoteSetup | null;
   /** No git provider token in the environment: nothing else is shown */
   tokenMissing: boolean;
@@ -74,16 +84,19 @@ interface BackpromotePanelState {
   /** Marker counts read after each save of a prepared file */
   markers: Record<string, number>;
   fileWatchers: vscode.Disposable[];
+  /** Merges being written by sfdx-hardis: no new plan while one is */
+  preparing: number;
   running: boolean;
   runLog: BackpromoteProgressEvent[];
-  runResult: BackpromotePlan | null;
+  runResult: BackpromoteRunOutcome | null;
   runError: { message: string; status: string | null } | null;
   orgSelectionWatcher: vscode.Disposable | null;
   loadCounter: number;
 }
 
-function createState(): BackpromotePanelState {
+function createState(panel: LwcUiPanel): BackpromotePanelState {
   return {
+    panel,
     setup: null,
     tokenMissing: false,
     targetOrg: null,
@@ -96,6 +109,7 @@ function createState(): BackpromotePanelState {
     revision: 0,
     markers: {},
     fileWatchers: [],
+    preparing: 0,
     running: false,
     runLog: [],
     runResult: null,
@@ -106,7 +120,7 @@ function createState(): BackpromotePanelState {
 }
 
 // The panel is a singleton: its state lives as long as the panel
-let state: BackpromotePanelState = createState();
+let state: BackpromotePanelState | null = null;
 
 function disposeState(panelState: BackpromotePanelState): void {
   panelState.orgSelectionWatcher?.dispose();
@@ -115,6 +129,28 @@ function disposeState(panelState: BackpromotePanelState): void {
     watcher.dispose();
   }
   panelState.fileWatchers = [];
+}
+
+/**
+ * True when the answer of a command is about a state the panel left: the panel was closed
+ * or replaced, or (when a load id is given) a newer plan replaced the one it was asked on.
+ */
+function isStale(current: BackpromotePanelState, loadId?: number): boolean {
+  return (
+    state !== current ||
+    current.panel.isDisposed() ||
+    (loadId !== undefined && loadId !== current.loadCounter)
+  );
+}
+
+/** A run or a prepare is working on the checkout: nothing that starts a new plan is accepted */
+function isBusy(current: BackpromotePanelState): boolean {
+  return current.running || current.preparing > 0;
+}
+
+/** The root the relative paths of a plan are relative to */
+function planRoot(plan: BackpromotePlan | null): string {
+  return plan?.gitRoot || getWorkspaceRoot();
 }
 
 /**
@@ -176,17 +212,72 @@ function commandTarget(
 }
 
 type CommandOutcome =
-  | { plan: BackpromotePlan; status: number }
+  | { plan: BackpromotePlan }
   | { error: { message: string; cliTooOld: boolean; status: string | null; plan: BackpromotePlan | null } };
+
+/**
+ * Reads the lines sfdx-hardis appended to its progress file since the last read: only the
+ * new bytes are read, and a line still being written waits for the next read. The reads
+ * are serialized, so the last read made once the command ended sees every line.
+ */
+class ProgressFileReader {
+  readonly events: BackpromoteProgressEvent[] = [];
+  private offset = 0;
+  private pending: Buffer = Buffer.alloc(0);
+  private queue: Promise<unknown> = Promise.resolve();
+
+  constructor(private readonly file: string) {}
+
+  read(): Promise<BackpromoteProgressEvent[]> {
+    const next = this.queue.then(() => this.readAppended());
+    this.queue = next.catch(() => undefined);
+    return next;
+  }
+
+  private async readAppended(): Promise<BackpromoteProgressEvent[]> {
+    let chunk: Buffer;
+    try {
+      const size = (await fs.promises.stat(this.file)).size;
+      if (size <= this.offset) {
+        return [];
+      }
+      const handle = await fs.promises.open(this.file, "r");
+      try {
+        const buffer = Buffer.alloc(size - this.offset);
+        const { bytesRead } = await handle.read(buffer, 0, buffer.length, this.offset);
+        chunk = buffer.subarray(0, bytesRead);
+      } finally {
+        await handle.close();
+      }
+    } catch {
+      // Not written yet: read again at the next tick
+      return [];
+    }
+    this.offset += chunk.length;
+    const buffered = Buffer.concat([this.pending, chunk]);
+    const lastNewline = buffered.lastIndexOf(0x0a);
+    if (lastNewline === -1) {
+      this.pending = buffered;
+      return [];
+    }
+    this.pending = buffered.subarray(lastNewline + 1);
+    const appended = parseProgressEvents(
+      buffered.subarray(0, lastNewline + 1).toString("utf8"),
+    );
+    this.events.push(...appended);
+    return appended;
+  }
+}
 
 /**
  * Runs one backpromote command in the background, with the progress file sfdx-hardis
  * appends its steps to, and returns the plan document it answers (the successful result, or
- * the plan attached to the error).
+ * the plan attached to the error). `onProgress` gets the steps appended since the last call,
+ * and the whole list.
  */
 async function runBackpromoteJson(
   command: string,
-  onProgress?: (events: BackpromoteProgressEvent[]) => void,
+  onProgress?: (appended: BackpromoteProgressEvent[], all: BackpromoteProgressEvent[]) => void,
 ): Promise<CommandOutcome> {
   if (!isAllowedBackpromoteCommand(command)) {
     return { error: { message: t("backpromoteCannotRunSelection"), cliTooOld: false, status: null, plan: null } };
@@ -195,23 +286,14 @@ async function runBackpromoteJson(
     os.tmpdir(),
     `sfdx-hardis-backpromote-${process.pid}-${Date.now()}.jsonl`,
   );
-  let lastProgressLength = -1;
-  const readProgress = () => {
-    try {
-      if (!onProgress || !fs.existsSync(progressFile)) {
-        return;
-      }
-      const content = fs.readFileSync(progressFile, "utf8");
-      if (content.length === lastProgressLength) {
-        return;
-      }
-      lastProgressLength = content.length;
-      onProgress(parseProgressEvents(content));
-    } catch {
-      // Read again at the next tick
+  const reader = new ProgressFileReader(progressFile);
+  const report = async () => {
+    const appended = await reader.read();
+    if (appended.length > 0 && onProgress) {
+      onProgress(appended, reader.events);
     }
   };
-  const progressTimer = setInterval(readProgress, 500);
+  const progressTimer = onProgress ? setInterval(() => void report(), PROGRESS_POLL_MS) : null;
   try {
     const result = recoverJsonCommandResult(
       await execSfdxJson(command, {
@@ -224,10 +306,13 @@ async function runBackpromoteJson(
         },
       }),
     );
-    readProgress();
+    if (progressTimer) {
+      clearInterval(progressTimer);
+      await report();
+    }
     const plan = extractPlanDocument(result);
     if (result?.status === 0 && plan) {
-      return { plan, status: 0 };
+      return { plan };
     }
     const cliTooOld = isCliTooOldForBackpromotePanel(result);
     const message =
@@ -241,7 +326,9 @@ async function runBackpromoteJson(
   } catch (e: any) {
     return { error: { message: String(e?.message || e), cliTooOld: false, status: null, plan: null } };
   } finally {
-    clearInterval(progressTimer);
+    if (progressTimer) {
+      clearInterval(progressTimer);
+    }
     fs.promises.unlink(progressFile).catch(() => undefined);
   }
 }
@@ -280,15 +367,34 @@ function buildPanelData(panelState: BackpromotePanelState): any {
   };
 }
 
-function sendSelectionSummary(
-  panel: LwcUiPanel,
-  panelState: BackpromotePanelState,
+/** The whole state of the panel, as a state message (the translations are not sent again) */
+function pushData(current: BackpromotePanelState): void {
+  if (!isStale(current)) {
+    current.panel.sendStateUpdate(buildPanelData(current));
+  }
+}
+
+/** The plan could not be computed: the pickers stay usable, the message and the cause are shown */
+function showPlanError(
+  current: BackpromotePanelState,
+  error: { message: string; cliTooOld: boolean },
 ): void {
+  current.panel.sendStateUpdate({
+    loading: false,
+    planError: { cliTooOld: error.cliTooOld, message: error.message },
+    tokenMissing: current.tokenMissing,
+    setup: current.setup,
+    targetOrg: current.targetOrg,
+    parentBranch: current.parentBranch,
+  });
+}
+
+function sendSelectionSummary(panelState: BackpromotePanelState): void {
   const target = commandTarget(panelState);
-  if (!panelState.plan || !panelState.selection || !target || panel.isDisposed()) {
+  if (!panelState.plan || !panelState.selection || !target || isStale(panelState)) {
     return;
   }
-  panel.sendMessage({
+  panelState.panel.sendMessage({
     type: "selectionSummary",
     data: {
       revision: panelState.revision,
@@ -351,19 +457,23 @@ function readDirtyTree(data: any): BackpromoteDirtyTreeChoice | null {
   return { action: raw.action, message };
 }
 
+/** Absolute path of a file of the plan, relative to the git root */
+function absoluteFile(root: string, file: string): string {
+  return path.isAbsolute(file) ? file : path.join(root, file);
+}
+
 /** Counts the markers of a prepared file of the checkout, null when the file cannot be read */
-function readMarkers(file: string): number | null {
+function readMarkers(root: string, file: string): number | null {
   try {
-    const absolute = path.join(getWorkspaceRoot(), file);
-    return countConflictMarkerBlocks(fs.readFileSync(absolute, "utf8"));
+    return countConflictMarkerBlocks(fs.readFileSync(absoluteFile(root, file), "utf8"));
   } catch {
     return null;
   }
 }
 
 /** Keeps the count of the plan when the file cannot be read */
-function rememberMarkers(panelState: BackpromotePanelState, file: string): void {
-  const count = readMarkers(file);
+function rememberMarkers(panelState: BackpromotePanelState, root: string, file: string): void {
+  const count = readMarkers(root, file);
   if (count === null) {
     return;
   }
@@ -371,45 +481,64 @@ function rememberMarkers(panelState: BackpromotePanelState, file: string): void 
 }
 
 /**
- * Watches the prepared files: after every save, the marker count of the file is read again
- * and sent to the panel, which enables the Backpromote button once none is left.
+ * Watches the prepared files: after every save (or an external write, by a coding agent for
+ * instance), the marker count of the file is read again and sent to the panel, which enables
+ * the Backpromote button once none is left. One watcher covers every prepared file, and a
+ * file is read once per burst of events.
  */
-function watchPreparedFiles(panel: LwcUiPanel, panelState: BackpromotePanelState): void {
-  for (const watcher of panelState.fileWatchers) {
+function watchPreparedFiles(current: BackpromotePanelState): void {
+  for (const watcher of current.fileWatchers) {
     watcher.dispose();
   }
-  panelState.fileWatchers = [];
-  const prepared = (panelState.plan?.comparison || []).filter((comparison) => comparison.prepared);
-  if (prepared.length === 0) {
+  current.fileWatchers = [];
+  const plan = current.plan;
+  const files = new Set(
+    (plan?.comparison || [])
+      .filter((comparison) => comparison.prepared)
+      .map((comparison) => comparison.file),
+  );
+  if (!plan || files.size === 0) {
     return;
   }
-  const root = getWorkspaceRoot();
+  const root = planRoot(plan);
+  const timers = new Map<string, ReturnType<typeof setTimeout>>();
   const refresh = (file: string) => {
-    if (state !== panelState || panel.isDisposed()) {
-      return;
-    }
-    rememberMarkers(panelState, file);
-    sendSelectionSummary(panel, panelState);
+    clearTimeout(timers.get(file));
+    timers.set(
+      file,
+      setTimeout(() => {
+        timers.delete(file);
+        if (isStale(current)) {
+          return;
+        }
+        rememberMarkers(current, root, file);
+        sendSelectionSummary(current);
+      }, MARKER_READ_DEBOUNCE_MS),
+    );
   };
-  for (const comparison of prepared) {
-    rememberMarkers(panelState, comparison.file);
-    const watcher = vscode.workspace.createFileSystemWatcher(
-      new vscode.RelativePattern(root, comparison.file),
-    );
-    panelState.fileWatchers.push(
-      watcher,
-      watcher.onDidChange(() => refresh(comparison.file)),
-      watcher.onDidCreate(() => refresh(comparison.file)),
-    );
+  const onFile = (uri: vscode.Uri) => {
+    const relative = path.relative(root, uri.fsPath).replace(/\\/g, "/");
+    if (files.has(relative)) {
+      refresh(relative);
+    }
+  };
+  for (const file of files) {
+    rememberMarkers(current, root, file);
   }
-  panelState.fileWatchers.push(
-    vscode.workspace.onDidSaveTextDocument((document) => {
-      const relative = path
-        .relative(root, document.uri.fsPath)
-        .replace(/\\/g, "/");
-      if (prepared.some((comparison) => comparison.file === relative)) {
-        refresh(relative);
+  const names = [...files];
+  const watcher = vscode.workspace.createFileSystemWatcher(
+    new vscode.RelativePattern(root, names.length === 1 ? names[0] : `{${names.join(",")}}`),
+  );
+  current.fileWatchers.push(
+    watcher,
+    watcher.onDidChange(onFile),
+    watcher.onDidCreate(onFile),
+    vscode.workspace.onDidSaveTextDocument((document) => onFile(document.uri)),
+    new vscode.Disposable(() => {
+      for (const timer of timers.values()) {
+        clearTimeout(timer);
       }
+      timers.clear();
     }),
   );
 }
@@ -419,9 +548,15 @@ export function registerShowBackpromote(commands: Commands) {
     "vscode-sfdx-hardis.showBackpromote",
     async () => {
       const lwcManager = LwcPanelManager.getInstance();
-      if (!lwcManager.getPanel(BACKPROMOTE_LWC_ID)) {
+      const existing = lwcManager.getPanel(BACKPROMOTE_LWC_ID);
+      if (existing && !existing.isDisposed() && state?.panel === existing) {
+        // A plan may be computing, a merge being prepared or a run in progress: the
+        // panel is only brought back
+        existing.reveal();
+        return;
+      }
+      if (state) {
         disposeState(state);
-        state = createState();
       }
 
       // Open the panel at once: the setup lists load in the background
@@ -429,23 +564,20 @@ export function registerShowBackpromote(commands: Commands) {
         loading: true,
       });
       panel.updateTitle(t("backpromote"));
+      const current = createState(panel);
+      state = current;
       lwcManager.setDisposalCallback(BACKPROMOTE_LWC_ID, () => {
-        disposeState(state);
-        state = createState();
+        disposeState(current);
+        if (state === current) {
+          state = null;
+        }
       });
 
-      const pushData = (current: BackpromotePanelState) => {
-        if (state === current && !panel.isDisposed()) {
-          panel.sendInitializationData(buildPanelData(current));
-        }
-      };
-
       const showSetup = async (): Promise<boolean> => {
-        const current = state;
         const loadId = ++current.loadCounter;
-        panel.sendInitializationData({ loading: true });
+        panel.sendStateUpdate({ loading: true });
         const [setup, credentials] = await Promise.all([loadSetup(), collectCredentialEnv()]);
-        if (state !== current || loadId !== current.loadCounter || panel.isDisposed()) {
+        if (isStale(current, loadId)) {
           return false;
         }
         current.setup = setup;
@@ -460,7 +592,6 @@ export function registerShowBackpromote(commands: Commands) {
       };
 
       const loadPlan = async () => {
-        const current = state;
         // A new plan is about another window or another moment: the previous run is over
         current.runResult = null;
         current.runError = null;
@@ -471,34 +602,24 @@ export function registerShowBackpromote(commands: Commands) {
           return;
         }
         const loadId = ++current.loadCounter;
-        panel.sendInitializationData({ loading: true, setup: current.setup, targetOrg: current.targetOrg, parentBranch: current.parentBranch });
+        panel.sendStateUpdate({ loading: true, setup: current.setup, targetOrg: current.targetOrg, parentBranch: current.parentBranch });
         let command: string;
         try {
           command = buildPlanCommand(target, { scanLimit: current.scanLimit });
         } catch (e: any) {
-          panel.sendInitializationData({
-            loading: false,
-            planError: { cliTooOld: false, message: String(e?.message || e) },
-            tokenMissing: current.tokenMissing,
-            setup: current.setup,
-            targetOrg: current.targetOrg,
-            parentBranch: current.parentBranch,
-          });
+          showPlanError(current, { cliTooOld: false, message: String(e?.message || e) });
           return;
         }
-        const outcome = await runBackpromoteJson(
-          command,
-          (events) => {
-            if (state === current && loadId === current.loadCounter && !panel.isDisposed()) {
-              const progress: BackpromotePlanProgress | null = buildPlanProgress(events);
-              if (progress) {
-                panel.sendMessage({ type: "planProgress", data: progress });
-              }
+        const outcome = await runBackpromoteJson(command, (_appended, all) => {
+          if (!isStale(current, loadId)) {
+            const progress = buildPlanProgress(all);
+            if (progress) {
+              panel.sendMessage({ type: "planProgress", data: progress });
             }
-          },
-        );
+          }
+        });
         // A newer load started meanwhile, or the panel was closed
-        if (state !== current || loadId !== current.loadCounter || panel.isDisposed()) {
+        if (isStale(current, loadId)) {
           return;
         }
         if ("error" in outcome) {
@@ -507,14 +628,7 @@ export function registerShowBackpromote(commands: Commands) {
             pushData(current);
             return;
           }
-          panel.sendInitializationData({
-            loading: false,
-            planError: { cliTooOld: outcome.error.cliTooOld, message: outcome.error.message },
-            tokenMissing: current.tokenMissing,
-            setup: current.setup,
-            targetOrg: current.targetOrg,
-            parentBranch: current.parentBranch,
-          });
+          showPlanError(current, outcome.error);
           return;
         }
         const plan = outcome.plan;
@@ -529,12 +643,20 @@ export function registerShowBackpromote(commands: Commands) {
         current.runId = plan.runId || current.runId;
         current.selection = previous || buildDefaultSelection(plan);
         current.markers = {};
-        watchPreparedFiles(panel, current);
+        watchPreparedFiles(current);
         pushData(current);
       };
 
+      const refreshPlan = async () => {
+        const ready = await showSetup();
+        if (ready) {
+          await loadPlan();
+        } else {
+          pushData(current);
+        }
+      };
+
       const startOver = async () => {
-        const current = state;
         current.plan = null;
         current.selection = null;
         current.runId = null;
@@ -547,57 +669,63 @@ export function registerShowBackpromote(commands: Commands) {
         await loadPlan();
       };
 
+      // A new plan while --auto or --prepare works on the same checkout and run id would
+      // answer about a state the checkout is leaving: the message is ignored, the panel gets
+      // its current state back
+      const unlessBusy = async (work: () => Promise<void>) => {
+        if (isBusy(current)) {
+          pushData(current);
+          return;
+        }
+        await work();
+      };
+
       panel.onMessage(async (type: string, data: any) => {
-        const current = state;
         switch (type) {
-          case "retryInit":
           case "refresh": {
-            const ready = await showSetup();
-            if (ready) {
-              await loadPlan();
-            } else {
-              pushData(current);
-            }
+            await unlessBusy(refreshPlan);
             break;
           }
           case "changeTargetOrg":
           case "changeParentBranch": {
             // Another org or another parent branch: the plan is about another backpromote
-            if (acceptChoices(current, data) || !current.plan) {
-              await startOver();
-            }
+            await unlessBusy(async () => {
+              if (acceptChoices(current, data) || !current.plan) {
+                await startOver();
+              } else {
+                pushData(current);
+              }
+            });
             break;
           }
           case "changeStartPullRequest": {
-            const number = Number(data?.number);
-            if (Number.isInteger(number) && number > 0) {
-              current.fromPullRequest = number;
-              current.markers = {};
-              await loadPlan();
-            }
+            await unlessBusy(async () => {
+              const number = Number(data?.number);
+              if (Number.isInteger(number) && number > 0) {
+                current.fromPullRequest = number;
+                current.markers = {};
+                await loadPlan();
+              } else {
+                pushData(current);
+              }
+            });
             break;
           }
           case "showEarlier": {
-            // One more page than the scan sfdx-hardis made (its limit may come from the project config)
-            current.scanLimit = (current.plan?.scan.limit || current.scanLimit) + BACKPROMOTE_SCAN_PAGE;
-            await loadPlan();
+            await unlessBusy(async () => {
+              // One more page than the scan sfdx-hardis made (its limit may come from the project config)
+              current.scanLimit = (current.plan?.scan.limit || current.scanLimit) + BACKPROMOTE_SCAN_PAGE;
+              await loadPlan();
+            });
             break;
           }
           case "selectionChanged": {
             acceptSelection(current, data);
-            sendSelectionSummary(panel, current);
+            sendSelectionSummary(current);
             break;
           }
           case "mergeItem": {
-            await prepareMerge(panel, current, data, pushData);
-            break;
-          }
-          case "openMergeEditor": {
-            await openMergeEditor(current, String(data?.itemKey || ""));
-            break;
-          }
-          case "compareItem": {
-            await compareItem(current, String(data?.itemKey || ""));
+            await prepareMerge(current, data);
             break;
           }
           case "copyAgentPrompt": {
@@ -605,11 +733,11 @@ export function registerShowBackpromote(commands: Commands) {
             break;
           }
           case "runBackpromote": {
-            await runBackpromote(panel, current, data, pushData);
+            await runBackpromote(current, data);
             break;
           }
           case "confirmAction": {
-            await confirmAction(panel, current, String(data?.actionId || ""), pushData);
+            await confirmAction(current, String(data?.actionId || ""));
             break;
           }
           case "backToBranch": {
@@ -617,16 +745,11 @@ export function registerShowBackpromote(commands: Commands) {
             break;
           }
           case "resetBranch": {
-            await resetBranch(current, loadPlan);
+            await unlessBusy(() => resetBranch(current, loadPlan));
             break;
           }
           case "selectOrg": {
             connectAnotherOrg(current, showSetup, loadPlan);
-            break;
-          }
-          case "openSettings": {
-            // The git provider tokens can be set in the extension settings
-            await vscode.commands.executeCommand("workbench.action.openSettings", "vsCodeSfdxHardis");
             break;
           }
           default:
@@ -634,25 +757,10 @@ export function registerShowBackpromote(commands: Commands) {
         }
       });
 
-      const ready = await showSetup();
-      if (ready) {
-        await loadPlan();
-      } else {
-        pushData(state);
-      }
+      await refreshPlan();
     },
   );
   commands.disposables.push(disposable);
-}
-
-/** Absolute path of a file of the checkout */
-function absoluteFile(file: string): string {
-  return path.isAbsolute(file) ? file : path.join(getWorkspaceRoot(), file);
-}
-
-async function openFileInEditor(file: string): Promise<void> {
-  const document = await vscode.workspace.openTextDocument(vscode.Uri.file(absoluteFile(file)));
-  await vscode.window.showTextDocument(document, { preview: false });
 }
 
 /**
@@ -665,9 +773,10 @@ async function openMergeEditor(current: BackpromotePanelState, itemKey: string):
   if (!plan) {
     return;
   }
+  const root = planRoot(plan);
   const files = differingComparisons(plan, itemKey).filter((comparison) => comparison.prepared);
   for (const comparison of files) {
-    const output = vscode.Uri.file(absoluteFile(comparison.file));
+    const output = vscode.Uri.file(absoluteFile(root, comparison.file));
     const { base, sandbox, parentHead } = comparison.versions;
     if (base && sandbox && parentHead) {
       try {
@@ -683,34 +792,9 @@ async function openMergeEditor(current: BackpromotePanelState, itemKey: string):
       }
     }
     try {
-      await openFileInEditor(comparison.file);
+      await vscode.commands.executeCommand("vscode.open", output);
     } catch (e: any) {
       vscode.window.showErrorMessage(t("backpromoteOpenFileFailed", { file: comparison.file, message: String(e?.message || e) }));
-    }
-  }
-}
-
-/** The VS Code diff editor between the sandbox version and the parent branch version of the item files */
-async function compareItem(current: BackpromotePanelState, itemKey: string): Promise<void> {
-  const plan = current.plan;
-  if (!plan) {
-    return;
-  }
-  for (const comparison of differingComparisons(plan, itemKey)) {
-    const { sandbox, parentHead } = comparison.versions;
-    if (!sandbox || !parentHead) {
-      continue;
-    }
-    try {
-      await vscode.commands.executeCommand(
-        "vscode.diff",
-        vscode.Uri.file(sandbox),
-        vscode.Uri.file(parentHead),
-        `${path.basename(comparison.file)}: ${getTargetOrgDisplayName(plan.targetOrg)} (org) <-> ${plan.parentBranch} (git)`,
-      );
-    } catch (e: any) {
-      vscode.window.showWarningMessage(t("vscodeDiffOpenFailed", { title: comparison.file }));
-      Logger.log(`[vscode-sfdx-hardis] vscode.diff failed: ${e?.message || e}`);
     }
   }
 }
@@ -722,7 +806,9 @@ async function copyAgentPrompt(current: BackpromotePanelState): Promise<void> {
     return;
   }
   try {
-    await vscode.env.clipboard.writeText(fs.readFileSync(promptFile, "utf8"));
+    await vscode.env.clipboard.writeText(
+      fs.readFileSync(absoluteFile(planRoot(current.plan), promptFile), "utf8"),
+    );
     vscode.window.showInformationMessage(t("backpromotePromptCopied"));
   } catch (e: any) {
     vscode.window.showErrorMessage(t("backpromoteOpenFileFailed", { file: promptFile, message: String(e?.message || e) }));
@@ -733,28 +819,23 @@ async function copyAgentPrompt(current: BackpromotePanelState): Promise<void> {
  * Merge on an item line: sfdx-hardis switches the checkout to the backpromote branch, writes the
  * merged files with markers and keeps the three versions in the cache; then the merge editor opens.
  */
-async function prepareMerge(
-  panel: LwcUiPanel,
-  current: BackpromotePanelState,
-  data: any,
-  pushData: (current: BackpromotePanelState) => void,
-): Promise<void> {
+async function prepareMerge(current: BackpromotePanelState, data: any): Promise<void> {
   const plan = current.plan;
   const target = commandTarget(current);
   const itemKey = String(data?.itemKey || "");
   // The webview marked the item as being prepared: every exit without a new plan releases it
   const failed = (message: string | null) => {
-    if (!panel.isDisposed()) {
-      panel.sendMessage({ type: "prepareFailed", data: { itemKey, message } });
+    if (!current.panel.isDisposed()) {
+      current.panel.sendMessage({ type: "prepareFailed", data: { itemKey, message } });
     }
   };
-  if (!plan || !target || !plan.items.some((item) => item.key === itemKey)) {
+  if (!plan || !target || current.running || !plan.items.some((item) => item.key === itemKey)) {
     failed(null);
     return;
   }
   acceptSelection(current, { selection: { ...(current.selection || {}), diffDecisions: { ...(current.selection?.diffDecisions || {}), [itemKey]: "merge" } }, revision: data?.revision });
   if (differingComparisons(plan, itemKey).every((comparison) => comparison.prepared)) {
-    sendSelectionSummary(panel, current);
+    sendSelectionSummary(current);
     await openMergeEditor(current, itemKey);
     return;
   }
@@ -768,10 +849,16 @@ async function prepareMerge(
     return;
   }
   const loadId = current.loadCounter;
-  panel.sendMessage({ type: "prepareStarted", data: { itemKey } });
-  const outcome = await runBackpromoteJson(command);
+  current.preparing += 1;
+  current.panel.sendMessage({ type: "prepareStarted", data: { itemKey } });
+  let outcome: CommandOutcome;
+  try {
+    outcome = await runBackpromoteJson(command);
+  } finally {
+    current.preparing -= 1;
+  }
   // The panel was closed, or another plan (other org, branch or start) replaced this one meanwhile
-  if (state !== current || loadId !== current.loadCounter || panel.isDisposed()) {
+  if (isStale(current, loadId)) {
     failed(null);
     return;
   }
@@ -784,7 +871,7 @@ async function prepareMerge(
   current.plan = outcome.plan;
   current.runId = outcome.plan.runId || current.runId;
   current.selection = normalizeSelection(outcome.plan, current.selection);
-  watchPreparedFiles(panel, current);
+  watchPreparedFiles(current);
   pushData(current);
   await openMergeEditor(current, itemKey);
 }
@@ -809,22 +896,17 @@ function noticeStash(
  * The run: the command is rebuilt from the plan held by the extension and the selection of the
  * webview (the webview never sends a command line), and run in the background with its progress.
  */
-async function runBackpromote(
-  panel: LwcUiPanel,
-  current: BackpromotePanelState,
-  data: any,
-  pushData: (current: BackpromotePanelState) => void,
-): Promise<void> {
+async function runBackpromote(current: BackpromotePanelState, data: any): Promise<void> {
   const plan = current.plan;
   const target = commandTarget(current);
-  if (!plan || !target || current.running) {
+  if (!plan || !target || isBusy(current)) {
     return;
   }
   acceptSelection(current, data);
   const payload = buildSelectionPayload(plan, current.selection as BackpromoteSelection, target, current.markers);
   if (!payload.summary.canRun || !payload.command) {
     vscode.window.showWarningMessage(t("backpromoteCannotRunSelection"));
-    sendSelectionSummary(panel, current);
+    sendSelectionSummary(current);
     return;
   }
   const dirtyTree = readDirtyTree(data);
@@ -839,14 +921,14 @@ async function runBackpromote(
   current.runLog = [];
   current.runResult = null;
   current.runError = null;
-  panel.sendMessage({ type: "runStarted", data: { command } });
-  const outcome = await runBackpromoteJson(command, (events) => {
-    if (state === current && !panel.isDisposed()) {
-      current.runLog = events;
-      panel.sendMessage({ type: "runProgress", data: { events } });
+  current.panel.sendMessage({ type: "runStarted", data: { command } });
+  const outcome = await runBackpromoteJson(command, (appended, all) => {
+    if (!isStale(current)) {
+      current.runLog = all.slice();
+      current.panel.sendMessage({ type: "runProgress", data: { appended } });
     }
   });
-  if (state !== current || panel.isDisposed()) {
+  if (isStale(current)) {
     return;
   }
   current.running = false;
@@ -855,11 +937,11 @@ async function runBackpromote(
     if (outcome.error.plan) {
       current.plan = outcome.error.plan;
       current.selection = normalizeSelection(outcome.error.plan, current.selection);
-      watchPreparedFiles(panel, current);
+      watchPreparedFiles(current);
     }
   } else {
     noticeStash(plan, outcome.plan, dirtyTree);
-    current.runResult = outcome.plan;
+    current.runResult = { result: outcome.plan.result, message: outcome.plan.message };
     current.plan = outcome.plan;
     current.selection = normalizeSelection(outcome.plan, current.selection);
     current.markers = {};
@@ -867,31 +949,33 @@ async function runBackpromote(
     current.fromPullRequest = null;
   }
   pushData(current);
-  panel.sendMessage({ type: "runFinished", data: { ok: !("error" in outcome) } });
+  current.panel.sendMessage({ type: "runFinished" });
 }
 
-/** "Done in the sandbox" on a manual action: sfdx-hardis records it in the Pull Request comment */
-async function confirmAction(
-  panel: LwcUiPanel,
-  current: BackpromotePanelState,
-  actionId: string,
-  pushData: (current: BackpromotePanelState) => void,
-): Promise<void> {
+/**
+ * "Done in the sandbox" on a manual action: sfdx-hardis records it in the Pull Request comment.
+ * The recorded action lines are merged into the plan as it is when the answer arrives: a prepare
+ * or a run may have replaced the plan the button was clicked on.
+ */
+async function confirmAction(current: BackpromotePanelState, actionId: string): Promise<void> {
   const plan = current.plan;
   const target = commandTarget(current);
   // The webview disabled the button: every exit gives it back
   const finished = () => {
-    if (!panel.isDisposed()) {
-      panel.sendMessage({ type: "confirmActionFinished", data: { actionId } });
+    if (!current.panel.isDisposed()) {
+      current.panel.sendMessage({ type: "confirmActionFinished", data: { actionId } });
     }
   };
-  if (!plan || !target || !plan.actions.some((action) => action.id === actionId)) {
+  const action = plan?.actions.find((entry) => entry.id === actionId);
+  // A run writes the same Pull Request comment, and its answer would replace the plan
+  // holding the recorded action: not while it works on the checkout
+  if (!plan || !target || !action || isBusy(current)) {
     finished();
     return;
   }
   let command: string;
   try {
-    command = buildConfirmActionCommand(target, [actionId]);
+    command = buildConfirmActionCommand(target, [actionId], { scanLimit: current.scanLimit });
   } catch (e: any) {
     finished();
     vscode.window.showErrorMessage(t("backpromoteConfirmActionFailed", { message: String(e?.message || e) }));
@@ -899,7 +983,7 @@ async function confirmAction(
   }
   const loadId = current.loadCounter;
   const outcome = await runBackpromoteJson(command);
-  if (state !== current || loadId !== current.loadCounter || panel.isDisposed()) {
+  if (isStale(current, loadId)) {
     finished();
     return;
   }
@@ -908,14 +992,21 @@ async function confirmAction(
     vscode.window.showErrorMessage(t("backpromoteConfirmActionFailed", { message: outcome.error.message }));
     return;
   }
+  // sfdx-hardis answers ok with a warning when the Pull Request of the action is outside its scan
+  const recorded = outcome.plan.actions.find((entry) => entry.id === actionId);
+  if (!recorded || recorded.alreadyRunOn === null) {
+    finished();
+    vscode.window.showErrorMessage(t("backpromoteConfirmActionNotRecorded", { label: action.label }));
+    return;
+  }
   // Only the action lines change: the result of the run stays on screen
-  const confirmed = outcome.plan.actions;
-  current.plan = {
-    ...plan,
-    actions: plan.actions.map((action) => confirmed.find((entry) => entry.id === action.id) || action),
-  };
-  if (current.runResult) {
-    current.runResult = { ...current.runResult, actions: current.plan.actions };
+  const confirmed = new Map(outcome.plan.actions.map((entry) => [entry.id, entry]));
+  if (current.plan) {
+    current.plan = {
+      ...current.plan,
+      actions: current.plan.actions.map((entry) => confirmed.get(entry.id) || entry),
+    };
+    current.selection = normalizeSelection(current.plan, current.selection);
   }
   pushData(current);
   finished();
@@ -927,13 +1018,13 @@ async function confirmAction(
  * not commit the backpromoted metadata as the story's own work.
  */
 async function backToBranch(current: BackpromotePanelState): Promise<void> {
-  const plan = current.runResult || current.plan;
+  const plan = current.plan;
   const checkout = plan?.checkout;
   if (!plan || !checkout?.originalBranch || !isSafeCommandValue(checkout.originalBranch)) {
     vscode.window.showInformationMessage(t("backpromoteNoOriginalBranch"));
     return;
   }
-  const git = simpleGit(getWorkspaceRoot());
+  const git = simpleGit(planRoot(plan));
   try {
     const status = await git.status();
     if (status.current !== checkout.originalBranch) {
@@ -1003,7 +1094,7 @@ async function resetBranch(current: BackpromotePanelState, reloadPlan: () => Pro
   }
   const loadId = current.loadCounter;
   const outcome = await runBackpromoteJson(command);
-  if (state !== current || loadId !== current.loadCounter) {
+  if (isStale(current, loadId)) {
     return;
   }
   if ("error" in outcome) {
@@ -1045,7 +1136,7 @@ function connectAnotherOrg(
   };
   function onConfigChange() {
     stop();
-    if (state === current) {
+    if (!isStale(current) && !isBusy(current)) {
       // The new default org becomes the target
       current.targetOrg = null;
       current.plan = null;

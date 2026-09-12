@@ -1,4 +1,5 @@
 import { stripAnsiCodes } from "../ansiColors";
+import { shortenOrgHost } from "../orgColorUtils";
 
 /**
  * Pure logic of the Backpromote panel (vscode-sfdx-hardis.showBackpromote).
@@ -178,6 +179,12 @@ export interface BackpromotePlan {
   };
   parentBranch: string;
   allowedParentBranches: string[];
+  /**
+   * Absolute root of the git repository: the relative paths of the plan (comparison files,
+   * item files) are relative to it, not to the VS Code workspace folder, which may be an sfdx
+   * project opened as a sub-folder of its repository. Empty with an older sfdx-hardis.
+   */
+  gitRoot: string;
   backpromoteBranch: {
     name: string;
     existsOnOrigin: boolean;
@@ -330,22 +337,26 @@ export function hasGitProviderToken(
 }
 
 const PLAIN_COMMAND_VALUE = /^[A-Za-z0-9_.@:/+=,-]+$/;
-// Characters whose meaning differs between the shell-less spawn, bash, cmd.exe
-// and PowerShell, even inside double quotes: such a value is refused, never escaped.
-// A single quote is refused too, because single quotes are what protects a value
-// carrying a dollar sign.
-const UNSAFE_COMMAND_VALUE = /["\\`']/;
+// Characters whose meaning differs between cmd.exe and /bin/sh, even inside double
+// quotes: such a value is refused, never escaped.
+const UNSAFE_COMMAND_VALUE = /["\\`]/;
 // Command and variable substitution: refused whatever the quoting
 const UNSAFE_SUBSTITUTION = /\$[({]/;
-// A lone dollar sign is part of Salesforce folder names (unfiled$public): the value
-// is single quoted, which bash and PowerShell both take literally
-const NEEDS_LITERAL_QUOTES = /\$/;
+// A lone dollar sign is part of Salesforce folder names (unfiled$public). cmd.exe never
+// expands it, so double quotes are enough on Windows; /bin/sh expands it inside double
+// quotes, so the value is single quoted there, which means a single quote inside the
+// value cannot be protected on that path.
+const HOLDS_DOLLAR = /\$/;
 
 /**
- * A value built from the plan can go into a command when it holds no quote, no
- * backslash, no substitution, no control character and no command chaining.
+ * The commands of the panel go through child_process.exec: cmd.exe on Windows (single
+ * quotes are plain characters there), /bin/sh elsewhere. `platform` is a parameter so
+ * both rules are unit tested.
  */
-export function isSafeCommandValue(value: unknown): value is string {
+export function isSafeCommandValue(
+  value: unknown,
+  platform: string = process.platform,
+): value is string {
   if (typeof value !== "string" || value.length === 0) {
     return false;
   }
@@ -355,6 +366,9 @@ export function isSafeCommandValue(value: unknown): value is string {
     value.includes("&&") ||
     value.includes("||")
   ) {
+    return false;
+  }
+  if (platform !== "win32" && HOLDS_DOLLAR.test(value) && value.includes("'")) {
     return false;
   }
   for (let i = 0; i < value.length; i++) {
@@ -369,8 +383,11 @@ export function isSafeCommandValue(value: unknown): value is string {
  * Returns the value as a command argument: as it is when it only holds plain
  * characters, quoted otherwise. Throws on an unsafe value.
  */
-export function quoteCommandValue(value: string): string {
-  if (!isSafeCommandValue(value)) {
+export function quoteCommandValue(
+  value: string,
+  platform: string = process.platform,
+): string {
+  if (!isSafeCommandValue(value, platform)) {
     throw new Error(
       `Value not allowed in a backpromote command: ${JSON.stringify(value)}`,
     );
@@ -378,7 +395,10 @@ export function quoteCommandValue(value: string): string {
   if (PLAIN_COMMAND_VALUE.test(value)) {
     return value;
   }
-  return NEEDS_LITERAL_QUOTES.test(value) ? `'${value}'` : `"${value}"`;
+  if (platform !== "win32" && HOLDS_DOLLAR.test(value)) {
+    return `'${value}'`;
+  }
+  return `"${value}"`;
 }
 
 /**
@@ -468,6 +488,7 @@ export function normalizeBackpromotePlan(raw: any): BackpromotePlan | null {
     },
     parentBranch: String(raw.parentBranch || ""),
     allowedParentBranches: asStringArray(raw.allowedParentBranches),
+    gitRoot: String(raw.gitRoot || ""),
     backpromoteBranch: {
       name: String(branch.name || ""),
       existsOnOrigin: branch.existsOnOrigin === true,
@@ -657,16 +678,49 @@ export function isGitProviderMissing(plan: BackpromotePlan | null): boolean {
 // Items and comparison
 // ---------------------------------------------------------------------------
 
+const NO_COMPARISONS: BackpromoteComparison[] = [];
+// A plan is never mutated (every answer of sfdx-hardis is a new object): its
+// comparisons are grouped by item once, the first time a line asks for them
+const comparisonsByPlan = new WeakMap<
+  BackpromotePlan,
+  Map<string, BackpromoteComparison[]>
+>();
+
+/** The comparison entries of every file of an item, grouped once per plan */
+export function comparisonsByItem(
+  plan: BackpromotePlan,
+): Map<string, BackpromoteComparison[]> {
+  let byItem = comparisonsByPlan.get(plan);
+  if (!byItem) {
+    byItem = new Map();
+    for (const comparison of plan.comparison) {
+      const entries = byItem.get(comparison.item);
+      if (entries) {
+        entries.push(comparison);
+      } else {
+        byItem.set(comparison.item, [comparison]);
+      }
+    }
+    comparisonsByPlan.set(plan, byItem);
+  }
+  return byItem;
+}
+
+export function isDifferingComparison(
+  comparison: BackpromoteComparison,
+): boolean {
+  return (
+    comparison.status === "different" || comparison.status === "pendingInOrg"
+  );
+}
+
 /** The comparison entries of an item's files whose sandbox version differs */
 export function differingComparisons(
   plan: BackpromotePlan,
   itemKey: string,
 ): BackpromoteComparison[] {
-  return plan.comparison.filter(
-    (comparison) =>
-      comparison.item === itemKey &&
-      (comparison.status === "different" ||
-        comparison.status === "pendingInOrg"),
+  return (comparisonsByItem(plan).get(itemKey) || NO_COMPARISONS).filter(
+    isDifferingComparison,
   );
 }
 
@@ -697,10 +751,8 @@ export function computeItemState(
   itemKey: string,
   markers: Record<string, number> = {},
 ): BackpromoteItemState {
-  const comparisons = plan.comparison.filter(
-    (comparison) => comparison.item === itemKey,
-  );
-  const differing = differingComparisons(plan, itemKey);
+  const comparisons = comparisonsByItem(plan).get(itemKey) || NO_COMPARISONS;
+  const differing = comparisons.filter(isDifferingComparison);
   const priority: Array<BackpromoteComparisonStatus> = [
     "pendingInOrg",
     "different",
@@ -810,22 +862,16 @@ export function normalizeSelection(
       ? choice
       : "git";
   }
-  const noOverwrite = plan.items
-    .filter((item) => item.noOverwrite)
-    .map((item) => item.key);
-  const excludedItems = pick(
-    raw?.excludedItems,
-    plan.items.map((item) => item.key),
+  const excludedItems = new Set(
+    pick(
+      raw?.excludedItems,
+      plan.items.map((item) => item.key),
+    ),
   );
-  for (const key of noOverwrite) {
-    if (!excludedItems.includes(key)) {
-      excludedItems.push(key);
-    }
-  }
   return {
     excludedItems: plan.items
-      .map((item) => item.key)
-      .filter((key) => excludedItems.includes(key)),
+      .filter((item) => item.noOverwrite || excludedItems.has(item.key))
+      .map((item) => item.key),
     excludedDeletions: pick(
       raw?.excludedDeletions,
       plan.deletions.map((deletion) => deletion.key),
@@ -994,12 +1040,13 @@ export function buildPlanCommand(
   target: BackpromoteCommandTarget,
   options: { scanLimit?: number | null } = {},
 ): string {
-  const parts = [BACKPROMOTE_COMMAND, "--plan", ...targetParts(target)];
-  if (options.scanLimit && options.scanLimit > BACKPROMOTE_SCAN_PAGE) {
-    parts.push(`--scan-limit ${Math.trunc(options.scanLimit)}`);
-  }
-  parts.push("--json");
-  return parts.join(" ");
+  return [
+    BACKPROMOTE_COMMAND,
+    "--plan",
+    ...targetParts(target),
+    ...scanLimitParts(options.scanLimit),
+    "--json",
+  ].join(" ");
 }
 
 /**
@@ -1080,16 +1127,30 @@ export function buildBackpromoteCommand(
   return parts.join(" ");
 }
 
-/** Records that manual actions were done in the sandbox */
+function scanLimitParts(scanLimit: number | null | undefined): string[] {
+  return scanLimit && scanLimit > BACKPROMOTE_SCAN_PAGE
+    ? [`--scan-limit ${Math.trunc(scanLimit)}`]
+    : [];
+}
+
+/**
+ * Records that manual actions were done in the sandbox. The scan limit of the plan travels
+ * too: sfdx-hardis only records an action whose Pull Request is within its scan.
+ */
 export function buildConfirmActionCommand(
   target: BackpromoteCommandTarget,
   actionIds: string[],
+  options: { scanLimit?: number | null } = {},
 ): string {
   const parts = [BACKPROMOTE_COMMAND];
   for (const actionId of actionIds) {
     parts.push(`--confirm-action ${quoteCommandValue(actionId)}`);
   }
-  parts.push(...targetParts(target), "--json");
+  parts.push(
+    ...targetParts(target),
+    ...scanLimitParts(options.scanLimit),
+    "--json",
+  );
   return parts.join(" ");
 }
 
@@ -1179,9 +1240,33 @@ function normalizeUrl(url: string | undefined | null): string {
 }
 
 /**
- * The orgs of `sf org list`, the default org first: developer sandboxes and scratch orgs are
- * selectable, the orgs of the major branches (matched on username, on the sandbox of the
- * username, or on the instance URL) and the production orgs are listed disabled with the reason.
+ * The type listAllOrgs computes; mirrored here for an org given without it.
+ * A Developer Edition org is `other`: selectable, only a production org is refused.
+ */
+function orgTypeOf(org: {
+  instanceUrl?: string;
+  isScratch?: boolean;
+  isSandbox?: boolean;
+  orgType?: string;
+}): string {
+  if (org.orgType) {
+    return org.orgType;
+  }
+  const url = (org.instanceUrl || "").toLowerCase();
+  if (org.isScratch) {
+    return "scratch";
+  }
+  if (org.isSandbox || url.includes(".sandbox")) {
+    return "sandbox";
+  }
+  return url.includes("dev-ed") || url.includes("test") ? "other" : "production";
+}
+
+/**
+ * The orgs of `sf org list`, the default org first: developer sandboxes, scratch orgs and
+ * Developer Edition orgs are selectable, the orgs of the major branches (matched on username,
+ * on the sandbox of the username, or on the instance URL) and the production orgs are listed
+ * disabled with the reason.
  */
 export function buildOrgChoices(
   orgs: Array<{
@@ -1227,19 +1312,12 @@ export function buildOrgChoices(
           !majorUrl.includes("test.salesforce.com")
         );
       });
-      const isSandboxOrg =
-        org.isScratch === true ||
-        org.isSandbox === true ||
-        org.orgType === "sandbox" ||
-        org.orgType === "scratch" ||
-        instanceUrl.includes(".sandbox.") ||
-        instanceUrl.includes(".scratch.");
       let disabledReason: BackpromoteOrgChoice["disabledReason"] = null;
       if (["Expired", "Deleted"].includes(String(org.status || ""))) {
         disabledReason = "expired";
       } else if (majorOrg) {
         disabledReason = "majorOrg";
-      } else if (!isSandboxOrg) {
+      } else if (orgTypeOf(org) === "production") {
         disabledReason = "production";
       }
       return {
@@ -1377,7 +1455,7 @@ export function getBackpromoteErrorMessage(result: any): string {
 
 /**
  * Short name of the target sandbox for the panel: the `sandboxName` of the plan, else the
- * first label of its instance URL, else its username.
+ * short host of its instance URL (the label of the status bar badge), else its username.
  */
 export function getTargetOrgDisplayName(
   targetOrg: Partial<BackpromotePlan["targetOrg"]> | null | undefined,
@@ -1388,14 +1466,9 @@ export function getTargetOrgDisplayName(
   if (targetOrg.sandboxName) {
     return targetOrg.sandboxName;
   }
-  try {
-    const host = new URL(targetOrg.instanceUrl || "").hostname;
-    const label = host.split(".")[0];
-    if (label && !["login", "test", "www"].includes(label)) {
-      return label;
-    }
-  } catch {
-    // Not a URL
+  const host = shortenOrgHost(targetOrg.instanceUrl || "");
+  if (host && !["login", "test", "www"].includes(host)) {
+    return host;
   }
   return targetOrg.alias || targetOrg.username || "";
 }

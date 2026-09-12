@@ -187,6 +187,7 @@
   "backpromoteCompare": "Vergelijken",
   "backpromoteCompareTooltip": "De diff-editor van VS Code openen: sandbox-versie en versie van de parent branch. Flows openen ook in de tekst-diff.",
   "backpromoteConfirmActionFailed": "De handmatige actie kon niet worden vastgelegd: {{message}}",
+  "backpromoteConfirmActionNotRecorded": "sfdx-hardis heeft de handmatige actie {{label}} niet vastgelegd: de Pull Request valt mogelijk buiten de doorzochte geschiedenis. Zoek eerdere Pull Requests en probeer het opnieuw.",
   "backpromoteConflictLeft": "{{count}} conflicten over",
   "backpromoteConflictLeftOne": "1 conflict over",
   "backpromoteConnectOtherOrg": "Andere org verbinden",
