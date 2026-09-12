@@ -26,7 +26,6 @@
         </template>
       </div>
       <div class="hardis-page-head-actions">
-        <lightning-button variant="neutral" label={i18n.runInTerminal} title={i18n.backpromoteRunInTerminalTooltip} onclick={handleRunInTerminal}></lightning-button>
         <lightning-button variant="neutral" icon-name="utility:refresh" label={i18n.refreshLabel} onclick={handleRefresh} disabled={loading}></lightning-button>
       </div>
     </div>
@@ -93,7 +92,6 @@
           <h3 class="hardis-empty-title">{i18n.backpromoteCliTooOldTitle}</h3>
           <p class="hardis-empty-desc">{i18n.backpromoteCliTooOldDesc}</p>
           <div class="hardis-empty-actions">
-            <lightning-button variant="neutral" label={i18n.runInTerminal} onclick={handleRunInTerminal}></lightning-button>
             <lightning-button variant="neutral" class="hardis-btn-tinted-blue" label={i18n.backpromoteUpdateSfdxHardis} onclick={handleOpenSetup}></lightning-button>
           </div>
         </div>
@@ -111,7 +109,6 @@
             <p>{planErrorMessage}</p>
           </div>
           <div class="hardis-empty-actions">
-            <lightning-button variant="neutral" label={i18n.runInTerminal} onclick={handleRunInTerminal}></lightning-button>
             <lightning-button variant="neutral" class="hardis-btn-tinted-blue" label={i18n.tryAgainLabel} onclick={handleRetry}></lightning-button>
           </div>
         </div>

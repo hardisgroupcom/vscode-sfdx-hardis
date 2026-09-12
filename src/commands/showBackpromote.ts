@@ -16,7 +16,6 @@ import {
   getCurrentGitBranch,
 } from "../utils/pipeline/sfdxHardisConfig";
 import {
-  BACKPROMOTE_COMMAND,
   BackpromotePlan,
   BackpromotePlanProgress,
   BackpromoteSelection,
@@ -388,13 +387,6 @@ export function registerShowBackpromote(commands: Commands) {
           }
           case "runBackpromote": {
             runBackpromote(panel, current, data);
-            break;
-          }
-          case "runInTerminal": {
-            commands.commandRunner.executeCommandTerminal(
-              BACKPROMOTE_COMMAND,
-              await collectCredentialEnv(),
-            );
             break;
           }
           case "selectOrg": {

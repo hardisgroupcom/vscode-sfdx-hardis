@@ -959,10 +959,6 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     window.sendMessageToVSCode({ type: "retryInit" });
   }
 
-  handleRunInTerminal() {
-    window.sendMessageToVSCode({ type: "runInTerminal" });
-  }
-
   handleOpenSetup() {
     window.sendMessageToVSCode({
       type: "runVsCodeCommand",
