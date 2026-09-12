@@ -7,12 +7,13 @@
       <div class="hardis-page-head-text">
         <h1 class="hardis-page-title">{i18n.backpromote}</h1>
         <p class="hardis-page-subtitle">{i18n.backpromotePanelSubtitle}</p>
-        <template if:true={isReady}>
+        <template if:true={showPickers}>
           <div class="bp-from">
             <span class="muted">{i18n.backpromoteTargetOrgLabel}</span>
             <lightning-combobox class="bp-parent-picker" label={i18n.backpromoteTargetOrgLabel} variant="label-hidden" options={targetOrgOptions} value={targetOrgValue} onchange={handleTargetOrgChange} disabled={loading}></lightning-combobox>
             <span class="muted">{i18n.backpromoteFromBranch}</span>
             <lightning-combobox class="bp-parent-picker" label={i18n.backpromoteParentBranchLabel} variant="label-hidden" options={parentBranchOptions} value={parentBranchValue} onchange={handleParentBranchChange} disabled={loading}></lightning-combobox>
+            <button type="button" class="hardis-textlink" onclick={handleSelectOrg}>{i18n.backpromoteConnectOtherOrg}</button>
           </div>
         </template>
         <template if:true={hasPassedChecks}>

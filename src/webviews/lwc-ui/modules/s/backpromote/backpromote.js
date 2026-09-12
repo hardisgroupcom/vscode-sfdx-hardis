@@ -227,6 +227,12 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     return !this.loading && !this.planError && !this.plan && !!this.setup;
   }
 
+  // The org and the parent branch stay changeable whatever the plan answered: an expired
+  // org session or a blocked check is exactly when another org or branch is wanted
+  get showPickers() {
+    return !this.loading && !!this.setup && !this.isSetupState;
+  }
+
   get setupDescription() {
     return this.t("backpromoteSetupDesc", {
       branch: this.setup ? this.setup.currentBranch : "",
