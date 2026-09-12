@@ -20,6 +20,8 @@ const UNKNOWN_PILL = "hardis-pill hardis-status-unknown";
 // Pull Requests shown before the start when the list is collapsed
 const EARLIER_PULL_REQUESTS_SHOWN = 2;
 const DEFAULT_DOC_URL = "https://sfdx-hardis.cloudity.com/hardis/work/backpromote/";
+// Value of the last entry of the target sandbox list, the one that opens the Orgs Manager
+const CONNECT_ANOTHER_ORG = "__connectAnotherOrg__";
 
 function fileName(filePath) {
   return String(filePath).split("/").pop();
@@ -348,9 +350,10 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   // Where: sandbox, parent branch, start Pull Request
   // ---------------------------------------------------------------------------
 
+  // The last entry of the list opens the Orgs Manager to authenticate another org
   get targetOrgOptions() {
     const orgs = this.setup ? this.setup.orgs : [];
-    return orgs.map((org) => {
+    const options = orgs.map((org) => {
       let suffix = "";
       if (org.disabledReason === "majorOrg") {
         suffix = ` (${this.t("backpromoteOrgOfBranch", { branch: org.majorBranch || "" })})`;
@@ -359,6 +362,11 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       }
       return { label: org.label + suffix, value: org.username };
     });
+    options.push({
+      label: this.t("backpromoteConnectOtherOrg"),
+      value: CONNECT_ANOTHER_ORG,
+    });
+    return options;
   }
 
   get targetOrgValue() {
@@ -391,6 +399,16 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     return this.parentBranch || "";
   }
 
+  // The combobox already shows the entry the user picked: the value is set to it and back so
+  // the rendered value follows the tracked one again
+  _restorePickerValue(previous) {
+    this.targetOrg = CONNECT_ANOTHER_ORG;
+    // eslint-disable-next-line @lwc/lwc/no-async-operation
+    setTimeout(() => {
+      this.targetOrg = previous;
+    }, 0);
+  }
+
   handleTargetOrgChange(event) {
     const targetOrg = event.detail.value || null;
     const choice = (this.setup ? this.setup.orgs : []).find(
@@ -399,14 +417,16 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     if (!targetOrg || targetOrg === this.targetOrg) {
       return;
     }
+    if (targetOrg === CONNECT_ANOTHER_ORG) {
+      // The picker goes back to the current org while the Orgs Manager opens: the org
+      // authenticated there becomes the target once it is the default org
+      this._restorePickerValue(this.targetOrg);
+      window.sendMessageToVSCode({ type: "selectOrg" });
+      return;
+    }
     if (choice && choice.disabledReason) {
       // The picker goes back to the current org: a major org is never a target
-      const previous = this.targetOrg;
-      this.targetOrg = targetOrg;
-      // eslint-disable-next-line @lwc/lwc/no-async-operation
-      setTimeout(() => {
-        this.targetOrg = previous;
-      }, 0);
+      this._restorePickerValue(this.targetOrg);
       return;
     }
     this.targetOrg = targetOrg;
@@ -1490,10 +1510,6 @@ export default class Backpromote extends SharedMixin(LightningElement) {
 
   handleOpenDoc() {
     window.sendMessageToVSCode({ type: "openExternal", data: { url: this.docUrl } });
-  }
-
-  handleSelectOrg() {
-    window.sendMessageToVSCode({ type: "selectOrg" });
   }
 
   // The git provider tokens can be set in the extension settings

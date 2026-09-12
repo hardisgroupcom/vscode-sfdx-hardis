@@ -241,7 +241,7 @@ export class BranchStrategyMermaidBuilder {
       // The counter says how many User Stories the branch holds: a Pull Request a promotion took
       // out of this branch belongs to the branch it reached (counting it here too would show the
       // same number twice), and promotion or major-to-major Pull Requests are vehicles, not
-      // stories. The total is kept as well, for the toggles of the webview.
+      // stories
       const prCount = userStoryPullRequests(
         visiblePullRequests(branchPrs),
         this.branchesAndOrgs.map((entry) => entry.branchName),
@@ -257,7 +257,7 @@ export class BranchStrategyMermaidBuilder {
         " " +
         this.escapeHtmlLabel(branchAndOrg.branchName) +
         (prCountAll > 0
-          ? `<span class='hardis-node-count' data-count='${prCount}' data-count-all='${prCountAll}' style='display:none;'></span>`
+          ? `<span class='hardis-node-count' data-count='${prCount}' style='display:none;'></span>`
           : "");
       return {
         name: branchAndOrg.branchName,

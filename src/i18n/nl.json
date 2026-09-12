@@ -2009,8 +2009,6 @@
   "sfdxPluginLatestInstalled": "De nieuwste versie van SFDX-plugin {{plugin}} is geïnstalleerd",
   "sfdxProjectConfigFile": "Sfdx-projectconfiguratiebestand",
   "showAllOptions": "Alles tonen",
-  "showAlreadyPromotedPrs": "Al gepromote Pull Requests weergeven (experimenteel)",
-  "showAlreadyPromotedPrsHelp": "Een Pull Request die door een promotion branch is meegenomen, staat in de branch die hij heeft bereikt. Zet dit aan om hem ook in zijn vorige branch te zien.",
   "showAtStartup": "Weergeven bij opstarten",
   "showFeatureBranches": "Feature branches weergeven",
   "showFilter": "Filter weergeven",

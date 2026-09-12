@@ -32,7 +32,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track displayFeatureBranches = false;
   // Promotion branches: a Pull Request a promotion took out of a branch is listed in the branch
   // it reached, so a number appears once in the pipeline. This brings the other places back.
-  @track showAlreadyPromotedPrs = false;
   // Branch modal: promotion and major-to-major Pull Requests are the vehicles that move the
   // User Stories, not stories themselves, so they are hidden unless this toggle is on
   @track modalShowPromotionPrs = false;
@@ -702,9 +701,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.warnings = (this.pipelineData && this.pipelineData.warnings) || [];
     this.hasWarnings = this.warnings.length > 0;
     this.showOnlyMajor = false;
-    if (Object.prototype.hasOwnProperty.call(data, "showAlreadyPromotedPrs")) {
-      this.showAlreadyPromotedPrs = data.showAlreadyPromotedPrs ?? false;
-    }
     if (Object.prototype.hasOwnProperty.call(data, "displayFeatureBranches")) {
       this.displayFeatureBranches = data.displayFeatureBranches ?? false;
     }
@@ -2237,32 +2233,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
   }
 
-  handleToggleAlreadyPromoted(event) {
-    this.showAlreadyPromotedPrs = event.target.checked;
-    window.sendMessageToVSCode({
-      type: "updateVsCodeSfdxHardisConfiguration",
-      data: {
-        configKey: "pipelineShowAlreadyPromotedPullRequests",
-        value: this.showAlreadyPromotedPrs,
-      },
-    });
-    // The diagram itself does not change, only the counters drawn on its nodes
-    this._redrawNodeCountBubbles();
-  }
-
-  // True as soon as one Pull Request of the pipeline was carried away by a promotion: without
-  // one, the toggle would have nothing to show and stays hidden.
-  get hasAlreadyPromotedPrs() {
-    if (!this.pipelineData || !Array.isArray(this.pipelineData.orgs)) {
-      return false;
-    }
-    return this.pipelineData.orgs.some((org) =>
-      (org.pullRequestsInBranchSinceLastMerge || []).some(
-        (pr) => pr.promotedAway === true,
-      ),
-    );
-  }
-
   _redrawNodeCountBubbles() {
     const mermaidSvg = this.template.querySelector(".mermaid-container svg");
     if (!mermaidSvg) {
@@ -2476,12 +2446,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   // Every list shown in a branch modal goes through here, whatever its origin (branch window or
-  // selected go-live): the two toggles must apply the same way to both
+  // selected go-live): a story a promotion carried away is listed in the branch it reached only,
+  // and the vehicles toggle applies the same way to both
   _filterModalPullRequests(pullRequests) {
     let prs = Array.isArray(pullRequests) ? pullRequests : [];
-    if (!this.showAlreadyPromotedPrs) {
-      prs = prs.filter((pr) => pr.promotedAway !== true);
-    }
+    prs = prs.filter((pr) => pr.promotedAway !== true);
     if (!this.modalShowPromotionPrs) {
       prs = prs.filter((pr) => !this._isPromotionOrMajorPr(pr));
     }
@@ -2833,10 +2802,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (!marker) {
       return;
     }
-    const count = this.showAlreadyPromotedPrs
-      ? marker.getAttribute("data-count-all") ||
-        marker.getAttribute("data-count")
-      : marker.getAttribute("data-count");
+    const count = marker.getAttribute("data-count");
     if (count === "0") {
       return;
     }

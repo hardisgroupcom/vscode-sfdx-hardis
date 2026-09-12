@@ -541,17 +541,10 @@ export function annotateAlreadyPromoted(
 }
 
 /**
- * The Pull Requests a window shows: the ones a promotion took out of the branch are listed in
- * the branch they reached instead, so a Pull Request number appears once in the whole pipeline.
- * `showAlreadyPromoted` brings them back.
+ * The Pull Requests a window shows: a story a promotion took out of the branch is listed in the
+ * branch it reached only, so a Pull Request number appears once in the whole pipeline.
  */
-export function visiblePullRequests(
-  pullRequests: PullRequest[],
-  showAlreadyPromoted = false,
-): PullRequest[] {
-  if (showAlreadyPromoted) {
-    return pullRequests;
-  }
+export function visiblePullRequests(pullRequests: PullRequest[]): PullRequest[] {
   return pullRequests.filter((pr) => pr.promotedAway !== true);
 }
 

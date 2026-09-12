@@ -2009,8 +2009,6 @@
   "sfdxPluginLatestInstalled": "A versão mais recente do plugin SFDX {{plugin}} está instalada",
   "sfdxProjectConfigFile": "Arquivo de configuração do projeto Sfdx",
   "showAllOptions": "Mostrar todos",
-  "showAlreadyPromotedPrs": "Mostrar Pull Requests já promovidas (experimental)",
-  "showAlreadyPromotedPrsHelp": "Uma Pull Request levada por um branch de promoção é listada no branch que alcançou. Ative isto para vê-la também no branch anterior.",
   "showAtStartup": "Mostrar ao iniciar",
   "showFeatureBranches": "Mostrar branches de funcionalidade",
   "showFilter": "Mostrar filtro",

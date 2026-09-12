@@ -108,7 +108,6 @@
         <div class="bp-where-line">
           <span class="muted">{i18n.backpromoteTargetSandbox}</span>
           <lightning-combobox class="bp-picker" label={i18n.backpromoteTargetSandbox} variant="label-hidden" options={targetOrgOptions} value={targetOrgValue} onchange={handleTargetOrgChange} disabled={pickersDisabled}></lightning-combobox>
-          <button type="button" class="hardis-textlink" onclick={handleSelectOrg}>{i18n.backpromoteConnectOtherOrg}</button>
           <template if:true={showParentBranchPicker}>
             <span class="muted">{i18n.backpromoteParentBranch}</span>
             <lightning-combobox class="bp-picker" label={i18n.backpromoteParentBranch} variant="label-hidden" options={parentBranchOptions} value={parentBranchValue} onchange={handleParentBranchChange} disabled={pickersDisabled}></lightning-combobox>

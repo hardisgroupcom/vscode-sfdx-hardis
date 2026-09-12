@@ -53,7 +53,8 @@ import {
 } from "../utils/backpromote/backpromotePanelUtils";
 
 const BACKPROMOTE_LWC_ID = "s-backpromote";
-// After "Connect another org", the org list reloads when the default org changes
+// After "Connect another org" (last entry of the sandbox list), the org list reloads when the
+// default org changes
 // during this delay
 const ORG_SELECTION_WATCH_MS = 10 * 60 * 1000;
 // A save in the editor and the file watcher report the same write: one read per file
@@ -1109,8 +1110,8 @@ async function resetBranch(current: BackpromotePanelState, reloadPlan: () => Pro
 }
 
 /**
- * Authenticates another org with the org selection command, then offers it: the org list
- * reloads once the default org changed, and the plan is computed again.
+ * Opens the Orgs Manager to authenticate another org, then offers it: the org list reloads once
+ * the default org changed, and the plan is computed again.
  */
 function connectAnotherOrg(
   current: BackpromotePanelState,
@@ -1147,8 +1148,5 @@ function connectAnotherOrg(
   }
   timer = setTimeout(stop, ORG_SELECTION_WATCH_MS);
   current.orgSelectionWatcher = subscription;
-  vscode.commands.executeCommand(
-    "vscode-sfdx-hardis.execute-command",
-    "sf hardis:org:select --set-default",
-  );
+  vscode.commands.executeCommand("vscode-sfdx-hardis.openOrgsManager");
 }

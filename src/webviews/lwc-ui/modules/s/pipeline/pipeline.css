@@ -140,10 +140,33 @@
     gap: 0.5rem;
 }
 
+/* The header row is wide (provider icons, two toggles, the settings buttons):
+   the title and subtitle give way first, down to 16rem, before that row has
+   to wrap */
+.hardis-page-head-text {
+    flex-shrink: 100;
+    min-width: 16rem;
+}
+
+/* Provider icons, toggles and the settings buttons. The row wraps as a whole
+   when the header is tight (two toggles on a 1300px window) instead of
+   squeezing every item */
+.provider-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
 .toggle-wrapper {
     display: flex;
     align-items: center;
     margin-top: 0.6rem;
+    /* One line per toggle: a flex row shrinks the toggle before anything else,
+       its label then wrapped on two lines and the switch drifted away from its words */
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 /* Greyed (not connected). Strong fade so the disconnected state is unmistakable

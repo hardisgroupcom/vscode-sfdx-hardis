@@ -13,7 +13,7 @@
         </div>
         <div class="hardis-page-head-actions">
         <div class="actions-row">
-            <div style="display:flex;align-items:center;gap:0.5rem;">
+            <div class="provider-actions">
                 <!-- Provider icon button for Git -->
                 <template if:true={gitProviderIconUrl}>
                     <button class="slds-button provider-button" title={connectedLabel} onclick={handleGitConnect}>
@@ -38,19 +38,6 @@
                             message-toggle-inactive=""
                         ></lightning-input>
                     </div>
-                    <template if:true={hasAlreadyPromotedPrs}>
-                        <div class="toggle-wrapper">
-                            <lightning-input
-                                type="toggle"
-                                label={i18n.showAlreadyPromotedPrs}
-                                title={i18n.showAlreadyPromotedPrsHelp}
-                                checked={showAlreadyPromotedPrs}
-                                onchange={handleToggleAlreadyPromoted}
-                                message-toggle-active=""
-                                message-toggle-inactive=""
-                            ></lightning-input>
-                        </div>
-                    </template>
                 </template>
 
                 <lightning-button-group>

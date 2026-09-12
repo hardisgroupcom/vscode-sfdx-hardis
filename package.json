@@ -216,11 +216,6 @@
           "default": false,
           "description": "Display feature branches in the DevOps Pipeline diagram"
         },
-        "vsCodeSfdxHardis.pipelineShowAlreadyPromotedPullRequests": {
-          "type": "boolean",
-          "default": false,
-          "description": "Promotion branches (experimental): in the DevOps Pipeline diagram, also list a Pull Request in the branch a promotion branch already carried it out of. By default a Pull Request number appears in a single branch: the one it has reached."
-        },
         "vsCodeSfdxHardis.pipelineFeatureBranchGroupThreshold": {
           "type": "integer",
           "default": 3,
