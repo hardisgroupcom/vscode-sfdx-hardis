@@ -9,12 +9,20 @@ import { execSfdxJson, getWorkspaceRoot } from "../utils";
 import { Logger } from "../logger";
 import { t } from "../i18n/i18n";
 import { collectProviderCredentialEnvVars } from "../utils/providerCredentials";
+import { listAllOrgs } from "../utils/orgUtils";
+import { listMajorOrgs } from "../utils/orgConfigUtils";
+import {
+  getConfig,
+  getCurrentGitBranch,
+} from "../utils/pipeline/sfdxHardisConfig";
 import {
   BACKPROMOTE_COMMAND,
   BackpromotePlan,
   BackpromotePlanProgress,
   BackpromoteSelection,
+  BackpromoteSetup,
   buildDefaultSelection,
+  buildOrgChoices,
   buildPlanCommand,
   buildPlanProgress,
   buildSelectionPayload,
@@ -30,14 +38,20 @@ import {
 } from "../utils/backpromote/backpromotePanelUtils";
 
 const BACKPROMOTE_LWC_ID = "s-backpromote";
-// After "Select another org", the plan reloads when the default org changes
+// After "Connect another org", the org list reloads when the default org changes
 // during this delay
 const ORG_SELECTION_WATCH_MS = 10 * 60 * 1000;
 
 interface BackpromotePanelState {
-  plan: BackpromotePlan | null;
-  /** Parent branch picked in the panel, null for the one sfdx-hardis resolves */
+  /** What the panel offers to choose from before a plan */
+  setup: BackpromoteSetup | null;
+  /** Org picked in the panel, null for the default org */
+  targetOrg: string | null;
+  /** Parent branch picked in the panel, null for the one sfdx-hardis guesses */
   parentBranch: string | null;
+  /** The user asked for a plan: the panel shows it (or its loading state) instead of the setup */
+  planRequested: boolean;
+  plan: BackpromotePlan | null;
   selection: BackpromoteSelection | null;
   /** Revision of the last selection received from the webview */
   revision: number;
@@ -47,8 +61,11 @@ interface BackpromotePanelState {
 
 function createState(): BackpromotePanelState {
   return {
-    plan: null,
+    setup: null,
+    targetOrg: null,
     parentBranch: null,
+    planRequested: false,
+    plan: null,
     selection: null,
     revision: 0,
     orgSelectionWatcher: null,
@@ -80,12 +97,43 @@ async function collectCredentialEnv(): Promise<Record<string, string>> {
   }
 }
 
+/**
+ * The org and the parent branch are chosen before anything is computed: the authenticated
+ * orgs (cached list, no connection probe) and the major branches of config/branches.
+ */
+async function loadSetup(): Promise<BackpromoteSetup> {
+  const [orgs, majorOrgs, projectConfig, currentBranch] = await Promise.all([
+    listAllOrgs(false, true, true).catch(() => []),
+    listMajorOrgs().catch(() => []),
+    getConfig("project").catch(() => ({})),
+    getCurrentGitBranch().catch(() => ""),
+  ]);
+  const developmentBranch: string | null =
+    typeof projectConfig?.developmentBranch === "string"
+      ? projectConfig.developmentBranch
+      : null;
+  const parentBranchChoices = [
+    ...new Set(
+      [developmentBranch, ...majorOrgs.map((org) => org.branchName)].filter(
+        (branch): branch is string => !!branch && isSafeCommandValue(branch),
+      ),
+    ),
+  ];
+  return {
+    currentBranch: String(currentBranch || ""),
+    orgs: buildOrgChoices(orgs),
+    parentBranchChoices,
+    defaultParentBranch: developmentBranch || parentBranchChoices[0] || null,
+  };
+}
+
 type PlanFetchResult =
   | { plan: BackpromotePlan }
   | { planError: { message: string; cliTooOld: boolean } };
 
 async function fetchPlan(
   parentBranch: string | null,
+  targetOrg: string | null,
   onProgress?: (progress: BackpromotePlanProgress) => void,
 ): Promise<PlanFetchResult> {
   // sfdx-hardis appends each step of the plan to this file (SFDX_HARDIS_PROGRESS_FILE):
@@ -116,7 +164,7 @@ async function fetchPlan(
   const progressTimer = setInterval(readProgress, 500);
   try {
     const result = recoverJsonCommandResult(
-      await execSfdxJson(buildPlanCommand(parentBranch), {
+      await execSfdxJson(buildPlanCommand(parentBranch, { targetOrg }), {
         fail: false,
         output: false,
         reuseRecentResult: false,
@@ -158,6 +206,9 @@ function buildPanelData(panelState: BackpromotePanelState): any {
   return {
     loading: false,
     planError: null,
+    setup: panelState.setup,
+    targetOrg: panelState.targetOrg,
+    parentBranch: panelState.parentBranch,
     plan,
     selection,
     revision: panelState.revision,
@@ -194,6 +245,27 @@ function acceptSelection(panelState: BackpromotePanelState, data: any): void {
   }
 }
 
+/** The org and the parent branch the webview asks for, only when the setup offers them */
+function acceptChoices(panelState: BackpromotePanelState, data: any): void {
+  const setup = panelState.setup;
+  const targetOrg = data?.targetOrg;
+  if (typeof targetOrg === "string" && targetOrg && setup?.orgs.some((org) => org.username === targetOrg)) {
+    panelState.targetOrg = targetOrg;
+  } else if (targetOrg === null || targetOrg === "") {
+    panelState.targetOrg = null;
+  }
+  const parentBranch = data?.parentBranch;
+  const branchChoices = new Set([
+    ...(setup?.parentBranchChoices || []),
+    ...(panelState.plan?.parentBranchChoices || []),
+  ]);
+  if (typeof parentBranch === "string" && parentBranch && branchChoices.has(parentBranch) && isSafeCommandValue(parentBranch)) {
+    panelState.parentBranch = parentBranch;
+  } else if (parentBranch === null || parentBranch === "") {
+    panelState.parentBranch = null;
+  }
+}
+
 export function registerShowBackpromote(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showBackpromote",
@@ -204,8 +276,7 @@ export function registerShowBackpromote(commands: Commands) {
         state = createState();
       }
 
-      // Open the panel at once: computing the plan previews the org and takes a
-      // few seconds
+      // Open the panel at once: the setup lists load in the background
       const panel = lwcManager.getOrCreatePanel(BACKPROMOTE_LWC_ID, {
         loading: true,
       });
@@ -215,19 +286,49 @@ export function registerShowBackpromote(commands: Commands) {
         state = createState();
       });
 
-      const loadAndPush = async () => {
+      const showSetup = async () => {
         const current = state;
         const loadId = ++current.loadCounter;
         panel.sendInitializationData({ loading: true });
-        const fetched = await fetchPlan(current.parentBranch, (progress) => {
-          if (
-            state === current &&
-            loadId === current.loadCounter &&
-            !panel.isDisposed()
-          ) {
-            panel.sendMessage({ type: "planProgress", data: progress });
-          }
+        const setup = await loadSetup();
+        if (state !== current || loadId !== current.loadCounter || panel.isDisposed()) {
+          return;
+        }
+        current.setup = setup;
+        if (current.parentBranch === null) {
+          current.parentBranch = setup.defaultParentBranch;
+        }
+        if (current.targetOrg === null) {
+          current.targetOrg = setup.orgs.find((org) => org.isDefault)?.username || null;
+        }
+        panel.sendInitializationData({
+          loading: false,
+          planError: null,
+          setup,
+          targetOrg: current.targetOrg,
+          parentBranch: current.parentBranch,
+          plan: null,
         });
+      };
+
+      const loadAndPush = async () => {
+        const current = state;
+        const loadId = ++current.loadCounter;
+        current.planRequested = true;
+        panel.sendInitializationData({ loading: true, setup: current.setup });
+        const fetched = await fetchPlan(
+          current.parentBranch,
+          current.targetOrg,
+          (progress) => {
+            if (
+              state === current &&
+              loadId === current.loadCounter &&
+              !panel.isDisposed()
+            ) {
+              panel.sendMessage({ type: "planProgress", data: progress });
+            }
+          },
+        );
         // A newer load started meanwhile, or the panel was closed
         if (
           state !== current ||
@@ -240,6 +341,9 @@ export function registerShowBackpromote(commands: Commands) {
           panel.sendInitializationData({
             loading: false,
             planError: fetched.planError,
+            setup: current.setup,
+            targetOrg: current.targetOrg,
+            parentBranch: current.parentBranch,
           });
           return;
         }
@@ -260,23 +364,21 @@ export function registerShowBackpromote(commands: Commands) {
         switch (type) {
           case "retryInit":
           case "refresh": {
-            await loadAndPush();
+            if (current.planRequested) {
+              await loadAndPush();
+            } else {
+              await showSetup();
+            }
             break;
           }
-          case "changeParentBranch": {
-            const parentBranch = data?.parentBranch;
-            if (
-              current.plan &&
-              typeof parentBranch === "string" &&
-              current.plan.parentBranchChoices.includes(parentBranch) &&
-              isSafeCommandValue(parentBranch)
-            ) {
-              current.parentBranch = parentBranch;
-              // The decisions were about another merge
-              current.selection = null;
-              current.plan = null;
-              await loadAndPush();
-            }
+          case "computePlan":
+          case "changeParentBranch":
+          case "changeTargetOrg": {
+            acceptChoices(current, data);
+            // Another org or another parent branch: the decisions were about another merge
+            current.plan = null;
+            current.selection = null;
+            await loadAndPush();
             break;
           }
           case "selectionChanged": {
@@ -296,7 +398,7 @@ export function registerShowBackpromote(commands: Commands) {
             break;
           }
           case "selectOrg": {
-            selectOrg(current, loadAndPush);
+            connectAnotherOrg(current, showSetup, loadAndPush);
             break;
           }
           default:
@@ -304,7 +406,7 @@ export function registerShowBackpromote(commands: Commands) {
         }
       });
 
-      void loadAndPush();
+      void showSetup();
     },
   );
   commands.disposables.push(disposable);
@@ -346,11 +448,13 @@ function runBackpromote(
 }
 
 /**
- * Runs the org selection, then reloads the plan once the default org changed.
+ * Authenticates another org with the org selection command, then offers it: the org list
+ * reloads once the default org changed, and the plan is computed again when one was shown.
  */
-function selectOrg(
+function connectAnotherOrg(
   current: BackpromotePanelState,
-  reload: () => Promise<void>,
+  showSetup: () => Promise<void>,
+  reloadPlan: () => Promise<void>,
 ): void {
   current.orgSelectionWatcher?.dispose();
   const watcher = vscode.workspace.createFileSystemWatcher(
@@ -372,10 +476,11 @@ function selectOrg(
   function onConfigChange() {
     stop();
     if (state === current) {
-      // Another org: the decisions were about this one
-      current.selection = null;
+      // The new default org becomes the target
+      current.targetOrg = null;
       current.plan = null;
-      void reload();
+      current.selection = null;
+      void showSetup().then(() => (current.planRequested ? reloadPlan() : undefined));
     }
   }
   timer = setTimeout(stop, ORG_SELECTION_WATCH_MS);

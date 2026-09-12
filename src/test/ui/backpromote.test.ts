@@ -55,6 +55,22 @@ suite("Backpromote panel UI tests", function () {
       "backpromote panel to open",
     );
     sent = recordSentMessages(panel);
+    // The panel first asks for the org and the parent branch, and computes nothing
+    const setupData = await waitFor(
+      () => {
+        const data = panel.getInitializationData();
+        return data && data.loading === false && data.setup ? data : null;
+      },
+      30000,
+      "the setup step",
+    );
+    assert.strictEqual(setupData.plan, null);
+    assert.ok(Array.isArray(setupData.setup.orgs));
+    assert.ok(Array.isArray(setupData.setup.parentBranchChoices));
+    panel.simulateWebviewMessage({
+      type: "computePlan",
+      data: { targetOrg: null, parentBranch: null },
+    });
     initData = await waitFor(
       () => {
         const data = panel.getInitializationData();

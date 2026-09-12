@@ -12,6 +12,7 @@ import {
   BackpromoteSelection,
   buildBackpromoteCommand,
   buildDefaultSelection,
+  buildOrgChoices,
   buildPlanCommand,
   buildPlanProgress,
   buildSelectionPayload,
@@ -244,6 +245,24 @@ suite("backpromotePanelUtils", () => {
       'sf hardis:work:backpromote --plan --parentbranch "main;rm -rf" --json',
     );
     assert.throws(() => buildPlanCommand("main$(id)"));
+    assert.strictEqual(
+      buildPlanCommand("integration", { targetOrg: USERNAME }),
+      `sf hardis:work:backpromote --plan --parentbranch integration --target-org ${USERNAME} --json`,
+    );
+  });
+
+  test("buildOrgChoices offers the live developer orgs, the default one first", () => {
+    const choices = buildOrgChoices([
+      { username: "dev2@x.com.dev2", alias: "dev2", isSandbox: true },
+      { username: "admin@x.com", orgType: "production" },
+      { username: "scratch@x.com", isScratch: true, status: "Expired" },
+      { username: "me@x.com.dev", alias: "dev", isSandbox: true, isDefaultUsername: true },
+      { username: "user$(x)@x.com.dev", isSandbox: true },
+    ]);
+    assert.deepStrictEqual(choices, [
+      { username: "me@x.com.dev", label: "dev (me@x.com.dev)", isDefault: true },
+      { username: "dev2@x.com.dev2", label: "dev2 (dev2@x.com.dev2)", isDefault: false },
+    ]);
   });
 
   test("an unknown flag error or a plan of the previous version means the installed sfdx-hardis is too old", () => {

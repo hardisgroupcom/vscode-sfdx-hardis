@@ -557,15 +557,70 @@ export function buildSelectionPayload(
 }
 
 /**
- * Read-only plan command, with the parent branch the user chose in the panel.
+ * Read-only plan command, with the parent branch and the org the user chose in the panel.
+ * Without them sfdx-hardis guesses the parent branch and takes the default org.
  */
-export function buildPlanCommand(parentBranch?: string | null): string {
+export function buildPlanCommand(
+  parentBranch?: string | null,
+  options: { targetOrg?: string | null } = {},
+): string {
   const parts = [BACKPROMOTE_COMMAND, "--plan"];
   if (parentBranch) {
     parts.push(`--parentbranch ${quoteCommandValue(parentBranch)}`);
   }
+  if (options.targetOrg) {
+    parts.push(`--target-org ${quoteCommandValue(options.targetOrg)}`);
+  }
   parts.push("--json");
   return parts.join(" ");
+}
+
+/** An authenticated org the panel offers as target */
+export interface BackpromoteOrgChoice {
+  username: string;
+  /** Alias when there is one, else the username */
+  label: string;
+  isDefault: boolean;
+}
+
+/**
+ * What the panel asks before computing a plan: the org and the parent branch. Empty lists are
+ * fine, sfdx-hardis then takes the default org and guesses the parent branch.
+ */
+export interface BackpromoteSetup {
+  currentBranch: string;
+  orgs: BackpromoteOrgChoice[];
+  parentBranchChoices: string[];
+  /** The parent branch preselected: the development branch, else the first major branch */
+  defaultParentBranch: string | null;
+}
+
+/**
+ * The orgs a backpromote may target, from `sf org list`: developer sandboxes and scratch orgs
+ * that are still alive, the default org first. Production orgs are refused by the command anyway.
+ */
+export function buildOrgChoices(
+  orgs: Array<{
+    username?: string;
+    alias?: string;
+    isDefaultUsername?: boolean;
+    isScratch?: boolean;
+    isSandbox?: boolean;
+    orgType?: string;
+    status?: string;
+    connectedStatus?: string;
+  }>,
+): BackpromoteOrgChoice[] {
+  return orgs
+    .filter((org) => !!org.username && isSafeCommandValue(org.username))
+    .filter((org) => org.isScratch || org.isSandbox || org.orgType === "sandbox" || org.orgType === "scratch")
+    .filter((org) => !["Expired", "Deleted"].includes(String(org.status || "")))
+    .map((org) => ({
+      username: org.username as string,
+      label: org.alias ? `${org.alias} (${org.username})` : (org.username as string),
+      isDefault: org.isDefaultUsername === true,
+    }))
+    .sort((a, b) => Number(b.isDefault) - Number(a.isDefault) || a.label.localeCompare(b.label));
 }
 
 /**

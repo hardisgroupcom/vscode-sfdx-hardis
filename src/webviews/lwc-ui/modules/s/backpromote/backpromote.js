@@ -37,6 +37,11 @@ function fileName(filePath) {
 export default class Backpromote extends SharedMixin(LightningElement) {
   loading = true;
   planError = null;
+  // What the panel offers before a plan: the authenticated orgs and the major branches
+  setup = null;
+  // The org and the parent branch picked, null for the default org and the guessed branch
+  targetOrg = null;
+  parentBranch = null;
   plan = null;
   selection = null;
   summary = null;
@@ -74,8 +79,23 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       this.planProgress = null;
     }
     this.planError = payload.planError || null;
+    if (payload.setup) {
+      this.setup = payload.setup;
+    }
+    if (payload.targetOrg !== undefined) {
+      this.targetOrg = payload.targetOrg || null;
+    }
+    if (payload.parentBranch !== undefined) {
+      this.parentBranch = payload.parentBranch || null;
+    }
+    if (payload.plan === null) {
+      this.plan = null;
+      this.summary = null;
+      this.command = null;
+    }
     if (payload.plan) {
       this.plan = payload.plan;
+      this.parentBranch = payload.plan.parentBranch;
       this.applySelectionPayload(payload);
       this.targetOrgLabel = payload.targetOrgLabel || "";
       this.workspaceRoot = payload.workspaceRoot || "";
@@ -202,6 +222,80 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     return !this.loading && !this.planError && !!this.plan;
   }
 
+  // Nothing computed yet: the org and the parent branch are chosen first
+  get isSetupState() {
+    return !this.loading && !this.planError && !this.plan && !!this.setup;
+  }
+
+  get setupDescription() {
+    return this.t("backpromoteSetupDesc", {
+      branch: this.setup ? this.setup.currentBranch : "",
+    });
+  }
+
+  // The orgs to pick from: the default org (whatever it is) first, then the ones listed
+  get targetOrgOptions() {
+    const orgs = this.setup ? this.setup.orgs : [];
+    const options = orgs.map((org) => ({ label: org.label, value: org.username }));
+    if (!orgs.some((org) => org.isDefault)) {
+      options.unshift({ label: this.t("backpromoteDefaultOrg"), value: "" });
+    }
+    return options;
+  }
+
+  get targetOrgValue() {
+    return this.targetOrg || "";
+  }
+
+  // The parent branches to pick from: the major branches, and the guess of sfdx-hardis
+  // when the project declares none
+  get parentBranchOptions() {
+    const choices = new Set([
+      ...(this.setup ? this.setup.parentBranchChoices : []),
+      ...(this.plan ? this.plan.parentBranchChoices : []),
+    ]);
+    const options = [...choices].map((branch) => ({ label: branch, value: branch }));
+    if (options.length === 0) {
+      options.push({ label: this.t("backpromoteParentBranchGuessed"), value: "" });
+    }
+    return options;
+  }
+
+  get parentBranchValue() {
+    return this.parentBranch || "";
+  }
+
+  handleSetupTargetOrgChange(event) {
+    this.targetOrg = event.detail.value || null;
+  }
+
+  handleSetupParentBranchChange(event) {
+    this.parentBranch = event.detail.value || null;
+  }
+
+  handleComputePlan() {
+    this.loading = true;
+    this.planError = null;
+    window.sendMessageToVSCode({
+      type: "computePlan",
+      data: { targetOrg: this.targetOrg, parentBranch: this.parentBranch },
+    });
+  }
+
+  handleTargetOrgChange(event) {
+    const targetOrg = event.detail.value || null;
+    if (targetOrg === this.targetOrg) {
+      return;
+    }
+    this.targetOrg = targetOrg;
+    this.loading = true;
+    this.planError = null;
+    window.sendMessageToVSCode({
+      type: "changeTargetOrg",
+      data: { targetOrg, parentBranch: this.parentBranch },
+    });
+  }
+
   get isUpToDate() {
     return this.isReady && this.plan.status === "upToDate";
   }
@@ -274,30 +368,17 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     return this.failedChecks.length > 0;
   }
 
-  get parentBranchOptions() {
-    if (!this.plan) {
-      return [];
-    }
-    return (this.plan.parentBranchChoices || []).map((branch) => ({
-      label: branch,
-      value: branch,
-    }));
-  }
-
-  get hasParentBranchChoices() {
-    return this.parentBranchOptions.length > 0;
-  }
-
   handleParentBranchChange(event) {
-    const parentBranch = event.detail.value;
-    if (!parentBranch || !this.plan || parentBranch === this.plan.parentBranch) {
+    const parentBranch = event.detail.value || null;
+    if (parentBranch === this.parentBranch) {
       return;
     }
+    this.parentBranch = parentBranch;
     this.loading = true;
     this.planError = null;
     window.sendMessageToVSCode({
       type: "changeParentBranch",
-      data: { parentBranch },
+      data: { targetOrg: this.targetOrg, parentBranch },
     });
   }
 

@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **Backpromote (Beta) panel**: bring what your teammates merged in the parent branch into your User Story branch and your developer sandbox or scratch org, from the commands menu or the DevOps Pipeline
+  - Pick the target org and the parent branch first, then compute the plan; both stay changeable in the header
   - See the Pull Requests the merge brings in, the metadata it deploys, the deletions and the deployment actions, and untick what you do not want yet
   - Files changed both by the Pull Requests and in your branch or your org are listed first: for each one, choose to overwrite with the parent branch version, keep yours, or merge by hand with a prompt for your coding agent
   - Your pending org changes are saved in your branch before the merge, and a merge that stopped on conflicts is finished from the panel once the markers are solved

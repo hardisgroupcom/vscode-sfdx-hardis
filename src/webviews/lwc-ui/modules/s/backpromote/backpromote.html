@@ -7,10 +7,12 @@
       <div class="hardis-page-head-text">
         <h1 class="hardis-page-title">{i18n.backpromote}</h1>
         <p class="hardis-page-subtitle">{i18n.backpromotePanelSubtitle}</p>
-        <template if:true={hasParentBranchChoices}>
+        <template if:true={isReady}>
           <div class="bp-from">
+            <span class="muted">{i18n.backpromoteTargetOrgLabel}</span>
+            <lightning-combobox class="bp-parent-picker" label={i18n.backpromoteTargetOrgLabel} variant="label-hidden" options={targetOrgOptions} value={targetOrgValue} onchange={handleTargetOrgChange} disabled={loading}></lightning-combobox>
             <span class="muted">{i18n.backpromoteFromBranch}</span>
-            <lightning-combobox class="bp-parent-picker" label={i18n.backpromoteParentBranchLabel} variant="label-hidden" options={parentBranchOptions} value={plan.parentBranch} onchange={handleParentBranchChange} disabled={loading}></lightning-combobox>
+            <lightning-combobox class="bp-parent-picker" label={i18n.backpromoteParentBranchLabel} variant="label-hidden" options={parentBranchOptions} value={parentBranchValue} onchange={handleParentBranchChange} disabled={loading}></lightning-combobox>
           </div>
         </template>
         <template if:true={hasPassedChecks}>
@@ -28,6 +30,27 @@
         <lightning-button variant="neutral" icon-name="utility:refresh" label={i18n.refreshLabel} onclick={handleRefresh} disabled={loading}></lightning-button>
       </div>
     </div>
+
+    <!-- Setup: the org and the parent branch, before anything is computed -->
+    <template if:true={isSetupState}>
+      <div class="hardis-panel-body">
+        <div class="hardis-empty">
+          <div class="hardis-tile featured backpromote-action">
+            <lightning-icon icon-name="utility:merge" size="small"></lightning-icon>
+          </div>
+          <h3 class="hardis-empty-title">{i18n.backpromoteSetupTitle}</h3>
+          <p class="hardis-empty-desc">{setupDescription}</p>
+          <div class="bp-setup-form">
+            <lightning-combobox label={i18n.backpromoteTargetOrgLabel} options={targetOrgOptions} value={targetOrgValue} onchange={handleSetupTargetOrgChange}></lightning-combobox>
+            <lightning-combobox label={i18n.backpromoteParentBranchLabel} options={parentBranchOptions} value={parentBranchValue} onchange={handleSetupParentBranchChange}></lightning-combobox>
+          </div>
+          <div class="hardis-empty-actions">
+            <button type="button" class="hardis-textlink" onclick={handleSelectOrg}>{i18n.backpromoteConnectOtherOrg}</button>
+            <lightning-button variant="neutral" class="hardis-btn-tinted-blue" icon-name="utility:search" label={i18n.backpromoteComputePlan} onclick={handleComputePlan}></lightning-button>
+          </div>
+        </div>
+      </div>
+    </template>
 
     <!-- Loading: the plan reads git and previews the org -->
     <template if:true={isLoadingState}>
