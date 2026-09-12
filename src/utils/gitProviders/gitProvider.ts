@@ -13,7 +13,7 @@ import type {
 import { getReportDirectory, getWorkspaceRoot } from "../../utils";
 import { getConfig } from "../pipeline/sfdxHardisConfig";
 import { Logger } from "../../logger";
-import { DEFAULT_CONCURRENCY, mapWithConcurrencySettled } from "../concurrency";
+import { mapWithConcurrencySettled } from "../concurrency";
 import {
   getCachedPipelineQuery,
   setCachedPipelineQuery,
@@ -635,11 +635,11 @@ export class GitProvider {
       }
       // Fetch details for each unique ticket
       const uniqueTickets = Array.from(uniqueTicketsMap.values());
-      // Adaptive batches: 20 tickets at a time, 10 then 5 then 1 after a failure
+      // The adaptive batches of the ticketing provider's ladder, shrunk only when it throttles
       const detailedResults = await mapWithConcurrencySettled(
         uniqueTickets,
         async (t) => (await ticketProvider.completeTicketDetails(t)) ?? t,
-        DEFAULT_CONCURRENCY,
+        ticketProvider.batchSizes,
         (err: any, t) =>
           Logger.log(
             `completeTicketDetails failed for ticket=${t.id}: ${err?.message || err}`,

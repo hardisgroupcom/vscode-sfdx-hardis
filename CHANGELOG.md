@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- DevOps Pipeline: the parallel calls to the git provider and to the ticketing provider (Pull Request details, statuses, ticket details) leave 20 at a time and back off to 10, 5, then one by one when a batch fails.
+- DevOps Pipeline: the parallel calls to the git provider and to the ticketing provider (Pull Request details, statuses, ticket details) leave in batches sized for the provider (50 at a time on GitHub and GitLab, 10 on Azure DevOps and Bitbucket, 5 on Jira Cloud, 4 on ServiceNow) and, only when the provider throttles, wait the delay it asks for and go on with smaller batches.
 - **Backpromote (Beta) panel**: deploy into your developer sandbox or scratch org what your teammates merged in the parent branch, from the commands menu or the Backpromote card of the DevOps Pipeline
   - One page: the target sandbox, the parent branch, the start Pull Request, then the metadata, deletions and deployment actions to backpromote
   - The Pull Requests already backpromoted to that sandbox are greyed in the list

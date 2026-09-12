@@ -11,7 +11,7 @@ import {
   JobStatus,
 } from "./types";
 import { Logger } from "../../logger";
-import { DEFAULT_CONCURRENCY, mapWithConcurrency } from "../concurrency";
+import { PROVIDER_BATCH_PROFILES, mapWithConcurrency } from "../concurrency";
 import { SecretsManager } from "../secretsManager";
 import { t } from "../../i18n/i18n";
 import {
@@ -669,7 +669,7 @@ export class GitProviderGitHub extends GitProvider {
           return [];
         }
       },
-      DEFAULT_CONCURRENCY,
+      PROVIDER_BATCH_PROFILES.github,
     );
     const allMergedPRs: any[] = prResults.flat();
 
@@ -718,7 +718,7 @@ export class GitProviderGitHub extends GitProvider {
         }
         return converted;
       },
-      DEFAULT_CONCURRENCY,
+      PROVIDER_BATCH_PROFILES.github,
     );
     return converted;
   }

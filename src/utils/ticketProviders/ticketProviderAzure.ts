@@ -1,4 +1,5 @@
 import { TicketProvider } from "./ticketProvider";
+import { PROVIDER_BATCH_PROFILES } from "../concurrency";
 import { Ticket, TicketProviderName } from "./types";
 import { Logger } from "../../logger";
 import { GitProvider } from "../gitProviders/gitProvider";
@@ -135,6 +136,10 @@ export class AzureBoardsProvider extends TicketProvider {
 
     const baseUrl = this.serverUrl.replace(/\/$/, "");
     return `${baseUrl}/${encodeURIComponent(this.teamProject)}/_workitems/edit/${ticketId}`;
+  }
+
+  get batchSizes(): readonly number[] {
+    return PROVIDER_BATCH_PROFILES.azure;
   }
 
   async completeTicketDetails(ticket: Ticket): Promise<Ticket> {

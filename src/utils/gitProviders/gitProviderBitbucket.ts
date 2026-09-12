@@ -12,7 +12,7 @@ import {
 } from "./types";
 import { SecretsManager } from "../secretsManager";
 import { Logger } from "../../logger";
-import { DEFAULT_CONCURRENCY, mapWithConcurrency } from "../concurrency";
+import { PROVIDER_BATCH_PROFILES, mapWithConcurrency } from "../concurrency";
 import { t } from "../../i18n/i18n";
 import {
   promptForToken,
@@ -654,7 +654,7 @@ export class GitProviderBitbucket extends GitProvider {
           return [];
         }
       },
-      DEFAULT_CONCURRENCY,
+      PROVIDER_BATCH_PROFILES.bitbucket,
     );
     const allMergedPRs: any[] = prResults.flat();
 
@@ -988,7 +988,7 @@ export class GitProviderBitbucket extends GitProvider {
         }
         return conv;
       },
-      DEFAULT_CONCURRENCY,
+      PROVIDER_BATCH_PROFILES.bitbucket,
     );
     return converted;
   }
