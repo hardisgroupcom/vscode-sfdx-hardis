@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- sfdx-hardis 8.8.0 is now the minimum version, needed by the Backpromote panel
 - **Backpromote (Beta) panel**: deploy into your developer sandbox what your teammates merged in the parent branch, from the DevOps Pipeline or the commands menu ([guide](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-backpromote/))
   - Review the metadata, deletions and deployment actions, and choose for each item that differs: overwrite, keep your version or merge
   - Hand the merges and the deployment errors to a coding agent with one copied prompt
