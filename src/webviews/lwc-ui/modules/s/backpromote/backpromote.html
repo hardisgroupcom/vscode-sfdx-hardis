@@ -93,7 +93,7 @@
               <span class="hardis-pill hardis-status-pending" title={i18n.backpromotePendingMergesTooltip}><span class="hardis-pill-dot"></span>{pendingMergesLabel}</span>
             </template>
             <template if:true={showStartAgain}>
-              <lightning-button variant="neutral" icon-name="utility:refresh" label={i18n.backpromoteStartAgain} title={i18n.backpromoteStartAgainTooltip} onclick={handleResetBranch} disabled={isReadOnly}></lightning-button>
+              <lightning-button variant="neutral" icon-name="utility:skip_back" label={i18n.backpromoteStartAgain} title={i18n.backpromoteStartAgainTooltip} onclick={handleResetBranch} disabled={isReadOnly}></lightning-button>
             </template>
           </template>
         </div>

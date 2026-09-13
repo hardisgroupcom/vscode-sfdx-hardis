@@ -438,11 +438,12 @@ function buildPanelData(panelState: BackpromotePanelState): any {
     runResult: panelState.runResult,
     runError: panelState.runError,
     resumedAt: panelState.resumedAt,
-    // A backpromote in progress can be started again: its branch is deleted and created again
+    // A backpromote in progress (checkout on its branch, pending merges, or resumed) can be started
+    // again: its branch is deleted and created again. A branch that only exists on origin, left by
+    // an earlier backpromote, does not make one in progress.
     canStartAgain:
       !!plan &&
       (plan.checkout?.onBackpromoteBranch === true ||
-        plan.backpromoteBranch?.existsOnOrigin === true ||
         (plan.backpromoteBranch?.pendingMerges || []).length > 0 ||
         !!panelState.resumedAt),
   };

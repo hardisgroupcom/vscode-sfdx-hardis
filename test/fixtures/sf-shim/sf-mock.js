@@ -820,7 +820,7 @@ function answerBackpromote() {
       }
       plan.status = "deployFailed";
       plan.message =
-        "The deployment failed on 1 component(s): ApexClass:InvoiceCalculator. Fix them on the backpromote branch " +
+        "The sandbox refused 1 component(s): ApexClass:InvoiceCalculator. Fix them on the backpromote branch " +
         plan.backpromoteBranch.name +
         " and run the backpromote again, or untick them to leave them out of this backpromote.";
       plan.result = {
