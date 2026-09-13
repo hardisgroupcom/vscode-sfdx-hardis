@@ -1279,7 +1279,8 @@ suite("Backpromote panel UI tests", function () {
         const seen =
           panelManager.getPanel(LWC_ID)?.getInitializationData() || {};
         throw new Error(
-          `${(error as Error).message}: saved for ${branch} in ${root}, panel on ${seen.setup?.currentBranch} with ${JSON.stringify((seen.setup?.orgs || []).map((org: any) => [org.username, org.disabledReason]))}, resumedAt ${seen.resumedAt}, plan ${!!seen.plan}, stored ${CacheManager.getPreference(key) ? "yes" : "no"}`,
+          `${(error as Error).message}: saved for ${branch} in ${root}, panel on ${seen.setup?.currentBranch} with ${JSON.stringify((seen.setup?.orgs || []).map((org: any) => [org.username, org.disabledReason]))}, resumedAt ${seen.resumedAt}, plan ${!!seen.plan}, stored ${CacheManager.getPreference(key) ? "yes" : "no"}`
+          { cause: error },
         );
       }
       assert.strictEqual(initData.resumedAt, "2026-09-13T10:00:00.000Z");
