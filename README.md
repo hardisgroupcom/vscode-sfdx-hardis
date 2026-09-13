@@ -146,12 +146,15 @@ Designed for consultant profiles: **start a user story → work in the org → s
 
 ### Backpromote (Beta)
 
-Deploy into your developer sandbox what your teammates merged in the parent branch since your last backpromote. The panel lists the merged Pull Requests, the metadata, the deletions and the deployment actions, and compares each item with your sandbox. For an item that differs, choose Overwrite, Keep org version or Merge. Merge opens the VS Code merge editor, and Merge all copies one prompt for your coding agent. Each Pull Request records the backpromote in a comment, so the next one starts where this one ended.
+Deploy into your developer sandbox what your teammates merged in the parent branch since your last backpromote.
+The panel lists the merged Pull Requests, the metadata, the deletions and the deployment actions, and compares each item with your sandbox.
+For an item that differs, choose Overwrite, Keep org version or Merge. Merge opens the VS Code merge editor, and Merge all copies one prompt for your coding agent.
+Each Pull Request records the backpromote in a comment, so the next one starts where this one ended.
 
 ![Backpromote panel](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/backpromote.png)
 
-| Merge all                                                                                                                  | Result                                                                                                                 |
-|----------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
+| Merge all                                                                                                                     | Result                                                                                                                  |
+|-------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------|
 | ![Backpromote Merge all](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/backpromote-merge-all.png) | ![Backpromote result](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/backpromote-result.png) |
 
 - [Backpromote to your dev sandbox](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-backpromote/) - how it works, from VS Code and from a terminal.

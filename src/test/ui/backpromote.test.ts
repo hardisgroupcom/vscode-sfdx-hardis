@@ -42,6 +42,17 @@ function backpromoteCalls(): any[] {
   return readMockLog().filter((entry) => entry.args[0] === "hardis:work:backpromote");
 }
 
+/** Polls the clipboard until it holds the expected content, or 10 seconds passed, and returns what it holds */
+async function readClipboardWhenEqual(content: string): Promise<string> {
+  const start = Date.now();
+  let clipboard = "";
+  while (clipboard !== content && Date.now() - start < 10000) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    clipboard = await vscode.env.clipboard.readText();
+  }
+  return clipboard;
+}
+
 suite("Backpromote panel UI tests", function () {
   let panelManager: any;
   let panel: any;
@@ -462,12 +473,7 @@ suite("Backpromote panel UI tests", function () {
       this.skip();
     }
     panel.simulateWebviewMessage({ type: "copyAgentPrompt" });
-    const start = Date.now();
-    let clipboard = "";
-    while (clipboard !== content && Date.now() - start < 10000) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      clipboard = await vscode.env.clipboard.readText();
-    }
+    const clipboard = await readClipboardWhenEqual(content);
     assert.strictEqual(clipboard, content, `prompt file exists: ${fs.existsSync(data.plan.promptFile)}`);
   });
 
@@ -698,13 +704,7 @@ suite("Backpromote panel UI tests", function () {
       if (hasClipboard) {
         const content = fs.readFileSync(data.plan.promptFile, "utf8");
         assert.ok(content.includes("commit them on that branch"), content);
-        const start = Date.now();
-        let clipboard = "";
-        while (clipboard !== content && Date.now() - start < 10000) {
-          await new Promise((resolve) => setTimeout(resolve, 100));
-          clipboard = await vscode.env.clipboard.readText();
-        }
-        assert.strictEqual(clipboard, content);
+        assert.strictEqual(await readClipboardWhenEqual(content), content);
       }
     } finally {
       (vscode.window as any).showInformationMessage = original;

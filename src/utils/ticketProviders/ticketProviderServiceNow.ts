@@ -1,3 +1,4 @@
+// jscpd:ignore-start
 import * as vscode from "vscode";
 import { PROVIDER_BATCH_PROFILES } from "../concurrency";
 import { TicketProvider } from "./ticketProvider";
@@ -8,6 +9,7 @@ import { SecretsManager } from "../secretsManager";
 import { getJson, HttpError } from "../httpUtils";
 import { t } from "../../i18n/i18n";
 import { showAuthFailureGuidance } from "../providerCredentials";
+// jscpd:ignore-end
 
 /**
  * Record number prefix -> ServiceNow table, mirroring the mapping of the

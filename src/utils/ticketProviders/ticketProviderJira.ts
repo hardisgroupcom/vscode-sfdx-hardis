@@ -1,3 +1,4 @@
+// jscpd:ignore-start
 import * as vscode from "vscode";
 import { PROVIDER_BATCH_PROFILES } from "../concurrency";
 import { TicketProvider } from "./ticketProvider";
@@ -11,6 +12,7 @@ import {
   promptForToken,
   showAuthFailureGuidance,
 } from "../providerCredentials";
+// jscpd:ignore-end
 
 export class JiraProvider extends TicketProvider {
   static readonly providerName: TicketProviderName = "JIRA";
