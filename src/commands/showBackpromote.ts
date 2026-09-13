@@ -62,6 +62,7 @@ import {
   BackpromoteSession,
   backpromoteSessionKey,
   resumableBackpromoteSession,
+  readCheckedOutBranch,
 } from "../utils/backpromote/backpromotePanelUtils";
 
 const BACKPROMOTE_LWC_ID = "s-backpromote";
@@ -217,12 +218,22 @@ async function loadSetup(): Promise<BackpromoteSetup> {
     getCurrentGitBranch().catch(() => ""),
   ]);
   const allowedParentBranches = listAllowedParentBranches(projectConfig);
+  // A git command can fail while another one holds the index: the HEAD file still tells the branch,
+  // which the resume of a backpromote depends on
+  const checkedOut =
+    String(currentBranch || "") ||
+    readCheckedOutBranch(
+      getWorkspaceRoot(),
+      (file) => fs.readFileSync(file, "utf8"),
+      (file) => fs.existsSync(file) && fs.statSync(file).isFile(),
+      path.resolve,
+    );
   return {
-    currentBranch: String(currentBranch || ""),
+    currentBranch: checkedOut,
     orgs: buildOrgChoices(orgs, majorOrgs),
     allowedParentBranches,
     defaultParentBranch: defaultParentBranchFor(
-      String(currentBranch || ""),
+      checkedOut,
       allowedParentBranches,
     ),
   };

@@ -35,6 +35,7 @@ import {
   isSafeCommandValue,
   defaultParentBranchFor,
   backpromoteSessionKey,
+  readCheckedOutBranch,
   resumableBackpromoteSession,
   listAllowedParentBranches,
   normalizeBackpromotePlan,
@@ -902,6 +903,42 @@ suite("backpromotePanelUtils", () => {
       ),
     })!;
     assert.deepStrictEqual(planMergeAll(same, selection(same)).itemKeys, []);
+  });
+
+  test("the checked out branch is read from the HEAD file, worktrees included", () => {
+    const files: Record<string, string> = {
+      "/repo/.git/HEAD": "ref: refs/heads/backpromote/integration/dev1\n",
+      "/wt/.git": "gitdir: /repo/.git/worktrees/wt\n",
+      "/repo/.git/worktrees/wt/HEAD": "ref: refs/heads/feature/x\n",
+      "/detached/.git/HEAD": "4b56254c6ce6a34aa1019c6da6daf144370b6c6e\n",
+    };
+    const read = (file: string) => {
+      if (!(file in files)) {
+        throw new Error("ENOENT " + file);
+      }
+      return files[file];
+    };
+    const isFile = (file: string) => file === "/wt/.git";
+    const resolve = (...parts: string[]) =>
+      parts.reduce((all, part) =>
+        part.startsWith("/") ? part : `${all}/${part}`,
+      );
+    assert.strictEqual(
+      readCheckedOutBranch("/repo", read, isFile, resolve),
+      "backpromote/integration/dev1",
+    );
+    assert.strictEqual(
+      readCheckedOutBranch("/wt", read, isFile, resolve),
+      "feature/x",
+    );
+    assert.strictEqual(
+      readCheckedOutBranch("/detached", read, isFile, resolve),
+      "",
+    );
+    assert.strictEqual(
+      readCheckedOutBranch("/nothing", read, isFile, resolve),
+      "",
+    );
   });
 
   test("a saved backpromote is resumed only on its backpromote branch, with an org and a branch still allowed", () => {

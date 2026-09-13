@@ -1263,19 +1263,29 @@ suite("Backpromote panel UI tests", function () {
 
       // Closed and opened again: the backpromote goes on with that decision
       await openPanel();
-      initData = await waitFor(
-        () => {
-          const opened = panelManager.getPanel(LWC_ID);
-          const data = opened?.getInitializationData();
-          if (data && data.loading === false && data.plan && data.resumedAt) {
-            panel = opened;
-            return data;
-          }
-          return null;
-        },
-        40000,
-        "the resumed plan",
-      );
+      try {
+        initData = await waitFor(
+          () => {
+            const opened = panelManager.getPanel(LWC_ID);
+            const data = opened?.getInitializationData();
+            if (data && data.loading === false && data.plan && data.resumedAt) {
+              panel = opened;
+              return data;
+            }
+            return null;
+          },
+          40000,
+          "the resumed plan",
+        );
+      } catch (error) {
+        // What the reopened panel saw, to tell why it did not resume
+        const seen =
+          panelManager.getPanel(LWC_ID)?.getInitializationData() || {};
+        throw new Error(
+          `${(error as Error).message}: session for ${branch}, panel on "${seen.setup?.currentBranch}", plan branch ${seen.plan?.backpromoteBranch?.name}, target ${seen.targetOrg}, parent ${seen.parentBranch}, loading ${seen.loading}, resumedAt ${seen.resumedAt}`,
+          { cause: error },
+        );
+      }
       assert.strictEqual(initData.canStartAgain, true);
       assert.deepStrictEqual(initData.selection.excludedItems, [
         "Flow:Quote_Approval",

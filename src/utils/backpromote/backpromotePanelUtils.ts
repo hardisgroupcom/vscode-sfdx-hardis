@@ -57,7 +57,11 @@ export const BACKPROMOTE_DIFF_CHOICES: BackpromoteDiffChoice[] = [
 ];
 
 export type BackpromoteComparisonStatus =
-  "same" | "different" | "missingInOrg" | "pendingInOrg" | "notCompared";
+  | "same"
+  | "different"
+  | "missingInOrg"
+  | "pendingInOrg"
+  | "notCompared";
 
 export interface BackpromoteLeftOutItem {
   key: string;
@@ -1496,6 +1500,34 @@ export function listAllowedParentBranches(config: any): string[] {
     add(branch);
   }
   return branches;
+}
+
+/**
+ * The branch checked out in a repository, read from its HEAD file: no git process and no lock, so
+ * it answers when a git command fails because another one holds the index. A worktree's `.git` file
+ * points to its own git directory. Empty on a detached HEAD or when nothing can be read.
+ */
+export function readCheckedOutBranch(
+  repositoryRoot: string,
+  readFile: (file: string) => string,
+  isFile: (file: string) => boolean,
+  resolvePath: (...parts: string[]) => string,
+): string {
+  try {
+    let gitDir = resolvePath(repositoryRoot, ".git");
+    if (isFile(gitDir)) {
+      const pointer = /gitdir:\s*(.+)/.exec(readFile(gitDir));
+      if (!pointer) {
+        return "";
+      }
+      gitDir = resolvePath(repositoryRoot, pointer[1].trim());
+    }
+    const head = readFile(resolvePath(gitDir, "HEAD")).trim();
+    const ref = /^ref:\s*refs\/heads\/(.+)$/.exec(head);
+    return ref ? ref[1] : "";
+  } catch {
+    return "";
+  }
 }
 
 /**
