@@ -34,6 +34,8 @@ import {
   isNoOverwriteItemInSandbox,
   isSafeCommandValue,
   defaultParentBranchFor,
+  backpromoteSessionKey,
+  resumableBackpromoteSession,
   listAllowedParentBranches,
   normalizeBackpromotePlan,
   normalizeSelection,
@@ -900,6 +902,60 @@ suite("backpromotePanelUtils", () => {
       ),
     })!;
     assert.deepStrictEqual(planMergeAll(same, selection(same)).itemKeys, []);
+  });
+
+  test("a saved backpromote is resumed only on its backpromote branch, with an org and a branch still allowed", () => {
+    const setup = {
+      currentBranch: "backpromote/integration/dev1",
+      orgs: [
+        { username: "sam@dev1", disabledReason: null },
+        { username: "deploy@uat", disabledReason: "majorOrg" },
+      ],
+      allowedParentBranches: ["integration", "uat"],
+    };
+    const session = {
+      version: 1,
+      savedAt: "2026-09-13T10:00:00.000Z",
+      backpromoteBranch: "backpromote/integration/dev1",
+      targetOrg: "sam@dev1",
+      parentBranch: "integration",
+      fromPullRequest: 415,
+      scanLimit: 100,
+      runId: "7f3a",
+      selection: null,
+      runError: null,
+    };
+    assert.strictEqual(resumableBackpromoteSession(session, setup), session);
+    // Back on the story branch: nothing is resumed
+    assert.strictEqual(
+      resumableBackpromoteSession(session, {
+        ...setup,
+        currentBranch: "feature/x",
+      }),
+      null,
+    );
+    // The org is not selectable anymore, or the parent branch not allowed
+    assert.strictEqual(
+      resumableBackpromoteSession(
+        { ...session, targetOrg: "deploy@uat" },
+        setup,
+      ),
+      null,
+    );
+    assert.strictEqual(
+      resumableBackpromoteSession({ ...session, parentBranch: "main" }, setup),
+      null,
+    );
+    assert.strictEqual(resumableBackpromoteSession(undefined, setup), null);
+    assert.strictEqual(
+      resumableBackpromoteSession({ ...session, version: 2 }, setup),
+      null,
+    );
+    // One session per workspace and backpromote branch, whatever the slashes of the path
+    assert.strictEqual(
+      backpromoteSessionKey("C:\\git\\crm", "backpromote/integration/dev1"),
+      backpromoteSessionKey("c:/git/crm", "backpromote/integration/dev1"),
+    );
   });
 
   test("the plan, prepare, confirm and reset commands", () => {

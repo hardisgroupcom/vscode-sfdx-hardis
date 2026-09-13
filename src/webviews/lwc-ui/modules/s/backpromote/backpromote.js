@@ -74,6 +74,9 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   comparisonsByItem = new Map();
   // Keys of the package-no-overwrite.xml items of the plan
   noOverwriteKeys = new Set();
+  // When the backpromote on screen was resumed from the previous opening
+  resumedAt = null;
+  canStartAgain = false;
   // Web page and title of each Pull Request number of the plan, for the number chips
   pullRequestUrls = new Map();
   pullRequestTitles = new Map();
@@ -184,6 +187,27 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     if (payload.runError !== undefined) {
       this.runError = payload.runError || null;
     }
+    if (payload.resumedAt !== undefined) {
+      this.resumedAt = payload.resumedAt || null;
+    }
+    if (payload.canStartAgain !== undefined) {
+      this.canStartAgain = payload.canStartAgain === true;
+    }
+  }
+
+  // Opened again on the backpromote branch: the choices, merges and last errors were kept
+  get resumedNote() {
+    if (!this.resumedAt || !this.plan) {
+      return "";
+    }
+    const date = new Date(this.resumedAt);
+    return this.t("backpromoteResumedNote", {
+      date: isNaN(date.getTime()) ? this.resumedAt : date.toLocaleString(),
+    });
+  }
+
+  get showStartAgain() {
+    return this.canStartAgain && !!this.plan;
   }
 
   @api

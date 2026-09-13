@@ -865,6 +865,54 @@ suite("Documentation screenshots", function () {
       delete process.env.SF_MOCK_BACKPROMOTE_STEP_DELAY_MS;
       delete process.env.SF_MOCK_BACKPROMOTE_CLI;
       await captureBottomOfPage("backpromote-deploy-failed");
+
+      // Opened again on the backpromote branch: the panel resumes the backpromote left above, with
+      // its selection and its deployment errors, and offers to start it again
+      const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+      const previousBranch = workspaceRoot
+        ? execFileSync("git", ["branch", "--show-current"], {
+            cwd: workspaceRoot,
+            encoding: "utf8",
+          }).trim()
+        : "";
+      if (workspaceRoot) {
+        execFileSync(
+          "git",
+          ["checkout", "-q", "-B", "backpromote/integration/dev1"],
+          { cwd: workspaceRoot, stdio: "pipe" },
+        );
+      }
+      try {
+        panelManager.disposePanel(lwcId);
+        await vscode.commands.executeCommand(
+          "workbench.action.closeAllEditors",
+        );
+        await sleep(400);
+        await vscode.commands.executeCommand(
+          "vscode-sfdx-hardis.showBackpromote",
+        );
+        const resumed = await waitFor(
+          () => panelManager.getPanel(lwcId),
+          20000,
+          "backpromote panel to open on the backpromote branch",
+        );
+        await waitFor(
+          () => {
+            const current = resumed.getInitializationData();
+            return current && planReady(current) ? current : null;
+          },
+          40000,
+          "the resumed backpromote plan",
+        );
+        resumed.reveal();
+        await sleep(3500);
+        await cleanChrome();
+        await captureStable("backpromote-resumed");
+      } finally {
+        if (previousBranch) {
+          checkoutWorkspaceBranch(previousBranch);
+        }
+      }
     } finally {
       delete process.env.SF_MOCK_BACKPROMOTE_STEP_DELAY_MS;
       delete process.env.SF_MOCK_BACKPROMOTE_CLI;

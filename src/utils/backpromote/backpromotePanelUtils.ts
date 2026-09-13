@@ -57,7 +57,11 @@ export const BACKPROMOTE_DIFF_CHOICES: BackpromoteDiffChoice[] = [
 ];
 
 export type BackpromoteComparisonStatus =
-  "same" | "different" | "missingInOrg" | "pendingInOrg" | "notCompared";
+  | "same"
+  | "different"
+  | "missingInOrg"
+  | "pendingInOrg"
+  | "notCompared";
 
 export interface BackpromoteLeftOutItem {
   key: string;
@@ -1496,6 +1500,64 @@ export function listAllowedParentBranches(config: any): string[] {
     add(branch);
   }
   return branches;
+}
+
+/**
+ * What the panel keeps of a backpromote between two openings, per workspace and backpromote branch:
+ * the choices, the start, the run id (sfdx-hardis keeps the prepared merges under it), the selection
+ * and the error of the last run.
+ */
+export interface BackpromoteSession {
+  version: 1;
+  savedAt: string;
+  backpromoteBranch: string;
+  targetOrg: string;
+  parentBranch: string;
+  fromPullRequest: number | null;
+  scanLimit: number;
+  runId: string | null;
+  selection: BackpromoteSelection | null;
+  runError: any | null;
+}
+
+export function backpromoteSessionKey(
+  workspaceRoot: string,
+  backpromoteBranch: string,
+): string {
+  return `backpromoteSession:${(workspaceRoot || "").replace(/\\/g, "/").toLowerCase()}:${backpromoteBranch}`;
+}
+
+/**
+ * The session to resume when the panel opens: only on the backpromote branch it was saved for,
+ * with an org still selectable and a parent branch still allowed. Anything else starts fresh.
+ */
+export function resumableBackpromoteSession(
+  session: unknown,
+  setup: {
+    currentBranch: string;
+    orgs: Array<{ username: string; disabledReason?: string | null }>;
+    allowedParentBranches: string[];
+  },
+): BackpromoteSession | null {
+  const candidate = session as BackpromoteSession | null;
+  if (
+    !candidate ||
+    typeof candidate !== "object" ||
+    candidate.version !== 1 ||
+    !candidate.backpromoteBranch ||
+    candidate.backpromoteBranch !== setup.currentBranch
+  ) {
+    return null;
+  }
+  if (
+    !setup.orgs.some(
+      (org) => org.username === candidate.targetOrg && !org.disabledReason,
+    ) ||
+    !setup.allowedParentBranches.includes(candidate.parentBranch)
+  ) {
+    return null;
+  }
+  return candidate;
 }
 
 /**

@@ -3,6 +3,10 @@ import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
 import { activateExtension, readMockLog, waitFor } from "./uiTestUtils";
+import { execFileSync } from "child_process";
+import { CacheManager } from "../../utils/cache-manager";
+import { getWorkspaceRoot } from "../../utils";
+import { backpromoteSessionKey } from "../../utils/backpromote/backpromotePanelUtils";
 
 /**
  * UI integration tests of the Backpromote panel, against the mocked sf CLI that
@@ -1218,6 +1222,68 @@ suite("Backpromote panel UI tests", function () {
       }
     } finally {
       (vscode.window as any).showInformationMessage = original;
+    }
+  });
+
+  test("opened again on the backpromote branch, the panel resumes the saved backpromote", async function () {
+    const root = getWorkspaceRoot();
+    let branch = "";
+    try {
+      branch = execFileSync("git", ["branch", "--show-current"], {
+        cwd: root,
+        encoding: "utf8",
+      }).trim();
+    } catch {
+      this.skip();
+    }
+    if (!branch) {
+      this.skip();
+    }
+    const key = backpromoteSessionKey(root, branch);
+    await CacheManager.setPreference(key, {
+      version: 1,
+      savedAt: "2026-09-13T10:00:00.000Z",
+      backpromoteBranch: branch,
+      targetOrg: "sam.dubois@mycompany.com.dev1",
+      parentBranch: "integration",
+      fromPullRequest: 417,
+      scanLimit: 100,
+      runId: "resume42",
+      selection: {
+        excludedItems: ["Flow:Quote_Approval"],
+        excludedDeletions: [],
+        actions: ["load-sla-thresholds"],
+        diffDecisions: { "ApexClass:InvoiceCalculator": "org" },
+      },
+      runError: {
+        message: "The deployment failed on 1 component(s)",
+        status: "deployFailed",
+        deployErrors: [],
+        deployReport: null,
+        deployErrorsPromptFile: null,
+      },
+    });
+    try {
+      await openPanel();
+      assert.strictEqual(initData.resumedAt, "2026-09-13T10:00:00.000Z");
+      assert.strictEqual(initData.canStartAgain, true);
+      assert.deepStrictEqual(initData.selection.excludedItems, [
+        "Flow:Quote_Approval",
+      ]);
+      assert.strictEqual(
+        initData.selection.diffDecisions["ApexClass:InvoiceCalculator"],
+        "org",
+      );
+      assert.strictEqual(initData.runError.status, "deployFailed");
+      const planCall = lastPlanCall();
+      assert.ok(
+        planCall.args.includes("resume42"),
+        JSON.stringify(planCall.args),
+      );
+      assert.ok(planCall.args.includes("417"), JSON.stringify(planCall.args));
+    } finally {
+      await CacheManager.setPreference(key, undefined);
+      panelManager.disposePanel(LWC_ID);
     }
   });
 

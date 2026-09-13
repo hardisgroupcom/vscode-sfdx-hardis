@@ -91,10 +91,15 @@
             <span class="hardis-branch-chip mono" title={i18n.backpromoteBranchTooltip}>{backpromoteBranchName}</span>
             <template if:true={hasPendingMerges}>
               <span class="hardis-pill hardis-status-pending" title={i18n.backpromotePendingMergesTooltip}><span class="hardis-pill-dot"></span>{pendingMergesLabel}</span>
-              <button type="button" class="hardis-textlink" onclick={handleResetBranch} disabled={running}>{i18n.backpromoteAbandonMerges}</button>
+            </template>
+            <template if:true={showStartAgain}>
+              <lightning-button variant="neutral" icon-name="utility:refresh" label={i18n.backpromoteStartAgain} title={i18n.backpromoteStartAgainTooltip} onclick={handleResetBranch} disabled={isReadOnly}></lightning-button>
             </template>
           </template>
         </div>
+        <template if:true={resumedNote}>
+          <div class="hardis-note"><lightning-icon icon-name="utility:info" size="x-small"></lightning-icon><p>{resumedNote}</p></div>
+        </template>
         <template if:true={hasNoAllowedOrg}>
           <div class="hardis-note warning"><lightning-icon icon-name="utility:warning" size="x-small"></lightning-icon><p>{i18n.backpromoteNoAllowedOrg} <button type="button" class="hardis-textlink" onclick={handleConnectAnotherOrg}>{i18n.backpromoteConnectOtherOrg}</button></p></div>
         </template>

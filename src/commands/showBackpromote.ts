@@ -13,6 +13,7 @@ import {
 } from "../utils";
 import { onOrgsChanged } from "../utils/orgChangeEvents";
 import { Logger } from "../logger";
+import { CacheManager } from "../utils/cache-manager";
 import { t } from "../i18n/i18n";
 import { collectProviderCredentialEnvVars } from "../utils/providerCredentials";
 import { forgetCachedOrgList, listAllOrgs } from "../utils/orgUtils";
@@ -58,6 +59,9 @@ import {
   parseProgressEvents,
   planMergeAll,
   recoverJsonCommandResult,
+  BackpromoteSession,
+  backpromoteSessionKey,
+  resumableBackpromoteSession,
 } from "../utils/backpromote/backpromotePanelUtils";
 
 const BACKPROMOTE_LWC_ID = "s-backpromote";
@@ -110,6 +114,12 @@ interface BackpromotePanelState {
   orgChangeSubscription: { dispose: () => void } | null;
   applyOrgChange: (() => Promise<void>) | null;
   loadCounter: number;
+  /** The saved session was looked for, once, when the panel opened */
+  sessionChecked: boolean;
+  /** A saved session to apply to the first plan: its selection and the error of its last run */
+  pendingSession: BackpromoteSession | null;
+  /** When the backpromote on screen was resumed from a saved session */
+  resumedAt: string | null;
 }
 
 function createState(panel: LwcUiPanel): BackpromotePanelState {
@@ -138,6 +148,9 @@ function createState(panel: LwcUiPanel): BackpromotePanelState {
     orgChangeSubscription: null,
     applyOrgChange: null,
     loadCounter: 0,
+    sessionChecked: false,
+    pendingSession: null,
+    resumedAt: null,
   };
 }
 
@@ -424,6 +437,14 @@ function buildPanelData(panelState: BackpromotePanelState): any {
     runLog: panelState.runLog,
     runResult: panelState.runResult,
     runError: panelState.runError,
+    resumedAt: panelState.resumedAt,
+    // A backpromote in progress can be started again: its branch is deleted and created again
+    canStartAgain:
+      !!plan &&
+      (plan.checkout?.onBackpromoteBranch === true ||
+        plan.backpromoteBranch?.existsOnOrigin === true ||
+        (plan.backpromoteBranch?.pendingMerges || []).length > 0 ||
+        !!panelState.resumedAt),
   };
 }
 
@@ -431,7 +452,51 @@ function buildPanelData(panelState: BackpromotePanelState): any {
 function pushData(current: BackpromotePanelState): void {
   if (!isStale(current)) {
     current.panel.sendStateUpdate(buildPanelData(current));
+    saveSession(current);
   }
+}
+
+/**
+ * Keeps what the panel shows of the backpromote (choices, start, run id, selection, last error)
+ * for the next opening on the backpromote branch. Not awaited: a failed write only loses the resume.
+ */
+function saveSession(current: BackpromotePanelState): void {
+  const plan = current.plan;
+  if (
+    !plan ||
+    !current.selection ||
+    !current.targetOrg ||
+    !current.parentBranch ||
+    current.running ||
+    !plan.backpromoteBranch?.name
+  ) {
+    return;
+  }
+  const session: BackpromoteSession = {
+    version: 1,
+    savedAt: new Date().toISOString(),
+    backpromoteBranch: plan.backpromoteBranch.name,
+    targetOrg: current.targetOrg,
+    parentBranch: current.parentBranch,
+    fromPullRequest: current.fromPullRequest,
+    scanLimit: current.scanLimit,
+    runId: current.runId,
+    selection: current.selection,
+    runError: current.runError,
+  };
+  CacheManager.setPreference(
+    backpromoteSessionKey(getWorkspaceRoot(), session.backpromoteBranch),
+    session,
+  ).catch((e: any) =>
+    Logger.log(`[Backpromote] session not saved: ${e?.message || e}`),
+  );
+}
+
+function forgetSession(backpromoteBranch: string): void {
+  CacheManager.setPreference(
+    backpromoteSessionKey(getWorkspaceRoot(), backpromoteBranch),
+    undefined,
+  ).catch(() => undefined);
 }
 
 /** The plan could not be computed: the pickers stay usable, the message and the cause are shown */
@@ -669,6 +734,30 @@ export function registerShowBackpromote(commands: Commands) {
           ...process.env,
           ...credentials,
         });
+        // Opened again on a backpromote branch: the backpromote goes on where it was left
+        if (!current.sessionChecked) {
+          current.sessionChecked = true;
+          const session = setup.currentBranch
+            ? resumableBackpromoteSession(
+                CacheManager.getPreference(
+                  backpromoteSessionKey(
+                    getWorkspaceRoot(),
+                    setup.currentBranch,
+                  ),
+                ),
+                setup,
+              )
+            : null;
+          if (session) {
+            current.targetOrg = session.targetOrg;
+            current.parentBranch = session.parentBranch;
+            current.fromPullRequest = session.fromPullRequest;
+            current.scanLimit = session.scanLimit || BACKPROMOTE_SCAN_PAGE;
+            current.runId = session.runId;
+            current.pendingSession = session;
+            current.resumedAt = session.savedAt;
+          }
+        }
         if (
           current.parentBranch === null ||
           !setup.allowedParentBranches.includes(current.parentBranch)
@@ -752,6 +841,15 @@ export function registerShowBackpromote(commands: Commands) {
         current.plan = plan;
         current.runId = plan.runId || current.runId;
         current.selection = previous || buildDefaultSelection(plan);
+        // The first plan of a resumed backpromote gets back its selection and its last error
+        const session = current.pendingSession;
+        current.pendingSession = null;
+        if (session) {
+          if (session.selection) {
+            current.selection = normalizeSelection(plan, session.selection);
+          }
+          current.runError = session.runError || null;
+        }
         current.markers = {};
         watchPreparedFiles(current);
         pushData(current);
@@ -777,6 +875,8 @@ export function registerShowBackpromote(commands: Commands) {
         current.runResult = null;
         current.runError = null;
         current.runLog = [];
+        current.pendingSession = null;
+        current.resumedAt = null;
       };
 
       const startOver = async () => {
@@ -1004,27 +1104,32 @@ async function copyDeployErrorsPrompt(
     );
     return;
   }
+  notifyPromptCopied(t("backpromoteDeployErrorsPromptCopied"), absolute);
+}
+
+/**
+ * Tells that a prompt is in the clipboard, with an Open prompt button. Not awaited: the notification
+ * stays until the user closes it, and the panel goes on meanwhile.
+ */
+function notifyPromptCopied(message: string, promptFile: string): void {
   const openPrompt = t("backpromoteOpenPrompt");
-  // Not awaited: the notification stays until the user closes it
   vscode.window
-    .showInformationMessage(
-      t("backpromoteDeployErrorsPromptCopied"),
-      openPrompt,
-    )
+    .showInformationMessage(message, openPrompt)
     .then(async (choice) => {
-      if (choice === openPrompt) {
-        try {
-          await vscode.window.showTextDocument(vscode.Uri.file(absolute), {
-            preview: false,
-          });
-        } catch (e: any) {
-          vscode.window.showErrorMessage(
-            t("backpromoteOpenFileFailed", {
-              file: promptFile,
-              message: String(e?.message || e),
-            }),
-          );
-        }
+      if (choice !== openPrompt) {
+        return;
+      }
+      try {
+        await vscode.window.showTextDocument(vscode.Uri.file(promptFile), {
+          preview: false,
+        });
+      } catch (e: any) {
+        vscode.window.showErrorMessage(
+          t("backpromoteOpenFileFailed", {
+            file: promptFile,
+            message: String(e?.message || e),
+          }),
+        );
       }
     });
 }
@@ -1221,32 +1326,13 @@ async function prepareAllMerges(
     planRoot(current.plan),
     current.plan?.promptFile || "",
   );
-  const openPrompt = t("backpromoteOpenPrompt");
-  // Not awaited: the notification stays until the user closes it, the panel goes on meanwhile
-  vscode.window
-    .showInformationMessage(
-      t("backpromoteMergeAllPromptCopied", {
-        count: mergeAll.itemKeys.length,
-        branch: current.plan?.backpromoteBranch.name || "",
-      }),
-      openPrompt,
-    )
-    .then(async (choice) => {
-      if (choice === openPrompt) {
-        try {
-          await vscode.window.showTextDocument(vscode.Uri.file(promptFile), {
-            preview: false,
-          });
-        } catch (e: any) {
-          vscode.window.showErrorMessage(
-            t("backpromoteOpenFileFailed", {
-              file: promptFile,
-              message: String(e?.message || e),
-            }),
-          );
-        }
-      }
-    });
+  notifyPromptCopied(
+    t("backpromoteMergeAllPromptCopied", {
+      count: mergeAll.itemKeys.length,
+      branch: current.plan?.backpromoteBranch.name || "",
+    }),
+    promptFile,
+  );
 }
 
 /**
@@ -1538,7 +1624,7 @@ async function resetBranch(
   }
   const confirmLabel = t("backpromoteResetConfirmButton");
   const answer = await vscode.window.showWarningMessage(
-    t("backpromoteResetConfirm", {
+    t("backpromoteStartAgainConfirm", {
       branch: plan.backpromoteBranch.name,
       count: plan.backpromoteBranch.pendingMerges.length,
     }),
@@ -1568,10 +1654,19 @@ async function resetBranch(
     );
     return;
   }
-  // The branch is gone: the next plan starts from scratch, with the default start
+  // The branch is gone: the next plan starts from scratch, with the default start, the default
+  // selection and no error, and the saved session is forgotten
+  forgetSession(plan.backpromoteBranch.name);
   current.runId = null;
   current.fromPullRequest = null;
   current.markers = {};
+  current.plan = null;
+  current.selection = null;
+  current.runResult = null;
+  current.runError = null;
+  current.runLog = [];
+  current.pendingSession = null;
+  current.resumedAt = null;
   await reloadPlan();
 }
 
