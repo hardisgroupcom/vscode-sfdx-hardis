@@ -12,7 +12,10 @@ import {
   hasMergeConflicts,
 } from "../gitProviders/mergeStatus";
 import { GitProvider } from "../gitProviders/gitProvider";
-import { parsePromotionBranchName } from "./promotionBranchUtils";
+import {
+  isBackpromoteBranchName,
+  parsePromotionBranchName,
+} from "./promotionBranchUtils";
 import { t } from "../../i18n/i18n";
 
 /**
@@ -238,13 +241,12 @@ export class BranchStrategyMermaidBuilder {
       // The counter says how many User Stories the branch holds: a Pull Request a promotion took
       // out of this branch belongs to the branch it reached (counting it here too would show the
       // same number twice), and promotion or major-to-major Pull Requests are vehicles, not
-      // stories. The total is kept as well, for the toggles of the webview.
+      // stories
       const prCount = userStoryPullRequests(
         visiblePullRequests(branchPrs),
         this.branchesAndOrgs.map((entry) => entry.branchName),
         this.promotionBranchConfig,
       ).length;
-      const prCountAll = branchPrs.length;
       // The PR count is embedded as a hidden marker: the webview draws it as
       // a notification-style bubble on the node's top-right corner (see
       // _decorateMermaidNodes in pipeline.js). It cannot be rendered inside
@@ -253,8 +255,8 @@ export class BranchStrategyMermaidBuilder {
         BRANCH_ICON_SVG +
         " " +
         this.escapeHtmlLabel(branchAndOrg.branchName) +
-        (prCountAll > 0
-          ? `<span class='hardis-node-count' data-count='${prCount}' data-count-all='${prCountAll}' style='display:none;'></span>`
+        (prCount > 0
+          ? `<span class='hardis-node-count' data-count='${prCount}' style='display:none;'></span>`
           : "");
       return {
         name: branchAndOrg.branchName,
@@ -263,7 +265,6 @@ export class BranchStrategyMermaidBuilder {
         class: isProduction(branchAndOrg.branchName) ? "gitMain" : "gitMajor",
         level: branchAndOrg.level,
         instanceUrl: branchAndOrg.instanceUrl,
-        hasPullRequests: prCountAll > 0,
       };
     });
 
@@ -306,7 +307,9 @@ export class BranchStrategyMermaidBuilder {
         ) &&
         // A promotion already drawn on the edge between its two branches must not also get a
         // feature node: the same Pull Request number would appear twice in the diagram
-        !this.isPromotionDrawnOnAnEdge(pullRequest),
+        !this.isPromotionDrawnOnAnEdge(pullRequest) &&
+        // A backpromote branch never carries work of its own: nothing to draw
+        !isBackpromoteBranchName(pullRequest.sourceBranch),
     );
     // Group feature PRs by their target (major) branch. When a target has more
     // than the threshold, only the newest ones stay as individual nodes and the

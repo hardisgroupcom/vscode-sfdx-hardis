@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- sfdx-hardis 8.8.0 is now the minimum version, needed by the Backpromote panel
+- **Backpromote (Beta) panel**: deploy into your developer sandbox what your teammates merged in the parent branch, from the DevOps Pipeline or the commands menu ([guide](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-backpromote/))
+  - Review the metadata, deletions and deployment actions, and choose for each item that differs: overwrite, keep your version or merge
+  - Hand the merges and the deployment errors to a coding agent with one copied prompt
+  - Pick up where you left off when you open the panel again, or start again
+- DevOps Pipeline: a User Story promoted further is shown only in the branch it reached (the "Show already promoted Pull Requests" toggle is gone), and the Promotions column comes last in the Pull Requests tab
+- DevOps Pipeline: Pull Request and ticket details load faster on large projects
 - Pipeline Settings: a table of a list setting (`allowedPromotionSteps`, `monitoringCommands`, installed packages...) now takes the whole width of the panel instead of shrinking to its content, which printed branch names one character per line
 - DevOps Pipeline: promotion branches named `promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM>` by sfdx-hardis (with `-2`, `-3`... when the name was taken) are recognized, next to the `<YYYY-MM-DD>-<counter>` names of earlier promotions
 

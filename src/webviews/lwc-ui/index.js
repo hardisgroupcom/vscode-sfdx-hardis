@@ -83,6 +83,7 @@ const lwcModules = {
   "s-org-monitoring": () => import("s/orgMonitoring"),
   "s-package-xml": () => import("s/packageXml"),
   "s-data-workbench": () => import("s/dataWorkbench"),
+  "s-backpromote": () => import("s/backpromote"),
   "s-files-workbench": () => import("s/filesWorkbench"),
   "s-documentation-workbench": () => import("s/documentationWorkbench"),
   "s-documentation-config": () => import("s/documentationConfig"),

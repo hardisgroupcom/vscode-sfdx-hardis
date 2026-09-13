@@ -17,7 +17,7 @@ import {
   GitStatusState,
 } from "azure-devops-node-api/interfaces/GitInterfaces";
 import { Logger } from "../../logger";
-import { DEFAULT_CONCURRENCY, mapWithConcurrency } from "../concurrency";
+import { PROVIDER_BATCH_PROFILES, mapWithConcurrency } from "../concurrency";
 import {
   getCachedPullRequestDescription,
   repositoryKeyFromRemoteUrl,
@@ -651,7 +651,7 @@ export class GitProviderAzure extends GitProvider {
           return [];
         }
       },
-      DEFAULT_CONCURRENCY,
+      PROVIDER_BATCH_PROFILES.azure,
     );
     const allMergedPRs: any[] = prResults.flat();
 
@@ -756,7 +756,7 @@ export class GitProviderAzure extends GitProvider {
         }
         return rawPr;
       },
-      DEFAULT_CONCURRENCY,
+      PROVIDER_BATCH_PROFILES.azure,
     );
   }
 
@@ -797,7 +797,7 @@ export class GitProviderAzure extends GitProvider {
         }
         return pr;
       },
-      DEFAULT_CONCURRENCY,
+      PROVIDER_BATCH_PROFILES.azure,
     );
   }
 
@@ -920,7 +920,7 @@ export class GitProviderAzure extends GitProvider {
     const BATCH_BUILDS_TOP = 500;
     const index = new Map<string, any[]>();
     this.pullRequestBuildIndex = index;
-    if (rawPrs.length <= DEFAULT_CONCURRENCY) {
+    if (rawPrs.length <= PROVIDER_BATCH_PROFILES.azure[0]) {
       // Below the fan-out ceiling the per Pull Request calls all leave in one wave, so the batch
       // would only add a serial round trip in front of them. It earns its place from the point
       // where the direct path needs a second wave.
