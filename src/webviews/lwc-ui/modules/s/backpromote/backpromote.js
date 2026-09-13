@@ -1449,6 +1449,7 @@ export default class Backpromote extends SharedMixin(LightningElement) {
           ? `${event.current}/${event.total}`
           : "",
       last: index === this.runLog.length - 1,
+      inProgress: index === this.runLog.length - 1 && this.running,
       iconName:
         index === this.runLog.length - 1 && this.running
           ? "utility:sync"
@@ -1480,6 +1481,78 @@ export default class Backpromote extends SharedMixin(LightningElement) {
 
   get hasRunError() {
     return !this.running && !!this.runError;
+  }
+
+  // The modal of a run: what sfdx-hardis did, then the step in progress with its spinner
+  get showRunModal() {
+    return this.running;
+  }
+
+  get runModalDescription() {
+    return this.t("backpromoteRunningDesc", { sandbox: this.targetOrgLabel });
+  }
+
+  // The components the sandbox refused, shown with the error instead of a log the panel hides
+  get runErrorDeployErrors() {
+    return ((this.runError && this.runError.deployErrors) || []).map(
+      (error, index) => ({
+        key: `${error.key}-${index}`,
+        label: error.type ? `${error.type} ${error.name}` : error.name,
+        location: error.file
+          ? error.line
+            ? `${error.file}:${error.line}`
+            : error.file
+          : "",
+        problem: error.problem,
+      }),
+    );
+  }
+
+  get hasRunErrorDeployErrors() {
+    return this.hasRunError && this.runErrorDeployErrors.length > 0;
+  }
+
+  // The items in error still ticked: the ones the button unticks
+  get errorItemKeysToUntick() {
+    if (!this.plan || !this.selection || !this.runError) {
+      return [];
+    }
+    const items = new Set(this.plan.items.map((item) => item.key));
+    const excluded = new Set(this.selection.excludedItems);
+    return [
+      ...new Set(
+        (this.runError.deployErrors || [])
+          .map((error) => error.key)
+          .filter((key) => items.has(key) && !excluded.has(key)),
+      ),
+    ];
+  }
+
+  get canUntickErrorItems() {
+    return !this.isReadOnly && this.errorItemKeysToUntick.length > 0;
+  }
+
+  handleUntickErrorItems() {
+    const keys = this.errorItemKeysToUntick;
+    if (this.isReadOnly || keys.length === 0) {
+      return;
+    }
+    this.updateSelection({
+      excludedItems: [...this.selection.excludedItems, ...keys],
+    });
+  }
+
+  get hasRunErrorDeployReport() {
+    return this.hasRunError && !!this.runError.deployReport;
+  }
+
+  handleOpenErrorDeployReport() {
+    if (this.hasRunErrorDeployReport) {
+      window.sendMessageToVSCode({
+        type: "openFile",
+        data: { filePath: this.runError.deployReport },
+      });
+    }
   }
 
   get runErrorMessage() {

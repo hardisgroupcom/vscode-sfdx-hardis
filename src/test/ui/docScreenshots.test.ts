@@ -834,7 +834,41 @@ suite("Documentation screenshots", function () {
       }
       await sleep(1500);
       await captureStable("backpromote-result");
+
+      // A run in progress (its modal), then a failed deployment with the components in error
+      process.env.SF_MOCK_BACKPROMOTE_CLI = "deployFailed";
+      const failPanel = await openWithSandbox();
+      process.env.SF_MOCK_BACKPROMOTE_STEP_DELAY_MS = "3000";
+      failPanel.simulateWebviewMessage({
+        type: "runBackpromote",
+        data: {
+          selection: failPanel.getInitializationData().selection,
+          revision: 902,
+          dirtyTree: null,
+        },
+      });
+      await sleep(5000);
+      await vscode.commands.executeCommand(
+        "workbench.action.closeAuxiliaryBar",
+      );
+      capture("backpromote-running");
+      await waitFor(
+        () => failPanel.getInitializationData()?.runError,
+        40000,
+        "the failed backpromote run",
+      );
+      delete process.env.SF_MOCK_BACKPROMOTE_STEP_DELAY_MS;
+      delete process.env.SF_MOCK_BACKPROMOTE_CLI;
+      await sleep(3000);
+      await cleanChrome();
+      for (let step = 0; step < 6; step++) {
+        await click(1100, 500, { scroll: -30 });
+      }
+      await sleep(1500);
+      await captureStable("backpromote-deploy-failed");
     } finally {
+      delete process.env.SF_MOCK_BACKPROMOTE_STEP_DELAY_MS;
+      delete process.env.SF_MOCK_BACKPROMOTE_CLI;
       await workbench.update(
         "activityBar.location",
         activityBarBefore,

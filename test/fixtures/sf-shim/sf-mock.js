@@ -820,7 +820,35 @@ function answerBackpromote() {
       }
       plan.status = "deployFailed";
       plan.message =
-        "Deployment to dev1 failed: InvoiceCalculator: Unexpected token '}' (line 12)";
+        "The deployment failed on 1 component(s): ApexClass:InvoiceCalculator. Fix them in " +
+        plan.parentBranch +
+        " with a Pull Request so that they deploy, or untick them to leave them out of this backpromote.";
+      plan.result = {
+        deployed: 0,
+        deleted: 0,
+        excluded: [],
+        actions: { run: [], skipped: [], failed: [], pending: [] },
+        conflictPending: [],
+        commentedPullRequests: [],
+        pushed: false,
+        pushRejected: false,
+        deployReport: path.join(
+          process.cwd(),
+          "hardis-report",
+          "backpromote-deploy.log",
+        ),
+        deployErrors: [
+          {
+            key: "ApexClass:InvoiceCalculator",
+            type: "ApexClass",
+            name: "InvoiceCalculator",
+            file: "force-app/main/default/classes/InvoiceCalculator.cls",
+            line: 12,
+            problem: "Unexpected token '}'.",
+          },
+        ],
+        orgUrl: plan.targetOrg.instanceUrl,
+      };
       plan.checkout.onBackpromoteBranch = true;
       plan.checkout.currentBranch = plan.backpromoteBranch.name;
       console.log(

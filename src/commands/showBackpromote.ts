@@ -22,6 +22,7 @@ import {
   getCurrentGitBranch,
 } from "../utils/pipeline/sfdxHardisConfig";
 import {
+  BackpromoteDeployError,
   BACKPROMOTE_DOC_URL,
   BACKPROMOTE_SCAN_PAGE,
   GIT_PROVIDER_TOKEN_VARIABLES,
@@ -93,7 +94,12 @@ interface BackpromotePanelState {
   running: boolean;
   runLog: BackpromoteProgressEvent[];
   runResult: BackpromoteRunOutcome | null;
-  runError: { message: string; status: string | null } | null;
+  runError: {
+    message: string;
+    status: string | null;
+    deployErrors: BackpromoteDeployError[];
+    deployReport: string | null;
+  } | null;
   /** "Connect another org" was picked: the next change of the orgs reloads the org list */
   awaitingOrgSelection: boolean;
   /** The default org when "Connect another org" was picked, to tell a new default from a new org */
@@ -1265,6 +1271,8 @@ async function runBackpromote(
     current.runError = {
       message: outcome.error.message,
       status: outcome.error.status,
+      deployErrors: outcome.error.plan?.result?.deployErrors || [],
+      deployReport: outcome.error.plan?.result?.deployReport || null,
     };
     if (outcome.error.plan) {
       current.plan = outcome.error.plan;

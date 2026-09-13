@@ -307,6 +307,34 @@
   opacity: 0.75;
 }
 
+/* The steps of a run in its modal: left aligned, full width */
+.bp-run-modal-steps {
+  margin: 0.75rem 0 0;
+  max-width: none;
+}
+
+/* The components a failed deployment refused */
+.bp-deploy-errors {
+  margin: 0.4rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.bp-deploy-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.5rem;
+}
+
+.bp-deploy-error-problem {
+  flex-basis: 100%;
+  overflow-wrap: anywhere;
+}
+
 /* The step in progress: full opacity, a small spinner in place of the check */
 .bp-progress-current {
   align-items: flex-start;

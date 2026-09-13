@@ -118,6 +118,28 @@ suite("Backpromote panel UI tests", function () {
     );
   }
 
+  /**
+   * Opens a file the test just wrote with fs. VS Code may still hold that path as missing (an earlier
+   * test opened the merge editor on it before it existed), so the open is retried for a few seconds.
+   */
+  async function openWhenReadable(
+    absolute: string,
+  ): Promise<vscode.TextDocument> {
+    const start = Date.now();
+    for (;;) {
+      try {
+        return await vscode.workspace.openTextDocument(
+          vscode.Uri.file(absolute),
+        );
+      } catch (error) {
+        if (Date.now() - start > 10000) {
+          throw error;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+    }
+  }
+
   /** Waits for the end of the run in progress, then returns the last --auto call of sfdx-hardis */
   async function waitForRunCall(): Promise<any> {
     await waitFor(
@@ -496,9 +518,7 @@ suite("Backpromote panel UI tests", function () {
       absolute,
       "public with sharing class InvoiceCalculator {\n}\n",
     );
-    const document = await vscode.workspace.openTextDocument(
-      vscode.Uri.file(absolute),
-    );
+    const document = await openWhenReadable(absolute);
     const edit = new vscode.WorkspaceEdit();
     edit.insert(document.uri, new vscode.Position(document.lineCount, 0), "\n");
     await vscode.workspace.applyEdit(edit);
@@ -960,7 +980,18 @@ suite("Backpromote panel UI tests", function () {
       const data = await runAndWait(initData.selection, 1);
       assert.strictEqual(data.running, false);
       assert.strictEqual(data.runError.status, "deployFailed");
-      assert.match(data.runError.message, /Deployment to dev1 failed/);
+      // The message says what to do, and the components in error travel with it
+      assert.match(data.runError.message, /untick them/);
+      assert.deepStrictEqual(
+        data.runError.deployErrors.map(
+          (error: any) => `${error.key} ${error.line} ${error.problem}`,
+        ),
+        ["ApexClass:InvoiceCalculator 12 Unexpected token '}'."],
+      );
+      assert.ok(
+        data.runError.deployReport,
+        "the deployment report can be opened",
+      );
       assert.strictEqual(data.plan.status, "deployFailed");
       assert.strictEqual(data.plan.checkout.onBackpromoteBranch, true);
       assert.strictEqual(data.runResult, null);

@@ -57,7 +57,11 @@ export const BACKPROMOTE_DIFF_CHOICES: BackpromoteDiffChoice[] = [
 ];
 
 export type BackpromoteComparisonStatus =
-  "same" | "different" | "missingInOrg" | "pendingInOrg" | "notCompared";
+  | "same"
+  | "different"
+  | "missingInOrg"
+  | "pendingInOrg"
+  | "notCompared";
 
 export interface BackpromoteLeftOutItem {
   key: string;
@@ -164,7 +168,34 @@ export interface BackpromoteRunResult {
   pushed: boolean;
   pushRejected: boolean;
   deployReport: string | null;
+  /** The components the sandbox refused when the deployment failed */
+  deployErrors: BackpromoteDeployError[];
   orgUrl: string | null;
+}
+
+export interface BackpromoteDeployError {
+  key: string;
+  type: string;
+  name: string;
+  file: string | null;
+  line: number | null;
+  problem: string;
+}
+
+function normalizeDeployErrors(raw: unknown): BackpromoteDeployError[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  return raw
+    .filter((entry: any) => entry && typeof entry === "object" && entry.key)
+    .map((entry: any) => ({
+      key: String(entry.key),
+      type: String(entry.type || ""),
+      name: String(entry.name || ""),
+      file: asStringOrNull(entry.file),
+      line: Number(entry.line) > 0 ? Number(entry.line) : null,
+      problem: String(entry.problem || ""),
+    }));
 }
 
 export interface BackpromotePlan {
@@ -653,6 +684,7 @@ export function normalizeBackpromotePlan(raw: any): BackpromotePlan | null {
             pushed: raw.result.pushed === true,
             pushRejected: raw.result.pushRejected === true,
             deployReport: asStringOrNull(raw.result.deployReport),
+            deployErrors: normalizeDeployErrors(raw.result.deployErrors),
             orgUrl: asStringOrNull(raw.result.orgUrl),
           }
         : null,

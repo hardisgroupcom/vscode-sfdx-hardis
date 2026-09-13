@@ -369,7 +369,30 @@
         <template if:true={hasRunError}>
           <div class="hardis-note error">
             <lightning-icon icon-name="utility:error" size="x-small"></lightning-icon>
-            <p><strong>{runErrorStatusLabel}</strong> {runErrorMessage}</p>
+            <div class="bp-result-body">
+              <p><strong>{runErrorStatusLabel}</strong> {runErrorMessage}</p>
+              <template if:true={hasRunErrorDeployErrors}>
+                <ul class="bp-deploy-errors">
+                  <template for:each={runErrorDeployErrors} for:item="error">
+                    <li key={error.key} class="bp-deploy-error">
+                      <span class="hardis-row-label">{error.label}</span>
+                      <template if:true={error.location}>
+                        <span class="muted mono">{error.location}</span>
+                      </template>
+                      <span class="bp-deploy-error-problem">{error.problem}</span>
+                    </li>
+                  </template>
+                </ul>
+              </template>
+              <div class="bp-line bp-result-actions">
+                <template if:true={canUntickErrorItems}>
+                  <button type="button" class="hardis-textlink" onclick={handleUntickErrorItems}>{i18n.backpromoteUntickErrorItems}</button>
+                </template>
+                <template if:true={hasRunErrorDeployReport}>
+                  <button type="button" class="hardis-textlink" onclick={handleOpenErrorDeployReport}>{i18n.backpromoteOpenDeployReport}</button>
+                </template>
+              </div>
+            </div>
           </div>
         </template>
 
@@ -409,6 +432,40 @@
           </div>
         </template>
       </div>
+    </template>
+
+    <!-- A backpromote runs: the steps done, then the step in progress with its spinner -->
+    <template if:true={showRunModal}>
+      <section role="dialog" tabindex="-1" aria-busy="true" class="slds-modal slds-fade-in-open">
+        <div class="slds-modal__container">
+          <header class="slds-modal__header">
+            <h2 class="slds-modal__title slds-hyphenate">{i18n.backpromoteRunningTitle}</h2>
+          </header>
+          <div class="slds-modal__content slds-p-around_medium">
+            <p class="hardis-group-desc">{runModalDescription}</p>
+            <ul class="bp-progress-steps bp-run-modal-steps">
+              <template for:each={runLogRows} for:item="line">
+                <li key={line.key} class="bp-progress-step">
+                  <template if:true={line.inProgress}>
+                    <span class="bp-step-spinner">
+                      <lightning-spinner alternative-text={i18n.loadingLabel} size="xx-small" variant="brand"></lightning-spinner>
+                    </span>
+                    <strong>{line.message}</strong>
+                  </template>
+                  <template if:false={line.inProgress}>
+                    <lightning-icon icon-name="utility:check" size="xx-small"></lightning-icon>
+                    <span>{line.message}</span>
+                  </template>
+                  <template if:true={line.counted}>
+                    <span class="muted">{line.countLabel}</span>
+                  </template>
+                </li>
+              </template>
+            </ul>
+          </div>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open"></div>
     </template>
 
     <!-- A merge is being prepared: sfdx-hardis switches the checkout and writes the files with markers -->
