@@ -1,4 +1,6 @@
+// jscpd:ignore-start
 import * as vscode from "vscode";
+import { PROVIDER_BATCH_PROFILES } from "../concurrency";
 import { TicketProvider } from "./ticketProvider";
 import { Ticket, TicketProviderName } from "./types";
 import { Logger } from "../../logger";
@@ -10,6 +12,7 @@ import {
   promptForToken,
   showAuthFailureGuidance,
 } from "../providerCredentials";
+// jscpd:ignore-end
 
 export class JiraProvider extends TicketProvider {
   static readonly providerName: TicketProviderName = "JIRA";
@@ -355,6 +358,10 @@ export class JiraProvider extends TicketProvider {
       "https://define.jiraHost.in.your.sfdx-hardis.yml";
     const baseUrl = jiraHost.replace(/\/$/, "");
     return `${baseUrl}/browse/${ticketId}`;
+  }
+
+  get batchSizes(): readonly number[] {
+    return this.isJiraCloud() ? PROVIDER_BATCH_PROFILES.jiraCloud : PROVIDER_BATCH_PROFILES.jiraServer;
   }
 
   async completeTicketDetails(ticket: Ticket): Promise<Ticket> {

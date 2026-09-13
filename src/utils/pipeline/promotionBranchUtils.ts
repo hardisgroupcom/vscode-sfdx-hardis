@@ -19,6 +19,35 @@ import { PullRequest } from "../gitProviders/types";
 
 export const PROMOTION_PULL_REQUESTS_KEY = "promotionPullRequests";
 export const PROMOTION_BRANCH_PREFIX = "promotion";
+export const BACKPROMOTE_BRANCH_PREFIX = "backpromote/";
+
+/**
+ * backpromote/<parent branch>/<sandbox name>: the technical branch sfdx-hardis creates for the
+ * backpromote of one sandbox (hardis:work:backpromote). The parent branch may hold slashes, the
+ * sandbox name never: it is the last segment. Mirror of the sfdx-hardis rule.
+ */
+export function parseBackpromoteBranchName(
+  branch: string | null | undefined,
+): { parentBranch: string; sandboxName: string } | null {
+  const value = branch || "";
+  if (!value.startsWith(BACKPROMOTE_BRANCH_PREFIX)) {
+    return null;
+  }
+  const rest = value.substring(BACKPROMOTE_BRANCH_PREFIX.length);
+  const separator = rest.lastIndexOf("/");
+  if (separator <= 0 || separator === rest.length - 1) {
+    return null;
+  }
+  return {
+    parentBranch: rest.substring(0, separator),
+    sandboxName: rest.substring(separator + 1),
+  };
+}
+
+/** True for a backpromote branch: ignored by the DevOps Pipeline like promotion and retrofit branches */
+export function isBackpromoteBranchName(branch: string | null | undefined): boolean {
+  return parseBackpromoteBranchName(branch) !== null;
+}
 
 export interface PromotionBranchConfig {
   enabled: boolean;
@@ -512,17 +541,10 @@ export function annotateAlreadyPromoted(
 }
 
 /**
- * The Pull Requests a window shows: the ones a promotion took out of the branch are listed in
- * the branch they reached instead, so a Pull Request number appears once in the whole pipeline.
- * `showAlreadyPromoted` brings them back.
+ * The Pull Requests a window shows: a story a promotion took out of the branch is listed in the
+ * branch it reached only, so a Pull Request number appears once in the whole pipeline.
  */
-export function visiblePullRequests(
-  pullRequests: PullRequest[],
-  showAlreadyPromoted = false,
-): PullRequest[] {
-  if (showAlreadyPromoted) {
-    return pullRequests;
-  }
+export function visiblePullRequests(pullRequests: PullRequest[]): PullRequest[] {
   return pullRequests.filter((pr) => pr.promotedAway !== true);
 }
 
@@ -579,6 +601,7 @@ export function isVehiclePullRequest(
 ): boolean {
   return (
     isMajorToMajorPullRequest(pr, majorBranchNames) ||
+    isBackpromoteBranchName(pr.sourceBranch) ||
     (config.enabled && isPromotionPullRequest(pr, config))
   );
 }

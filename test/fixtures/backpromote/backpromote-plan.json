@@ -1,0 +1,369 @@
+{
+  "version": 3,
+  "runId": "mock7f3a",
+  "mode": "plan",
+  "status": "ok",
+  "message": null,
+  "targetOrg": {
+    "alias": "dev1",
+    "username": "sam.dubois@mycompany.com.dev1",
+    "instanceUrl": "https://mycompany--dev1.sandbox.my.salesforce.com",
+    "orgId": "00D5g000004ABCDEAA",
+    "sandboxName": "dev1",
+    "orgType": "sandbox",
+    "tracksSource": true,
+    "refusal": null
+  },
+  "parentBranch": "integration",
+  "allowedParentBranches": ["integration", "uat"],
+  "gitRoot": "/tmp/mock-workspace",
+  "backpromoteBranch": {
+    "name": "backpromote/integration/dev1",
+    "existsOnOrigin": true,
+    "head": "b1d1000000000000000000000000000000000000",
+    "pendingMerges": []
+  },
+  "checkout": {
+    "originalBranch": "feature/lead-routing",
+    "currentBranch": "feature/lead-routing",
+    "clean": true,
+    "dirtyFiles": [],
+    "stashed": false,
+    "stashMessage": null,
+    "onBackpromoteBranch": false
+  },
+  "pullRequests": [
+    {
+      "number": 418,
+      "title": "Quote sharing recalculation on account owner change",
+      "author": "Lea Martin",
+      "mergeDate": "2026-09-11T14:12:00+02:00",
+      "sourceBranch": "feature/MKTCRMHG-1101-quote-sharing",
+      "commit": "e418000000000000000000000000000000000000",
+      "webUrl": "https://github.com/mycompany/crm/pull/418",
+      "itemCount": 4,
+      "actionCount": 1,
+      "backpromote": null,
+      "beforeRefresh": false,
+      "beforeLastBackpromote": false,
+      "selected": false,
+      "inWindow": true,
+      "scanned": true
+    },
+    {
+      "number": 417,
+      "title": "Remove legacy discount helper",
+      "author": "Sam Dubois",
+      "mergeDate": "2026-09-10T10:03:00+02:00",
+      "sourceBranch": "feature/MKTCRMHG-1090-legacy-discount",
+      "commit": "d417000000000000000000000000000000000000",
+      "webUrl": "https://github.com/mycompany/crm/pull/417",
+      "itemCount": 1,
+      "actionCount": 0,
+      "backpromote": null,
+      "beforeRefresh": false,
+      "beforeLastBackpromote": false,
+      "selected": false,
+      "inWindow": true,
+      "scanned": true
+    },
+    {
+      "number": 415,
+      "title": "Case SLA fields and layout",
+      "author": "Alex Martin",
+      "mergeDate": "2026-09-09T09:41:00+02:00",
+      "sourceBranch": "feature/MKTCRMHG-1016-case-sla",
+      "commit": "c415000000000000000000000000000000000000",
+      "webUrl": "https://github.com/mycompany/crm/pull/415",
+      "itemCount": 3,
+      "actionCount": 2,
+      "backpromote": null,
+      "beforeRefresh": false,
+      "beforeLastBackpromote": false,
+      "selected": true,
+      "inWindow": true,
+      "scanned": true
+    },
+    {
+      "number": 412,
+      "title": "Opportunity stage notifications",
+      "author": "Lea Martin",
+      "mergeDate": "2026-09-05T16:20:00+02:00",
+      "sourceBranch": "feature/MKTCRMHG-1002-stage-notifications",
+      "commit": "a412000000000000000000000000000000000000",
+      "webUrl": "https://github.com/mycompany/crm/pull/412",
+      "itemCount": 2,
+      "actionCount": 1,
+      "backpromote": {
+        "date": "2026-09-08T11:02:00.000Z",
+        "user": "Sam Dubois",
+        "status": "complete",
+        "leftOut": []
+      },
+      "beforeRefresh": false,
+      "beforeLastBackpromote": false,
+      "selected": false,
+      "inWindow": false,
+      "scanned": true
+    },
+    {
+      "number": 409,
+      "title": "Lead routing rules",
+      "author": "Sam Dubois",
+      "mergeDate": "2026-09-02T08:00:00+02:00",
+      "sourceBranch": "feature/MKTCRMHG-990-lead-routing",
+      "commit": "9409000000000000000000000000000000000000",
+      "webUrl": "https://github.com/mycompany/crm/pull/409",
+      "itemCount": 5,
+      "actionCount": 0,
+      "backpromote": null,
+      "beforeRefresh": false,
+      "beforeLastBackpromote": true,
+      "selected": false,
+      "inWindow": false,
+      "scanned": false
+    }
+  ],
+  "scan": { "read": 4, "limit": 100, "found": true, "hasMore": false },
+  "window": {
+    "fromCommit": "a412000000000000000000000000000000000000",
+    "toCommit": "e418000000000000000000000000000000000000",
+    "startPullRequest": 415
+  },
+  "items": [
+    {
+      "key": "ApexClass:InvoiceCalculator",
+      "type": "ApexClass",
+      "name": "InvoiceCalculator",
+      "files": ["force-app/main/default/classes/InvoiceCalculator.cls", "force-app/main/default/classes/InvoiceCalculator.cls-meta.xml"],
+      "pullRequests": [418],
+      "excludedLastTime": false,
+      "noOverwrite": false
+    },
+    {
+      "key": "ApexClass:QuoteSharingRecalculator",
+      "type": "ApexClass",
+      "name": "QuoteSharingRecalculator",
+      "files": ["force-app/main/default/classes/QuoteSharingRecalculator.cls", "force-app/main/default/classes/QuoteSharingRecalculator.cls-meta.xml"],
+      "pullRequests": [418],
+      "excludedLastTime": false,
+      "noOverwrite": false
+    },
+    {
+      "key": "CustomField:Case.SLA_Deadline__c",
+      "type": "CustomField",
+      "name": "Case.SLA_Deadline__c",
+      "files": ["force-app/main/default/objects/Case/fields/SLA_Deadline__c.field-meta.xml"],
+      "pullRequests": [415],
+      "excludedLastTime": false,
+      "noOverwrite": false
+    },
+    {
+      "key": "Layout:Case-Case Layout",
+      "type": "Layout",
+      "name": "Case-Case Layout",
+      "files": ["force-app/main/default/layouts/Case-Case Layout.layout-meta.xml"],
+      "pullRequests": [415],
+      "excludedLastTime": false,
+      "noOverwrite": false
+    },
+    {
+      "key": "Flow:Quote_Approval",
+      "type": "Flow",
+      "name": "Quote_Approval",
+      "files": ["force-app/main/default/flows/Quote_Approval.flow-meta.xml"],
+      "pullRequests": [418],
+      "excludedLastTime": false,
+      "noOverwrite": false
+    },
+    {
+      "key": "Profile:Admin",
+      "type": "Profile",
+      "name": "Admin",
+      "files": ["force-app/main/default/profiles/Admin.profile-meta.xml"],
+      "pullRequests": [415, 418],
+      "excludedLastTime": false,
+      "noOverwrite": true
+    },
+    {
+      "key": "RemoteSiteSetting:Erp_Api",
+      "type": "RemoteSiteSetting",
+      "name": "Erp_Api",
+      "files": ["force-app/main/default/remoteSiteSettings/Erp_Api.remoteSite-meta.xml"],
+      "pullRequests": [418],
+      "excludedLastTime": false,
+      "noOverwrite": true
+    }
+  ],
+  "deletions": [
+    { "key": "ApexClass:LegacyDiscountHelper", "type": "ApexClass", "name": "LegacyDiscountHelper" }
+  ],
+  "actions": [
+    {
+      "id": "load-sla-thresholds",
+      "label": "Load SLA thresholds",
+      "type": "data",
+      "phase": "pre",
+      "context": "all",
+      "pullRequest": 415,
+      "alreadyRunOn": null,
+      "manual": false,
+      "customUsername": null,
+      "runnable": true,
+      "runOnlyOnceByOrg": true
+    },
+    {
+      "id": "enable-sla-approval",
+      "label": "Enable SLA approval in Setup",
+      "type": "manual",
+      "phase": "post",
+      "context": "all",
+      "pullRequest": 415,
+      "alreadyRunOn": null,
+      "manual": true,
+      "customUsername": null,
+      "runnable": true,
+      "runOnlyOnceByOrg": true
+    },
+    {
+      "id": "recalculate-quote-sharing",
+      "label": "Recalculate quote sharing",
+      "type": "apex",
+      "phase": "post",
+      "context": "all",
+      "pullRequest": 418,
+      "alreadyRunOn": "2026-09-08T11:02:00.000Z",
+      "manual": false,
+      "customUsername": null,
+      "runnable": true,
+      "runOnlyOnceByOrg": true
+    }
+  ],
+  "comparison": [
+    {
+      "file": "force-app/main/default/classes/InvoiceCalculator.cls",
+      "item": "ApexClass:InvoiceCalculator",
+      "status": "different",
+      "versions": {
+        "base": "/tmp/sfdx-hardis/backpromote/retrieve/00D5g000004ABCDEAA/mock7f3a/base/classes/InvoiceCalculator.cls",
+        "sandbox": "/tmp/sfdx-hardis/backpromote/retrieve/00D5g000004ABCDEAA/mock7f3a/org/classes/InvoiceCalculator.cls",
+        "parentHead": "/tmp/sfdx-hardis/backpromote/retrieve/00D5g000004ABCDEAA/mock7f3a/git/classes/InvoiceCalculator.cls"
+      },
+      "diffLines": 6,
+      "pullRequests": [418],
+      "decision": null,
+      "prepared": false,
+      "markersRemaining": 0,
+      "conflictPending": false,
+      "threeWay": true
+    },
+    {
+      "file": "force-app/main/default/classes/InvoiceCalculator.cls-meta.xml",
+      "item": "ApexClass:InvoiceCalculator",
+      "status": "same",
+      "versions": { "base": null, "sandbox": null, "parentHead": null },
+      "diffLines": 0,
+      "pullRequests": [418],
+      "decision": null,
+      "prepared": false,
+      "markersRemaining": 0,
+      "conflictPending": false,
+      "threeWay": false
+    },
+    {
+      "file": "force-app/main/default/classes/QuoteSharingRecalculator.cls",
+      "item": "ApexClass:QuoteSharingRecalculator",
+      "status": "missingInOrg",
+      "versions": { "base": null, "sandbox": null, "parentHead": null },
+      "diffLines": 0,
+      "pullRequests": [418],
+      "decision": null,
+      "prepared": false,
+      "markersRemaining": 0,
+      "conflictPending": false,
+      "threeWay": false
+    },
+    {
+      "file": "force-app/main/default/objects/Case/fields/SLA_Deadline__c.field-meta.xml",
+      "item": "CustomField:Case.SLA_Deadline__c",
+      "status": "missingInOrg",
+      "versions": { "base": null, "sandbox": null, "parentHead": null },
+      "diffLines": 0,
+      "pullRequests": [415],
+      "decision": null,
+      "prepared": false,
+      "markersRemaining": 0,
+      "conflictPending": false,
+      "threeWay": false
+    },
+    {
+      "file": "force-app/main/default/layouts/Case-Case Layout.layout-meta.xml",
+      "item": "Layout:Case-Case Layout",
+      "status": "pendingInOrg",
+      "versions": {
+        "base": "/tmp/sfdx-hardis/backpromote/retrieve/00D5g000004ABCDEAA/mock7f3a/base/layouts/Case-Case Layout.layout-meta.xml",
+        "sandbox": "/tmp/sfdx-hardis/backpromote/retrieve/00D5g000004ABCDEAA/mock7f3a/org/layouts/Case-Case Layout.layout-meta.xml",
+        "parentHead": "/tmp/sfdx-hardis/backpromote/retrieve/00D5g000004ABCDEAA/mock7f3a/git/layouts/Case-Case Layout.layout-meta.xml"
+      },
+      "diffLines": 12,
+      "pullRequests": [415],
+      "decision": null,
+      "prepared": false,
+      "markersRemaining": 0,
+      "conflictPending": false,
+      "threeWay": true
+    },
+    {
+      "file": "force-app/main/default/flows/Quote_Approval.flow-meta.xml",
+      "item": "Flow:Quote_Approval",
+      "status": "same",
+      "versions": { "base": null, "sandbox": null, "parentHead": null },
+      "diffLines": 0,
+      "pullRequests": [418],
+      "decision": null,
+      "prepared": false,
+      "markersRemaining": 0,
+      "conflictPending": false,
+      "threeWay": false
+    },
+    {
+      "file": "force-app/main/default/profiles/Admin.profile-meta.xml",
+      "item": "Profile:Admin",
+      "status": "different",
+      "versions": {
+        "base": null,
+        "sandbox": "/tmp/sfdx-hardis/backpromote/retrieve/00D5g000004ABCDEAA/mock7f3a/org/profiles/Admin.profile-meta.xml",
+        "parentHead": "/tmp/sfdx-hardis/backpromote/retrieve/00D5g000004ABCDEAA/mock7f3a/git/profiles/Admin.profile-meta.xml"
+      },
+      "diffLines": 40,
+      "pullRequests": [415, 418],
+      "decision": null,
+      "prepared": false,
+      "markersRemaining": 0,
+      "conflictPending": false,
+      "threeWay": false
+    },
+    {
+      "file": "force-app/main/default/remoteSiteSettings/Erp_Api.remoteSite-meta.xml",
+      "item": "RemoteSiteSetting:Erp_Api",
+      "status": "missingInOrg",
+      "versions": { "base": null, "sandbox": null, "parentHead": null },
+      "diffLines": 0,
+      "pullRequests": [418],
+      "decision": null,
+      "prepared": false,
+      "markersRemaining": 0,
+      "conflictPending": false,
+      "threeWay": false
+    }
+  ],
+  "checks": [
+    { "id": "gitProvider", "ok": true, "message": "GitHub token found", "details": [] },
+    { "id": "targetOrg", "ok": true, "message": "dev1 is a developer sandbox", "details": [] },
+    { "id": "parentBranch", "ok": true, "message": "integration is an allowed parent branch", "details": [] },
+    { "id": "workingTree", "ok": true, "message": "No uncommitted change on feature/lead-routing", "details": [] }
+  ],
+  "promptFile": null,
+  "runCommand": null,
+  "result": null
+}

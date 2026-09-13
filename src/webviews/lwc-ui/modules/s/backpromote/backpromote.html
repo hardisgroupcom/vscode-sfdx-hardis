@@ -1,0 +1,437 @@
+<template>
+  <div class="slds-scope blue-back bp-root" data-theme={colorTheme} data-contrast={colorContrast}>
+    <div class="hardis-page-head">
+      <div class="hardis-tile featured backpromote-action">
+        <lightning-icon icon-name="utility:merge" size="medium"></lightning-icon>
+      </div>
+      <div class="hardis-page-head-text">
+        <h1 class="hardis-page-title">{i18n.backpromote}</h1>
+        <p class="hardis-page-subtitle">{i18n.backpromotePanelSubtitle}</p>
+      </div>
+      <div class="hardis-page-head-actions">
+        <lightning-button variant="neutral" icon-name="utility:refresh" label={i18n.refreshLabel} onclick={handleRefresh} disabled={refreshDisabled}></lightning-button>
+      </div>
+    </div>
+
+    <!-- No git provider token: the history cannot be read, nothing else is shown -->
+    <template if:true={isTokenMissing}>
+      <div class="hardis-panel-body">
+        <div class="hardis-empty">
+          <div class="hardis-tile featured amber">
+            <lightning-icon icon-name="utility:key" size="small"></lightning-icon>
+          </div>
+          <h3 class="hardis-empty-title">{i18n.backpromoteTokenMissingTitle}</h3>
+          <p class="hardis-empty-desc">{i18n.backpromoteTokenMissingDesc}</p>
+          <code class="hardis-prop-value mono bp-token-vars">{tokenVariablesLabel}</code>
+          <div class="hardis-empty-actions">
+            <button type="button" class="hardis-textlink" onclick={handleOpenDoc}>{i18n.backpromoteReadDoc}</button>
+            <lightning-button variant="neutral" icon-name="utility:settings" label={i18n.backpromoteOpenSettings} onclick={handleOpenSettings}></lightning-button>
+            <lightning-button variant="neutral" class="hardis-btn-tinted-blue" icon-name="utility:refresh" label={i18n.tryAgainLabel} onclick={handleRefresh}></lightning-button>
+          </div>
+        </div>
+      </div>
+    </template>
+
+
+    <!-- sfdx-hardis does not know the flags of the panel yet -->
+    <template if:true={isCliTooOld}>
+      <div class="hardis-panel-body">
+        <div class="hardis-empty">
+          <div class="hardis-tile featured amber">
+            <lightning-icon icon-name="utility:upload" size="small"></lightning-icon>
+          </div>
+          <h3 class="hardis-empty-title">{i18n.backpromoteCliTooOldTitle}</h3>
+          <p class="hardis-empty-desc">{i18n.backpromoteCliTooOldDesc}</p>
+          <div class="hardis-empty-actions">
+            <lightning-button variant="neutral" class="hardis-btn-tinted-blue" label={i18n.backpromoteUpdateSfdxHardis} onclick={handleOpenSetup}></lightning-button>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template if:true={isGenericError}>
+      <div class="hardis-panel-body">
+        <div class="hardis-empty">
+          <div class="hardis-tile featured red">
+            <lightning-icon icon-name="utility:warning" size="small"></lightning-icon>
+          </div>
+          <h3 class="hardis-empty-title">{i18n.backpromotePlanErrorTitle}</h3>
+          <div class="hardis-note error bp-error-message">
+            <p>{planErrorMessage}</p>
+          </div>
+          <div class="hardis-empty-actions">
+            <lightning-button variant="neutral" class="hardis-btn-tinted-blue" label={i18n.tryAgainLabel} onclick={handleRefresh}></lightning-button>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- Where: the target sandbox, the parent branch and the start Pull Request -->
+    <template if:true={showPickers}>
+      <div class="hardis-panel-body bp-block">
+        <div class="bp-block-head">
+          <span class="hardis-group-label bp-block-label">{i18n.backpromoteWhere}</span>
+          <template if:true={isReady}>
+            <span class="muted bp-block-summary">{whereSummary}</span>
+          </template>
+        </div>
+        <div class="bp-where-line">
+          <span class="muted">{i18n.backpromoteTargetSandbox}</span>
+          <lightning-combobox class="bp-picker" label={i18n.backpromoteTargetSandbox} variant="label-hidden" options={targetOrgOptions} value={targetOrgValue} onchange={handleTargetOrgChange} disabled={pickersDisabled}></lightning-combobox>
+          <template if:true={showParentBranchPicker}>
+            <span class="muted">{i18n.backpromoteParentBranch}</span>
+            <lightning-combobox class="bp-picker" label={i18n.backpromoteParentBranch} variant="label-hidden" options={parentBranchOptions} value={parentBranchValue} onchange={handleParentBranchChange} disabled={pickersDisabled}></lightning-combobox>
+          </template>
+          <template if:false={showParentBranchPicker}>
+            <span class="muted">{i18n.backpromoteParentBranch}</span>
+            <span class="hardis-branch-chip">{parentBranchValue}</span>
+          </template>
+          <template if:true={isReady}>
+            <span class="muted">{i18n.backpromoteBranchLabel}</span>
+            <span class="hardis-branch-chip mono" title={i18n.backpromoteBranchTooltip}>{backpromoteBranchName}</span>
+            <template if:true={hasPendingMerges}>
+              <span class="hardis-pill hardis-status-pending" title={i18n.backpromotePendingMergesTooltip}><span class="hardis-pill-dot"></span>{pendingMergesLabel}</span>
+              <button type="button" class="hardis-textlink" onclick={handleResetBranch} disabled={running}>{i18n.backpromoteAbandonMerges}</button>
+            </template>
+          </template>
+        </div>
+        <template if:true={hasNoAllowedOrg}>
+          <div class="hardis-note warning"><lightning-icon icon-name="utility:warning" size="x-small"></lightning-icon><p>{i18n.backpromoteNoAllowedOrg} <button type="button" class="hardis-textlink" onclick={handleConnectAnotherOrg}>{i18n.backpromoteConnectOtherOrg}</button></p></div>
+        </template>
+        <template if:true={needsChoices}>
+          <div class="hardis-note"><lightning-icon icon-name="utility:info" size="x-small"></lightning-icon><p>{i18n.backpromoteSelectSandboxAndBranch}</p></div>
+        </template>
+        <template if:true={hasNoAllowedBranch}>
+          <div class="hardis-note warning"><lightning-icon icon-name="utility:warning" size="x-small"></lightning-icon><p>{i18n.backpromoteNoAllowedBranch}</p></div>
+        </template>
+
+        <template if:true={isReady}>
+          <!-- Failed checks: nothing can be deployed until they pass -->
+          <template if:true={isBlocked}>
+            <template for:each={plan.checks} for:item="check">
+              <template if:false={check.ok}>
+                <div key={check.id} class="hardis-note error bp-check">
+                  <lightning-icon icon-name="utility:error" size="x-small"></lightning-icon>
+                  <p>{check.message}</p>
+                </div>
+              </template>
+            </template>
+          </template>
+          <template if:false={isBlocked}>
+            <p class="hardis-group-desc bp-pr-desc">{i18n.backpromoteStartPullRequestDesc}</p>
+            <template if:true={scanNotFoundNote}>
+              <div class="hardis-note"><lightning-icon icon-name="utility:info" size="x-small"></lightning-icon><p>{scanNotFoundNote}</p></div>
+            </template>
+            <template if:true={hasPullRequests}>
+              <div class="hardis-option-list bp-list">
+                <template for:each={pullRequestRows} for:item="pr">
+                  <div key={pr.key} class={pr.rowClass} role="radio" aria-checked={pr.selected} data-number={pr.number} onclick={handleStartPullRequest}>
+                    <span class={pr.radioClass}></span>
+                    <span class="hardis-option-main bp-line">
+                      <template if:true={pr.webUrl}>
+                        <button type="button" class="hardis-textlink hardis-option-label bp-pr-title" data-url={pr.webUrl} onclick={handleOpenPullRequest}>{pr.label}</button>
+                      </template>
+                      <template if:false={pr.webUrl}>
+                        <span class="hardis-option-label bp-pr-title">{pr.label}</span>
+                      </template>
+                      <span class="hardis-option-desc bp-pr-meta">{pr.meta}</span>
+                    </span>
+                    <template if:true={pr.statusLabel}>
+                      <span class={pr.statusClass} title={pr.statusTitle}><span class="hardis-pill-dot"></span>{pr.statusLabel}</span>
+                    </template>
+                  </div>
+                </template>
+              </div>
+              <div class="bp-line bp-pr-links">
+                <template if:true={hasHiddenPullRequests}>
+                  <button type="button" class="hardis-textlink" onclick={handleShowAllPullRequests}>{i18n.backpromoteShowEarlier}</button>
+                </template>
+                <template if:true={canScanEarlier}>
+                  <button type="button" class="hardis-textlink" onclick={handleScanEarlier} disabled={pickersDisabled}>{i18n.backpromoteScanEarlier}</button>
+                </template>
+              </div>
+            </template>
+            <template if:false={hasPullRequests}>
+              <p class="muted">{i18n.backpromotePullRequestsNone}</p>
+            </template>
+          </template>
+        </template>
+      </div>
+    </template>
+
+    <!-- Loading, below the Where block so its choices stay visible: the plan reads git, the Pull Request comments and the sandbox -->
+    <template if:true={isLoadingState}>
+      <div class="hardis-panel-body">
+        <div class="hardis-empty">
+          <div class="slds-is-relative bp-spinner">
+            <lightning-spinner alternative-text={i18n.loadingLabel} size="medium"></lightning-spinner>
+          </div>
+          <h3 class="hardis-empty-title">{i18n.backpromoteLoadingTitle}</h3>
+          <template if:true={hasPlanProgress}>
+            <p class="hardis-empty-desc">{planProgressMessage}</p>
+            <template if:true={hasPlanProgressPercent}>
+              <div class="hardis-progress-track bp-progress-track">
+                <div class="hardis-progress-fill active" style={planProgressFillStyle}></div>
+              </div>
+            </template>
+            <ul class="bp-progress-steps">
+              <template for:each={planProgressDoneSteps} for:item="step">
+                <li key={step.key} class="bp-progress-step">
+                  <lightning-icon icon-name="utility:check" size="xx-small"></lightning-icon>
+                  <span>{step.message}</span>
+                </li>
+              </template>
+            </ul>
+          </template>
+          <template if:false={hasPlanProgress}>
+            <p class="hardis-empty-desc">{i18n.backpromoteLoadingDesc}</p>
+          </template>
+        </div>
+      </div>
+    </template>
+
+    <!-- What: the metadata of the window, the deletions and the deployment actions -->
+    <template if:true={showPlan}>
+      <div class="hardis-panel-body bp-block">
+        <div class="bp-block-head">
+          <span class="hardis-group-label bp-block-label">{i18n.backpromoteWhat}</span>
+          <span class="muted bp-block-summary">{whatSummary}</span>
+          <span class="bp-block-right">
+            <template if:true={hasDifferingItems}>
+              <button type="button" class="hardis-textlink" onclick={handleOverwriteAll} disabled={isReadOnly}>{i18n.backpromoteOverwriteAll}</button>
+            </template>
+            <template if:true={showMergeAll}>
+              <button type="button" class="hardis-textlink" onclick={handleMergeAll} disabled={isReadOnly} title={i18n.backpromoteMergeAllTooltip}>{i18n.backpromoteMergeAll}</button>
+            </template>
+            <template if:true={hasPreparedFiles}>
+              <lightning-button variant="neutral" icon-name="utility:copy" label={copyPromptLabel} title={i18n.backpromoteCopyAgentPromptTooltip} onclick={handleCopyAgentPrompt}></lightning-button>
+            </template>
+            <template if:true={hasWindow}>
+              <span class="muted">{windowLabel}</span>
+            </template>
+          </span>
+        </div>
+
+        <template if:false={hasWindow}>
+          <p class="muted">{i18n.backpromotePickStartFirst}</p>
+        </template>
+        <template if:true={hasNothingInWindow}>
+          <p class="muted">{i18n.backpromoteNothingInWindow}</p>
+        </template>
+
+        <template if:true={hasItems}>
+          <template for:each={itemGroups} for:item="group">
+            <div key={group.type} class="bp-group">
+              <button type="button" class="slds-button bp-group-toggle" data-type={group.type} aria-expanded={group.expanded} onclick={handleToggleType}>
+                <lightning-icon icon-name={group.chevron} size="xx-small"></lightning-icon>
+                <span class={group.typePillClass}><span class="hardis-pill-dot"></span>{group.type}</span>
+                <span class="muted bp-group-count">{group.countLabel}</span>
+              </button>
+              <template if:true={group.expanded}>
+                <div class="bp-rows">
+                  <template for:each={group.rows} for:item="row">
+                    <div key={row.key} class={row.rowClass}>
+                      <button type="button" class={row.checkClass} role="checkbox" aria-checked={row.ariaChecked} data-key={row.key} onclick={handleToggleItem} disabled={row.checkDisabled} title={i18n.backpromoteTickTooltip}>
+                        <lightning-icon icon-name="utility:check" size="xx-small"></lightning-icon>
+                      </button>
+                      <span class="hardis-row-label bp-item-name" title={row.key}>{row.name}</span>
+                      <template for:each={row.pullRequests} for:item="pr">
+                        <span key={pr.key} class="hardis-chip bp-chip">{pr.label}</span>
+                      </template>
+                      <template if:true={row.noOverwrite}>
+                        <span class="hardis-pill hardis-status-pending" title={row.noOverwriteTitle}><span class="hardis-pill-dot"></span>package-no-overwrite.xml</span>
+                      </template>
+                      <template if:true={row.excludedLastTime}>
+                        <span class="hardis-pill hardis-status-info" title={i18n.backpromoteLeftOutLastTimeTooltip}><span class="hardis-pill-dot"></span>{i18n.backpromoteLeftOutLastTime}</span>
+                      </template>
+                      <span class="bp-item-side">
+                        <template if:true={row.stateLabel}>
+                          <span class={row.stateClass} title={row.stateTitle}><span class="hardis-pill-dot"></span>{row.stateLabel}</span>
+                        </template>
+                        <template if:true={row.showDecision}>
+                          <span class="hardis-segmented" role="group" aria-label={i18n.backpromoteDecisionLabel}>
+                            <button type="button" class={row.gitClass} data-key={row.key} data-choice="git" title={i18n.backpromoteChoiceOverwriteTooltip} onclick={handleDecision} disabled={row.decisionDisabled}>{i18n.backpromoteChoiceOverwrite}</button>
+                            <button type="button" class={row.orgClass} data-key={row.key} data-choice="org" title={i18n.backpromoteChoiceKeepOrgTooltip} onclick={handleDecision} disabled={row.decisionDisabled}>{i18n.backpromoteChoiceKeepOrg}</button>
+                            <button type="button" class={row.mergeClass} data-key={row.key} data-choice="merge" title={i18n.backpromoteChoiceMergeTooltip} onclick={handleDecision} disabled={row.decisionDisabled}>{i18n.backpromoteChoiceMerge}</button>
+                          </span>
+                          <template if:true={row.canCompare}>
+                            <button type="button" class="slds-button slds-button_neutral bp-compare" data-key={row.key} title={i18n.backpromoteCompareTooltip} onclick={handleCompare}>{i18n.backpromoteCompare}</button>
+                          </template>
+                        </template>
+                      </span>
+                    </div>
+                  </template>
+                </div>
+              </template>
+            </div>
+          </template>
+        </template>
+
+        <template if:true={hasDeletions}>
+          <div class="bp-group">
+            <div class="bp-group-toggle bp-group-static">
+              <span class="hardis-pill hardis-status-failed"><span class="hardis-pill-dot"></span>{i18n.backpromoteDeletionsSection}</span>
+              <span class="muted bp-group-count">{deletionsSummary}</span>
+            </div>
+            <div class="bp-rows">
+              <template for:each={deletionRows} for:item="row">
+                <div key={row.key} class={row.rowClass}>
+                  <button type="button" class={row.checkClass} role="checkbox" aria-checked={row.ariaChecked} data-key={row.key} onclick={handleToggleDeletion} disabled={isReadOnly}>
+                    <lightning-icon icon-name="utility:check" size="xx-small"></lightning-icon>
+                  </button>
+                  <span class={row.typePillClass}><span class="hardis-pill-dot"></span>{row.typeLabel}</span>
+                  <span class="hardis-row-label bp-item-name" title={row.key}>{row.name}</span>
+                  <span class="bp-item-side"><span class="hardis-pill hardis-status-failed"><span class="hardis-pill-dot"></span>{i18n.backpromoteDeletedFromSandbox}</span></span>
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
+
+        <template if:true={hasActions}>
+          <div class="bp-group">
+            <div class="bp-group-toggle bp-group-static">
+              <span class="hardis-pill hardis-hue-violet"><span class="hardis-pill-dot"></span>{i18n.backpromoteActionsSection}</span>
+              <span class="muted bp-group-count">{actionsSummary}</span>
+            </div>
+            <div class="bp-rows">
+              <template for:each={actionRows} for:item="row">
+                <div key={row.id} class={row.rowClass}>
+                  <button type="button" class={row.checkClass} role="checkbox" aria-checked={row.ariaChecked} data-id={row.id} onclick={handleToggleAction} disabled={row.disabled}>
+                    <lightning-icon icon-name="utility:check" size="xx-small"></lightning-icon>
+                  </button>
+                  <span class={row.whenPillClass}><span class="hardis-pill-dot"></span>{row.whenLabel}</span>
+                  <span class="hardis-row-label bp-item-name" title={row.id}>{row.label}</span>
+                  <span class={row.typePillClass}><span class="hardis-pill-dot"></span>{row.typeLabel}</span>
+                  <template if:true={row.pullRequestLabel}>
+                    <span class="hardis-chip bp-chip">{row.pullRequestLabel}</span>
+                  </template>
+                  <span class="bp-item-side">
+                    <template if:true={row.stateLabel}>
+                      <span class={row.stateClass}><span class="hardis-pill-dot"></span>{row.stateLabel}</span>
+                    </template>
+                    <template if:true={row.showConfirm}>
+                      <lightning-button variant="neutral" class="hardis-btn-tinted-green" icon-name="utility:check" label={i18n.backpromoteDoneInSandbox} title={i18n.backpromoteDoneInSandboxTooltip} data-id={row.id} onclick={handleConfirmAction} disabled={row.confirmDisabled}></lightning-button>
+                    </template>
+                  </span>
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- Go: one button, the progress, the result -->
+      <div class="hardis-panel-body bp-block bp-go">
+        <div class="bp-block-head">
+          <span class="hardis-group-label bp-block-label">{i18n.backpromoteGo}</span>
+        </div>
+        <div class="bp-go-line">
+          <lightning-button variant="neutral" class="hardis-btn-tinted-blue" icon-name="utility:play" label={runLabel} onclick={handleRunBackpromote} disabled={runDisabled}></lightning-button>
+          <span class="bp-go-summary">{goSummary}</span>
+          <button type="button" class="hardis-textlink" onclick={handleToggleCommand} disabled={noCommand}>{commandToggleLabel}</button>
+        </div>
+        <template if:true={blockerLabel}>
+          <p class="hardis-status-desc bp-blocker">{blockerLabel}</p>
+        </template>
+        <template if:true={checkoutNote}>
+          <p class="hardis-status-desc muted">{checkoutNote}</p>
+        </template>
+        <template if:true={showCommandBlock}>
+          <div class="bp-command">
+            <code class="hardis-prop-value mono bp-command-text">{command}</code>
+            <button type="button" class="hardis-textlink" onclick={handleCopyCommand}>{i18n.backpromoteCopyCommand}</button>
+          </div>
+        </template>
+
+        <template if:true={hasRunLog}>
+          <ul class="bp-run-log">
+            <template for:each={runLogRows} for:item="line">
+              <li key={line.key} class="bp-run-line">
+                <lightning-icon icon-name={line.iconName} size="xx-small"></lightning-icon>
+                <span>{line.message}</span>
+                <template if:true={line.counted}>
+                  <span class="muted">{line.countLabel}</span>
+                </template>
+              </li>
+            </template>
+          </ul>
+        </template>
+
+        <template if:true={hasRunError}>
+          <div class="hardis-note error">
+            <lightning-icon icon-name="utility:error" size="x-small"></lightning-icon>
+            <p><strong>{runErrorStatusLabel}</strong> {runErrorMessage}</p>
+          </div>
+        </template>
+
+        <template if:true={hasRunMessage}>
+          <div class="hardis-note">
+            <lightning-icon icon-name="utility:info" size="x-small"></lightning-icon>
+            <p>{runMessage}</p>
+          </div>
+        </template>
+
+        <template if:true={hasRunResult}>
+          <div class="hardis-note success bp-result">
+            <lightning-icon icon-name="utility:success" size="x-small"></lightning-icon>
+            <div class="bp-result-body">
+              <template for:each={resultLines} for:item="line">
+                <p key={line.key} class="bp-result-line"><lightning-icon icon-name={line.icon} size="xx-small"></lightning-icon><span>{line.text}</span></p>
+              </template>
+              <div class="bp-line bp-result-actions">
+                <template if:true={hasDeployReport}>
+                  <button type="button" class="hardis-textlink" onclick={handleOpenDeployReport}>{i18n.backpromoteOpenDeployReport}</button>
+                </template>
+                <template if:true={hasOrgUrl}>
+                  <button type="button" class="hardis-textlink" onclick={handleOpenOrg}>{i18n.backpromoteOpenSandbox}</button>
+                </template>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <template if:true={showBackToBranch}>
+          <div class="hardis-note bp-back">
+            <lightning-icon icon-name="utility:undo" size="x-small"></lightning-icon>
+            <div class="bp-result-body">
+              <p>{i18n.backpromoteBackToBranchDesc}</p>
+              <lightning-button variant="neutral" class="hardis-btn-tinted-blue" icon-name="utility:undo" label={backToBranchLabel} onclick={handleBackToBranch} disabled={running}></lightning-button>
+            </div>
+          </div>
+        </template>
+      </div>
+    </template>
+
+    <!-- The working tree is not clean: commit or stash before the checkout switches -->
+    <template if:true={showDirtyTreeModal}>
+      <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+        <div class="slds-modal__container">
+          <header class="slds-modal__header">
+            <h2 class="slds-modal__title slds-hyphenate">{dirtyTreeTitle}</h2>
+          </header>
+          <div class="slds-modal__content slds-p-around_medium">
+            <p class="hardis-group-desc">{dirtyTreeDescription}</p>
+            <ul class="bp-dirty-files">
+              <template for:each={dirtyTreeFiles} for:item="file">
+                <li key={file.key}><span class="hardis-prop-value mono">{file.name}</span></li>
+              </template>
+            </ul>
+            <template if:true={dirtyTreeMoreFiles}>
+              <p class="muted">{dirtyTreeMoreFiles}</p>
+            </template>
+            <lightning-radio-group name="dirtyTree" label={i18n.backpromoteDirtyTreeChoice} options={dirtyTreeOptions} value={dirtyTreeAction} type="radio" onchange={handleDirtyTreeActionChange}></lightning-radio-group>
+            <template if:true={isDirtyTreeCommit}>
+              <lightning-input label={i18n.backpromoteCommitMessage} value={dirtyTreeMessage} onchange={handleDirtyTreeMessageChange}></lightning-input>
+            </template>
+          </div>
+          <footer class="slds-modal__footer">
+            <lightning-button variant="neutral" label={i18n.cancelLabel} onclick={handleDirtyTreeCancel}></lightning-button>
+            <lightning-button variant="neutral" class="hardis-btn-tinted-blue" label={i18n.backpromoteDirtyTreeContinue} onclick={handleDirtyTreeConfirm} disabled={dirtyTreeConfirmDisabled}></lightning-button>
+          </footer>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+  </div>
+</template>

@@ -1,0 +1,313 @@
+/* Backpromote panel: layout only. Colors, pills, chips, checkboxes, notes and
+   buttons come from resources/global-theme.css and SLDS. */
+
+.bp-spinner {
+  height: 3rem;
+  width: 100%;
+}
+
+.bp-error-message {
+  max-width: 60ch;
+  text-align: left;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.bp-token-vars {
+  display: inline-block;
+  margin: 0.5rem auto;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid var(--slds-g-color-neutral-base-90);
+}
+
+/* The three blocks of the page */
+.bp-block {
+  margin-bottom: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bp-block-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.bp-block-label {
+  margin: 0;
+}
+
+.bp-block-summary {
+  font-size: 0.8rem;
+}
+
+.bp-block-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  font-size: 0.78rem;
+}
+
+.bp-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+/* Where */
+.bp-where-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.bp-picker {
+  display: block;
+  min-width: 14rem;
+}
+
+.bp-pr-desc {
+  margin: 0;
+}
+
+.bp-list {
+  max-height: none;
+}
+
+.bp-pr-row {
+  align-items: center;
+}
+
+.bp-pr-row.bp-done .bp-pr-title,
+.bp-pr-row.bp-done .bp-pr-meta {
+  opacity: 0.6;
+}
+
+.bp-pr-title {
+  text-align: left;
+}
+
+.bp-radio {
+  width: 14px;
+  height: 14px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 1.5px solid var(--slds-g-color-neutral-base-60);
+  flex-shrink: 0;
+}
+
+.bp-radio.on {
+  border-width: 4px;
+  border-color: var(--slds-g-color-palette-cloud-blue-50);
+}
+
+.bp-pr-links {
+  padding: 0.2rem 0.2rem 0;
+  gap: 1rem;
+}
+
+.bp-check {
+  margin-bottom: 0.25rem;
+}
+
+/* What: one line per item */
+.bp-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.bp-group-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.3rem 0;
+  color: inherit;
+  text-align: left;
+}
+
+.bp-group-static {
+  cursor: default;
+}
+
+.bp-group-count {
+  font-size: 0.76rem;
+}
+
+.bp-rows {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--slds-g-color-neutral-base-90);
+  border-radius: 9px;
+  overflow: hidden;
+}
+
+.bp-item-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding: 0.3rem 0.6rem;
+  min-width: 0;
+  border-bottom: 1px solid var(--slds-g-color-neutral-base-95);
+}
+
+.bp-item-row:last-child {
+  border-bottom: 0;
+}
+
+.bp-item-row.bp-disabled .bp-item-name {
+  opacity: 0.55;
+}
+
+/* The checkbox of an item row is a button: no button background while unticked, so the ticked
+   state of the kit (.hardis-check.on) stays visible */
+.bp-check {
+  cursor: pointer;
+  padding: 0;
+}
+
+.bp-check:not(.on) {
+  background: transparent;
+}
+
+.bp-check:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.bp-item-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.bp-chip {
+  font-size: 0.7rem;
+}
+
+.bp-item-side {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+/* The Overwrite / Keep org version / Merge select button is .hardis-segmented (global-theme.css) */
+.bp-compare {
+  font-size: 0.74rem;
+  line-height: 1.6rem;
+  padding: 0 0.6rem;
+}
+
+/* Go */
+.bp-go-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.bp-go-summary {
+  font-size: 0.82rem;
+}
+
+.bp-blocker {
+  margin: 0;
+}
+
+.bp-command {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.bp-command-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--slds-g-color-neutral-base-90);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.bp-run-log {
+  margin: 0;
+  padding: 0.4rem 0.6rem;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  border: 1px solid var(--slds-g-color-neutral-base-90);
+  border-radius: 8px;
+  font-size: 0.8rem;
+}
+
+.bp-run-line {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.bp-result-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.bp-result-line {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.bp-result-actions {
+  gap: 1rem;
+}
+
+/* Progress of the plan computation */
+.bp-progress-track {
+  width: min(24rem, 100%);
+  margin: 0.5rem auto 0;
+}
+
+.bp-progress-steps {
+  margin: 0.75rem auto 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 36rem;
+  text-align: left;
+}
+
+.bp-progress-step {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  opacity: 0.75;
+}
+
+/* Dirty working tree modal */
+.bp-dirty-files {
+  margin: 0.5rem 0 0.75rem;
+  padding: 0;
+  list-style: none;
+  max-height: 10rem;
+  overflow-y: auto;
+  font-size: 0.78rem;
+}

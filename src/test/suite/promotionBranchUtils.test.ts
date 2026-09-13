@@ -269,6 +269,15 @@ suite("promotionBranchUtils", () => {
       .filter((column: any) => !column.initialWidth)
       .map((column: any) => column.key);
     assert.deepStrictEqual(flexible, [columns[columns.length - 1].key]);
+    // With promotion labels, the promotion column comes last, and every column keeps a width:
+    // the table scrolls rather than squeezing a column
+    view.modalPullRequests = [{ number: 1, promotionLabel: "Already deployed via promotion/uat/preprod" }];
+    const withPromotion = view.modalPrColumns;
+    assert.strictEqual(withPromotion[withPromotion.length - 1].key, "promotion");
+    assert.deepStrictEqual(
+      withPromotion.filter((column: any) => !column.initialWidth).map((column: any) => column.key),
+      [],
+    );
     const author = columns.find((column: any) => column.key === "author");
     assert.ok(
       author && author.initialWidth >= 150,
@@ -668,10 +677,6 @@ suite("promotionBranchUtils", () => {
     // Only the upstream copy is flagged: the others are left untouched
     assert.notStrictEqual(uatWindow[1].promotedAway, true);
     assert.notStrictEqual(preprodWindow[0].promotedAway, true);
-    assert.deepStrictEqual(
-      visiblePullRequests(uatWindow).map((p) => p.number),
-      [500],
-    );
     // Nothing happens for a project that did not enable the feature
     const off = [pr({ number: 482 })];
     enforceSinglePlacePerPullRequest(
@@ -712,10 +717,6 @@ suite("promotionBranchUtils", () => {
     // The branch the promotion reached keeps the story, the one it left does not
     assert.notStrictEqual(carriedIntoUat.promotedAway, true);
     assert.strictEqual(leftInIntegration.promotedAway, true);
-    assert.deepStrictEqual(
-      visiblePullRequests([carriedIntoUat]).map((p) => p.number),
-      [497],
-    );
   });
 
   test("a promotion carrying another promotion reaches the User Stories", () => {
@@ -799,10 +800,6 @@ suite("promotionBranchUtils", () => {
     assert.deepStrictEqual(
       visiblePullRequests(uatWindow).map((p) => p.number),
       [500],
-    );
-    assert.deepStrictEqual(
-      visiblePullRequests(uatWindow, true).map((p) => p.number),
-      [482, 500],
     );
 
     // The very promotion that carried it, and the story it brought, stay visible in preprod

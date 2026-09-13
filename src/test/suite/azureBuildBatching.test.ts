@@ -1,5 +1,8 @@
 import * as assert from "assert";
-import { DEFAULT_CONCURRENCY } from "../../utils/concurrency";
+import { PROVIDER_BATCH_PROFILES } from "../../utils/concurrency";
+
+// The fan-out ceiling of the Azure DevOps ladder: below it the direct calls leave in one wave
+const AZURE_FANOUT = PROVIDER_BATCH_PROFILES.azure[0];
 import { newAzureProviderStub } from "./azureProviderStub";
 
 // Every open Pull Request used to cost its own getBuilds call, so a repository with a hundred open
@@ -83,7 +86,7 @@ suite("Azure Pull Request build batching", () => {
   // batch, which leaves the per Pull Request counter free to talk about the Pull Requests under
   // test.
   const PADDING_FIRST_PR = 900;
-  const paddingCount = DEFAULT_CONCURRENCY + 1;
+  const paddingCount = AZURE_FANOUT + 1;
   const paddingPrs = () =>
     Array.from({ length: paddingCount }, (_, i) => rawPr(PADDING_FIRST_PR + i));
   const paddingBuilds = () =>
@@ -211,7 +214,7 @@ suite("Azure Pull Request build batching", () => {
   test("does not batch below the fan-out ceiling", async () => {
     const counters = { batch: 0, single: 0, statuses: 0 };
     const numbers = Array.from(
-      { length: DEFAULT_CONCURRENCY },
+      { length: AZURE_FANOUT },
       (_, i) => i + 1,
     );
     const builds = numbers.map((n) =>
@@ -230,7 +233,7 @@ suite("Azure Pull Request build batching", () => {
       0,
       "one wave of direct calls is already as fast as it gets",
     );
-    assert.strictEqual(counters.single, DEFAULT_CONCURRENCY);
+    assert.strictEqual(counters.single, AZURE_FANOUT);
   });
 
   test("makes no build call at all when jobs are not requested", async () => {

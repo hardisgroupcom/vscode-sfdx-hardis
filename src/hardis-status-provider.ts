@@ -20,6 +20,7 @@ import { DOCSITE_URL } from "./constants";
 import { ThemeUtils } from "./utils/themeUtils";
 import { loadProjectSfdxHardisConfig } from "./utils/sfdx-hardis-config-utils";
 import { CacheManager } from "./utils/cache-manager";
+import { emitOrgsChanged } from "./utils/orgChangeEvents";
 
 // Module-level flag: true while the background scratch-pool fetch is in flight
 let SCRATCH_POOL_LOADING = false;
@@ -64,6 +65,7 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
         type: "refreshOrgs",
       });
     }
+    emitOrgsChanged();
   }
 
   /**

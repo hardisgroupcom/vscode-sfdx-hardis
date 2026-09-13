@@ -121,29 +121,27 @@
     display: block;
 }
 
-/* Layout helpers for action row in card header */
-.actions-row {
-    display: flex;
-    align-items: center; /* vertical center alignment */
-    gap: 0.5rem;
-}
-
-.left-actions {
-    display: flex;
-    align-items: center;
-    margin-right: 0.5rem;
-}
-
-.right-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+/* The header actions are wide (provider icons, the toggle, the settings
+   buttons): the title and subtitle give way first, down to 16rem, before the
+   actions row (.hardis-page-head-actions, which wraps) has to wrap. A modifier
+   next to the kit class: a kit class is never redefined in a component */
+.pipeline-head-text {
+    flex-shrink: 100;
+    min-width: 16rem;
 }
 
 .toggle-wrapper {
     display: flex;
     align-items: center;
     margin-top: 0.6rem;
+}
+
+/* The header toggle stays on one line: in a flex row the toggle shrank before anything else,
+   its label wrapped on two lines and the switch drifted away from its words. The branch modal
+   toggle (absolutely positioned) keeps the right to wrap in a narrow modal */
+.hardis-page-head-actions .toggle-wrapper {
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 /* Greyed (not connected). Strong fade so the disconnected state is unmistakable

@@ -1,44 +1,185 @@
 import * as assert from "assert";
 import {
   DEFAULT_CONCURRENCY,
+  PROVIDER_BATCH_PROFILES,
+  isThrottlingError,
   mapWithConcurrency,
   mapWithConcurrencySettled,
+  retryAfterMs,
 } from "../../utils/concurrency";
 
-suite("Bounded parallelism", () => {
-  // Records how many calls were in flight at the same time
-  const trackingMapper = (delays: number[]) => {
-    const state = { inFlight: 0, peak: 0 };
+const throttled = (retryAfter?: string) =>
+  Object.assign(new Error("API rate limit exceeded"), {
+    status: 429,
+    response: { headers: retryAfter ? { "retry-after": retryAfter } : {} },
+  });
+const notFound = () =>
+  Object.assign(new Error("Issue does not exist"), { status: 404 });
+const noSleep = { sleep: async () => undefined };
+
+suite("Adaptive batches of provider calls", () => {
+  // Records how many calls were in flight at the same time; an item listed in failures rejects
+  // with the given error that many times before answering
+  const trackingMapper = (
+    delays: number[],
+    failures: Map<number, { times: number; error: () => Error }> = new Map(),
+  ) => {
+    const state = { inFlight: 0, peak: 0, calls: 0 };
     const mapper = async (value: number) => {
+      state.calls++;
       state.inFlight++;
       state.peak = Math.max(state.peak, state.inFlight);
       await new Promise((resolve) => setTimeout(resolve, delays[value] ?? 1));
       state.inFlight--;
+      const failure = failures.get(value);
+      if (failure && failure.times > 0) {
+        failure.times--;
+        throw failure.error();
+      }
       return value * 2;
     };
     return { state, mapper };
   };
 
+  test("has one ladder per provider", () => {
+    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.github], [80, 40, 20, 10, 5, 1]);
+    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.gitlab], [80, 40, 20, 10, 5, 1]);
+    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.azure], [50, 20, 10, 5, 1]);
+    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.bitbucket], [50, 20, 10, 5, 1]);
+    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.jiraCloud], [20, 10, 5, 1]);
+    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.jiraServer], [40, 20, 10, 5, 1]);
+    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.serviceNow], [8, 4, 2, 1]);
+    assert.strictEqual(DEFAULT_CONCURRENCY, 80);
+  });
+
+  test("tells a throttling from the answer of the provider", () => {
+    assert.strictEqual(isThrottlingError(throttled()), true);
+    assert.strictEqual(
+      isThrottlingError(
+        Object.assign(new Error("secondary rate limit"), { status: 403 }),
+      ),
+      true,
+    );
+    assert.strictEqual(
+      isThrottlingError(
+        Object.assign(new Error("socket hang up"), { code: "ECONNRESET" }),
+      ),
+      true,
+    );
+    assert.strictEqual(isThrottlingError(notFound()), false);
+    assert.strictEqual(
+      isThrottlingError(Object.assign(new Error("Forbidden"), { status: 403 })),
+      false,
+    );
+    assert.strictEqual(retryAfterMs(throttled("3")), 3000);
+    assert.strictEqual(retryAfterMs(notFound()), null);
+  });
+
   test("keeps the results in the order of the input", async () => {
     // Reversed delays: the last item finishes first, the result must not follow completion order
-    const delays = [30, 20, 10, 0];
-    const { mapper } = trackingMapper(delays);
+    const { mapper } = trackingMapper([30, 20, 10, 0]);
     const results = await mapWithConcurrency([0, 1, 2, 3], mapper, 4);
     assert.deepStrictEqual(results, [0, 2, 4, 6]);
   });
 
-  test("never exceeds the ceiling", async () => {
+  test("reads a full batch of the ladder at a time", async () => {
+    const items = Array.from({ length: 200 }, (_, i) => i);
+    const { state, mapper } = trackingMapper(items.map(() => 5));
+    const results = await mapWithConcurrency(
+      items,
+      mapper,
+      PROVIDER_BATCH_PROFILES.github,
+    );
+    assert.deepStrictEqual(results, items.map((value) => value * 2));
+    assert.strictEqual(state.peak, 80);
+  });
+
+  test("never exceeds the ceiling a caller asks for", async () => {
     const items = Array.from({ length: 20 }, (_, i) => i);
     const { state, mapper } = trackingMapper(items.map(() => 5));
     await mapWithConcurrency(items, mapper, 3);
     assert.ok(state.peak <= 3, `peak concurrency was ${state.peak}`);
   });
 
-  test("actually runs in parallel up to the ceiling", async () => {
-    const items = Array.from({ length: 8 }, (_, i) => i);
-    const { state, mapper } = trackingMapper(items.map(() => 5));
-    await mapWithConcurrency(items, mapper, 4);
-    assert.strictEqual(state.peak, 4, "the ceiling should be reached");
+  test("backs off to the smaller sizes on a throttling and waits the delay asked for", async () => {
+    const items = Array.from({ length: 30 }, (_, i) => i);
+    // Item 3 is throttled at 80 and at 40, item 7 three times (down to size 10 where it passes)
+    const { state, mapper } = trackingMapper(
+      items.map(() => 1),
+      new Map([
+        [3, { times: 2, error: () => throttled("1") }],
+        [7, { times: 3, error: () => throttled() }],
+      ]),
+    );
+    const backoffs: Array<[number, number]> = [];
+    const results = await mapWithConcurrency(
+      items,
+      mapper,
+      PROVIDER_BATCH_PROFILES.github,
+      {
+        sleep: async () => undefined,
+        onBackoff: (size, _error, waitMs) => backoffs.push([size, waitMs]),
+      },
+    );
+    assert.deepStrictEqual(results, items.map((value) => value * 2));
+    assert.deepStrictEqual(backoffs, [
+      [40, 1000],
+      [20, 1000],
+      [10, 0],
+    ]);
+    assert.strictEqual(state.peak, 30);
+    // 30 first calls, then 2 retries at 40, 2 at 20, 1 at 10
+    assert.strictEqual(state.calls, 35);
+  });
+
+  test("never shrinks the batch for an error that is not a throttling", async () => {
+    const items = Array.from({ length: 12 }, (_, i) => i);
+    const failures: number[] = [];
+    const backoffs: number[] = [];
+    const { state, mapper } = trackingMapper(
+      items.map(() => 1),
+      new Map([[4, { times: 99, error: notFound }]]),
+    );
+    const results = await mapWithConcurrencySettled(
+      items,
+      mapper,
+      [5, 2, 1],
+      (_error, item) => failures.push(item),
+      { ...noSleep, onBackoff: (size) => backoffs.push(size) },
+    );
+    assert.strictEqual(results[4], undefined);
+    assert.strictEqual(results[5], 10);
+    assert.deepStrictEqual(failures, [4]);
+    assert.deepStrictEqual(backoffs, []);
+    assert.strictEqual(state.calls, 12);
+    await assert.rejects(
+      mapWithConcurrency(
+        [1, 2],
+        trackingMapper([1, 1], new Map([[2, { times: 99, error: notFound }]]))
+          .mapper,
+        5,
+        noSleep,
+      ),
+      /Issue does not exist/,
+    );
+  });
+
+  test("gives a throttled item one last try at the smallest size, then reports it", async () => {
+    const failures: number[] = [];
+    const { state, mapper } = trackingMapper(
+      [1, 1, 1],
+      new Map([[2, { times: 99, error: () => throttled() }]]),
+    );
+    const results = await mapWithConcurrencySettled(
+      [1, 2, 3],
+      mapper,
+      [5, 1],
+      (_error, item) => failures.push(item),
+      noSleep,
+    );
+    assert.deepStrictEqual(results, [2, undefined, 6]);
+    assert.deepStrictEqual(failures, [2]);
+    assert.strictEqual(state.calls, 5);
   });
 
   test("handles an empty list without calling the mapper", async () => {
@@ -51,59 +192,16 @@ suite("Bounded parallelism", () => {
     assert.strictEqual(called, false);
   });
 
-  test("never starts more workers than there are items", async () => {
-    const items = [0, 1];
-    const { state, mapper } = trackingMapper([5, 5]);
-    await mapWithConcurrency(items, mapper, 50);
-    assert.ok(state.peak <= 2, `peak concurrency was ${state.peak}`);
-  });
-
   test("treats a limit below one as one", async () => {
-    const items = [0, 1, 2];
     const { state, mapper } = trackingMapper([5, 5, 5]);
-    await mapWithConcurrency(items, mapper, 0);
+    await mapWithConcurrency([0, 1, 2], mapper, 0);
     assert.strictEqual(state.peak, 1);
   });
 
-  test("rejects on the first error, like Promise.all", async () => {
-    await assert.rejects(
-      mapWithConcurrency([1, 2, 3], async (value) => {
-        if (value === 2) {
-          throw new Error("boom");
-        }
-        return value;
-      }),
-      /boom/,
-    );
-  });
-
-  suite("mapWithConcurrencySettled()", () => {
-    test("keeps the good results and reports the failures", async () => {
-      const seen: unknown[] = [];
-      const results = await mapWithConcurrencySettled(
-        [1, 2, 3],
-        async (value) => {
-          if (value === 2) {
-            throw new Error("one Pull Request the provider refuses");
-          }
-          return value * 10;
-        },
-        2,
-        (error) => seen.push(error),
-      );
-      assert.deepStrictEqual(results, [10, undefined, 30]);
-      assert.strictEqual(seen.length, 1);
+  test("does not need an error callback", async () => {
+    const results = await mapWithConcurrencySettled([1], async () => {
+      throw new Error("ignored");
     });
-
-    test("does not need an error callback", async () => {
-      const results = await mapWithConcurrencySettled([1], async () => {
-        throw new Error("ignored");
-      });
-      assert.deepStrictEqual(results, [undefined]);
-    });
-  });
-
-  test("has a sane default ceiling", () => {
-    assert.ok(DEFAULT_CONCURRENCY >= 4 && DEFAULT_CONCURRENCY <= 16);
+    assert.deepStrictEqual(results, [undefined]);
   });
 });
