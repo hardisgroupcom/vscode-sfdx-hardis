@@ -170,6 +170,8 @@ export interface BackpromoteRunResult {
   deployReport: string | null;
   /** The components the sandbox refused when the deployment failed */
   deployErrors: BackpromoteDeployError[];
+  /** The coding agent prompt sfdx-hardis wrote for a failed deployment */
+  deployErrorsPromptFile: string | null;
   orgUrl: string | null;
 }
 
@@ -180,6 +182,10 @@ export interface BackpromoteDeployError {
   file: string | null;
   line: number | null;
   problem: string;
+  /** The sfdx-hardis deployment tip matching the error */
+  tip: { label: string; message: string; docUrl: string | null } | null;
+  /** The answer of the AI deployment assistant, when it is configured */
+  aiTip: string | null;
 }
 
 function normalizeDeployErrors(raw: unknown): BackpromoteDeployError[] {
@@ -187,14 +193,26 @@ function normalizeDeployErrors(raw: unknown): BackpromoteDeployError[] {
     return [];
   }
   return raw
-    .filter((entry: any) => entry && typeof entry === "object" && entry.key)
+    .filter(
+      (entry: any) =>
+        entry && typeof entry === "object" && (entry.key || entry.problem),
+    )
     .map((entry: any) => ({
-      key: String(entry.key),
+      key: String(entry.key || ""),
       type: String(entry.type || ""),
       name: String(entry.name || ""),
       file: asStringOrNull(entry.file),
       line: Number(entry.line) > 0 ? Number(entry.line) : null,
       problem: String(entry.problem || ""),
+      tip:
+        entry.tip && typeof entry.tip === "object" && entry.tip.message
+          ? {
+              label: String(entry.tip.label || ""),
+              message: String(entry.tip.message),
+              docUrl: asStringOrNull(entry.tip.docUrl),
+            }
+          : null,
+      aiTip: asStringOrNull(entry.aiTip),
     }));
 }
 
@@ -685,6 +703,9 @@ export function normalizeBackpromotePlan(raw: any): BackpromotePlan | null {
             pushRejected: raw.result.pushRejected === true,
             deployReport: asStringOrNull(raw.result.deployReport),
             deployErrors: normalizeDeployErrors(raw.result.deployErrors),
+            deployErrorsPromptFile: asStringOrNull(
+              raw.result.deployErrorsPromptFile,
+            ),
             orgUrl: asStringOrNull(raw.result.orgUrl),
           }
         : null,

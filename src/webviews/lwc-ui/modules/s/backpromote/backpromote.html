@@ -380,11 +380,46 @@
                         <span class="muted mono">{error.location}</span>
                       </template>
                       <span class="bp-deploy-error-problem">{error.problem}</span>
+                      <template if:true={error.hasTip}>
+                        <div class="bp-deploy-tip">
+                          <p class="bp-deploy-tip-title">
+                            <lightning-icon icon-name="utility:light_bulb" size="xx-small"></lightning-icon>
+                            <strong>{i18n.backpromoteDeployTip} {error.tipLabel}</strong>
+                            <template if:true={error.tipDocUrl}>
+                              <button type="button" class="hardis-textlink" data-url={error.tipDocUrl} onclick={handleOpenTipDoc}>{i18n.backpromoteDeployTipDoc}</button>
+                            </template>
+                          </p>
+                          <template for:each={error.tipLines} for:item="tipLine">
+                            <p key={tipLine.key} class="bp-deploy-tip-line">
+                              <template for:each={tipLine.segments} for:item="segment">
+                                <template if:true={segment.bold}>
+                                  <strong key={segment.key}>{segment.text}</strong>
+                                </template>
+                                <template if:false={segment.bold}>
+                                  <span key={segment.key}>{segment.text}</span>
+                                </template>
+                              </template>
+                            </p>
+                          </template>
+                        </div>
+                      </template>
+                      <template if:true={error.aiTip}>
+                        <div class="bp-deploy-tip">
+                          <p class="bp-deploy-tip-title">
+                            <lightning-icon icon-name="utility:einstein" size="xx-small"></lightning-icon>
+                            <strong>{i18n.backpromoteDeployAiTip}</strong>
+                          </p>
+                          <p class="bp-deploy-tip-line bp-deploy-ai-tip">{error.aiTip}</p>
+                        </div>
+                      </template>
                     </li>
                   </template>
                 </ul>
               </template>
               <div class="bp-line bp-result-actions">
+                <template if:true={hasRunErrorPrompt}>
+                  <lightning-button variant="neutral" icon-name="utility:copy" label={i18n.backpromoteCopyDeployErrorsPrompt} title={i18n.backpromoteCopyDeployErrorsPromptTooltip} onclick={handleCopyDeployErrorsPrompt}></lightning-button>
+                </template>
                 <template if:true={canUntickErrorItems}>
                   <button type="button" class="hardis-textlink" onclick={handleUntickErrorItems}>{i18n.backpromoteUntickErrorItems}</button>
                 </template>

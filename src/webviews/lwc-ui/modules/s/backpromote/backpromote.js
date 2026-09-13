@@ -12,6 +12,20 @@ import {
 // plan, the selection, the counters and the commands. This component renders one page
 // (Where, What, Go) and posts the decisions back after every change.
 
+// A deployment tip is plain text with **bold** parts and one step per line
+function tipLines(message, errorIndex) {
+  return String(message || "")
+    .split(/\r?\n/)
+    .map((line, lineIndex) => ({
+      key: `tip-${errorIndex}-${lineIndex}`,
+      segments: line.split(/\*\*/).map((text, segmentIndex) => ({
+        key: `tip-${errorIndex}-${lineIndex}-${segmentIndex}`,
+        text,
+        bold: segmentIndex % 2 === 1,
+      })),
+    }));
+}
+
 const SUCCESS_PILL = "hardis-pill hardis-status-success";
 const PENDING_PILL = "hardis-pill hardis-status-pending";
 const FAILED_PILL = "hardis-pill hardis-status-failed";
@@ -1492,11 +1506,12 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     return this.t("backpromoteRunningDesc", { sandbox: this.targetOrgLabel });
   }
 
-  // The components the sandbox refused, shown with the error instead of a log the panel hides
+  // The components the sandbox refused, shown with the error instead of a log the panel hides, each
+  // with the sfdx-hardis deployment tip and the AI suggestion found for it
   get runErrorDeployErrors() {
     return ((this.runError && this.runError.deployErrors) || []).map(
       (error, index) => ({
-        key: `${error.key}-${index}`,
+        key: `${error.key || "error"}-${index}`,
         label: error.type ? `${error.type} ${error.name}` : error.name,
         location: error.file
           ? error.line
@@ -1504,8 +1519,20 @@ export default class Backpromote extends SharedMixin(LightningElement) {
             : error.file
           : "",
         problem: error.problem,
+        hasTip: !!error.tip,
+        tipLabel: error.tip ? error.tip.label : "",
+        tipLines: error.tip ? tipLines(error.tip.message, index) : [],
+        tipDocUrl: error.tip ? error.tip.docUrl : null,
+        aiTip: error.aiTip || null,
       }),
     );
+  }
+
+  handleOpenTipDoc(event) {
+    const url = event.currentTarget.dataset.url;
+    if (url) {
+      window.sendMessageToVSCode({ type: "openExternal", data: { url } });
+    }
   }
 
   get hasRunErrorDeployErrors() {
@@ -1540,6 +1567,16 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     this.updateSelection({
       excludedItems: [...this.selection.excludedItems, ...keys],
     });
+  }
+
+  get hasRunErrorPrompt() {
+    return this.hasRunError && !!this.runError.deployErrorsPromptFile;
+  }
+
+  handleCopyDeployErrorsPrompt() {
+    if (this.hasRunErrorPrompt) {
+      window.sendMessageToVSCode({ type: "copyDeployErrorsPrompt" });
+    }
   }
 
   get hasRunErrorDeployReport() {

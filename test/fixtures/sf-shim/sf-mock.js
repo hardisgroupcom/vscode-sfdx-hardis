@@ -845,10 +845,33 @@ function answerBackpromote() {
             file: "force-app/main/default/classes/InvoiceCalculator.cls",
             line: 12,
             problem: "Unexpected token '}'.",
+            tip: {
+              label: "Apex compilation error",
+              message:
+                "The class **InvoiceCalculator** does not compile in the sandbox. You can:\n- Fix the syntax error in integration with a Pull Request\n- Untick **InvoiceCalculator** to leave it out of this backpromote",
+              docUrl:
+                "https://sfdx-hardis.cloudity.com/salesforce-deployment-assistant-home/",
+            },
+            aiTip: null,
           },
         ],
+        deployErrorsPromptFile: path.join(
+          process.cwd(),
+          "hardis-report",
+          "backpromote-deploy-errors-prompt-" + plan.runId + ".md",
+        ),
         orgUrl: plan.targetOrg.instanceUrl,
       };
+      fs.mkdirSync(path.dirname(plan.result.deployErrorsPromptFile), {
+        recursive: true,
+      });
+      fs.writeFileSync(
+        plan.result.deployErrorsPromptFile,
+        "Find why the sandbox refused ApexClass InvoiceCalculator (Unexpected token '}'.) and fix it in " +
+          plan.parentBranch +
+          ".\n",
+        "utf8",
+      );
       plan.checkout.onBackpromoteBranch = true;
       plan.checkout.currentBranch = plan.backpromoteBranch.name;
       console.log(

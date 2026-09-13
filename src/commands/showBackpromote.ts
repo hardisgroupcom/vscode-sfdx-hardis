@@ -99,6 +99,7 @@ interface BackpromotePanelState {
     status: string | null;
     deployErrors: BackpromoteDeployError[];
     deployReport: string | null;
+    deployErrorsPromptFile: string | null;
   } | null;
   /** "Connect another org" was picked: the next change of the orgs reloads the org list */
   awaitingOrgSelection: boolean;
@@ -890,6 +891,10 @@ export function registerShowBackpromote(commands: Commands) {
             await copyAgentPrompt(current);
             break;
           }
+          case "copyDeployErrorsPrompt": {
+            await copyDeployErrorsPrompt(current);
+            break;
+          }
           case "runBackpromote": {
             await runBackpromote(current, data);
             break;
@@ -976,6 +981,54 @@ async function openMergeEditor(
 }
 
 /** Reads the coding agent prompt written by sfdx-hardis into the clipboard: false when there is none */
+/**
+ * A failed deployment: the prompt sfdx-hardis wrote for a coding agent (the refused components with
+ * their deployment hints) goes to the clipboard, with a notification that opens it
+ */
+async function copyDeployErrorsPrompt(
+  current: BackpromotePanelState,
+): Promise<void> {
+  const promptFile = current.runError?.deployErrorsPromptFile;
+  if (!promptFile) {
+    return;
+  }
+  const absolute = absoluteFile(planRoot(current.plan), promptFile);
+  try {
+    await vscode.env.clipboard.writeText(fs.readFileSync(absolute, "utf8"));
+  } catch (e: any) {
+    vscode.window.showErrorMessage(
+      t("backpromoteOpenFileFailed", {
+        file: promptFile,
+        message: String(e?.message || e),
+      }),
+    );
+    return;
+  }
+  const openPrompt = t("backpromoteOpenPrompt");
+  // Not awaited: the notification stays until the user closes it
+  vscode.window
+    .showInformationMessage(
+      t("backpromoteDeployErrorsPromptCopied"),
+      openPrompt,
+    )
+    .then(async (choice) => {
+      if (choice === openPrompt) {
+        try {
+          await vscode.window.showTextDocument(vscode.Uri.file(absolute), {
+            preview: false,
+          });
+        } catch (e: any) {
+          vscode.window.showErrorMessage(
+            t("backpromoteOpenFileFailed", {
+              file: promptFile,
+              message: String(e?.message || e),
+            }),
+          );
+        }
+      }
+    });
+}
+
 async function writePromptToClipboard(
   current: BackpromotePanelState,
 ): Promise<boolean> {
@@ -1273,6 +1326,8 @@ async function runBackpromote(
       status: outcome.error.status,
       deployErrors: outcome.error.plan?.result?.deployErrors || [],
       deployReport: outcome.error.plan?.result?.deployReport || null,
+      deployErrorsPromptFile:
+        outcome.error.plan?.result?.deployErrorsPromptFile || null,
     };
     if (outcome.error.plan) {
       current.plan = outcome.error.plan;

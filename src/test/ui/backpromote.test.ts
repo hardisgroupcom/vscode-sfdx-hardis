@@ -992,6 +992,20 @@ suite("Backpromote panel UI tests", function () {
         data.runError.deployReport,
         "the deployment report can be opened",
       );
+      // The deployment tip sfdx-hardis found travels with the error
+      assert.strictEqual(
+        data.runError.deployErrors[0].tip.label,
+        "Apex compilation error",
+      );
+      // The coding agent prompt written by sfdx-hardis goes to the clipboard
+      const promptFile = data.runError.deployErrorsPromptFile;
+      assert.ok(promptFile, "the deployment errors prompt is known");
+      const probe = `probe-${Date.now()}`;
+      await vscode.env.clipboard.writeText(probe);
+      if ((await vscode.env.clipboard.readText()) === probe) {
+        panel.simulateWebviewMessage({ type: "copyDeployErrorsPrompt" });
+        await readClipboardWhenEqual(fs.readFileSync(promptFile, "utf8"));
+      }
       assert.strictEqual(data.plan.status, "deployFailed");
       assert.strictEqual(data.plan.checkout.onBackpromoteBranch, true);
       assert.strictEqual(data.runResult, null);

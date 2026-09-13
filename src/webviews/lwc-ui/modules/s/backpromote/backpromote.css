@@ -335,6 +335,32 @@
   overflow-wrap: anywhere;
 }
 
+/* The deployment tip (and AI suggestion) of a refused component */
+.bp-deploy-tip {
+  flex-basis: 100%;
+  margin: 0.2rem 0 0.3rem;
+  padding: 0.4rem 0.6rem;
+  border-left: 3px solid currentColor;
+  opacity: 0.9;
+}
+
+.bp-deploy-tip-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.2rem;
+}
+
+.bp-deploy-tip-line {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.bp-deploy-ai-tip {
+  font-style: italic;
+}
+
 /* The step in progress: full opacity, a small spinner in place of the check */
 .bp-progress-current {
   align-items: flex-start;
