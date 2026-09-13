@@ -3,7 +3,6 @@ import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
 import { activateExtension, readMockLog, waitFor } from "./uiTestUtils";
-import { execFileSync } from "child_process";
 import { CacheManager } from "../../utils/cache-manager";
 import { getWorkspaceRoot } from "../../utils";
 import { backpromoteSessionKey } from "../../utils/backpromote/backpromotePanelUtils";
@@ -1226,16 +1225,10 @@ suite("Backpromote panel UI tests", function () {
   });
 
   test("opened again on the backpromote branch, the panel resumes the saved backpromote", async function () {
+    // The branch as the extension reads it: the session is saved under that one
+    await openPanel();
     const root = getWorkspaceRoot();
-    let branch = "";
-    try {
-      branch = execFileSync("git", ["branch", "--show-current"], {
-        cwd: root,
-        encoding: "utf8",
-      }).trim();
-    } catch {
-      this.skip();
-    }
+    const branch = String(initData.setup?.currentBranch || "");
     if (!branch) {
       this.skip();
     }
@@ -1267,19 +1260,28 @@ suite("Backpromote panel UI tests", function () {
       await openPanel();
       // The panel of the previous test may still answer while it is disposed: the data of the
       // resumed panel is waited for
-      initData = await waitFor(
-        () => {
-          const opened = panelManager.getPanel(LWC_ID);
-          const data = opened?.getInitializationData();
-          if (data && data.loading === false && data.plan && data.resumedAt) {
-            panel = opened;
-            return data;
-          }
-          return null;
-        },
-        40000,
-        "the resumed plan",
-      );
+      try {
+        initData = await waitFor(
+          () => {
+            const opened = panelManager.getPanel(LWC_ID);
+            const data = opened?.getInitializationData();
+            if (data && data.loading === false && data.plan && data.resumedAt) {
+              panel = opened;
+              return data;
+            }
+            return null;
+          },
+          40000,
+          "the resumed plan",
+        );
+      } catch (error) {
+        // What the panel saw, to tell why the session was not resumed
+        const seen =
+          panelManager.getPanel(LWC_ID)?.getInitializationData() || {};
+        throw new Error(
+          `${(error as Error).message}: saved for ${branch} in ${root}, panel on ${seen.setup?.currentBranch} with ${JSON.stringify((seen.setup?.orgs || []).map((org: any) => [org.username, org.disabledReason]))}, resumedAt ${seen.resumedAt}, plan ${!!seen.plan}, stored ${CacheManager.getPreference(key) ? "yes" : "no"}`,
+        );
+      }
       assert.strictEqual(initData.resumedAt, "2026-09-13T10:00:00.000Z");
       assert.strictEqual(initData.canStartAgain, true);
       assert.deepStrictEqual(initData.selection.excludedItems, [
