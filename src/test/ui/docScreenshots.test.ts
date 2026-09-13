@@ -382,6 +382,17 @@ async function seedNpmVersionCache(): Promise<void> {
  * Removes everything that must not appear in a documentation screenshot:
  * toast notifications (upgrade prompts, warnings) and the auxiliary side bar.
  */
+/** Scrolls the panel to its bottom (the result of a run), then captures the window */
+async function captureBottomOfPage(name: string): Promise<void> {
+  await sleep(3000);
+  await cleanChrome();
+  for (let step = 0; step < 6; step++) {
+    await click(1100, 500, { scroll: -30 });
+  }
+  await sleep(1500);
+  await captureStable(name);
+}
+
 async function cleanChrome(): Promise<void> {
   await vscode.commands.executeCommand("notifications.clearAll");
   await vscode.commands.executeCommand("workbench.action.closeAuxiliaryBar");
@@ -826,14 +837,8 @@ suite("Documentation screenshots", function () {
         "the backpromote run to finish",
       );
       runPanel.reveal();
-      await sleep(3000);
-      await cleanChrome();
       // The result sits under the Go block, at the bottom of the page
-      for (let step = 0; step < 6; step++) {
-        await click(1100, 500, { scroll: -30 });
-      }
-      await sleep(1500);
-      await captureStable("backpromote-result");
+      await captureBottomOfPage("backpromote-result");
 
       // A run in progress (its modal), then a failed deployment with the components in error
       process.env.SF_MOCK_BACKPROMOTE_CLI = "deployFailed";
@@ -859,13 +864,7 @@ suite("Documentation screenshots", function () {
       );
       delete process.env.SF_MOCK_BACKPROMOTE_STEP_DELAY_MS;
       delete process.env.SF_MOCK_BACKPROMOTE_CLI;
-      await sleep(3000);
-      await cleanChrome();
-      for (let step = 0; step < 6; step++) {
-        await click(1100, 500, { scroll: -30 });
-      }
-      await sleep(1500);
-      await captureStable("backpromote-deploy-failed");
+      await captureBottomOfPage("backpromote-deploy-failed");
     } finally {
       delete process.env.SF_MOCK_BACKPROMOTE_STEP_DELAY_MS;
       delete process.env.SF_MOCK_BACKPROMOTE_CLI;
