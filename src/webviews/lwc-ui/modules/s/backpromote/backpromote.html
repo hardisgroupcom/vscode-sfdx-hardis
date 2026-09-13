@@ -236,7 +236,7 @@
                       </button>
                       <span class="hardis-row-label bp-item-name" title={row.key}>{row.name}</span>
                       <template for:each={row.pullRequests} for:item="pr">
-                        <span key={pr.key} class="hardis-chip bp-chip">{pr.label}</span>
+                        <button key={pr.key} type="button" class={pr.chipClass} data-url={pr.url} title={pr.chipTitle} disabled={pr.noUrl} onclick={handleOpenPullRequest}>{pr.label}</button>
                       </template>
                       <template if:true={row.noOverwrite}>
                         <span class="hardis-pill hardis-status-pending" title={row.noOverwriteTitle}><span class="hardis-pill-dot"></span>package-no-overwrite.xml</span>
@@ -304,7 +304,7 @@
                   <span class="hardis-row-label bp-item-name" title={row.id}>{row.label}</span>
                   <span class={row.typePillClass}><span class="hardis-pill-dot"></span>{row.typeLabel}</span>
                   <template if:true={row.pullRequestLabel}>
-                    <span class="hardis-chip bp-chip">{row.pullRequestLabel}</span>
+                    <button type="button" class={row.chipClass} data-url={row.url} title={row.chipTitle} disabled={row.noUrl} onclick={handleOpenPullRequest}>{row.pullRequestLabel}</button>
                   </template>
                   <span class="bp-item-side">
                     <template if:true={row.stateLabel}>

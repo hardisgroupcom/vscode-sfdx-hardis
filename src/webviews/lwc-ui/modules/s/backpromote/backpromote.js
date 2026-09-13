@@ -60,6 +60,8 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   comparisonsByItem = new Map();
   // Keys of the package-no-overwrite.xml items of the plan
   noOverwriteKeys = new Set();
+  // Web page of each Pull Request number of the plan, for the number chips
+  pullRequestUrls = new Map();
   selection = null;
   summary = null;
   command = null;
@@ -122,12 +124,18 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       this.plan = null;
       this.comparisonsByItem = new Map();
       this.noOverwriteKeys = new Set();
+      this.pullRequestUrls = new Map();
       this.summary = null;
       this.command = null;
     }
     if (payload.plan) {
       this.plan = payload.plan;
       this.comparisonsByItem = groupComparisonsByItem(payload.plan);
+      this.pullRequestUrls = new Map(
+        (payload.plan.pullRequests || [])
+          .filter((pr) => pr.number > 0 && pr.webUrl)
+          .map((pr) => [pr.number, pr.webUrl]),
+      );
       this.noOverwriteKeys = new Set(
         payload.plan.items
           .filter((item) => item.noOverwrite)
@@ -648,6 +656,17 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     });
   }
 
+  // A Pull Request number chip opens the Pull Request page when the plan knows it
+  pullRequestChip(number) {
+    const url = this.pullRequestUrls.get(number) || null;
+    return {
+      url,
+      chipClass: "hardis-chip bp-chip" + (url ? " hardis-chip-link" : ""),
+      chipTitle: url ? this.t("backpromoteOpenPullRequest", { number }) : "",
+      noUrl: !url,
+    };
+  }
+
   handleOpenPullRequest(event) {
     // The title sits in the row that picks the start Pull Request: opening the page does not pick
     event.stopPropagation();
@@ -875,6 +894,7 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       pullRequests: item.pullRequests.map((number) => ({
         key: `${item.key}-${number}`,
         label: `#${number}`,
+        ...this.pullRequestChip(number),
       })),
       excludedLastTime: item.excludedLastTime || leftOutLastTime,
       noOverwrite: item.noOverwrite,
@@ -1210,6 +1230,7 @@ export default class Backpromote extends SharedMixin(LightningElement) {
         typeLabel: getActionTypeLabel(action.type, translate),
         typePillClass: getActionTypePillClass(action.type),
         pullRequestLabel: action.pullRequest ? `#${action.pullRequest}` : null,
+        ...(action.pullRequest ? this.pullRequestChip(action.pullRequest) : {}),
         stateLabel,
         stateClass,
         showConfirm,
