@@ -1,4 +1,5 @@
 import { Logger } from "../../logger";
+import { PROVIDER_BATCH_PROFILES } from "../concurrency";
 import { getConfig } from "../pipeline/sfdxHardisConfig";
 import { SecretsManager } from "../secretsManager";
 import { Ticket, TicketProviderName } from "./types";
@@ -185,6 +186,11 @@ export class TicketProvider {
   async buildTicketUrl(_ticketId: string): Promise<string> {
     Logger.log("buildTicketUrl should be implemented on provider class");
     return "";
+  }
+
+  /** The ladder of batch sizes for parallel calls to this provider (see concurrency.ts) */
+  get batchSizes(): readonly number[] {
+    return PROVIDER_BATCH_PROFILES.default;
   }
 
   async completeTicketDetails(_ticket: Ticket): Promise<Ticket> {

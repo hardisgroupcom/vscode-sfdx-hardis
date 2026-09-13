@@ -159,6 +159,12 @@ async function main() {
     // a path containing "npm" keeps that note out of the screenshots.
     const npmShimDir = path.join(workDir, "npm-global", "sf-shim");
     fs.cpSync(shimDir, npmShimDir, { recursive: true });
+    // The mock reads the backpromote plan next to its own folder
+    fs.cpSync(
+      path.join(shimDir, "..", "backpromote"),
+      path.join(workDir, "npm-global", "backpromote"),
+      { recursive: true },
+    );
     shimDir = npmShimDir;
   }
   if (process.platform !== "win32") {

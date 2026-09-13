@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+- DevOps Pipeline: the parallel calls to the git provider and to the ticketing provider (Pull Request details, statuses, ticket details) leave in batches sized on what the provider serves concurrently (80 at a time on GitHub and GitLab, 50 on Azure DevOps and Bitbucket, 40 on Jira Server, 20 on Jira Cloud, 8 on ServiceNow) and, only when the provider throttles, wait the delay it asks for and go on with smaller batches.
+- **Backpromote (Beta) panel**: deploy into your developer sandbox or scratch org what your teammates merged in the parent branch, from the commands menu or the Backpromote card of the DevOps Pipeline
+  - One page: the target sandbox, the parent branch, the start Pull Request, then the metadata, deletions and deployment actions to backpromote
+  - The Pull Requests already backpromoted to that sandbox are greyed in the list
+  - An item whose sandbox version differs from the parent branch version is decided on its own line: Overwrite, Keep org version, or Merge
+  - Merge opens the VS Code merge editor, next to a Compare button
+  - One prompt for your coding agent covers every merge left to solve
+  - Merge all prepares every ticked item that differs and copies that prompt, which asks the agent to commit the solved files on the backpromote branch
+  - The items of package-no-overwrite.xml carry a marker and start unticked when the sandbox already has them
+  - The Backpromote button is enabled once every merge is solved
+  - The backpromote runs in the background with its progress, and ends with the result and the Pull Requests updated
+  - A Back to my branch button brings the checkout back to the story branch
+  - Production orgs and the orgs of the major branches are refused
+  - The panel asks for a git provider token before anything else
+  - The last entry of the target sandbox list opens the Orgs Manager to authenticate another org
+  - The plan waits until the sandbox and the parent branch are chosen: only the default org and the checked out parent branch are taken without asking
+  - The progress of the plan shows below the Where block, which stays visible while the plan is computed
+- DevOps Pipeline: in the Pull Requests tab of a branch window, the promotion column is named "Promotions" and comes last
+- DevOps Pipeline: a story a promotion branch carried further is listed in the branch it reached only. The "Show already promoted Pull Requests" toggle and the `pipelineShowAlreadyPromotedPullRequests` setting are gone
+- DevOps Pipeline: the "Show feature branches" toggle keeps its label on one line next to the switch when the header is tight, the title gives way first and the header actions wrap as a whole
 - Pipeline Settings: a table of a list setting (`allowedPromotionSteps`, `monitoringCommands`, installed packages...) now takes the whole width of the panel instead of shrinking to its content, which printed branch names one character per line
 - DevOps Pipeline: promotion branches named `promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM>` by sfdx-hardis (with `-2`, `-3`... when the name was taken) are recognized, next to the `<YYYY-MM-DD>-<counter>` names of earlier promotions
 
