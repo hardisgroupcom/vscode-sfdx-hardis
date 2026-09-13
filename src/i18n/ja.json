@@ -267,6 +267,7 @@
   "backpromotePrepareFailed": "merge を準備できませんでした: {{message}}",
   "backpromotePreparedNotMergedTooltip": "このファイルは merge 用に準備され、チェックアウトにまだ競合マーカーが残っています: もう一度 Merge を選んで完了してください",
   "backpromotePreparingMerge": "merge を準備中",
+  "backpromotePreparingMergeDesc": "sfdx-hardis が {{branch}} をチェックアウトし、{{count}} 件の項目をコンフリクトマーカー付きで書き込みます。",
   "backpromotePromptCopied": "コーディングエージェント用プロンプトをクリップボードにコピーしました。",
   "backpromotePullRequestsNone": "親 branch に merge 済みの Pull Request が見つかりません",
   "backpromoteReadDoc": "トークンの設定方法を読む",

@@ -757,10 +757,16 @@ suite("Documentation screenshots", function () {
       await click(1100, 650, { scroll: 12 });
       await sleep(800);
       const initData = panel.getInitializationData();
+      // A slower mocked CLI keeps the preparing modal on screen long enough to capture it
+      // (its spinner never stops moving, so the capture is taken once)
+      process.env.SF_MOCK_BOOT_DELAY_MS = "10000";
       panel.simulateWebviewMessage({
         type: "mergeAll",
         data: { selection: initData.selection, revision: 900 },
       });
+      await sleep(3500);
+      capture("backpromote-preparing");
+      delete process.env.SF_MOCK_BOOT_DELAY_MS;
       await waitFor(
         () => {
           const current = panel.getInitializationData();

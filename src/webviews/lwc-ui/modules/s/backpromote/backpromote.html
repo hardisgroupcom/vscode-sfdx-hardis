@@ -403,6 +403,26 @@
       </div>
     </template>
 
+    <!-- A merge is being prepared: sfdx-hardis switches the checkout and writes the files with markers -->
+    <template if:true={showPreparingModal}>
+      <section role="dialog" tabindex="-1" aria-busy="true" class="slds-modal slds-fade-in-open">
+        <div class="slds-modal__container">
+          <header class="slds-modal__header">
+            <h2 class="slds-modal__title slds-hyphenate">{i18n.backpromotePreparingMerge}</h2>
+          </header>
+          <div class="slds-modal__content slds-p-around_medium">
+            <div class="hardis-empty">
+              <div class="slds-is-relative bp-spinner">
+                <lightning-spinner alternative-text={i18n.loadingLabel} size="medium"></lightning-spinner>
+              </div>
+              <p class="hardis-empty-desc">{preparingModalDescription}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
     <!-- The working tree is not clean: commit or stash before the checkout switches -->
     <template if:true={showDirtyTreeModal}>
       <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">

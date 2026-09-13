@@ -1493,6 +1493,19 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     return !!this.dirtyTreeModal;
   }
 
+  // Shown from the moment the extension says the prepare call started until the new plan or the
+  // failure arrives: the checkout is switching and the page must not be changed meanwhile
+  get showPreparingModal() {
+    return this.preparing.length > 0 && !this.dirtyTreeModal;
+  }
+
+  get preparingModalDescription() {
+    return this.t("backpromotePreparingMergeDesc", {
+      count: this.preparing.length,
+      branch: this.plan?.backpromoteBranch?.name || "",
+    });
+  }
+
   get dirtyTreeTitle() {
     return this.plan
       ? this.t("backpromoteDirtyTreeTitle", {

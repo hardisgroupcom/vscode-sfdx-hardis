@@ -267,6 +267,7 @@
   "backpromotePrepareFailed": "Der Merge konnte nicht vorbereitet werden: {{message}}",
   "backpromotePreparedNotMergedTooltip": "Diese Datei wurde für einen Merge vorbereitet und enthält noch Konfliktmarker in Ihrem Checkout: wählen Sie erneut Merge und schließen Sie ihn ab",
   "backpromotePreparingMerge": "Merge wird vorbereitet",
+  "backpromotePreparingMergeDesc": "sfdx-hardis checkt {{branch}} aus und schreibt {{count}} Element(e) mit Konfliktmarkierungen.",
   "backpromotePromptCopied": "Der Prompt für den Coding-Agent ist in Ihrer Zwischenablage.",
   "backpromotePullRequestsNone": "Kein gemergter Pull Request auf dem Parent-Branch gefunden",
   "backpromoteReadDoc": "Lesen, wie das Token konfiguriert wird",

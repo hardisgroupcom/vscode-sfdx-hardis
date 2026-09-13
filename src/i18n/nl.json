@@ -267,6 +267,7 @@
   "backpromotePrepareFailed": "De merge kon niet worden voorbereid: {{message}}",
   "backpromotePreparedNotMergedTooltip": "Dit bestand is voorbereid voor een merge en bevat nog conflictmarkeringen in je checkout: kies opnieuw Merge en rond hem af",
   "backpromotePreparingMerge": "Merge wordt voorbereid",
+  "backpromotePreparingMergeDesc": "sfdx-hardis checkt {{branch}} uit en schrijft {{count}} item(s) met conflictmarkeringen.",
   "backpromotePromptCopied": "De prompt voor de code-agent staat op je klembord.",
   "backpromotePullRequestsNone": "Geen gemergde Pull Request gevonden op de parent branch",
   "backpromoteReadDoc": "Lees hoe je het token instelt",

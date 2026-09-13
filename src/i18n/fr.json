@@ -267,6 +267,7 @@
   "backpromotePrepareFailed": "Le merge n'a pas pu être préparé : {{message}}",
   "backpromotePreparedNotMergedTooltip": "Ce fichier a été préparé pour un merge et contient encore des marqueurs de conflit dans votre copie de travail : choisissez à nouveau Merger et terminez-le",
   "backpromotePreparingMerge": "Préparation du merge",
+  "backpromotePreparingMergeDesc": "sfdx-hardis bascule sur {{branch}} et écrit {{count}} élément(s) avec des marqueurs de conflit.",
   "backpromotePromptCopied": "Le prompt pour l'agent de code est dans votre presse-papiers.",
   "backpromotePullRequestsNone": "Aucune Pull Request mergée trouvée sur la branche parente",
   "backpromoteReadDoc": "Lire comment configurer le token",

@@ -267,6 +267,7 @@
   "backpromotePrepareFailed": "Nie udało się przygotować merge: {{message}}",
   "backpromotePreparedNotMergedTooltip": "Ten plik został przygotowany do merge i nadal zawiera znaczniki konfliktu w checkout: należy ponownie wybrać Merge i go dokończyć",
   "backpromotePreparingMerge": "Przygotowywanie merge",
+  "backpromotePreparingMergeDesc": "sfdx-hardis przełącza się na {{branch}} i zapisuje elementy ({{count}}) ze znacznikami konfliktu.",
   "backpromotePromptCopied": "Prompt dla agenta kodującego znajduje się w schowku.",
   "backpromotePullRequestsNone": "Nie znaleziono scalonych Pull Requestów na branch nadrzędnym",
   "backpromoteReadDoc": "Przeczytaj, jak skonfigurować token",
