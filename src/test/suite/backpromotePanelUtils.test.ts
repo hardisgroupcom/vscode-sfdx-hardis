@@ -32,6 +32,7 @@ import {
   isCliTooOldForBackpromotePanel,
   isGitProviderMissing,
   isSafeCommandValue,
+  defaultParentBranchFor,
   listAllowedParentBranches,
   normalizeBackpromotePlan,
   normalizeSelection,
@@ -480,6 +481,18 @@ suite("backpromotePanelUtils", () => {
     assert.deepStrictEqual(listAllowedParentBranches({ developmentBranch: "integration" }), ["integration"]);
     assert.deepStrictEqual(listAllowedParentBranches({ availableTargetBranches: ["uat", "a && b"] }), ["uat"]);
     assert.deepStrictEqual(listAllowedParentBranches({}), []);
+  });
+
+  test("the parent branch is taken without asking only when it cannot be another one", () => {
+    const allowed = ["integration", "preprod"];
+    assert.strictEqual(defaultParentBranchFor("integration", allowed), "integration");
+    assert.strictEqual(defaultParentBranchFor("backpromote/preprod/dev1", allowed), "preprod");
+    // A User Story branch could come from any of them: the user chooses
+    assert.strictEqual(defaultParentBranchFor("feature/CRM-1042-account-hierarchy", allowed), null);
+    assert.strictEqual(defaultParentBranchFor("backpromote/uat/dev1", allowed), null);
+    assert.strictEqual(defaultParentBranchFor("", allowed), null);
+    assert.strictEqual(defaultParentBranchFor("feature/x", ["integration"]), "integration");
+    assert.strictEqual(defaultParentBranchFor("feature/x", []), null);
   });
 
   test("a backpromote branch is recognized, with a parent branch holding slashes", () => {

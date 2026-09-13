@@ -1355,6 +1355,27 @@ export function listAllowedParentBranches(config: any): string[] {
   return branches;
 }
 
+/**
+ * The parent branch taken without asking: the checked out branch when it is an allowed parent
+ * branch, the parent of the checked out backpromote/<parent>/<sandbox> branch, or the only allowed
+ * parent branch. Null otherwise: a backpromote from the wrong parent branch reads the history of
+ * other Pull Requests, so the plan waits for the user's choice.
+ */
+export function defaultParentBranchFor(
+  currentBranch: string,
+  allowedParentBranches: string[],
+): string | null {
+  const current = (currentBranch || "").trim();
+  if (current && allowedParentBranches.includes(current)) {
+    return current;
+  }
+  const backpromote = /^backpromote\/(.+)\/[^/]+$/.exec(current);
+  if (backpromote && allowedParentBranches.includes(backpromote[1])) {
+    return backpromote[1];
+  }
+  return allowedParentBranches.length === 1 ? allowedParentBranches[0] : null;
+}
+
 // ---------------------------------------------------------------------------
 // Command results
 // ---------------------------------------------------------------------------

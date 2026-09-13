@@ -311,8 +311,22 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     );
   }
 
+  // The Where block stays on screen while a plan is computed: its progress shows below it
   get showPickers() {
-    return !this.loading && !this.tokenMissing && !!this.setup;
+    return !this.tokenMissing && !!this.setup;
+  }
+
+  // The plan waits for a sandbox and a parent branch the user chose (or the defaults that need
+  // no choice: the default org, the checked out branch)
+  get needsChoices() {
+    return (
+      this.showPickers &&
+      !this.loading &&
+      !this.plan &&
+      !this.planError &&
+      ((!this.targetOrg && !this.hasNoAllowedOrg) ||
+        (!this.parentBranch && !this.hasNoAllowedBranch))
+    );
   }
 
   get isBlocked() {
@@ -395,8 +409,9 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     return [...choices].map((branch) => ({ label: branch, value: branch }));
   }
 
+  // A picker as soon as there is a choice, or when no branch is chosen yet
   get showParentBranchPicker() {
-    return this.parentBranchOptions.length > 1;
+    return this.parentBranchOptions.length > 1 || (!this.parentBranch && this.parentBranchOptions.length > 0);
   }
 
   get hasNoAllowedBranch() {

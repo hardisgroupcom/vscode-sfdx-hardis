@@ -32,36 +32,6 @@
       </div>
     </template>
 
-    <!-- Loading: the plan reads git, the Pull Request comments and the sandbox -->
-    <template if:true={isLoadingState}>
-      <div class="hardis-panel-body">
-        <div class="hardis-empty">
-          <div class="slds-is-relative bp-spinner">
-            <lightning-spinner alternative-text={i18n.loadingLabel} size="medium"></lightning-spinner>
-          </div>
-          <h3 class="hardis-empty-title">{i18n.backpromoteLoadingTitle}</h3>
-          <template if:true={hasPlanProgress}>
-            <p class="hardis-empty-desc">{planProgressMessage}</p>
-            <template if:true={hasPlanProgressPercent}>
-              <div class="hardis-progress-track bp-progress-track">
-                <div class="hardis-progress-fill active" style={planProgressFillStyle}></div>
-              </div>
-            </template>
-            <ul class="bp-progress-steps">
-              <template for:each={planProgressDoneSteps} for:item="step">
-                <li key={step.key} class="bp-progress-step">
-                  <lightning-icon icon-name="utility:check" size="xx-small"></lightning-icon>
-                  <span>{step.message}</span>
-                </li>
-              </template>
-            </ul>
-          </template>
-          <template if:false={hasPlanProgress}>
-            <p class="hardis-empty-desc">{i18n.backpromoteLoadingDesc}</p>
-          </template>
-        </div>
-      </div>
-    </template>
 
     <!-- sfdx-hardis does not know the flags of the panel yet -->
     <template if:true={isCliTooOld}>
@@ -128,6 +98,9 @@
         <template if:true={hasNoAllowedOrg}>
           <div class="hardis-note warning"><lightning-icon icon-name="utility:warning" size="x-small"></lightning-icon><p>{i18n.backpromoteNoAllowedOrg} <button type="button" class="hardis-textlink" onclick={handleConnectAnotherOrg}>{i18n.backpromoteConnectOtherOrg}</button></p></div>
         </template>
+        <template if:true={needsChoices}>
+          <div class="hardis-note"><lightning-icon icon-name="utility:info" size="x-small"></lightning-icon><p>{i18n.backpromoteSelectSandboxAndBranch}</p></div>
+        </template>
         <template if:true={hasNoAllowedBranch}>
           <div class="hardis-note warning"><lightning-icon icon-name="utility:warning" size="x-small"></lightning-icon><p>{i18n.backpromoteNoAllowedBranch}</p></div>
         </template>
@@ -183,6 +156,37 @@
             </template>
           </template>
         </template>
+      </div>
+    </template>
+
+    <!-- Loading, below the Where block so its choices stay visible: the plan reads git, the Pull Request comments and the sandbox -->
+    <template if:true={isLoadingState}>
+      <div class="hardis-panel-body">
+        <div class="hardis-empty">
+          <div class="slds-is-relative bp-spinner">
+            <lightning-spinner alternative-text={i18n.loadingLabel} size="medium"></lightning-spinner>
+          </div>
+          <h3 class="hardis-empty-title">{i18n.backpromoteLoadingTitle}</h3>
+          <template if:true={hasPlanProgress}>
+            <p class="hardis-empty-desc">{planProgressMessage}</p>
+            <template if:true={hasPlanProgressPercent}>
+              <div class="hardis-progress-track bp-progress-track">
+                <div class="hardis-progress-fill active" style={planProgressFillStyle}></div>
+              </div>
+            </template>
+            <ul class="bp-progress-steps">
+              <template for:each={planProgressDoneSteps} for:item="step">
+                <li key={step.key} class="bp-progress-step">
+                  <lightning-icon icon-name="utility:check" size="xx-small"></lightning-icon>
+                  <span>{step.message}</span>
+                </li>
+              </template>
+            </ul>
+          </template>
+          <template if:false={hasPlanProgress}>
+            <p class="hardis-empty-desc">{i18n.backpromoteLoadingDesc}</p>
+          </template>
+        </div>
       </div>
     </template>
 

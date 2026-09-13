@@ -182,7 +182,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
               url: { fieldName: "promotionUrl" },
             },
             wrapText: false,
-            initialWidth: 220,
+            // A width even as the last column: the table is wider than the modal and scrolls,
+            // a flexible last column would get what is left, next to nothing
+            initialWidth: 260,
           },
         ]
       : [];
@@ -206,7 +208,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       },
       ...statusColumn,
       ...mergeConflictColumn,
-      ...promotionColumn,
       // The shared author column, which states a width. This table used to hold a copy of it
       // without one, and it was then the only column left to absorb what the promotion
       // checkbox column takes: it collapsed to the avatar circle, hiding both the author name
@@ -235,7 +236,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         fieldName: "targetBranch",
         type: "branchChip",
         wrapText: false,
+        // Only the last column is left without a width: when the promotion column follows, the
+        // target column takes one, or it is squeezed to a single letter
+        ...(promotionColumn.length > 0 ? { initialWidth: 150 } : {}),
       },
+      // Last: it only says how a story travels, the columns before it say what it is
+      ...promotionColumn,
     ];
   }
 

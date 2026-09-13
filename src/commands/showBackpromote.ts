@@ -32,6 +32,7 @@ import {
   buildConfirmActionCommand,
   buildDefaultSelection,
   buildOrgChoices,
+  defaultParentBranchFor,
   buildPlanCommand,
   buildPlanProgress,
   buildPrepareCommand,
@@ -195,7 +196,7 @@ async function loadSetup(): Promise<BackpromoteSetup> {
     currentBranch: String(currentBranch || ""),
     orgs: buildOrgChoices(orgs, majorOrgs),
     allowedParentBranches,
-    defaultParentBranch: allowedParentBranches[0] || null,
+    defaultParentBranch: defaultParentBranchFor(String(currentBranch || ""), allowedParentBranches),
   };
 }
 
@@ -595,6 +596,8 @@ export function registerShowBackpromote(commands: Commands) {
         if (current.parentBranch === null || !setup.allowedParentBranches.includes(current.parentBranch)) {
           current.parentBranch = setup.defaultParentBranch;
         }
+        // Only the default org is taken without asking: any other sandbox waits for the user's
+        // choice, and so does the plan (commandTarget needs both)
         if (current.targetOrg === null || !setup.orgs.some((org) => org.username === current.targetOrg && !org.disabledReason)) {
           current.targetOrg = setup.orgs.find((org) => org.isDefault && !org.disabledReason)?.username || null;
         }

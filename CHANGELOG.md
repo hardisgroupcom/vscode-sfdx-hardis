@@ -15,6 +15,9 @@
   - Production orgs and the orgs of the major branches are refused
   - The panel asks for a git provider token before anything else
   - The last entry of the target sandbox list opens the Orgs Manager to authenticate another org
+  - The plan waits until the sandbox and the parent branch are chosen: only the default org and the checked out parent branch are taken without asking
+  - The progress of the plan shows below the Where block, which stays visible while the plan is computed
+- DevOps Pipeline: in the Pull Requests tab of a branch window, the promotion column is named "Promotions" and comes last
 - DevOps Pipeline: a story a promotion branch carried further is listed in the branch it reached only. The "Show already promoted Pull Requests" toggle and the `pipelineShowAlreadyPromotedPullRequests` setting are gone
 - DevOps Pipeline: the "Show feature branches" toggle keeps its label on one line next to the switch when the header is tight, the title gives way first and the header actions wrap as a whole
 - Pipeline Settings: a table of a list setting (`allowedPromotionSteps`, `monitoringCommands`, installed packages...) now takes the whole width of the panel instead of shrinking to its content, which printed branch names one character per line
