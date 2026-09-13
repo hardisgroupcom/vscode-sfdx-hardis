@@ -628,6 +628,10 @@ function answerBackpromote() {
     plan.parentBranch = parentBranch;
     plan.backpromoteBranch.name = `backpromote/${parentBranch}/${plan.targetOrg.sandboxName}`;
   }
+  // SF_MOCK_BACKPROMOTE_BRANCH: the name of the backpromote branch (a test that must be on it)
+  if (process.env.SF_MOCK_BACKPROMOTE_BRANCH) {
+    plan.backpromoteBranch.name = process.env.SF_MOCK_BACKPROMOTE_BRANCH;
+  }
   // The relative paths of the plan are relative to the git root: the workspace here
   plan.gitRoot = process.cwd();
   const runId = flagValue("--run-id");

@@ -3,9 +3,6 @@ import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
 import { activateExtension, readMockLog, waitFor } from "./uiTestUtils";
-import { CacheManager } from "../../utils/cache-manager";
-import { getWorkspaceRoot } from "../../utils";
-import { backpromoteSessionKey } from "../../utils/backpromote/backpromotePanelUtils";
 
 /**
  * UI integration tests of the Backpromote panel, against the mocked sf CLI that
@@ -1225,65 +1222,60 @@ suite("Backpromote panel UI tests", function () {
   });
 
   test("opened again on the backpromote branch, the panel resumes the saved backpromote", async function () {
-    // The branch as the extension reads it: the session is saved under that one
+    // The workspace stays on its branch: the mocked plan names its backpromote branch after it, so
+    // the extension saves and resumes the backpromote as if the checkout were on that branch
     await openPanel();
-    const root = getWorkspaceRoot();
     const branch = String(initData.setup?.currentBranch || "");
     if (!branch) {
       this.skip();
     }
-    const key = backpromoteSessionKey(root, branch);
-    await CacheManager.setPreference(key, {
-      version: 1,
-      savedAt: "2026-09-13T10:00:00.000Z",
-      backpromoteBranch: branch,
-      targetOrg: "sam.dubois@mycompany.com.dev1",
-      parentBranch: "integration",
-      fromPullRequest: 417,
-      scanLimit: 100,
-      runId: "resume42",
-      selection: {
-        excludedItems: ["Flow:Quote_Approval"],
-        excludedDeletions: [],
-        actions: ["load-sla-thresholds"],
-        diffDecisions: { "ApexClass:InvoiceCalculator": "org" },
-      },
-      runError: {
-        message: "The deployment failed on 1 component(s)",
-        status: "deployFailed",
-        deployErrors: [],
-        deployReport: null,
-        deployErrorsPromptFile: null,
-      },
-    });
+    process.env.SF_MOCK_BACKPROMOTE_BRANCH = branch;
+    const original = vscode.window.showWarningMessage;
     try {
       await openPanel();
-      // The panel of the previous test may still answer while it is disposed: the data of the
-      // resumed panel is waited for
-      try {
-        initData = await waitFor(
-          () => {
-            const opened = panelManager.getPanel(LWC_ID);
-            const data = opened?.getInitializationData();
-            if (data && data.loading === false && data.plan && data.resumedAt) {
-              panel = opened;
-              return data;
-            }
-            return null;
+      assert.strictEqual(initData.plan.backpromoteBranch.name, branch);
+      assert.strictEqual(initData.resumedAt, null);
+      // A decision taken in the panel is saved
+      panel.simulateWebviewMessage({
+        type: "selectionChanged",
+        data: {
+          selection: {
+            ...initData.selection,
+            excludedItems: ["Flow:Quote_Approval"],
+            diffDecisions: {
+              ...initData.selection.diffDecisions,
+              "ApexClass:InvoiceCalculator": "org",
+            },
           },
-          40000,
-          "the resumed plan",
-        );
-      } catch (error) {
-        // What the panel saw, to tell why the session was not resumed
-        const seen =
-          panelManager.getPanel(LWC_ID)?.getInitializationData() || {};
-        throw new Error(
-          `${(error as Error).message}: saved for ${branch} in ${root}, panel on ${seen.setup?.currentBranch} with ${JSON.stringify((seen.setup?.orgs || []).map((org: any) => [org.username, org.disabledReason]))}, resumedAt ${seen.resumedAt}, plan ${!!seen.plan}, stored ${CacheManager.getPreference(key) ? "yes" : "no"}`,
-          { cause: error },
-        );
-      }
-      assert.strictEqual(initData.resumedAt, "2026-09-13T10:00:00.000Z");
+          revision: 70,
+        },
+      });
+      await waitFor(
+        () =>
+          sent.find(
+            (entry) =>
+              entry.type === "selectionSummary" && entry.data.revision === 70,
+          ),
+        5000,
+        "the summary of the decision",
+      );
+      const runId = initData.plan.runId;
+
+      // Closed and opened again: the backpromote goes on with that decision
+      await openPanel();
+      initData = await waitFor(
+        () => {
+          const opened = panelManager.getPanel(LWC_ID);
+          const data = opened?.getInitializationData();
+          if (data && data.loading === false && data.plan && data.resumedAt) {
+            panel = opened;
+            return data;
+          }
+          return null;
+        },
+        40000,
+        "the resumed plan",
+      );
       assert.strictEqual(initData.canStartAgain, true);
       assert.deepStrictEqual(initData.selection.excludedItems, [
         "Flow:Quote_Approval",
@@ -1292,15 +1284,37 @@ suite("Backpromote panel UI tests", function () {
         initData.selection.diffDecisions["ApexClass:InvoiceCalculator"],
         "org",
       );
-      assert.strictEqual(initData.runError.status, "deployFailed");
-      const planCall = lastPlanCall();
       assert.ok(
-        planCall.args.includes("resume42"),
-        JSON.stringify(planCall.args),
+        lastPlanCall().args.includes(runId),
+        JSON.stringify(lastPlanCall().args),
       );
-      assert.ok(planCall.args.includes("417"), JSON.stringify(planCall.args));
+
+      // Start again forgets it: the next plan is a fresh one
+      (vscode.window as any).showWarningMessage = async (
+        _message: any,
+        _options: any,
+        ...items: any[]
+      ) => items[0];
+      sent = recordSentMessages(panel);
+      panel.simulateWebviewMessage({ type: "resetBranch" });
+      const fresh = await waitFor(
+        () => {
+          const data = panel.getInitializationData();
+          return data &&
+            data.loading === false &&
+            data.plan &&
+            !data.resumedAt &&
+            !data.selection.excludedItems.includes("Flow:Quote_Approval")
+            ? data
+            : null;
+        },
+        40000,
+        "the fresh plan after Start again",
+      );
+      assert.strictEqual(fresh.canStartAgain, false);
     } finally {
-      await CacheManager.setPreference(key, undefined);
+      (vscode.window as any).showWarningMessage = original;
+      delete process.env.SF_MOCK_BACKPROMOTE_BRANCH;
       panelManager.disposePanel(LWC_ID);
     }
   });

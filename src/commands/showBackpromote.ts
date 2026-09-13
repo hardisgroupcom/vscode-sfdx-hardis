@@ -539,6 +539,8 @@ function sendSelectionSummary(panelState: BackpromotePanelState): void {
       ),
     },
   });
+  // A tick or a decision changed: kept for the next opening on the backpromote branch
+  saveSession(panelState);
 }
 
 function acceptSelection(panelState: BackpromotePanelState, data: any): void {
