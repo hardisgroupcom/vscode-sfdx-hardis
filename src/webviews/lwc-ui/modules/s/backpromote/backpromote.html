@@ -22,12 +22,12 @@
           </div>
           <h3 class="hardis-empty-title">{i18n.backpromoteTokenMissingTitle}</h3>
           <p class="hardis-empty-desc">{i18n.backpromoteTokenMissingDesc}</p>
-          <code class="hardis-prop-value mono bp-token-vars">{tokenVariablesLabel}</code>
           <div class="hardis-empty-actions">
+            <lightning-button variant="neutral" class="hardis-btn-tinted-blue" icon-name="utility:flow" label={i18n.backpromoteOpenPipeline} onclick={handleOpenPipeline}></lightning-button>
+            <lightning-button variant="neutral" icon-name="utility:refresh" label={i18n.tryAgainLabel} onclick={handleRefresh}></lightning-button>
             <button type="button" class="hardis-textlink" onclick={handleOpenDoc}>{i18n.backpromoteReadDoc}</button>
-            <lightning-button variant="neutral" icon-name="utility:settings" label={i18n.backpromoteOpenSettings} onclick={handleOpenSettings}></lightning-button>
-            <lightning-button variant="neutral" class="hardis-btn-tinted-blue" icon-name="utility:refresh" label={i18n.tryAgainLabel} onclick={handleRefresh}></lightning-button>
           </div>
+          <p class="muted bp-token-terminal">{i18n.backpromoteTokenMissingTerminal} <span class="mono">{tokenVariablesLabel}</span></p>
         </div>
       </div>
     </template>

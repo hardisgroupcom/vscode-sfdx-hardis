@@ -1938,14 +1938,11 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     });
   }
 
-  // The git provider tokens can be set in the extension settings
-  handleOpenSettings() {
+  // The git provider is connected from the DevOps Pipeline: the panel computes the plan as soon as it is
+  handleOpenPipeline() {
     window.sendMessageToVSCode({
       type: "runVsCodeCommand",
-      data: {
-        command: "workbench.action.openSettings",
-        args: ["vsCodeSfdxHardis"],
-      },
+      data: { command: "vscode-sfdx-hardis.showPipeline" },
     });
   }
 

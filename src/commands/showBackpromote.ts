@@ -13,6 +13,7 @@ import {
 } from "../utils";
 import { onOrgsChanged } from "../utils/orgChangeEvents";
 import { Logger } from "../logger";
+import { SecretsManager } from "../utils/secretsManager";
 import { CacheManager } from "../utils/cache-manager";
 import { t } from "../i18n/i18n";
 import { collectProviderCredentialEnvVars } from "../utils/providerCredentials";
@@ -121,6 +122,8 @@ interface BackpromotePanelState {
   pendingSession: BackpromoteSession | null;
   /** When the backpromote on screen was resumed from a saved session */
   resumedAt: string | null;
+  /** Computes the plan again: called when a git provider gets connected while the token was missing */
+  retryPlan: (() => Promise<void>) | null;
 }
 
 function createState(panel: LwcUiPanel): BackpromotePanelState {
@@ -152,6 +155,7 @@ function createState(panel: LwcUiPanel): BackpromotePanelState {
     sessionChecked: false,
     pendingSession: null,
     resumedAt: null,
+    retryPlan: null,
   };
 }
 
@@ -704,6 +708,20 @@ function watchPreparedFiles(current: BackpromotePanelState): void {
 }
 
 export function registerShowBackpromote(commands: Commands) {
+  // A git provider connected from the DevOps Pipeline while the panel waits for a token: the plan is
+  // computed at once (the credentials cache is emptied by the same change)
+  SecretsManager.onSecretChanged(() => {
+    const current = state;
+    if (
+      current &&
+      current.tokenMissing &&
+      !isBusy(current) &&
+      current.retryPlan
+    ) {
+      void current.retryPlan();
+    }
+  });
+
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showBackpromote",
     async () => {
@@ -877,6 +895,7 @@ export function registerShowBackpromote(commands: Commands) {
           pushData(current);
         }
       };
+      current.retryPlan = refreshPlan;
 
       // Another org, another branch or another start: nothing of the previous window is kept
       const clearWindow = () => {

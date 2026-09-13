@@ -13,12 +13,12 @@
   overflow-wrap: anywhere;
 }
 
-.bp-token-vars {
-  display: inline-block;
-  margin: 0.5rem auto;
-  padding: 0.3rem 0.6rem;
-  border-radius: 6px;
-  border: 1px solid var(--slds-g-color-neutral-base-90);
+/* The variables read from a terminal: a secondary line under the actions */
+.bp-token-terminal {
+  margin-top: 1rem;
+  max-width: 44rem;
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
 }
 
 /* The three blocks of the page */

@@ -742,6 +742,28 @@ suite("Documentation screenshots", function () {
     };
     // The panel asks for a git provider token first: the mocked CLI never calls GitHub
     const tokenBefore = process.env.GITHUB_TOKEN;
+    // Without a git provider connection first: the panel sends to the DevOps Pipeline
+    if (!tokenBefore) {
+      panelManager.disposePanel(lwcId);
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+      await vscode.commands.executeCommand(
+        "vscode-sfdx-hardis.showBackpromote",
+      );
+      const noToken = await waitFor(
+        () => panelManager.getPanel(lwcId),
+        20000,
+        "backpromote panel without token",
+      );
+      await waitFor(
+        () => noToken.getInitializationData()?.tokenMissing === true,
+        30000,
+        "the git provider token state",
+      );
+      await sleep(2500);
+      await cleanChrome();
+      await captureStable("backpromote-token-missing");
+      panelManager.disposePanel(lwcId);
+    }
     process.env.GITHUB_TOKEN = tokenBefore || "ghp_mock_token";
     const workbench = vscode.workspace.getConfiguration("workbench");
     // Workspace level: the settings of the documentation workspace pin the activity bar
