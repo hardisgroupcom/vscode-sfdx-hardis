@@ -83,10 +83,6 @@ WEBVIEW_ONLY = {
     "command-runner.png",
     "installed-packages.png",
     "pipeline-config.png",
-    "backpromote.png",
-    "backpromote-what.png",
-    "backpromote-merge-all.png",
-    "backpromote-result.png",
 }
 
 # --- Crops of a single side bar row ----------------------------------------

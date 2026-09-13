@@ -675,8 +675,9 @@ suite("Documentation screenshots", function () {
   // The Backpromote panel, with the plan of test/fixtures/backpromote/backpromote-plan.json
   // served by the mocked CLI: the plan and its default selection, the same plan once Merge all
   // prepared every differing item (with the notification of the copied prompt), then the result
-  // of a run. One zoom level out, so that the Where, What and Go blocks fit in the capture.
-  // Feeds salesforce-ci-cd-backpromote.md and the README of the extension.
+  // of a run. The side bar, the activity bar and the status bar are hidden: the panel fills the
+  // window, so the images need no side crop. Feeds salesforce-ci-cd-backpromote.md and the README
+  // of the extension.
   test("backpromote panel", async function () {
     if (!shouldTake("backpromote")) {
       this.skip();
@@ -729,8 +730,21 @@ suite("Documentation screenshots", function () {
     // The panel asks for a git provider token first: the mocked CLI never calls GitHub
     const tokenBefore = process.env.GITHUB_TOKEN;
     process.env.GITHUB_TOKEN = tokenBefore || "ghp_mock_token";
-    await vscode.commands.executeCommand("workbench.action.zoomOut");
-    await sleep(800);
+    const workbench = vscode.workspace.getConfiguration("workbench");
+    // Workspace level: the settings of the documentation workspace pin the activity bar
+    const activityBarBefore = workbench.inspect("activityBar.location")?.workspaceValue;
+    const statusBarBefore = workbench.inspect("statusBar.visible")?.workspaceValue;
+    try {
+      await workbench.update("activityBar.location", "hidden", vscode.ConfigurationTarget.Workspace);
+      await workbench.update("statusBar.visible", false, vscode.ConfigurationTarget.Workspace);
+    } catch (error: any) {
+      console.log(`      [shot] backpromote: layout settings not written: ${error?.message}`);
+    }
+    const layout = vscode.workspace.getConfiguration("workbench");
+    console.log(`      [shot] backpromote layout: activityBar=${layout.get("activityBar.location")} statusBar=${layout.get("statusBar.visible")}`);
+    await vscode.commands.executeCommand("workbench.action.closeSidebar");
+    await vscode.commands.executeCommand("workbench.action.closePanel");
+    await sleep(1200);
     try {
       const panel = await openWithSandbox();
       await sleep(3500);
@@ -780,11 +794,15 @@ suite("Documentation screenshots", function () {
       await sleep(3000);
       await cleanChrome();
       // The result sits under the Go block, at the bottom of the page
-      await click(1100, 650, { scroll: -40 });
-      await sleep(1000);
+      for (let step = 0; step < 6; step++) {
+        await click(1100, 500, { scroll: -30 });
+      }
+      await sleep(1500);
       await captureStable("backpromote-result");
     } finally {
-      await vscode.commands.executeCommand("workbench.action.zoomIn");
+      await workbench.update("activityBar.location", activityBarBefore, vscode.ConfigurationTarget.Workspace);
+      await workbench.update("statusBar.visible", statusBarBefore, vscode.ConfigurationTarget.Workspace);
+      await vscode.commands.executeCommand("workbench.view.extension.sfdx-hardis-explorer");
       await sleep(800);
       panelManager.disposePanel(lwcId);
       if (tokenBefore === undefined) {
