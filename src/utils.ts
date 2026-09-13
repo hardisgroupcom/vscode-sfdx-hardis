@@ -672,9 +672,7 @@ export async function execCommand(
   try {
     if (
       COMMANDS_RESULTS[command] &&
-      !(
-        options.reuseRecentResult === false && COMMANDS_RESULTS[command].result
-      )
+      !(options.reuseRecentResult === false && COMMANDS_RESULTS[command].result)
     ) {
       // use in-flight or completed result
       Logger.log(

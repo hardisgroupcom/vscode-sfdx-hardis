@@ -19,7 +19,8 @@ const INFO_PILL = "hardis-pill hardis-status-info";
 const UNKNOWN_PILL = "hardis-pill hardis-status-unknown";
 // Pull Requests shown before the start when the list is collapsed
 const EARLIER_PULL_REQUESTS_SHOWN = 2;
-const DEFAULT_DOC_URL = "https://sfdx-hardis.cloudity.com/hardis/work/backpromote/";
+const DEFAULT_DOC_URL =
+  "https://sfdx-hardis.cloudity.com/hardis/work/backpromote/";
 // Value of the last entry of the target sandbox list, the one that opens the Orgs Manager
 const CONNECT_ANOTHER_ORG = "__connectAnotherOrg__";
 
@@ -128,7 +129,9 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       this.plan = payload.plan;
       this.comparisonsByItem = groupComparisonsByItem(payload.plan);
       this.noOverwriteKeys = new Set(
-        payload.plan.items.filter((item) => item.noOverwrite).map((item) => item.key),
+        payload.plan.items
+          .filter((item) => item.noOverwrite)
+          .map((item) => item.key),
       );
       this.parentBranch = payload.plan.parentBranch;
       this.applySelectionPayload(payload);
@@ -267,9 +270,7 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   }
 
   get hasPlanProgressPercent() {
-    return (
-      !!this.planProgress && typeof this.planProgress.percent === "number"
-    );
+    return !!this.planProgress && typeof this.planProgress.percent === "number";
   }
 
   get planProgressFillStyle() {
@@ -303,7 +304,9 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   }
 
   get isReady() {
-    return !this.loading && !this.tokenMissing && !this.planError && !!this.plan;
+    return (
+      !this.loading && !this.tokenMissing && !this.planError && !!this.plan
+    );
   }
 
   // The setup is loaded but no plan can be computed yet: no allowed org, or no allowed branch
@@ -374,7 +377,11 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   // built once per setup (and language): a new array on every render makes the combobox rebuild
   // its items and moves the highlight of an open list back to the first entry
   get targetOrgOptions() {
-    if (this._targetOrgOptions && this._targetOrgOptionsSetup === this.setup && this._targetOrgOptionsI18n === this.i18n) {
+    if (
+      this._targetOrgOptions &&
+      this._targetOrgOptionsSetup === this.setup &&
+      this._targetOrgOptionsI18n === this.i18n
+    ) {
       return this._targetOrgOptions;
     }
     const orgs = this.setup ? this.setup.orgs : [];
@@ -402,9 +409,7 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   }
 
   get hasNoAllowedOrg() {
-    return (
-      !!this.setup && !this.setup.orgs.some((org) => !org.disabledReason)
-    );
+    return !!this.setup && !this.setup.orgs.some((org) => !org.disabledReason);
   }
 
   get parentBranchOptions() {
@@ -417,7 +422,10 @@ export default class Backpromote extends SharedMixin(LightningElement) {
 
   // A picker as soon as there is a choice, or when no branch is chosen yet
   get showParentBranchPicker() {
-    return this.parentBranchOptions.length > 1 || (!this.parentBranch && this.parentBranchOptions.length > 0);
+    return (
+      this.parentBranchOptions.length > 1 ||
+      (!this.parentBranch && this.parentBranchOptions.length > 0)
+    );
   }
 
   get hasNoAllowedBranch() {
@@ -436,7 +444,10 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     const choice = (this.setup ? this.setup.orgs : []).find(
       (org) => org.username === targetOrg,
     );
-    if (targetOrg === CONNECT_ANOTHER_ORG || (choice && choice.disabledReason)) {
+    if (
+      targetOrg === CONNECT_ANOTHER_ORG ||
+      (choice && choice.disabledReason)
+    ) {
       // The picker shows the current org again, set on the element itself: the tracked value
       // did not change, so a re-render would not bring it back. A major org is never a target;
       // the last entry opens the Orgs Manager, and the org authenticated there becomes the
@@ -491,9 +502,7 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   }
 
   get hasPendingMerges() {
-    return (
-      !!this.plan && this.plan.backpromoteBranch.pendingMerges.length > 0
-    );
+    return !!this.plan && this.plan.backpromoteBranch.pendingMerges.length > 0;
   }
 
   get pendingMergesLabel() {
@@ -514,7 +523,8 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     const lastInWindow = all.map((pr) => pr.inWindow).lastIndexOf(true);
     const shownUntil = this.showAllPullRequests
       ? all.length
-      : (lastInWindow >= 0 ? lastInWindow + 1 : 0) + EARLIER_PULL_REQUESTS_SHOWN;
+      : (lastInWindow >= 0 ? lastInWindow + 1 : 0) +
+        EARLIER_PULL_REQUESTS_SHOWN;
     return all.slice(0, shownUntil).map((pr) => {
       let statusLabel = null;
       let statusClass = UNKNOWN_PILL;
@@ -546,9 +556,17 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       const meta = [
         pr.author,
         this.formatDate(pr.mergeDate),
-        this.countLabel(pr.itemCount, "backpromoteItemCountOne", "backpromoteItemCount"),
+        this.countLabel(
+          pr.itemCount,
+          "backpromoteItemCountOne",
+          "backpromoteItemCount",
+        ),
         pr.actionCount > 0
-          ? this.countLabel(pr.actionCount, "backpromoteActionCountOne", "backpromoteActionCount")
+          ? this.countLabel(
+              pr.actionCount,
+              "backpromoteActionCountOne",
+              "backpromoteActionCount",
+            )
           : null,
       ]
         .filter((part) => !!part)
@@ -652,16 +670,28 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       return "";
     }
     const parts = [
-      this.countLabel(this.plan.items.length, "backpromoteItemCountOne", "backpromoteItemCount"),
+      this.countLabel(
+        this.plan.items.length,
+        "backpromoteItemCountOne",
+        "backpromoteItemCount",
+      ),
     ];
     if (this.plan.deletions.length > 0) {
       parts.push(
-        this.countLabel(this.plan.deletions.length, "backpromoteDeletionCountOne", "backpromoteDeletionCount"),
+        this.countLabel(
+          this.plan.deletions.length,
+          "backpromoteDeletionCountOne",
+          "backpromoteDeletionCount",
+        ),
       );
     }
     if (this.plan.actions.length > 0) {
       parts.push(
-        this.countLabel(this.plan.actions.length, "backpromoteActionCountOne", "backpromoteActionCount"),
+        this.countLabel(
+          this.plan.actions.length,
+          "backpromoteActionCountOne",
+          "backpromoteActionCount",
+        ),
       );
     }
     return parts.join(", ");
@@ -695,7 +725,9 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   }
 
   get hasDifferingItems() {
-    return !!this.plan && this.plan.items.some((item) => this.itemDiffers(item.key));
+    return (
+      !!this.plan && this.plan.items.some((item) => this.itemDiffers(item.key))
+    );
   }
 
   // The ticked items Merge all prepares: they differ from the sandbox (a package-no-overwrite.xml
@@ -725,7 +757,9 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   }
 
   get copyPromptLabel() {
-    return this.t("backpromoteCopyAgentPrompt", { count: this.preparedFilesCount });
+    return this.t("backpromoteCopyAgentPrompt", {
+      count: this.preparedFilesCount,
+    });
   }
 
   itemComparisons(key) {
@@ -785,7 +819,11 @@ export default class Backpromote extends SharedMixin(LightningElement) {
         stateLabel = this.t("backpromoteMergeNotPrepared");
         stateClass = PENDING_PILL;
       } else if (markers > 0) {
-        stateLabel = this.countLabel(markers, "backpromoteConflictLeftOne", "backpromoteConflictLeft");
+        stateLabel = this.countLabel(
+          markers,
+          "backpromoteConflictLeftOne",
+          "backpromoteConflictLeft",
+        );
         stateClass = PENDING_PILL;
       } else {
         stateLabel = this.t("backpromoteMerged");
@@ -793,25 +831,37 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       }
     } else if (prepared && markers > 0) {
       // Switched back to Overwrite or Keep org version: the merged file still holds markers
-      stateLabel = this.countLabel(markers, "backpromoteConflictLeftOne", "backpromoteConflictLeft");
+      stateLabel = this.countLabel(
+        markers,
+        "backpromoteConflictLeftOne",
+        "backpromoteConflictLeft",
+      );
       stateClass = PENDING_PILL;
       stateTitle = this.t("backpromotePreparedNotMergedTooltip");
     } else if (differs && decision === "org") {
       stateLabel = this.t("backpromoteKeptOrgVersion");
       stateClass = INFO_PILL;
     } else if (differs) {
-      stateLabel = comparisons.some((comparison) => comparison.status === "pendingInOrg")
+      stateLabel = comparisons.some(
+        (comparison) => comparison.status === "pendingInOrg",
+      )
         ? this.t("backpromoteDiffersPendingInOrg")
-        : this.t("backpromoteDiffersInSandbox", { sandbox: this.targetOrgLabel });
+        : this.t("backpromoteDiffersInSandbox", {
+            sandbox: this.targetOrgLabel,
+          });
       stateClass = PENDING_PILL;
       stateTitle = this.t("backpromoteDiffersTooltip", {
         sandbox: this.targetOrgLabel,
         parentBranch: this.plan.parentBranch,
       });
-    } else if (comparisons.some((comparison) => comparison.status === "missingInOrg")) {
+    } else if (
+      comparisons.some((comparison) => comparison.status === "missingInOrg")
+    ) {
       stateLabel = this.t("backpromoteNewInSandbox");
       stateClass = INFO_PILL;
-    } else if (comparisons.some((comparison) => comparison.status === "notCompared")) {
+    } else if (
+      comparisons.some((comparison) => comparison.status === "notCompared")
+    ) {
       stateLabel = this.t("backpromoteNotCompared");
     } else if (comparisons.length > 0) {
       stateLabel = this.t("backpromoteSameAsSandbox");
@@ -822,7 +872,10 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       name: item.name,
       typeLabel: item.type,
       typePillClass: getMetadataTypePillClass(item.type),
-      pullRequests: item.pullRequests.map((number) => ({ key: `${item.key}-${number}`, label: `#${number}` })),
+      pullRequests: item.pullRequests.map((number) => ({
+        key: `${item.key}-${number}`,
+        label: `#${number}`,
+      })),
       excludedLastTime: item.excludedLastTime || leftOutLastTime,
       noOverwrite: item.noOverwrite,
       noOverwriteTitle: item.noOverwrite
@@ -844,9 +897,16 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       decisionDisabled: this.isReadOnly || preparing,
       gitClass: "hardis-seg" + (decision === "git" ? " on" : ""),
       orgClass: "hardis-seg" + (decision === "org" ? " on" : ""),
-      mergeClass: "hardis-seg" + (decision === "merge" ? (markers > 0 || !prepared ? " warn-on" : " on") : ""),
+      mergeClass:
+        "hardis-seg" +
+        (decision === "merge"
+          ? markers > 0 || !prepared
+            ? " warn-on"
+            : " on"
+          : ""),
       canCompare: comparisons.some(
-        (comparison) => comparison.versions.sandbox && comparison.versions.parentHead,
+        (comparison) =>
+          comparison.versions.sandbox && comparison.versions.parentHead,
       ),
     };
   }
@@ -876,11 +936,18 @@ export default class Backpromote extends SharedMixin(LightningElement) {
         return {
           type,
           typePillClass: getMetadataTypePillClass(type),
-          countLabel: this.t("backpromoteTypeCount", { ticked, total: items.length }),
+          countLabel: this.t("backpromoteTypeCount", {
+            ticked,
+            total: items.length,
+          }),
           collapsed,
           expanded: !collapsed,
           chevron: collapsed ? "utility:chevronright" : "utility:chevrondown",
-          rows: collapsed ? [] : items.map((item) => this.buildItemRow(item, excluded, previousRun)),
+          rows: collapsed
+            ? []
+            : items.map((item) =>
+                this.buildItemRow(item, excluded, previousRun),
+              ),
         };
       });
   }
@@ -943,7 +1010,8 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     }
     const needsPrepare = keys.some((key) =>
       this.itemComparisons(key).some(
-        (comparison) => isDifferingComparison(comparison) && !comparison.prepared,
+        (comparison) =>
+          isDifferingComparison(comparison) && !comparison.prepared,
       ),
     );
     if (!dirtyTree && needsPrepare && this.needsDirtyTreeChoice) {
@@ -967,11 +1035,7 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   }
 
   requestMerge(key, dirtyTree) {
-    if (
-      !dirtyTree &&
-      !this.itemPrepared(key) &&
-      this.needsDirtyTreeChoice
-    ) {
+    if (!dirtyTree && !this.itemPrepared(key) && this.needsDirtyTreeChoice) {
       this.openDirtyTreeModal({ then: "merge", itemKey: key });
       return;
     }
@@ -1044,7 +1108,8 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       typePillClass: getMetadataTypePillClass(deletion.type),
       name: deletion.name,
       rowClass: "bp-item-row" + (excluded.has(deletion.key) ? "" : " selected"),
-      checkClass: "hardis-check bp-check" + (excluded.has(deletion.key) ? "" : " on"),
+      checkClass:
+        "hardis-check bp-check" + (excluded.has(deletion.key) ? "" : " on"),
       ariaChecked: excluded.has(deletion.key) ? "false" : "true",
     }));
   }
@@ -1072,9 +1137,17 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     if (!this.plan || !this.summary) {
       return "";
     }
-    const parts = [this.t("backpromoteActionsToRun", { count: this.summary.actionsToRunCount })];
+    const parts = [
+      this.t("backpromoteActionsToRun", {
+        count: this.summary.actionsToRunCount,
+      }),
+    ];
     if (this.summary.manualActionsCount > 0) {
-      parts.push(this.t("backpromoteActionsManual", { count: this.summary.manualActionsCount }));
+      parts.push(
+        this.t("backpromoteActionsManual", {
+          count: this.summary.manualActionsCount,
+        }),
+      );
     }
     return parts.join(" · ");
   }
@@ -1092,10 +1165,14 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       let stateLabel = null;
       let stateClass = UNKNOWN_PILL;
       if (alreadyRun) {
-        stateLabel = this.t("backpromoteActionAlreadyRun", { date: this.formatDate(action.alreadyRunOn) });
+        stateLabel = this.t("backpromoteActionAlreadyRun", {
+          date: this.formatDate(action.alreadyRunOn),
+        });
         stateClass = SUCCESS_PILL;
       } else if (!action.runnable) {
-        stateLabel = this.t("backpromoteActionNotRunnable", { username: action.customUsername || "" });
+        stateLabel = this.t("backpromoteActionNotRunnable", {
+          username: action.customUsername || "",
+        });
       } else if (result && result.actions.failed.includes(action.id)) {
         stateLabel = this.t("backpromoteActionFailed");
         stateClass = FAILED_PILL;
@@ -1122,8 +1199,14 @@ export default class Backpromote extends SharedMixin(LightningElement) {
         checkClass: "hardis-check bp-check" + (ticked ? " on" : ""),
         ariaChecked: ticked ? "true" : "false",
         disabled: !runnable || this.isReadOnly,
-        whenLabel: this.t(action.phase === "pre" ? "backpromoteActionBefore" : "backpromoteActionAfter"),
-        whenPillClass: getActionWhenPillClass(action.phase === "pre" ? "pre-deploy" : "post-deploy"),
+        whenLabel: this.t(
+          action.phase === "pre"
+            ? "backpromoteActionBefore"
+            : "backpromoteActionAfter",
+        ),
+        whenPillClass: getActionWhenPillClass(
+          action.phase === "pre" ? "pre-deploy" : "post-deploy",
+        ),
         typeLabel: getActionTypeLabel(action.type, translate),
         typePillClass: getActionTypePillClass(action.type),
         pullRequestLabel: action.pullRequest ? `#${action.pullRequest}` : null,
@@ -1131,7 +1214,8 @@ export default class Backpromote extends SharedMixin(LightningElement) {
         stateClass,
         showConfirm,
         // The extension refuses the confirmation while a run or a prepare works on the checkout
-        confirmDisabled: this.confirmingActions.includes(action.id) || this.pickersDisabled,
+        confirmDisabled:
+          this.confirmingActions.includes(action.id) || this.pickersDisabled,
       };
     });
   }
@@ -1142,7 +1226,11 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       return;
     }
     const action = this.plan.actions.find((entry) => entry.id === id);
-    if (!action || !action.runnable || (action.alreadyRunOn && action.runOnlyOnceByOrg)) {
+    if (
+      !action ||
+      !action.runnable ||
+      (action.alreadyRunOn && action.runOnlyOnceByOrg)
+    ) {
       return;
     }
     const actions = new Set(this.selection.actions);
@@ -1152,7 +1240,9 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       actions.add(id);
     }
     this.updateSelection({
-      actions: this.plan.actions.map((entry) => entry.id).filter((actionId) => actions.has(actionId)),
+      actions: this.plan.actions
+        .map((entry) => entry.id)
+        .filter((actionId) => actions.has(actionId)),
     });
   }
 
@@ -1162,7 +1252,10 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       return;
     }
     this.confirmingActions = [...this.confirmingActions, id];
-    window.sendMessageToVSCode({ type: "confirmAction", data: { actionId: id } });
+    window.sendMessageToVSCode({
+      type: "confirmAction",
+      data: { actionId: id },
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -1174,26 +1267,46 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       return "";
     }
     const parts = [
-      this.countLabel(this.summary.itemsToDeployCount, "backpromoteItemCountOne", "backpromoteItemCount"),
+      this.countLabel(
+        this.summary.itemsToDeployCount,
+        "backpromoteItemCountOne",
+        "backpromoteItemCount",
+      ),
     ];
     if (this.summary.deletionsToDeleteCount > 0) {
       parts.push(
-        this.countLabel(this.summary.deletionsToDeleteCount, "backpromoteDeletionCountOne", "backpromoteDeletionCount"),
+        this.countLabel(
+          this.summary.deletionsToDeleteCount,
+          "backpromoteDeletionCountOne",
+          "backpromoteDeletionCount",
+        ),
       );
     }
     if (this.summary.actionsToRunCount > 0) {
       parts.push(
-        this.countLabel(this.summary.actionsToRunCount, "backpromoteActionCountOne", "backpromoteActionCount"),
+        this.countLabel(
+          this.summary.actionsToRunCount,
+          "backpromoteActionCountOne",
+          "backpromoteActionCount",
+        ),
       );
     }
     if (this.summary.mergedFilesCount > 0) {
       parts.push(
-        this.countLabel(this.summary.mergedFilesCount, "backpromoteMergedFileCountOne", "backpromoteMergedFileCount"),
+        this.countLabel(
+          this.summary.mergedFilesCount,
+          "backpromoteMergedFileCountOne",
+          "backpromoteMergedFileCount",
+        ),
       );
     }
     if (this.summary.keptOrgCount > 0) {
       parts.push(
-        this.countLabel(this.summary.keptOrgCount, "backpromoteKeptOrgCountOne", "backpromoteKeptOrgCount"),
+        this.countLabel(
+          this.summary.keptOrgCount,
+          "backpromoteKeptOrgCountOne",
+          "backpromoteKeptOrgCount",
+        ),
       );
     }
     return parts.join(", ");
@@ -1204,7 +1317,9 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   }
 
   get runDisabled() {
-    return this.isReadOnly || !this.summary || !this.summary.canRun || this.running;
+    return (
+      this.isReadOnly || !this.summary || !this.summary.canRun || this.running
+    );
   }
 
   get blockerLabel() {
@@ -1227,7 +1342,9 @@ export default class Backpromote extends SharedMixin(LightningElement) {
           names: this.markersLeftNames(false),
         });
       case "invalidCommand":
-        return this.t("backpromoteBlockerInvalidCommand", { message: this.commandError || "" });
+        return this.t("backpromoteBlockerInvalidCommand", {
+          message: this.commandError || "",
+        });
       default:
         return null;
     }
@@ -1283,7 +1400,9 @@ export default class Backpromote extends SharedMixin(LightningElement) {
 
   get backToBranchLabel() {
     return this.plan
-      ? this.t("backpromoteBackToBranch", { branch: this.plan.checkout.originalBranch })
+      ? this.t("backpromoteBackToBranch", {
+          branch: this.plan.checkout.originalBranch,
+        })
       : "";
   }
 
@@ -1291,10 +1410,17 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     return (this.runLog || []).map((event, index) => ({
       key: `${event.step}-${index}`,
       message: event.message,
-      counted: typeof event.current === "number" && typeof event.total === "number",
-      countLabel: typeof event.current === "number" ? `${event.current}/${event.total}` : "",
+      counted:
+        typeof event.current === "number" && typeof event.total === "number",
+      countLabel:
+        typeof event.current === "number"
+          ? `${event.current}/${event.total}`
+          : "",
       last: index === this.runLog.length - 1,
-      iconName: index === this.runLog.length - 1 && this.running ? "utility:sync" : "utility:check",
+      iconName:
+        index === this.runLog.length - 1 && this.running
+          ? "utility:sync"
+          : "utility:check",
     }));
   }
 
@@ -1359,10 +1485,17 @@ export default class Backpromote extends SharedMixin(LightningElement) {
         sandbox: this.targetOrgLabel,
       }),
     });
-    if (result.actions.run.length > 0 || result.actions.skipped.length > 0 || result.actions.failed.length > 0) {
+    if (
+      result.actions.run.length > 0 ||
+      result.actions.skipped.length > 0 ||
+      result.actions.failed.length > 0
+    ) {
       lines.push({
         key: "actions",
-        icon: result.actions.failed.length > 0 ? "utility:warning" : "utility:check",
+        icon:
+          result.actions.failed.length > 0
+            ? "utility:warning"
+            : "utility:check",
         text: this.t("backpromoteResultActions", {
           run: result.actions.run.length,
           skipped: result.actions.skipped.length,
@@ -1374,7 +1507,11 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       lines.push({
         key: "pending",
         icon: "utility:priority",
-        text: this.countLabel(result.actions.pending.length, "backpromoteResultPendingOne", "backpromoteResultPending"),
+        text: this.countLabel(
+          result.actions.pending.length,
+          "backpromoteResultPendingOne",
+          "backpromoteResultPending",
+        ),
       });
     }
     if (result.excluded.length > 0) {
@@ -1391,7 +1528,9 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       lines.push({
         key: "conflicts",
         icon: "utility:warning",
-        text: this.t("backpromoteResultConflictPending", { items: result.conflictPending.join(", ") }),
+        text: this.t("backpromoteResultConflictPending", {
+          items: result.conflictPending.join(", "),
+        }),
       });
     }
     if (result.commentedPullRequests.length > 0) {
@@ -1399,7 +1538,9 @@ export default class Backpromote extends SharedMixin(LightningElement) {
         key: "comments",
         icon: "utility:comments",
         text: this.t("backpromoteResultComments", {
-          numbers: result.commentedPullRequests.map((number) => `#${number}`).join(", "),
+          numbers: result.commentedPullRequests
+            .map((number) => `#${number}`)
+            .join(", "),
         }),
       });
     }
@@ -1407,7 +1548,9 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       lines.push({
         key: "pushed",
         icon: "utility:upload",
-        text: this.t("backpromoteResultPushed", { branch: this.plan.backpromoteBranch.name }),
+        text: this.t("backpromoteResultPushed", {
+          branch: this.plan.backpromoteBranch.name,
+        }),
       });
     }
     return lines;
@@ -1431,7 +1574,11 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     }
     window.sendMessageToVSCode({
       type: "runBackpromote",
-      data: { selection: this.selection, revision: this.revision, dirtyTree: dirtyTree || null },
+      data: {
+        selection: this.selection,
+        revision: this.revision,
+        dirtyTree: dirtyTree || null,
+      },
     });
   }
 
@@ -1466,7 +1613,9 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   }
 
   get commandToggleLabel() {
-    return this.showCommand ? this.t("backpromoteHideCommand") : this.t("backpromoteShowCommand");
+    return this.showCommand
+      ? this.t("backpromoteHideCommand")
+      : this.t("backpromoteShowCommand");
   }
 
   handleToggleCommand() {
@@ -1475,7 +1624,10 @@ export default class Backpromote extends SharedMixin(LightningElement) {
 
   handleCopyCommand() {
     if (this.command) {
-      window.sendMessageToVSCode({ type: "copyToClipboard", data: { text: this.command } });
+      window.sendMessageToVSCode({
+        type: "copyToClipboard",
+        data: { text: this.command },
+      });
     }
   }
 
@@ -1504,13 +1656,17 @@ export default class Backpromote extends SharedMixin(LightningElement) {
 
   get dirtyTreeDescription() {
     return this.plan
-      ? this.t("backpromoteDirtyTreeDesc", { branch: this.plan.backpromoteBranch.name })
+      ? this.t("backpromoteDirtyTreeDesc", {
+          branch: this.plan.backpromoteBranch.name,
+        })
       : "";
   }
 
   get dirtyTreeFiles() {
     return this.plan
-      ? this.plan.checkout.dirtyFiles.slice(0, 12).map((file) => ({ key: file, name: file }))
+      ? this.plan.checkout.dirtyFiles
+          .slice(0, 12)
+          .map((file) => ({ key: file, name: file }))
       : [];
   }
 
@@ -1531,7 +1687,9 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   }
 
   get dirtyTreeConfirmDisabled() {
-    return this.isDirtyTreeCommit && !String(this.dirtyTreeMessage || "").trim();
+    return (
+      this.isDirtyTreeCommit && !String(this.dirtyTreeMessage || "").trim()
+    );
   }
 
   handleDirtyTreeActionChange(event) {
@@ -1553,7 +1711,9 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     }
     const choice = {
       action: this.dirtyTreeAction,
-      message: this.isDirtyTreeCommit ? String(this.dirtyTreeMessage || "").trim() : null,
+      message: this.isDirtyTreeCommit
+        ? String(this.dirtyTreeMessage || "").trim()
+        : null,
     };
     this.dirtyTreeModal = null;
     if (next.then === "merge") {
@@ -1593,14 +1753,20 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   }
 
   handleOpenDoc() {
-    window.sendMessageToVSCode({ type: "openExternal", data: { url: this.docUrl } });
+    window.sendMessageToVSCode({
+      type: "openExternal",
+      data: { url: this.docUrl },
+    });
   }
 
   // The git provider tokens can be set in the extension settings
   handleOpenSettings() {
     window.sendMessageToVSCode({
       type: "runVsCodeCommand",
-      data: { command: "workbench.action.openSettings", args: ["vsCodeSfdxHardis"] },
+      data: {
+        command: "workbench.action.openSettings",
+        args: ["vsCodeSfdxHardis"],
+      },
     });
   }
 

@@ -213,10 +213,7 @@ suite("Azure Pull Request build batching", () => {
   // Requests, that round trip cost more than the batch saved.
   test("does not batch below the fan-out ceiling", async () => {
     const counters = { batch: 0, single: 0, statuses: 0 };
-    const numbers = Array.from(
-      { length: AZURE_FANOUT },
-      (_, i) => i + 1,
-    );
+    const numbers = Array.from({ length: AZURE_FANOUT }, (_, i) => i + 1);
     const builds = numbers.map((n) =>
       build({ prNumber: n, sourceBranch: `refs/pull/${n}/merge`, id: n }),
     );

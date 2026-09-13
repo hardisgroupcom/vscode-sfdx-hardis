@@ -135,7 +135,10 @@
       "key": "ApexClass:InvoiceCalculator",
       "type": "ApexClass",
       "name": "InvoiceCalculator",
-      "files": ["force-app/main/default/classes/InvoiceCalculator.cls", "force-app/main/default/classes/InvoiceCalculator.cls-meta.xml"],
+      "files": [
+        "force-app/main/default/classes/InvoiceCalculator.cls",
+        "force-app/main/default/classes/InvoiceCalculator.cls-meta.xml"
+      ],
       "pullRequests": [418],
       "excludedLastTime": false,
       "noOverwrite": false
@@ -144,7 +147,10 @@
       "key": "ApexClass:QuoteSharingRecalculator",
       "type": "ApexClass",
       "name": "QuoteSharingRecalculator",
-      "files": ["force-app/main/default/classes/QuoteSharingRecalculator.cls", "force-app/main/default/classes/QuoteSharingRecalculator.cls-meta.xml"],
+      "files": [
+        "force-app/main/default/classes/QuoteSharingRecalculator.cls",
+        "force-app/main/default/classes/QuoteSharingRecalculator.cls-meta.xml"
+      ],
       "pullRequests": [418],
       "excludedLastTime": false,
       "noOverwrite": false
@@ -153,7 +159,9 @@
       "key": "CustomField:Case.SLA_Deadline__c",
       "type": "CustomField",
       "name": "Case.SLA_Deadline__c",
-      "files": ["force-app/main/default/objects/Case/fields/SLA_Deadline__c.field-meta.xml"],
+      "files": [
+        "force-app/main/default/objects/Case/fields/SLA_Deadline__c.field-meta.xml"
+      ],
       "pullRequests": [415],
       "excludedLastTime": false,
       "noOverwrite": false
@@ -162,7 +170,9 @@
       "key": "Layout:Case-Case Layout",
       "type": "Layout",
       "name": "Case-Case Layout",
-      "files": ["force-app/main/default/layouts/Case-Case Layout.layout-meta.xml"],
+      "files": [
+        "force-app/main/default/layouts/Case-Case Layout.layout-meta.xml"
+      ],
       "pullRequests": [415],
       "excludedLastTime": false,
       "noOverwrite": false
@@ -189,14 +199,20 @@
       "key": "RemoteSiteSetting:Erp_Api",
       "type": "RemoteSiteSetting",
       "name": "Erp_Api",
-      "files": ["force-app/main/default/remoteSiteSettings/Erp_Api.remoteSite-meta.xml"],
+      "files": [
+        "force-app/main/default/remoteSiteSettings/Erp_Api.remoteSite-meta.xml"
+      ],
       "pullRequests": [418],
       "excludedLastTime": false,
       "noOverwrite": true
     }
   ],
   "deletions": [
-    { "key": "ApexClass:LegacyDiscountHelper", "type": "ApexClass", "name": "LegacyDiscountHelper" }
+    {
+      "key": "ApexClass:LegacyDiscountHelper",
+      "type": "ApexClass",
+      "name": "LegacyDiscountHelper"
+    }
   ],
   "actions": [
     {
@@ -358,10 +374,30 @@
     }
   ],
   "checks": [
-    { "id": "gitProvider", "ok": true, "message": "GitHub token found", "details": [] },
-    { "id": "targetOrg", "ok": true, "message": "dev1 is a developer sandbox", "details": [] },
-    { "id": "parentBranch", "ok": true, "message": "integration is an allowed parent branch", "details": [] },
-    { "id": "workingTree", "ok": true, "message": "No uncommitted change on feature/lead-routing", "details": [] }
+    {
+      "id": "gitProvider",
+      "ok": true,
+      "message": "GitHub token found",
+      "details": []
+    },
+    {
+      "id": "targetOrg",
+      "ok": true,
+      "message": "dev1 is a developer sandbox",
+      "details": []
+    },
+    {
+      "id": "parentBranch",
+      "ok": true,
+      "message": "integration is an allowed parent branch",
+      "details": []
+    },
+    {
+      "id": "workingTree",
+      "ok": true,
+      "message": "No uncommitted change on feature/lead-routing",
+      "details": []
+    }
   ],
   "promptFile": null,
   "runCommand": null,

@@ -639,12 +639,16 @@ function answerBackpromote() {
     if (progressFile) {
       fs.appendFileSync(
         progressFile,
-        JSON.stringify({ time: new Date().toISOString(), step, message }) + "\n",
+        JSON.stringify({ time: new Date().toISOString(), step, message }) +
+          "\n",
       );
     }
   };
   progress("targetOrg", "Reading the target sandbox");
-  progress("listing", "Listing the Pull Requests merged in " + plan.parentBranch);
+  progress(
+    "listing",
+    "Listing the Pull Requests merged in " + plan.parentBranch,
+  );
   const fromPullRequest = Number(flagValue("--from-pull-request"));
   if (fromPullRequest > 0) {
     plan.window.startPullRequest = fromPullRequest;
@@ -660,7 +664,12 @@ function answerBackpromote() {
   if (variant === "tokenMissing") {
     plan.status = "blocked";
     plan.checks = [
-      { id: "gitProvider", ok: false, message: "No git provider token: set GITHUB_TOKEN", details: [] },
+      {
+        id: "gitProvider",
+        ok: false,
+        message: "No git provider token: set GITHUB_TOKEN",
+        details: [],
+      },
     ];
     plan.pullRequests = [];
     plan.items = [];
@@ -693,25 +702,41 @@ function answerBackpromote() {
   // compared file of it is missing there) is left alone unless --include-no-overwrite names it
   const included = flagValues("--include-no-overwrite");
   const noOverwriteInSandbox = (key) => {
-    const comparisons = plan.comparison.filter((comparison) => comparison.item === key);
-    return comparisons.length === 0 || comparisons.some((comparison) => comparison.status !== "missingInOrg");
+    const comparisons = plan.comparison.filter(
+      (comparison) => comparison.item === key,
+    );
+    return (
+      comparisons.length === 0 ||
+      comparisons.some((comparison) => comparison.status !== "missingInOrg")
+    );
   };
   const held = new Set(
     plan.items
-      .filter((item) => item.noOverwrite && noOverwriteInSandbox(item.key) && !included.includes(item.key))
+      .filter(
+        (item) =>
+          item.noOverwrite &&
+          noOverwriteInSandbox(item.key) &&
+          !included.includes(item.key),
+      )
       .map((item) => item.key),
   );
   const mergedFiles = flagValues("--on-diff")
     .filter((value) => value.endsWith("=merge"))
     .map((value) => value.substring(0, value.length - "=merge".length))
-    .filter((file) => !plan.comparison.some((comparison) => comparison.file === file && held.has(comparison.item)));
+    .filter(
+      (file) =>
+        !plan.comparison.some(
+          (comparison) => comparison.file === file && held.has(comparison.item),
+        ),
+    );
   // The step lines of a run, worded like sfdx-hardis (the documentation screenshots show them)
   const stepLabel = (step) =>
     ({
       checkout: "Checking out " + plan.backpromoteBranch.name,
       preActions: "Running the pre-deployment actions",
       deploy: "Deploying the metadata to " + plan.targetOrg.sandboxName,
-      destructive: "Deleting the removed metadata from " + plan.targetOrg.sandboxName,
+      destructive:
+        "Deleting the removed metadata from " + plan.targetOrg.sandboxName,
       postActions: "Running the post-deployment actions",
       comments: "Updating the Backpromotes comments of the Pull Requests",
       push: "Pushing " + plan.backpromoteBranch.name,
@@ -724,7 +749,10 @@ function answerBackpromote() {
     plan.checkout.currentBranch = plan.backpromoteBranch.name;
     plan.checkout.stashed = args.includes("stash");
     plan.checkout.stashMessage = plan.checkout.stashed
-      ? "sfdx-hardis backpromote " + plan.runId + " from " + plan.checkout.originalBranch
+      ? "sfdx-hardis backpromote " +
+        plan.runId +
+        " from " +
+        plan.checkout.originalBranch
       : null;
     for (const comparison of plan.comparison) {
       if (mergedFiles.includes(comparison.file)) {
@@ -742,7 +770,9 @@ function answerBackpromote() {
     fs.writeFileSync(
       plan.promptFile,
       [
-        "Solve the conflict markers of these files in the checkout of " + plan.backpromoteBranch.name + ", then commit them on that branch:",
+        "Solve the conflict markers of these files in the checkout of " +
+          plan.backpromoteBranch.name +
+          ", then commit them on that branch:",
         ...mergedFiles.map((file) => "- " + file),
         "",
       ].join("\n"),
@@ -796,7 +826,15 @@ function answerBackpromote() {
       );
       return 1;
     }
-    for (const step of ["checkout", "preActions", "deploy", "destructive", "postActions", "comments", "push"]) {
+    for (const step of [
+      "checkout",
+      "preActions",
+      "deploy",
+      "destructive",
+      "postActions",
+      "comments",
+      "push",
+    ]) {
       progress(step, stepLabel(step));
     }
     plan.checkout.onBackpromoteBranch = true;
@@ -814,7 +852,9 @@ function answerBackpromote() {
       actions: {
         run: args.includes("--skip-actions")
           ? []
-          : ["load-sla-thresholds"].filter((id) => !actions || actions.split(",").includes(id)),
+          : ["load-sla-thresholds"].filter(
+              (id) => !actions || actions.split(",").includes(id),
+            ),
         skipped: ["recalculate-quote-sharing"],
         failed: [],
         pending: args.includes("--skip-actions") ? [] : ["enable-sla-approval"],
@@ -823,7 +863,11 @@ function answerBackpromote() {
       commentedPullRequests: [415, 417, 418],
       pushed: mergedFiles.length > 0,
       pushRejected: false,
-      deployReport: path.join(process.cwd(), "hardis-report", "backpromote-deploy.log"),
+      deployReport: path.join(
+        process.cwd(),
+        "hardis-report",
+        "backpromote-deploy.log",
+      ),
       orgUrl: plan.targetOrg.instanceUrl,
     };
     outputJsonIfRequested({ status: 0, result: plan, warnings: [] }, "");

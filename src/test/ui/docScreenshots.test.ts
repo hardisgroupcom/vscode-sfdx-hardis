@@ -690,7 +690,9 @@ suite("Documentation screenshots", function () {
       panelManager.disposePanel(lwcId);
       await vscode.commands.executeCommand("workbench.action.closeAllEditors");
       await sleep(400);
-      await vscode.commands.executeCommand("vscode-sfdx-hardis.showBackpromote");
+      await vscode.commands.executeCommand(
+        "vscode-sfdx-hardis.showBackpromote",
+      );
       const opened = await waitFor(
         () => panelManager.getPanel(lwcId),
         20000,
@@ -732,16 +734,31 @@ suite("Documentation screenshots", function () {
     process.env.GITHUB_TOKEN = tokenBefore || "ghp_mock_token";
     const workbench = vscode.workspace.getConfiguration("workbench");
     // Workspace level: the settings of the documentation workspace pin the activity bar
-    const activityBarBefore = workbench.inspect("activityBar.location")?.workspaceValue;
-    const statusBarBefore = workbench.inspect("statusBar.visible")?.workspaceValue;
+    const activityBarBefore = workbench.inspect(
+      "activityBar.location",
+    )?.workspaceValue;
+    const statusBarBefore =
+      workbench.inspect("statusBar.visible")?.workspaceValue;
     try {
-      await workbench.update("activityBar.location", "hidden", vscode.ConfigurationTarget.Workspace);
-      await workbench.update("statusBar.visible", false, vscode.ConfigurationTarget.Workspace);
+      await workbench.update(
+        "activityBar.location",
+        "hidden",
+        vscode.ConfigurationTarget.Workspace,
+      );
+      await workbench.update(
+        "statusBar.visible",
+        false,
+        vscode.ConfigurationTarget.Workspace,
+      );
     } catch (error: any) {
-      console.log(`      [shot] backpromote: layout settings not written: ${error?.message}`);
+      console.log(
+        `      [shot] backpromote: layout settings not written: ${error?.message}`,
+      );
     }
     const layout = vscode.workspace.getConfiguration("workbench");
-    console.log(`      [shot] backpromote layout: activityBar=${layout.get("activityBar.location")} statusBar=${layout.get("statusBar.visible")}`);
+    console.log(
+      `      [shot] backpromote layout: activityBar=${layout.get("activityBar.location")} statusBar=${layout.get("statusBar.visible")}`,
+    );
     await vscode.commands.executeCommand("workbench.action.closeSidebar");
     await vscode.commands.executeCommand("workbench.action.closePanel");
     await sleep(1200);
@@ -774,7 +791,9 @@ suite("Documentation screenshots", function () {
       // The notification of the copied prompt is part of this shot: only the
       // auxiliary bar is closed
       await sleep(3000);
-      await vscode.commands.executeCommand("workbench.action.closeAuxiliaryBar");
+      await vscode.commands.executeCommand(
+        "workbench.action.closeAuxiliaryBar",
+      );
       await captureStable("backpromote-merge-all");
 
       // A fresh panel for the run: the prepared merges above would block it
@@ -800,9 +819,19 @@ suite("Documentation screenshots", function () {
       await sleep(1500);
       await captureStable("backpromote-result");
     } finally {
-      await workbench.update("activityBar.location", activityBarBefore, vscode.ConfigurationTarget.Workspace);
-      await workbench.update("statusBar.visible", statusBarBefore, vscode.ConfigurationTarget.Workspace);
-      await vscode.commands.executeCommand("workbench.view.extension.sfdx-hardis-explorer");
+      await workbench.update(
+        "activityBar.location",
+        activityBarBefore,
+        vscode.ConfigurationTarget.Workspace,
+      );
+      await workbench.update(
+        "statusBar.visible",
+        statusBarBefore,
+        vscode.ConfigurationTarget.Workspace,
+      );
+      await vscode.commands.executeCommand(
+        "workbench.view.extension.sfdx-hardis-explorer",
+      );
       await sleep(800);
       panelManager.disposePanel(lwcId);
       if (tokenBefore === undefined) {

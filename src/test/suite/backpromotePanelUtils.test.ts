@@ -49,14 +49,27 @@ import {
 } from "../../utils/pipeline/promotionBranchUtils";
 
 const USERNAME = "sam.dubois@mycompany.com.dev1";
-const INVOICE_CALCULATOR_FILE = "force-app/main/default/classes/InvoiceCalculator.cls";
-const CASE_LAYOUT_FILE = "force-app/main/default/layouts/Case-Case Layout.layout-meta.xml";
-const TARGET = { targetOrg: USERNAME, parentBranch: "integration", fromPullRequest: 415, runId: "mock7f3a" };
+const INVOICE_CALCULATOR_FILE =
+  "force-app/main/default/classes/InvoiceCalculator.cls";
+const CASE_LAYOUT_FILE =
+  "force-app/main/default/layouts/Case-Case Layout.layout-meta.xml";
+const TARGET = {
+  targetOrg: USERNAME,
+  parentBranch: "integration",
+  fromPullRequest: 415,
+  runId: "mock7f3a",
+};
 
 function loadRawPlan(): any {
   return JSON.parse(
     fs.readFileSync(
-      path.join(REPO_ROOT, "test", "fixtures", "backpromote", "backpromote-plan.json"),
+      path.join(
+        REPO_ROOT,
+        "test",
+        "fixtures",
+        "backpromote",
+        "backpromote-plan.json",
+      ),
       "utf8",
     ),
   );
@@ -77,10 +90,13 @@ function selection(
 
 suite("backpromotePanelUtils", () => {
   test("parseMetadataKey splits on the first colon only", () => {
-    assert.deepStrictEqual(parseMetadataKey("Layout:Opportunity-Sales Layout"), {
-      type: "Layout",
-      name: "Opportunity-Sales Layout",
-    });
+    assert.deepStrictEqual(
+      parseMetadataKey("Layout:Opportunity-Sales Layout"),
+      {
+        type: "Layout",
+        name: "Opportunity-Sales Layout",
+      },
+    );
     assert.deepStrictEqual(parseMetadataKey("CustomLabel:A:B"), {
       type: "CustomLabel",
       name: "A:B",
@@ -91,30 +107,74 @@ suite("backpromotePanelUtils", () => {
 
   test("quoteCommandValue quotes spaces and refuses shell syntax, by platform", () => {
     for (const platform of ["win32", "linux", "darwin"]) {
-      assert.strictEqual(quoteCommandValue("integration", platform), "integration");
+      assert.strictEqual(
+        quoteCommandValue("integration", platform),
+        "integration",
+      );
       assert.strictEqual(
         quoteCommandValue("Layout:Opportunity-Sales Layout", platform),
         '"Layout:Opportunity-Sales Layout"',
         platform,
       );
-      for (const unsafe of ['a"b', "a$(b)", "a${b}", "a`b", "a\\b", "a && b", "a || b", "a\nb", "a\tb", ""]) {
-        assert.throws(() => quoteCommandValue(unsafe, platform), `${JSON.stringify(unsafe)} must be refused on ${platform}`);
+      for (const unsafe of [
+        'a"b',
+        "a$(b)",
+        "a${b}",
+        "a`b",
+        "a\\b",
+        "a && b",
+        "a || b",
+        "a\nb",
+        "a\tb",
+        "",
+      ]) {
+        assert.throws(
+          () => quoteCommandValue(unsafe, platform),
+          `${JSON.stringify(unsafe)} must be refused on ${platform}`,
+        );
       }
-      assert.strictEqual(isSafeCommandValue("user$(whoami)@example.com", platform), false);
+      assert.strictEqual(
+        isSafeCommandValue("user$(whoami)@example.com", platform),
+        false,
+      );
       // A single quote is a plain character for cmd.exe and inside double quotes for /bin/sh
-      assert.strictEqual(quoteCommandValue("Layout:Sam's Layout", platform), "\"Layout:Sam's Layout\"", platform);
+      assert.strictEqual(
+        quoteCommandValue("Layout:Sam's Layout", platform),
+        '"Layout:Sam\'s Layout"',
+        platform,
+      );
     }
     // A lone dollar sign is part of the unfiled$public folder names. cmd.exe (the shell of
     // child_process.exec on Windows) never expands it and takes single quotes literally:
     // double quotes there, single quotes for /bin/sh which expands $ inside double quotes
-    assert.strictEqual(quoteCommandValue("Report:unfiled$public/Pipeline", "win32"), '"Report:unfiled$public/Pipeline"');
-    assert.strictEqual(quoteCommandValue("Report:unfiled$public/Pipeline", "linux"), "'Report:unfiled$public/Pipeline'");
-    assert.strictEqual(quoteCommandValue("Report:unfiled$public/Pipeline", "darwin"), "'Report:unfiled$public/Pipeline'");
+    assert.strictEqual(
+      quoteCommandValue("Report:unfiled$public/Pipeline", "win32"),
+      '"Report:unfiled$public/Pipeline"',
+    );
+    assert.strictEqual(
+      quoteCommandValue("Report:unfiled$public/Pipeline", "linux"),
+      "'Report:unfiled$public/Pipeline'",
+    );
+    assert.strictEqual(
+      quoteCommandValue("Report:unfiled$public/Pipeline", "darwin"),
+      "'Report:unfiled$public/Pipeline'",
+    );
     // A dollar sign next to a single quote cannot be protected by /bin/sh: refused there only
-    assert.strictEqual(quoteCommandValue("Report:unfiled$public/Sam's", "win32"), "\"Report:unfiled$public/Sam's\"");
-    assert.throws(() => quoteCommandValue("Report:unfiled$public/Sam's", "linux"));
-    assert.strictEqual(isSafeCommandValue("Report:unfiled$public/Sam's", "linux"), false);
-    assert.strictEqual(isSafeCommandValue("Report:unfiled$public/Sam's", "win32"), true);
+    assert.strictEqual(
+      quoteCommandValue("Report:unfiled$public/Sam's", "win32"),
+      '"Report:unfiled$public/Sam\'s"',
+    );
+    assert.throws(() =>
+      quoteCommandValue("Report:unfiled$public/Sam's", "linux"),
+    );
+    assert.strictEqual(
+      isSafeCommandValue("Report:unfiled$public/Sam's", "linux"),
+      false,
+    );
+    assert.strictEqual(
+      isSafeCommandValue("Report:unfiled$public/Sam's", "win32"),
+      true,
+    );
     // The default platform is the one of the extension host
     assert.strictEqual(quoteCommandValue("a b"), '"a b"');
   });
@@ -122,41 +182,89 @@ suite("backpromotePanelUtils", () => {
   test("the comparison entries of a plan are grouped by item once", () => {
     const plan = loadPlan();
     const byItem = comparisonsByItem(plan);
-    assert.strictEqual(byItem, comparisonsByItem(plan), "the same map for the same plan");
+    assert.strictEqual(
+      byItem,
+      comparisonsByItem(plan),
+      "the same map for the same plan",
+    );
     assert.deepStrictEqual(
-      byItem.get("ApexClass:InvoiceCalculator")?.map((comparison) => comparison.file),
+      byItem
+        .get("ApexClass:InvoiceCalculator")
+        ?.map((comparison) => comparison.file),
       [INVOICE_CALCULATOR_FILE, `${INVOICE_CALCULATOR_FILE}-meta.xml`],
     );
     assert.strictEqual(byItem.get("Profile:Admin")?.length, 1);
-    assert.deepStrictEqual(differingComparisons(plan, "ApexClass:InvoiceCalculator").map((comparison) => comparison.file), [INVOICE_CALCULATOR_FILE]);
+    assert.deepStrictEqual(
+      differingComparisons(plan, "ApexClass:InvoiceCalculator").map(
+        (comparison) => comparison.file,
+      ),
+      [INVOICE_CALCULATOR_FILE],
+    );
     // A package-no-overwrite.xml item that differs takes a decision once ticked
-    assert.deepStrictEqual(differingComparisons(plan, "Profile:Admin").map((comparison) => comparison.file), ["force-app/main/default/profiles/Admin.profile-meta.xml"]);
+    assert.deepStrictEqual(
+      differingComparisons(plan, "Profile:Admin").map(
+        (comparison) => comparison.file,
+      ),
+      ["force-app/main/default/profiles/Admin.profile-meta.xml"],
+    );
     // Another plan object (a new answer of sfdx-hardis) gets its own map
     assert.notStrictEqual(comparisonsByItem(loadPlan()), byItem);
   });
 
   test("only sf hardis:work:backpromote commands without chaining are allowed", () => {
     assert.ok(isAllowedBackpromoteCommand("sf hardis:work:backpromote"));
-    assert.ok(isAllowedBackpromoteCommand("sf hardis:work:backpromote --auto --parent-branch integration"));
-    assert.strictEqual(isAllowedBackpromoteCommand("sf hardis:work:backpromote && rm -rf /"), false);
-    assert.strictEqual(isAllowedBackpromoteCommand("sf hardis:work:save"), false);
+    assert.ok(
+      isAllowedBackpromoteCommand(
+        "sf hardis:work:backpromote --auto --parent-branch integration",
+      ),
+    );
+    assert.strictEqual(
+      isAllowedBackpromoteCommand("sf hardis:work:backpromote && rm -rf /"),
+      false,
+    );
+    assert.strictEqual(
+      isAllowedBackpromoteCommand("sf hardis:work:save"),
+      false,
+    );
     assert.strictEqual(isAllowedBackpromoteCommand(42), false);
   });
 
   test("countConflictMarkerBlocks counts every marker line, so a half removed block still counts", () => {
     assert.strictEqual(countConflictMarkerBlocks("a\nb\n"), 0);
-    assert.strictEqual(countConflictMarkerBlocks("<<<<<<< sandbox\na\n=======\nb\n>>>>>>> integration\n"), 1);
-    assert.strictEqual(countConflictMarkerBlocks("a\n=======\nb\n>>>>>>> integration\n"), 1);
-    assert.strictEqual(countConflictMarkerBlocks("<<<<<<< a\n1\n||||||| base\n0\n=======\n2\n>>>>>>> b\n<<<<<<< a\n=======\n>>>>>>> b\n"), 2);
+    assert.strictEqual(
+      countConflictMarkerBlocks(
+        "<<<<<<< sandbox\na\n=======\nb\n>>>>>>> integration\n",
+      ),
+      1,
+    );
+    assert.strictEqual(
+      countConflictMarkerBlocks("a\n=======\nb\n>>>>>>> integration\n"),
+      1,
+    );
+    assert.strictEqual(
+      countConflictMarkerBlocks(
+        "<<<<<<< a\n1\n||||||| base\n0\n=======\n2\n>>>>>>> b\n<<<<<<< a\n=======\n>>>>>>> b\n",
+      ),
+      2,
+    );
   });
 
   test("hasGitProviderToken finds any of the provider token variables", () => {
     assert.strictEqual(hasGitProviderToken({}), false);
     assert.strictEqual(hasGitProviderToken({ GITHUB_TOKEN: "" }), false);
     assert.strictEqual(hasGitProviderToken({ GITHUB_TOKEN: "ghp_x" }), true);
-    assert.strictEqual(hasGitProviderToken({ CI_SFDX_HARDIS_GITLAB_TOKEN: "glpat" }), true);
-    assert.strictEqual(hasGitProviderToken({ SYSTEM_ACCESSTOKEN: "pat" }), true);
-    assert.strictEqual(hasGitProviderToken({ CI_SFDX_HARDIS_BITBUCKET_TOKEN: "bb" }), true);
+    assert.strictEqual(
+      hasGitProviderToken({ CI_SFDX_HARDIS_GITLAB_TOKEN: "glpat" }),
+      true,
+    );
+    assert.strictEqual(
+      hasGitProviderToken({ SYSTEM_ACCESSTOKEN: "pat" }),
+      true,
+    );
+    assert.strictEqual(
+      hasGitProviderToken({ CI_SFDX_HARDIS_BITBUCKET_TOKEN: "bb" }),
+      true,
+    );
   });
 
   test("normalizeBackpromotePlan reads the fixture and refuses the plan of another version", () => {
@@ -173,10 +281,22 @@ suite("backpromotePanelUtils", () => {
     // #409 is older than #412, the newest Pull Request backpromoted to dev1: counted as backpromoted
     assert.deepStrictEqual(
       plan.pullRequests.map((pr) => [pr.number, pr.beforeLastBackpromote]),
-      [[418, false], [417, false], [415, false], [412, false], [409, true]],
+      [
+        [418, false],
+        [417, false],
+        [415, false],
+        [412, false],
+        [409, true],
+      ],
     );
-    assert.strictEqual(normalizeBackpromotePlan({ planVersion: 2, status: "ready" }), null);
-    assert.strictEqual(normalizeBackpromotePlan({ version: 3, status: "weird" }), null);
+    assert.strictEqual(
+      normalizeBackpromotePlan({ planVersion: 2, status: "ready" }),
+      null,
+    );
+    assert.strictEqual(
+      normalizeBackpromotePlan({ version: 3, status: "weird" }),
+      null,
+    );
     // A partial plan never crashes the panel
     const partial = normalizeBackpromotePlan({ version: 3, status: "blocked" });
     assert.deepStrictEqual(partial?.items, []);
@@ -188,13 +308,30 @@ suite("backpromotePanelUtils", () => {
 
   test("extractPlanDocument reads the plan of a success and the plan attached to an error", () => {
     const raw = loadRawPlan();
-    assert.strictEqual(extractPlanDocument({ status: 0, result: raw })?.runId, "mock7f3a");
+    assert.strictEqual(
+      extractPlanDocument({ status: 0, result: raw })?.runId,
+      "mock7f3a",
+    );
     const refused = { ...raw, status: "conflictsRemaining" };
-    const fromError = extractPlanDocument({ status: 1, message: "markers left", data: refused });
+    const fromError = extractPlanDocument({
+      status: 1,
+      message: "markers left",
+      data: refused,
+    });
     assert.strictEqual(fromError?.status, "conflictsRemaining");
-    assert.strictEqual(extractPlanDocument({ status: 1, message: "boom" }), null);
-    assert.strictEqual(extractPlanDocument({ status: 1, data: { plan: raw } }), null);
-    const blocked = normalizeBackpromotePlan({ version: 3, status: "blocked", checks: [{ id: "gitProvider", ok: false, message: "no token" }] });
+    assert.strictEqual(
+      extractPlanDocument({ status: 1, message: "boom" }),
+      null,
+    );
+    assert.strictEqual(
+      extractPlanDocument({ status: 1, data: { plan: raw } }),
+      null,
+    );
+    const blocked = normalizeBackpromotePlan({
+      version: 3,
+      status: "blocked",
+      checks: [{ id: "gitProvider", ok: false, message: "no token" }],
+    });
     assert.strictEqual(isGitProviderMissing(blocked), true);
     assert.strictEqual(isGitProviderMissing(loadPlan()), false);
   });
@@ -206,7 +343,10 @@ suite("backpromotePanelUtils", () => {
     assert.deepStrictEqual(defaults.excludedItems, ["Profile:Admin"]);
     assert.deepStrictEqual(defaults.excludedDeletions, []);
     // The action already run in this sandbox is not offered
-    assert.deepStrictEqual(defaults.actions, ["load-sla-thresholds", "enable-sla-approval"]);
+    assert.deepStrictEqual(defaults.actions, [
+      "load-sla-thresholds",
+      "enable-sla-approval",
+    ]);
     assert.deepStrictEqual(defaults.diffDecisions, {
       "ApexClass:InvoiceCalculator": "git",
       "Layout:Case-Case Layout": "git",
@@ -220,11 +360,22 @@ suite("backpromotePanelUtils", () => {
       excludedItems: ["Flow:Quote_Approval", "Flow:Unknown"],
       excludedDeletions: ["ApexClass:LegacyDiscountHelper", "ApexClass:Nope"],
       actions: ["enable-sla-approval", "recalculate-quote-sharing", "evil"],
-      diffDecisions: { "ApexClass:InvoiceCalculator": "merge", "Flow:Quote_Approval": "org", "Layout:Case-Case Layout": "deploy", "Profile:Admin": "merge" },
+      diffDecisions: {
+        "ApexClass:InvoiceCalculator": "merge",
+        "Flow:Quote_Approval": "org",
+        "Layout:Case-Case Layout": "deploy",
+        "Profile:Admin": "merge",
+      },
     });
     assert.deepStrictEqual(normalized.excludedItems, ["Flow:Quote_Approval"]);
-    assert.deepStrictEqual(normalizeSelection(plan, { excludedItems: ["RemoteSiteSetting:Erp_Api"] }).excludedItems, ["RemoteSiteSetting:Erp_Api"]);
-    assert.deepStrictEqual(normalized.excludedDeletions, ["ApexClass:LegacyDiscountHelper"]);
+    assert.deepStrictEqual(
+      normalizeSelection(plan, { excludedItems: ["RemoteSiteSetting:Erp_Api"] })
+        .excludedItems,
+      ["RemoteSiteSetting:Erp_Api"],
+    );
+    assert.deepStrictEqual(normalized.excludedDeletions, [
+      "ApexClass:LegacyDiscountHelper",
+    ]);
     assert.deepStrictEqual(normalized.actions, ["enable-sla-approval"]);
     assert.deepStrictEqual(normalized.diffDecisions, {
       "ApexClass:InvoiceCalculator": "merge",
@@ -235,12 +386,20 @@ suite("backpromotePanelUtils", () => {
 
   test("computeItemState reads the worst state of the item files and the markers of a prepared merge", () => {
     const plan = loadPlan();
-    const invoice = computeItemState(plan, selection(plan), "ApexClass:InvoiceCalculator");
+    const invoice = computeItemState(
+      plan,
+      selection(plan),
+      "ApexClass:InvoiceCalculator",
+    );
     assert.strictEqual(invoice.status, "different");
     assert.strictEqual(invoice.differs, true);
     assert.strictEqual(invoice.decision, "git");
     assert.strictEqual(invoice.threeWay, true);
-    const layout = computeItemState(plan, selection(plan), "Layout:Case-Case Layout");
+    const layout = computeItemState(
+      plan,
+      selection(plan),
+      "Layout:Case-Case Layout",
+    );
     assert.strictEqual(layout.status, "pendingInOrg");
     assert.strictEqual(layout.pendingInOrg, true);
     const flow = computeItemState(plan, selection(plan), "Flow:Quote_Approval");
@@ -250,13 +409,29 @@ suite("backpromotePanelUtils", () => {
     const prepared = normalizeBackpromotePlan({
       ...loadRawPlan(),
       comparison: loadRawPlan().comparison.map((comparison: any) =>
-        comparison.file === INVOICE_CALCULATOR_FILE ? { ...comparison, decision: "merge", prepared: true, markersRemaining: 2 } : comparison,
+        comparison.file === INVOICE_CALCULATOR_FILE
+          ? {
+              ...comparison,
+              decision: "merge",
+              prepared: true,
+              markersRemaining: 2,
+            }
+          : comparison,
       ),
     })!;
-    const merged = computeItemState(prepared, selection(prepared), "ApexClass:InvoiceCalculator");
+    const merged = computeItemState(
+      prepared,
+      selection(prepared),
+      "ApexClass:InvoiceCalculator",
+    );
     assert.strictEqual(merged.decision, "merge");
     assert.strictEqual(merged.markersRemaining, 2);
-    const solved = computeItemState(prepared, selection(prepared), "ApexClass:InvoiceCalculator", { [INVOICE_CALCULATOR_FILE]: 0 });
+    const solved = computeItemState(
+      prepared,
+      selection(prepared),
+      "ApexClass:InvoiceCalculator",
+      { [INVOICE_CALCULATOR_FILE]: 0 },
+    );
     assert.strictEqual(solved.markersRemaining, 0);
   });
 
@@ -271,57 +446,148 @@ suite("backpromotePanelUtils", () => {
     assert.deepStrictEqual(summary.blockers, []);
     assert.strictEqual(summary.canRun, true);
 
-    const keptOrg = computeSelectionSummary(plan, selection(plan, { diffDecisions: { "ApexClass:InvoiceCalculator": "org", "Layout:Case-Case Layout": "git" } }));
+    const keptOrg = computeSelectionSummary(
+      plan,
+      selection(plan, {
+        diffDecisions: {
+          "ApexClass:InvoiceCalculator": "org",
+          "Layout:Case-Case Layout": "git",
+        },
+      }),
+    );
     assert.strictEqual(keptOrg.itemsToDeployCount, 5);
     // Ticking the Profile deploys it like any other item
-    assert.strictEqual(computeSelectionSummary(plan, selection(plan, { excludedItems: [] })).itemsToDeployCount, 7);
-    assert.strictEqual(computeSelectionSummary(plan, selection(plan, { excludedItems: ["Profile:Admin", "RemoteSiteSetting:Erp_Api"] })).itemsToDeployCount, 5);
+    assert.strictEqual(
+      computeSelectionSummary(plan, selection(plan, { excludedItems: [] }))
+        .itemsToDeployCount,
+      7,
+    );
+    assert.strictEqual(
+      computeSelectionSummary(
+        plan,
+        selection(plan, {
+          excludedItems: ["Profile:Admin", "RemoteSiteSetting:Erp_Api"],
+        }),
+      ).itemsToDeployCount,
+      5,
+    );
     assert.strictEqual(keptOrg.keptOrgCount, 1);
 
     // A merge decided but not prepared yet blocks the run, a prepared one blocks while markers remain
-    const merging = computeSelectionSummary(plan, selection(plan, { diffDecisions: { "ApexClass:InvoiceCalculator": "merge", "Layout:Case-Case Layout": "git" } }));
+    const merging = computeSelectionSummary(
+      plan,
+      selection(plan, {
+        diffDecisions: {
+          "ApexClass:InvoiceCalculator": "merge",
+          "Layout:Case-Case Layout": "git",
+        },
+      }),
+    );
     assert.deepStrictEqual(merging.blockers, ["conflictMarkers"]);
     assert.strictEqual(merging.mergedFilesCount, 1);
     const prepared = normalizeBackpromotePlan({
       ...loadRawPlan(),
       comparison: loadRawPlan().comparison.map((comparison: any) =>
-        comparison.file === INVOICE_CALCULATOR_FILE ? { ...comparison, decision: "merge", prepared: true, markersRemaining: 1 } : comparison,
+        comparison.file === INVOICE_CALCULATOR_FILE
+          ? {
+              ...comparison,
+              decision: "merge",
+              prepared: true,
+              markersRemaining: 1,
+            }
+          : comparison,
       ),
     })!;
     const stillMarked = computeSelectionSummary(prepared, selection(prepared));
     assert.deepStrictEqual(stillMarked.blockers, ["conflictMarkers"]);
-    assert.deepStrictEqual(stillMarked.markersLeft.map((file) => file.file), [INVOICE_CALCULATOR_FILE]);
-    const solved = computeSelectionSummary(prepared, selection(prepared), { [INVOICE_CALCULATOR_FILE]: 0 });
+    assert.deepStrictEqual(
+      stillMarked.markersLeft.map((file) => file.file),
+      [INVOICE_CALCULATOR_FILE],
+    );
+    const solved = computeSelectionSummary(prepared, selection(prepared), {
+      [INVOICE_CALCULATOR_FILE]: 0,
+    });
     assert.strictEqual(solved.canRun, true);
 
     // A prepared file switched back to Overwrite or Keep org version, or unticked, still holds
     // its markers in the checkout: sfdx-hardis would refuse the run, so the panel does too
     for (const overrides of [
-      { diffDecisions: { "ApexClass:InvoiceCalculator": "git" as const, "Layout:Case-Case Layout": "git" as const } },
-      { diffDecisions: { "ApexClass:InvoiceCalculator": "org" as const, "Layout:Case-Case Layout": "git" as const } },
+      {
+        diffDecisions: {
+          "ApexClass:InvoiceCalculator": "git" as const,
+          "Layout:Case-Case Layout": "git" as const,
+        },
+      },
+      {
+        diffDecisions: {
+          "ApexClass:InvoiceCalculator": "org" as const,
+          "Layout:Case-Case Layout": "git" as const,
+        },
+      },
       { excludedItems: ["ApexClass:InvoiceCalculator", "Profile:Admin"] },
     ]) {
-      const switched = computeSelectionSummary(prepared, selection(prepared, overrides));
-      assert.deepStrictEqual(switched.blockers, ["preparedMarkers"], JSON.stringify(overrides));
-      assert.deepStrictEqual(switched.markersLeft, [{ file: INVOICE_CALCULATOR_FILE, item: "ApexClass:InvoiceCalculator", markersRemaining: 1, merging: false }]);
+      const switched = computeSelectionSummary(
+        prepared,
+        selection(prepared, overrides),
+      );
+      assert.deepStrictEqual(
+        switched.blockers,
+        ["preparedMarkers"],
+        JSON.stringify(overrides),
+      );
+      assert.deepStrictEqual(switched.markersLeft, [
+        {
+          file: INVOICE_CALCULATOR_FILE,
+          item: "ApexClass:InvoiceCalculator",
+          markersRemaining: 1,
+          merging: false,
+        },
+      ]);
       assert.strictEqual(switched.mergedFilesCount, 0);
       assert.strictEqual(switched.canRun, false);
     }
-    const switchedSolved = computeSelectionSummary(prepared, selection(prepared, { diffDecisions: { "ApexClass:InvoiceCalculator": "git", "Layout:Case-Case Layout": "git" } }), { [INVOICE_CALCULATOR_FILE]: 0 });
+    const switchedSolved = computeSelectionSummary(
+      prepared,
+      selection(prepared, {
+        diffDecisions: {
+          "ApexClass:InvoiceCalculator": "git",
+          "Layout:Case-Case Layout": "git",
+        },
+      }),
+      { [INVOICE_CALCULATOR_FILE]: 0 },
+    );
     assert.deepStrictEqual(switchedSolved.blockers, []);
     assert.strictEqual(stillMarked.markersLeft[0].merging, true);
 
-    const empty = computeSelectionSummary(plan, selection(plan, {
-      excludedItems: plan.items.map((item) => item.key),
-      excludedDeletions: plan.deletions.map((deletion) => deletion.key),
-      actions: [],
-    }));
+    const empty = computeSelectionSummary(
+      plan,
+      selection(plan, {
+        excludedItems: plan.items.map((item) => item.key),
+        excludedDeletions: plan.deletions.map((deletion) => deletion.key),
+        actions: [],
+      }),
+    );
     assert.deepStrictEqual(empty.blockers, ["nothingToDo"]);
 
-    const noWindow = normalizeBackpromotePlan({ ...loadRawPlan(), window: null, items: [], comparison: [] })!;
-    assert.deepStrictEqual(computeSelectionSummary(noWindow, buildDefaultSelection(noWindow)).blockers, ["noWindow"]);
-    const blocked = normalizeBackpromotePlan({ ...loadRawPlan(), status: "blocked" })!;
-    assert.deepStrictEqual(computeSelectionSummary(blocked, buildDefaultSelection(blocked)).blockers, ["notReady"]);
+    const noWindow = normalizeBackpromotePlan({
+      ...loadRawPlan(),
+      window: null,
+      items: [],
+      comparison: [],
+    })!;
+    assert.deepStrictEqual(
+      computeSelectionSummary(noWindow, buildDefaultSelection(noWindow))
+        .blockers,
+      ["noWindow"],
+    );
+    const blocked = normalizeBackpromotePlan({
+      ...loadRawPlan(),
+      status: "blocked",
+    })!;
+    assert.deepStrictEqual(
+      computeSelectionSummary(blocked, buildDefaultSelection(blocked)).blockers,
+      ["notReady"],
+    );
   });
 
   test("the run command carries every decision as flags", () => {
@@ -332,26 +598,56 @@ suite("backpromotePanelUtils", () => {
         excludedItems: ["Flow:Quote_Approval", "Profile:Admin"],
         excludedDeletions: [],
         actions: ["load-sla-thresholds"],
-        diffDecisions: { "ApexClass:InvoiceCalculator": "merge", "Layout:Case-Case Layout": "org" },
+        diffDecisions: {
+          "ApexClass:InvoiceCalculator": "merge",
+          "Layout:Case-Case Layout": "org",
+        },
       }),
       TARGET,
       { action: "commit", message: "WIP lead routing" },
     );
     const tokens = tokenizeCommand(command);
-    assert.deepStrictEqual(tokens.slice(0, 3), ["sf", "hardis:work:backpromote", "--auto"]);
-    assert.ok(command.includes("--run-id mock7f3a --target-org sam.dubois@mycompany.com.dev1 --parent-branch integration --from-pull-request 415"), command);
+    assert.deepStrictEqual(tokens.slice(0, 3), [
+      "sf",
+      "hardis:work:backpromote",
+      "--auto",
+    ]);
+    assert.ok(
+      command.includes(
+        "--run-id mock7f3a --target-org sam.dubois@mycompany.com.dev1 --parent-branch integration --from-pull-request 415",
+      ),
+      command,
+    );
     // The Profile the sandbox has is left alone without a flag: sfdx-hardis does not deploy it by default
-    assert.ok(command.includes("--exclude-metadata Flow:Quote_Approval"), command);
+    assert.ok(
+      command.includes("--exclude-metadata Flow:Quote_Approval"),
+      command,
+    );
     assert.ok(!command.includes("Profile:Admin"), command);
     assert.ok(!command.includes("RemoteSiteSetting"), command);
-    assert.ok(command.includes(`--on-diff ${INVOICE_CALCULATOR_FILE}=merge`), command);
+    assert.ok(
+      command.includes(`--on-diff ${INVOICE_CALCULATOR_FILE}=merge`),
+      command,
+    );
     assert.ok(command.includes(`--on-diff "${CASE_LAYOUT_FILE}=org"`), command);
     assert.ok(command.includes("--actions load-sla-thresholds"), command);
-    assert.ok(command.includes('--dirty-tree commit --commit-message "WIP lead routing"'), command);
+    assert.ok(
+      command.includes(
+        '--dirty-tree commit --commit-message "WIP lead routing"',
+      ),
+      command,
+    );
     assert.ok(command.endsWith(" --json"), command);
     assert.ok(!command.includes("--skip-destructive"));
 
-    const skipping = buildBackpromoteCommand(plan, selection(plan, { excludedDeletions: ["ApexClass:LegacyDiscountHelper"], actions: [] }), TARGET);
+    const skipping = buildBackpromoteCommand(
+      plan,
+      selection(plan, {
+        excludedDeletions: ["ApexClass:LegacyDiscountHelper"],
+        actions: [],
+      }),
+      TARGET,
+    );
     assert.ok(skipping.includes("--skip-destructive"), skipping);
     assert.ok(skipping.includes("--skip-actions"), skipping);
     assert.ok(!skipping.includes("--on-diff"), skipping);
@@ -360,15 +656,32 @@ suite("backpromotePanelUtils", () => {
     // An unticked item carries no decision, whatever the choice taken before it was unticked
     const excludedMerge = buildBackpromoteCommand(
       plan,
-      selection(plan, { excludedItems: ["ApexClass:InvoiceCalculator", "Profile:Admin"], diffDecisions: { "ApexClass:InvoiceCalculator": "merge", "Layout:Case-Case Layout": "git" } }),
+      selection(plan, {
+        excludedItems: ["ApexClass:InvoiceCalculator", "Profile:Admin"],
+        diffDecisions: {
+          "ApexClass:InvoiceCalculator": "merge",
+          "Layout:Case-Case Layout": "git",
+        },
+      }),
       TARGET,
     );
-    assert.ok(excludedMerge.includes("--exclude-metadata ApexClass:InvoiceCalculator"), excludedMerge);
+    assert.ok(
+      excludedMerge.includes("--exclude-metadata ApexClass:InvoiceCalculator"),
+      excludedMerge,
+    );
     assert.ok(!excludedMerge.includes("--on-diff"), excludedMerge);
 
     // A commit of the working tree without a message: sfdx-hardis uses its default one
-    const commitNoMessage = buildBackpromoteCommand(plan, selection(plan), TARGET, { action: "commit", message: null });
-    assert.ok(commitNoMessage.endsWith("--dirty-tree commit --json"), commitNoMessage);
+    const commitNoMessage = buildBackpromoteCommand(
+      plan,
+      selection(plan),
+      TARGET,
+      { action: "commit", message: null },
+    );
+    assert.ok(
+      commitNoMessage.endsWith("--dirty-tree commit --json"),
+      commitNoMessage,
+    );
     assert.ok(!commitNoMessage.includes("--commit-message"), commitNoMessage);
   });
 
@@ -377,15 +690,32 @@ suite("backpromotePanelUtils", () => {
     const everyTime = normalizeBackpromotePlan({
       ...raw,
       actions: raw.actions.map((action: any) =>
-        action.id === "recalculate-quote-sharing" ? { ...action, runOnlyOnceByOrg: false } : action,
+        action.id === "recalculate-quote-sharing"
+          ? { ...action, runOnlyOnceByOrg: false }
+          : action,
       ),
     })!;
     const defaults = buildDefaultSelection(everyTime);
-    assert.deepStrictEqual(defaults.actions, ["load-sla-thresholds", "enable-sla-approval", "recalculate-quote-sharing"]);
-    assert.deepStrictEqual(normalizeSelection(everyTime, defaults).actions, defaults.actions);
+    assert.deepStrictEqual(defaults.actions, [
+      "load-sla-thresholds",
+      "enable-sla-approval",
+      "recalculate-quote-sharing",
+    ]);
+    assert.deepStrictEqual(
+      normalizeSelection(everyTime, defaults).actions,
+      defaults.actions,
+    );
     const command = buildBackpromoteCommand(everyTime, defaults, TARGET);
-    assert.ok(command.includes("--actions load-sla-thresholds,enable-sla-approval,recalculate-quote-sharing"), command);
-    assert.strictEqual(computeSelectionSummary(everyTime, defaults).actionsToRunCount, 3);
+    assert.ok(
+      command.includes(
+        "--actions load-sla-thresholds,enable-sla-approval,recalculate-quote-sharing",
+      ),
+      command,
+    );
+    assert.strictEqual(
+      computeSelectionSummary(everyTime, defaults).actionsToRunCount,
+      3,
+    );
   });
 
   test("the prepare command lists every differing file of an item", () => {
@@ -398,68 +728,177 @@ suite("backpromotePanelUtils", () => {
           : comparison,
       ),
     })!;
-    const prepare = buildPrepareCommand(twoFiles, TARGET, ["ApexClass:InvoiceCalculator"]);
-    assert.ok(prepare.includes(`--on-diff ${INVOICE_CALCULATOR_FILE}=merge --on-diff ${INVOICE_CALCULATOR_FILE}-meta.xml=merge`), prepare);
+    const prepare = buildPrepareCommand(twoFiles, TARGET, [
+      "ApexClass:InvoiceCalculator",
+    ]);
+    assert.ok(
+      prepare.includes(
+        `--on-diff ${INVOICE_CALCULATOR_FILE}=merge --on-diff ${INVOICE_CALCULATOR_FILE}-meta.xml=merge`,
+      ),
+      prepare,
+    );
     assert.strictEqual((prepare.match(/--on-diff/g) || []).length, 2);
     // The same two files in the run command once the merge is decided
-    const run = buildBackpromoteCommand(twoFiles, selection(twoFiles, { diffDecisions: { "ApexClass:InvoiceCalculator": "merge", "Layout:Case-Case Layout": "git" } }), TARGET);
+    const run = buildBackpromoteCommand(
+      twoFiles,
+      selection(twoFiles, {
+        diffDecisions: {
+          "ApexClass:InvoiceCalculator": "merge",
+          "Layout:Case-Case Layout": "git",
+        },
+      }),
+      TARGET,
+    );
     assert.strictEqual((run.match(/--on-diff/g) || []).length, 2);
-    assert.strictEqual(computeSelectionSummary(twoFiles, selection(twoFiles, { diffDecisions: { "ApexClass:InvoiceCalculator": "merge", "Layout:Case-Case Layout": "git" } })).mergedFilesCount, 2);
+    assert.strictEqual(
+      computeSelectionSummary(
+        twoFiles,
+        selection(twoFiles, {
+          diffDecisions: {
+            "ApexClass:InvoiceCalculator": "merge",
+            "Layout:Case-Case Layout": "git",
+          },
+        }),
+      ).mergedFilesCount,
+      2,
+    );
   });
 
   test("a no-overwrite item is in the sandbox unless every compared file is missing there", () => {
     const plan = loadPlan();
     assert.strictEqual(isNoOverwriteItemInSandbox(plan, "Profile:Admin"), true);
-    assert.strictEqual(isNoOverwriteItemInSandbox(plan, "RemoteSiteSetting:Erp_Api"), false);
+    assert.strictEqual(
+      isNoOverwriteItemInSandbox(plan, "RemoteSiteSetting:Erp_Api"),
+      false,
+    );
     // Not a no-overwrite item
-    assert.strictEqual(isNoOverwriteItemInSandbox(plan, "ApexClass:QuoteSharingRecalculator"), false);
+    assert.strictEqual(
+      isNoOverwriteItemInSandbox(plan, "ApexClass:QuoteSharingRecalculator"),
+      false,
+    );
     // No compared file: nothing proves it is absent, it counts as present
     const raw = loadRawPlan();
-    const uncompared = normalizeBackpromotePlan({ ...raw, comparison: raw.comparison.filter((comparison: any) => comparison.item !== "RemoteSiteSetting:Erp_Api") })!;
-    assert.strictEqual(isNoOverwriteItemInSandbox(uncompared, "RemoteSiteSetting:Erp_Api"), true);
+    const uncompared = normalizeBackpromotePlan({
+      ...raw,
+      comparison: raw.comparison.filter(
+        (comparison: any) => comparison.item !== "RemoteSiteSetting:Erp_Api",
+      ),
+    })!;
+    assert.strictEqual(
+      isNoOverwriteItemInSandbox(uncompared, "RemoteSiteSetting:Erp_Api"),
+      true,
+    );
     // Ticked, the Profile the sandbox has is named with --include-no-overwrite and takes decisions
     const plain = buildDefaultSelection(plan);
-    const ticked = { ...plain, excludedItems: [], diffDecisions: { ...plain.diffDecisions, "Profile:Admin": "merge" as const } };
+    const ticked = {
+      ...plain,
+      excludedItems: [],
+      diffDecisions: {
+        ...plain.diffDecisions,
+        "Profile:Admin": "merge" as const,
+      },
+    };
     const command = buildBackpromoteCommand(plan, ticked, TARGET);
-    assert.ok(command.includes("--include-no-overwrite Profile:Admin"), command);
-    assert.ok(command.includes("--on-diff force-app/main/default/profiles/Admin.profile-meta.xml=merge"), command);
+    assert.ok(
+      command.includes("--include-no-overwrite Profile:Admin"),
+      command,
+    );
+    assert.ok(
+      command.includes(
+        "--on-diff force-app/main/default/profiles/Admin.profile-meta.xml=merge",
+      ),
+      command,
+    );
     // Unticked, the remote site setting the sandbox lacks is excluded like any other item
-    const leftOut = buildBackpromoteCommand(plan, { ...plain, excludedItems: ["Profile:Admin", "RemoteSiteSetting:Erp_Api"] }, TARGET);
-    assert.ok(leftOut.includes("--exclude-metadata RemoteSiteSetting:Erp_Api"), leftOut);
+    const leftOut = buildBackpromoteCommand(
+      plan,
+      {
+        ...plain,
+        excludedItems: ["Profile:Admin", "RemoteSiteSetting:Erp_Api"],
+      },
+      TARGET,
+    );
+    assert.ok(
+      leftOut.includes("--exclude-metadata RemoteSiteSetting:Erp_Api"),
+      leftOut,
+    );
     assert.ok(!leftOut.includes("Profile:Admin"), leftOut);
     const prepare = buildPrepareCommand(plan, TARGET, ["Profile:Admin"]);
-    assert.ok(prepare.includes("--include-no-overwrite Profile:Admin"), prepare);
-    assert.strictEqual(computeItemState(plan, plain, "Profile:Admin").differs, true);
+    assert.ok(
+      prepare.includes("--include-no-overwrite Profile:Admin"),
+      prepare,
+    );
+    assert.strictEqual(
+      computeItemState(plan, plain, "Profile:Admin").differs,
+      true,
+    );
   });
 
   test("Merge all sets Merge on every ticked differing item and prepares only the ones not prepared yet", () => {
     const plan = loadPlan();
     const all = planMergeAll(plan, selection(plan));
     // The Profile differs but is unticked by default (package-no-overwrite.xml, in the sandbox): left alone
-    assert.deepStrictEqual(all.itemKeys, ["ApexClass:InvoiceCalculator", "Layout:Case-Case Layout"]);
+    assert.deepStrictEqual(all.itemKeys, [
+      "ApexClass:InvoiceCalculator",
+      "Layout:Case-Case Layout",
+    ]);
     assert.deepStrictEqual(all.toPrepare, all.itemKeys);
-    assert.deepStrictEqual(all.selection.diffDecisions, { "ApexClass:InvoiceCalculator": "merge", "Layout:Case-Case Layout": "merge", "Profile:Admin": "git" });
+    assert.deepStrictEqual(all.selection.diffDecisions, {
+      "ApexClass:InvoiceCalculator": "merge",
+      "Layout:Case-Case Layout": "merge",
+      "Profile:Admin": "git",
+    });
     // One prepare command for both items
     const prepare = buildPrepareCommand(plan, TARGET, all.toPrepare);
     assert.strictEqual((prepare.match(/--on-diff/g) || []).length, 2);
-    assert.ok(prepare.includes(`--on-diff ${INVOICE_CALCULATOR_FILE}=merge --on-diff "${CASE_LAYOUT_FILE}=merge"`), prepare);
+    assert.ok(
+      prepare.includes(
+        `--on-diff ${INVOICE_CALCULATOR_FILE}=merge --on-diff "${CASE_LAYOUT_FILE}=merge"`,
+      ),
+      prepare,
+    );
     // An unticked item is left alone
-    const unticked = planMergeAll(plan, selection(plan, { excludedItems: ["Layout:Case-Case Layout", "Profile:Admin"] }));
+    const unticked = planMergeAll(
+      plan,
+      selection(plan, {
+        excludedItems: ["Layout:Case-Case Layout", "Profile:Admin"],
+      }),
+    );
     assert.deepStrictEqual(unticked.itemKeys, ["ApexClass:InvoiceCalculator"]);
-    assert.strictEqual(unticked.selection.diffDecisions["Layout:Case-Case Layout"], "git");
+    assert.strictEqual(
+      unticked.selection.diffDecisions["Layout:Case-Case Layout"],
+      "git",
+    );
     // An item already prepared is merged without a new prepare
     const raw = loadRawPlan();
     const prepared = normalizeBackpromotePlan({
       ...raw,
       comparison: raw.comparison.map((comparison: any) =>
-        comparison.file === INVOICE_CALCULATOR_FILE ? { ...comparison, decision: "merge", prepared: true, markersRemaining: 1 } : comparison,
+        comparison.file === INVOICE_CALCULATOR_FILE
+          ? {
+              ...comparison,
+              decision: "merge",
+              prepared: true,
+              markersRemaining: 1,
+            }
+          : comparison,
       ),
     })!;
     const again = planMergeAll(prepared, selection(prepared));
-    assert.deepStrictEqual(again.itemKeys, ["ApexClass:InvoiceCalculator", "Layout:Case-Case Layout"]);
+    assert.deepStrictEqual(again.itemKeys, [
+      "ApexClass:InvoiceCalculator",
+      "Layout:Case-Case Layout",
+    ]);
     assert.deepStrictEqual(again.toPrepare, ["Layout:Case-Case Layout"]);
     // Nothing differs: nothing to merge
-    const same = normalizeBackpromotePlan({ ...raw, comparison: raw.comparison.filter((comparison: any) => comparison.status !== "different" && comparison.status !== "pendingInOrg") })!;
+    const same = normalizeBackpromotePlan({
+      ...raw,
+      comparison: raw.comparison.filter(
+        (comparison: any) =>
+          comparison.status !== "different" &&
+          comparison.status !== "pendingInOrg",
+      ),
+    })!;
     assert.deepStrictEqual(planMergeAll(same, selection(same)).itemKeys, []);
   });
 
@@ -473,20 +912,43 @@ suite("backpromotePanelUtils", () => {
       buildPlanCommand(TARGET, { scanLimit: 200 }),
       `sf hardis:work:backpromote --plan --run-id mock7f3a --target-org ${USERNAME} --parent-branch integration --from-pull-request 415 --scan-limit 200 --json`,
     );
-    const prepare = buildPrepareCommand(plan, TARGET, ["Layout:Case-Case Layout"], { action: "stash", message: null });
-    assert.ok(prepare.startsWith("sf hardis:work:backpromote --prepare --run-id mock7f3a"), prepare);
-    assert.ok(prepare.includes(`--on-diff "${CASE_LAYOUT_FILE}=merge" --dirty-tree stash --json`), prepare);
-    assert.throws(() => buildPrepareCommand(plan, TARGET, ["Flow:Quote_Approval"]));
+    const prepare = buildPrepareCommand(
+      plan,
+      TARGET,
+      ["Layout:Case-Case Layout"],
+      { action: "stash", message: null },
+    );
+    assert.ok(
+      prepare.startsWith(
+        "sf hardis:work:backpromote --prepare --run-id mock7f3a",
+      ),
+      prepare,
+    );
+    assert.ok(
+      prepare.includes(
+        `--on-diff "${CASE_LAYOUT_FILE}=merge" --dirty-tree stash --json`,
+      ),
+      prepare,
+    );
+    assert.throws(() =>
+      buildPrepareCommand(plan, TARGET, ["Flow:Quote_Approval"]),
+    );
     assert.strictEqual(
       buildConfirmActionCommand(TARGET, ["enable-sla-approval"]),
       `sf hardis:work:backpromote --confirm-action enable-sla-approval --run-id mock7f3a --target-org ${USERNAME} --parent-branch integration --from-pull-request 415 --json`,
     );
     // The scan the plan was made with: sfdx-hardis only records an action of a Pull Request within its scan
     assert.strictEqual(
-      buildConfirmActionCommand(TARGET, ["enable-sla-approval"], { scanLimit: 200 }),
+      buildConfirmActionCommand(TARGET, ["enable-sla-approval"], {
+        scanLimit: 200,
+      }),
       `sf hardis:work:backpromote --confirm-action enable-sla-approval --run-id mock7f3a --target-org ${USERNAME} --parent-branch integration --from-pull-request 415 --scan-limit 200 --json`,
     );
-    assert.ok(!buildConfirmActionCommand(TARGET, ["enable-sla-approval"], { scanLimit: 100 }).includes("--scan-limit"));
+    assert.ok(
+      !buildConfirmActionCommand(TARGET, ["enable-sla-approval"], {
+        scanLimit: 100,
+      }).includes("--scan-limit"),
+    );
     assert.strictEqual(
       buildResetCommand(TARGET),
       `sf hardis:work:backpromote --reset --auto --target-org ${USERNAME} --parent-branch integration --json`,
@@ -498,8 +960,24 @@ suite("backpromotePanelUtils", () => {
     const payload = buildSelectionPayload(plan, selection(plan), TARGET);
     assert.ok(payload.command);
     assert.strictEqual(payload.commandError, null);
-    const evil = normalizeBackpromotePlan({ ...loadRawPlan(), items: [{ key: 'Flow:a"b', type: "Flow", name: 'a"b', files: [], pullRequests: [] }], comparison: [] })!;
-    const broken = buildSelectionPayload(evil, { ...buildDefaultSelection(evil), excludedItems: ['Flow:a"b'] }, TARGET);
+    const evil = normalizeBackpromotePlan({
+      ...loadRawPlan(),
+      items: [
+        {
+          key: 'Flow:a"b',
+          type: "Flow",
+          name: 'a"b',
+          files: [],
+          pullRequests: [],
+        },
+      ],
+      comparison: [],
+    })!;
+    const broken = buildSelectionPayload(
+      evil,
+      { ...buildDefaultSelection(evil), excludedItems: ['Flow:a"b'] },
+      TARGET,
+    );
     assert.strictEqual(broken.command, null);
     assert.ok(broken.commandError);
     assert.ok(broken.summary.blockers.includes("invalidCommand"));
@@ -508,24 +986,75 @@ suite("backpromotePanelUtils", () => {
 
   test("buildOrgChoices disables the major orgs and the production orgs, default org first", () => {
     const majorOrgs = [
-      { branchName: "integration", targetUsername: "deploy@mycompany.com.integ", instanceUrl: "https://mycompany--integ.sandbox.my.salesforce.com" },
+      {
+        branchName: "integration",
+        targetUsername: "deploy@mycompany.com.integ",
+        instanceUrl: "https://mycompany--integ.sandbox.my.salesforce.com",
+      },
       { branchName: "uat", targetUsername: "deploy@mycompany.com.uat" },
     ];
     const choices = buildOrgChoices(
       [
-        { username: "sam@mycompany.com.dev1", alias: "dev1", orgType: "sandbox", isSandbox: true, isDefaultUsername: true },
-        { username: "alex@mycompany.com.dev2", orgType: "sandbox", isSandbox: true },
+        {
+          username: "sam@mycompany.com.dev1",
+          alias: "dev1",
+          orgType: "sandbox",
+          isSandbox: true,
+          isDefaultUsername: true,
+        },
+        {
+          username: "alex@mycompany.com.dev2",
+          orgType: "sandbox",
+          isSandbox: true,
+        },
         // Another user of the UAT sandbox: still the UAT org
-        { username: "sam@mycompany.com.uat", alias: "UAT-sam", orgType: "sandbox", isSandbox: true },
-        { username: "deploy@mycompany.com", alias: "PROD", orgType: "production", isSandbox: false },
-        { username: "test-x@example.com", alias: "scratch", orgType: "scratch", isScratch: true },
+        {
+          username: "sam@mycompany.com.uat",
+          alias: "UAT-sam",
+          orgType: "sandbox",
+          isSandbox: true,
+        },
+        {
+          username: "deploy@mycompany.com",
+          alias: "PROD",
+          orgType: "production",
+          isSandbox: false,
+        },
+        {
+          username: "test-x@example.com",
+          alias: "scratch",
+          orgType: "scratch",
+          isScratch: true,
+        },
         // A Developer Edition org is "other" for listAllOrgs: selectable
-        { username: "dev@example.com", alias: "devEd", orgType: "other", instanceUrl: "https://mycompany-dev-ed.develop.my.salesforce.com" },
-        { username: "old@mycompany.com.dead", orgType: "sandbox", isSandbox: true, status: "Expired" },
-        { username: "bad$(x)@mycompany.com.dev3", orgType: "sandbox", isSandbox: true },
+        {
+          username: "dev@example.com",
+          alias: "devEd",
+          orgType: "other",
+          instanceUrl: "https://mycompany-dev-ed.develop.my.salesforce.com",
+        },
+        {
+          username: "old@mycompany.com.dead",
+          orgType: "sandbox",
+          isSandbox: true,
+          status: "Expired",
+        },
+        {
+          username: "bad$(x)@mycompany.com.dev3",
+          orgType: "sandbox",
+          isSandbox: true,
+        },
         // Without the orgType of listAllOrgs, the same rule is applied on the flags and the URL
-        { username: "legacy@mycompany.com", isSandbox: false, instanceUrl: "https://mycompany.my.salesforce.com" },
-        { username: "legacy-dev@example.com", isSandbox: false, instanceUrl: "https://legacy-dev-ed.develop.my.salesforce.com" },
+        {
+          username: "legacy@mycompany.com",
+          isSandbox: false,
+          instanceUrl: "https://mycompany.my.salesforce.com",
+        },
+        {
+          username: "legacy-dev@example.com",
+          isSandbox: false,
+          instanceUrl: "https://legacy-dev-ed.develop.my.salesforce.com",
+        },
       ],
       majorOrgs,
     );
@@ -547,36 +1076,86 @@ suite("backpromotePanelUtils", () => {
   });
 
   test("listAllowedParentBranches keeps developmentBranch first, then availableTargetBranches, nothing else", () => {
-    assert.deepStrictEqual(listAllowedParentBranches({ developmentBranch: "integration", availableTargetBranches: ["preprod", "integration", "uat"] }), ["integration", "preprod", "uat"]);
-    assert.deepStrictEqual(listAllowedParentBranches({ developmentBranch: "integration" }), ["integration"]);
-    assert.deepStrictEqual(listAllowedParentBranches({ availableTargetBranches: ["uat", "a && b"] }), ["uat"]);
+    assert.deepStrictEqual(
+      listAllowedParentBranches({
+        developmentBranch: "integration",
+        availableTargetBranches: ["preprod", "integration", "uat"],
+      }),
+      ["integration", "preprod", "uat"],
+    );
+    assert.deepStrictEqual(
+      listAllowedParentBranches({ developmentBranch: "integration" }),
+      ["integration"],
+    );
+    assert.deepStrictEqual(
+      listAllowedParentBranches({ availableTargetBranches: ["uat", "a && b"] }),
+      ["uat"],
+    );
     assert.deepStrictEqual(listAllowedParentBranches({}), []);
   });
 
   test("the parent branch is taken without asking only when it cannot be another one", () => {
     const allowed = ["integration", "preprod"];
-    assert.strictEqual(defaultParentBranchFor("integration", allowed), "integration");
-    assert.strictEqual(defaultParentBranchFor("backpromote/preprod/dev1", allowed), "preprod");
+    assert.strictEqual(
+      defaultParentBranchFor("integration", allowed),
+      "integration",
+    );
+    assert.strictEqual(
+      defaultParentBranchFor("backpromote/preprod/dev1", allowed),
+      "preprod",
+    );
     // A User Story branch could come from any of them: the user chooses
-    assert.strictEqual(defaultParentBranchFor("feature/CRM-1042-account-hierarchy", allowed), null);
-    assert.strictEqual(defaultParentBranchFor("backpromote/uat/dev1", allowed), null);
+    assert.strictEqual(
+      defaultParentBranchFor("feature/CRM-1042-account-hierarchy", allowed),
+      null,
+    );
+    assert.strictEqual(
+      defaultParentBranchFor("backpromote/uat/dev1", allowed),
+      null,
+    );
     assert.strictEqual(defaultParentBranchFor("", allowed), null);
-    assert.strictEqual(defaultParentBranchFor("feature/x", ["integration"]), "integration");
+    assert.strictEqual(
+      defaultParentBranchFor("feature/x", ["integration"]),
+      "integration",
+    );
     assert.strictEqual(defaultParentBranchFor("feature/x", []), null);
   });
 
   test("a backpromote branch is recognized, with a parent branch holding slashes", () => {
-    assert.deepStrictEqual(parseBackpromoteBranchName("backpromote/integration/dev1"), { parentBranch: "integration", sandboxName: "dev1" });
-    assert.deepStrictEqual(parseBackpromoteBranchName("backpromote/release/2026.09/dev-sam"), { parentBranch: "release/2026.09", sandboxName: "dev-sam" });
+    assert.deepStrictEqual(
+      parseBackpromoteBranchName("backpromote/integration/dev1"),
+      { parentBranch: "integration", sandboxName: "dev1" },
+    );
+    assert.deepStrictEqual(
+      parseBackpromoteBranchName("backpromote/release/2026.09/dev-sam"),
+      { parentBranch: "release/2026.09", sandboxName: "dev-sam" },
+    );
     assert.strictEqual(parseBackpromoteBranchName("backpromote/dev1"), null);
-    assert.strictEqual(parseBackpromoteBranchName("feature/backpromote/x"), null);
+    assert.strictEqual(
+      parseBackpromoteBranchName("feature/backpromote/x"),
+      null,
+    );
     assert.strictEqual(isBackpromoteBranchName("backpromote/uat/dev2"), true);
-    assert.strictEqual(isBackpromoteBranchName("promotion/uat/preprod/2026-09-11-0859"), false);
+    assert.strictEqual(
+      isBackpromoteBranchName("promotion/uat/preprod/2026-09-11-0859"),
+      false,
+    );
   });
 
   test("recoverJsonCommandResult reads the JSON printed after a log line", () => {
-    const stdout = ["WS Client started", "{", '  "status": 0,', '  "result": { "version": 3, "status": "ok" }', "}"].join("\n");
-    const recovered = recoverJsonCommandResult({ status: 1, unableToParseJson: true, stdout, stderr: "" });
+    const stdout = [
+      "WS Client started",
+      "{",
+      '  "status": 0,',
+      '  "result": { "version": 3, "status": "ok" }',
+      "}",
+    ].join("\n");
+    const recovered = recoverJsonCommandResult({
+      status: 1,
+      unableToParseJson: true,
+      stdout,
+      stderr: "",
+    });
     assert.strictEqual(recovered.status, 0);
     assert.strictEqual(recovered.result.version, 3);
     assert.strictEqual(recovered.unableToParseJson, false);
@@ -585,22 +1164,83 @@ suite("backpromotePanelUtils", () => {
   });
 
   test("an old sfdx-hardis and a failed command are told apart", () => {
-    assert.strictEqual(isCliTooOldForBackpromotePanel({ status: 2, message: "Nonexistent flag: --parent-branch" }), true);
-    assert.strictEqual(isCliTooOldForBackpromotePanel({ status: 0, result: { planVersion: 2, status: "ready" } }), true);
-    assert.strictEqual(isCliTooOldForBackpromotePanel({ status: 0, result: loadRawPlan() }), false);
-    assert.strictEqual(isCliTooOldForBackpromotePanel({ status: 1, message: "Deployment failed" }), false);
-    assert.strictEqual(getBackpromoteErrorMessage({ status: 1, message: "[31mDeployment failed[0m" }), "Deployment failed");
-    assert.strictEqual(getBackpromoteErrorMessage({ status: 1, stdout: '{"status":1,"message":"No git provider token"}' }), "No git provider token");
-    assert.strictEqual(getBackpromoteErrorMessage({ status: 1, stderr: "line 1\nline 2" }), "line 1\nline 2");
+    assert.strictEqual(
+      isCliTooOldForBackpromotePanel({
+        status: 2,
+        message: "Nonexistent flag: --parent-branch",
+      }),
+      true,
+    );
+    assert.strictEqual(
+      isCliTooOldForBackpromotePanel({
+        status: 0,
+        result: { planVersion: 2, status: "ready" },
+      }),
+      true,
+    );
+    assert.strictEqual(
+      isCliTooOldForBackpromotePanel({ status: 0, result: loadRawPlan() }),
+      false,
+    );
+    assert.strictEqual(
+      isCliTooOldForBackpromotePanel({
+        status: 1,
+        message: "Deployment failed",
+      }),
+      false,
+    );
+    assert.strictEqual(
+      getBackpromoteErrorMessage({
+        status: 1,
+        message: "[31mDeployment failed[0m",
+      }),
+      "Deployment failed",
+    );
+    assert.strictEqual(
+      getBackpromoteErrorMessage({
+        status: 1,
+        stdout: '{"status":1,"message":"No git provider token"}',
+      }),
+      "No git provider token",
+    );
+    assert.strictEqual(
+      getBackpromoteErrorMessage({ status: 1, stderr: "line 1\nline 2" }),
+      "line 1\nline 2",
+    );
     assert.strictEqual(getBackpromoteErrorMessage(null), "");
   });
 
   test("getTargetOrgDisplayName prefers the sandbox name, then the short host of the status bar", () => {
     assert.strictEqual(getTargetOrgDisplayName(loadPlan().targetOrg), "dev1");
-    assert.strictEqual(getTargetOrgDisplayName({ instanceUrl: "https://mycompany--dev-sam.sandbox.my.salesforce.com", username: USERNAME }), "mycompany--dev-sam");
-    assert.strictEqual(getTargetOrgDisplayName({ instanceUrl: "https://mycompany-dev-ed.develop.my.salesforce.com", username: USERNAME }), "mycompany-dev-ed");
-    assert.strictEqual(getTargetOrgDisplayName({ instanceUrl: "https://test.salesforce.com", username: USERNAME }), USERNAME);
-    assert.strictEqual(getTargetOrgDisplayName({ instanceUrl: "", alias: "dev1", username: USERNAME }), "dev1");
+    assert.strictEqual(
+      getTargetOrgDisplayName({
+        instanceUrl: "https://mycompany--dev-sam.sandbox.my.salesforce.com",
+        username: USERNAME,
+      }),
+      "mycompany--dev-sam",
+    );
+    assert.strictEqual(
+      getTargetOrgDisplayName({
+        instanceUrl: "https://mycompany-dev-ed.develop.my.salesforce.com",
+        username: USERNAME,
+      }),
+      "mycompany-dev-ed",
+    );
+    assert.strictEqual(
+      getTargetOrgDisplayName({
+        instanceUrl: "https://test.salesforce.com",
+        username: USERNAME,
+      }),
+      USERNAME,
+    );
+    assert.strictEqual(
+      getTargetOrgDisplayName({
+        instanceUrl: "",
+        alias: "dev1",
+        username: USERNAME,
+      }),
+      "dev1",
+    );
     assert.strictEqual(getTargetOrgDisplayName(null), "");
   });
 
@@ -616,7 +1256,10 @@ suite("backpromotePanelUtils", () => {
     const progress = buildPlanProgress(events);
     assert.strictEqual(progress?.message, "Reading #417");
     assert.strictEqual(progress?.percent, 50);
-    assert.deepStrictEqual(progress?.doneSteps.map((step) => step.key), ["targetOrg"]);
+    assert.deepStrictEqual(
+      progress?.doneSteps.map((step) => step.key),
+      ["targetOrg"],
+    );
     assert.strictEqual(buildPlanProgress([]), null);
   });
 
@@ -624,7 +1267,10 @@ suite("backpromotePanelUtils", () => {
     const sources = [
       readModuleFile("backpromote", "backpromote.html"),
       readModuleFile("backpromote", "backpromote.js"),
-      fs.readFileSync(path.join(REPO_ROOT, "src", "commands", "showBackpromote.ts"), "utf8"),
+      fs.readFileSync(
+        path.join(REPO_ROOT, "src", "commands", "showBackpromote.ts"),
+        "utf8",
+      ),
     ].join("\n");
     const keys = new Set<string>();
     for (const [, key] of sources.matchAll(/i18n\.([A-Za-z0-9_]+)/g)) {

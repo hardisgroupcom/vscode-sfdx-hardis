@@ -271,11 +271,21 @@ suite("promotionBranchUtils", () => {
     assert.deepStrictEqual(flexible, [columns[columns.length - 1].key]);
     // With promotion labels, the promotion column comes last, and every column keeps a width:
     // the table scrolls rather than squeezing a column
-    view.modalPullRequests = [{ number: 1, promotionLabel: "Already deployed via promotion/uat/preprod" }];
+    view.modalPullRequests = [
+      {
+        number: 1,
+        promotionLabel: "Already deployed via promotion/uat/preprod",
+      },
+    ];
     const withPromotion = view.modalPrColumns;
-    assert.strictEqual(withPromotion[withPromotion.length - 1].key, "promotion");
+    assert.strictEqual(
+      withPromotion[withPromotion.length - 1].key,
+      "promotion",
+    );
     assert.deepStrictEqual(
-      withPromotion.filter((column: any) => !column.initialWidth).map((column: any) => column.key),
+      withPromotion
+        .filter((column: any) => !column.initialWidth)
+        .map((column: any) => column.key),
       [],
     );
     const author = columns.find((column: any) => column.key === "author");
