@@ -276,10 +276,10 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
               "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_delete_tracking_unified",
           },
           {
-            id: "hardis:work:backpromote",
+            id: "vscode-sfdx-hardis.showBackpromote",
             label: t("backpromoteUserStory"),
             tooltip: t("backpromoteUserStoryTooltip"),
-            command: "sf hardis:work:backpromote",
+            command: "vscode-sfdx-hardis.showBackpromote",
             requiresProject: true,
             helpUrl: DOCSITE_URL + "/hardis/work/backpromote/",
           },

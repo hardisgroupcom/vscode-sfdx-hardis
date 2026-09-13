@@ -382,6 +382,17 @@ async function seedNpmVersionCache(): Promise<void> {
  * Removes everything that must not appear in a documentation screenshot:
  * toast notifications (upgrade prompts, warnings) and the auxiliary side bar.
  */
+/** Scrolls the panel to its bottom (the result of a run), then captures the window */
+async function captureBottomOfPage(name: string): Promise<void> {
+  await sleep(3000);
+  await cleanChrome();
+  for (let step = 0; step < 6; step++) {
+    await click(1100, 500, { scroll: -30 });
+  }
+  await sleep(1500);
+  await captureStable(name);
+}
+
 async function cleanChrome(): Promise<void> {
   await vscode.commands.executeCommand("notifications.clearAll");
   await vscode.commands.executeCommand("workbench.action.closeAuxiliaryBar");
@@ -669,6 +680,262 @@ suite("Documentation screenshots", function () {
       await vscode.commands.executeCommand("workbench.action.zoomIn");
       await sleep(800);
       checkoutWorkspaceBranch("integration");
+    }
+  });
+
+  // The Backpromote panel, with the plan of test/fixtures/backpromote/backpromote-plan.json
+  // served by the mocked CLI: the plan and its default selection, the same plan once Merge all
+  // prepared every differing item (with the notification of the copied prompt), then the result
+  // of a run. The side bar, the activity bar and the status bar are hidden: the panel fills the
+  // window, so the images need no side crop. Feeds salesforce-ci-cd-backpromote.md and the README
+  // of the extension.
+  test("backpromote panel", async function () {
+    if (!shouldTake("backpromote")) {
+      this.skip();
+    }
+    const lwcId = "s-backpromote";
+    const planReady = (data: any) => data.loading === false && !!data.plan;
+    // The default org of the documentation workspace is the integration org, which a
+    // backpromote refuses: the developer sandbox is chosen the way the picker does
+    const openWithSandbox = async (): Promise<any> => {
+      panelManager.disposePanel(lwcId);
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+      await sleep(400);
+      await vscode.commands.executeCommand(
+        "vscode-sfdx-hardis.showBackpromote",
+      );
+      const opened = await waitFor(
+        () => panelManager.getPanel(lwcId),
+        20000,
+        "backpromote panel to open",
+      );
+      const setup = await waitFor(
+        () => opened.getInitializationData()?.setup,
+        30000,
+        "the backpromote setup",
+      );
+      const allowedOrgs = (setup.orgs || []).filter(
+        (org: any) => !org.disabledReason,
+      );
+      const sandbox =
+        allowedOrgs.find((org: any) => /\.dev\d*$/.test(org.username)) ||
+        allowedOrgs[0];
+      if (sandbox && !opened.getInitializationData()?.plan) {
+        opened.simulateWebviewMessage({
+          type: "changeTargetOrg",
+          data: {
+            targetOrg: sandbox.username,
+            parentBranch: setup.defaultParentBranch || "integration",
+          },
+        });
+      }
+      await waitFor(
+        () => {
+          const current = opened.getInitializationData();
+          return current && planReady(current) ? current : null;
+        },
+        40000,
+        "the backpromote plan",
+      );
+      opened.reveal();
+      return opened;
+    };
+    // The panel asks for a git provider token first: the mocked CLI never calls GitHub
+    const tokenBefore = process.env.GITHUB_TOKEN;
+    process.env.GITHUB_TOKEN = tokenBefore || "ghp_mock_token";
+    const workbench = vscode.workspace.getConfiguration("workbench");
+    // Workspace level: the settings of the documentation workspace pin the activity bar
+    const activityBarBefore = workbench.inspect(
+      "activityBar.location",
+    )?.workspaceValue;
+    const statusBarBefore =
+      workbench.inspect("statusBar.visible")?.workspaceValue;
+    try {
+      await workbench.update(
+        "activityBar.location",
+        "hidden",
+        vscode.ConfigurationTarget.Workspace,
+      );
+      await workbench.update(
+        "statusBar.visible",
+        false,
+        vscode.ConfigurationTarget.Workspace,
+      );
+    } catch (error: any) {
+      console.log(
+        `      [shot] backpromote: layout settings not written: ${error?.message}`,
+      );
+    }
+    const layout = vscode.workspace.getConfiguration("workbench");
+    console.log(
+      `      [shot] backpromote layout: activityBar=${layout.get("activityBar.location")} statusBar=${layout.get("statusBar.visible")}`,
+    );
+    await vscode.commands.executeCommand("workbench.action.closeSidebar");
+    await vscode.commands.executeCommand("workbench.action.closePanel");
+    await sleep(1200);
+    try {
+      // The plan while it is computed: the steps done, then the one in progress with its spinner
+      process.env.SF_MOCK_BACKPROMOTE_STEP_DELAY_MS = "3000";
+      const loading = openWithSandbox();
+      await sleep(10000);
+      await vscode.commands.executeCommand(
+        "workbench.action.closeAuxiliaryBar",
+      );
+      capture("backpromote-loading");
+      await loading;
+      delete process.env.SF_MOCK_BACKPROMOTE_STEP_DELAY_MS;
+      const panel = await openWithSandbox();
+      await sleep(3500);
+      await cleanChrome();
+      await captureStable("backpromote");
+      // Lower in the What block: the package-no-overwrite.xml item, the deletion, the actions
+      await click(1100, 650, { scroll: -6 });
+      await sleep(800);
+      await captureStable("backpromote-what");
+      await click(1100, 650, { scroll: 12 });
+      await sleep(800);
+      const initData = panel.getInitializationData();
+      // A slower mocked CLI keeps the preparing modal on screen long enough to capture it
+      // (its spinner never stops moving, so the capture is taken once)
+      process.env.SF_MOCK_BOOT_DELAY_MS = "10000";
+      panel.simulateWebviewMessage({
+        type: "mergeAll",
+        data: { selection: initData.selection, revision: 900 },
+      });
+      await sleep(3500);
+      capture("backpromote-preparing");
+      delete process.env.SF_MOCK_BOOT_DELAY_MS;
+      await waitFor(
+        () => {
+          const current = panel.getInitializationData();
+          return current?.plan?.comparison?.some((entry: any) => entry.prepared)
+            ? current
+            : null;
+        },
+        30000,
+        "Merge all to prepare the differing items",
+      );
+      // The notification of the copied prompt is part of this shot: only the
+      // auxiliary bar is closed
+      await sleep(3000);
+      await vscode.commands.executeCommand(
+        "workbench.action.closeAuxiliaryBar",
+      );
+      await captureStable("backpromote-merge-all");
+
+      // A fresh panel for the run: the prepared merges above would block it
+      await vscode.commands.executeCommand("notifications.clearAll");
+      const runPanel = await openWithSandbox();
+      const runData = runPanel.getInitializationData();
+      runPanel.simulateWebviewMessage({
+        type: "runBackpromote",
+        data: { selection: runData.selection, revision: 901, dirtyTree: null },
+      });
+      await waitFor(
+        () => runPanel.getInitializationData()?.runResult,
+        40000,
+        "the backpromote run to finish",
+      );
+      runPanel.reveal();
+      // The result sits under the Go block, at the bottom of the page
+      await captureBottomOfPage("backpromote-result");
+
+      // A run in progress (its modal), then a failed deployment with the components in error
+      process.env.SF_MOCK_BACKPROMOTE_CLI = "deployFailed";
+      const failPanel = await openWithSandbox();
+      process.env.SF_MOCK_BACKPROMOTE_STEP_DELAY_MS = "3000";
+      failPanel.simulateWebviewMessage({
+        type: "runBackpromote",
+        data: {
+          selection: failPanel.getInitializationData().selection,
+          revision: 902,
+          dirtyTree: null,
+        },
+      });
+      await sleep(5000);
+      await vscode.commands.executeCommand(
+        "workbench.action.closeAuxiliaryBar",
+      );
+      capture("backpromote-running");
+      await waitFor(
+        () => failPanel.getInitializationData()?.runError,
+        40000,
+        "the failed backpromote run",
+      );
+      delete process.env.SF_MOCK_BACKPROMOTE_STEP_DELAY_MS;
+      delete process.env.SF_MOCK_BACKPROMOTE_CLI;
+      await captureBottomOfPage("backpromote-deploy-failed");
+
+      // Opened again on the backpromote branch: the panel resumes the backpromote left above, with
+      // its selection and its deployment errors, and offers to start it again
+      const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+      const previousBranch = workspaceRoot
+        ? execFileSync("git", ["branch", "--show-current"], {
+            cwd: workspaceRoot,
+            encoding: "utf8",
+          }).trim()
+        : "";
+      if (workspaceRoot) {
+        execFileSync(
+          "git",
+          ["checkout", "-q", "-B", "backpromote/integration/dev1"],
+          { cwd: workspaceRoot, stdio: "pipe" },
+        );
+      }
+      try {
+        panelManager.disposePanel(lwcId);
+        await vscode.commands.executeCommand(
+          "workbench.action.closeAllEditors",
+        );
+        await sleep(400);
+        await vscode.commands.executeCommand(
+          "vscode-sfdx-hardis.showBackpromote",
+        );
+        const resumed = await waitFor(
+          () => panelManager.getPanel(lwcId),
+          20000,
+          "backpromote panel to open on the backpromote branch",
+        );
+        await waitFor(
+          () => {
+            const current = resumed.getInitializationData();
+            return current && planReady(current) ? current : null;
+          },
+          40000,
+          "the resumed backpromote plan",
+        );
+        resumed.reveal();
+        await sleep(3500);
+        await cleanChrome();
+        await captureStable("backpromote-resumed");
+      } finally {
+        if (previousBranch) {
+          checkoutWorkspaceBranch(previousBranch);
+        }
+      }
+    } finally {
+      delete process.env.SF_MOCK_BACKPROMOTE_STEP_DELAY_MS;
+      delete process.env.SF_MOCK_BACKPROMOTE_CLI;
+      await workbench.update(
+        "activityBar.location",
+        activityBarBefore,
+        vscode.ConfigurationTarget.Workspace,
+      );
+      await workbench.update(
+        "statusBar.visible",
+        statusBarBefore,
+        vscode.ConfigurationTarget.Workspace,
+      );
+      await vscode.commands.executeCommand(
+        "workbench.view.extension.sfdx-hardis-explorer",
+      );
+      await sleep(800);
+      panelManager.disposePanel(lwcId);
+      if (tokenBefore === undefined) {
+        delete process.env.GITHUB_TOKEN;
+      } else {
+        process.env.GITHUB_TOKEN = tokenBefore;
+      }
     }
   });
 
