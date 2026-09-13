@@ -123,7 +123,9 @@ export function isThrottlingError(error: unknown): boolean {
   if (status !== null && status >= 400 && status < 500) {
     return false;
   }
-  const code = String((error as any)?.code || (error as any)?.cause?.code || "");
+  const code = String(
+    (error as any)?.code || (error as any)?.cause?.code || "",
+  );
   return THROTTLING_CODES.has(code) || THROTTLING_MESSAGE.test(message);
 }
 

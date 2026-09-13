@@ -57,11 +57,7 @@ export const BACKPROMOTE_DIFF_CHOICES: BackpromoteDiffChoice[] = [
 ];
 
 export type BackpromoteComparisonStatus =
-  | "same"
-  | "different"
-  | "missingInOrg"
-  | "pendingInOrg"
-  | "notCompared";
+  "same" | "different" | "missingInOrg" | "pendingInOrg" | "notCompared";
 
 export interface BackpromoteLeftOutItem {
   key: string;
@@ -157,7 +153,12 @@ export interface BackpromoteRunResult {
   deployed: number;
   deleted: number;
   excluded: BackpromoteLeftOutItem[];
-  actions: { run: string[]; skipped: string[]; failed: string[]; pending: string[] };
+  actions: {
+    run: string[];
+    skipped: string[];
+    failed: string[];
+    pending: string[];
+  };
   conflictPending: string[];
   commentedPullRequests: number[];
   pushed: boolean;
@@ -291,8 +292,8 @@ function asStringArray(value: unknown): string[] {
 }
 
 function asNumberArray(value: unknown): number[] {
-  return asArray(value).filter(
-    (entry): entry is number => Number.isInteger(entry),
+  return asArray(value).filter((entry): entry is number =>
+    Number.isInteger(entry),
   );
 }
 
@@ -436,9 +437,12 @@ function normalizeLeftOut(value: unknown): BackpromoteLeftOutItem[] {
     .filter((entry: any) => entry && typeof entry.key === "string")
     .map((entry: any) => ({
       key: entry.key,
-      reason: ["excluded", "keptOrg", "conflictPending", "noOverwrite"].includes(
-        entry.reason,
-      )
+      reason: [
+        "excluded",
+        "keptOrg",
+        "conflictPending",
+        "noOverwrite",
+      ].includes(entry.reason)
         ? entry.reason
         : "excluded",
       ...(typeof entry.commit === "string" && entry.commit
@@ -725,7 +729,9 @@ const noOverwriteKeysByPlan = new WeakMap<BackpromotePlan, Set<string>>();
 function noOverwriteKeys(plan: BackpromotePlan): Set<string> {
   let keys = noOverwriteKeysByPlan.get(plan);
   if (!keys) {
-    keys = new Set(plan.items.filter((item) => item.noOverwrite).map((item) => item.key));
+    keys = new Set(
+      plan.items.filter((item) => item.noOverwrite).map((item) => item.key),
+    );
     noOverwriteKeysByPlan.set(plan, keys);
   }
   return keys;
@@ -1046,10 +1052,18 @@ export function computeSelectionSummary(
 export function planMergeAll(
   plan: BackpromotePlan,
   selection: BackpromoteSelection,
-): { itemKeys: string[]; toPrepare: string[]; selection: BackpromoteSelection } {
+): {
+  itemKeys: string[];
+  toPrepare: string[];
+  selection: BackpromoteSelection;
+} {
   const excluded = new Set(selection.excludedItems);
   const itemKeys = plan.items
-    .filter((item) => !excluded.has(item.key) && differingComparisons(plan, item.key).length > 0)
+    .filter(
+      (item) =>
+        !excluded.has(item.key) &&
+        differingComparisons(plan, item.key).length > 0,
+    )
     .map((item) => item.key);
   const diffDecisions = { ...selection.diffDecisions };
   for (const key of itemKeys) {
@@ -1085,7 +1099,9 @@ function dirtyTreeParts(choice?: BackpromoteDirtyTreeChoice | null): string[] {
   if (!choice) {
     return [];
   }
-  const parts = [`--dirty-tree ${choice.action === "commit" ? "commit" : "stash"}`];
+  const parts = [
+    `--dirty-tree ${choice.action === "commit" ? "commit" : "stash"}`,
+  ];
   if (choice.action === "commit" && choice.message) {
     parts.push(`--commit-message ${quoteCommandValue(choice.message)}`);
   }
@@ -1133,7 +1149,9 @@ export function buildPrepareCommand(
   for (const file of files) {
     parts.push(`--on-diff ${quoteCommandValue(`${file}=merge`)}`);
   }
-  for (const key of itemKeys.filter((itemKey) => isNoOverwriteItemInSandbox(plan, itemKey))) {
+  for (const key of itemKeys.filter((itemKey) =>
+    isNoOverwriteItemInSandbox(plan, itemKey),
+  )) {
     parts.push(`--include-no-overwrite ${quoteCommandValue(key)}`);
   }
   parts.push(...dirtyTreeParts(dirtyTree));
@@ -1181,7 +1199,9 @@ export function buildBackpromoteCommand(
       continue;
     }
     for (const comparison of differingComparisons(plan, key)) {
-      parts.push(`--on-diff ${quoteCommandValue(`${comparison.file}=${choice}`)}`);
+      parts.push(
+        `--on-diff ${quoteCommandValue(`${comparison.file}=${choice}`)}`,
+      );
     }
   }
   const runnableActions = plan.actions.filter((action) =>
@@ -1331,7 +1351,9 @@ function orgTypeOf(org: {
   if (org.isSandbox || url.includes(".sandbox")) {
     return "sandbox";
   }
-  return url.includes("dev-ed") || url.includes("test") ? "other" : "production";
+  return url.includes("dev-ed") || url.includes("test")
+    ? "other"
+    : "production";
 }
 
 /**
@@ -1593,7 +1615,9 @@ export interface BackpromotePlanProgress {
  * The events of a progress file, one JSON line each. A line sfdx-hardis is still
  * writing is skipped: the next read gets it.
  */
-export function parseProgressEvents(content: string): BackpromoteProgressEvent[] {
+export function parseProgressEvents(
+  content: string,
+): BackpromoteProgressEvent[] {
   const events: BackpromoteProgressEvent[] = [];
   for (const line of (content || "").split(/\r?\n/)) {
     if (!line.trim()) {
@@ -1640,13 +1664,19 @@ export function buildPlanProgress(
   }
   const percent =
     last.current !== null && last.total
-      ? Math.max(0, Math.min(100, Math.round((last.current / last.total) * 100)))
+      ? Math.max(
+          0,
+          Math.min(100, Math.round((last.current / last.total) * 100)),
+        )
       : null;
   return {
     message: last.message,
     percent,
     doneSteps: stepOrder
       .filter((step) => step !== last.step)
-      .map((step) => ({ key: step, message: lastMessageByStep.get(step) as string })),
+      .map((step) => ({
+        key: step,
+        message: lastMessageByStep.get(step) as string,
+      })),
   };
 }

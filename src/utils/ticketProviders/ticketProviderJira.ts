@@ -361,7 +361,9 @@ export class JiraProvider extends TicketProvider {
   }
 
   get batchSizes(): readonly number[] {
-    return this.isJiraCloud() ? PROVIDER_BATCH_PROFILES.jiraCloud : PROVIDER_BATCH_PROFILES.jiraServer;
+    return this.isJiraCloud()
+      ? PROVIDER_BATCH_PROFILES.jiraCloud
+      : PROVIDER_BATCH_PROFILES.jiraServer;
   }
 
   async completeTicketDetails(ticket: Ticket): Promise<Ticket> {

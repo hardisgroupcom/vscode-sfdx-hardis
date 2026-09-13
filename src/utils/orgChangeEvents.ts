@@ -9,7 +9,9 @@ type OrgChangeListener = () => void;
 
 const listeners = new Set<OrgChangeListener>();
 
-export function onOrgsChanged(listener: OrgChangeListener): { dispose: () => void } {
+export function onOrgsChanged(listener: OrgChangeListener): {
+  dispose: () => void;
+} {
   listeners.add(listener);
   return { dispose: () => listeners.delete(listener) };
 }

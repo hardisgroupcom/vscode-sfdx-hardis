@@ -42,13 +42,34 @@ suite("Adaptive batches of provider calls", () => {
   };
 
   test("has one ladder per provider", () => {
-    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.github], [80, 40, 20, 10, 5, 1]);
-    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.gitlab], [80, 40, 20, 10, 5, 1]);
-    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.azure], [50, 20, 10, 5, 1]);
-    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.bitbucket], [50, 20, 10, 5, 1]);
-    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.jiraCloud], [20, 10, 5, 1]);
-    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.jiraServer], [40, 20, 10, 5, 1]);
-    assert.deepStrictEqual([...PROVIDER_BATCH_PROFILES.serviceNow], [8, 4, 2, 1]);
+    assert.deepStrictEqual(
+      [...PROVIDER_BATCH_PROFILES.github],
+      [80, 40, 20, 10, 5, 1],
+    );
+    assert.deepStrictEqual(
+      [...PROVIDER_BATCH_PROFILES.gitlab],
+      [80, 40, 20, 10, 5, 1],
+    );
+    assert.deepStrictEqual(
+      [...PROVIDER_BATCH_PROFILES.azure],
+      [50, 20, 10, 5, 1],
+    );
+    assert.deepStrictEqual(
+      [...PROVIDER_BATCH_PROFILES.bitbucket],
+      [50, 20, 10, 5, 1],
+    );
+    assert.deepStrictEqual(
+      [...PROVIDER_BATCH_PROFILES.jiraCloud],
+      [20, 10, 5, 1],
+    );
+    assert.deepStrictEqual(
+      [...PROVIDER_BATCH_PROFILES.jiraServer],
+      [40, 20, 10, 5, 1],
+    );
+    assert.deepStrictEqual(
+      [...PROVIDER_BATCH_PROFILES.serviceNow],
+      [8, 4, 2, 1],
+    );
     assert.strictEqual(DEFAULT_CONCURRENCY, 80);
   });
 
@@ -90,7 +111,10 @@ suite("Adaptive batches of provider calls", () => {
       mapper,
       PROVIDER_BATCH_PROFILES.github,
     );
-    assert.deepStrictEqual(results, items.map((value) => value * 2));
+    assert.deepStrictEqual(
+      results,
+      items.map((value) => value * 2),
+    );
     assert.strictEqual(state.peak, 80);
   });
 
@@ -121,7 +145,10 @@ suite("Adaptive batches of provider calls", () => {
         onBackoff: (size, _error, waitMs) => backoffs.push([size, waitMs]),
       },
     );
-    assert.deepStrictEqual(results, items.map((value) => value * 2));
+    assert.deepStrictEqual(
+      results,
+      items.map((value) => value * 2),
+    );
     assert.deepStrictEqual(backoffs, [
       [40, 1000],
       [20, 1000],
