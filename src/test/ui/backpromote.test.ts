@@ -1265,6 +1265,21 @@ suite("Backpromote panel UI tests", function () {
     });
     try {
       await openPanel();
+      // The panel of the previous test may still answer while it is disposed: the data of the
+      // resumed panel is waited for
+      initData = await waitFor(
+        () => {
+          const opened = panelManager.getPanel(LWC_ID);
+          const data = opened?.getInitializationData();
+          if (data && data.loading === false && data.plan && data.resumedAt) {
+            panel = opened;
+            return data;
+          }
+          return null;
+        },
+        40000,
+        "the resumed plan",
+      );
       assert.strictEqual(initData.resumedAt, "2026-09-13T10:00:00.000Z");
       assert.strictEqual(initData.canStartAgain, true);
       assert.deepStrictEqual(initData.selection.excludedItems, [
