@@ -834,7 +834,7 @@ export default class Backpromote extends SharedMixin(LightningElement) {
           )
         : "",
       rowClass: "bp-item-row" + (isExcluded ? "" : " selected"),
-      checkClass: "hardis-check" + (isExcluded ? "" : " on"),
+      checkClass: "hardis-check bp-check" + (isExcluded ? "" : " on"),
       ariaChecked: isExcluded ? "false" : "true",
       checkDisabled: this.isReadOnly,
       stateLabel,
@@ -1044,7 +1044,7 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       typePillClass: getMetadataTypePillClass(deletion.type),
       name: deletion.name,
       rowClass: "bp-item-row" + (excluded.has(deletion.key) ? "" : " selected"),
-      checkClass: "hardis-check" + (excluded.has(deletion.key) ? "" : " on"),
+      checkClass: "hardis-check bp-check" + (excluded.has(deletion.key) ? "" : " on"),
       ariaChecked: excluded.has(deletion.key) ? "false" : "true",
     }));
   }
@@ -1119,7 +1119,7 @@ export default class Backpromote extends SharedMixin(LightningElement) {
           "bp-item-row bp-action-row" +
           (ticked ? " selected" : "") +
           (runnable ? "" : " bp-disabled"),
-        checkClass: "hardis-check" + (ticked ? " on" : ""),
+        checkClass: "hardis-check bp-check" + (ticked ? " on" : ""),
         ariaChecked: ticked ? "true" : "false",
         disabled: !runnable || this.isReadOnly,
         whenLabel: this.t(action.phase === "pre" ? "backpromoteActionBefore" : "backpromoteActionAfter"),

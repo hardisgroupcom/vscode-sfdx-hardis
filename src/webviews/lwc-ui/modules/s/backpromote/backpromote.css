@@ -170,13 +170,18 @@
   opacity: 0.55;
 }
 
-.bp-item-row .hardis-check {
+/* The checkbox of an item row is a button: no button background while unticked, so the ticked
+   state of the kit (.hardis-check.on) stays visible */
+.bp-check {
   cursor: pointer;
   padding: 0;
+}
+
+.bp-check:not(.on) {
   background: transparent;
 }
 
-.bp-item-row .hardis-check:disabled {
+.bp-check:disabled {
   cursor: default;
   opacity: 0.5;
 }

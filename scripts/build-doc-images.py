@@ -57,6 +57,10 @@ PANEL_SHOTS = {
     "command-runner.png": "command-runner-question",
     "installed-packages.png": "installed-packages",
     "pipeline-config.png": "pipeline-config",
+    "backpromote.png": "backpromote",
+    "backpromote-what.png": "backpromote-what",
+    "backpromote-merge-all.png": "backpromote-merge-all",
+    "backpromote-result.png": "backpromote-result",
 }
 
 # Width of the activity bar + side bar in a capture: the editor area (the
@@ -79,6 +83,10 @@ WEBVIEW_ONLY = {
     "command-runner.png",
     "installed-packages.png",
     "pipeline-config.png",
+    "backpromote.png",
+    "backpromote-what.png",
+    "backpromote-merge-all.png",
+    "backpromote-result.png",
 }
 
 # --- Crops of a single side bar row ----------------------------------------

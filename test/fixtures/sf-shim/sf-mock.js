@@ -705,6 +705,17 @@ function answerBackpromote() {
     .filter((value) => value.endsWith("=merge"))
     .map((value) => value.substring(0, value.length - "=merge".length))
     .filter((file) => !plan.comparison.some((comparison) => comparison.file === file && held.has(comparison.item)));
+  // The step lines of a run, worded like sfdx-hardis (the documentation screenshots show them)
+  const stepLabel = (step) =>
+    ({
+      checkout: "Checking out " + plan.backpromoteBranch.name,
+      preActions: "Running the pre-deployment actions",
+      deploy: "Deploying the metadata to " + plan.targetOrg.sandboxName,
+      destructive: "Deleting the removed metadata from " + plan.targetOrg.sandboxName,
+      postActions: "Running the post-deployment actions",
+      comments: "Updating the Backpromotes comments of the Pull Requests",
+      push: "Pushing " + plan.backpromoteBranch.name,
+    })[step] || step;
   if (args.includes("--prepare")) {
     progress("checkout", "Checking out " + plan.backpromoteBranch.name);
     progress("merges", "Writing " + mergedFiles.length + " merged file(s)");
@@ -767,7 +778,7 @@ function answerBackpromote() {
     }
     if (variant === "deployFailed") {
       for (const step of ["checkout", "preActions", "deploy"]) {
-        progress(step, "Mock step " + step);
+        progress(step, stepLabel(step));
       }
       plan.status = "deployFailed";
       plan.message =
@@ -786,7 +797,7 @@ function answerBackpromote() {
       return 1;
     }
     for (const step of ["checkout", "preActions", "deploy", "destructive", "postActions", "comments", "push"]) {
-      progress(step, "Mock step " + step);
+      progress(step, stepLabel(step));
     }
     plan.checkout.onBackpromoteBranch = true;
     plan.checkout.currentBranch = plan.backpromoteBranch.name;

@@ -33,6 +33,7 @@ Built and maintained by [**Cloudity**](https://cloudity.com/?ref=sfdxhardis) and
   - [Orgs Manager](#orgs-manager)
   - [DevOps Pipeline (CI/CD)](#devops-pipeline-cicd)
   - [User Story workflow](#user-story-workflow)
+  - [Backpromote (Beta)](#backpromote-beta)
   - [Metadata Retriever](#metadata-retriever)
   - [Data Workbench (SFDMU)](#data-workbench-sfdmu)
   - [Files Workbench](#files-workbench)
@@ -142,6 +143,18 @@ Designed for consultant profiles: **start a user story → work in the org → s
 - [Start a new user story](https://sfdx-hardis.cloudity.com/hardis/work/new/) - branches and configures everything for you.
 - [Pull from org](https://sfdx-hardis.cloudity.com/hardis/scratch/pull/) - retrieves only what you actually changed.
 - [Save / publish](https://sfdx-hardis.cloudity.com/hardis/work/save/) - cleans sources, commits, and opens the merge request.
+
+### Backpromote (Beta)
+
+Deploy into your developer sandbox what your teammates merged in the parent branch since your last backpromote. The panel lists the merged Pull Requests, the metadata, the deletions and the deployment actions, and compares each item with your sandbox. For an item that differs, choose Overwrite, Keep org version or Merge. Merge opens the VS Code merge editor, and Merge all copies one prompt for your coding agent. Each Pull Request records the backpromote in a comment, so the next one starts where this one ended.
+
+![Backpromote panel](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/backpromote.png)
+
+| Merge all                                                                                                                  | Result                                                                                                                 |
+|----------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
+| ![Backpromote Merge all](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/backpromote-merge-all.png) | ![Backpromote result](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/backpromote-result.png) |
+
+- [Backpromote to your dev sandbox](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-backpromote/) - how it works, from VS Code and from a terminal.
 
 ### Metadata Retriever
 

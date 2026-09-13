@@ -672,6 +672,129 @@ suite("Documentation screenshots", function () {
     }
   });
 
+  // The Backpromote panel, with the plan of test/fixtures/backpromote/backpromote-plan.json
+  // served by the mocked CLI: the plan and its default selection, the same plan once Merge all
+  // prepared every differing item (with the notification of the copied prompt), then the result
+  // of a run. One zoom level out, so that the Where, What and Go blocks fit in the capture.
+  // Feeds salesforce-ci-cd-backpromote.md and the README of the extension.
+  test("backpromote panel", async function () {
+    if (!shouldTake("backpromote")) {
+      this.skip();
+    }
+    const lwcId = "s-backpromote";
+    const planReady = (data: any) => data.loading === false && !!data.plan;
+    // The default org of the documentation workspace is the integration org, which a
+    // backpromote refuses: the developer sandbox is chosen the way the picker does
+    const openWithSandbox = async (): Promise<any> => {
+      panelManager.disposePanel(lwcId);
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+      await sleep(400);
+      await vscode.commands.executeCommand("vscode-sfdx-hardis.showBackpromote");
+      const opened = await waitFor(
+        () => panelManager.getPanel(lwcId),
+        20000,
+        "backpromote panel to open",
+      );
+      const setup = await waitFor(
+        () => opened.getInitializationData()?.setup,
+        30000,
+        "the backpromote setup",
+      );
+      const allowedOrgs = (setup.orgs || []).filter(
+        (org: any) => !org.disabledReason,
+      );
+      const sandbox =
+        allowedOrgs.find((org: any) => /\.dev\d*$/.test(org.username)) ||
+        allowedOrgs[0];
+      if (sandbox && !opened.getInitializationData()?.plan) {
+        opened.simulateWebviewMessage({
+          type: "changeTargetOrg",
+          data: {
+            targetOrg: sandbox.username,
+            parentBranch: setup.defaultParentBranch || "integration",
+          },
+        });
+      }
+      await waitFor(
+        () => {
+          const current = opened.getInitializationData();
+          return current && planReady(current) ? current : null;
+        },
+        40000,
+        "the backpromote plan",
+      );
+      opened.reveal();
+      return opened;
+    };
+    // The panel asks for a git provider token first: the mocked CLI never calls GitHub
+    const tokenBefore = process.env.GITHUB_TOKEN;
+    process.env.GITHUB_TOKEN = tokenBefore || "ghp_mock_token";
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await sleep(800);
+    try {
+      const panel = await openWithSandbox();
+      await sleep(3500);
+      await cleanChrome();
+      await captureStable("backpromote");
+      // Lower in the What block: the package-no-overwrite.xml item, the deletion, the actions
+      await click(1100, 650, { scroll: -6 });
+      await sleep(800);
+      await captureStable("backpromote-what");
+      await click(1100, 650, { scroll: 12 });
+      await sleep(800);
+      const initData = panel.getInitializationData();
+      panel.simulateWebviewMessage({
+        type: "mergeAll",
+        data: { selection: initData.selection, revision: 900 },
+      });
+      await waitFor(
+        () => {
+          const current = panel.getInitializationData();
+          return current?.plan?.comparison?.some((entry: any) => entry.prepared)
+            ? current
+            : null;
+        },
+        30000,
+        "Merge all to prepare the differing items",
+      );
+      // The notification of the copied prompt is part of this shot: only the
+      // auxiliary bar is closed
+      await sleep(3000);
+      await vscode.commands.executeCommand("workbench.action.closeAuxiliaryBar");
+      await captureStable("backpromote-merge-all");
+
+      // A fresh panel for the run: the prepared merges above would block it
+      await vscode.commands.executeCommand("notifications.clearAll");
+      const runPanel = await openWithSandbox();
+      const runData = runPanel.getInitializationData();
+      runPanel.simulateWebviewMessage({
+        type: "runBackpromote",
+        data: { selection: runData.selection, revision: 901, dirtyTree: null },
+      });
+      await waitFor(
+        () => runPanel.getInitializationData()?.runResult,
+        40000,
+        "the backpromote run to finish",
+      );
+      runPanel.reveal();
+      await sleep(3000);
+      await cleanChrome();
+      // The result sits under the Go block, at the bottom of the page
+      await click(1100, 650, { scroll: -40 });
+      await sleep(1000);
+      await captureStable("backpromote-result");
+    } finally {
+      await vscode.commands.executeCommand("workbench.action.zoomIn");
+      await sleep(800);
+      panelManager.disposePanel(lwcId);
+      if (tokenBefore === undefined) {
+        delete process.env.GITHUB_TOKEN;
+      } else {
+        process.env.GITHUB_TOKEN = tokenBefore;
+      }
+    }
+  });
+
   test("pipeline configuration", async function () {
     await shootPanel(panelManager, {
       name: "pipeline-config",
