@@ -1504,7 +1504,7 @@ export function listAllowedParentBranches(config: any): string[] {
 
 /**
  * The branch checked out in a repository, read from its HEAD file: no git process and no lock, so
- * it answers when a git command fails because another one holds the index. A worktree's `.git` file
+ * it answers when a git command fails because another one holds the index. The `.git` file of a worktree
  * points to its own git directory. Empty on a detached HEAD or when nothing can be read.
  */
 export function readCheckedOutBranch(
