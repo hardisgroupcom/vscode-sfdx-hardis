@@ -763,6 +763,16 @@ suite("Documentation screenshots", function () {
     await vscode.commands.executeCommand("workbench.action.closePanel");
     await sleep(1200);
     try {
+      // The plan while it is computed: the steps done, then the one in progress with its spinner
+      process.env.SF_MOCK_BACKPROMOTE_STEP_DELAY_MS = "3000";
+      const loading = openWithSandbox();
+      await sleep(10000);
+      await vscode.commands.executeCommand(
+        "workbench.action.closeAuxiliaryBar",
+      );
+      capture("backpromote-loading");
+      await loading;
+      delete process.env.SF_MOCK_BACKPROMOTE_STEP_DELAY_MS;
       const panel = await openWithSandbox();
       await sleep(3500);
       await cleanChrome();

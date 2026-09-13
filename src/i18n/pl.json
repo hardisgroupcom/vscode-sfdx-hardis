@@ -248,7 +248,7 @@
   "backpromoteOpenDeployReport": "Otwórz raport wdrożenia",
   "backpromoteOpenFileFailed": "Nie udało się otworzyć {{file}}: {{message}}",
   "backpromoteOpenPrompt": "Otwórz prompt",
-  "backpromoteOpenPullRequest": "Otwarcie Pull Request #{{number}}",
+  "backpromoteOpenPullRequest": "#{{number}} {{title}} (kliknięcie otwiera Pull Request)",
   "backpromoteOpenSandbox": "Otwórz sandbox",
   "backpromoteOpenSettings": "Otwórz ustawienia rozszerzenia",
   "backpromoteOrgIsProduction": "org produkcyjna",

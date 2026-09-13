@@ -168,12 +168,7 @@
           </div>
           <h3 class="hardis-empty-title">{i18n.backpromoteLoadingTitle}</h3>
           <template if:true={hasPlanProgress}>
-            <p class="hardis-empty-desc">{planProgressMessage}</p>
-            <template if:true={hasPlanProgressPercent}>
-              <div class="hardis-progress-track bp-progress-track">
-                <div class="hardis-progress-fill active" style={planProgressFillStyle}></div>
-              </div>
-            </template>
+            <!-- The steps done, then the step in progress last, with its spinner and its progress bar -->
             <ul class="bp-progress-steps">
               <template for:each={planProgressDoneSteps} for:item="step">
                 <li key={step.key} class="bp-progress-step">
@@ -181,6 +176,19 @@
                   <span>{step.message}</span>
                 </li>
               </template>
+              <li class="bp-progress-step bp-progress-current" aria-live="polite">
+                <span class="bp-step-spinner">
+                  <lightning-spinner alternative-text={i18n.loadingLabel} size="xx-small" variant="brand"></lightning-spinner>
+                </span>
+                <div class="bp-progress-current-body">
+                  <span>{planProgressMessage}</span>
+                  <template if:true={hasPlanProgressPercent}>
+                    <div class="hardis-progress-track bp-progress-track">
+                      <div class="hardis-progress-fill active" style={planProgressFillStyle}></div>
+                    </div>
+                  </template>
+                </div>
+              </li>
             </ul>
           </template>
           <template if:false={hasPlanProgress}>
@@ -236,7 +244,7 @@
                       </button>
                       <span class="hardis-row-label bp-item-name" title={row.key}>{row.name}</span>
                       <template for:each={row.pullRequests} for:item="pr">
-                        <button key={pr.key} type="button" class={pr.chipClass} data-url={pr.url} title={pr.chipTitle} disabled={pr.noUrl} onclick={handleOpenPullRequest}>{pr.label}</button>
+                        <button key={pr.key} type="button" class={pr.chipClass} data-url={pr.url} title={pr.chipTitle} onclick={handleOpenPullRequest}>{pr.label}</button>
                       </template>
                       <template if:true={row.noOverwrite}>
                         <span class="hardis-pill hardis-status-pending" title={row.noOverwriteTitle}><span class="hardis-pill-dot"></span>package-no-overwrite.xml</span>
@@ -304,7 +312,7 @@
                   <span class="hardis-row-label bp-item-name" title={row.id}>{row.label}</span>
                   <span class={row.typePillClass}><span class="hardis-pill-dot"></span>{row.typeLabel}</span>
                   <template if:true={row.pullRequestLabel}>
-                    <button type="button" class={row.chipClass} data-url={row.url} title={row.chipTitle} disabled={row.noUrl} onclick={handleOpenPullRequest}>{row.pullRequestLabel}</button>
+                    <button type="button" class={row.chipClass} data-url={row.url} title={row.chipTitle} onclick={handleOpenPullRequest}>{row.pullRequestLabel}</button>
                   </template>
                   <span class="bp-item-side">
                     <template if:true={row.stateLabel}>

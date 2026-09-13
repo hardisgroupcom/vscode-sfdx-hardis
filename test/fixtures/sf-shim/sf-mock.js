@@ -635,6 +635,11 @@ function answerBackpromote() {
     plan.runId = runId;
   }
   const progressFile = process.env.SFDX_HARDIS_PROGRESS_FILE;
+  // SF_MOCK_BACKPROMOTE_STEP_DELAY_MS: a pause after each step, so that the steps can be seen
+  const stepDelay = parseInt(
+    process.env.SF_MOCK_BACKPROMOTE_STEP_DELAY_MS || "0",
+    10,
+  );
   const progress = (step, message) => {
     if (progressFile) {
       fs.appendFileSync(
@@ -642,6 +647,9 @@ function answerBackpromote() {
         JSON.stringify({ time: new Date().toISOString(), step, message }) +
           "\n",
       );
+    }
+    if (stepDelay > 0) {
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, stepDelay);
     }
   };
   progress("targetOrg", "Reading the target sandbox");

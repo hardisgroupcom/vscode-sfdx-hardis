@@ -118,6 +118,29 @@ suite("Backpromote panel UI tests", function () {
     );
   }
 
+  /** Waits for the end of the run in progress, then returns the last --auto call of sfdx-hardis */
+  async function waitForRunCall(): Promise<any> {
+    await waitFor(
+      () => lastOfType(sent, "runFinished"),
+      40000,
+      "the run to finish",
+    );
+    return [...backpromoteCalls()]
+      .reverse()
+      .find((entry) => entry.args.includes("--auto"));
+  }
+
+  /** Confirms a manual action the way the Done in the sandbox button does, and waits for its release */
+  async function confirmActionAndWait(actionId: string): Promise<void> {
+    const sentBefore = sent.length;
+    panel.simulateWebviewMessage({ type: "confirmAction", data: { actionId } });
+    await waitFor(
+      () => sentAfter(sent, sentBefore, "confirmActionFinished"),
+      20000,
+      "the confirmation to be released",
+    );
+  }
+
   async function runAndWait(
     selection: any,
     revision: number,
@@ -220,14 +243,7 @@ suite("Backpromote panel UI tests", function () {
       started.data.command,
     );
     assert.ok(!started.data.command.includes("evil"));
-    await waitFor(
-      () => lastOfType(sent, "runFinished"),
-      40000,
-      "the run to finish",
-    );
-    const runCall = [...backpromoteCalls()]
-      .reverse()
-      .find((entry) => entry.args.includes("--auto"));
+    const runCall = await waitForRunCall();
     assert.ok(runCall, "sf hardis:work:backpromote --auto must be called");
     assert.ok(
       !runCall!.args.some((arg: string) => arg.includes("evil")),
@@ -671,16 +687,7 @@ suite("Backpromote panel UI tests", function () {
     // The fixture scan limit is 100: one page more
     assert.strictEqual(call.args[call.args.indexOf("--scan-limit") + 1], "200");
     // A manual action of a Pull Request found by the wider scan is confirmed with the same scan
-    const sentBefore = sent.length;
-    panel.simulateWebviewMessage({
-      type: "confirmAction",
-      data: { actionId: "enable-sla-approval" },
-    });
-    await waitFor(
-      () => sentAfter(sent, sentBefore, "confirmActionFinished"),
-      20000,
-      "the confirmation to be released",
-    );
+    await confirmActionAndWait("enable-sla-approval");
     const confirmCall = [...backpromoteCalls()]
       .reverse()
       .find((entry) => entry.args.includes("--confirm-action"));
@@ -712,16 +719,7 @@ suite("Backpromote panel UI tests", function () {
     }
     try {
       await openPanel();
-      const sentBefore = sent.length;
-      panel.simulateWebviewMessage({
-        type: "confirmAction",
-        data: { actionId: "enable-sla-approval" },
-      });
-      await waitFor(
-        () => sentAfter(sent, sentBefore, "confirmActionFinished"),
-        20000,
-        "the confirmation to be released",
-      );
+      await confirmActionAndWait("enable-sla-approval");
       assert.ok(
         errors.some((message) =>
           message.includes("Enable SLA approval in Setup"),
@@ -1001,14 +999,7 @@ suite("Backpromote panel UI tests", function () {
         ),
         started.data.command,
       );
-      await waitFor(
-        () => lastOfType(sent, "runFinished"),
-        40000,
-        "the run to finish",
-      );
-      const runCall = [...backpromoteCalls()]
-        .reverse()
-        .find((entry) => entry.args.includes("--auto"));
+      const runCall = await waitForRunCall();
       assert.strictEqual(
         runCall!.args[runCall!.args.indexOf("--dirty-tree") + 1],
         "commit",

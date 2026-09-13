@@ -195,6 +195,11 @@
   font-size: 0.7rem;
 }
 
+/* A Pull Request number without a known page: a tooltip, nothing to click */
+.bp-chip-static {
+  cursor: default;
+}
+
 .bp-item-side {
   margin-left: auto;
   display: flex;
@@ -281,7 +286,7 @@
 /* Progress of the plan computation */
 .bp-progress-track {
   width: min(24rem, 100%);
-  margin: 0.5rem auto 0;
+  margin: 0.35rem 0 0;
 }
 
 .bp-progress-steps {
@@ -300,6 +305,27 @@
   align-items: center;
   gap: 0.4rem;
   opacity: 0.75;
+}
+
+/* The step in progress: full opacity, a small spinner in place of the check */
+.bp-progress-current {
+  align-items: flex-start;
+  opacity: 1;
+  font-weight: 600;
+}
+
+.bp-step-spinner {
+  position: relative;
+  display: inline-block;
+  width: 0.875rem;
+  height: 1.2rem;
+  flex-shrink: 0;
+}
+
+.bp-progress-current-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 /* Dirty working tree modal */

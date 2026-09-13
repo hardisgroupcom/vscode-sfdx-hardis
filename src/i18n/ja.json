@@ -248,7 +248,7 @@
   "backpromoteOpenDeployReport": "デプロイレポートを開く",
   "backpromoteOpenFileFailed": "{{file}} を開けませんでした: {{message}}",
   "backpromoteOpenPrompt": "プロンプトを開く",
-  "backpromoteOpenPullRequest": "Pull Request #{{number}} を開く",
+  "backpromoteOpenPullRequest": "#{{number}} {{title}} (クリックすると Pull Request を開きます)",
   "backpromoteOpenSandbox": "sandbox を開く",
   "backpromoteOpenSettings": "拡張機能の設定を開く",
   "backpromoteOrgIsProduction": "本番環境",

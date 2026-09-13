@@ -60,8 +60,9 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   comparisonsByItem = new Map();
   // Keys of the package-no-overwrite.xml items of the plan
   noOverwriteKeys = new Set();
-  // Web page of each Pull Request number of the plan, for the number chips
+  // Web page and title of each Pull Request number of the plan, for the number chips
   pullRequestUrls = new Map();
+  pullRequestTitles = new Map();
   selection = null;
   summary = null;
   command = null;
@@ -125,6 +126,7 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       this.comparisonsByItem = new Map();
       this.noOverwriteKeys = new Set();
       this.pullRequestUrls = new Map();
+      this.pullRequestTitles = new Map();
       this.summary = null;
       this.command = null;
     }
@@ -135,6 +137,11 @@ export default class Backpromote extends SharedMixin(LightningElement) {
         (payload.plan.pullRequests || [])
           .filter((pr) => pr.number > 0 && pr.webUrl)
           .map((pr) => [pr.number, pr.webUrl]),
+      );
+      this.pullRequestTitles = new Map(
+        (payload.plan.pullRequests || [])
+          .filter((pr) => pr.number > 0 && pr.title)
+          .map((pr) => [pr.number, pr.title]),
       );
       this.noOverwriteKeys = new Set(
         payload.plan.items
@@ -656,14 +663,18 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     });
   }
 
-  // A Pull Request number chip opens the Pull Request page when the plan knows it
+  // A Pull Request number chip shows the Pull Request title as its tooltip, and opens the Pull
+  // Request page when the plan knows it. Two map lookups per chip: no cost on large plans.
   pullRequestChip(number) {
     const url = this.pullRequestUrls.get(number) || null;
+    const title = this.pullRequestTitles.get(number) || "";
     return {
       url,
-      chipClass: "hardis-chip bp-chip" + (url ? " hardis-chip-link" : ""),
-      chipTitle: url ? this.t("backpromoteOpenPullRequest", { number }) : "",
-      noUrl: !url,
+      chipClass:
+        "hardis-chip bp-chip" + (url ? " hardis-chip-link" : " bp-chip-static"),
+      chipTitle: url
+        ? this.t("backpromoteOpenPullRequest", { number, title })
+        : title,
     };
   }
 
