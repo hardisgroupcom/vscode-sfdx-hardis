@@ -820,9 +820,9 @@ function answerBackpromote() {
       }
       plan.status = "deployFailed";
       plan.message =
-        "The deployment failed on 1 component(s): ApexClass:InvoiceCalculator. Fix them in " +
-        plan.parentBranch +
-        " with a Pull Request so that they deploy, or untick them to leave them out of this backpromote.";
+        "The deployment failed on 1 component(s): ApexClass:InvoiceCalculator. Fix them on the backpromote branch " +
+        plan.backpromoteBranch.name +
+        " and run the backpromote again, or untick them to leave them out of this backpromote.";
       plan.result = {
         deployed: 0,
         deleted: 0,
@@ -848,7 +848,7 @@ function answerBackpromote() {
             tip: {
               label: "Apex compilation error",
               message:
-                "The class **InvoiceCalculator** does not compile in the sandbox. You can:\n- Fix the syntax error in integration with a Pull Request\n- Untick **InvoiceCalculator** to leave it out of this backpromote",
+                "The class **InvoiceCalculator** does not compile in the sandbox. You can:\n- Fix the syntax error on the backpromote branch and run the backpromote again\n- Untick **InvoiceCalculator** to leave it out of this backpromote",
               docUrl:
                 "https://sfdx-hardis.cloudity.com/salesforce-deployment-assistant-home/",
             },
@@ -867,8 +867,8 @@ function answerBackpromote() {
       });
       fs.writeFileSync(
         plan.result.deployErrorsPromptFile,
-        "Find why the sandbox refused ApexClass InvoiceCalculator (Unexpected token '}'.) and fix it in " +
-          plan.parentBranch +
+        "Find why the sandbox refused ApexClass InvoiceCalculator (Unexpected token '}'.) and fix it on the backpromote branch " +
+          plan.backpromoteBranch.name +
           ".\n",
         "utf8",
       );
