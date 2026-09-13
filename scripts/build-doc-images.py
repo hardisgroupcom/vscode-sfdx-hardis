@@ -57,6 +57,14 @@ PANEL_SHOTS = {
     "command-runner.png": "command-runner-question",
     "installed-packages.png": "installed-packages",
     "pipeline-config.png": "pipeline-config",
+    "backpromote.png": "backpromote",
+    "backpromote-what.png": "backpromote-what",
+    "backpromote-merge-all.png": "backpromote-merge-all",
+    "backpromote-result.png": "backpromote-result",
+    "backpromote-loading.png": "backpromote-loading",
+    "backpromote-running.png": "backpromote-running",
+    "backpromote-deploy-failed.png": "backpromote-deploy-failed",
+    "backpromote-resumed.png": "backpromote-resumed",
 }
 
 # Width of the activity bar + side bar in a capture: the editor area (the

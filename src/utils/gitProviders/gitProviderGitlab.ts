@@ -16,7 +16,7 @@ import { mapGitLabMergeStatus } from "./mergeStatus";
 import { SecretsManager } from "../secretsManager";
 import { CacheManager } from "../cache-manager";
 import { Logger } from "../../logger";
-import { DEFAULT_CONCURRENCY, mapWithConcurrency } from "../concurrency";
+import { PROVIDER_BATCH_PROFILES, mapWithConcurrency } from "../concurrency";
 import { t } from "../../i18n/i18n";
 import {
   promptForToken,
@@ -606,7 +606,7 @@ export class GitProviderGitlab extends GitProvider {
           return [];
         }
       },
-      DEFAULT_CONCURRENCY,
+      PROVIDER_BATCH_PROFILES.gitlab,
     );
     const allMergedMRs: Array<
       | MergeRequestSchemaWithBasicLabels
@@ -751,7 +751,7 @@ export class GitProviderGitlab extends GitProvider {
         }
         return pr;
       },
-      DEFAULT_CONCURRENCY,
+      PROVIDER_BATCH_PROFILES.gitlab,
     );
     return converted;
   }

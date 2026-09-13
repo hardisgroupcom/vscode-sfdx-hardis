@@ -168,6 +168,10 @@ export class ThemeUtils {
         vscode: "cloud-download",
         hardis: "pull.svg",
       },
+      "vscode-sfdx-hardis.showBackpromote": {
+        vscode: "git-merge",
+        hardis: "merge.svg",
+      },
       "hardis:work:save": { vscode: "save", hardis: "save.svg" },
       "hardis:work:resetselection": { vscode: "history", hardis: "reset.svg" },
       "vscode-sfdx-hardis.showPipeline": {
