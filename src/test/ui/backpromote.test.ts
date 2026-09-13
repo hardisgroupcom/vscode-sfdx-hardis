@@ -134,11 +134,13 @@ suite("Backpromote panel UI tests", function () {
     assert.strictEqual(initData.plan.pullRequests.length, 5);
     assert.strictEqual(initData.plan.window.startPullRequest, 415);
     assert.strictEqual(initData.targetOrgLabel, "dev1");
-    assert.strictEqual(initData.summary.itemsToDeployCount, 5);
+    // 7 items, the Profile of package-no-overwrite.xml already in the sandbox is unticked
+    assert.strictEqual(initData.summary.itemsToDeployCount, 6);
     assert.strictEqual(initData.summary.deletionsToDeleteCount, 1);
     assert.strictEqual(initData.summary.actionsToRunCount, 2);
     assert.strictEqual(initData.summary.canRun, true);
     assert.deepStrictEqual(initData.selection.excludedItems, ["Profile:Admin"]);
+    assert.ok(!initData.command.includes("Profile:Admin"), initData.command);
     assert.ok(initData.command.startsWith("sf hardis:work:backpromote --auto --run-id mock7f3a"), initData.command);
     const planCall = backpromoteCalls().find((entry) => entry.args.includes("--plan"));
     assert.ok(planCall, "sf hardis:work:backpromote --plan must be called");
@@ -169,7 +171,7 @@ suite("Backpromote panel UI tests", function () {
     assert.ok(!runCall!.args.some((arg: string) => arg.includes("evil")), JSON.stringify(runCall!.args));
     const data = panel.getInitializationData();
     assert.strictEqual(data.runError, null);
-    assert.strictEqual(data.runResult.result.deployed, 5);
+    assert.strictEqual(data.runResult.result.deployed, 6);
     assert.ok(data.runLog.length > 0, "the progress lines of the run are shown");
   });
 
@@ -194,7 +196,7 @@ suite("Backpromote panel UI tests", function () {
   test("the extension summarizes every selection change", async function () {
     const selection = {
       ...initData.selection,
-      excludedItems: ["Flow:Quote_Approval"],
+      excludedItems: ["Flow:Quote_Approval", "Profile:Admin"],
       diffDecisions: { ...initData.selection.diffDecisions, "Layout:Case-Case Layout": "org" },
     };
     panel.simulateWebviewMessage({
@@ -206,11 +208,11 @@ suite("Backpromote panel UI tests", function () {
       5000,
       "the summary of the new selection",
     );
-    // Flow left out, Profile still held back by no-overwrite, the layout kept as org version
-    assert.strictEqual(message.data.summary.itemsToDeployCount, 3);
+    // Flow left out, Profile of package-no-overwrite.xml already in the sandbox, the layout kept as org version
+    assert.strictEqual(message.data.summary.itemsToDeployCount, 4);
     assert.strictEqual(message.data.summary.keptOrgCount, 1);
     assert.match(message.data.command, /--exclude-metadata Flow:Quote_Approval/);
-    assert.match(message.data.command, /--exclude-metadata Profile:Admin/);
+    assert.ok(!message.data.command.includes("Profile:Admin"), message.data.command);
     assert.ok(message.data.command.includes(`--on-diff "${CASE_LAYOUT_FILE}=org"`), message.data.command);
   });
 
@@ -321,8 +323,8 @@ suite("Backpromote panel UI tests", function () {
     const data = panel.getInitializationData();
     assert.strictEqual(data.running, false);
     assert.strictEqual(data.runError, null);
-    // 6 items, minus the Flow left out earlier and the Profile held back by no-overwrite
-    assert.strictEqual(data.runResult.result.deployed, 4);
+    // 7 items, minus the Flow left out earlier and the Profile of package-no-overwrite.xml already in the sandbox
+    assert.strictEqual(data.runResult.result.deployed, 5);
     assert.strictEqual(data.runResult.result.pushed, true);
     assert.deepStrictEqual(data.runResult.result.commentedPullRequests, [415, 417, 418]);
     assert.deepStrictEqual(data.runResult.result.actions.pending, ["enable-sla-approval"]);
@@ -633,6 +635,79 @@ suite("Backpromote panel UI tests", function () {
       assert.ok(data.plan.checkout.stashMessage, "the stash message is known for Back to my branch");
     } finally {
       delete process.env.SF_MOCK_BACKPROMOTE_CLI;
+    }
+  });
+
+  test("a no-overwrite item the sandbox has is unticked by default and deployed once ticked", async function () {
+    await openPanel();
+    // Ticked, the Profile already in the sandbox is deployed with --include-no-overwrite
+    const ticked = await runAndWait({ ...initData.selection, excludedItems: [] }, 1);
+    assert.strictEqual(ticked.runError, null);
+    assert.strictEqual(ticked.runResult.result.deployed, 7);
+    assert.deepStrictEqual(ticked.runResult.result.excluded, []);
+    const tickedCall = [...backpromoteCalls()].reverse().find((entry) => entry.args.includes("--auto"));
+    assert.ok(tickedCall!.args.includes("--include-no-overwrite") && tickedCall!.args.includes("Profile:Admin"), JSON.stringify(tickedCall!.args));
+    // Unticking the remote site setting, absent from the sandbox, leaves it out like any item
+    const leftOut = await runAndWait({ ...initData.selection, excludedItems: ["Profile:Admin", "RemoteSiteSetting:Erp_Api"] }, 2);
+    assert.strictEqual(leftOut.runResult.result.deployed, 5);
+    assert.deepStrictEqual(leftOut.runResult.result.excluded, [{ key: "RemoteSiteSetting:Erp_Api", reason: "excluded" }]);
+    const runCall = [...backpromoteCalls()].reverse().find((entry) => entry.args.includes("--auto"));
+    assert.ok(!runCall!.args.includes("Profile:Admin"), JSON.stringify(runCall!.args));
+  });
+
+  test("Merge all prepares every ticked differing item in one sfdx-hardis call and copies the prompt", async function () {
+    await openPanel();
+    const callsBefore = backpromoteCalls().length;
+    const sentBefore = sent.length;
+    const infoMessages: string[] = [];
+    const original = vscode.window.showInformationMessage;
+    // The clipboard API object is frozen: the real clipboard is checked, when this instance has one
+    const probe = `probe-${Date.now()}`;
+    await vscode.env.clipboard.writeText(probe);
+    const hasClipboard = (await vscode.env.clipboard.readText()) === probe;
+    let stubbed = true;
+    try {
+      (vscode.window as any).showInformationMessage = async (message: string) => {
+        infoMessages.push(message);
+        return undefined;
+      };
+    } catch {
+      stubbed = false;
+    }
+    try {
+      panel.simulateWebviewMessage({ type: "mergeAll", data: { selection: initData.selection, revision: 5 } });
+      const data = await waitForPlan(
+        "every differing item prepared",
+        (current) => [INVOICE_CALCULATOR_FILE, CASE_LAYOUT_FILE].every((file) => current.plan.comparison.some((entry: any) => entry.file === file && entry.prepared)),
+      );
+      const prepareCalls = backpromoteCalls().slice(callsBefore).filter((entry) => entry.args.includes("--prepare"));
+      assert.strictEqual(prepareCalls.length, 1, "one sfdx-hardis call for every item");
+      assert.ok(prepareCalls[0].args.includes(`${INVOICE_CALCULATOR_FILE}=merge`), JSON.stringify(prepareCalls[0].args));
+      assert.ok(prepareCalls[0].args.includes(`${CASE_LAYOUT_FILE}=merge`), JSON.stringify(prepareCalls[0].args));
+      // The Profile of package-no-overwrite.xml differs, but is never merged
+      assert.ok(!prepareCalls[0].args.some((arg: string) => arg.includes("Admin.profile-meta.xml")), JSON.stringify(prepareCalls[0].args));
+      const started = sent.slice(sentBefore).filter((message) => message.type === "prepareStarted").map((message) => message.data.itemKey);
+      assert.deepStrictEqual(started, ["ApexClass:InvoiceCalculator", "Layout:Case-Case Layout"]);
+      assert.strictEqual(data.selection.diffDecisions["ApexClass:InvoiceCalculator"], "merge");
+      assert.strictEqual(data.selection.diffDecisions["Layout:Case-Case Layout"], "merge");
+      assert.ok(data.plan.promptFile, "the coding agent prompt path is known");
+      if (stubbed) {
+        const copied = await waitFor(() => infoMessages.find((message) => message.includes("Claude Code")), 10000, "the prompt copied message");
+        assert.ok(copied.includes(data.plan.backpromoteBranch.name), copied);
+      }
+      if (hasClipboard) {
+        const content = fs.readFileSync(data.plan.promptFile, "utf8");
+        assert.ok(content.includes("commit them on that branch"), content);
+        const start = Date.now();
+        let clipboard = "";
+        while (clipboard !== content && Date.now() - start < 10000) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          clipboard = await vscode.env.clipboard.readText();
+        }
+        assert.strictEqual(clipboard, content);
+      }
+    } finally {
+      (vscode.window as any).showInformationMessage = original;
     }
   });
 

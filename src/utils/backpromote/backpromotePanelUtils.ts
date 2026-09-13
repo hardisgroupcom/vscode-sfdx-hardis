@@ -100,6 +100,11 @@ export interface BackpromoteItem {
   files: string[];
   pullRequests: number[];
   excludedLastTime: boolean;
+  /**
+   * Listed in package-no-overwrite.xml of the parent branch: ticked by default only when absent
+   * from the sandbox. Once ticked it is deployed like any other item (`--include-no-overwrite`
+   * when the sandbox already has it)
+   */
   noOverwrite: boolean;
 }
 
@@ -714,6 +719,18 @@ export function isDifferingComparison(
   );
 }
 
+// The keys of the package-no-overwrite.xml items of a plan, read once per plan
+const noOverwriteKeysByPlan = new WeakMap<BackpromotePlan, Set<string>>();
+
+function noOverwriteKeys(plan: BackpromotePlan): Set<string> {
+  let keys = noOverwriteKeysByPlan.get(plan);
+  if (!keys) {
+    keys = new Set(plan.items.filter((item) => item.noOverwrite).map((item) => item.key));
+    noOverwriteKeysByPlan.set(plan, keys);
+  }
+  return keys;
+}
+
 /** The comparison entries of an item's files whose sandbox version differs */
 export function differingComparisons(
   plan: BackpromotePlan,
@@ -721,6 +738,26 @@ export function differingComparisons(
 ): BackpromoteComparison[] {
   return (comparisonsByItem(plan).get(itemKey) || NO_COMPARISONS).filter(
     isDifferingComparison,
+  );
+}
+
+/**
+ * A package-no-overwrite.xml item already in the sandbox: unticked by default, and passed with
+ * `--include-no-overwrite` once ticked. Same rule as sfdx-hardis: in the sandbox unless every
+ * compared file of the item is missing there, and an item with no compared file counts as
+ * present. False for any other item.
+ */
+export function isNoOverwriteItemInSandbox(
+  plan: BackpromotePlan,
+  itemKey: string,
+): boolean {
+  if (!noOverwriteKeys(plan).has(itemKey)) {
+    return false;
+  }
+  const comparisons = comparisonsByItem(plan).get(itemKey) || NO_COMPARISONS;
+  return (
+    comparisons.length === 0 ||
+    comparisons.some((comparison) => comparison.status !== "missingInOrg")
   );
 }
 
@@ -804,8 +841,9 @@ export function computeItemState(
 }
 
 /**
- * Default selection of a freshly loaded plan: every item deployed (the parent branch version
- * overwrites a differing sandbox version), every deletion run, every action that can run ticked.
+ * Default selection of a freshly loaded plan: every item ticked (the parent branch version
+ * overwrites a differing sandbox version) but the package-no-overwrite.xml items the sandbox
+ * already has, every deletion run, every action that can run ticked.
  */
 export function buildDefaultSelection(
   plan: BackpromotePlan,
@@ -821,7 +859,7 @@ export function buildDefaultSelection(
   }
   return {
     excludedItems: plan.items
-      .filter((item) => item.noOverwrite)
+      .filter((item) => isNoOverwriteItemInSandbox(plan, item.key))
       .map((item) => item.key),
     excludedDeletions: [],
     actions: plan.actions
@@ -841,8 +879,8 @@ export function isActionRunnable(action: BackpromoteAction): boolean {
 
 /**
  * Keeps from a selection received from the webview only what exists in the plan,
- * in plan order and without duplicates. Items held back by package-no-overwrite.xml
- * stay excluded whatever the webview says.
+ * in plan order and without duplicates. A package-no-overwrite.xml item is ticked and
+ * unticked like any other item.
  */
 export function normalizeSelection(
   plan: BackpromotePlan,
@@ -870,7 +908,7 @@ export function normalizeSelection(
   );
   return {
     excludedItems: plan.items
-      .filter((item) => item.noOverwrite || excludedItems.has(item.key))
+      .filter((item) => excludedItems.has(item.key))
       .map((item) => item.key),
     excludedDeletions: pick(
       raw?.excludedDeletions,
@@ -1000,6 +1038,29 @@ export function computeSelectionSummary(
   };
 }
 
+/**
+ * Merge all: every ticked item with a differing file gets the Merge decision, and the items not
+ * prepared yet are written by one `--prepare` call. Unticked items (the package-no-overwrite.xml
+ * items the sandbox has, by default) are left alone.
+ */
+export function planMergeAll(
+  plan: BackpromotePlan,
+  selection: BackpromoteSelection,
+): { itemKeys: string[]; toPrepare: string[]; selection: BackpromoteSelection } {
+  const excluded = new Set(selection.excludedItems);
+  const itemKeys = plan.items
+    .filter((item) => !excluded.has(item.key) && differingComparisons(plan, item.key).length > 0)
+    .map((item) => item.key);
+  const diffDecisions = { ...selection.diffDecisions };
+  for (const key of itemKeys) {
+    diffDecisions[key] = "merge";
+  }
+  const toPrepare = itemKeys.filter((key) =>
+    differingComparisons(plan, key).some((comparison) => !comparison.prepared),
+  );
+  return { itemKeys, toPrepare, selection: { ...selection, diffDecisions } };
+}
+
 export interface BackpromoteCommandTarget {
   targetOrg: string;
   parentBranch: string;
@@ -1072,6 +1133,9 @@ export function buildPrepareCommand(
   for (const file of files) {
     parts.push(`--on-diff ${quoteCommandValue(`${file}=merge`)}`);
   }
+  for (const key of itemKeys.filter((itemKey) => isNoOverwriteItemInSandbox(plan, itemKey))) {
+    parts.push(`--include-no-overwrite ${quoteCommandValue(key)}`);
+  }
   parts.push(...dirtyTreeParts(dirtyTree));
   parts.push("--json");
   return parts.join(" ");
@@ -1088,8 +1152,16 @@ export function buildBackpromoteCommand(
   dirtyTree?: BackpromoteDirtyTreeChoice | null,
 ): string {
   const parts = [BACKPROMOTE_COMMAND, "--auto", ...targetParts(target)];
-  for (const key of selection.excludedItems) {
-    parts.push(`--exclude-metadata ${quoteCommandValue(key)}`);
+  const excludedKeys = new Set(selection.excludedItems);
+  for (const item of plan.items) {
+    // A package-no-overwrite.xml item the sandbox has is left alone by default: named only when ticked
+    if (isNoOverwriteItemInSandbox(plan, item.key)) {
+      if (!excludedKeys.has(item.key)) {
+        parts.push(`--include-no-overwrite ${quoteCommandValue(item.key)}`);
+      }
+    } else if (excludedKeys.has(item.key)) {
+      parts.push(`--exclude-metadata ${quoteCommandValue(item.key)}`);
+    }
   }
   if (
     plan.deletions.length > 0 &&

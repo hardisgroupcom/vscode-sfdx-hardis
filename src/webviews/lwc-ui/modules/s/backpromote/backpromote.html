@@ -200,6 +200,9 @@
             <template if:true={hasDifferingItems}>
               <button type="button" class="hardis-textlink" onclick={handleOverwriteAll} disabled={isReadOnly}>{i18n.backpromoteOverwriteAll}</button>
             </template>
+            <template if:true={showMergeAll}>
+              <button type="button" class="hardis-textlink" onclick={handleMergeAll} disabled={isReadOnly} title={i18n.backpromoteMergeAllTooltip}>{i18n.backpromoteMergeAll}</button>
+            </template>
             <template if:true={hasPreparedFiles}>
               <lightning-button variant="neutral" icon-name="utility:copy" label={copyPromptLabel} title={i18n.backpromoteCopyAgentPromptTooltip} onclick={handleCopyAgentPrompt}></lightning-button>
             </template>
@@ -234,6 +237,9 @@
                       <span class="hardis-row-label bp-item-name" title={row.key}>{row.name}</span>
                       <template for:each={row.pullRequests} for:item="pr">
                         <span key={pr.key} class="hardis-chip bp-chip">{pr.label}</span>
+                      </template>
+                      <template if:true={row.noOverwrite}>
+                        <span class="hardis-pill hardis-status-pending" title={row.noOverwriteTitle}><span class="hardis-pill-dot"></span>package-no-overwrite.xml</span>
                       </template>
                       <template if:true={row.excludedLastTime}>
                         <span class="hardis-pill hardis-status-info" title={i18n.backpromoteLeftOutLastTimeTooltip}><span class="hardis-pill-dot"></span>{i18n.backpromoteLeftOutLastTime}</span>

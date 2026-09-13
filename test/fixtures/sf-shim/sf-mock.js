@@ -580,8 +580,9 @@ async function main() {
  * `sf hardis:work:backpromote` answers the plan (version 3) of
  * test/fixtures/backpromote/backpromote-plan.json, with the parent branch of --parent-branch
  * and the start Pull Request of --from-pull-request when given. --prepare marks the files of
- * the --on-diff flags as prepared with one marker left and a prompt file, --auto answers the
- * run result, --confirm-action records the manual action, --reset empties the pending merges.
+ * the --on-diff flags as prepared with one marker left and writes a prompt file, --auto
+ * answers the run result (a package-no-overwrite.xml item the sandbox has is deployed only
+ * with --include-no-overwrite), --confirm-action records the manual action, --reset empties the pending merges.
  * SF_MOCK_BACKPROMOTE_CLI=old simulates an sfdx-hardis version that does not know the panel
  * flags yet, =tokenMissing a plan blocked on the git provider check, =noHistory a sandbox
  * with no backpromote row within the scan limit (nothing selected, no window), =dirty a
@@ -688,9 +689,22 @@ function answerBackpromote() {
       "NOTES.md",
     ];
   }
+  // Same rule as sfdx-hardis: a package-no-overwrite.xml item the sandbox has (unless every
+  // compared file of it is missing there) is left alone unless --include-no-overwrite names it
+  const included = flagValues("--include-no-overwrite");
+  const noOverwriteInSandbox = (key) => {
+    const comparisons = plan.comparison.filter((comparison) => comparison.item === key);
+    return comparisons.length === 0 || comparisons.some((comparison) => comparison.status !== "missingInOrg");
+  };
+  const held = new Set(
+    plan.items
+      .filter((item) => item.noOverwrite && noOverwriteInSandbox(item.key) && !included.includes(item.key))
+      .map((item) => item.key),
+  );
   const mergedFiles = flagValues("--on-diff")
     .filter((value) => value.endsWith("=merge"))
-    .map((value) => value.substring(0, value.length - "=merge".length));
+    .map((value) => value.substring(0, value.length - "=merge".length))
+    .filter((file) => !plan.comparison.some((comparison) => comparison.file === file && held.has(comparison.item)));
   if (args.includes("--prepare")) {
     progress("checkout", "Checking out " + plan.backpromoteBranch.name);
     progress("merges", "Writing " + mergedFiles.length + " merged file(s)");
@@ -712,6 +726,16 @@ function answerBackpromote() {
       process.cwd(),
       "hardis-report",
       "backpromote-merge-prompt-" + plan.runId + ".md",
+    );
+    fs.mkdirSync(path.dirname(plan.promptFile), { recursive: true });
+    fs.writeFileSync(
+      plan.promptFile,
+      [
+        "Solve the conflict markers of these files in the checkout of " + plan.backpromoteBranch.name + ", then commit them on that branch:",
+        ...mergedFiles.map((file) => "- " + file),
+        "",
+      ].join("\n"),
+      "utf8",
     );
     plan.runCommand =
       "sf hardis:work:backpromote --auto --target-org " +
@@ -767,11 +791,13 @@ function answerBackpromote() {
     plan.checkout.onBackpromoteBranch = true;
     plan.checkout.currentBranch = plan.backpromoteBranch.name;
     const excluded = flagValues("--exclude-metadata").filter((key) =>
-      plan.items.some((item) => item.key === key),
+      plan.items.some((item) => item.key === key && !held.has(item.key)),
     );
     const actions = flagValue("--actions");
     plan.result = {
-      deployed: plan.items.filter((item) => !item.noOverwrite && !excluded.includes(item.key)).length,
+      deployed: plan.items.filter(
+        (item) => !held.has(item.key) && !excluded.includes(item.key),
+      ).length,
       deleted: args.includes("--skip-destructive") ? 0 : plan.deletions.length,
       excluded: excluded.map((key) => ({ key, reason: "excluded" })),
       actions: {

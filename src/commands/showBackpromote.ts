@@ -51,6 +51,7 @@ import {
   listAllowedParentBranches,
   normalizeSelection,
   parseProgressEvents,
+  planMergeAll,
   recoverJsonCommandResult,
 } from "../utils/backpromote/backpromotePanelUtils";
 
@@ -782,6 +783,10 @@ export function registerShowBackpromote(commands: Commands) {
             await prepareMerge(current, data);
             break;
           }
+          case "mergeAll": {
+            await prepareAllMerges(current, data);
+            break;
+          }
           case "copyAgentPrompt": {
             await copyAgentPrompt(current);
             break;
@@ -853,58 +858,67 @@ async function openMergeEditor(current: BackpromotePanelState, itemKey: string):
   }
 }
 
-async function copyAgentPrompt(current: BackpromotePanelState): Promise<void> {
+/** Reads the coding agent prompt written by sfdx-hardis into the clipboard: false when there is none */
+async function writePromptToClipboard(current: BackpromotePanelState): Promise<boolean> {
   const promptFile = current.plan?.promptFile;
   if (!promptFile) {
     vscode.window.showInformationMessage(t("backpromoteNoPromptYet"));
-    return;
+    return false;
   }
   try {
     await vscode.env.clipboard.writeText(
       fs.readFileSync(absoluteFile(planRoot(current.plan), promptFile), "utf8"),
     );
-    vscode.window.showInformationMessage(t("backpromotePromptCopied"));
+    return true;
   } catch (e: any) {
     vscode.window.showErrorMessage(t("backpromoteOpenFileFailed", { file: promptFile, message: String(e?.message || e) }));
+    return false;
+  }
+}
+
+async function copyAgentPrompt(current: BackpromotePanelState): Promise<void> {
+  if (await writePromptToClipboard(current)) {
+    vscode.window.showInformationMessage(t("backpromotePromptCopied"));
   }
 }
 
 /**
- * Merge on an item line: sfdx-hardis switches the checkout to the backpromote branch, writes the
- * merged files with markers and keeps the three versions in the cache; then the merge editor opens.
+ * Runs one `--prepare` call for the given items: sfdx-hardis switches the checkout to the
+ * backpromote branch, writes the merged files with markers, keeps the three versions in the
+ * cache and rewrites the coding agent prompt. Every item is shown as being prepared until the
+ * new plan arrives; every exit without a new plan releases them. True when the plan was replaced.
  */
-async function prepareMerge(current: BackpromotePanelState, data: any): Promise<void> {
+async function runPrepare(
+  current: BackpromotePanelState,
+  itemKeys: string[],
+  dirtyTree: BackpromoteDirtyTreeChoice | null,
+): Promise<boolean> {
   const plan = current.plan;
   const target = commandTarget(current);
-  const itemKey = String(data?.itemKey || "");
-  // The webview marked the item as being prepared: every exit without a new plan releases it
   const failed = (message: string | null) => {
     if (!current.panel.isDisposed()) {
-      current.panel.sendMessage({ type: "prepareFailed", data: { itemKey, message } });
+      for (const itemKey of itemKeys) {
+        current.panel.sendMessage({ type: "prepareFailed", data: { itemKey, message } });
+      }
     }
   };
-  if (!plan || !target || current.running || !plan.items.some((item) => item.key === itemKey)) {
+  if (!plan || !target) {
     failed(null);
-    return;
+    return false;
   }
-  acceptSelection(current, { selection: { ...(current.selection || {}), diffDecisions: { ...(current.selection?.diffDecisions || {}), [itemKey]: "merge" } }, revision: data?.revision });
-  if (differingComparisons(plan, itemKey).every((comparison) => comparison.prepared)) {
-    sendSelectionSummary(current);
-    await openMergeEditor(current, itemKey);
-    return;
-  }
-  const dirtyTree = readDirtyTree(data);
   let command: string;
   try {
-    command = buildPrepareCommand(plan, target, [itemKey], dirtyTree);
+    command = buildPrepareCommand(plan, target, itemKeys, dirtyTree);
   } catch (e: any) {
     failed(String(e?.message || e));
     vscode.window.showWarningMessage(String(e?.message || e));
-    return;
+    return false;
   }
   const loadId = current.loadCounter;
   current.preparing += 1;
-  current.panel.sendMessage({ type: "prepareStarted", data: { itemKey } });
+  for (const itemKey of itemKeys) {
+    current.panel.sendMessage({ type: "prepareStarted", data: { itemKey } });
+  }
   let outcome: CommandOutcome;
   try {
     outcome = await runBackpromoteJson(command);
@@ -915,12 +929,12 @@ async function prepareMerge(current: BackpromotePanelState, data: any): Promise<
   // The panel was closed, or another plan (other org, branch or start) replaced this one meanwhile
   if (isStale(current, loadId)) {
     failed(null);
-    return;
+    return false;
   }
   if ("error" in outcome) {
     failed(outcome.error.message);
     vscode.window.showErrorMessage(t("backpromotePrepareFailed", { message: outcome.error.message }));
-    return;
+    return false;
   }
   noticeStash(plan, outcome.plan, dirtyTree);
   current.plan = outcome.plan;
@@ -928,7 +942,84 @@ async function prepareMerge(current: BackpromotePanelState, data: any): Promise<
   current.selection = normalizeSelection(outcome.plan, current.selection);
   watchPreparedFiles(current);
   pushData(current);
-  await openMergeEditor(current, itemKey);
+  return true;
+}
+
+/**
+ * Merge on an item line: the merged files are prepared by sfdx-hardis, then the merge editor opens.
+ */
+async function prepareMerge(current: BackpromotePanelState, data: any): Promise<void> {
+  const plan = current.plan;
+  const itemKey = String(data?.itemKey || "");
+  if (!plan || !commandTarget(current) || current.running || !plan.items.some((item) => item.key === itemKey)) {
+    if (!current.panel.isDisposed()) {
+      current.panel.sendMessage({ type: "prepareFailed", data: { itemKey, message: null } });
+    }
+    return;
+  }
+  acceptSelection(current, { selection: { ...(current.selection || {}), diffDecisions: { ...(current.selection?.diffDecisions || {}), [itemKey]: "merge" } }, revision: data?.revision });
+  if (differingComparisons(plan, itemKey).every((comparison) => comparison.prepared)) {
+    sendSelectionSummary(current);
+    await openMergeEditor(current, itemKey);
+    return;
+  }
+  if (await runPrepare(current, [itemKey], readDirtyTree(data))) {
+    await openMergeEditor(current, itemKey);
+  }
+}
+
+/**
+ * Merge all: every ticked item that differs gets the Merge decision and the ones not prepared yet
+ * are written by one `--prepare` call, with no merge editor. The coding agent prompt covering them
+ * all is then copied, to be pasted into Claude Code or Codex, which solves the markers and commits
+ * the files on the backpromote branch.
+ */
+async function prepareAllMerges(current: BackpromotePanelState, data: any): Promise<void> {
+  const plan = current.plan;
+  if (!plan || !current.selection || !commandTarget(current) || isBusy(current)) {
+    pushData(current);
+    return;
+  }
+  acceptSelection(current, data);
+  const mergeAll = planMergeAll(plan, current.selection as BackpromoteSelection);
+  if (mergeAll.itemKeys.length === 0) {
+    vscode.window.showInformationMessage(t("backpromoteMergeAllNothing"));
+    sendSelectionSummary(current);
+    return;
+  }
+  current.selection = mergeAll.selection;
+  if (mergeAll.toPrepare.length > 0) {
+    // The webview shows the new decisions while sfdx-hardis works
+    sendSelectionSummary(current);
+    if (!(await runPrepare(current, mergeAll.toPrepare, readDirtyTree(data)))) {
+      return;
+    }
+  } else {
+    sendSelectionSummary(current);
+  }
+  if (!(await writePromptToClipboard(current))) {
+    return;
+  }
+  const promptFile = absoluteFile(planRoot(current.plan), current.plan?.promptFile || "");
+  const openPrompt = t("backpromoteOpenPrompt");
+  // Not awaited: the notification stays until the user closes it, the panel goes on meanwhile
+  vscode.window
+    .showInformationMessage(
+      t("backpromoteMergeAllPromptCopied", {
+        count: mergeAll.itemKeys.length,
+        branch: current.plan?.backpromoteBranch.name || "",
+      }),
+      openPrompt,
+    )
+    .then(async (choice) => {
+      if (choice === openPrompt) {
+        try {
+          await vscode.window.showTextDocument(vscode.Uri.file(promptFile), { preview: false });
+        } catch (e: any) {
+          vscode.window.showErrorMessage(t("backpromoteOpenFileFailed", { file: promptFile, message: String(e?.message || e) }));
+        }
+      }
+    });
 }
 
 /**

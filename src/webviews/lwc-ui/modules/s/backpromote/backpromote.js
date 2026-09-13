@@ -57,6 +57,8 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   parentBranch = null;
   plan = null;
   comparisonsByItem = new Map();
+  // Keys of the package-no-overwrite.xml items of the plan
+  noOverwriteKeys = new Set();
   selection = null;
   summary = null;
   command = null;
@@ -118,12 +120,16 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     if (payload.plan === null) {
       this.plan = null;
       this.comparisonsByItem = new Map();
+      this.noOverwriteKeys = new Set();
       this.summary = null;
       this.command = null;
     }
     if (payload.plan) {
       this.plan = payload.plan;
       this.comparisonsByItem = groupComparisonsByItem(payload.plan);
+      this.noOverwriteKeys = new Set(
+        payload.plan.items.filter((item) => item.noOverwrite).map((item) => item.key),
+      );
       this.parentBranch = payload.plan.parentBranch;
       this.applySelectionPayload(payload);
       this.targetOrgLabel = payload.targetOrgLabel || "";
@@ -692,6 +698,22 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     return !!this.plan && this.plan.items.some((item) => this.itemDiffers(item.key));
   }
 
+  // The ticked items Merge all prepares: they differ from the sandbox (a package-no-overwrite.xml
+  // item never does, see itemDiffers)
+  get mergeAllKeys() {
+    if (!this.plan || !this.selection) {
+      return [];
+    }
+    const excluded = new Set(this.selection.excludedItems);
+    return this.plan.items
+      .filter((item) => !excluded.has(item.key) && this.itemDiffers(item.key))
+      .map((item) => item.key);
+  }
+
+  get showMergeAll() {
+    return this.mergeAllKeys.length > 0;
+  }
+
   get preparedFilesCount() {
     return this.plan
       ? this.plan.comparison.filter((comparison) => comparison.prepared).length
@@ -712,6 +734,16 @@ export default class Backpromote extends SharedMixin(LightningElement) {
 
   itemDiffers(key) {
     return this.itemComparisons(key).some(isDifferingComparison);
+  }
+
+  // Same rule as sfdx-hardis: in the sandbox unless every compared file of the item is missing
+  // there, and an item with no compared file counts as present (unticked by default)
+  noOverwriteInSandbox(key) {
+    const comparisons = this.itemComparisons(key);
+    return (
+      comparisons.length === 0 ||
+      comparisons.some((comparison) => comparison.status !== "missingInOrg")
+    );
   }
 
   itemMarkers(key) {
@@ -743,10 +775,7 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     let stateLabel = null;
     let stateClass = UNKNOWN_PILL;
     let stateTitle = "";
-    if (item.noOverwrite) {
-      stateLabel = this.t("backpromoteNoOverwrite");
-      stateTitle = this.t("backpromoteNoOverwriteTooltip");
-    } else if (isExcluded) {
+    if (isExcluded) {
       stateLabel = this.t("backpromoteNotDeployedNow");
     } else if (differs && decision === "merge") {
       if (preparing) {
@@ -796,17 +825,22 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       pullRequests: item.pullRequests.map((number) => ({ key: `${item.key}-${number}`, label: `#${number}` })),
       excludedLastTime: item.excludedLastTime || leftOutLastTime,
       noOverwrite: item.noOverwrite,
-      rowClass:
-        "bp-item-row" +
-        (isExcluded ? "" : " selected") +
-        (item.noOverwrite ? " bp-disabled" : ""),
+      noOverwriteTitle: item.noOverwrite
+        ? this.t(
+            this.noOverwriteInSandbox(item.key)
+              ? "backpromoteNoOverwriteInSandboxTooltip"
+              : "backpromoteNoOverwriteNotInSandboxTooltip",
+            { sandbox: this.targetOrgLabel },
+          )
+        : "",
+      rowClass: "bp-item-row" + (isExcluded ? "" : " selected"),
       checkClass: "hardis-check" + (isExcluded ? "" : " on"),
       ariaChecked: isExcluded ? "false" : "true",
-      checkDisabled: item.noOverwrite || this.isReadOnly,
+      checkDisabled: this.isReadOnly,
       stateLabel,
       stateClass,
       stateTitle,
-      showDecision: differs && !isExcluded && !item.noOverwrite,
+      showDecision: differs && !isExcluded,
       decisionDisabled: this.isReadOnly || preparing,
       gitClass: "hardis-seg" + (decision === "git" ? " on" : ""),
       orgClass: "hardis-seg" + (decision === "org" ? " on" : ""),
@@ -863,8 +897,7 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     if (this.isReadOnly || !key || !this.selection || !this.plan) {
       return;
     }
-    const item = this.plan.items.find((entry) => entry.key === key);
-    if (!item || item.noOverwrite) {
+    if (!this.plan.items.some((entry) => entry.key === key)) {
       return;
     }
     const excluded = this.selection.excludedItems.includes(key);
@@ -898,6 +931,39 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       diffDecisions[key] = "git";
     }
     this.updateSelection({ diffDecisions });
+  }
+
+  // Merge all: every ticked item that differs gets the Merge decision, and the extension prepares
+  // the ones not prepared yet in one sfdx-hardis call, then copies the coding agent prompt. The
+  // items show "Preparing the merge" when the extension says the call started.
+  handleMergeAll(event, dirtyTree) {
+    const keys = this.mergeAllKeys;
+    if (this.isReadOnly || !this.selection || keys.length === 0) {
+      return;
+    }
+    const needsPrepare = keys.some((key) =>
+      this.itemComparisons(key).some(
+        (comparison) => isDifferingComparison(comparison) && !comparison.prepared,
+      ),
+    );
+    if (!dirtyTree && needsPrepare && this.needsDirtyTreeChoice) {
+      this.openDirtyTreeModal({ then: "mergeAll" });
+      return;
+    }
+    const diffDecisions = { ...this.selection.diffDecisions };
+    for (const key of keys) {
+      diffDecisions[key] = "merge";
+    }
+    this.selection = { ...this.selection, diffDecisions };
+    this.revision += 1;
+    window.sendMessageToVSCode({
+      type: "mergeAll",
+      data: {
+        selection: this.selection,
+        revision: this.revision,
+        dirtyTree: dirtyTree || null,
+      },
+    });
   }
 
   requestMerge(key, dirtyTree) {
@@ -1492,6 +1558,8 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     this.dirtyTreeModal = null;
     if (next.then === "merge") {
       this.requestMerge(next.itemKey, choice);
+    } else if (next.then === "mergeAll") {
+      this.handleMergeAll(null, choice);
     } else {
       this.handleRunBackpromote(null, choice);
     }

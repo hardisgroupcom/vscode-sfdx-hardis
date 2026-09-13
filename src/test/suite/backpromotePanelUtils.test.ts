@@ -31,6 +31,7 @@ import {
   isAllowedBackpromoteCommand,
   isCliTooOldForBackpromotePanel,
   isGitProviderMissing,
+  isNoOverwriteItemInSandbox,
   isSafeCommandValue,
   defaultParentBranchFor,
   listAllowedParentBranches,
@@ -38,6 +39,7 @@ import {
   normalizeSelection,
   parseMetadataKey,
   parseProgressEvents,
+  planMergeAll,
   quoteCommandValue,
   recoverJsonCommandResult,
 } from "../../utils/backpromote/backpromotePanelUtils";
@@ -125,9 +127,10 @@ suite("backpromotePanelUtils", () => {
       byItem.get("ApexClass:InvoiceCalculator")?.map((comparison) => comparison.file),
       [INVOICE_CALCULATOR_FILE, `${INVOICE_CALCULATOR_FILE}-meta.xml`],
     );
-    assert.strictEqual(byItem.get("Profile:Admin"), undefined);
+    assert.strictEqual(byItem.get("Profile:Admin")?.length, 1);
     assert.deepStrictEqual(differingComparisons(plan, "ApexClass:InvoiceCalculator").map((comparison) => comparison.file), [INVOICE_CALCULATOR_FILE]);
-    assert.deepStrictEqual(differingComparisons(plan, "Profile:Admin"), []);
+    // A package-no-overwrite.xml item that differs takes a decision once ticked
+    assert.deepStrictEqual(differingComparisons(plan, "Profile:Admin").map((comparison) => comparison.file), ["force-app/main/default/profiles/Admin.profile-meta.xml"]);
     // Another plan object (a new answer of sfdx-hardis) gets its own map
     assert.notStrictEqual(comparisonsByItem(loadPlan()), byItem);
   });
@@ -161,8 +164,8 @@ suite("backpromotePanelUtils", () => {
     assert.strictEqual(plan.status, "ok");
     assert.strictEqual(plan.runId, "mock7f3a");
     assert.strictEqual(plan.pullRequests.length, 5);
-    assert.strictEqual(plan.items.length, 6);
-    assert.strictEqual(plan.comparison.length, 6);
+    assert.strictEqual(plan.items.length, 7);
+    assert.strictEqual(plan.comparison.length, 8);
     assert.strictEqual(plan.window?.startPullRequest, 415);
     assert.strictEqual(plan.targetOrg.sandboxName, "dev1");
     assert.strictEqual(plan.gitRoot, "/tmp/mock-workspace");
@@ -196,9 +199,10 @@ suite("backpromotePanelUtils", () => {
     assert.strictEqual(isGitProviderMissing(loadPlan()), false);
   });
 
-  test("the default selection deploys everything but the no-overwrite items, and overwrites differing files", () => {
+  test("the default selection ticks every item but the no-overwrite ones the sandbox has, and overwrites differing files", () => {
     const plan = loadPlan();
     const defaults = buildDefaultSelection(plan);
+    // The Profile is in the sandbox: unticked. The remote site setting is not: ticked
     assert.deepStrictEqual(defaults.excludedItems, ["Profile:Admin"]);
     assert.deepStrictEqual(defaults.excludedDeletions, []);
     // The action already run in this sandbox is not offered
@@ -206,23 +210,26 @@ suite("backpromotePanelUtils", () => {
     assert.deepStrictEqual(defaults.diffDecisions, {
       "ApexClass:InvoiceCalculator": "git",
       "Layout:Case-Case Layout": "git",
+      "Profile:Admin": "git",
     });
   });
 
-  test("normalizeSelection keeps only what the plan knows, and never re-ticks a no-overwrite item", () => {
+  test("normalizeSelection keeps only what the plan knows, and ticks and unticks a no-overwrite item like any other", () => {
     const plan = loadPlan();
     const normalized = normalizeSelection(plan, {
       excludedItems: ["Flow:Quote_Approval", "Flow:Unknown"],
       excludedDeletions: ["ApexClass:LegacyDiscountHelper", "ApexClass:Nope"],
       actions: ["enable-sla-approval", "recalculate-quote-sharing", "evil"],
-      diffDecisions: { "ApexClass:InvoiceCalculator": "merge", "Flow:Quote_Approval": "org", "Layout:Case-Case Layout": "deploy" },
+      diffDecisions: { "ApexClass:InvoiceCalculator": "merge", "Flow:Quote_Approval": "org", "Layout:Case-Case Layout": "deploy", "Profile:Admin": "merge" },
     });
-    assert.deepStrictEqual(normalized.excludedItems, ["Flow:Quote_Approval", "Profile:Admin"]);
+    assert.deepStrictEqual(normalized.excludedItems, ["Flow:Quote_Approval"]);
+    assert.deepStrictEqual(normalizeSelection(plan, { excludedItems: ["RemoteSiteSetting:Erp_Api"] }).excludedItems, ["RemoteSiteSetting:Erp_Api"]);
     assert.deepStrictEqual(normalized.excludedDeletions, ["ApexClass:LegacyDiscountHelper"]);
     assert.deepStrictEqual(normalized.actions, ["enable-sla-approval"]);
     assert.deepStrictEqual(normalized.diffDecisions, {
       "ApexClass:InvoiceCalculator": "merge",
       "Layout:Case-Case Layout": "git",
+      "Profile:Admin": "merge",
     });
   });
 
@@ -256,7 +263,8 @@ suite("backpromotePanelUtils", () => {
   test("the summary counts what runs, blocks on markers and on a missing window", () => {
     const plan = loadPlan();
     const summary = computeSelectionSummary(plan, selection(plan));
-    assert.strictEqual(summary.itemsToDeployCount, 5);
+    // 7 items, the Profile of package-no-overwrite.xml already in the sandbox is unticked
+    assert.strictEqual(summary.itemsToDeployCount, 6);
     assert.strictEqual(summary.deletionsToDeleteCount, 1);
     assert.strictEqual(summary.actionsToRunCount, 2);
     assert.strictEqual(summary.manualActionsCount, 1);
@@ -264,7 +272,10 @@ suite("backpromotePanelUtils", () => {
     assert.strictEqual(summary.canRun, true);
 
     const keptOrg = computeSelectionSummary(plan, selection(plan, { diffDecisions: { "ApexClass:InvoiceCalculator": "org", "Layout:Case-Case Layout": "git" } }));
-    assert.strictEqual(keptOrg.itemsToDeployCount, 4);
+    assert.strictEqual(keptOrg.itemsToDeployCount, 5);
+    // Ticking the Profile deploys it like any other item
+    assert.strictEqual(computeSelectionSummary(plan, selection(plan, { excludedItems: [] })).itemsToDeployCount, 7);
+    assert.strictEqual(computeSelectionSummary(plan, selection(plan, { excludedItems: ["Profile:Admin", "RemoteSiteSetting:Erp_Api"] })).itemsToDeployCount, 5);
     assert.strictEqual(keptOrg.keptOrgCount, 1);
 
     // A merge decided but not prepared yet blocks the run, a prepared one blocks while markers remain
@@ -329,7 +340,10 @@ suite("backpromotePanelUtils", () => {
     const tokens = tokenizeCommand(command);
     assert.deepStrictEqual(tokens.slice(0, 3), ["sf", "hardis:work:backpromote", "--auto"]);
     assert.ok(command.includes("--run-id mock7f3a --target-org sam.dubois@mycompany.com.dev1 --parent-branch integration --from-pull-request 415"), command);
-    assert.ok(command.includes("--exclude-metadata Flow:Quote_Approval --exclude-metadata Profile:Admin"), command);
+    // The Profile the sandbox has is left alone without a flag: sfdx-hardis does not deploy it by default
+    assert.ok(command.includes("--exclude-metadata Flow:Quote_Approval"), command);
+    assert.ok(!command.includes("Profile:Admin"), command);
+    assert.ok(!command.includes("RemoteSiteSetting"), command);
     assert.ok(command.includes(`--on-diff ${INVOICE_CALCULATOR_FILE}=merge`), command);
     assert.ok(command.includes(`--on-diff "${CASE_LAYOUT_FILE}=org"`), command);
     assert.ok(command.includes("--actions load-sla-thresholds"), command);
@@ -391,6 +405,62 @@ suite("backpromotePanelUtils", () => {
     const run = buildBackpromoteCommand(twoFiles, selection(twoFiles, { diffDecisions: { "ApexClass:InvoiceCalculator": "merge", "Layout:Case-Case Layout": "git" } }), TARGET);
     assert.strictEqual((run.match(/--on-diff/g) || []).length, 2);
     assert.strictEqual(computeSelectionSummary(twoFiles, selection(twoFiles, { diffDecisions: { "ApexClass:InvoiceCalculator": "merge", "Layout:Case-Case Layout": "git" } })).mergedFilesCount, 2);
+  });
+
+  test("a no-overwrite item is in the sandbox unless every compared file is missing there", () => {
+    const plan = loadPlan();
+    assert.strictEqual(isNoOverwriteItemInSandbox(plan, "Profile:Admin"), true);
+    assert.strictEqual(isNoOverwriteItemInSandbox(plan, "RemoteSiteSetting:Erp_Api"), false);
+    // Not a no-overwrite item
+    assert.strictEqual(isNoOverwriteItemInSandbox(plan, "ApexClass:QuoteSharingRecalculator"), false);
+    // No compared file: nothing proves it is absent, it counts as present
+    const raw = loadRawPlan();
+    const uncompared = normalizeBackpromotePlan({ ...raw, comparison: raw.comparison.filter((comparison: any) => comparison.item !== "RemoteSiteSetting:Erp_Api") })!;
+    assert.strictEqual(isNoOverwriteItemInSandbox(uncompared, "RemoteSiteSetting:Erp_Api"), true);
+    // Ticked, the Profile the sandbox has is named with --include-no-overwrite and takes decisions
+    const plain = buildDefaultSelection(plan);
+    const ticked = { ...plain, excludedItems: [], diffDecisions: { ...plain.diffDecisions, "Profile:Admin": "merge" as const } };
+    const command = buildBackpromoteCommand(plan, ticked, TARGET);
+    assert.ok(command.includes("--include-no-overwrite Profile:Admin"), command);
+    assert.ok(command.includes("--on-diff force-app/main/default/profiles/Admin.profile-meta.xml=merge"), command);
+    // Unticked, the remote site setting the sandbox lacks is excluded like any other item
+    const leftOut = buildBackpromoteCommand(plan, { ...plain, excludedItems: ["Profile:Admin", "RemoteSiteSetting:Erp_Api"] }, TARGET);
+    assert.ok(leftOut.includes("--exclude-metadata RemoteSiteSetting:Erp_Api"), leftOut);
+    assert.ok(!leftOut.includes("Profile:Admin"), leftOut);
+    const prepare = buildPrepareCommand(plan, TARGET, ["Profile:Admin"]);
+    assert.ok(prepare.includes("--include-no-overwrite Profile:Admin"), prepare);
+    assert.strictEqual(computeItemState(plan, plain, "Profile:Admin").differs, true);
+  });
+
+  test("Merge all sets Merge on every ticked differing item and prepares only the ones not prepared yet", () => {
+    const plan = loadPlan();
+    const all = planMergeAll(plan, selection(plan));
+    // The Profile differs but is unticked by default (package-no-overwrite.xml, in the sandbox): left alone
+    assert.deepStrictEqual(all.itemKeys, ["ApexClass:InvoiceCalculator", "Layout:Case-Case Layout"]);
+    assert.deepStrictEqual(all.toPrepare, all.itemKeys);
+    assert.deepStrictEqual(all.selection.diffDecisions, { "ApexClass:InvoiceCalculator": "merge", "Layout:Case-Case Layout": "merge", "Profile:Admin": "git" });
+    // One prepare command for both items
+    const prepare = buildPrepareCommand(plan, TARGET, all.toPrepare);
+    assert.strictEqual((prepare.match(/--on-diff/g) || []).length, 2);
+    assert.ok(prepare.includes(`--on-diff ${INVOICE_CALCULATOR_FILE}=merge --on-diff "${CASE_LAYOUT_FILE}=merge"`), prepare);
+    // An unticked item is left alone
+    const unticked = planMergeAll(plan, selection(plan, { excludedItems: ["Layout:Case-Case Layout", "Profile:Admin"] }));
+    assert.deepStrictEqual(unticked.itemKeys, ["ApexClass:InvoiceCalculator"]);
+    assert.strictEqual(unticked.selection.diffDecisions["Layout:Case-Case Layout"], "git");
+    // An item already prepared is merged without a new prepare
+    const raw = loadRawPlan();
+    const prepared = normalizeBackpromotePlan({
+      ...raw,
+      comparison: raw.comparison.map((comparison: any) =>
+        comparison.file === INVOICE_CALCULATOR_FILE ? { ...comparison, decision: "merge", prepared: true, markersRemaining: 1 } : comparison,
+      ),
+    })!;
+    const again = planMergeAll(prepared, selection(prepared));
+    assert.deepStrictEqual(again.itemKeys, ["ApexClass:InvoiceCalculator", "Layout:Case-Case Layout"]);
+    assert.deepStrictEqual(again.toPrepare, ["Layout:Case-Case Layout"]);
+    // Nothing differs: nothing to merge
+    const same = normalizeBackpromotePlan({ ...raw, comparison: raw.comparison.filter((comparison: any) => comparison.status !== "different" && comparison.status !== "pendingInOrg") })!;
+    assert.deepStrictEqual(planMergeAll(same, selection(same)).itemKeys, []);
   });
 
   test("the plan, prepare, confirm and reset commands", () => {
