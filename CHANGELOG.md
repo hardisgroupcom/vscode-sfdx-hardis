@@ -11,7 +11,6 @@
   - One prompt for your coding agent covers every merge left to solve
   - Merge all prepares every ticked item that differs and copies that prompt, which asks the agent to commit the solved files on the backpromote branch
   - The items of package-no-overwrite.xml carry a marker and start unticked when the sandbox already has them
-  - The ticked state of the item checkboxes is visible again
   - The Backpromote button is enabled once every merge is solved
   - The backpromote runs in the background with its progress, and ends with the result and the Pull Requests updated
   - A Back to my branch button brings the checkout back to the story branch
