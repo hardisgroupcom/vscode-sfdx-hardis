@@ -10,7 +10,13 @@ import {
   parsePluginsJson,
   stripAnsiCodes,
 } from "../../utils/pluginsVersionUtils";
-import { assertKeysTranslated, loadLocale } from "./lwcSourceUtils";
+import * as fs from "fs";
+import * as path from "path";
+import {
+  REPO_ROOT,
+  assertKeysTranslated,
+  loadLocale,
+} from "./lwcSourceUtils";
 
 // Real `sf plugins` output samples (Windows, Salesforce CLI 2.146.3)
 const PLUGINS_TEXT_LINKED = [
@@ -667,5 +673,36 @@ suite("outdated preview plugin messages", () => {
         `usingOutdatedPreviewPlugin must carry ${placeholder}`,
       );
     }
+  });
+});
+
+suite("outdated preview is reported on every dependencies surface", () => {
+  // The same check exists in three places, each feeding a different UI. A fix in
+  // one of them is worthless if the other two still show the stale build as fine.
+  const readSource = (relative: string): string =>
+    fs.readFileSync(path.join(REPO_ROOT, "src", relative), "utf8");
+
+  test("the Dependencies tree view flags it", () => {
+    const source = readSource("hardis-plugins-provider.ts");
+    assert.ok(
+      source.includes("isOutdatedPreviewPlugin"),
+      "the tree view must compare an accepted preview against npm latest",
+    );
+    assert.ok(
+      source.includes("sfdxHardisOutdatedPreviewMessage"),
+      "the tree view must warn the user once per session",
+    );
+  });
+
+  test("the Setup panel flags it", () => {
+    const source = readSource("utils/setupUtils.ts");
+    assert.ok(
+      source.includes("isOutdatedPreviewPlugin"),
+      "the Setup LWC must compare an accepted preview against npm latest",
+    );
+    assert.ok(
+      source.includes("usingOutdatedPreviewPlugin"),
+      "the Setup LWC card must say the preview build is behind the release",
+    );
   });
 });

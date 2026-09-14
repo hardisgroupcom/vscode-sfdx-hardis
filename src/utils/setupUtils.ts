@@ -11,6 +11,7 @@ import {
   stripAnsi,
 } from "../utils";
 import {
+  isOutdatedPreviewPlugin,
   mustUpgradeSfdxHardisPlugin,
   resolveRecommendedSfCliVersion,
 } from "./pluginsVersionUtils";
@@ -674,6 +675,37 @@ export class SetupHelper {
             upgradeAvailable: true,
           };
         }
+      }
+
+      // An accepted preview build left behind by the published releases. The generic
+      // check below deliberately ignores preview installs, because their version is
+      // expected to differ from npm latest -- but a build that is genuinely BEHIND is
+      // not "expected to differ", it is stale, and nothing else would report it.
+      if (
+        isOutdatedPreviewPlugin({
+          kind: installKind,
+          installedVersion,
+          latestVersion: latestPluginVersion,
+        })
+      ) {
+        const previewInstallTag =
+          pluginName === "sfdx-hardis" ? getSfdxHardisInstallTag() : "latest";
+        return {
+          id: `sfplugin:${pluginName}`,
+          label: pluginName,
+          installed: true,
+          version: installedVersion,
+          recommended: latestPluginVersion,
+          status: "outdated",
+          helpUrl: `https://www.npmjs.com/package/${pluginName}`,
+          message: t("usingOutdatedPreviewPlugin", {
+            plugin: pluginName,
+            version: installedVersion ?? "",
+            latestVersion: latestPluginVersion ?? "",
+          }),
+          installCommand: `sf plugins install ${pluginName}@${previewInstallTag}`,
+          upgradeAvailable: true,
+        };
       }
 
       // If installed and latest is known and differs -> outdated.

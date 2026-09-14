@@ -6,7 +6,7 @@
   - Fix the panel going blank when typing in the search box of a question that listed the same option twice
   - When a question cannot be displayed, show a message with a Cancel button instead of leaving the command waiting for an answer
 - Deprecate the user input modes other than the LWC User Interface, which the DevOps Pipeline, Backpromote and Setup panels are not built for: a warning now offers to switch, and they will be removed in a future version
-- Dependencies: warn when the installed preview version of sfdx-hardis is older than the published one, and offer to upgrade
+- Dependencies and Setup panel: warn when the installed preview version of sfdx-hardis is older than the published one, and offer to upgrade
 
 ## [8.6.0] 2026-09-13
 
