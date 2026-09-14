@@ -29,6 +29,7 @@ import {
   getCurrentLocale,
   initI18n,
   reinitI18n,
+  t,
 } from "./i18n/i18n";
 
 let refreshInterval: any = null;
@@ -179,9 +180,34 @@ export function activate(context: vscode.ExtensionContext) {
     }
   }
 
+  // Only the LWC User Interface is built for the newer panels (DevOps Pipeline, Backpromote,
+  // Setup...): on the other two they silently fall back to a QuickPick or to the terminal. Warn
+  // once per workspace rather than leaving people on a mode nothing new is tested against.
+  async function warnIfUserInputIsDeprecated(userInput: unknown) {
+    if (userInput === "ui-lwc") {
+      return;
+    }
+    const stateKey = `userInputDeprecationWarned.${getWorkspaceRoot() || "global"}`;
+    if (context.globalState.get(stateKey) === true) {
+      return;
+    }
+    await context.globalState.update(stateKey, true);
+    const switchAction = t("userInputSwitchToLwcUi");
+    const answer = await vscode.window.showWarningMessage(
+      t("userInputDeprecatedWarning"),
+      switchAction,
+    );
+    if (answer === switchAction) {
+      await vscode.workspace
+        .getConfiguration("vsCodeSfdxHardis")
+        .update("userInput", "ui-lwc", vscode.ConfigurationTarget.Global);
+    }
+  }
+
   async function manageWebSocketServer() {
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     const userInput = config.get("userInput");
+    warnIfUserInputIsDeprecated(userInput);
     if (userInput === "ui-lwc" || userInput === "ui") {
       if (
         commands.disposableWebSocketServer === null ||

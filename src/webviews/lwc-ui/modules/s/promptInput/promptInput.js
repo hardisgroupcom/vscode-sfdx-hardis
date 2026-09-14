@@ -23,8 +23,13 @@ export default class PromptInput extends SharedMixin(LightningElement) {
   @track error = null;
   // Centralized mapping: string identifier -> original value
   @track choiceValueMapping = {};
-  // Reverse mapping: JSON-stringified original value -> string identifier
+  // Reverse mapping: JSON-stringified original value -> string identifier of the FIRST choice
+  // carrying that value. Only used to resolve a preselection expressed as a value.
   @track valueToIdentifier = {};
+  // Row identity: index in currentPrompt.choices -> string identifier. Two choices may carry the
+  // same value, so a row is never identified through valueToIdentifier: that collapsed both rows
+  // onto one identifier, and the duplicated iteration key blanked the panel on the next render.
+  @track choiceIdentifiers = [];
   _hasInitialFocus = false; // Track if initial focus has been set
   _hasInitialScroll = false;
 
@@ -115,6 +120,10 @@ export default class PromptInput extends SharedMixin(LightningElement) {
       (this.currentPrompt.type === "select" ||
         this.currentPrompt.type === "multiselect")
     ) {
+      this.currentPrompt = {
+        ...this.currentPrompt,
+        choices: this.dedupeChoices(this.currentPrompt.choices),
+      };
       this.buildChoiceMappings();
     }
 
@@ -156,13 +165,10 @@ export default class PromptInput extends SharedMixin(LightningElement) {
           this.selectedOptionDescription = "";
         }
       } else if (this.currentPrompt.type === "multiselect") {
-        // Use reverse mapping to get identifiers for selected values
-        this.selectedValues =
-          (this.currentPrompt.choices || [])
-            .filter((choice) => choice.selected)
-            .map(
-              (choice) => this.valueToIdentifier[JSON.stringify(choice.value)],
-            ) || [];
+        // Ticked rows are read by their index: two rows may carry the same value
+        this.selectedValues = (this.currentPrompt.choices || [])
+          .map((choice, index) => (choice.selected ? this.choiceIdentifiers[index] : null))
+          .filter((identifier) => identifier !== null && identifier !== undefined);
         if (
           this.selectedValues.length === 0 &&
           this.currentPrompt?.default?.length > 0
@@ -189,10 +195,39 @@ export default class PromptInput extends SharedMixin(LightningElement) {
     }
   }
 
+  // Drops the choices the CLI listed more than once, so two rows can never be strictly
+  // interchangeable. A choice is a duplicate only when its value, label and description are all
+  // equal: the same value shown under two different labels is two meaningful rows.
+  dedupeChoices(choices) {
+    if (!Array.isArray(choices)) {
+      return choices;
+    }
+    const seen = new Set();
+    return choices.filter((choice) => {
+      let key;
+      try {
+        key = JSON.stringify([
+          choice && choice.value,
+          (choice && choice.title) || "",
+          (choice && choice.description) || "",
+        ]);
+      } catch (e) {
+        // A value that cannot be serialized is kept: it cannot be compared either
+        return true;
+      }
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+  }
+
   // Build mapping from string identifier <-> original value for current choices
   buildChoiceMappings() {
     this.choiceValueMapping = {};
     this.valueToIdentifier = {};
+    this.choiceIdentifiers = [];
     if (!this.currentPrompt || !this.currentPrompt.choices) return;
     this.currentPrompt.choices.forEach((choice, index) => {
       let stringIdentifier;
@@ -209,7 +244,13 @@ export default class PromptInput extends SharedMixin(LightningElement) {
         counter++;
       }
       this.choiceValueMapping[uniqueIdentifier] = choice.value;
-      this.valueToIdentifier[JSON.stringify(choice.value)] = uniqueIdentifier;
+      this.choiceIdentifiers[index] = uniqueIdentifier;
+      // First row wins: a preselection given as a value then resolves to the first row carrying
+      // it, the same row the CLI keeps when it deduplicates its own list
+      const valueKey = JSON.stringify(choice.value);
+      if (!Object.prototype.hasOwnProperty.call(this.valueToIdentifier, valueKey)) {
+        this.valueToIdentifier[valueKey] = uniqueIdentifier;
+      }
     });
   }
 
@@ -322,6 +363,8 @@ export default class PromptInput extends SharedMixin(LightningElement) {
     this.error = null;
     this.isSubmitting = false;
     this.choiceValueMapping = {};
+    this.valueToIdentifier = {};
+    this.choiceIdentifiers = [];
     this._hasInitialFocus = false; // Reset focus flag
     this._hasInitialScroll = false; // Reset scroll flag
     this.multiselectFilter = "";
@@ -491,9 +534,10 @@ export default class PromptInput extends SharedMixin(LightningElement) {
       const choiceTitle =
         choice.title || choice.label || choice.name || "Option " + (index + 1);
       const choiceDescription = choice.description || "";
-      const stringIdentifier =
-        this.valueToIdentifier[JSON.stringify(choice.value)];
+      const stringIdentifier = this.choiceIdentifiers[index];
       return {
+        // `key` identifies the row in the template iterations, `value` identifies the answer
+        key: stringIdentifier,
         label: this.decodeHtmlEntities(choiceTitle),
         value: stringIdentifier,
         description: this.decodeHtmlEntities(choiceDescription),
@@ -501,41 +545,29 @@ export default class PromptInput extends SharedMixin(LightningElement) {
     });
   }
 
-  // Helper method to get choice description by value (using string identifier)
+  // Helper method to get the description of a row, from its string identifier
   getChoiceDescription(stringIdentifier) {
     if (!this.currentPrompt || !this.currentPrompt.choices || !stringIdentifier)
       return "";
 
-    // Find the original choice using the mapping
-    const originalValue = this.choiceValueMapping[stringIdentifier];
-    if (originalValue === undefined) {
+    // The row is found by identity, not by value: two rows may share a value but carry
+    // different descriptions
+    const index = this.choiceIdentifiers.indexOf(stringIdentifier);
+    if (index < 0) {
       return "";
     }
-
-    const choice = this.currentPrompt.choices.find((choice) => {
-      // Handle both object and string comparisons
-      if (
-        typeof originalValue === "object" &&
-        typeof choice.value === "object"
-      ) {
-        return JSON.stringify(choice.value) === JSON.stringify(originalValue);
-      }
-      return choice.value === originalValue;
-    });
-
-    const description = choice
-      ? this.decodeHtmlEntities(choice.description || "")
-      : "";
-    return description;
+    const choice = this.currentPrompt.choices[index];
+    return choice ? this.decodeHtmlEntities(choice.description || "") : "";
   }
 
   get multiselectOptions() {
     if (!this.currentPrompt || !this.currentPrompt.choices) return [];
     return this.currentPrompt.choices.map((choice, index) => {
-      const stringIdentifier =
-        this.valueToIdentifier[JSON.stringify(choice.value)];
+      const stringIdentifier = this.choiceIdentifiers[index];
       const isChecked = this.selectedValues.includes(stringIdentifier);
       return {
+        // `key` identifies the row in the template iterations, `value` identifies the answer
+        key: stringIdentifier,
         label: this.decodeHtmlEntities(choice.title),
         value: stringIdentifier,
         originalValue: choice.value,
@@ -750,11 +782,10 @@ export default class PromptInput extends SharedMixin(LightningElement) {
 
   handleSelectAll() {
     if (!this.currentPrompt || !this.currentPrompt.choices) return;
-    // Select all string identifiers from mapping
-    const allIdentifiers = this.currentPrompt.choices.map(
-      (choice) => this.valueToIdentifier[JSON.stringify(choice.value)],
+    // One identifier per row, so every row is ticked
+    this.selectedValues = this.currentPrompt.choices.map(
+      (choice, index) => this.choiceIdentifiers[index],
     );
-    this.selectedValues = allIdentifiers;
     this.error = null;
   }
 
