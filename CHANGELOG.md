@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [8.6.1] 2026-09-14
+
 - Questions asked in the command panel
   - Fix the panel going blank when typing in the search box of a question that listed the same option twice
   - When a question cannot be displayed, show a message with a Cancel button instead of leaving the command waiting for an answer
