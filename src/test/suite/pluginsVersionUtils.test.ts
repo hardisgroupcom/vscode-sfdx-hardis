@@ -12,11 +12,7 @@ import {
 } from "../../utils/pluginsVersionUtils";
 import * as fs from "fs";
 import * as path from "path";
-import {
-  REPO_ROOT,
-  assertKeysTranslated,
-  loadLocale,
-} from "./lwcSourceUtils";
+import { REPO_ROOT, assertKeysTranslated, loadLocale } from "./lwcSourceUtils";
 
 // Real `sf plugins` output samples (Windows, Salesforce CLI 2.146.3)
 const PLUGINS_TEXT_LINKED = [
