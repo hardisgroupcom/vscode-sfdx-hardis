@@ -14,6 +14,7 @@ import {
 } from "./utils";
 import {
   getPluginInstallKindFromText,
+  isOutdatedPreviewPlugin,
   mustUpgradeSfdxHardisPlugin,
   resolveRecommendedSfCliVersion,
 } from "./utils/pluginsVersionUtils";
@@ -642,6 +643,18 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       // Check installed plugins with npm latest version comparison
       const outdated: any[] = [];
       const pluginPromises = plugins.map(async (plugin) => {
+        // Check latest plugin version (may be null when offline / cold cache).
+        // Read before the sfdx-hardis prompt below, which needs it to tell an
+        // accepted preview build that is up to date from one left behind by the
+        // published releases.
+        const latestPluginVersion: string | null = await getNpmLatestVersion(
+          plugin.name,
+        );
+        if (latestPluginVersion === null) {
+          Logger.log(
+            `Latest version for ${plugin.name} is not yet available (cold/offline)`,
+          );
+        }
         // Special check for sfdx-hardis version — show prompt once per session
         if (plugin.name === "sfdx-hardis" && !PLUGINS_SFDXHARDIS_PROMPT_SHOWN) {
           let installedVersion = null;
@@ -675,6 +688,34 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
             `[sfdx-hardis] plugin install kind: ${installKind} (v${installedVersion}) - upgrade prompt: ${mustUpgradePlugin}`,
           );
           const sfdxHardisInstallTag = getSfdxHardisInstallTag();
+          // An accepted preview build left behind by the published releases: nothing
+          // above reports it, because a pre-release extension accepts any preview
+          const isOutdatedPreview = isOutdatedPreviewPlugin({
+            kind: installKind,
+            installedVersion,
+            latestVersion: latestPluginVersion,
+          });
+          if (installedVersion && !mustUpgradePlugin && isOutdatedPreview) {
+            PLUGINS_SFDXHARDIS_PROMPT_SHOWN = true;
+            const upgradeNowLabel = t("upgradeNow");
+            vscode.window
+              .showWarningMessage(
+                t("sfdxHardisOutdatedPreviewMessage", {
+                  version: installedVersion,
+                  latestVersion: latestPluginVersion,
+                  versionToInstall: sfdxHardisInstallTag,
+                }),
+                upgradeNowLabel,
+              )
+              .then((selection) => {
+                if (selection === upgradeNowLabel) {
+                  vscode.commands.executeCommand(
+                    "vscode-sfdx-hardis.execute-command",
+                    `echo y|sf plugins:install sfdx-hardis@${sfdxHardisInstallTag} && sf hardis:work:ws --event refreshPlugins`,
+                  );
+                }
+              });
+          }
           if (installedVersion && mustUpgradePlugin) {
             PLUGINS_SFDXHARDIS_PROMPT_SHOWN = true;
             const versionToInstall = sfdxHardisInstallTag;
@@ -704,15 +745,6 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
           }
         }
 
-        // Check latest plugin version (may be null when offline / cold cache)
-        const latestPluginVersion: string | null = await getNpmLatestVersion(
-          plugin.name,
-        );
-        if (latestPluginVersion === null) {
-          Logger.log(
-            `Latest version for ${plugin.name} is not yet available (cold/offline)`,
-          );
-        }
         let pluginLabel = (plugin as any).isCommunity
           ? `${plugin.name} ${t("communityPluginLabel")}`
           : plugin.name;
@@ -766,8 +798,33 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
           });
         } else if (isPreviewPlugin) {
           pluginItem.label = `${pluginItem.label} ${previewLabel}`;
-          pluginItem.status = "dependency-preview";
-          pluginItem.tooltip = t("usingPreviewPlugin", { plugin: plugin.name });
+          // An accepted preview build is fine while it keeps up with the published
+          // releases. Once it falls behind, it is stale and must be flagged: the
+          // ordinary upgrade decoration below deliberately skips preview installs.
+          // pluginVersionDetail holds everything after the name ("8.1.0-beta1 (beta)"),
+          // so keep only the version itself for the comparison and the message
+          const installedPluginVersion = (pluginVersionDetail || "")
+            .trim()
+            .split(/\s+/)[0];
+          const isOutdatedPreview = isOutdatedPreviewPlugin({
+            kind: installKind,
+            installedVersion: installedPluginVersion,
+            latestVersion: latestPluginVersion,
+          });
+          if (isOutdatedPreview) {
+            pluginItem.label = pluginItem.label + upgradeAvailableText;
+            pluginItem.status = "dependency-warning";
+            pluginItem.tooltip = t("usingOutdatedPreviewPlugin", {
+              plugin: plugin.name,
+              version: installedPluginVersion,
+              latestVersion: latestPluginVersion,
+            });
+          } else {
+            pluginItem.status = "dependency-preview";
+            pluginItem.tooltip = t("usingPreviewPlugin", {
+              plugin: plugin.name,
+            });
+          }
         }
         // Only show upgrade decoration when we have a known latest version.
         // A locally developed plugin is never upgradable: reinstalling it from

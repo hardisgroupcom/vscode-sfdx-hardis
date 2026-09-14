@@ -60,7 +60,7 @@
                 <div class="slds-m-bottom_x-small">
                     <template for:each={selectOptionsDecorated} for:item="option">
                         <button
-                            key={option.value}
+                            key={option.key}
                             type="button"
                             class="hardis-option-card select-option-button"
                             data-value={option.value}
@@ -100,7 +100,7 @@
                     <div class="hardis-option-list" role="listbox">
                         <template for:each={filteredListOptions} for:item="option">
                             <button
-                                key={option.value}
+                                key={option.key}
                                 type="button"
                                 class={option.rowClass}
                                 data-value={option.value}
@@ -146,7 +146,7 @@
                     <div class="hardis-option-list" role="listbox" aria-multiselectable="true">
                         <template for:each={filteredMultiselectOptions} for:item="option">
                             <button
-                                key={option.value}
+                                key={option.key}
                                 type="button"
                                 class={option.rowClass}
                                 data-value={option.value}

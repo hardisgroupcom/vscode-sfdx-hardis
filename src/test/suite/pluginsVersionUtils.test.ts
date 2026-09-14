@@ -4,11 +4,19 @@ import {
   resolveRecommendedSfCliVersion,
   getPluginInstallKindFromInfo,
   getPluginInstallKindFromText,
+  isOutdatedPreviewPlugin,
   mustUpgradeSfdxHardisPlugin,
   parsePluginsData,
   parsePluginsJson,
   stripAnsiCodes,
 } from "../../utils/pluginsVersionUtils";
+import * as fs from "fs";
+import * as path from "path";
+import {
+  REPO_ROOT,
+  assertKeysTranslated,
+  loadLocale,
+} from "./lwcSourceUtils";
 
 // Real `sf plugins` output samples (Windows, Salesforce CLI 2.146.3)
 const PLUGINS_TEXT_LINKED = [
@@ -498,6 +506,98 @@ suite("pluginsVersionUtils", () => {
   });
 });
 
+suite("isOutdatedPreviewPlugin", () => {
+  test("flags a beta left behind by the published releases", () => {
+    // The reported case: a beta installed weeks ago, several releases old
+    assert.strictEqual(
+      isOutdatedPreviewPlugin({
+        kind: "preview",
+        installedVersion: "8.1.0-beta202608161651.0",
+        latestVersion: "8.2.9",
+      }),
+      true,
+    );
+  });
+
+  test("leaves a fresh beta of the next version alone", () => {
+    // sfdx-hardis betas are built from the NEXT version, so they are ahead of latest
+    assert.strictEqual(
+      isOutdatedPreviewPlugin({
+        kind: "preview",
+        installedVersion: "8.3.0-beta202609141200.0",
+        latestVersion: "8.2.9",
+      }),
+      false,
+    );
+  });
+
+  test("leaves a beta of the published version alone", () => {
+    assert.strictEqual(
+      isOutdatedPreviewPlugin({
+        kind: "preview",
+        installedVersion: "8.2.9-beta202609141200.0",
+        latestVersion: "8.2.9",
+      }),
+      false,
+    );
+  });
+
+  test("only a preview install is concerned", () => {
+    // A standard install behind latest is already reported by the ordinary path,
+    // and a locally developed one is never upgraded
+    for (const kind of ["standard", "localdev", "missing"] as const) {
+      assert.strictEqual(
+        isOutdatedPreviewPlugin({
+          kind,
+          installedVersion: "8.1.0",
+          latestVersion: "8.2.9",
+        }),
+        false,
+        `kind ${kind} must not be flagged`,
+      );
+    }
+  });
+
+  test("never guesses when a version is unknown", () => {
+    // Offline or cold npm cache
+    assert.strictEqual(
+      isOutdatedPreviewPlugin({
+        kind: "preview",
+        installedVersion: "8.1.0-beta202608161651.0",
+        latestVersion: null,
+      }),
+      false,
+    );
+    assert.strictEqual(
+      isOutdatedPreviewPlugin({
+        kind: "preview",
+        installedVersion: null,
+        latestVersion: "8.2.9",
+      }),
+      false,
+    );
+  });
+
+  test("compares on the major and minor, not only the patch", () => {
+    assert.strictEqual(
+      isOutdatedPreviewPlugin({
+        kind: "preview",
+        installedVersion: "7.9.0-beta1",
+        latestVersion: "8.0.0",
+      }),
+      true,
+    );
+    assert.strictEqual(
+      isOutdatedPreviewPlugin({
+        kind: "preview",
+        installedVersion: "8.2.8-beta1",
+        latestVersion: "8.2.9",
+      }),
+      true,
+    );
+  });
+});
+
 suite("resolveRecommendedSfCliVersion", () => {
   test("uses npm latest when no version is pinned", () => {
     assert.strictEqual(
@@ -539,6 +639,70 @@ suite("resolveRecommendedSfCliVersion", () => {
     assert.strictEqual(
       resolveRecommendedSfCliVersion("3.0.0", "2.151.6"),
       "3.0.0",
+    );
+  });
+});
+
+suite("outdated preview plugin messages", () => {
+  test("the warning and the tooltip are translated in the 9 locales", () => {
+    assertKeysTranslated([
+      "sfdxHardisOutdatedPreviewMessage",
+      "usingOutdatedPreviewPlugin",
+    ]);
+  });
+
+  test("the messages keep every interpolation placeholder", () => {
+    const en = loadLocale("en");
+    for (const placeholder of [
+      "{{version}}",
+      "{{latestVersion}}",
+      "{{versionToInstall}}",
+    ]) {
+      assert.ok(
+        en.sfdxHardisOutdatedPreviewMessage.includes(placeholder),
+        `sfdxHardisOutdatedPreviewMessage must carry ${placeholder}`,
+      );
+    }
+    for (const placeholder of [
+      "{{plugin}}",
+      "{{version}}",
+      "{{latestVersion}}",
+    ]) {
+      assert.ok(
+        en.usingOutdatedPreviewPlugin.includes(placeholder),
+        `usingOutdatedPreviewPlugin must carry ${placeholder}`,
+      );
+    }
+  });
+});
+
+suite("outdated preview is reported on every dependencies surface", () => {
+  // The same check exists in three places, each feeding a different UI. A fix in
+  // one of them is worthless if the other two still show the stale build as fine.
+  const readSource = (relative: string): string =>
+    fs.readFileSync(path.join(REPO_ROOT, "src", relative), "utf8");
+
+  test("the Dependencies tree view flags it", () => {
+    const source = readSource("hardis-plugins-provider.ts");
+    assert.ok(
+      source.includes("isOutdatedPreviewPlugin"),
+      "the tree view must compare an accepted preview against npm latest",
+    );
+    assert.ok(
+      source.includes("sfdxHardisOutdatedPreviewMessage"),
+      "the tree view must warn the user once per session",
+    );
+  });
+
+  test("the Setup panel flags it", () => {
+    const source = readSource("utils/setupUtils.ts");
+    assert.ok(
+      source.includes("isOutdatedPreviewPlugin"),
+      "the Setup LWC must compare an accepted preview against npm latest",
+    );
+    assert.ok(
+      source.includes("usingOutdatedPreviewPlugin"),
+      "the Setup LWC card must say the preview build is behind the release",
     );
   });
 });

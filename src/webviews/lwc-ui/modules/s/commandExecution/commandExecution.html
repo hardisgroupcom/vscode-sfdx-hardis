@@ -275,7 +275,24 @@
                 <lightning-icon icon-name="utility:questions_and_answers" size="xx-small"></lightning-icon>
               </div>
               <div class="hardis-tl-prompt">
-                <s-prompt-input prompt-data={embeddedPromptData} embedded="true" onsubmit={handleEmbeddedPromptSubmit} onexit={handleEmbeddedPromptExit}></s-prompt-input>
+                <template if:false={promptRenderError}>
+                  <s-prompt-input prompt-data={embeddedPromptData} embedded="true" onsubmit={handleEmbeddedPromptSubmit} onexit={handleEmbeddedPromptExit}></s-prompt-input>
+                </template>
+                <template if:true={promptRenderError}>
+                  <div class="hardis-note error" role="alert">
+                    <span class="slds-assistive-text">{i18n.errorLabel}</span>
+                    <div>{i18n.promptCouldNotBeDisplayed}</div>
+                    <div>{i18n.promptCouldNotBeDisplayedHint}</div>
+                    <div class="slds-m-top_x-small">
+                      <lightning-button
+                        variant="neutral"
+                        label={i18n.cancel}
+                        icon-name="utility:close"
+                        onclick={handlePromptRenderErrorCancel}>
+                      </lightning-button>
+                    </div>
+                  </div>
+                </template>
               </div>
             </div>
           </template>
