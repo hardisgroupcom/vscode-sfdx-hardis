@@ -52,10 +52,10 @@
           ],
           "enumDescriptions": [
             "Visual Studio Code LWC User Interface",
-            "Visual Studio Code User Interface",
-            "Command line"
+            "(Deprecated) Visual Studio Code User Interface",
+            "(Deprecated) Command line"
           ],
-          "description": "Defines if user input is in VsCode UI or in console"
+          "description": "Defines if user input is in VsCode UI or in console. Only the LWC User Interface is supported: the newer panels are not built for the other two, which will be removed in a future version."
         },
         "vsCodeSfdxHardis.userInputCommandLineIfLWC": {
           "type": "string",

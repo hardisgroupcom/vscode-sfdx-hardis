@@ -123,6 +123,26 @@ window.addEventListener("message", (event) => {
   routeMessageToComponent(message);
 });
 
+// A render error in the component mounted at the root has no LWC parent to catch it, so the
+// panel would simply stay empty with the failure visible only in the developer console. Paint a
+// plain-DOM message instead, so the panel always says something went wrong.
+window.addEventListener("error", (event) => {
+  const appContainer = document.getElementById("app");
+  if (!appContainer || appContainer.childElementCount > 0) {
+    return;
+  }
+  const translations = window.__lwcTranslations || {};
+  const message =
+    translations.panelCouldNotBeDisplayed ||
+    "This panel could not be displayed.";
+  const detail = (event && event.message) || "";
+  const box = document.createElement("div");
+  box.className = "hardis-note error";
+  box.setAttribute("role", "alert");
+  box.textContent = detail ? `${message} ${detail}` : message;
+  appContainer.appendChild(box);
+});
+
 // Wait for DOM to be ready
 document.addEventListener("DOMContentLoaded", async () => {
   console.log("DOM ready, creating LWC component...");
