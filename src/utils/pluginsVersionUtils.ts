@@ -210,6 +210,35 @@ export function mustUpgradeSfdxHardisPlugin(params: {
 }
 
 /**
+ * Tells if an accepted preview (alpha/beta) build has been left behind by the published
+ * releases, ex: a beta 8.1.0-beta202601... while 8.2.9 is published. A pre-release
+ * extension accepts any preview build, so nothing else would ever tell the user that the
+ * beta they installed weeks ago is now several releases old.
+ *
+ * {@link comparePluginVersions} strips the prerelease identifiers, so a fresh beta of the
+ * NEXT version (8.3.0-beta against a published 8.2.9) compares as ahead and is never
+ * flagged, and a beta of the published version itself (8.2.9-beta against 8.2.9) compares
+ * as equal and is not flagged either. Only a build that is genuinely behind is reported.
+ */
+export function isOutdatedPreviewPlugin(params: {
+  kind: PluginInstallKind;
+  installedVersion: string | null | undefined;
+  latestVersion: string | null | undefined;
+}): boolean {
+  const { kind, installedVersion, latestVersion } = params;
+  // Only a preview install is concerned: a standard one outdated against npm latest is
+  // already reported by the ordinary upgrade path, and a localdev one is never upgraded
+  if (kind !== "preview") {
+    return false;
+  }
+  // Unknown latest version (offline / cold npm cache): never guess
+  if (!installedVersion || !latestVersion) {
+    return false;
+  }
+  return comparePluginVersions(installedVersion, latestVersion) < 0;
+}
+
+/**
  * Resolves the Salesforce CLI version the extension must recommend / install.
  *
  * {@link RECOMMENDED_SFDX_CLI_VERSION} is a FLOOR, not an exact target: it
