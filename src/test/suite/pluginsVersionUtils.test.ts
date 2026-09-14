@@ -657,7 +657,11 @@ suite("outdated preview plugin messages", () => {
         `sfdxHardisOutdatedPreviewMessage must carry ${placeholder}`,
       );
     }
-    for (const placeholder of ["{{plugin}}", "{{version}}", "{{latestVersion}}"]) {
+    for (const placeholder of [
+      "{{plugin}}",
+      "{{version}}",
+      "{{latestVersion}}",
+    ]) {
       assert.ok(
         en.usingOutdatedPreviewPlugin.includes(placeholder),
         `usingOutdatedPreviewPlugin must carry ${placeholder}`,
