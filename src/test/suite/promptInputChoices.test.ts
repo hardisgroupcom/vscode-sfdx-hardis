@@ -48,7 +48,9 @@ function buildComponent(choices: any[], type = "multiselect"): any {
     )() as unknown as () => void;
   }
   for (const signature of ["get selectOptions()", "get multiselectOptions()"]) {
-    const body = extractMember(source, signature).trim().replace(/^get\s+/, "");
+    const body = extractMember(source, signature)
+      .trim()
+      .replace(/^get\s+/, "");
     const name = signature.slice(4, signature.indexOf("("));
     const getter = new Function(`return function ${body}`)();
     Object.defineProperty(component, name, { get: getter, configurable: true });

@@ -133,7 +133,8 @@ window.addEventListener("error", (event) => {
   }
   const translations = window.__lwcTranslations || {};
   const message =
-    translations.panelCouldNotBeDisplayed || "This panel could not be displayed.";
+    translations.panelCouldNotBeDisplayed ||
+    "This panel could not be displayed.";
   const detail = (event && event.message) || "";
   const box = document.createElement("div");
   box.className = "hardis-note error";

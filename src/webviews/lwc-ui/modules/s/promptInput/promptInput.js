@@ -167,8 +167,12 @@ export default class PromptInput extends SharedMixin(LightningElement) {
       } else if (this.currentPrompt.type === "multiselect") {
         // Ticked rows are read by their index: two rows may carry the same value
         this.selectedValues = (this.currentPrompt.choices || [])
-          .map((choice, index) => (choice.selected ? this.choiceIdentifiers[index] : null))
-          .filter((identifier) => identifier !== null && identifier !== undefined);
+          .map((choice, index) =>
+            choice.selected ? this.choiceIdentifiers[index] : null,
+          )
+          .filter(
+            (identifier) => identifier !== null && identifier !== undefined,
+          );
         if (
           this.selectedValues.length === 0 &&
           this.currentPrompt?.default?.length > 0
@@ -248,7 +252,9 @@ export default class PromptInput extends SharedMixin(LightningElement) {
       // First row wins: a preselection given as a value then resolves to the first row carrying
       // it, the same row the CLI keeps when it deduplicates its own list
       const valueKey = JSON.stringify(choice.value);
-      if (!Object.prototype.hasOwnProperty.call(this.valueToIdentifier, valueKey)) {
+      if (
+        !Object.prototype.hasOwnProperty.call(this.valueToIdentifier, valueKey)
+      ) {
         this.valueToIdentifier[valueKey] = uniqueIdentifier;
       }
     });
