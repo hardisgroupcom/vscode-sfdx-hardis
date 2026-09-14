@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Questions asked in the command panel
+  - Fix the panel going blank when typing in the search box of a question that listed the same option twice
+  - When a question cannot be displayed, show a message with a Cancel button instead of leaving the command waiting for an answer
+- Deprecate the user input modes other than the LWC User Interface, which the DevOps Pipeline, Backpromote and Setup panels are not built for: a warning now offers to switch, and they will be removed in a future version
+
 ## [8.6.0] 2026-09-13
 
 - sfdx-hardis 8.8.0 is now the minimum version, needed by the Backpromote panel

@@ -69,6 +69,10 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
   // For embedded prompt
   @track showEmbeddedPrompt = false;
   @track embeddedPromptData = null;
+  // Message of a render error raised by a child component. When a question was being asked, the
+  // prompt subtree is unmounted by LWC and nothing replaces it: the panel looked empty while the
+  // CLI kept waiting for an answer that could no longer be given.
+  @track promptRenderError = null;
   embeddedPromptListener = null;
   @track commandContext = null;
   @track commandDocUrl = null;
@@ -511,6 +515,8 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
   showPromptInPanel(data) {
     this.embeddedPromptData = { prompts: [data.prompt] };
     this.showEmbeddedPrompt = true;
+    // A failure on an earlier question must not hide the next one
+    this.promptRenderError = null;
     // Remove any previous listener
     if (this.embeddedPromptListener) {
       this.removeEventListener("promptsubmit", this.embeddedPromptListener);
@@ -584,6 +590,33 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
         composed: true,
       }),
     );
+  }
+
+  // A render error in a child component aborts its rendering and leaves nothing on screen.
+  // SharedMixin writes it to fields this panel does not track, so it is caught here instead and
+  // shown in place of the question that could not be displayed.
+  errorCallback(error, stack) {
+    console.error("LWC component error:", error, stack);
+    this.promptRenderError = (error && error.message) || String(error);
+  }
+
+  // Answers the pending question the way Cancel does, so a command is never left waiting on a
+  // question the panel could not display
+  handlePromptRenderErrorCancel() {
+    const prompt =
+      (this.embeddedPromptData &&
+        this.embeddedPromptData.prompts &&
+        this.embeddedPromptData.prompts[0]) ||
+      null;
+    const response = {};
+    response[(prompt && prompt.name) || "value"] =
+      prompt && prompt.type === "multiselect" ? [] : "exitNow";
+    window.sendMessageToVSCode({
+      type: "submit",
+      data: response,
+    });
+    this.promptRenderError = null;
+    this.hidePromptInPanel();
   }
 
   handleLogContainerClick(event) {
