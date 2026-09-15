@@ -154,7 +154,7 @@ BOX_CROPS = {
         (760, 264, 1462, 706),
     ),
     # One pre-filled "Edit Deployment Action" editor per action type, for
-    # salesforce-ci-cd-work-on-task-deployment-actions.md (same zoomed-out
+    # salesforce-devops-work-on-user-story-deployment-actions.md (same zoomed-out
     # captures; the modal height depends on the action type)
     "screenshot-deployment-action-command.jpg": (
         "pipeline-edit-action-command",

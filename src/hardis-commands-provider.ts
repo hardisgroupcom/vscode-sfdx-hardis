@@ -197,7 +197,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             command: "vscode-sfdx-hardis.showPipeline",
             tooltip: t("devOpsPipelineTooltip"),
             requiresProject: false,
-            helpUrl: DOCSITE_URL + "/salesforce-ci-cd-home/",
+            helpUrl: DOCSITE_URL + "/salesforce-devops-home/",
           },
           {
             id: "hardis:work:new",
@@ -1164,7 +1164,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             id: "help:cicd",
             label: t("ciCdDocumentation"),
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-              DOCSITE_URL + "/salesforce-ci-cd-home/",
+              DOCSITE_URL + "/salesforce-devops-home/",
             )}`,
           },
           {

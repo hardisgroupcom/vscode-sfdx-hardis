@@ -646,7 +646,7 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
                         branch: branchForFetch,
                         parent: parentGitBranch,
                       }),
-                      command: `vscode-sfdx-hardis.openExternal ${DOCSITE_URL}/salesforce-ci-cd-merge-parent-branch/`,
+                      command: `vscode-sfdx-hardis.openExternal ${DOCSITE_URL}/salesforce-devops-merge-parent-branch/`,
                     };
                   }
                   return item;

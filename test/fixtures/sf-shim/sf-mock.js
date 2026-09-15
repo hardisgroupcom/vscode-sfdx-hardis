@@ -1778,7 +1778,7 @@ const DOCS_SCENARIOS = {
     });
     send({
       event: "reportFile",
-      file: "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#create-merge-request",
+      file: "https://sfdx-hardis.cloudity.com/salesforce-devops-publish-user-story/#create-merge-request",
       title: "View Pull Request documentation",
       type: "docUrl",
     });

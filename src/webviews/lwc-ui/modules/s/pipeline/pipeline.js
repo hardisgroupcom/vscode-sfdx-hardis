@@ -1599,7 +1599,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   openCloudityDocs() {
     window.sendMessageToVSCode({
       type: "openExternal",
-      data: "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/",
+      data: "https://sfdx-hardis.cloudity.com/salesforce-devops-home/",
     });
   }
 
