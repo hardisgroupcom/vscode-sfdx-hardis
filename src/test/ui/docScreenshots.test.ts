@@ -265,6 +265,29 @@ function checkoutWorkspaceBranch(branchName: string): void {
 }
 
 const FEATURE_BRANCH = "feature/CRM-1042-account-hierarchy";
+/**
+ * Promotion branches variant of the run (SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION):
+ * enablePromotionBranches is on in the workspace config and the git provider
+ * fixture holds the uat window and the open promotion to preprod. The feature is
+ * experimental and off by default, so its shots are taken apart rather than
+ * changing every pipeline screenshot of the documentation.
+ */
+const PROMOTION_VARIANT =
+  process.env.SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION === "true";
+/** uat branch node of the diagram, in the coordinates of the captured PNG */
+const PROMOTION_UAT_NODE = { x: 1097, y: 366 };
+/** Promotion branch of the fixture, source of the open promotion #130 */
+const PROMOTION_BRANCH = "promotion/uat/preprod/2026-08-20-0930";
+/**
+ * Checkboxes of the two approved User Stories of the uat window (#115 and
+ * #113): the same two the promotion of the fixture carries, so the branch
+ * window and the promotion Pull Request screenshots tell one story.
+ */
+const PROMOTION_TICKED_ROWS = [
+  { x: 512, y: 422 },
+  { x: 512, y: 500 },
+];
+const PROMOTION_MODAL_CLOSE = { x: 1843, y: 78 };
 const PIPELINE_ACTIONS_DEEP_LINK = { focus: "deploymentActions" };
 
 /**
@@ -605,6 +628,68 @@ suite("Documentation screenshots", function () {
     await click(958, 227); // "Deployment Actions" tab of the modal
     await sleep(1500);
     await captureStable("pipeline-branch-modal-actions");
+  });
+
+  // Promotion branches (experimental), for
+  // docs/salesforce-ci-cd-promotion-branches.md. Only in the promotion variant
+  // of the run:
+  //   SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION=true \
+  //   SFDX_HARDIS_DOC_SCREENSHOTS_DIR=doc-screenshots/promotion \
+  //   yarn screenshots promotion
+  test("promotion branches", async function () {
+    if (!PROMOTION_VARIANT || !shouldTake("promotion")) {
+      this.skip();
+    }
+    // The diagram, with the open promotion drawn on the uat -> preprod arrow
+    await shootPanel(panelManager, {
+      name: "promotion-pipeline",
+      command: "vscode-sfdx-hardis.showPipeline",
+      lwcId: "s-pipeline",
+      ready: pipelineFullyLoaded,
+      settleMs: 9000,
+      force: true,
+    });
+    // Window of uat: the User Stories waiting there, with the checkbox column
+    // and the "Create promotion" button the release manager uses
+    await sleep(1000);
+    await click(PROMOTION_UAT_NODE.x, PROMOTION_UAT_NODE.y);
+    await sleep(2500);
+    await cleanChrome();
+    for (const row of PROMOTION_TICKED_ROWS) {
+      await click(row.x, row.y);
+    }
+    await sleep(1200);
+    await captureStable("promotion-branch-modal");
+    await click(PROMOTION_MODAL_CLOSE.x, PROMOTION_MODAL_CLOSE.y);
+    await sleep(1500);
+    // Modal of the promotion Pull Request itself, on its Deployment Actions
+    // tab: the actions declared on the User Stories it carries, read-only.
+    // Opened from the promotion branch through the deep link of
+    // hardis:work:save, so no coordinate is involved.
+    checkoutWorkspaceBranch(PROMOTION_BRANCH);
+    try {
+      await shootPanel(panelManager, {
+        name: "promotion-pr-modal",
+        command: "vscode-sfdx-hardis.showPipeline",
+        lwcId: "s-pipeline",
+        ready: pipelineFullyLoaded,
+        settleMs: 9000,
+        force: true,
+        commandArgs: PIPELINE_ACTIONS_DEEP_LINK,
+      });
+    } finally {
+      checkoutWorkspaceBranch("integration");
+    }
+    // Danger Zone of the Pipeline Settings, where the two project settings of
+    // the feature are switched on
+    await shootPanel(panelManager, {
+      name: "promotion-settings",
+      command: "vscode-sfdx-hardis.showPipelineConfig",
+      commandArgs: [null, "Danger Zone"],
+      lwcId: "s-pipeline-config",
+      settleMs: 3500,
+      force: true,
+    });
   });
 
   // One screenshot of the "Edit Deployment Action" editor per action type,

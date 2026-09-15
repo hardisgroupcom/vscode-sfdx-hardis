@@ -1,0 +1,10 @@
+commandsPostDeploy:
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-115a00000001
+    label: Assign the CRM_Manager permission set to the dispatchers
+    type: apex
+    when: post-deploy
+    parameters:
+      apexScript: scripts/apex/assign-crm-manager.apex
+    command: ""
+    context: process-deployment-only
+    runOnlyOnceByOrg: true

@@ -65,6 +65,10 @@ PANEL_SHOTS = {
     "backpromote-running.png": "backpromote-running",
     "backpromote-deploy-failed.png": "backpromote-deploy-failed",
     "backpromote-resumed.png": "backpromote-resumed",
+    # Promotion branches (experimental), taken by the promotion variant of the
+    # run into doc-screenshots/promotion (see CONTRIBUTING.md)
+    "promotion-pipeline.png": "promotion/promotion-pipeline",
+    "promotion-settings.png": "promotion/promotion-settings",
 }
 
 # Width of the activity bar + side bar in a capture: the editor area (the
@@ -87,6 +91,8 @@ WEBVIEW_ONLY = {
     "command-runner.png",
     "installed-packages.png",
     "pipeline-config.png",
+    "promotion-pipeline.png",
+    "promotion-settings.png",
 }
 
 # --- Crops of a single side bar row ----------------------------------------
@@ -194,6 +200,17 @@ BOX_CROPS = {
     "screenshot-deployment-action-target-orgs-exclude.jpg": (
         "pipeline-edit-action-target-orgs-exclude",
         (760, 144, 1462, 823),
+    ),
+    # Promotion branches (experimental): the uat window with the User Stories
+    # ticked and the Create promotion button, and the modal of the promotion
+    # Pull Request on its Deployment Actions tab
+    "promotion-branch-modal.png": (
+        "promotion/promotion-branch-modal",
+        (470, 60, 1866, 810),
+    ),
+    "promotion-pr-modal.png": (
+        "promotion/promotion-pr-modal",
+        (470, 60, 1866, 810),
     ),
 }
 

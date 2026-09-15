@@ -94,6 +94,7 @@ The extension follows this architecture:
 ### 3. Testing Your Changes
 
 1. **Start the watch task** (optional but recommended):
+
    ```bash
    yarn watch
    ```
@@ -101,6 +102,7 @@ The extension follows this architecture:
 2. **Launch the debugger** (F5) to open the Extension Development Host
 
 3. **Test your changes** in the development environment:
+
    - Open a Salesforce project
    - Test the commands you've modified
    - Verify the UI components work correctly
@@ -127,6 +129,7 @@ The extension follows this architecture:
 ### Command Patterns
 
 All commands should follow the modern Salesforce CLI format:
+
 ```bash
 sf hardis:category:action [options]
 ```
@@ -182,6 +185,13 @@ yarn screenshots           # captures every panel into doc-screenshots/
 yarn screenshots welcome,setup            # only some of them
 SF_MOCK_DEPS_STATE=missing yarn screenshots setup   # Setup panel with missing dependencies
 
+# Promotion branches (experimental): a variant run that turns
+# enablePromotionBranches on and serves the promotion fixture, into its own
+# output folder so the ordinary screenshots keep showing the feature off
+SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION=true \
+  SFDX_HARDIS_DOC_SCREENSHOTS_DIR=doc-screenshots/promotion \
+  yarn screenshots promotion
+
 # Copy them into the documentation of the sibling sfdx-hardis repository
 python scripts/build-doc-images.py
 ```
@@ -204,7 +214,10 @@ The DevOps Pipeline screenshots include open pull requests, feature branches
 and CI job statuses: they are served by a mocked git provider
 (`src/utils/gitProviders/gitProviderMock.ts`), which reads its data from
 `test/fixtures/screenshot/git-provider-mock.json` and is only activated by the
-UI test harness.
+UI test harness. The promotion variant merges
+`test/fixtures/screenshot/git-provider-mock-promotion.json` on top of it (the
+uat window and the open promotion Pull Request to preprod) and appends
+`enablePromotionBranches` / `allowedPromotionSteps` to the workspace config.
 
 ### Manual Testing Checklist
 
@@ -230,6 +243,7 @@ git commit -m "feat: add new feature description"
 ```
 
 Follow conventional commit format:
+
 - `feat:` for new features
 - `fix:` for bug fixes
 - `docs:` for documentation changes
