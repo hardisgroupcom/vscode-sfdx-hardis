@@ -1,0 +1,23 @@
+commandsPostDeploy:
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-113a00000001
+    label: Schedule the renewal reminder batch
+    type: schedule-batch
+    when: post-deploy
+    parameters:
+      className: RenewalReminderBatch
+      cronExpression: 0 0 6 * * ?
+      jobName: Renewal Reminders
+    command: ""
+    context: process-deployment-only
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-113a00000002
+    label: Activate the renewal reminder email alert in Setup
+    type: manual
+    when: post-deploy
+    parameters:
+      instructions: |
+        1. Open **Setup**, type `Email Alerts` in the Quick Find box, then open **Email Alerts**.
+        2. Find `Contract_Renewal_Reminder` and click **Edit**.
+        3. Tick **Active**, then click **Save**.
+        4. Check: the alert is listed as active. If it already was, there is nothing to do: tick the box anyway.
+    command: ""
+    context: process-deployment-only

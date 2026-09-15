@@ -33,6 +33,7 @@ Built and maintained by [**Cloudity**](https://cloudity.com/?ref=sfdxhardis) and
   - [Orgs Manager](#orgs-manager)
   - [DevOps Pipeline (CI/CD)](#devops-pipeline-cicd)
   - [User Story workflow](#user-story-workflow)
+  - [Promotion branches (experimental)](#promotion-branches-experimental)
   - [Backpromote (Beta)](#backpromote-beta)
   - [Metadata Retriever](#metadata-retriever)
   - [Data Workbench (SFDMU)](#data-workbench-sfdmu)
@@ -143,6 +144,16 @@ Designed for consultant profiles: **start a user story → work in the org → s
 - [Start a new user story](https://sfdx-hardis.cloudity.com/hardis/work/new/) - branches and configures everything for you.
 - [Pull from org](https://sfdx-hardis.cloudity.com/hardis/scratch/pull/) - retrieves only what you actually changed.
 - [Save / publish](https://sfdx-hardis.cloudity.com/hardis/work/save/) - cleans sources, commits, and opens the merge request.
+
+### Promotion branches (experimental)
+
+Ship the approved User Stories of a branch without waiting for the rest of the window.
+Open a major branch in the DevOps Pipeline, tick the stories business signed off, and click **Create promotion**: the branch is assembled by cherry-pick, its Pull Request declares what it carries, and the deployment jobs give those stories their deployment actions, Apex test classes and tickets as if they had been merged directly.
+When a cherry-pick conflicts, the recommended answer commits every conflict at once and hands you a ready-to-paste prompt for your coding agent, which solves them all in a single pass.
+
+![Create a promotion from a branch window of the DevOps Pipeline](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/promotion-branch-modal.png)
+
+- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/) - when to use one, how to assemble it, and what the jobs do with it.
 
 ### Backpromote (Beta)
 

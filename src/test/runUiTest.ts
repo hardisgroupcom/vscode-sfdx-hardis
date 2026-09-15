@@ -23,6 +23,15 @@ async function main() {
   // to display, and only the docScreenshots suite runs.
   const docScreenshots = process.env.SFDX_HARDIS_DOC_SCREENSHOTS === "true";
 
+  // Promotion branches variant of the screenshot run: the experimental feature
+  // is off in the base fixture, so the ordinary screenshots show a project that
+  // does not use it. This variant turns it on, adds the promotion branch to the
+  // workspace and serves a git provider fixture holding the User Stories
+  // waiting in uat and the open promotion carrying two of them to preprod.
+  const promotionVariant =
+    docScreenshots &&
+    process.env.SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION === "true";
+
   // Real-CLI performance gate: same Extension Development Host and dummy
   // project, but the REAL `sf` CLI stays on the PATH (no shim) and only the
   // realCliPerf suite runs. See src/test/ui/realCliPerf.test.ts.
@@ -83,6 +92,58 @@ async function main() {
       git(`branch ${branch}`);
     }
     git("remote add origin https://github.com/mycompany/salesforce-crm.git");
+  }
+
+  // Git provider fixture of the run: the promotion variant merges its overlay
+  // into the base one and writes the result next to the temp workspace, so the
+  // committed fixtures stay independent from each other.
+  let gitProviderFixtureFile = path.join(
+    extensionDevelopmentPath,
+    "test",
+    "fixtures",
+    "screenshot",
+    "git-provider-mock.json",
+  );
+  if (promotionVariant) {
+    // The promotion branch exists on the repository, like any branch pushed by
+    // hardis:project:promotion:create
+    git("branch promotion/uat/preprod/2026-08-20-0930");
+    // enablePromotionBranches + allowedPromotionSteps, the two project settings
+    // the feature needs (see the promotion-branches documentation page)
+    const configFile = path.join(workspaceDir, ".sfdx-hardis.yml");
+    fs.appendFileSync(
+      configFile,
+      [
+        "enablePromotionBranches: true",
+        "allowedPromotionSteps:",
+        "  - source: uat",
+        "    target: preprod",
+        "",
+      ].join("\n"),
+    );
+    const overlayFile = path.join(
+      extensionDevelopmentPath,
+      "test",
+      "fixtures",
+      "screenshot",
+      "git-provider-mock-promotion.json",
+    );
+    const fixture = JSON.parse(fs.readFileSync(gitProviderFixtureFile, "utf8"));
+    const overlay = JSON.parse(fs.readFileSync(overlayFile, "utf8"));
+    fixture.openPullRequests = [
+      ...(overlay.addOpenPullRequests || []),
+      ...(fixture.openPullRequests || []),
+    ];
+    Object.assign(
+      fixture.mergedPullRequestsByBranch,
+      overlay.mergedPullRequestsByBranch || {},
+    );
+    gitProviderFixtureFile = path.join(workDir, "git-provider-mock.json");
+    fs.writeFileSync(
+      gitProviderFixtureFile,
+      JSON.stringify(fixture, null, 2),
+      "utf8",
+    );
   }
 
   // 3. Deterministic extension settings for the test workspace
@@ -251,13 +312,7 @@ async function main() {
               // Git provider answers (open PRs with CI jobs, merged PRs,
               // go-lives) served from a fixture so the DevOps Pipeline shows
               // feature branches and running jobs (see gitProviderMock.ts)
-              SFDX_HARDIS_MOCK_GIT_PROVIDER_FILE: path.join(
-                extensionDevelopmentPath,
-                "test",
-                "fixtures",
-                "screenshot",
-                "git-provider-mock.json",
-              ),
+              SFDX_HARDIS_MOCK_GIT_PROVIDER_FILE: gitProviderFixtureFile,
               // Connected JIRA ticketing provider with the tickets referenced
               // by the mocked pull requests (see ticketProviderMock.ts)
               SFDX_HARDIS_MOCK_TICKET_PROVIDER_FILE: path.join(
@@ -267,6 +322,9 @@ async function main() {
                 "screenshot",
                 "ticket-provider-mock.json",
               ),
+              SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION: promotionVariant
+                ? "true"
+                : "",
               SF_MOCK_DEPS_STATE: process.env.SF_MOCK_DEPS_STATE || "ok",
               SF_MOCK_VERSIONS_FILE: process.env.SF_MOCK_VERSIONS_FILE || "",
               // Screenshots must not depend on what npm answers today: the

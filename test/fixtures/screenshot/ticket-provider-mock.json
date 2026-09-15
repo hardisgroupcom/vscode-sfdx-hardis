@@ -74,6 +74,34 @@
       "author": "Lisa Chen",
       "authorLabel": "Lisa Chen"
     },
+    "CRM-1015": {
+      "subject": "Territory assignment rules",
+      "status": "In Review",
+      "statusLabel": "In Review",
+      "author": "Nadia Ferreira",
+      "authorLabel": "Nadia Ferreira"
+    },
+    "CRM-1012": {
+      "subject": "Service appointment scheduler",
+      "status": "Done",
+      "statusLabel": "Done",
+      "author": "Sam Dubois",
+      "authorLabel": "Sam Dubois"
+    },
+    "CRM-1007": {
+      "subject": "Contract line item pricing",
+      "status": "In Review",
+      "statusLabel": "In Review",
+      "author": "Alex Martin",
+      "authorLabel": "Alex Martin"
+    },
+    "CRM-1001": {
+      "subject": "Renewal reminder emails",
+      "status": "Done",
+      "statusLabel": "Done",
+      "author": "Lisa Chen",
+      "authorLabel": "Lisa Chen"
+    },
     "CRM-991": {
       "subject": "Quote PDF generation",
       "status": "Done",
