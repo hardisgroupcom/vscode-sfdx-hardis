@@ -58,7 +58,7 @@ const SERVICENOW_USERNAME_KEY = "SERVICENOW_USERNAME";
 const SERVICENOW_PASSWORD_KEY = "SERVICENOW_PASSWORD";
 
 const SERVICENOW_DOC_URL =
-  "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/";
+  "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-servicenow/";
 
 /**
  * Value of a setting the CLI connector reads with `getEnvVar(name) || config?.property`.

@@ -631,7 +631,7 @@ suite("Documentation screenshots", function () {
   });
 
   // Promotion branches (experimental), for
-  // docs/salesforce-ci-cd-promotion-branches.md. Only in the promotion variant
+  // docs/salesforce-devops-promotion-branches.md. Only in the promotion variant
   // of the run:
   //   SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION=true \
   //   SFDX_HARDIS_DOC_SCREENSHOTS_DIR=doc-screenshots/promotion \
@@ -696,7 +696,7 @@ suite("Documentation screenshots", function () {
   // pre-filled from the PR #128 fixture actions
   // (test/fixtures/doc-screenshots-project/scripts/actions/.sfdx-hardis.128.yml).
   // Feeds the docs images screenshot-deployment-action-<type>.jpg of
-  // salesforce-ci-cd-work-on-task-deployment-actions.md.
+  // salesforce-devops-work-on-user-story-deployment-actions.md.
   test("pipeline: deployment action editors", async function () {
     if (!shouldTake("pipeline-action-editors")) {
       this.skip();
@@ -772,7 +772,7 @@ suite("Documentation screenshots", function () {
   // served by the mocked CLI: the plan and its default selection, the same plan once Merge all
   // prepared every differing item (with the notification of the copied prompt), then the result
   // of a run. The side bar, the activity bar and the status bar are hidden: the panel fills the
-  // window, so the images need no side crop. Feeds salesforce-ci-cd-backpromote.md and the README
+  // window, so the images need no side crop. Feeds salesforce-devops-backpromote.md and the README
   // of the extension.
   test("backpromote panel", async function () {
     if (!shouldTake("backpromote")) {

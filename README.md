@@ -65,7 +65,7 @@ Built and maintained by [**Cloudity**](https://cloudity.com/?ref=sfdxhardis) and
 Salesforce DX is powerful, but you have to glue together dozens of `sf` commands, plugins, YAML files, and Git operations to ship a project safely. **VS Code SFDX Hardis turns that toolbox into an integrated workspace:**
 
 - 🖱️ **Click, don't memorize** - every operation is a button with sensible defaults, tooltips, and contextual help.
-- 🚦 **CI/CD-ready from day one** - set up a complete [Salesforce CI/CD pipeline](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/) and visualize it inside VS Code.
+- 🚦 **CI/CD-ready from day one** - set up a complete [Salesforce CI/CD pipeline](https://sfdx-hardis.cloudity.com/salesforce-devops-home/) and visualize it inside VS Code.
 - 🩺 **Watch your orgs** - [monitor production and sandbox health](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/), security, and limits, with notifications to Slack, MS Teams, email, Jira, Grafana…
 - 📚 **AI-generated documentation** - turn your metadata into a browsable, diagram-rich knowledge base.
 - 🤝 **Native integrations** - GitHub, GitLab, Azure DevOps, Bitbucket, Gitea · Jira, Azure Boards, ServiceNow · Slack, MS Teams, Email · OpenAI, Anthropic, Agentforce, Ollama…
@@ -131,7 +131,7 @@ Visualize and manage your entire CI/CD pipeline inside VS Code: branches, enviro
 
 ![DevOps Pipeline UI](https://sfdx-hardis.cloudity.com/assets/images/sfdx-hardis-pipeline-view.gif)
 
-The pipeline supports the major Git platforms out of the box: **GitHub, GitLab, Azure DevOps, Bitbucket, Gitea** - with [merge-request comments](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-handle-merge-request-results/), [Jira / Azure Boards / ServiceNow integration](https://sfdx-hardis.cloudity.com/), and notifications to **Slack, MS Teams and Email**.
+The pipeline supports the major Git platforms out of the box: **GitHub, GitLab, Azure DevOps, Bitbucket, Gitea** - with [merge-request comments](https://sfdx-hardis.cloudity.com/salesforce-devops-handle-merge-request-results/), [Jira / Azure Boards / ServiceNow integration](https://sfdx-hardis.cloudity.com/), and notifications to **Slack, MS Teams and Email**.
 
 ### User Story workflow
 
@@ -153,7 +153,7 @@ When a cherry-pick conflicts, the recommended answer commits every conflict at o
 
 ![Create a promotion from a branch window of the DevOps Pipeline](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/promotion-branch-modal.png)
 
-- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/) - when to use one, how to assemble it, and what the jobs do with it.
+- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) - when to use one, how to assemble it, and what the jobs do with it.
 
 ### Backpromote (Beta)
 
@@ -168,7 +168,7 @@ Each Pull Request records the backpromote in a comment, so the next one starts w
 |-------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------|
 | ![Backpromote Merge all](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/backpromote-merge-all.png) | ![Backpromote result](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/backpromote-result.png) |
 
-- [Backpromote to your dev sandbox](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-backpromote/) - how it works, from VS Code and from a terminal.
+- [Backpromote to your dev sandbox](https://sfdx-hardis.cloudity.com/salesforce-devops-backpromote/) - how it works, from VS Code and from a terminal.
 
 ### Metadata Retriever
 
@@ -406,7 +406,7 @@ plugins:
 ## Articles & talks
 
 - [sfdx-hardis: A release management tool for open-source](https://salesforcedevops.net/index.php/2023/03/01/sfdx-hardis-open-source-salesforce-release-management/)
-- [What DevOps experts want to know about Salesforce CI/CD](https://nicolas.vuillamy.fr/what-devops-experts-want-to-know-about-salesforce-ci-cd-with-sfdx-hardis-q-a-1f412db34476)
+- [What DevOps experts want to know about Salesforce CI/CD](https://nicolas.vuillamy.fr/what-devops-experts-want-to-know-about-salesforce-devops-with-sfdx-hardis-q-a-1f412db34476)
 - [Handle Salesforce API versions deprecation like a pro](https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238)
 - [Mass-download notes & attachments from a Salesforce org](https://nicolas.vuillamy.fr/how-to-mass-download-notes-and-attachments-files-from-a-salesforce-org-83a028824afd)
 - [Freeze / unfreeze users during a deployment](https://medium.com/@dimitrimonge/freeze-unfreeze-users-during-salesforce-deployment-8a1488bf8dd3)
