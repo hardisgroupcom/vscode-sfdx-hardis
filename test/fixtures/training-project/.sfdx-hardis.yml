@@ -1,0 +1,111 @@
+# Helios Energy - sfdx-hardis training project
+# This file is read by sfdx-hardis and by the VS Code extension.
+# Doc: https://sfdx-hardis.cloudity.com/salesforce-devops-config-home/
+
+projectName: HeliosEnergy
+
+# --- Pipeline -------------------------------------------------------------
+# At Levels 1 and 2 the pipeline stops at integration on purpose.
+# Level 3 lab 0 is where uat and main are declared as major branches.
+developmentBranch: integration
+productionBranch: main
+availableTargetBranches:
+  - integration
+availableTargetBranchesLabels:
+  - "integration: shared integration org, where every contributor merges"
+
+# Branch naming for new User Stories
+branchPrefixChoices:
+  - value: features
+    title: "Feature: a new capability or an improvement"
+  - value: fixes
+    title: "Fix: correct something that is broken"
+newTaskNameRegex: '^US-\d{3}-[a-z0-9-]+$'
+newTaskNameRegexExample: "US-014-panels-required"
+
+# --- Quality --------------------------------------------------------------
+testLevel: RunLocalTests
+apexTestsMinCoverageOrgWide: 75
+testCoverageNotBlocking: false
+
+# --- Automated cleaning ---------------------------------------------------
+# Applied by hardis:work:save before the Pull Request. Level 1 lab 4 reads the
+# result, Level 3 lab 4 explains why each one is here.
+autoCleanTypes:
+  - destructivechanges
+  - localfields
+  - productrequest
+  - flowPositions
+  - minimizeProfiles
+  - listViewsMine
+
+# Permissions that must never travel through a Profile on this project.
+# This is what makes the Level 2 lab 5 failure happen, and it is deliberate.
+autoRemoveUserPermissions:
+  - EnableCommunityAppLauncher
+  - FieldServiceAccess
+  - OmnichannelInventorySync
+  - SendExternalEmailAvailable
+  - WorkCalibrationUser
+
+# --- Data -----------------------------------------------------------------
+dataPackages:
+  - dataPath: scripts/data/HeliosBaseline
+    importInScratchOrgs: false
+  - dataPath: scripts/data/HeliosCrewRefData
+    importInScratchOrgs: false
+
+# --- The Training menu ----------------------------------------------------
+# Rendered by the VS Code extension as cards on the Welcome page and as a menu
+# in the Commands panel. This is how a learner runs anything the product does
+# not already own a button for.
+customCommandsPosition: first
+customCommands:
+  - id: training
+    label: Training
+    description: Salesforce DevOps with sfdx-hardis - the commands for your labs
+    vscodeIcon: mortar-board
+    sldsIcon: utility:education
+    commands:
+      - id: training-status
+        label: Where am I?
+        vscodeIcon: compass
+        sldsIcon: utility:location
+        tooltip: Shows the level and lab you reached, and what to do next
+        command: node scripts/training.mjs status
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/
+      - id: training-seed
+        label: Set up one of my training orgs
+        vscodeIcon: cloud-upload
+        sldsIcon: utility:upload
+        tooltip: Deploys the Helios Energy app and its sample data into the org you choose
+        command: node scripts/training.mjs seed
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1/lab-00-setup/
+      - id: training-check
+        label: Check my work
+        vscodeIcon: pass
+        sldsIcon: utility:check
+        tooltip: Verifies the lab you just finished and prints your receipt
+        command: node scripts/training.mjs check
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/badges/
+      - id: training-simulate
+        label: Simulate my teammates
+        vscodeIcon: organization
+        sldsIcon: utility:groups
+        tooltip: Creates the teammate branches and Pull Requests your lab needs
+        command: node scripts/training.mjs simulate
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2/lab-06-conflicts/
+      - id: training-reset
+        label: Reset this level
+        vscodeIcon: debug-restart
+        sldsIcon: utility:refresh
+        tooltip: Puts your repository back to the start of a level
+        command: node scripts/training.mjs reset
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/
+      - id: training-teardown
+        label: Clean up a training org
+        vscodeIcon: trash
+        sldsIcon: utility:delete
+        tooltip: Removes the Helios app and its data from an org
+        command: node scripts/training.mjs teardown
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/

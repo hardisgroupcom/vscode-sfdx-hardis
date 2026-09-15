@@ -78,6 +78,44 @@ function docsPlugins() {
   return DOCS_PLUGINS;
 }
 
+// ---------------------------------------------------------------------------
+// Alternate fixture universe (SF_MOCK_UNIVERSE).
+//
+// Unset means everything above, byte for byte: no existing command, script or
+// CI job changes meaning. Set to a universe name, the mock reads
+//   test/fixtures/screenshot/<name>/sf-mock-overlay.json
+// and uses only the keys that file declares, falling back to the values above
+// for everything else.
+//
+// It is how the sfdx-hardis training gets screenshots showing Helios Energy
+// instead of MyCompany-CRM without editing a single existing fixture value.
+// ---------------------------------------------------------------------------
+const MOCK_UNIVERSE = process.env.SF_MOCK_UNIVERSE || "";
+const UNIVERSE_OVERLAY = (() => {
+  if (!MOCK_UNIVERSE) {
+    return {};
+  }
+  // The shim is copied to a temporary folder for the documentation run, so the
+  // folder is passed explicitly. The relative path is the fallback for a shim
+  // still sitting in the repository.
+  const file = process.env.SF_MOCK_UNIVERSE_DIR
+    ? path.join(process.env.SF_MOCK_UNIVERSE_DIR, "sf-mock-overlay.json")
+    : path.join(__dirname, "..", "screenshot", MOCK_UNIVERSE, "sf-mock-overlay.json");
+  try {
+    return JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch {
+    // An unreadable overlay must never silently change the base universe
+    return {};
+  }
+})();
+
+/** The overlay value for a key, or the base fixture when the overlay is silent. */
+function universeValue(key, fallback) {
+  return Object.prototype.hasOwnProperty.call(UNIVERSE_OVERLAY, key)
+    ? UNIVERSE_OVERLAY[key]
+    : fallback;
+}
+
 const DOCS_ORGS = {
   nonScratchOrgs: [
     {
@@ -402,7 +440,12 @@ async function main() {
     const typeIndex = args.indexOf("--metadata-type");
     const type = typeIndex > -1 ? args[typeIndex + 1] : "";
     outputJsonIfRequested(
-      { status: 0, result: DOCS_PROFILE ? docsMetadataFor(type) : [] },
+      {
+        status: 0,
+        result: DOCS_PROFILE
+          ? (universeValue("metadata", null) || {})[type] || docsMetadataFor(type)
+          : [],
+      },
       "",
     );
     return 0;
@@ -412,7 +455,10 @@ async function main() {
     // Outside the docs profile, one developer sandbox (the default org): the target of the
     // Backpromote panel tests, whose plan fixture names it
     outputJsonIfRequested(
-      { status: 0, result: DOCS_PROFILE ? DOCS_ORGS : TEST_ORGS },
+      {
+        status: 0,
+        result: DOCS_PROFILE ? universeValue("orgs", DOCS_ORGS) : TEST_ORGS,
+      },
       "",
     );
     return 0;
@@ -423,14 +469,14 @@ async function main() {
       DOCS_PROFILE
         ? {
             status: 0,
-            result: {
+            result: universeValue("orgDisplay", {
               id: "00D5f0000012XybEAE",
               username: "deploy.user@mycompany.com.integ",
               instanceUrl: "https://mycompany--integ.sandbox.my.salesforce.com",
               apiVersion: "67.0",
               connectedStatus: "Connected",
               alias: "INTEGRATION",
-            },
+            }),
           }
         : {
             status: 0,
@@ -444,7 +490,7 @@ async function main() {
             },
           },
       DOCS_PROFILE
-        ? "deploy.user@mycompany.com.integ (Connected)"
+        ? `${universeValue("orgDisplay", { username: "deploy.user@mycompany.com.integ" }).username} (Connected)`
         : "test-user@example.com (Connected)",
     );
     return 0;
@@ -457,7 +503,7 @@ async function main() {
       records = docsSourceMemberRecords();
     } else if (DOCS_PROFILE && query.includes("FROM ApexClass")) {
       // Schedulable classes picker of the deployment action editor
-      records = [
+      records = universeValue("apexClasses", [
         {
           Name: "AccountHierarchySyncBatch",
           Body: "global class AccountHierarchySyncBatch implements Database.Batchable<SObject>, Schedulable {",
@@ -474,7 +520,7 @@ async function main() {
           Name: "OpportunityService",
           Body: "public with sharing class OpportunityService {",
         },
-      ];
+      ]);
     } else if (DOCS_PROFILE && query.includes("FROM Network")) {
       // Communities picker of the deployment action editor
       records = [{ Name: "Customer Portal" }, { Name: "Partner Community" }];
@@ -604,12 +650,17 @@ function answerBackpromote() {
     );
     return 2;
   }
-  const plan = JSON.parse(
-    fs.readFileSync(
-      path.join(__dirname, "..", "backpromote", "backpromote-plan.json"),
-      "utf8",
-    ),
-  );
+  // A fixture universe can serve its own plan, so the Backpromote screenshots
+  // of that universe show its own orgs and Pull Requests. Without one, the base
+  // plan is used, unchanged.
+  const universePlan = process.env.SF_MOCK_UNIVERSE_DIR
+    ? path.join(process.env.SF_MOCK_UNIVERSE_DIR, "backpromote-plan.json")
+    : "";
+  const planFile =
+    universePlan && fs.existsSync(universePlan)
+      ? universePlan
+      : path.join(__dirname, "..", "backpromote", "backpromote-plan.json");
+  const plan = JSON.parse(fs.readFileSync(planFile, "utf8"));
   const flagValue = (name) => {
     const index = args.indexOf(name);
     return index >= 0 ? args[index + 1] : null;
