@@ -95,6 +95,13 @@
       "statusLabel": "In Progress",
       "author": "You",
       "authorLabel": "You"
+    },
+    "US-045": {
+      "subject": "Installations can no longer be saved",
+      "status": "In Progress",
+      "statusLabel": "In Progress",
+      "author": "You",
+      "authorLabel": "You"
     }
   }
 }
