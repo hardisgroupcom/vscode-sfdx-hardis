@@ -539,6 +539,26 @@ suite("Documentation screenshots", function () {
     await captureStable("sidebar");
   });
 
+  // Lab 0 of the training installs the extension from this view. Its reader has
+  // never opened VS Code, so the Extensions icon and the search box have to be
+  // shown rather than named.
+  test("extensions view: installing sfdx-hardis", async function () {
+    if (!shouldTake("extensions-install")) {
+      this.skip();
+    }
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await vscode.commands.executeCommand("workbench.view.extensions");
+    await vscode.commands.executeCommand(
+      "workbench.extensions.search",
+      "sfdx-hardis",
+    );
+    // The gallery answers over the network: nothing renders before it does
+    await sleep(7000);
+    await cleanChrome();
+    await parkPointer();
+    await captureStable("extensions-install");
+  });
+
   // The CI/CD guides illustrate their steps with a crop of a single menu entry
   // (docs/assets/images/btn-*.jpg). Those crops are cut out of these captures
   // by scripts/crop-doc-screenshots.js.
@@ -1422,6 +1442,33 @@ suite("Documentation screenshots", function () {
       settleMs: 3500,
       commandArgs: "integration",
     });
+  });
+
+  // The same panel with its fields unlocked. Lab 1 of the training has the
+  // reader type the org username and the instance URL, and the read-only card
+  // shows the values without showing where they are typed.
+  test("pipeline configuration (branch, editing)", async function () {
+    if (!shouldTake("pipeline-config-branch-edit")) {
+      this.skip();
+    }
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await vscode.commands.executeCommand(
+      "vscode-sfdx-hardis.showPipelineConfig",
+      "integration",
+    );
+    await sleep(4500);
+    // Edit, at the top right of the panel next to the scope selector.
+    // Coordinates are relative to the captured PNG, which already drops the
+    // title bar, so this is the button's position in the image.
+    // capture() is what maximizes the window, and click() coordinates are
+    // relative to the captured image: clicking before the first capture of a
+    // filtered run aims at a window that is still its default size.
+    capture("pipeline-config-branch-edit");
+    await sleep(600);
+    await click(1848, 104);
+    await sleep(3000);
+    await cleanChrome();
+    await captureStable("pipeline-config-branch-edit");
   });
 
   // Productivity command example: reactivation of the sandbox users whose
