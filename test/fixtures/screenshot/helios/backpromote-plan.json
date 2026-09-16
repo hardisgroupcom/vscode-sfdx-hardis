@@ -1,0 +1,408 @@
+{
+  "version": 3,
+  "runId": "mock7f3a",
+  "mode": "plan",
+  "status": "ok",
+  "message": null,
+  "targetOrg": {
+    "alias": "helios-dev",
+    "username": "helios.deploy+helios-dev@heliostraining.invalid",
+    "instanceUrl": "https://helios-dev-dev-ed.develop.my.salesforce.com",
+    "orgId": "00D5g000004ABCDEAA",
+    "sandboxName": "helios-dev",
+    "orgType": "sandbox",
+    "tracksSource": true,
+    "refusal": null
+  },
+  "parentBranch": "integration",
+  "allowedParentBranches": [
+    "integration"
+  ],
+  "gitRoot": "/tmp/mock-workspace",
+  "backpromoteBranch": {
+    "name": "backpromote/integration/helios-dev",
+    "existsOnOrigin": true,
+    "head": "b1d1000000000000000000000000000000000000",
+    "pendingMerges": []
+  },
+  "checkout": {
+    "originalBranch": "features/US-021-crew-size-warning",
+    "currentBranch": "features/US-021-crew-size-warning",
+    "clean": true,
+    "dirtyFiles": [],
+    "stashed": false,
+    "stashMessage": null,
+    "onBackpromoteBranch": false
+  },
+  "pullRequests": [
+    {
+      "number": 51,
+      "title": "US-018 Cap the crew size a planner can assign",
+      "author": "Marco Bianchi",
+      "mergeDate": "2026-09-11T14:12:00+02:00",
+      "sourceBranch": "training/mate-us-018-crew-capacity",
+      "commit": "e418000000000000000000000000000000000000",
+      "webUrl": "https://github.com/hardisgroupcom/sfdx-hardis-training/pull/51",
+      "itemCount": 3,
+      "actionCount": 0,
+      "backpromote": null,
+      "beforeRefresh": false,
+      "beforeLastBackpromote": false,
+      "selected": true,
+      "inWindow": true,
+      "scanned": true
+    },
+    {
+      "number": 52,
+      "title": "US-019 Generate a quote PDF from an opportunity",
+      "author": "Amina Diallo",
+      "mergeDate": "2026-09-10T10:03:00+02:00",
+      "sourceBranch": "training/mate-us-019-quote-pdf",
+      "commit": "d417000000000000000000000000000000000000",
+      "webUrl": "https://github.com/hardisgroupcom/sfdx-hardis-training/pull/52",
+      "itemCount": 2,
+      "actionCount": 0,
+      "backpromote": null,
+      "beforeRefresh": false,
+      "beforeLastBackpromote": false,
+      "selected": true,
+      "inWindow": true,
+      "scanned": true
+    },
+    {
+      "number": 53,
+      "title": "US-026 Crew capacity reference data and nightly recalculation",
+      "author": "Amina Diallo",
+      "mergeDate": "2026-09-09T09:41:00+02:00",
+      "sourceBranch": "features/US-026-crew-capacity-data",
+      "commit": "c415000000000000000000000000000000000000",
+      "webUrl": "https://github.com/hardisgroupcom/sfdx-hardis-training/pull/53",
+      "itemCount": 2,
+      "actionCount": 2,
+      "backpromote": null,
+      "beforeRefresh": false,
+      "beforeLastBackpromote": false,
+      "selected": true,
+      "inWindow": true,
+      "scanned": true
+    }
+  ],
+  "scan": {
+    "read": 4,
+    "limit": 100,
+    "found": true,
+    "hasMore": false
+  },
+  "window": {
+    "fromCommit": "a412000000000000000000000000000000000000",
+    "toCommit": "e418000000000000000000000000000000000000",
+    "startPullRequest": 51
+  },
+  "items": [
+    {
+      "key": "Flow:Installation_Assign_Crew",
+      "type": "Flow",
+      "name": "Installation_Assign_Crew",
+      "files": [
+        "force-app/main/default/flows/Installation_Assign_Crew.flow-meta.xml"
+      ],
+      "pullRequests": [
+        51
+      ],
+      "excludedLastTime": false,
+      "noOverwrite": false
+    },
+    {
+      "key": "PermissionSet:Helios_Delivery_Manager",
+      "type": "PermissionSet",
+      "name": "Helios_Delivery_Manager",
+      "files": [
+        "force-app/main/default/permissionsets/Helios_Delivery_Manager.permissionset-meta.xml"
+      ],
+      "pullRequests": [
+        51
+      ],
+      "excludedLastTime": false,
+      "noOverwrite": false
+    },
+    {
+      "key": "CustomField:Installation__c.Crew_Capacity_Cap__c",
+      "type": "CustomField",
+      "name": "Installation__c.Crew_Capacity_Cap__c",
+      "files": [
+        "force-app/main/default/objects/Installation__c/fields/Crew_Capacity_Cap__c.field-meta.xml"
+      ],
+      "pullRequests": [
+        51
+      ],
+      "excludedLastTime": false,
+      "noOverwrite": false
+    },
+    {
+      "key": "PermissionSet:Helios_Delivery_Crew",
+      "type": "PermissionSet",
+      "name": "Helios_Delivery_Crew",
+      "files": [
+        "force-app/main/default/permissionsets/Helios_Delivery_Crew.permissionset-meta.xml"
+      ],
+      "pullRequests": [
+        52
+      ],
+      "excludedLastTime": false,
+      "noOverwrite": false
+    },
+    {
+      "key": "Layout:Opportunity-Opportunity Layout",
+      "type": "Layout",
+      "name": "Opportunity-Opportunity Layout",
+      "files": [
+        "force-app/main/default/layouts/Opportunity-Opportunity Layout.layout-meta.xml"
+      ],
+      "pullRequests": [
+        52
+      ],
+      "excludedLastTime": false,
+      "noOverwrite": false
+    },
+    {
+      "key": "CustomObject:Crew_Capacity__c",
+      "type": "CustomObject",
+      "name": "Crew_Capacity__c",
+      "files": [
+        "force-app/main/default/objects/Crew_Capacity__c/Crew_Capacity__c.object-meta.xml"
+      ],
+      "pullRequests": [
+        53
+      ],
+      "excludedLastTime": false,
+      "noOverwrite": false
+    },
+    {
+      "key": "ApexClass:CrewCapacityBatch",
+      "type": "ApexClass",
+      "name": "CrewCapacityBatch",
+      "files": [
+        "force-app/main/default/classes/CrewCapacityBatch.cls",
+        "force-app/main/default/classes/CrewCapacityBatch.cls-meta.xml"
+      ],
+      "pullRequests": [
+        53
+      ],
+      "excludedLastTime": false,
+      "noOverwrite": false
+    }
+  ],
+  "deletions": [],
+  "actions": [
+    {
+      "id": "load-crew-capacity",
+      "label": "Load the crew capacity reference data",
+      "type": "data",
+      "phase": "post",
+      "context": "all",
+      "pullRequest": 53,
+      "alreadyRunOn": null,
+      "manual": false,
+      "customUsername": null,
+      "runnable": true,
+      "runOnlyOnceByOrg": true
+    },
+    {
+      "id": "planning-board-setting",
+      "label": "Turn on the planning board in Setup",
+      "type": "manual",
+      "phase": "post",
+      "context": "all",
+      "pullRequest": 53,
+      "alreadyRunOn": null,
+      "manual": true,
+      "customUsername": null,
+      "runnable": false,
+      "runOnlyOnceByOrg": true
+    }
+  ],
+  "comparison": [
+    {
+      "file": "force-app/main/default/classes/InvoiceCalculator.cls",
+      "item": "ApexClass:InvoiceCalculator",
+      "status": "different",
+      "versions": {
+        "base": "/tmp/sfdx-hardis/backpromote/retrieve/00D5g000004ABCDEAA/mock7f3a/base/classes/InvoiceCalculator.cls",
+        "sandbox": "/tmp/sfdx-hardis/backpromote/retrieve/00D5g000004ABCDEAA/mock7f3a/org/classes/InvoiceCalculator.cls",
+        "parentHead": "/tmp/sfdx-hardis/backpromote/retrieve/00D5g000004ABCDEAA/mock7f3a/git/classes/InvoiceCalculator.cls"
+      },
+      "diffLines": 6,
+      "pullRequests": [
+        418
+      ],
+      "decision": null,
+      "prepared": false,
+      "markersRemaining": 0,
+      "conflictPending": false,
+      "threeWay": true
+    },
+    {
+      "file": "force-app/main/default/classes/InvoiceCalculator.cls-meta.xml",
+      "item": "ApexClass:InvoiceCalculator",
+      "status": "same",
+      "versions": {
+        "base": null,
+        "sandbox": null,
+        "parentHead": null
+      },
+      "diffLines": 0,
+      "pullRequests": [
+        418
+      ],
+      "decision": null,
+      "prepared": false,
+      "markersRemaining": 0,
+      "conflictPending": false,
+      "threeWay": false
+    },
+    {
+      "file": "force-app/main/default/classes/QuoteSharingRecalculator.cls",
+      "item": "ApexClass:QuoteSharingRecalculator",
+      "status": "missingInOrg",
+      "versions": {
+        "base": null,
+        "sandbox": null,
+        "parentHead": null
+      },
+      "diffLines": 0,
+      "pullRequests": [
+        418
+      ],
+      "decision": null,
+      "prepared": false,
+      "markersRemaining": 0,
+      "conflictPending": false,
+      "threeWay": false
+    },
+    {
+      "file": "force-app/main/default/objects/Case/fields/SLA_Deadline__c.field-meta.xml",
+      "item": "CustomField:Case.SLA_Deadline__c",
+      "status": "missingInOrg",
+      "versions": {
+        "base": null,
+        "sandbox": null,
+        "parentHead": null
+      },
+      "diffLines": 0,
+      "pullRequests": [
+        415
+      ],
+      "decision": null,
+      "prepared": false,
+      "markersRemaining": 0,
+      "conflictPending": false,
+      "threeWay": false
+    },
+    {
+      "file": "force-app/main/default/layouts/Case-Case Layout.layout-meta.xml",
+      "item": "Layout:Case-Case Layout",
+      "status": "pendingInOrg",
+      "versions": {
+        "base": "/tmp/sfdx-hardis/backpromote/retrieve/00D5g000004ABCDEAA/mock7f3a/base/layouts/Case-Case Layout.layout-meta.xml",
+        "sandbox": "/tmp/sfdx-hardis/backpromote/retrieve/00D5g000004ABCDEAA/mock7f3a/org/layouts/Case-Case Layout.layout-meta.xml",
+        "parentHead": "/tmp/sfdx-hardis/backpromote/retrieve/00D5g000004ABCDEAA/mock7f3a/git/layouts/Case-Case Layout.layout-meta.xml"
+      },
+      "diffLines": 12,
+      "pullRequests": [
+        415
+      ],
+      "decision": null,
+      "prepared": false,
+      "markersRemaining": 0,
+      "conflictPending": false,
+      "threeWay": true
+    },
+    {
+      "file": "force-app/main/default/flows/Quote_Approval.flow-meta.xml",
+      "item": "Flow:Quote_Approval",
+      "status": "same",
+      "versions": {
+        "base": null,
+        "sandbox": null,
+        "parentHead": null
+      },
+      "diffLines": 0,
+      "pullRequests": [
+        418
+      ],
+      "decision": null,
+      "prepared": false,
+      "markersRemaining": 0,
+      "conflictPending": false,
+      "threeWay": false
+    },
+    {
+      "file": "force-app/main/default/profiles/Admin.profile-meta.xml",
+      "item": "Profile:Admin",
+      "status": "different",
+      "versions": {
+        "base": null,
+        "sandbox": "/tmp/sfdx-hardis/backpromote/retrieve/00D5g000004ABCDEAA/mock7f3a/org/profiles/Admin.profile-meta.xml",
+        "parentHead": "/tmp/sfdx-hardis/backpromote/retrieve/00D5g000004ABCDEAA/mock7f3a/git/profiles/Admin.profile-meta.xml"
+      },
+      "diffLines": 40,
+      "pullRequests": [
+        415,
+        418
+      ],
+      "decision": null,
+      "prepared": false,
+      "markersRemaining": 0,
+      "conflictPending": false,
+      "threeWay": false
+    },
+    {
+      "file": "force-app/main/default/remoteSiteSettings/Erp_Api.remoteSite-meta.xml",
+      "item": "RemoteSiteSetting:Erp_Api",
+      "status": "missingInOrg",
+      "versions": {
+        "base": null,
+        "sandbox": null,
+        "parentHead": null
+      },
+      "diffLines": 0,
+      "pullRequests": [
+        418
+      ],
+      "decision": null,
+      "prepared": false,
+      "markersRemaining": 0,
+      "conflictPending": false,
+      "threeWay": false
+    }
+  ],
+  "checks": [
+    {
+      "id": "gitProvider",
+      "ok": true,
+      "message": "GitHub token found",
+      "details": []
+    },
+    {
+      "id": "targetOrg",
+      "ok": true,
+      "message": "dev1 is a developer sandbox",
+      "details": []
+    },
+    {
+      "id": "parentBranch",
+      "ok": true,
+      "message": "integration is an allowed parent branch",
+      "details": []
+    },
+    {
+      "id": "workingTree",
+      "ok": true,
+      "message": "No uncommitted change on feature/lead-routing",
+      "details": []
+    }
+  ],
+  "promptFile": null,
+  "runCommand": null,
+  "result": null
+}

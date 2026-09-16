@@ -1,0 +1,9 @@
+{
+  "objects": [
+    {
+      "query": "SELECT External_Id__c, Crew_Type__c, Roof_Type__c, Panels_Per_Day__c FROM Crew_Capacity__c",
+      "operation": "Upsert",
+      "externalId": "External_Id__c"
+    }
+  ]
+}
