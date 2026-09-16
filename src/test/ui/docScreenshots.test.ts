@@ -41,6 +41,8 @@ const ONLY = (process.env.SFDX_HARDIS_DOC_SCREENSHOTS_ONLY || "")
   .split(",")
   .map((name) => name.trim())
   .filter((name) => name.length > 0);
+const WINDOW_TITLE =
+  process.env.SFDX_HARDIS_DOC_SCREENSHOTS_TITLE || "MyCompany-CRM";
 const SCRIPT_DIR = path.resolve(__dirname, "../../../test/fixtures/screenshot");
 const CAPTURE_SCRIPT = path.join(SCRIPT_DIR, "capture-window.ps1");
 const CLICK_SCRIPT = path.join(SCRIPT_DIR, "click-window.ps1");
@@ -84,9 +86,10 @@ function capture(
     "-OutFile",
     file,
     // Matches the Extension Development Host only: any other VS Code window
-    // open on the machine must not be captured
+    // open on the machine must not be captured. The title follows the fixture
+    // universe (SF_MOCK_UNIVERSE), so a training run matches its own window.
     "-TitleMatch",
-    "MyCompany-CRM",
+    WINDOW_TITLE,
     "-Maximize",
   ];
   args.push("-CropTop", String(options.crop?.top ?? TITLE_BAR_HEIGHT));
@@ -156,6 +159,8 @@ async function click(
     "Bypass",
     "-File",
     CLICK_SCRIPT,
+    "-TitleMatch",
+    WINDOW_TITLE,
     "-X",
     String(x),
     "-Y",
@@ -264,7 +269,14 @@ function checkoutWorkspaceBranch(branchName: string): void {
   });
 }
 
-const FEATURE_BRANCH = "feature/CRM-1042-account-hierarchy";
+/**
+ * Feature branch the contribution cards and the deployment action editors are
+ * captured from. It belongs to the fixture universe, so an alternate universe
+ * (SF_MOCK_UNIVERSE) names its own through SFDX_HARDIS_DOC_SCREENSHOTS_BRANCH.
+ */
+const FEATURE_BRANCH =
+  process.env.SFDX_HARDIS_DOC_SCREENSHOTS_BRANCH ||
+  "feature/CRM-1042-account-hierarchy";
 /**
  * Promotion branches variant of the run (SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION):
  * enablePromotionBranches is on in the workspace config and the git provider
@@ -319,6 +331,8 @@ async function record(
       "Bypass",
       "-File",
       RECORD_SCRIPT,
+      "-TitleMatch",
+      WINDOW_TITLE,
       "-OutDir",
       outDir,
       "-Seconds",
@@ -621,8 +635,19 @@ suite("Documentation screenshots", function () {
       force: true,
     });
     await sleep(1000);
-    await click(850, 405); // integration branch node
-    await sleep(2500);
+    // The modal of the integration branch, opened by deep link rather than by
+    // clicking its node: the node moves with the branches the fixture carries,
+    // and a click landing next to it captured a pipeline with no modal at all.
+    await shootPanel(panelManager, {
+      name: "pipeline-branch-modal",
+      command: "vscode-sfdx-hardis.showPipeline",
+      lwcId: "s-pipeline",
+      ready: pipelineFullyLoaded,
+      settleMs: 9000,
+      force: true,
+      commandArgs: { focus: "branch", branch: "integration" },
+    });
+    await sleep(1500);
     await cleanChrome();
     await captureStable("pipeline-branch-modal");
     await click(958, 227); // "Deployment Actions" tab of the modal
@@ -1203,6 +1228,139 @@ suite("Documentation screenshots", function () {
     await sleep(1500);
     await cleanChrome();
     capture("command-runner-completed");
+  });
+
+  // The two commands a contributor runs every day, captured at the question
+  // they ask. The training walks a beginner through both click by click, so
+  // each prompt needs a picture of the panel that asks it. The scenarios come
+  // from the mocked CLI (DOCS_SCENARIOS in test/fixtures/sf-shim/sf-mock.js)
+  // and name the story of the current fixture universe.
+  test("command runner (new user story)", async function () {
+    if (!shouldTake("work-new")) {
+      this.skip();
+    }
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await sleep(400);
+    const asked = trackAskedPrompts();
+    const panelId = await runCommandAndWaitForPanel(
+      panelManager,
+      "sf hardis:work:new",
+    );
+    const panel = panelManager.getPanel(panelId);
+
+    // 1. Which branch this story will be merged into
+    await waitFor(() => asked("targetBranch"), 30000, "target branch prompt");
+    await sleep(1500);
+    await cleanChrome();
+    capture("work-new-target-branch");
+    panel.simulateWebviewMessage({
+      type: "submit",
+      data: { targetBranch: "integration" },
+    });
+
+    await waitFor(() => asked("storyType"), 30000, "story type prompt");
+    await sleep(1200);
+    panel.simulateWebviewMessage({
+      type: "submit",
+      data: { storyType: "feature" },
+    });
+
+    // 2. The name, which becomes the branch name
+    await waitFor(() => asked("storyName"), 30000, "story name prompt");
+    await sleep(1500);
+    await cleanChrome();
+    capture("work-new-story-name");
+    panel.simulateWebviewMessage({
+      type: "submit",
+      data: { storyName: "US-014 Panels required on Installation" },
+    });
+
+    await waitFor(() => asked("orgType"), 30000, "org type prompt");
+    await sleep(1200);
+    panel.simulateWebviewMessage({
+      type: "submit",
+      data: { orgType: "sandbox" },
+    });
+
+    // 3. The org the work happens in
+    await waitFor(() => asked("sandboxOrg"), 30000, "org prompt");
+    await sleep(1500);
+    await cleanChrome();
+    capture("work-new-org");
+    panel.simulateWebviewMessage({
+      type: "submit",
+      data: { sandboxOrg: "helios-dev" },
+    });
+
+    await waitFor(() => asked("openOrg"), 30000, "open org prompt");
+    await sleep(1000);
+    panel.simulateWebviewMessage({ type: "submit", data: { openOrg: "no" } });
+
+    await waitFor(
+      () => panelManager.getPanel(panelId)?.commandStatus === "completed",
+      60000,
+      "new user story to complete",
+    );
+    await sleep(1500);
+    await cleanChrome();
+    capture("work-new-completed");
+  });
+
+  test("command runner (save and publish)", async function () {
+    if (!shouldTake("work-save")) {
+      this.skip();
+    }
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await sleep(400);
+    const asked = trackAskedPrompts();
+    const panelId = await runCommandAndWaitForPanel(
+      panelManager,
+      "sf hardis:work:save",
+    );
+    const panel = panelManager.getPanel(panelId);
+
+    // 1. The question that trips up every beginner: commit first
+    await waitFor(() => asked("commitReady"), 30000, "commit ready prompt");
+    await sleep(1500);
+    await cleanChrome();
+    capture("work-save-commit-ready");
+    panel.simulateWebviewMessage({
+      type: "submit",
+      data: { commitReady: "commitReady" },
+    });
+
+    // 2. After the delta package.xml and the cleanings, the push question,
+    //    with the generated manifest in the report bar
+    await waitFor(() => asked("pushCommits"), 60000, "push prompt");
+    await sleep(1800);
+    await cleanChrome();
+    capture("work-save-package-xml");
+    panel.simulateWebviewMessage({
+      type: "submit",
+      data: { pushCommits: "yes" },
+    });
+
+    await waitFor(
+      () => panelManager.getPanel(panelId)?.commandStatus === "completed",
+      60000,
+      "save to complete",
+    );
+    await sleep(1500);
+    await cleanChrome();
+    capture("work-save-completed");
+  });
+
+  // Pipeline settings scoped to a major branch: the screen where a contributor
+  // declares which org the branch deploys to (targetUsername, instanceUrl).
+  // The command takes the branch as its first argument, so no click is needed.
+  test("pipeline configuration (branch)", async function () {
+    await shootPanel(panelManager, {
+      name: "pipeline-config-branch",
+      command: "vscode-sfdx-hardis.showPipelineConfig",
+      lwcId: "s-pipeline-config",
+      settleMs: 3500,
+      commandArgs: "integration",
+    });
   });
 
   // Productivity command example: reactivation of the sandbox users whose

@@ -78,6 +78,50 @@ function docsPlugins() {
   return DOCS_PLUGINS;
 }
 
+// ---------------------------------------------------------------------------
+// Alternate fixture universe (SF_MOCK_UNIVERSE).
+//
+// Unset means everything above, byte for byte: no existing command, script or
+// CI job changes meaning. Set to a universe name, the mock reads
+//   test/fixtures/screenshot/<name>/sf-mock-overlay.json
+// and uses only the keys that file declares, falling back to the values above
+// for everything else.
+//
+// It is how the sfdx-hardis training gets screenshots showing Helios Energy
+// instead of MyCompany-CRM without editing a single existing fixture value.
+// ---------------------------------------------------------------------------
+const MOCK_UNIVERSE = process.env.SF_MOCK_UNIVERSE || "";
+const UNIVERSE_OVERLAY = (() => {
+  if (!MOCK_UNIVERSE) {
+    return {};
+  }
+  // The shim is copied to a temporary folder for the documentation run, so the
+  // folder is passed explicitly. The relative path is the fallback for a shim
+  // still sitting in the repository.
+  const file = process.env.SF_MOCK_UNIVERSE_DIR
+    ? path.join(process.env.SF_MOCK_UNIVERSE_DIR, "sf-mock-overlay.json")
+    : path.join(
+        __dirname,
+        "..",
+        "screenshot",
+        MOCK_UNIVERSE,
+        "sf-mock-overlay.json",
+      );
+  try {
+    return JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch {
+    // An unreadable overlay must never silently change the base universe
+    return {};
+  }
+})();
+
+/** The overlay value for a key, or the base fixture when the overlay is silent. */
+function universeValue(key, fallback) {
+  return Object.prototype.hasOwnProperty.call(UNIVERSE_OVERLAY, key)
+    ? UNIVERSE_OVERLAY[key]
+    : fallback;
+}
+
 const DOCS_ORGS = {
   nonScratchOrgs: [
     {
@@ -402,7 +446,13 @@ async function main() {
     const typeIndex = args.indexOf("--metadata-type");
     const type = typeIndex > -1 ? args[typeIndex + 1] : "";
     outputJsonIfRequested(
-      { status: 0, result: DOCS_PROFILE ? docsMetadataFor(type) : [] },
+      {
+        status: 0,
+        result: DOCS_PROFILE
+          ? (universeValue("metadata", null) || {})[type] ||
+            docsMetadataFor(type)
+          : [],
+      },
       "",
     );
     return 0;
@@ -412,7 +462,10 @@ async function main() {
     // Outside the docs profile, one developer sandbox (the default org): the target of the
     // Backpromote panel tests, whose plan fixture names it
     outputJsonIfRequested(
-      { status: 0, result: DOCS_PROFILE ? DOCS_ORGS : TEST_ORGS },
+      {
+        status: 0,
+        result: DOCS_PROFILE ? universeValue("orgs", DOCS_ORGS) : TEST_ORGS,
+      },
       "",
     );
     return 0;
@@ -423,14 +476,14 @@ async function main() {
       DOCS_PROFILE
         ? {
             status: 0,
-            result: {
+            result: universeValue("orgDisplay", {
               id: "00D5f0000012XybEAE",
               username: "deploy.user@mycompany.com.integ",
               instanceUrl: "https://mycompany--integ.sandbox.my.salesforce.com",
               apiVersion: "67.0",
               connectedStatus: "Connected",
               alias: "INTEGRATION",
-            },
+            }),
           }
         : {
             status: 0,
@@ -444,7 +497,7 @@ async function main() {
             },
           },
       DOCS_PROFILE
-        ? "deploy.user@mycompany.com.integ (Connected)"
+        ? `${universeValue("orgDisplay", { username: "deploy.user@mycompany.com.integ" }).username} (Connected)`
         : "test-user@example.com (Connected)",
     );
     return 0;
@@ -457,7 +510,7 @@ async function main() {
       records = docsSourceMemberRecords();
     } else if (DOCS_PROFILE && query.includes("FROM ApexClass")) {
       // Schedulable classes picker of the deployment action editor
-      records = [
+      records = universeValue("apexClasses", [
         {
           Name: "AccountHierarchySyncBatch",
           Body: "global class AccountHierarchySyncBatch implements Database.Batchable<SObject>, Schedulable {",
@@ -474,7 +527,7 @@ async function main() {
           Name: "OpportunityService",
           Body: "public with sharing class OpportunityService {",
         },
-      ];
+      ]);
     } else if (DOCS_PROFILE && query.includes("FROM Network")) {
       // Communities picker of the deployment action editor
       records = [{ Name: "Customer Portal" }, { Name: "Partner Community" }];
@@ -604,12 +657,17 @@ function answerBackpromote() {
     );
     return 2;
   }
-  const plan = JSON.parse(
-    fs.readFileSync(
-      path.join(__dirname, "..", "backpromote", "backpromote-plan.json"),
-      "utf8",
-    ),
-  );
+  // A fixture universe can serve its own plan, so the Backpromote screenshots
+  // of that universe show its own orgs and Pull Requests. Without one, the base
+  // plan is used, unchanged.
+  const universePlan = process.env.SF_MOCK_UNIVERSE_DIR
+    ? path.join(process.env.SF_MOCK_UNIVERSE_DIR, "backpromote-plan.json")
+    : "";
+  const planFile =
+    universePlan && fs.existsSync(universePlan)
+      ? universePlan
+      : path.join(__dirname, "..", "backpromote", "backpromote-plan.json");
+  const plan = JSON.parse(fs.readFileSync(planFile, "utf8"));
   const flagValue = (name) => {
     const index = args.indexOf(name);
     return index >= 0 ? args[index + 1] : null;
@@ -1337,8 +1395,79 @@ async function runShowcaseScenario(send, askPrompt, sleep) {
  * runs of these commands (see hardis-report/commands/*.log of any sfdx-hardis
  * CI/CD project).
  */
-const DOCS_REPO_URL = "https://github.com/mycompany/salesforce-crm";
-const DOCS_STORY_BRANCH = "feature/CRM-123-Sync-accounts-with-SAP";
+// The story the recorded command scenarios walk through. An alternate universe
+// (SF_MOCK_UNIVERSE) overrides the whole block through its "scenario" key, so a
+// screenshot never tells the reader to pick a name that exists nowhere in their
+// project.
+const DOCS_SCENARIO = {
+  repoUrl: "https://github.com/mycompany/salesforce-crm.git",
+  targetBranch: "integration",
+  targetBranches: [
+    {
+      title: "integration",
+      value: "integration",
+      description: "New features and enhancements (BUILD)",
+    },
+    {
+      title: "preprod",
+      value: "preprod",
+      description: "Hotfixes on the production version (RUN)",
+    },
+  ],
+  storyName: "CRM-123 Sync accounts with SAP",
+  storyBranch: "feature/CRM-123-Sync-accounts-with-SAP",
+  devOrgs: [
+    {
+      title: "https://mycompany--dev.sandbox.my.salesforce.com",
+      value: "dev",
+      description: "alex.martin@mycompany.com.dev",
+    },
+    {
+      title: "https://mycompany--dev2.sandbox.my.salesforce.com",
+      value: "dev2",
+      description: "sam.dubois@mycompany.com.dev2",
+    },
+  ],
+  publishItems: null,
+  ...universeValue("scenario", {}),
+};
+
+const DOCS_REPO_URL = DOCS_SCENARIO.repoUrl.replace(/\.git$/, "");
+const DOCS_STORY_BRANCH = DOCS_SCENARIO.storyBranch;
+const DOCS_TARGET_BRANCH = DOCS_SCENARIO.targetBranch;
+const DOCS_DEV_ORG = DOCS_SCENARIO.devOrgs[0];
+const DOCS_DEV_ORG_URL = DOCS_DEV_ORG.title;
+const DOCS_DEV_ORG_USER = DOCS_DEV_ORG.description;
+
+// The delta package.xml the Save / Publish scenario shows, taken from the
+// universe so the components named are the ones the learner just changed
+const DOCS_PACKAGE_TYPES = DOCS_SCENARIO.packageXmlTypes || [
+  { name: "ApexClass", members: ["AccountSyncService"] },
+  { name: "CustomField", members: ["Account.SAP_Reference__c"] },
+  { name: "Flow", members: ["Account_Sync_With_SAP"] },
+];
+
+const DOCS_PACKAGE_MEMBER_COUNT = DOCS_PACKAGE_TYPES.reduce(
+  (total, type) => total + type.members.length,
+  0,
+);
+
+function deltaPackageXml() {
+  const lines = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<Package xmlns="http://soap.sforce.com/2006/04/metadata">',
+  ];
+  for (const type of DOCS_PACKAGE_TYPES) {
+    lines.push("    <types>");
+    for (const member of type.members) {
+      lines.push(`        <members>${member}</members>`);
+    }
+    lines.push(`        <name>${type.name}</name>`);
+    lines.push("    </types>");
+  }
+  lines.push("    <version>64.0</version>", "</Package>");
+  return lines.join("\n");
+}
 
 const DOCS_SCENARIOS = {
   "hardis:work:new": async (send, askPrompt, sleep) => {
@@ -1370,20 +1499,9 @@ const DOCS_SCENARIOS = {
       type: "select",
       message:
         "What will be the target branch of your new User Story ? (the branch where you will make your Pull Request after the User Story is completed)",
-      choices: [
-        {
-          title: "integration",
-          value: "integration",
-          description: "New features and enhancements (BUILD)",
-        },
-        {
-          title: "preprod",
-          value: "preprod",
-          description: "Hotfixes on the production version (RUN)",
-        },
-      ],
+      choices: DOCS_SCENARIO.targetBranches,
     });
-    log("log", "integration");
+    log("log", DOCS_TARGET_BRANCH);
     await sleep(150);
 
     log("action", "What type of User Story do you want to create?", {
@@ -1420,9 +1538,9 @@ const DOCS_SCENARIOS = {
       name: "storyName",
       type: "text",
       message:
-        "What is the name of your new User Story? Please avoid accents and special characters. (ex: CRM-1042 Account hierarchy)",
+        `What is the name of your new User Story? Please avoid accents and special characters. (ex: ${DOCS_SCENARIO.storyName})`,
     });
-    log("log", "CRM-123 Sync accounts with SAP");
+    log("log", DOCS_SCENARIO.storyName);
     await sleep(150);
 
     log(
@@ -1490,16 +1608,7 @@ const DOCS_SCENARIOS = {
       type: "select",
       message: `Select a sandbox org to work in branch ${DOCS_STORY_BRANCH}`,
       choices: [
-        {
-          title: "https://mycompany--dev.sandbox.my.salesforce.com",
-          value: "dev",
-          description: "alex.martin@mycompany.com.dev",
-        },
-        {
-          title: "https://mycompany--dev2.sandbox.my.salesforce.com",
-          value: "dev2",
-          description: "sam.dubois@mycompany.com.dev2",
-        },
+        ...DOCS_SCENARIO.devOrgs,
         {
           title: "\u{1F517} Connect to another org",
           value: "other",
@@ -1507,17 +1616,17 @@ const DOCS_SCENARIOS = {
         },
       ],
     });
-    log("log", "https://mycompany--dev.sandbox.my.salesforce.com");
+    log("log", DOCS_DEV_ORG_URL);
     await sleep(150);
 
     log(
       "action",
-      "Setting https://mycompany--dev.sandbox.my.salesforce.com (alex.martin@mycompany.com.dev) as default org...",
+      `Setting ${DOCS_DEV_ORG_URL} (${DOCS_DEV_ORG_USER}) as default org...`,
     );
     send({
       event: "commandSubCommandStart",
       data: {
-        command: "sf config set target-org=alex.martin@mycompany.com.dev",
+        command: `sf config set target-org=${DOCS_DEV_ORG_USER}`,
         cwd: ".",
       },
     });
@@ -1525,21 +1634,21 @@ const DOCS_SCENARIOS = {
     send({
       event: "commandSubCommandEnd",
       data: {
-        command: "sf config set target-org=alex.martin@mycompany.com.dev",
+        command: `sf config set target-org=${DOCS_DEV_ORG_USER}`,
         success: true,
       },
     });
 
     log(
       "action",
-      "Do you want to open org alex.martin@mycompany.com.dev in your browser?",
+      `Do you want to open org ${DOCS_DEV_ORG_USER} in your browser?`,
       { isQuestion: true },
     );
     await askPrompt({
       name: "openOrg",
       type: "select",
       message:
-        "Do you want to open org alex.martin@mycompany.com.dev in your browser?",
+        `Do you want to open org ${DOCS_DEV_ORG_USER} in your browser?`,
       choices: [
         { title: "✅ Yes", value: "yes" },
         { title: "❌ No", value: "no" },
@@ -1551,11 +1660,11 @@ const DOCS_SCENARIOS = {
     log("action", `Ready to work in branch ${DOCS_STORY_BRANCH}`);
     log(
       "log",
-      "Use your default org with username alex.martin@mycompany.com.dev",
+      `Use your default org with username ${DOCS_DEV_ORG_USER}`,
     );
     log(
       "log",
-      "Your current org URL is https://mycompany--dev.sandbox.my.salesforce.com",
+      `Your current org URL is ${DOCS_DEV_ORG_URL}`,
     );
     await sleep(600);
   },
@@ -1575,7 +1684,7 @@ const DOCS_SCENARIOS = {
     });
     log(
       "action",
-      `Preparing Pull Request from branch ${DOCS_STORY_BRANCH} to integration`,
+      `Preparing Pull Request from branch ${DOCS_STORY_BRANCH} to ${DOCS_TARGET_BRANCH}`,
     );
     await sleep(150);
 
@@ -1627,7 +1736,7 @@ const DOCS_SCENARIOS = {
     send({
       event: "commandSubCommandStart",
       data: {
-        command: `sf sgd:source:delta --from integration --to ${DOCS_STORY_BRANCH} --ignore-whitespace --source-dir force-app --json`,
+        command: `sf sgd:source:delta --from ${DOCS_TARGET_BRANCH} --to ${DOCS_STORY_BRANCH} --ignore-whitespace --source-dir force-app --json`,
         cwd: ".",
       },
     });
@@ -1635,40 +1744,25 @@ const DOCS_SCENARIOS = {
     send({
       event: "commandSubCommandEnd",
       data: {
-        command: `sf sgd:source:delta --from integration --to ${DOCS_STORY_BRANCH} --ignore-whitespace --source-dir force-app --json`,
+        command: `sf sgd:source:delta --from ${DOCS_TARGET_BRANCH} --to ${DOCS_STORY_BRANCH} --ignore-whitespace --source-dir force-app --json`,
         success: true,
       },
     });
     log(
       "log",
-      `Calculating package.xml diff from [integration] to [${DOCS_STORY_BRANCH} - commit]`,
+      `Calculating package.xml diff from [${DOCS_TARGET_BRANCH}] to [${DOCS_STORY_BRANCH} - commit]`,
     );
     log(
       "log",
       [
         "Delta package.xml diff to be merged within manifest/package.xml:",
-        '<?xml version="1.0" encoding="UTF-8"?>',
-        '<Package xmlns="http://soap.sforce.com/2006/04/metadata">',
-        "    <types>",
-        "        <members>AccountSyncService</members>",
-        "        <name>ApexClass</name>",
-        "    </types>",
-        "    <types>",
-        "        <members>Account.SAP_Reference__c</members>",
-        "        <name>CustomField</name>",
-        "    </types>",
-        "    <types>",
-        "        <members>Account_Sync_With_SAP</members>",
-        "        <name>Flow</name>",
-        "    </types>",
-        "    <version>67.0</version>",
-        "</Package>",
+        deltaPackageXml(),
       ].join("\n"),
     );
     send({
       event: "reportFile",
       file: "manifest/package.xml",
-      title: "Git Delta package.xml (3)",
+      title: `Git Delta package.xml (${DOCS_PACKAGE_MEMBER_COUNT})`,
       type: "report",
     });
     await sleep(250);

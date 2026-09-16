@@ -1,0 +1,12 @@
+# Generated fixtures. scripts/build/mocks.mjs in the sfdx-hardis-training
+# repository writes them with JSON.stringify, which always expands arrays, while
+# prettier collapses short ones. Formatting them here would make every
+# regeneration show drift and every CI run reformat them again.
+test/fixtures/screenshot/helios/
+test/fixtures/training-project/
+
+# Captured screenshots and build output
+doc-screenshots/
+dist/
+out/
+node_modules/
