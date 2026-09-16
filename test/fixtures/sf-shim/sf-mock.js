@@ -1537,8 +1537,7 @@ const DOCS_SCENARIOS = {
     await askPrompt({
       name: "storyName",
       type: "text",
-      message:
-        `What is the name of your new User Story? Please avoid accents and special characters. (ex: ${DOCS_SCENARIO.storyName})`,
+      message: `What is the name of your new User Story? Please avoid accents and special characters. (ex: ${DOCS_SCENARIO.storyName})`,
     });
     log("log", DOCS_SCENARIO.storyName);
     await sleep(150);
@@ -1647,8 +1646,7 @@ const DOCS_SCENARIOS = {
     await askPrompt({
       name: "openOrg",
       type: "select",
-      message:
-        `Do you want to open org ${DOCS_DEV_ORG_USER} in your browser?`,
+      message: `Do you want to open org ${DOCS_DEV_ORG_USER} in your browser?`,
       choices: [
         { title: "✅ Yes", value: "yes" },
         { title: "❌ No", value: "no" },
@@ -1658,14 +1656,8 @@ const DOCS_SCENARIOS = {
     await sleep(200);
 
     log("action", `Ready to work in branch ${DOCS_STORY_BRANCH}`);
-    log(
-      "log",
-      `Use your default org with username ${DOCS_DEV_ORG_USER}`,
-    );
-    log(
-      "log",
-      `Your current org URL is ${DOCS_DEV_ORG_URL}`,
-    );
+    log("log", `Use your default org with username ${DOCS_DEV_ORG_USER}`);
+    log("log", `Your current org URL is ${DOCS_DEV_ORG_URL}`);
     await sleep(600);
   },
 
