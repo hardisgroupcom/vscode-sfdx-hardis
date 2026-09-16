@@ -437,6 +437,18 @@ async function cleanChrome(): Promise<void> {
 }
 
 /**
+ * Moves the pointer out of the side bar. A tree row left under the cursor shows
+ * its tooltip, which covers the two rows below it, so every side bar capture
+ * moves the pointer away first. Setting Cursor.Position is not enough: Electron
+ * only drops the hover when it receives a real move, so this clicks the empty
+ * editor background, which has nothing to activate.
+ */
+async function parkPointer(): Promise<void> {
+  await click(1200, 500);
+  await sleep(500);
+}
+
+/**
  * Returns a predicate telling whether the mocked CLI asked a given prompt
  * since the moment this tracker was created (see promptAsked entries logged
  * by test/fixtures/sf-shim/sf-mock.js).
@@ -469,6 +481,8 @@ function trackAskedPrompts(): (promptName: string) => boolean {
 suite("Documentation screenshots", function () {
   this.timeout(600000);
   let panelManager: any;
+  let commandsProvider: any;
+  let commandsTreeView: any;
 
   suiteSetup(async function () {
     if (!ENABLED) {
@@ -476,6 +490,8 @@ suite("Documentation screenshots", function () {
     }
     const api = await activateExtension();
     panelManager = api.getLwcPanelManager();
+    commandsProvider = api.hardisCommandsProvider;
+    commandsTreeView = api.hardisCommandsTreeView;
 
     // Show the SFDX Hardis activity bar view: it is part of most screenshots
     await vscode.commands.executeCommand(
@@ -1724,23 +1740,40 @@ suite("Documentation screenshots", function () {
     // full height of the side bar
     await click(130, 664); // DEPENDENCIES header
     await click(130, 362); // STATUS header
+    await parkPointer();
     await cleanChrome();
     capture("sidebar-commands-collapsed");
 
-    // Expand, capture and collapse again each section holding a documented
-    // menu entry. Row positions are stable: 27.5px per row, first row at 85.
-    const sections: Array<{ name: string; y: number }> = [
-      { name: "advanced", y: 278 }, // CI/CD (advanced)
-      { name: "misc", y: 305 }, // CI/CD (misc)
-      { name: "org-operations", y: 415 }, // Org Operations
-      { name: "setup", y: 498 }, // Setup Configuration
-      { name: "packaging", y: 525 }, // Packaging
+    // Expand, capture and collapse again each section holding a documented menu
+    // entry. The section is found by its id and expanded through the tree view,
+    // not by clicking a row at a fixed height: a project that declares its own
+    // menus adds rows above these, and clicking a hardcoded y then expanded
+    // nothing and produced seven identical captures.
+    const sections: Array<{ name: string; id: string }> = [
+      { name: "advanced", id: "cicd-advanced" },
+      { name: "misc", id: "cicd-misc" },
+      { name: "org-operations", id: "org-operations" },
+      { name: "setup", id: "setup-config" },
+      { name: "packaging", id: "packaging" },
     ];
+    const topics = await commandsProvider.getChildren();
     for (const section of sections) {
-      await click(150, section.y);
+      const node = topics.find((topic: any) => topic.id === section.id);
+      if (!node) {
+        console.log(`      [shot] sidebar section ${section.id} not in the tree`);
+        continue;
+      }
+      await commandsTreeView.reveal(node, { expand: true, select: false });
+      await sleep(900);
+      await parkPointer();
       await cleanChrome();
       capture(`sidebar-commands-${section.name}`);
-      await click(150, section.y);
+      // Collapsing is not exposed, so the tree is rebuilt instead: refreshing
+      // the provider returns every section to its declared collapsed state.
+      await vscode.commands.executeCommand(
+        "vscode-sfdx-hardis.refreshCommandsView",
+      );
+      await sleep(900);
     }
     // Restore the default side bar layout for the next screenshots
     await click(130, 362); // STATUS: expand

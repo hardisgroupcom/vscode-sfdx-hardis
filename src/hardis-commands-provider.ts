@@ -25,6 +25,27 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
     return element;
   }
 
+  /**
+   * Parent of a node. `TreeView.reveal` refuses to run without it, and revealing
+   * a section is how the documentation screenshots expand one: expanding by
+   * element keeps working when a project declares its own menus and pushes every
+   * row down, which clicking a row at a fixed height does not.
+   *
+   * Topics sit at the root and have no parent; a command belongs to the topic
+   * that declares it.
+   */
+  async getParent(element: CommandTreeItem): Promise<CommandTreeItem | null> {
+    const topics = await this.listTopicAndCommands();
+    const ownerTopic = topics.find((topic: any) =>
+      (topic.commands || []).some((command: any) => command.id === element.id),
+    );
+    if (!ownerTopic) {
+      return null;
+    }
+    const topicItems = await this.listTopics();
+    return topicItems.find((item) => item.id === ownerTopic.id) || null;
+  }
+
   getChildren(element?: CommandTreeItem): Thenable<CommandTreeItem[]> {
     if (!this.workspaceRoot) {
       vscode.window.showInformationMessage(
