@@ -1366,6 +1366,45 @@ suite("Documentation screenshots", function () {
     capture("work-save-completed");
   });
 
+  // The contribution cards of the DevOps Pipeline: New User Story, Save /
+  // Publish, Commit changes, Backpromote. They sit under the diagram, so a
+  // fixture with several feature branches pushes them below the fold and the
+  // panel capture shows only the diagram. This one scrolls to them first.
+  test("pipeline contribution cards", async function () {
+    if (!shouldTake("pipeline-cards")) {
+      this.skip();
+    }
+    checkoutWorkspaceBranch(FEATURE_BRANCH);
+    await shootPanel(panelManager, {
+      name: "pipeline-cards-before",
+      command: "vscode-sfdx-hardis.showPipeline",
+      lwcId: "s-pipeline",
+      ready: pipelineFullyLoaded,
+      settleMs: 9000,
+      force: true,
+    });
+    // The cards sit under the diagram, and neither zooming the window nor a
+    // wheel event brings them up: the window zoom scales the diagram with the
+    // page, and a posted wheel never reaches the webview's scroller. Hiding the
+    // feature branches is what actually shrinks the diagram, and it is a real
+    // control a reader can find, right in the header.
+    await click(1655, 111); // "Show feature branches" toggle
+    await sleep(2500);
+    // Two levels out on top of that, so the whole row of cards fits rather than
+    // being cut off at the bottom edge
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await sleep(1500);
+    await parkPointer();
+    await cleanChrome();
+    await captureStable("pipeline-cards");
+    await vscode.commands.executeCommand("workbench.action.zoomIn");
+    await vscode.commands.executeCommand("workbench.action.zoomIn");
+    await sleep(1200);
+    await click(1655, 111); // put the toggle back for the captures that follow
+    await sleep(1500);
+  });
+
   // Pipeline settings scoped to a major branch: the screen where a contributor
   // declares which org the branch deploys to (targetUsername, instanceUrl).
   // The command takes the branch as its first argument, so no click is needed.
