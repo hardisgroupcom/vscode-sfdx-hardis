@@ -62,7 +62,7 @@
       "authorLabel": "You"
     },
     "US-027": {
-      "subject": "Schedule installations by panel batch availability",
+      "subject": "Check several installations against panel availability at once",
       "status": "In Progress",
       "statusLabel": "In Progress",
       "author": "You",
