@@ -1760,7 +1760,9 @@ suite("Documentation screenshots", function () {
     for (const section of sections) {
       const node = topics.find((topic: any) => topic.id === section.id);
       if (!node) {
-        console.log(`      [shot] sidebar section ${section.id} not in the tree`);
+        console.log(
+          `      [shot] sidebar section ${section.id} not in the tree`,
+        );
         continue;
       }
       await commandsTreeView.reveal(node, { expand: true, select: false });
