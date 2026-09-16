@@ -86,8 +86,14 @@ export function registerShowWelcome(command: Commands) {
       let customMenus: CustomCommandMenu[] = [];
       const allCustomCommandsLoaded = isAllCustomCommandsLoaded();
       if (allCustomCommandsLoaded) {
-        customMenus = (await loadAllCustomCommandGroups()).flatMap(
-          (g) => g.menus,
+        // The insertion position declared by customCommandsPosition travels with
+        // each menu, so the Welcome page can place custom menus above the
+        // built-in cards the way the Commands tree already does.
+        customMenus = (await loadAllCustomCommandGroups()).flatMap((g) =>
+          (g.menus || []).map((menu) => ({
+            ...menu,
+            position: g.position || "last",
+          })),
         );
       }
 
