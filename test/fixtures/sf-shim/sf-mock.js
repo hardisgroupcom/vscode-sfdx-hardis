@@ -100,7 +100,13 @@ const UNIVERSE_OVERLAY = (() => {
   // still sitting in the repository.
   const file = process.env.SF_MOCK_UNIVERSE_DIR
     ? path.join(process.env.SF_MOCK_UNIVERSE_DIR, "sf-mock-overlay.json")
-    : path.join(__dirname, "..", "screenshot", MOCK_UNIVERSE, "sf-mock-overlay.json");
+    : path.join(
+        __dirname,
+        "..",
+        "screenshot",
+        MOCK_UNIVERSE,
+        "sf-mock-overlay.json",
+      );
   try {
     return JSON.parse(fs.readFileSync(file, "utf8"));
   } catch {
@@ -443,7 +449,8 @@ async function main() {
       {
         status: 0,
         result: DOCS_PROFILE
-          ? (universeValue("metadata", null) || {})[type] || docsMetadataFor(type)
+          ? (universeValue("metadata", null) || {})[type] ||
+            docsMetadataFor(type)
           : [],
       },
       "",

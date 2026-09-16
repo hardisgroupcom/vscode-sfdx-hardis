@@ -48,9 +48,7 @@ async function main() {
   // edited or repointed: a new universe is new files in new folders.
   //
   // "helios" is the sfdx-hardis training universe. See the training repository.
-  const universeName = docScreenshots
-    ? process.env.SF_MOCK_UNIVERSE || ""
-    : "";
+  const universeName = docScreenshots ? process.env.SF_MOCK_UNIVERSE || "" : "";
   const universeDir = universeName
     ? path.join(
         extensionDevelopmentPath,

@@ -15,9 +15,7 @@
     "refusal": null
   },
   "parentBranch": "integration",
-  "allowedParentBranches": [
-    "integration"
-  ],
+  "allowedParentBranches": ["integration"],
   "gitRoot": "/tmp/mock-workspace",
   "backpromoteBranch": {
     "name": "backpromote/integration/helios-dev",
@@ -106,9 +104,7 @@
       "files": [
         "force-app/main/default/flows/Installation_Assign_Crew.flow-meta.xml"
       ],
-      "pullRequests": [
-        51
-      ],
+      "pullRequests": [51],
       "excludedLastTime": false,
       "noOverwrite": false
     },
@@ -119,9 +115,7 @@
       "files": [
         "force-app/main/default/permissionsets/Helios_Delivery_Manager.permissionset-meta.xml"
       ],
-      "pullRequests": [
-        51
-      ],
+      "pullRequests": [51],
       "excludedLastTime": false,
       "noOverwrite": false
     },
@@ -132,9 +126,7 @@
       "files": [
         "force-app/main/default/objects/Installation__c/fields/Crew_Capacity_Cap__c.field-meta.xml"
       ],
-      "pullRequests": [
-        51
-      ],
+      "pullRequests": [51],
       "excludedLastTime": false,
       "noOverwrite": false
     },
@@ -145,9 +137,7 @@
       "files": [
         "force-app/main/default/permissionsets/Helios_Delivery_Crew.permissionset-meta.xml"
       ],
-      "pullRequests": [
-        52
-      ],
+      "pullRequests": [52],
       "excludedLastTime": false,
       "noOverwrite": false
     },
@@ -158,9 +148,7 @@
       "files": [
         "force-app/main/default/layouts/Opportunity-Opportunity Layout.layout-meta.xml"
       ],
-      "pullRequests": [
-        52
-      ],
+      "pullRequests": [52],
       "excludedLastTime": false,
       "noOverwrite": false
     },
@@ -171,9 +159,7 @@
       "files": [
         "force-app/main/default/objects/Crew_Capacity__c/Crew_Capacity__c.object-meta.xml"
       ],
-      "pullRequests": [
-        53
-      ],
+      "pullRequests": [53],
       "excludedLastTime": false,
       "noOverwrite": false
     },
@@ -185,9 +171,7 @@
         "force-app/main/default/classes/CrewCapacityBatch.cls",
         "force-app/main/default/classes/CrewCapacityBatch.cls-meta.xml"
       ],
-      "pullRequests": [
-        53
-      ],
+      "pullRequests": [53],
       "excludedLastTime": false,
       "noOverwrite": false
     }
@@ -232,9 +216,7 @@
         "parentHead": "/tmp/sfdx-hardis/backpromote/retrieve/00D5g000004ABCDEAA/mock7f3a/git/classes/InvoiceCalculator.cls"
       },
       "diffLines": 6,
-      "pullRequests": [
-        418
-      ],
+      "pullRequests": [418],
       "decision": null,
       "prepared": false,
       "markersRemaining": 0,
@@ -251,9 +233,7 @@
         "parentHead": null
       },
       "diffLines": 0,
-      "pullRequests": [
-        418
-      ],
+      "pullRequests": [418],
       "decision": null,
       "prepared": false,
       "markersRemaining": 0,
@@ -270,9 +250,7 @@
         "parentHead": null
       },
       "diffLines": 0,
-      "pullRequests": [
-        418
-      ],
+      "pullRequests": [418],
       "decision": null,
       "prepared": false,
       "markersRemaining": 0,
@@ -289,9 +267,7 @@
         "parentHead": null
       },
       "diffLines": 0,
-      "pullRequests": [
-        415
-      ],
+      "pullRequests": [415],
       "decision": null,
       "prepared": false,
       "markersRemaining": 0,
@@ -308,9 +284,7 @@
         "parentHead": "/tmp/sfdx-hardis/backpromote/retrieve/00D5g000004ABCDEAA/mock7f3a/git/layouts/Case-Case Layout.layout-meta.xml"
       },
       "diffLines": 12,
-      "pullRequests": [
-        415
-      ],
+      "pullRequests": [415],
       "decision": null,
       "prepared": false,
       "markersRemaining": 0,
@@ -327,9 +301,7 @@
         "parentHead": null
       },
       "diffLines": 0,
-      "pullRequests": [
-        418
-      ],
+      "pullRequests": [418],
       "decision": null,
       "prepared": false,
       "markersRemaining": 0,
@@ -346,10 +318,7 @@
         "parentHead": "/tmp/sfdx-hardis/backpromote/retrieve/00D5g000004ABCDEAA/mock7f3a/git/profiles/Admin.profile-meta.xml"
       },
       "diffLines": 40,
-      "pullRequests": [
-        415,
-        418
-      ],
+      "pullRequests": [415, 418],
       "decision": null,
       "prepared": false,
       "markersRemaining": 0,
@@ -366,9 +335,7 @@
         "parentHead": null
       },
       "diffLines": 0,
-      "pullRequests": [
-        418
-      ],
+      "pullRequests": [418],
       "decision": null,
       "prepared": false,
       "markersRemaining": 0,
