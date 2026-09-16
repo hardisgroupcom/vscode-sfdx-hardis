@@ -854,13 +854,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
     const deepLink = this._pendingDeepLink;
     this._pendingDeepLink = null;
-    // Opening a major branch by name, which is what clicking its node in the
-    // diagram does. Used by the documentation captures, so they do not depend
-    // on where the node happens to be drawn.
-    if (deepLink.focus === "branch" && deepLink.branch) {
-      this.handleShowBranchPRs(deepLink.branch);
-      return;
-    }
     if (
       deepLink.focus !== "deploymentActions" ||
       !this.currentBranchPullRequest

@@ -270,6 +270,17 @@ function checkoutWorkspaceBranch(branchName: string): void {
 }
 
 /**
+ * Where the major branch node sits in the diagram, for the click that opens its
+ * window. Mermaid lays the node out from the branches the fixture carries, so
+ * each universe names its own point.
+ */
+const BRANCH_NODE = (() => {
+  const raw = process.env.SFDX_HARDIS_DOC_SCREENSHOTS_BRANCH_NODE || "850,405";
+  const [x, y] = raw.split(",").map((part) => Number(part.trim()));
+  return { x: Number.isFinite(x) ? x : 850, y: Number.isFinite(y) ? y : 405 };
+})();
+
+/**
  * Feature branch the contribution cards and the deployment action editors are
  * captured from. It belongs to the fixture universe, so an alternate universe
  * (SF_MOCK_UNIVERSE) names its own through SFDX_HARDIS_DOC_SCREENSHOTS_BRANCH.
@@ -651,19 +662,14 @@ suite("Documentation screenshots", function () {
       force: true,
     });
     await sleep(1000);
-    // The modal of the integration branch, opened by deep link rather than by
-    // clicking its node: the node moves with the branches the fixture carries,
-    // and a click landing next to it captured a pipeline with no modal at all.
-    await shootPanel(panelManager, {
-      name: "pipeline-branch-modal",
-      command: "vscode-sfdx-hardis.showPipeline",
-      lwcId: "s-pipeline",
-      ready: pipelineFullyLoaded,
-      settleMs: 9000,
-      force: true,
-      commandArgs: { focus: "branch", branch: "integration" },
-    });
-    await sleep(1500);
+    // Click the major branch node of the diagram to open its window. The node is
+    // laid out by mermaid, so where it lands depends on how many feature
+    // branches the fixture carries: an alternate universe names its own point
+    // through SFDX_HARDIS_DOC_SCREENSHOTS_BRANCH_NODE ("x,y"). With the wrong
+    // point the click hits empty canvas and the capture is a pipeline with no
+    // window, which is what happened before this was configurable.
+    await click(BRANCH_NODE.x, BRANCH_NODE.y);
+    await sleep(2500);
     await cleanChrome();
     await captureStable("pipeline-branch-modal");
     await click(958, 227); // "Deployment Actions" tab of the modal
