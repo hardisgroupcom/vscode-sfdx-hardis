@@ -1878,6 +1878,61 @@ const DOCS_SCENARIOS = {
   // replay of a real `sf hardis:org:user:activateinvalid` run (reactivation of
   // sandbox users whose email was suffixed with .invalid by a refresh),
   // anonymized
+  // Connecting an org, which is what the Orgs Manager "Add org" button runs.
+  // The alias question is the point of this scenario: the default is built from
+  // the org address, and on a fresh Developer Edition that address is a random
+  // string, so the name has to be typed rather than accepted.
+  "hardis:org:select": async (send, askPrompt, sleep) => {
+    const log = (logType, message, extra) =>
+      send({ event: "commandLogLine", logType, message, ...(extra || {}) });
+
+    log("action", "Please select the org you want to connect");
+    await sleep(400);
+    await askPrompt({
+      name: "orgSelect",
+      type: "select",
+      message: "Please select an org",
+      description: "Pick an org you already connected, or connect a new one",
+      choices: [
+        { title: "Connect to another org", value: "connectOrg" },
+        {
+          title: "helios-dev",
+          value: "helios-dev",
+          description: "helios.deploy+helios-dev@heliostraining.invalid",
+        },
+      ],
+    });
+    log("log", "Connect to another org");
+    await sleep(300);
+
+    log("action", "Authenticating using web login");
+    log("log", "Please login in the open web browser");
+    await sleep(900);
+    log(
+      "other",
+      "Successfully logged to https://orgfarm-9f2a1c7e4b-dev-ed.develop.my.salesforce.com",
+    );
+    await sleep(300);
+
+    log("action", "What name do you want to give this org?", {
+      isQuestion: true,
+    });
+    await askPrompt({
+      name: "alias",
+      type: "text",
+      message: "What name do you want to give this org?",
+      description:
+        "This alias replaces the long username in every list and every command. Keep the suggestion or type your own.",
+      initial: "orgfarm-9f2a1c7e4b",
+    });
+    log("log", "helios-dev");
+    await sleep(200);
+
+    log("action", "Naming the org helios-dev");
+    log("success", "Org helios.deploy+helios-dev@heliostraining.invalid is now known as helios-dev");
+    await sleep(200);
+  },
+
   "hardis:org:user:activateinvalid": async (send, askPrompt, sleep) => {
     const log = (logType, message, extra) =>
       send({ event: "commandLogLine", logType, message, ...(extra || {}) });

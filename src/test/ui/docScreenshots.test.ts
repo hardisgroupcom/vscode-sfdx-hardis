@@ -1471,6 +1471,35 @@ suite("Documentation screenshots", function () {
     await captureStable("pipeline-config-branch-edit");
   });
 
+  // Connecting an org, stopped on the question that names it. The training's
+  // first lab connects two orgs and has to show that the suggested name, taken
+  // from the org address, is not the one to keep.
+  test("command runner (name the org you connect)", async function () {
+    if (!shouldTake("org-select-alias")) {
+      this.skip();
+    }
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await sleep(400);
+    const asked = trackAskedPrompts();
+    const panelId = await runCommandAndWaitForPanel(
+      panelManager,
+      "sf hardis:org:select",
+    );
+    const panel = panelManager.getPanel(panelId);
+
+    await waitFor(() => asked("orgSelect"), 30000, "org list prompt");
+    await sleep(1000);
+    panel.simulateWebviewMessage({
+      type: "submit",
+      data: { orgSelect: "connectOrg" },
+    });
+
+    await waitFor(() => asked("alias"), 30000, "alias prompt");
+    await sleep(1500);
+    await cleanChrome();
+    await captureStable("org-select-alias");
+  });
+
   // Productivity command example: reactivation of the sandbox users whose
   // email was suffixed with .invalid by a refresh. Its multiselect question is
   // the docs image ProductivityCommands.png.
