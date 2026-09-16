@@ -41,6 +41,8 @@ const ONLY = (process.env.SFDX_HARDIS_DOC_SCREENSHOTS_ONLY || "")
   .split(",")
   .map((name) => name.trim())
   .filter((name) => name.length > 0);
+const WINDOW_TITLE =
+  process.env.SFDX_HARDIS_DOC_SCREENSHOTS_TITLE || "MyCompany-CRM";
 const SCRIPT_DIR = path.resolve(__dirname, "../../../test/fixtures/screenshot");
 const CAPTURE_SCRIPT = path.join(SCRIPT_DIR, "capture-window.ps1");
 const CLICK_SCRIPT = path.join(SCRIPT_DIR, "click-window.ps1");
@@ -84,9 +86,10 @@ function capture(
     "-OutFile",
     file,
     // Matches the Extension Development Host only: any other VS Code window
-    // open on the machine must not be captured
+    // open on the machine must not be captured. The title follows the fixture
+    // universe (SF_MOCK_UNIVERSE), so a training run matches its own window.
     "-TitleMatch",
-    "MyCompany-CRM",
+    WINDOW_TITLE,
     "-Maximize",
   ];
   args.push("-CropTop", String(options.crop?.top ?? TITLE_BAR_HEIGHT));
@@ -156,6 +159,8 @@ async function click(
     "Bypass",
     "-File",
     CLICK_SCRIPT,
+    "-TitleMatch",
+    WINDOW_TITLE,
     "-X",
     String(x),
     "-Y",
@@ -264,7 +269,14 @@ function checkoutWorkspaceBranch(branchName: string): void {
   });
 }
 
-const FEATURE_BRANCH = "feature/CRM-1042-account-hierarchy";
+/**
+ * Feature branch the contribution cards and the deployment action editors are
+ * captured from. It belongs to the fixture universe, so an alternate universe
+ * (SF_MOCK_UNIVERSE) names its own through SFDX_HARDIS_DOC_SCREENSHOTS_BRANCH.
+ */
+const FEATURE_BRANCH =
+  process.env.SFDX_HARDIS_DOC_SCREENSHOTS_BRANCH ||
+  "feature/CRM-1042-account-hierarchy";
 /**
  * Promotion branches variant of the run (SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION):
  * enablePromotionBranches is on in the workspace config and the git provider
@@ -319,6 +331,8 @@ async function record(
       "Bypass",
       "-File",
       RECORD_SCRIPT,
+      "-TitleMatch",
+      WINDOW_TITLE,
       "-OutDir",
       outDir,
       "-Seconds",
