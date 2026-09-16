@@ -1438,6 +1438,9 @@ const DOCS_TARGET_BRANCH = DOCS_SCENARIO.targetBranch;
 const DOCS_DEV_ORG = DOCS_SCENARIO.devOrgs[0];
 const DOCS_DEV_ORG_URL = DOCS_DEV_ORG.title;
 const DOCS_DEV_ORG_USER = DOCS_DEV_ORG.description;
+const DOCS_MANUAL_ACTIONS_URL =
+  DOCS_SCENARIO.manualActionsUrl ||
+  "https://mycompany.sharepoint.com/sites/crm/ManualActions.xlsx";
 
 // The delta package.xml the Save / Publish scenario shows, taken from the
 // universe so the components named are the ones the learner just changed
@@ -1835,7 +1838,7 @@ const DOCS_SCENARIOS = {
     );
     log(
       "warning",
-      "If you have pre-deployment or post-deployment manual actions, record them in https://mycompany.sharepoint.com/sites/crm/ManualActions.xlsx",
+      `If you have pre-deployment or post-deployment manual actions, record them in ${DOCS_MANUAL_ACTIONS_URL}`,
     );
     send({
       event: "reportFile",
@@ -1845,7 +1848,7 @@ const DOCS_SCENARIOS = {
     });
     send({
       event: "reportFile",
-      file: "https://mycompany.sharepoint.com/sites/crm/ManualActions.xlsx",
+      file: DOCS_MANUAL_ACTIONS_URL,
       title: "Update Manual Actions file",
       type: "actionUrl",
     });

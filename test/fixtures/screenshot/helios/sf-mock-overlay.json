@@ -101,6 +101,7 @@
         "description": "helios.deploy+helios-dev@heliostraining.invalid"
       }
     ],
+    "manualActionsUrl": "https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2/lab-03-deployment-actions-data/",
     "packageXmlTypes": [
       {
         "name": "CustomField",
