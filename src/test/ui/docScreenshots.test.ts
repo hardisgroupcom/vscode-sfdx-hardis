@@ -2015,6 +2015,10 @@ suite("Documentation screenshots", function () {
     // menus adds rows above these, and clicking a hardcoded y then expanded
     // nothing and produced seven identical captures.
     const sections: Array<{ name: string; id: string }> = [
+      // The custom menu a project declares in customCommands. Absent from the
+      // product fixture, present in the training one, and the entry point of
+      // every lab of the course.
+      { name: "custom-menu", id: "training" },
       { name: "advanced", id: "cicd-advanced" },
       { name: "misc", id: "cicd-misc" },
       { name: "org-operations", id: "org-operations" },

@@ -139,6 +139,35 @@ async function main() {
     git("remote add origin https://github.com/mycompany/salesforce-crm.git");
   }
 
+  // The pipeline as Level 3 of the training finishes it: three major branches,
+  // each pointing at its org and merging into the next. Levels 1 and 2 stop at
+  // integration, so the committed fixture does too, and the Level 3 captures
+  // need the finished shape: a three column diagram, and a branch window that
+  // lists what is waiting to be promoted rather than a go-live selector.
+  if (pipelineState === "level3") {
+    const branchDir = path.join(workspaceDir, "config", "branches");
+    fs.mkdirSync(branchDir, { recursive: true });
+    const writeBranch = (branch: string, org: string, mergeTargets: string[]) =>
+      fs.writeFileSync(
+        path.join(branchDir, `.sfdx-hardis.${branch}.yml`),
+        [
+          `# Helios ${org} org`,
+          `targetUsername: helios.deploy+helios-${org}@heliostraining.invalid`,
+          `instanceUrl: https://helios-${org}.my.salesforce.com`,
+          `mergeTargets: [${mergeTargets.join(", ")}]`,
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+    writeBranch("integration", "integration", ["uat"]);
+    writeBranch("uat", "uat", ["main"]);
+    writeBranch("main", "prod", []);
+    execSync("git add -A && git commit -m level3 --no-gpg-sign", {
+      cwd: workspaceDir,
+      stdio: "pipe",
+    });
+  }
+
   // Git provider fixture of the run: the promotion variant merges its overlay
   // into the base one and writes the result next to the temp workspace, so the
   // committed fixtures stay independent from each other.
