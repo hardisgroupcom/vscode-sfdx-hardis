@@ -349,11 +349,15 @@ function docsSourceMemberRecords() {
   const sorted = [...source].sort((a, b) =>
     a[0] === b[0] ? a[1].localeCompare(b[1]) : a[0].localeCompare(b[0]),
   );
-  return sorted.map(([type, name, author, operation], index) => ({
+  // A row may carry its own date, for a universe where when a change happened
+  // is what tells the reader which rows are theirs
+  return sorted.map(([type, name, author, operation, date], index) => ({
     attributes: { type: "SourceMember" },
     MemberType: type,
     MemberName: name,
-    LastModifiedDate: `2026-08-1${(index % 8) + 1}T0${(index % 9) + 1}:2${index % 9}:00.000+0000`,
+    LastModifiedDate:
+      date ||
+      `2026-08-1${(index % 8) + 1}T0${(index % 9) + 1}:2${index % 9}:00.000+0000`,
     LastModifiedBy: { Name: author },
     IsNewMember: operation === "created",
     IsDeleted: false,
@@ -1603,99 +1607,165 @@ const DOCS_SCENARIOS = {
         },
       ],
     });
-    log("log", "\u{1F30E} Sandbox org with source tracking");
-    await sleep(150);
+    // A universe whose contributors build in scratch orgs (the training) answers
+    // with the scratch org list, the one hardis:work:new shows for that choice.
+    // It has no sandbox initialization question, and it opens the org itself.
+    if (DOCS_SCENARIO.devOrgType === "scratch") {
+      log("log", "\u{1FA90} Scratch org");
+      await sleep(150);
 
-    log(
-      "action",
-      `Select a sandbox org to work in branch ${DOCS_STORY_BRANCH}`,
-      { isQuestion: true },
-    );
-    await askPrompt({
-      name: "sandboxOrg",
-      type: "select",
-      message: `Select a sandbox org to work in branch ${DOCS_STORY_BRANCH}`,
-      choices: [
-        ...DOCS_SCENARIO.devOrgs,
-        {
-          title: "\u{1F517} Connect to another org",
-          value: "other",
-          description: "Authenticate to an org that is not in the list yet",
+      log("action", `Select a scratch org for branch ${DOCS_STORY_BRANCH}`, {
+        isQuestion: true,
+      });
+      await askPrompt({
+        name: "scratchOrg",
+        type: "select",
+        message: `Select a scratch org for branch ${DOCS_STORY_BRANCH}`,
+        description:
+          "Choose whether to create a new scratch org or reuse an existing one",
+        choices: [
+          {
+            title: "Create new scratch org",
+            value: "newScratchOrg",
+            description:
+              "Generate a new scratch org; you'll be ready to work in a few minutes",
+          },
+          {
+            title: "Reuse current org",
+            value: "currentOrg",
+            description: `Reuse current org ${DOCS_DEV_ORG_URL}. Beware of conflicts if others have merged changes.`,
+          },
+          ...DOCS_SCENARIO.devOrgs.map((org) => ({
+            title: `Reuse scratch org ${org.value}`,
+            value: org.value,
+            description: org.title,
+          })),
+        ],
+      });
+      log(
+        "action",
+        `Selected scratch org ${DOCS_DEV_ORG_URL} with user ${DOCS_DEV_ORG_USER}`,
+      );
+      send({
+        event: "commandSubCommandStart",
+        data: {
+          command: `sf config set target-org=${DOCS_DEV_ORG_USER}`,
+          cwd: ".",
         },
-      ],
-    });
-    log("log", DOCS_DEV_ORG_URL);
-    await sleep(150);
-
-    log(
-      "action",
-      `Setting ${DOCS_DEV_ORG_URL} (${DOCS_DEV_ORG_USER}) as default org...`,
-    );
-    send({
-      event: "commandSubCommandStart",
-      data: {
-        command: `sf config set target-org=${DOCS_DEV_ORG_USER}`,
-        cwd: ".",
-      },
-    });
-    await sleep(1000);
-    send({
-      event: "commandSubCommandEnd",
-      data: {
-        command: `sf config set target-org=${DOCS_DEV_ORG_USER}`,
-        success: true,
-      },
-    });
-
-    log(
-      "action",
-      `Do you want to update your sandbox to match ${DOCS_TARGET_BRANCH} branch?`,
-      { isQuestion: true },
-    );
-    await askPrompt({
-      name: "initSandbox",
-      type: "select",
-      message: `Do you want to update your sandbox to match ${DOCS_TARGET_BRANCH} branch?`,
-      description:
-        "Choose whether to sync your sandbox with the latest changes of the parent branch",
-      choices: [
-        {
-          title: "Continue working on the current sandbox state",
-          value: "no",
-          description: "Use this if several people share this sandbox",
+      });
+      await sleep(800);
+      send({
+        event: "commandSubCommandEnd",
+        data: {
+          command: `sf config set target-org=${DOCS_DEV_ORG_USER}`,
+          success: true,
         },
-        {
-          title: "Yes, update my sandbox",
-          value: "init",
-          description: `Install packages, assign permission sets and run the initialization scripts of ${DOCS_TARGET_BRANCH}`,
+      });
+      log("action", "Opening scratch org in browser...");
+      send({
+        event: "commandSubCommandStart",
+        data: { command: "sf org open", cwd: "." },
+      });
+      await sleep(800);
+      send({
+        event: "commandSubCommandEnd",
+        data: { command: "sf org open", success: true },
+      });
+    } else {
+      log("log", "\u{1F30E} Sandbox org with source tracking");
+      await sleep(150);
+
+      log(
+        "action",
+        `Select a sandbox org to work in branch ${DOCS_STORY_BRANCH}`,
+        { isQuestion: true },
+      );
+      await askPrompt({
+        name: "sandboxOrg",
+        type: "select",
+        message: `Select a sandbox org to work in branch ${DOCS_STORY_BRANCH}`,
+        choices: [
+          ...DOCS_SCENARIO.devOrgs,
+          {
+            title: "\u{1F517} Connect to another org",
+            value: "other",
+            description: "Authenticate to an org that is not in the list yet",
+          },
+        ],
+      });
+      log("log", DOCS_DEV_ORG_URL);
+      await sleep(150);
+
+      log(
+        "action",
+        `Setting ${DOCS_DEV_ORG_URL} (${DOCS_DEV_ORG_USER}) as default org...`,
+      );
+      send({
+        event: "commandSubCommandStart",
+        data: {
+          command: `sf config set target-org=${DOCS_DEV_ORG_USER}`,
+          cwd: ".",
         },
-      ],
-    });
-    log("log", "Continue working on the current sandbox state");
-    await sleep(200);
+      });
+      await sleep(1000);
+      send({
+        event: "commandSubCommandEnd",
+        data: {
+          command: `sf config set target-org=${DOCS_DEV_ORG_USER}`,
+          success: true,
+        },
+      });
 
-    log(
-      "action",
-      `The metadata merged in ${DOCS_TARGET_BRANCH} is brought into your org by a backpromote, not by this command`,
-    );
-    await sleep(200);
+      log(
+        "action",
+        `Do you want to update your sandbox to match ${DOCS_TARGET_BRANCH} branch?`,
+        { isQuestion: true },
+      );
+      await askPrompt({
+        name: "initSandbox",
+        type: "select",
+        message: `Do you want to update your sandbox to match ${DOCS_TARGET_BRANCH} branch?`,
+        description:
+          "Choose whether to sync your sandbox with the latest changes of the parent branch",
+        choices: [
+          {
+            title: "Continue working on the current sandbox state",
+            value: "no",
+            description: "Use this if several people share this sandbox",
+          },
+          {
+            title: "Yes, update my sandbox",
+            value: "init",
+            description: `Install packages, assign permission sets and run the initialization scripts of ${DOCS_TARGET_BRANCH}`,
+          },
+        ],
+      });
+      log("log", "Continue working on the current sandbox state");
+      await sleep(200);
 
-    log(
-      "action",
-      `Do you want to open org ${DOCS_DEV_ORG_USER} in your browser?`,
-      { isQuestion: true },
-    );
-    await askPrompt({
-      name: "openOrg",
-      type: "select",
-      message: `Do you want to open org ${DOCS_DEV_ORG_USER} in your browser?`,
-      choices: [
-        { title: "✅ Yes", value: "yes" },
-        { title: "❌ No", value: "no" },
-      ],
-    });
-    log("log", "❌ No");
-    await sleep(200);
+      log(
+        "action",
+        `The metadata merged in ${DOCS_TARGET_BRANCH} is brought into your org by a backpromote, not by this command`,
+      );
+      await sleep(200);
+
+      log(
+        "action",
+        `Do you want to open org ${DOCS_DEV_ORG_USER} in your browser?`,
+        { isQuestion: true },
+      );
+      await askPrompt({
+        name: "openOrg",
+        type: "select",
+        message: `Do you want to open org ${DOCS_DEV_ORG_USER} in your browser?`,
+        choices: [
+          { title: "✅ Yes", value: "yes" },
+          { title: "❌ No", value: "no" },
+        ],
+      });
+      log("log", "❌ No");
+      await sleep(200);
+    }
 
     log("action", `Ready to work in branch ${DOCS_STORY_BRANCH}`);
     log("log", `Use your default org with username ${DOCS_DEV_ORG_USER}`);

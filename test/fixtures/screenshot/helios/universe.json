@@ -8,6 +8,7 @@
   "branchNode": "1190,557",
   "branches": [
     "uat",
+    "preprod",
     "main",
     "features/US-014-panels-required",
     "features/US-016-crew-notes",

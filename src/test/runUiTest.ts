@@ -139,29 +139,38 @@ async function main() {
     git("remote add origin https://github.com/mycompany/salesforce-crm.git");
   }
 
-  // The pipeline as Level 3 of the training finishes it: three major branches,
+  // The pipeline as Level 3 of the training finishes it: four major branches,
   // each pointing at its org and merging into the next. Levels 1 and 2 stop at
-  // integration, so the committed fixture does too, and the Level 3 captures
-  // need the finished shape: a three column diagram, and a branch window that
-  // lists what is waiting to be promoted rather than a go-live selector.
+  // uat, so the committed fixture does too, and the Level 3 captures need the
+  // finished shape: a four column diagram, and a branch window that lists what
+  // is waiting to be promoted rather than a go-live selector.
   if (pipelineState === "level3") {
     const branchDir = path.join(workspaceDir, "config", "branches");
     fs.mkdirSync(branchDir, { recursive: true });
-    const writeBranch = (branch: string, org: string, mergeTargets: string[]) =>
+    const writeBranch = (
+      branch: string,
+      org: string,
+      loginUrl: string,
+      mergeTargets: string[],
+    ) =>
       fs.writeFileSync(
         path.join(branchDir, `.sfdx-hardis.${branch}.yml`),
         [
           `# Helios ${org} org`,
           `targetUsername: helios.deploy+helios-${org}@heliostraining.invalid`,
-          `instanceUrl: https://helios-${org}.my.salesforce.com`,
+          `instanceUrl: ${loginUrl}`,
           `mergeTargets: [${mergeTargets.join(", ")}]`,
           "",
         ].join("\n"),
         "utf8",
       );
-    writeBranch("integration", "integration", ["uat"]);
-    writeBranch("uat", "uat", ["main"]);
-    writeBranch("main", "prod", []);
+    // integration and uat are scratch orgs, preprod and main Developer Editions
+    writeBranch("integration", "integration", "https://test.salesforce.com", [
+      "uat",
+    ]);
+    writeBranch("uat", "uat", "https://test.salesforce.com", ["preprod"]);
+    writeBranch("preprod", "preprod", "https://login.salesforce.com", ["main"]);
+    writeBranch("main", "prod", "https://login.salesforce.com", []);
     execSync("git add -A && git commit -m level3 --no-gpg-sign", {
       cwd: workspaceDir,
       stdio: "pipe",

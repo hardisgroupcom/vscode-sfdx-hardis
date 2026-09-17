@@ -5,18 +5,20 @@
 projectName: HeliosEnergy
 
 # --- Pipeline -------------------------------------------------------------
-# At Levels 1 and 2 the pipeline stops at integration on purpose.
-# Level 3 lab 0 is where uat and main are declared as major branches.
+# At Levels 1 and 2 the pipeline is integration then uat, both deploying to
+# scratch orgs that Set up my training environment creates. preprod and main
+# exist in the fork and have no org yet: Level 3 lab 0 is where they join.
 developmentBranch: integration
 productionBranch: main
-# How the CI job gets into an org. Levels 1 and 2 use an auth URL kept in a
-# GitHub secret, which is the shortcut, so there is no certificate to look for
+# How the CI job gets into an org. Levels 1 and 2 use auth URLs kept in
+# GitHub secrets, which is the shortcut, so there is no certificate to look for
 # and the pipeline is right not to ask for one. Level 3 lab 1 replaces it with
 # a JWT certificate and puts this back to encryptedCert.
 orgAuthenticationMode: secretsOnly
 # One entry on purpose. A contributor at Levels 1 and 2 has exactly one place
 # to send a User Story, and a question with one answer is a question that
-# cannot be got wrong. Level 3 lab 0 adds uat and main here.
+# cannot be got wrong. uat is a major branch all the same: work reaches it by
+# promotion, never by a User Story. Level 3 lab 0 adds preprod here, for hotfixes.
 availableTargetBranches:
   - integration
 availableTargetBranchesLabels:
@@ -84,18 +86,11 @@ customCommands:
     welcomeIconClass: cyan
     commands:
       - id: training-l1-init
-        label: Set up my pipeline
+        label: Set up my training environment
         vscodeIcon: repo-forked
         sldsIcon: utility:merge
-        tooltip: Forks the repository, turns Actions on, and gives the CI job a way into your org
+        tooltip: Forks the repository, creates your scratch orgs with the Helios app, and wires the pipeline to them
         command: node scripts/training.mjs init
-        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1/lab-01-fork-and-connect/
-      - id: training-l1-seed
-        label: Set up one of my training orgs
-        vscodeIcon: cloud-upload
-        sldsIcon: utility:upload
-        tooltip: Deploys the Helios Energy app and its sample data into the org you choose
-        command: node scripts/training.mjs seed
         helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1/lab-01-fork-and-connect/
       - id: training-l1-status
         label: Where am I?
@@ -126,6 +121,13 @@ customCommands:
     sldsIcon: utility:education
     welcomeIconClass: indigo
     commands:
+      - id: training-l2-init
+        label: Set up my training environment
+        vscodeIcon: repo-forked
+        sldsIcon: utility:merge
+        tooltip: Rebuilds a scratch org that expired, with the Helios app, and points the pipeline at it again
+        command: node scripts/training.mjs init
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1/lab-01-fork-and-connect/
       - id: training-l2-status
         label: Where am I?
         vscodeIcon: compass
@@ -169,6 +171,13 @@ customCommands:
     sldsIcon: utility:education
     welcomeIconClass: violet
     commands:
+      - id: training-l3-init
+        label: Set up my training environment
+        vscodeIcon: repo-forked
+        sldsIcon: utility:merge
+        tooltip: Rebuilds a scratch org that expired, with the Helios app, and points the pipeline at it again
+        command: node scripts/training.mjs init
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1/lab-01-fork-and-connect/
       - id: training-l3-status
         label: Where am I?
         vscodeIcon: compass

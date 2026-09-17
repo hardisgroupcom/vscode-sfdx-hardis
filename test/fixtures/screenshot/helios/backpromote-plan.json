@@ -7,7 +7,7 @@
   "targetOrg": {
     "alias": "helios-dev",
     "username": "helios.deploy+helios-dev@heliostraining.invalid",
-    "instanceUrl": "https://orgfarm-a4f21c7d09-dev-ed.develop.my.salesforce.com",
+    "instanceUrl": "https://velocity-power-7123-dev-ed.scratch.my.salesforce.com",
     "orgId": "00D5g000004ABCDEAA",
     "sandboxName": "helios-dev",
     "orgType": "sandbox",

@@ -3,51 +3,9 @@
   "orgs": {
     "nonScratchOrgs": [
       {
-        "username": "helios.deploy+helios-dev@heliostraining.invalid",
-        "alias": "helios-dev",
-        "orgId": "00D8E00000100000EAA",
-        "instanceUrl": "https://orgfarm-a4f21c7d09-dev-ed.develop.my.salesforce.com",
-        "instanceApiVersion": "64.0",
-        "loginUrl": "https://login.salesforce.com",
-        "connectedStatus": "Connected",
-        "isDefaultUsername": true,
-        "isSandbox": false,
-        "isScratch": false,
-        "orgEdition": "Developer Edition",
-        "_role": "your own development org"
-      },
-      {
-        "username": "helios.deploy+helios-integration@heliostraining.invalid",
-        "alias": "helios-integration",
-        "orgId": "00D8E00000100001EAA",
-        "instanceUrl": "https://orgfarm-b70e3d5142-dev-ed.develop.my.salesforce.com",
-        "instanceApiVersion": "64.0",
-        "loginUrl": "https://login.salesforce.com",
-        "connectedStatus": "Connected",
-        "isDefaultUsername": false,
-        "isSandbox": false,
-        "isScratch": false,
-        "orgEdition": "Developer Edition",
-        "_role": "shared integration org, target of the integration branch"
-      },
-      {
-        "username": "helios.deploy+helios-uat@heliostraining.invalid",
-        "alias": "helios-uat",
-        "orgId": "00D8E00000100002EAA",
-        "instanceUrl": "https://orgfarm-c18a94f6be-dev-ed.develop.my.salesforce.com",
-        "instanceApiVersion": "64.0",
-        "loginUrl": "https://login.salesforce.com",
-        "connectedStatus": "Connected",
-        "isDefaultUsername": false,
-        "isSandbox": false,
-        "isScratch": false,
-        "orgEdition": "Developer Edition",
-        "_role": "user acceptance org, target of the uat branch"
-      },
-      {
         "username": "helios.deploy+helios-prod@heliostraining.invalid",
         "alias": "helios-prod",
-        "orgId": "00D8E00000100003EAA",
+        "orgId": "00D8E00000100000EAA",
         "instanceUrl": "https://orgfarm-d6b52e0a37-dev-ed.develop.my.salesforce.com",
         "instanceApiVersion": "64.0",
         "loginUrl": "https://login.salesforce.com",
@@ -56,18 +14,92 @@
         "isSandbox": false,
         "isScratch": false,
         "orgEdition": "Developer Edition",
-        "_role": "production stand-in, target of the main branch"
+        "isDevHub": true,
+        "isDefaultDevHubUsername": true,
+        "_role": "the one Developer Edition org a learner signs up for: the Dev Hub that creates the scratch orgs, and from Level 3 the production stand-in, target of the main branch"
       }
     ],
-    "scratchOrgs": [],
+    "scratchOrgs": [
+      {
+        "username": "helios.deploy+helios-dev@heliostraining.invalid",
+        "alias": "helios-dev",
+        "orgId": "00D8E00000100001EAA",
+        "instanceUrl": "https://velocity-power-7123-dev-ed.scratch.my.salesforce.com",
+        "instanceApiVersion": "64.0",
+        "loginUrl": "https://test.salesforce.com",
+        "connectedStatus": "Connected",
+        "isDefaultUsername": true,
+        "isSandbox": false,
+        "isScratch": true,
+        "orgEdition": "Developer Edition",
+        "status": "Active",
+        "createdDate": "2026-09-01T09:12:00.000Z",
+        "expirationDate": "2026-10-01",
+        "devHubUsername": "helios.deploy+helios-prod@heliostraining.invalid",
+        "_role": "your own development org, a scratch org"
+      },
+      {
+        "username": "helios.deploy+helios-integration@heliostraining.invalid",
+        "alias": "helios-integration",
+        "orgId": "00D8E00000100002EAA",
+        "instanceUrl": "https://saas-inspiration-4518-dev-ed.scratch.my.salesforce.com",
+        "instanceApiVersion": "64.0",
+        "loginUrl": "https://test.salesforce.com",
+        "connectedStatus": "Connected",
+        "isDefaultUsername": false,
+        "isSandbox": false,
+        "isScratch": true,
+        "orgEdition": "Developer Edition",
+        "status": "Active",
+        "createdDate": "2026-09-01T09:12:00.000Z",
+        "expirationDate": "2026-10-01",
+        "devHubUsername": "helios.deploy+helios-prod@heliostraining.invalid",
+        "_role": "shared integration org, a scratch org, target of the integration branch"
+      },
+      {
+        "username": "helios.deploy+helios-uat@heliostraining.invalid",
+        "alias": "helios-uat",
+        "orgId": "00D8E00000100003EAA",
+        "instanceUrl": "https://data-energy-9087-dev-ed.scratch.my.salesforce.com",
+        "instanceApiVersion": "64.0",
+        "loginUrl": "https://test.salesforce.com",
+        "connectedStatus": "Connected",
+        "isDefaultUsername": false,
+        "isSandbox": false,
+        "isScratch": true,
+        "orgEdition": "Developer Edition",
+        "status": "Active",
+        "createdDate": "2026-09-01T09:12:00.000Z",
+        "expirationDate": "2026-10-01",
+        "devHubUsername": "helios.deploy+helios-prod@heliostraining.invalid",
+        "_role": "user acceptance org, a scratch org, target of the uat branch"
+      }
+    ],
     "sandboxes": [],
     "other": [],
-    "devHubs": []
+    "devHubs": [
+      {
+        "username": "helios.deploy+helios-prod@heliostraining.invalid",
+        "alias": "helios-prod",
+        "orgId": "00D8E00000100000EAA",
+        "instanceUrl": "https://orgfarm-d6b52e0a37-dev-ed.develop.my.salesforce.com",
+        "instanceApiVersion": "64.0",
+        "loginUrl": "https://login.salesforce.com",
+        "connectedStatus": "Connected",
+        "isDefaultUsername": false,
+        "isSandbox": false,
+        "isScratch": false,
+        "orgEdition": "Developer Edition",
+        "isDevHub": true,
+        "isDefaultDevHubUsername": true,
+        "_role": "the one Developer Edition org a learner signs up for: the Dev Hub that creates the scratch orgs, and from Level 3 the production stand-in, target of the main branch"
+      }
+    ]
   },
   "orgDisplay": {
-    "id": "00D8E00000100000EAA",
+    "id": "00D8E00000100001EAA",
     "username": "helios.deploy+helios-dev@heliostraining.invalid",
-    "instanceUrl": "https://orgfarm-a4f21c7d09-dev-ed.develop.my.salesforce.com",
+    "instanceUrl": "https://velocity-power-7123-dev-ed.scratch.my.salesforce.com",
     "apiVersion": "64.0",
     "connectedStatus": "Connected",
     "alias": "helios-dev"
@@ -85,9 +117,10 @@
     "storyName": "US-014 Show the crew how many panels a job needs",
     "storyNameExample": "US-014-panels-required",
     "storyBranch": "features/US-014-panels-required",
+    "devOrgType": "scratch",
     "devOrgs": [
       {
-        "title": "https://orgfarm-a4f21c7d09-dev-ed.develop.my.salesforce.com",
+        "title": "https://velocity-power-7123-dev-ed.scratch.my.salesforce.com",
         "value": "helios-dev",
         "description": "helios.deploy+helios-dev@heliostraining.invalid"
       }
@@ -138,49 +171,78 @@
       "CustomField",
       "Installation__c.Panels_Required__c",
       "You",
-      "created"
+      "created",
+      "2026-09-17T14:42:00.000+0000"
     ],
     [
       "PermissionSet",
       "Helios_Delivery_Crew",
       "You",
-      "modified"
+      "modified",
+      "2026-09-17T14:46:00.000+0000"
     ],
     [
       "Layout",
       "Installation__c-Installation Layout",
       "You",
-      "modified"
+      "modified",
+      "2026-09-17T14:49:00.000+0000"
+    ],
+    [
+      "CustomObject",
+      "Installation__c",
+      "You",
+      "created",
+      "2026-09-15T09:12:00.000+0000"
+    ],
+    [
+      "CustomObject",
+      "Panel_Batch__c",
+      "You",
+      "created",
+      "2026-09-15T09:12:00.000+0000"
     ],
     [
       "CustomField",
-      "Installation__c.Internal_Note__c",
-      "Marco Bianchi",
-      "modified"
+      "Installation__c.Crew_Size__c",
+      "You",
+      "created",
+      "2026-09-15T09:12:00.000+0000"
+    ],
+    [
+      "CustomField",
+      "Installation__c.Install_Date__c",
+      "You",
+      "created",
+      "2026-09-15T09:12:00.000+0000"
+    ],
+    [
+      "CustomField",
+      "Installation__c.Status__c",
+      "You",
+      "created",
+      "2026-09-15T09:12:00.000+0000"
     ],
     [
       "Flow",
       "Installation_Assign_Crew",
-      "Marco Bianchi",
-      "modified"
-    ],
-    [
-      "FlexiPage",
-      "Installation_Record_Page",
-      "Amina Diallo",
-      "modified"
-    ],
-    [
-      "Profile",
-      "Admin",
-      "Automated Process",
-      "modified"
+      "You",
+      "created",
+      "2026-09-15T09:12:00.000+0000"
     ],
     [
       "ApexClass",
       "InstallationScheduler",
-      "Marco Bianchi",
-      "modified"
+      "You",
+      "created",
+      "2026-09-15T09:12:00.000+0000"
+    ],
+    [
+      "PermissionSet",
+      "Helios_Delivery_Manager",
+      "You",
+      "created",
+      "2026-09-15T09:12:00.000+0000"
     ]
   ],
   "apexClasses": [

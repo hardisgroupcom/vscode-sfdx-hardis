@@ -1511,27 +1511,42 @@ suite("Documentation screenshots", function () {
       data: { orgType: "sandbox" },
     });
 
-    // 3. The org the work happens in
-    await waitFor(() => asked("sandboxOrg"), 30000, "org prompt");
+    // 3. The org the work happens in: a sandbox in the product universe, one of
+    //    the scratch orgs in the training one, which asks nothing more after it
+    await waitFor(
+      () => asked("sandboxOrg") || asked("scratchOrg"),
+      30000,
+      "org prompt",
+    );
     await sleep(1500);
     await cleanChrome();
     capture("work-new-org");
-    panel.simulateWebviewMessage({
-      type: "submit",
-      data: { sandboxOrg: "helios-dev" },
-    });
+    if (asked("scratchOrg")) {
+      panel.simulateWebviewMessage({
+        type: "submit",
+        data: { scratchOrg: "helios-dev" },
+      });
+    } else {
+      panel.simulateWebviewMessage({
+        type: "submit",
+        data: { sandboxOrg: "helios-dev" },
+      });
 
-    // 6. Whether to re-run the org initialization. It does NOT bring the
-    //    metadata down, which is the misunderstanding the training corrects
-    await waitFor(() => asked("initSandbox"), 30000, "init sandbox prompt");
-    await sleep(1500);
-    await cleanChrome();
-    capture("work-new-init-sandbox");
-    panel.simulateWebviewMessage({ type: "submit", data: { initSandbox: "no" } });
+      // 6. Whether to re-run the org initialization. It does NOT bring the
+      //    metadata down, which is the misunderstanding the training corrects
+      await waitFor(() => asked("initSandbox"), 30000, "init sandbox prompt");
+      await sleep(1500);
+      await cleanChrome();
+      capture("work-new-init-sandbox");
+      panel.simulateWebviewMessage({
+        type: "submit",
+        data: { initSandbox: "no" },
+      });
 
-    await waitFor(() => asked("openOrg"), 30000, "open org prompt");
-    await sleep(1000);
-    panel.simulateWebviewMessage({ type: "submit", data: { openOrg: "no" } });
+      await waitFor(() => asked("openOrg"), 30000, "open org prompt");
+      await sleep(1000);
+      panel.simulateWebviewMessage({ type: "submit", data: { openOrg: "no" } });
+    }
 
     await waitFor(
       () => panelManager.getPanel(panelId)?.commandStatus === "completed",

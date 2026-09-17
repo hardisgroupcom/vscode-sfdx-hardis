@@ -1,4 +1,4 @@
-# Helios integration org
+# Helios integration org, a scratch org
 targetUsername: helios.deploy+helios-integration@heliostraining.invalid
-instanceUrl: https://helios-integration.my.salesforce.com
-mergeTargets: []
+instanceUrl: https://test.salesforce.com
+mergeTargets: [uat]
