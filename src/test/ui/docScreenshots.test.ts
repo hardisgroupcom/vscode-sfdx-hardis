@@ -1284,8 +1284,13 @@ suite("Documentation screenshots", function () {
       clicks: [{ x: 571, y: 301 }],
     });
     // The three rows of US-014, in the order the panel sorts them (by type,
-    // then name): the field, the layout, the permission set
-    for (const y of [561, 712, 763]) {
+    // then name): the field, the layout, the permission set. Where they sit
+    // depends on what else the fixture lists, so a universe names its own rows
+    const rows = (universeSetting("retrieverRows") || "561,712,763")
+      .split(",")
+      .map((part) => Number(part.trim()))
+      .filter((y) => Number.isFinite(y));
+    for (const y of rows) {
       await click(496, y);
       await sleep(600);
     }

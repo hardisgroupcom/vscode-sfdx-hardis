@@ -5,7 +5,8 @@
   "workspaceName": "Helios-Energy",
   "remote": "https://github.com/hardisgroupcom/sfdx-hardis-training.git",
   "featureBranch": "features/US-024-crew-size-required",
-  "branchNode": "1190,557",
+  "branchNode": "1063,539",
+  "retrieverRows": "611,863,914",
   "branches": [
     "uat",
     "preprod",
