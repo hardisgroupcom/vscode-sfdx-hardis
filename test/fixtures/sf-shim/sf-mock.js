@@ -1958,6 +1958,353 @@ const DOCS_SCENARIOS = {
     await sleep(600);
   },
 
+  // CI authentication of a major branch, what the DevOps Pipeline gear menu >
+  // Add/Configure Org runs. Replays the questions, log lines and report files of
+  // sf hardis:project:configure:auth in the order the command asks them, as it
+  // runs once VS Code has relaunched it with the chosen org as default org. The
+  // two values it prints are fake, in the shape of the real ones.
+  "hardis:project:configure:auth": async (send, askPrompt, sleep) => {
+    const log = (logType, message, extra) =>
+      send({ event: "commandLogLine", logType, message, ...(extra || {}) });
+    const question = async (prompt) => {
+      log("action", prompt.message, { isQuestion: true });
+      return askPrompt(prompt);
+    };
+    const subCommand = async (command, ms) => {
+      send({ event: "commandSubCommandStart", data: { command, cwd: "." } });
+      await sleep(ms);
+      send({
+        event: "commandSubCommandEnd",
+        data: { command, success: true },
+      });
+    };
+    const auth = {
+      branchName: "integration",
+      orgAlias: "INTEGRATION",
+      remoteBranches: ["integration", "main", "preprod", "uat"],
+      mergeTargets: ["uat"],
+      contactEmail: "release.manager@mycompany.com",
+      ...(DOCS_SCENARIO.authConfig || {}),
+    };
+    const orgs = universeValue("orgs", DOCS_ORGS);
+    const byUrl = (a, b) => (a.instanceUrl || "").localeCompare(b.instanceUrl || "");
+    const orgList = [
+      ...[...(orgs.scratchOrgs || [])].sort(byUrl),
+      ...[...(orgs.nonScratchOrgs || [])].sort(byUrl),
+    ];
+    const org = orgList.find((o) => o.alias === auth.orgAlias) || orgList[0];
+    const branch = auth.branchName;
+    const upper = branch.toUpperCase();
+    const branchConfigFile = `./config/branches/.sfdx-hardis.${branch}.yml`;
+    const keyFile = `config/branches/.jwt/${branch}.key`;
+    const consumerKey =
+      "3MVG9Rd3qC6oMalVq8Hk2vT0bXa1cLmNpQrStUvWxYz4AbCdEfGhIjKlMnOpQrStUvWxYz0123456789AbCdEfGhIjKlMnOpQrStUvWxYz01234567";
+    const decryptionKey = "7f3a9c1e5b2d8f4a6c0e9b7d3f1a5c8e";
+
+    log(
+      "action",
+      "This command will configure the authentication between a git branch and a Salesforce org.",
+    );
+    log("action", "Listing your authenticated orgs...");
+    await sleep(300);
+    await question({
+      name: "org",
+      type: "select",
+      message:
+        "Please select or login into the org you want to configure the SF CLI Authentication",
+      description: "Choose a Salesforce org from the list of authenticated orgs",
+      choices: [
+        {
+          title: "\u{1F30D} Login to another org",
+          value: "other",
+          description:
+            "Connect in Web Browser to a Sandbox, a Production Org, a Dev Org or a Scratch Org",
+        },
+        ...orgList.map((o) => ({
+          title: `${o.instanceUrl.replace("https://", "")} (${o.alias})`,
+          // The org the scenario configures answers to a fixed value, so the
+          // test can pick it without knowing the universe's usernames
+          value: o === org ? "configuredOrg" : o.username,
+          description:
+            `Connected with ${o.username}` +
+            (o.devHubUsername ? ` (Hub: ${o.devHubUsername})` : ""),
+        })),
+        {
+          title: "\u{1F631} I already authenticated my org but I don't see it !",
+          value: "clearCache",
+          description:
+            "It might be a sfdx-hardis cache issue, reset it and try again !",
+        },
+        {
+          title: "❌ Cancel",
+          value: "cancel",
+          description: "Get out of here \u{1F60A}",
+        },
+      ],
+    });
+    log("log", `${org.instanceUrl.replace("https://", "")} (${org.alias})`);
+    log(
+      "action",
+      `Selected Org ${org.username} - ${org.instanceUrl}`,
+    );
+    await subCommand(`sf config set target-org=${org.username}`, 500);
+    log(
+      "action",
+      `Checking if the org username has changed from ${org.username}...`,
+    );
+    await subCommand("sf config get target-org", 300);
+
+    await question({
+      name: "branchName",
+      type: "select",
+      message:
+        "What is the name of the git branch you want to configure Automated CI/CD deployments from?",
+      description: "Enter the git branch name for this org configuration",
+      placeholder: "Select the git branch name",
+      choices: auth.remoteBranches.map((b) => ({ title: b, value: b })),
+    });
+    log("log", branch);
+    await sleep(150);
+
+    await question({
+      name: "instanceUrl",
+      type: "select",
+      message: `What is the base URL or domain or the org you want to connect to, as ${branch} related org ?`,
+      description:
+        "Select the Salesforce environment type or specify a custom URL for authentication",
+      choices: [
+        {
+          title: `♻️ ${org.instanceUrl}`,
+          value: org.instanceUrl,
+          description: "Your current default org",
+        },
+        {
+          title: "\u{1F4DD} Custom login URL (Sandbox, DevHub or Production Org)",
+          value: "custom",
+          description:
+            "Recommended option \u{1F60A} Example: https://myclient--preprod.sandbox.lightning.force.com/",
+        },
+        {
+          title: "\u{1F9EA} Sandbox or Scratch org (test.salesforce.com)",
+          value: "https://test.salesforce.com",
+          description: "The org I want to connect is a sandbox or a scratch org",
+        },
+        {
+          title:
+            "☢️ Other: Dev org, Production org or DevHub org (login.salesforce.com)",
+          value: "https://login.salesforce.com",
+          description: "The org I want to connect is NOT a sandbox",
+        },
+      ],
+    });
+    const instanceUrl = org.loginUrl || "https://test.salesforce.com";
+    log("log", instanceUrl);
+    await sleep(150);
+
+    await question({
+      name: "mergeTargets",
+      type: "multiselect",
+      message: `What are the target git branches that ${branch} will be able to merge in? (very often a single target branch to select)`,
+      description:
+        "Select the git branches that this branch will be able to merge in (for example, integration can merge into uat, and preprod can merge into main)",
+      placeholder: "Select the target git branches",
+      choices: auth.remoteBranches.map((b) => ({ title: b, value: b })),
+      initial: auth.mergeTargets,
+    });
+    log("log", auth.mergeTargets.join(", "));
+    await sleep(150);
+
+    await question({
+      name: "username",
+      type: "text",
+      message:
+        "What is the Salesforce username that will be used for deployments by CI server ? Example: admin.sfdx@myclient.com",
+      description: "Enter the Salesforce username for this configuration",
+      placeholder: "Ex: admin.sfdx@myclient.com",
+      initial: org.username,
+    });
+    log("log", org.username);
+    send({
+      event: "reportFile",
+      file: branchConfigFile,
+      title: `Updated ${branch} config file`,
+      type: "report",
+    });
+    await sleep(150);
+
+    await question({
+      name: "certSource",
+      type: "select",
+      message: "How do you want to provide the SSL certificate?",
+      description:
+        "Choose between generating a self-signed certificate (default) or using your own CA-signed certificate.",
+      choices: [
+        {
+          title: "Generate a self-signed certificate (default)",
+          value: "selfSigned",
+          description:
+            "sfdx-hardis generates the key pair, the certificate, and deploys the External Client App for you.",
+        },
+        {
+          title:
+            "Use a CA-signed certificate I already have (manual External Client App creation)",
+          value: "caSigned",
+          description:
+            "You will create the External Client App manually in Setup; sfdx-hardis only collects the values for CI/CD variables.",
+        },
+      ],
+    });
+    log("log", "Generate a self-signed certificate (default)");
+    log("action", "Generating SSL certificate...");
+    await subCommand(
+      'openssl req -nodes -newkey rsa:2048 -keyout server.key -out server.csr -subj "/C=GB/ST=Paris/L=Paris/O=Hardis Group/OU=sfdx-hardis/CN=hardis-group.com"',
+      700,
+    );
+    await subCommand(
+      "openssl x509 -req -sha256 -days 3650 -in server.csr -signkey server.key -out server.crt",
+      500,
+    );
+    send({
+      event: "reportFile",
+      file: keyFile,
+      title: `Encrypted SSL certificate key for branch ${branch}`,
+      type: "report",
+    });
+
+    await question({
+      name: "createApp",
+      type: "confirm",
+      message:
+        "Do you want sfdx-hardis to configure the SF CLI External Client App or Connected App on your org ?",
+      description:
+        "Creates a Connected App required for CI/CD authentication. Choose yes if you are unsure.",
+      initial: true,
+    });
+    log("log", "✅ Yes");
+    await sleep(150);
+
+    await question({
+      name: "certStorage",
+      type: "select",
+      message: "Which JWT certificate storage mode do you want?",
+      description:
+        "Choose how the encrypted JWT certificate key should be stored for CI/CD authentication.",
+      choices: [
+        {
+          title:
+            "ClientId + decryption key as secret variables + encrypted certificate as file (default)",
+          value: "file",
+          description:
+            "Keep current behavior: store clientId and decryption key as variables, and encrypted certificate as a local file.",
+        },
+        {
+          title:
+            "ClientId + decryption key + encrypted certificate as secret variables",
+          value: "variable",
+          description:
+            "Store clientId, decryption key, and encrypted certificate as CI/CD secret variables (recommended for fully secret-based auth).",
+        },
+      ],
+    });
+    log(
+      "log",
+      "ClientId + decryption key as secret variables + encrypted certificate as file (default)",
+    );
+
+    log(
+      "action",
+      "Please configure both below variables in your CI/CD platform.",
+    );
+    log(
+      "log",
+      `- Variable: SFDX_CLIENT_ID_${upper}\n- Value: <copy>${consumerKey}</copy>`,
+    );
+    log(
+      "log",
+      `- Variable: SFDX_CLIENT_KEY_${upper}\n- Value: <copy>${decryptionKey}</copy>`,
+    );
+    log(
+      "log",
+      "Help to configure CI/CD variables: https://sfdx-hardis.cloudity.com/salesforce-devops-setup-auth/",
+    );
+    log(
+      "warning",
+      `If you are using GitHub or Azure, you also need to manually add references to SFDX_CLIENT_ID_${upper} and SFDX_CLIENT_KEY_${upper} in your pipeline YAML definition file (.github/workflows/*.yml or azure-pipelines-*.yml).`,
+    );
+    send({
+      event: "reportFile",
+      file: "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-auth/",
+      title: "Help to configure CI variables",
+      type: "docUrl",
+    });
+    await question({
+      name: "variablesSet",
+      type: "confirm",
+      message:
+        "Please confirm when variables have been set (copy the variable names and values in the section above)",
+      description:
+        "Confirm when you have configured the required CI/CD environment variables in your deployment platform",
+    });
+    log("log", "✅ Yes");
+
+    const appName = `sfdxhardis${branch.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase().replace(/_+/g, "_").substring(0, 20)}`;
+    await question({
+      name: "appName",
+      type: "text",
+      message: "How would you like to name the External Client App?",
+      description:
+        "Name for the External Client App that will be created in your Salesforce org",
+      placeholder: "Ex: sfdx_hardis",
+      initial: appName,
+    });
+    log("log", appName);
+    await question({
+      name: "contactEmail",
+      type: "text",
+      message: "Enter a contact email for the External Client App (ex: teoman.sertcelik@gmail.com)",
+      initial: auth.contactEmail,
+    });
+    log("log", auth.contactEmail);
+    await question({
+      name: "profile",
+      type: "select",
+      message:
+        "What profile will be pre-authorized for the External Client App ? (ex: System Administrator)",
+      choices: [
+        { title: "System Administrator", value: "System Administrator" },
+        { title: "Standard User", value: "Standard User" },
+      ],
+    });
+    log("log", "System Administrator");
+
+    log(
+      "action",
+      `Deploying External Client App ${appName} into target org ${org.username} ...`,
+    );
+    log(
+      "log",
+      `External Client App metadata files:\n- externalClientApps/${appName}.eca-meta.xml\n- extlClntAppOauthSettings/${appName}OAuthSettings.ecaOauth-meta.xml\n- extlClntAppGlobalOauthSets/${appName}GlblOAuth.ecaGlblOauth-meta.xml (certificate and consumer key hidden)\n- extlClntAppPolicies/${appName}_defaultPolicy.ecaPlcy-meta.xml\n- extlClntAppOauthPolicies/${appName}OAuthSettings_defaultPolicy.ecaOauthPlcy-meta.xml`,
+    );
+    await subCommand(
+      `sf project deploy start --metadata-dir "/tmp/sfdx-hardis-eca" --wait 120 --test-level NoTestRun --api-version 64.0 --target-org ${org.username} --json`,
+      1500,
+    );
+    log("action", `Successfully deployed ${appName} External Client App`);
+    log(
+      "action",
+      `Branch ${branch} successfully configured for authentication!`,
+    );
+    log(
+      "warning",
+      "Make sure you have set the environment variables in your CI/CD platform",
+    );
+    log(
+      "warning",
+      "Don't forget to commit the sfdx-hardis config file and the encrypted certificated key in git!",
+    );
+    await sleep(600);
+  },
+
   // Productivity command example (docs/assets/images/ProductivityCommands.png):
   // replay of a real `sf hardis:org:user:activateinvalid` run (reactivation of
   // sandbox users whose email was suffixed with .invalid by a refresh),

@@ -125,6 +125,20 @@
         "description": "helios.deploy+helios-dev@heliostraining.invalid"
       }
     ],
+    "authConfig": {
+      "branchName": "integration",
+      "orgAlias": "helios-integration",
+      "remoteBranches": [
+        "integration",
+        "main",
+        "preprod",
+        "uat"
+      ],
+      "mergeTargets": [
+        "uat"
+      ],
+      "contactEmail": "release.manager@heliostraining.invalid"
+    },
     "manualActionsUrl": "https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-4-ship-reference-data-and-a-batch-with-deployment-actions/",
     "packageXmlTypes": [
       {

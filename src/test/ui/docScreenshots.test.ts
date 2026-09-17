@@ -1456,6 +1456,65 @@ suite("Documentation screenshots", function () {
     capture("command-runner-completed");
   });
 
+  // CI authentication of a major branch (DevOps Pipeline gear menu >
+  // Add/Configure Org), from the mocked sf hardis:project:configure:auth: the
+  // branch question, the stop where it prints the two secrets and waits for
+  // them to be stored, and the finished run.
+  test("command runner (configure auth)", async function () {
+    if (!shouldTake("configure-auth")) {
+      this.skip();
+    }
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await sleep(400);
+    const asked = trackAskedPrompts();
+    const panelId = await runCommandAndWaitForPanel(
+      panelManager,
+      "sf hardis:project:configure:auth",
+    );
+    const panel = panelManager.getPanel(panelId);
+    const answer = async (name: string, value: any) => {
+      await waitFor(() => asked(name), 30000, `${name} prompt`);
+      await sleep(900);
+      panel.simulateWebviewMessage({ type: "submit", data: { [name]: value } });
+    };
+    await answer("org", "configuredOrg");
+    await waitFor(() => asked("branchName"), 30000, "branch prompt");
+    await sleep(1500);
+    await cleanChrome();
+    capture("configure-auth-branch");
+    panel.simulateWebviewMessage({
+      type: "submit",
+      data: { branchName: "integration" },
+    });
+    await answer("instanceUrl", "https://test.salesforce.com");
+    await answer("mergeTargets", ["uat"]);
+    await answer("username", "ci");
+    await answer("certSource", "selfSigned");
+    await answer("createApp", true);
+    await answer("certStorage", "file");
+
+    await waitFor(() => asked("variablesSet"), 30000, "variables prompt");
+    await sleep(1800);
+    await cleanChrome();
+    capture("configure-auth-variables");
+    panel.simulateWebviewMessage({
+      type: "submit",
+      data: { variablesSet: true },
+    });
+    await answer("appName", "sfdxhardisintegration");
+    await answer("contactEmail", "ci");
+    await answer("profile", "System Administrator");
+
+    await waitFor(
+      () => panelManager.getPanel(panelId)?.commandStatus === "completed",
+      60000,
+      "configure auth to complete",
+    );
+    await sleep(1500);
+    await cleanChrome();
+    capture("configure-auth-completed");
+  });
+
   // The two commands a contributor runs every day, captured at the question
   // they ask. The training walks a beginner through both click by click, so
   // each prompt needs a picture of the panel that asks it. The scenarios come
