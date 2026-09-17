@@ -1716,33 +1716,8 @@ const DOCS_SCENARIOS = {
         },
       });
 
-      log(
-        "action",
-        `Do you want to update your sandbox to match ${DOCS_TARGET_BRANCH} branch?`,
-        { isQuestion: true },
-      );
-      await askPrompt({
-        name: "initSandbox",
-        type: "select",
-        message: `Do you want to update your sandbox to match ${DOCS_TARGET_BRANCH} branch?`,
-        description:
-          "Choose whether to sync your sandbox with the latest changes of the parent branch",
-        choices: [
-          {
-            title: "Continue working on the current sandbox state",
-            value: "no",
-            description: "Use this if several people share this sandbox",
-          },
-          {
-            title: "Yes, update my sandbox",
-            value: "init",
-            description: `Install packages, assign permission sets and run the initialization scripts of ${DOCS_TARGET_BRANCH}`,
-          },
-        ],
-      });
-      log("log", "Continue working on the current sandbox state");
-      await sleep(200);
-
+      // No sandbox initialization question: hardis:work:new only asks it when
+      // the project sets offerSandboxInit, and neither fixture project does
       log(
         "action",
         `The metadata merged in ${DOCS_TARGET_BRANCH} is brought into your org by a backpromote, not by this command`,

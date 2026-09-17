@@ -1532,17 +1532,6 @@ suite("Documentation screenshots", function () {
         data: { sandboxOrg: "helios-dev" },
       });
 
-      // 6. Whether to re-run the org initialization. It does NOT bring the
-      //    metadata down, which is the misunderstanding the training corrects
-      await waitFor(() => asked("initSandbox"), 30000, "init sandbox prompt");
-      await sleep(1500);
-      await cleanChrome();
-      capture("work-new-init-sandbox");
-      panel.simulateWebviewMessage({
-        type: "submit",
-        data: { initSandbox: "no" },
-      });
-
       await waitFor(() => asked("openOrg"), 30000, "open org prompt");
       await sleep(1000);
       panel.simulateWebviewMessage({ type: "submit", data: { openOrg: "no" } });
