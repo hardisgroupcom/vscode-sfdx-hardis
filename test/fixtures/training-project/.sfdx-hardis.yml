@@ -106,6 +106,13 @@ customCommands:
         tooltip: Verifies the Level 1 lab you just finished and prints your receipt
         command: node scripts/training.mjs check --level 1
         helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/badges/
+      - id: training-l1-claim
+        label: Claim my badge
+        vscodeIcon: mortar-board
+        sldsIcon: utility:favorite
+        tooltip: Checks the whole of level 1, then opens the badge claim form with your answers already in it
+        command: node scripts/training.mjs claim --level 1
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/badges/
       - id: training-l1-reset
         label: Reset this level
         vscodeIcon: debug-restart
@@ -156,6 +163,13 @@ customCommands:
         tooltip: Verifies the Level 2 lab you just finished and prints your receipt
         command: node scripts/training.mjs check --level 2
         helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/badges/
+      - id: training-l2-claim
+        label: Claim my badge
+        vscodeIcon: mortar-board
+        sldsIcon: utility:favorite
+        tooltip: Checks the whole of level 2, then opens the badge claim form with your answers already in it
+        command: node scripts/training.mjs claim --level 2
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/badges/
       - id: training-l2-reset
         label: Reset this level
         vscodeIcon: debug-restart
@@ -205,6 +219,13 @@ customCommands:
         sldsIcon: utility:check
         tooltip: Verifies the Level 3 lab you just finished and prints your receipt
         command: node scripts/training.mjs check --level 3
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/badges/
+      - id: training-l3-claim
+        label: Claim my badge
+        vscodeIcon: mortar-board
+        sldsIcon: utility:favorite
+        tooltip: Checks the whole of level 3, then opens the badge claim form with your answers already in it
+        command: node scripts/training.mjs claim --level 3
         helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/badges/
       - id: training-l3-reset
         label: Reset this level
