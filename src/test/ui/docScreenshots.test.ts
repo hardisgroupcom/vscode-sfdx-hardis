@@ -857,6 +857,22 @@ suite("Documentation screenshots", function () {
       { name: "pipeline-edit-action-target-orgs-include", row: 7, editY: 796 },
       { name: "pipeline-edit-action-target-orgs-exclude", row: 8, editY: 796 },
     ];
+    // A universe whose Pull Request declares its actions in another order says
+    // so, because these shots are taken by row position. The names are the shot
+    // names without their "pipeline-edit-action-" prefix.
+    const declaredOrder = (universeSetting("actionEditorOrder") || "")
+      .split(",")
+      .map((name) => name.trim())
+      .filter(Boolean);
+    const rowOf = (shot: { name: string; row: number }) => {
+      if (declaredOrder.length === 0) {
+        return shot.row;
+      }
+      const index = declaredOrder.indexOf(
+        shot.name.replace("pipeline-edit-action-", ""),
+      );
+      return index === -1 ? shot.row : index;
+    };
     const FIRST_ROW_CENTER_Y = 270;
     const ROW_STEP = 36;
     // Clicking the action label opens its editor
@@ -884,7 +900,7 @@ suite("Documentation screenshots", function () {
           force: true,
           commandArgs: PIPELINE_ACTIONS_DEEP_LINK,
         });
-        await click(EDIT_BUTTON_X, FIRST_ROW_CENTER_Y + shot.row * ROW_STEP);
+        await click(EDIT_BUTTON_X, FIRST_ROW_CENTER_Y + rowOf(shot) * ROW_STEP);
         await sleep(1800);
         // Switch the read-only details view to the editable form: the published
         // screenshots must show the values inside editable fields

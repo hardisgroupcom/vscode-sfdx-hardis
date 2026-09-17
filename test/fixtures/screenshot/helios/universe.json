@@ -7,6 +7,7 @@
   "featureBranch": "features/US-024-crew-size-required",
   "branchNode": "1063,539",
   "retrieverRows": "611,863,914",
+  "actionEditorOrder": "command,remove-packagexml-items,data,apex,schedule-batch,publish-community,manual,target-orgs-include,target-orgs-exclude",
   "branches": [
     "uat",
     "preprod",

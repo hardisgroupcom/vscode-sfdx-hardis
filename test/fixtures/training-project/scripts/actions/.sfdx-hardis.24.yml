@@ -6,14 +6,6 @@ commandsPreDeploy:
     command: sf hardis:org:monitor:limits
     context: all
     allowFailure: true
-  - id: 7a1c3d2e-2d0b-4f1e-8e3b-024b00000002
-    label: Load the crew capacity reference data
-    type: data
-    when: pre-deploy
-    parameters:
-      sfdmuProject: HeliosCrewRefData
-    command: sf hardis:org:data:import --path scripts/data/HeliosCrewRefData
-    context: process-deployment-only
   - id: 7a1c3d2e-2d0b-4f1e-8e3b-024b00000003
     label: Remove profiles from the delta package
     type: remove-packagexml-items
@@ -24,6 +16,14 @@ commandsPreDeploy:
     command: ""
     context: check-deployment-only
 commandsPostDeploy:
+  - id: 7a1c3d2e-2d0b-4f1e-8e3b-024b00000002
+    label: Load the crew capacity reference data
+    type: data
+    when: post-deploy
+    parameters:
+      sfdmuProject: HeliosCrewRefData
+    command: sf hardis:org:data:import --path scripts/data/HeliosCrewRefData
+    context: process-deployment-only
   - id: 7a1c3d2e-2d0b-4f1e-8e3b-024b00000004
     label: Backfill Crew Size on existing installations
     type: apex

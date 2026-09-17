@@ -969,6 +969,20 @@ function answerBackpromote() {
       plan.items.some((item) => item.key === key && !held.has(item.key)),
     );
     const actions = flagValue("--actions");
+    // A fixture universe serves its own plan, so what the run reports has to
+    // come from that plan. Without a universe the base fixture answers exactly
+    // as before, which is what keeps the product screenshots unchanged.
+    const ownPlan = MOCK_UNIVERSE !== "";
+    const commentedPullRequests = ownPlan
+      ? plan.pullRequests.map((pullRequest) => pullRequest.number)
+      : [415, 417, 418];
+    const runnableActionIds = ownPlan
+      ? plan.actions.filter((action) => !action.manual).map((action) => action.id)
+      : ["load-sla-thresholds"];
+    const skippedActionIds = ownPlan ? [] : ["recalculate-quote-sharing"];
+    const manualActionIds = ownPlan
+      ? plan.actions.filter((action) => action.manual).map((action) => action.id)
+      : ["enable-sla-approval"];
     plan.result = {
       deployed: plan.items.filter(
         (item) => !held.has(item.key) && !excluded.includes(item.key),
@@ -978,15 +992,15 @@ function answerBackpromote() {
       actions: {
         run: args.includes("--skip-actions")
           ? []
-          : ["load-sla-thresholds"].filter(
+          : runnableActionIds.filter(
               (id) => !actions || actions.split(",").includes(id),
             ),
-        skipped: ["recalculate-quote-sharing"],
+        skipped: skippedActionIds,
         failed: [],
-        pending: args.includes("--skip-actions") ? [] : ["enable-sla-approval"],
+        pending: args.includes("--skip-actions") ? [] : manualActionIds,
       },
       conflictPending: [],
-      commentedPullRequests: [415, 417, 418],
+      commentedPullRequests,
       pushed: mergedFiles.length > 0,
       pushRejected: false,
       deployReport: path.join(
