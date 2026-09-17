@@ -585,6 +585,42 @@ suite("Documentation screenshots", function () {
     });
   });
 
+  // The custom menus a project declares, opened on the Welcome page. Clicking a
+  // card replaces the page with that menu's commands, and for a reader who does
+  // not live in the side bar that page is the menu. The training has one menu
+  // per level and walks all three, so all three are captured; a project with no
+  // customCommands has no cards here and these come out as the plain Welcome
+  // page, which is harmless.
+  test("welcome page: the custom menus, opened", async function () {
+    const cards = [
+      { name: "welcome-custom-menu", x: 715 },
+      { name: "welcome-custom-menu-2", x: 1167 },
+      { name: "welcome-custom-menu-3", x: 1620 },
+    ];
+    // Only as many captures as the project declares menus. Without this the
+    // product fixture, which declares none, would write three copies of the
+    // plain Welcome page into the documentation folder.
+    await vscode.commands.executeCommand("vscode-sfdx-hardis.showWelcome");
+    const welcome = await waitFor(
+      () => panelManager.getPanel("s-welcome"),
+      20000,
+      "s-welcome panel to open",
+    );
+    const menus = (welcome.getInitializationData() || {}).customMenus || [];
+    for (const card of cards.slice(0, menus.length)) {
+      await shootPanel(panelManager, {
+        name: card.name,
+        command: "vscode-sfdx-hardis.showWelcome",
+        lwcId: "s-welcome",
+        settleMs: 3500,
+        // The CUSTOM MENUS row, first band of cards under the getting started
+        // strip. One click opens the menu, and the panel is reopened between
+        // captures so each starts from the same page.
+        clicks: [{ x: card.x, y: 470 }],
+      });
+    }
+  });
+
   test("setup / install dependencies", async function () {
     await shootPanel(panelManager, {
       name: "setup",
@@ -602,6 +638,21 @@ suite("Documentation screenshots", function () {
       lwcId: "s-org-manager",
       settleMs: 3500,
       ready: (data) => Array.isArray(data.orgs) && data.orgs.length > 0,
+    });
+  });
+
+  // The row menu of the orgs table, open on the development org. Every lab that
+  // says "open your org" means this menu, and the table alone does not show it:
+  // the actions column is a chevron, and what it holds is the whole point.
+  test("orgs manager: the actions of one org", async function () {
+    await shootPanel(panelManager, {
+      name: "orgs-manager-actions",
+      command: "vscode-sfdx-hardis.openOrgsManager",
+      lwcId: "s-org-manager",
+      settleMs: 3500,
+      ready: (data) => Array.isArray(data.orgs) && data.orgs.length > 0,
+      // The chevron at the end of the first row, which is the dev org
+      clicks: [{ x: 1826, y: 275 }],
     });
   });
 
@@ -2015,10 +2066,12 @@ suite("Documentation screenshots", function () {
     // menus adds rows above these, and clicking a hardcoded y then expanded
     // nothing and produced seven identical captures.
     const sections: Array<{ name: string; id: string }> = [
-      // The custom menu a project declares in customCommands. Absent from the
-      // product fixture, present in the training one, and the entry point of
-      // every lab of the course.
-      { name: "custom-menu", id: "training" },
+      // The custom menus a project declares in customCommands. Absent from the
+      // product fixture; the training one declares one per level, and they are
+      // the entry point of every lab of the course.
+      { name: "custom-menu", id: "training-level-1" },
+      { name: "custom-menu-2", id: "training-level-2" },
+      { name: "custom-menu-3", id: "training-level-3" },
       { name: "advanced", id: "cicd-advanced" },
       { name: "misc", id: "cicd-misc" },
       { name: "org-operations", id: "org-operations" },

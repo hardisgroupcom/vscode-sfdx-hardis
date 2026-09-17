@@ -6,7 +6,7 @@
         "username": "helios.deploy+helios-dev@heliostraining.invalid",
         "alias": "helios-dev",
         "orgId": "00D8E00000100000EAA",
-        "instanceUrl": "https://helios-dev-dev-ed.develop.my.salesforce.com",
+        "instanceUrl": "https://orgfarm-a4f21c7d09-dev-ed.develop.my.salesforce.com",
         "instanceApiVersion": "64.0",
         "loginUrl": "https://login.salesforce.com",
         "connectedStatus": "Connected",
@@ -20,7 +20,7 @@
         "username": "helios.deploy+helios-integration@heliostraining.invalid",
         "alias": "helios-integration",
         "orgId": "00D8E00000100001EAA",
-        "instanceUrl": "https://helios-integration-dev-ed.develop.my.salesforce.com",
+        "instanceUrl": "https://orgfarm-b70e3d5142-dev-ed.develop.my.salesforce.com",
         "instanceApiVersion": "64.0",
         "loginUrl": "https://login.salesforce.com",
         "connectedStatus": "Connected",
@@ -34,7 +34,7 @@
         "username": "helios.deploy+helios-uat@heliostraining.invalid",
         "alias": "helios-uat",
         "orgId": "00D8E00000100002EAA",
-        "instanceUrl": "https://helios-uat-dev-ed.develop.my.salesforce.com",
+        "instanceUrl": "https://orgfarm-c18a94f6be-dev-ed.develop.my.salesforce.com",
         "instanceApiVersion": "64.0",
         "loginUrl": "https://login.salesforce.com",
         "connectedStatus": "Connected",
@@ -48,7 +48,7 @@
         "username": "helios.deploy+helios-prod@heliostraining.invalid",
         "alias": "helios-prod",
         "orgId": "00D8E00000100003EAA",
-        "instanceUrl": "https://helios-prod-dev-ed.develop.my.salesforce.com",
+        "instanceUrl": "https://orgfarm-d6b52e0a37-dev-ed.develop.my.salesforce.com",
         "instanceApiVersion": "64.0",
         "loginUrl": "https://login.salesforce.com",
         "connectedStatus": "Connected",
@@ -67,7 +67,7 @@
   "orgDisplay": {
     "id": "00D8E00000100000EAA",
     "username": "helios.deploy+helios-dev@heliostraining.invalid",
-    "instanceUrl": "https://helios-dev-dev-ed.develop.my.salesforce.com",
+    "instanceUrl": "https://orgfarm-a4f21c7d09-dev-ed.develop.my.salesforce.com",
     "apiVersion": "64.0",
     "connectedStatus": "Connected",
     "alias": "helios-dev"
@@ -79,17 +79,7 @@
       {
         "title": "integration",
         "value": "integration",
-        "description": "Where the team merges its work (this course)"
-      },
-      {
-        "title": "uat",
-        "value": "uat",
-        "description": "The uat environment"
-      },
-      {
-        "title": "main",
-        "value": "main",
-        "description": "The main environment"
+        "description": "The shared integration org, where every contributor merges"
       }
     ],
     "storyName": "US-014 Show the crew how many panels a job needs",
@@ -97,7 +87,7 @@
     "storyBranch": "features/US-014-panels-required",
     "devOrgs": [
       {
-        "title": "https://helios-dev-dev-ed.develop.my.salesforce.com",
+        "title": "https://orgfarm-a4f21c7d09-dev-ed.develop.my.salesforce.com",
         "value": "helios-dev",
         "description": "helios.deploy+helios-dev@heliostraining.invalid"
       }
