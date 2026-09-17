@@ -103,8 +103,19 @@ async function main() {
   git("add -A");
   git("commit -m init --no-gpg-sign");
 
+  // A pipeline nobody has worked in yet: no feature branches, no open Pull
+  // Requests, no jobs. It is what a learner's own fork looks like at the end of
+  // the training setup, and the picture Level 1 has to show them.
+  const pipelineState = process.env.SF_MOCK_PIPELINE_STATE || "";
+  const freshPipeline = pipelineState.startsWith("fresh");
+  // ...and before the extension itself was signed in to the git provider
+  const disconnectedProvider = pipelineState === "fresh-disconnected";
+
   if (universe) {
     for (const branch of universe.branches || []) {
+      if (freshPipeline && /^(features|fixes|training)\//.test(branch)) {
+        continue;
+      }
       git(`branch ${branch}`);
     }
     git(`remote add origin ${universe.remote}`);
@@ -140,6 +151,21 @@ async function main() {
         "screenshot",
         "git-provider-mock.json",
       );
+  if (freshPipeline) {
+    const fixture = JSON.parse(fs.readFileSync(gitProviderFixtureFile, "utf8"));
+    fixture.openPullRequests = [];
+    fixture.mergedPullRequestsByBranch = {};
+    fixture.branchJobs = {};
+    if (disconnectedProvider) {
+      fixture.isActive = false;
+    }
+    gitProviderFixtureFile = path.join(workDir, "git-provider-mock.json");
+    fs.writeFileSync(
+      gitProviderFixtureFile,
+      JSON.stringify(fixture, null, 2),
+      "utf8",
+    );
+  }
   if (promotionVariant) {
     // The promotion branch exists on the repository, like any branch pushed by
     // hardis:project:promotion:create

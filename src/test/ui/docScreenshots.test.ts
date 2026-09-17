@@ -99,7 +99,11 @@ function capture(
   try {
     const out = execFileSync("powershell", args, {
       stdio: "pipe",
-      timeout: 30000,
+      // Generous: while the extension host is busy the window reports an empty
+      // title and the script waits for it to come back rather than losing the
+      // screenshot. The Metadata Retriever blocks the host for tens of seconds
+      // when it opens.
+      timeout: 150000,
     });
     console.log(`      [shot] ${out.toString().trim()}`);
   } catch (error: any) {
@@ -274,8 +278,30 @@ function checkoutWorkspaceBranch(branchName: string): void {
  * window. Mermaid lays the node out from the branches the fixture carries, so
  * each universe names its own point.
  */
+function universeSetting(key: string): string | null {
+  const dir = process.env.SF_MOCK_UNIVERSE_DIR;
+  if (!dir) {
+    return null;
+  }
+  try {
+    const universe = JSON.parse(
+      fs.readFileSync(path.join(dir, "universe.json"), "utf8"),
+    );
+    const value = universe?.[key];
+    return typeof value === "string" ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 const BRANCH_NODE = (() => {
-  const raw = process.env.SFDX_HARDIS_DOC_SCREENSHOTS_BRANCH_NODE || "850,405";
+  // The universe carries the point, so a fixture that changes the diagram
+  // updates it in the same commit rather than in an environment variable
+  // somebody has to remember. The variable still wins, for a one-off run.
+  const raw =
+    process.env.SFDX_HARDIS_DOC_SCREENSHOTS_BRANCH_NODE ||
+    universeSetting("branchNode") ||
+    "850,405";
   const [x, y] = raw.split(",").map((part) => Number(part.trim()));
   return { x: Number.isFinite(x) ? x : 850, y: Number.isFinite(y) ? y : 405 };
 })();
@@ -287,6 +313,7 @@ const BRANCH_NODE = (() => {
  */
 const FEATURE_BRANCH =
   process.env.SFDX_HARDIS_DOC_SCREENSHOTS_BRANCH ||
+  universeSetting("featureBranch") ||
   "feature/CRM-1042-account-hierarchy";
 /**
  * Promotion branches variant of the run (SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION):
@@ -539,25 +566,12 @@ suite("Documentation screenshots", function () {
     await captureStable("sidebar");
   });
 
-  // Lab 0 of the training installs the extension from this view. Its reader has
-  // never opened VS Code, so the Extensions icon and the search box have to be
-  // shown rather than named.
-  test("extensions view: installing sfdx-hardis", async function () {
-    if (!shouldTake("extensions-install")) {
-      this.skip();
-    }
-    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
-    await vscode.commands.executeCommand("workbench.view.extensions");
-    await vscode.commands.executeCommand(
-      "workbench.extensions.search",
-      "sfdx-hardis",
-    );
-    // The gallery answers over the network: nothing renders before it does
-    await sleep(7000);
-    await cleanChrome();
-    await parkPointer();
-    await captureStable("extensions-install");
-  });
+  // There is deliberately no capture of the Extensions view here. This VS Code
+  // has no access to the marketplace, so the view renders "Error while fetching
+  // extensions", and the test also left the side bar on Extensions, which leaked
+  // into every capture that followed it. The training uses a screenshot taken on
+  // a real machine instead: labs/_assets/vscode/extensions-install.png in the
+  // sfdx-hardis-training repository, which nothing here may overwrite.
 
   // The CI/CD guides illustrate their steps with a crop of a single menu entry
   // (docs/assets/images/btn-*.jpg). Those crops are cut out of these captures
@@ -979,23 +993,32 @@ suite("Documentation screenshots", function () {
       await sleep(3500);
       capture("backpromote-preparing");
       delete process.env.SF_MOCK_BOOT_DELAY_MS;
-      await waitFor(
-        () => {
-          const current = panel.getInitializationData();
-          return current?.plan?.comparison?.some((entry: any) => entry.prepared)
-            ? current
-            : null;
-        },
-        30000,
-        "Merge all to prepare the differing items",
-      );
-      // The notification of the copied prompt is part of this shot: only the
-      // auxiliary bar is closed
-      await sleep(3000);
-      await vscode.commands.executeCommand(
-        "workbench.action.closeAuxiliaryBar",
-      );
-      await captureStable("backpromote-merge-all");
+      // Not every fixture universe has an item that differs on both sides, and
+      // when none does, Merge all has nothing to prepare. That is not a reason
+      // to lose the captures that come after it.
+      try {
+        await waitFor(
+          () => {
+            const current = panel.getInitializationData();
+            return current?.plan?.comparison?.some(
+              (entry: any) => entry.prepared,
+            )
+              ? current
+              : null;
+          },
+          30000,
+          "Merge all to prepare the differing items",
+        );
+        // The notification of the copied prompt is part of this shot: only the
+        // auxiliary bar is closed
+        await sleep(3000);
+        await vscode.commands.executeCommand(
+          "workbench.action.closeAuxiliaryBar",
+        );
+        await captureStable("backpromote-merge-all");
+      } catch (error: any) {
+        console.log(`      [shot] backpromote-merge-all: ${error?.message}`);
+      }
 
       // A fresh panel for the run: the prepared merges above would block it
       await vscode.commands.executeCommand("notifications.clearAll");
@@ -1122,6 +1145,32 @@ suite("Documentation screenshots", function () {
     });
   });
 
+  // Deployment tab of the same panel, zoomed out so the whole section fits in
+  // one capture. The training needs the Org Authentication Mode row, which sits
+  // below the fold at 100%.
+  test("pipeline configuration (deployment tab)", async function () {
+    if (!shouldTake("pipeline-config-deployment")) {
+      this.skip();
+    }
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await sleep(800);
+    try {
+      await shootPanel(panelManager, {
+        name: "pipeline-config-deployment",
+        command: "vscode-sfdx-hardis.showPipelineConfig",
+        commandArgs: [null, "Deployment"],
+        lwcId: "s-pipeline-config",
+        settleMs: 3500,
+        force: true,
+      });
+    } finally {
+      await vscode.commands.executeCommand("workbench.action.zoomIn");
+      await vscode.commands.executeCommand("workbench.action.zoomIn");
+      await sleep(800);
+    }
+  });
+
   // Security & Privacy tab of the same panel: the anonymization editor, opened
   // through the section deep link of the command (2nd argument = section label)
   test("pipeline configuration (anonymization)", async function () {
@@ -1164,6 +1213,85 @@ suite("Documentation screenshots", function () {
       // "Search Metadata": the panel opens on an empty state
       clicks: [{ x: 571, y: 301 }],
     });
+  });
+
+  // The Metadata Retriever doing the job it exists for: "what did I just change
+  // in my org, and which of it belongs to my User Story". The training walks a
+  // beginner through it before every publish, so it needs the results list and
+  // the selection, not just the empty search form.
+  test("metadata retriever: recent changes and selection", async function () {
+    if (!shouldTake("metadata-retriever-recent-changes")) {
+      this.skip();
+    }
+    await shootPanel(panelManager, {
+      name: "metadata-retriever-recent-changes",
+      command: "vscode-sfdx-hardis.showMetadataRetriever",
+      lwcId: "s-metadata-retriever",
+      settleMs: 5000,
+      force: true,
+      // "Search Metadata": the panel opens on an empty state
+      clicks: [{ x: 571, y: 301 }],
+    });
+    // The three rows of US-014, in the order the panel sorts them (by type,
+    // then name): the field, the layout, the permission set
+    for (const y of [561, 712, 763]) {
+      await click(496, y);
+      await sleep(600);
+    }
+    await sleep(1200);
+    await cleanChrome();
+    await captureStable("metadata-retriever-selected");
+  });
+
+  // The Source Control view with retrieved metadata waiting in it. Committing
+  // is plain VS Code rather than the extension, and it is the step a beginner
+  // has never done, so the training shows it like any other click.
+  test("source control: retrieved metadata waiting to be committed", async function () {
+    if (!shouldTake("source-control-retrieved")) {
+      this.skip();
+    }
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!workspaceRoot) {
+      this.skip();
+    }
+    // What a retrieve of the three US-014 components leaves behind
+    const written = [
+      "force-app/main/default/objects/Installation__c/fields/Panels_Required__c.field-meta.xml",
+      "force-app/main/default/layouts/Installation__c-Installation Layout.layout-meta.xml",
+      "force-app/main/default/permissionsets/Helios_Delivery_Crew.permissionset-meta.xml",
+    ];
+    for (const relative of written) {
+      const file = path.join(workspaceRoot!, relative);
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(
+        file,
+        [
+          '<?xml version="1.0" encoding="UTF-8"?>',
+          '<Metadata xmlns="http://soap.sforce.com/2006/04/metadata"/>',
+          "",
+        ].join("\n"),
+      );
+    }
+    // The harness writes .vscode/settings.json after the initial commit, so it
+    // shows up as a change of its own. Hide it: it is harness plumbing, and a
+    // reader counting the files would count four instead of three.
+    const excludeFile = path.join(workspaceRoot!, ".git", "info", "exclude");
+    fs.mkdirSync(path.dirname(excludeFile), { recursive: true });
+    fs.appendFileSync(excludeFile, ".vscode/\n");
+    try {
+      await vscode.commands.executeCommand("workbench.view.scm");
+      await sleep(3000);
+      await cleanChrome();
+      await captureStable("source-control-retrieved");
+    } finally {
+      for (const relative of written) {
+        fs.rmSync(path.join(workspaceRoot!, relative), { force: true });
+      }
+      await vscode.commands.executeCommand(
+        "workbench.view.extension.sfdx-hardis-explorer",
+      );
+      await sleep(800);
+    }
   });
 
   test("data workbench", async function () {
@@ -1300,8 +1428,11 @@ suite("Documentation screenshots", function () {
       data: { targetBranch: "integration" },
     });
 
+    // 2. Feature or fix, which decides the branch prefix
     await waitFor(() => asked("storyType"), 30000, "story type prompt");
-    await sleep(1200);
+    await sleep(1500);
+    await cleanChrome();
+    capture("work-new-story-type");
     panel.simulateWebviewMessage({
       type: "submit",
       data: { storyType: "feature" },
@@ -1314,11 +1445,16 @@ suite("Documentation screenshots", function () {
     capture("work-new-story-name");
     panel.simulateWebviewMessage({
       type: "submit",
-      data: { storyName: "US-014 Panels required on Installation" },
+      // The name has to be one the project's branch pattern accepts, because
+      // the completed screen shows it next to the branch it produced
+      data: { storyName: "US-014-panels-required" },
     });
 
+    // 4. Which kind of org the work happens in
     await waitFor(() => asked("orgType"), 30000, "org type prompt");
-    await sleep(1200);
+    await sleep(1500);
+    await cleanChrome();
+    capture("work-new-org-type");
     panel.simulateWebviewMessage({
       type: "submit",
       data: { orgType: "sandbox" },
@@ -1333,6 +1469,14 @@ suite("Documentation screenshots", function () {
       type: "submit",
       data: { sandboxOrg: "helios-dev" },
     });
+
+    // 6. Whether to re-run the org initialization. It does NOT bring the
+    //    metadata down, which is the misunderstanding the training corrects
+    await waitFor(() => asked("initSandbox"), 30000, "init sandbox prompt");
+    await sleep(1500);
+    await cleanChrome();
+    capture("work-new-init-sandbox");
+    panel.simulateWebviewMessage({ type: "submit", data: { initSandbox: "no" } });
 
     await waitFor(() => asked("openOrg"), 30000, "open org prompt");
     await sleep(1000);

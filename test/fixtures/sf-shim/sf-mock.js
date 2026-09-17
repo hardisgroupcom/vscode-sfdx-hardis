@@ -345,7 +345,8 @@ const DOCS_SOURCE_MEMBERS = [
 function docsSourceMemberRecords() {
   // The extension queries "... ORDER BY MemberType, MemberName": honor it so
   // the Metadata Retriever results are ordered by type like with a real org
-  const sorted = [...DOCS_SOURCE_MEMBERS].sort((a, b) =>
+  const source = universeValue("sourceMembers", DOCS_SOURCE_MEMBERS);
+  const sorted = [...source].sort((a, b) =>
     a[0] === b[0] ? a[1].localeCompare(b[1]) : a[0].localeCompare(b[0]),
   );
   return sorted.map(([type, name, author, operation], index) => ({
@@ -1534,15 +1535,20 @@ const DOCS_SCENARIOS = {
 
     log(
       "action",
-      "What is the name of your new User Story? Please avoid accents and special characters.",
+      "What is the name of your new User Story?",
       { isQuestion: true },
     );
     await askPrompt({
       name: "storyName",
       type: "text",
-      message: `What is the name of your new User Story? Please avoid accents and special characters. (ex: ${DOCS_SCENARIO.storyName})`,
+      message: "What is the name of your new User Story?",
+      description:
+        "Enter a descriptive name for your User Story. It becomes the name of your git branch, so avoid accents and special characters.",
+      placeholder: `Ex: ${DOCS_SCENARIO.storyNameExample || DOCS_SCENARIO.storyName}`,
     });
-    log("log", DOCS_SCENARIO.storyName);
+    // What the user typed, which is what the branch is named after: the two
+    // have to agree or the screenshot teaches a name that produces another branch
+    log("log", DOCS_SCENARIO.storyNameExample || DOCS_SCENARIO.storyName);
     await sleep(150);
 
     log(
@@ -1640,6 +1646,39 @@ const DOCS_SCENARIOS = {
         success: true,
       },
     });
+
+    log(
+      "action",
+      `Do you want to update your sandbox to match ${DOCS_TARGET_BRANCH} branch?`,
+      { isQuestion: true },
+    );
+    await askPrompt({
+      name: "initSandbox",
+      type: "select",
+      message: `Do you want to update your sandbox to match ${DOCS_TARGET_BRANCH} branch?`,
+      description:
+        "Choose whether to sync your sandbox with the latest changes of the parent branch",
+      choices: [
+        {
+          title: "Continue working on the current sandbox state",
+          value: "no",
+          description: "Use this if several people share this sandbox",
+        },
+        {
+          title: "Yes, update my sandbox",
+          value: "init",
+          description: `Install packages, assign permission sets and run the initialization scripts of ${DOCS_TARGET_BRANCH}`,
+        },
+      ],
+    });
+    log("log", "Continue working on the current sandbox state");
+    await sleep(200);
+
+    log(
+      "action",
+      `The metadata merged in ${DOCS_TARGET_BRANCH} is brought into your org by a backpromote, not by this command`,
+    );
+    await sleep(200);
 
     log(
       "action",

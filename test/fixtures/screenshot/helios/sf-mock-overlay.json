@@ -93,6 +93,7 @@
       }
     ],
     "storyName": "US-014 Show the crew how many panels a job needs",
+    "storyNameExample": "US-014-panels-required",
     "storyBranch": "features/US-014-panels-required",
     "devOrgs": [
       {
@@ -142,6 +143,56 @@
       }
     ]
   },
+  "sourceMembers": [
+    [
+      "CustomField",
+      "Installation__c.Panels_Required__c",
+      "You",
+      "created"
+    ],
+    [
+      "PermissionSet",
+      "Helios_Delivery_Crew",
+      "You",
+      "modified"
+    ],
+    [
+      "Layout",
+      "Installation__c-Installation Layout",
+      "You",
+      "modified"
+    ],
+    [
+      "CustomField",
+      "Installation__c.Internal_Note__c",
+      "Marco Bianchi",
+      "modified"
+    ],
+    [
+      "Flow",
+      "Installation_Assign_Crew",
+      "Marco Bianchi",
+      "modified"
+    ],
+    [
+      "FlexiPage",
+      "Installation_Record_Page",
+      "Amina Diallo",
+      "modified"
+    ],
+    [
+      "Profile",
+      "Admin",
+      "Automated Process",
+      "modified"
+    ],
+    [
+      "ApexClass",
+      "InstallationScheduler",
+      "Marco Bianchi",
+      "modified"
+    ]
+  ],
   "apexClasses": [
     {
       "Name": "CrewCapacityBatch",

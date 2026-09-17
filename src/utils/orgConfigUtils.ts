@@ -199,8 +199,12 @@ async function processOrgSfdxHardisConfigFile(
       );
 
   const warnings: string[] = [];
+  // An explicit `mergeTargets: []` is an answer, not a missing setting: it says
+  // this branch is the end of the pipeline. Only an absent key is worth a
+  // warning, otherwise a project whose top branch is not production has no way
+  // of ever silencing it.
   if (
-    !(Array.isArray(props.mergeTargets) && props.mergeTargets.length > 0) &&
+    !Array.isArray(props.mergeTargets) &&
     orgType !== "prod" &&
     !branchName.includes("training")
   ) {
