@@ -1511,21 +1511,44 @@ const DOCS_SCENARIOS = {
       data: { command: "git stash", success: true },
     });
 
-    log(
-      "action",
-      "What will be the target branch of your new User Story ? (the branch where you will make your Pull Request after the User Story is completed)",
-      { isQuestion: true },
-    );
-    await askPrompt({
-      name: "targetBranch",
-      type: "select",
-      message:
+    // hardis:work:new only asks when the project allows more than one target
+    // branch: with a single one it says which it took and moves on
+    if (DOCS_SCENARIO.targetBranches.length > 1) {
+      log(
+        "action",
         "What will be the target branch of your new User Story ? (the branch where you will make your Pull Request after the User Story is completed)",
-      choices: DOCS_SCENARIO.targetBranches,
-    });
-    log("log", DOCS_TARGET_BRANCH);
+        { isQuestion: true },
+      );
+      await askPrompt({
+        name: "targetBranch",
+        type: "select",
+        message:
+          "What will be the target branch of your new User Story ? (the branch where you will make your Pull Request after the User Story is completed)",
+        choices: DOCS_SCENARIO.targetBranches,
+      });
+      log("log", DOCS_TARGET_BRANCH);
+    } else {
+      log(
+        "action",
+        `Automatically selected target branch is ${DOCS_TARGET_BRANCH}`,
+      );
+    }
     await sleep(150);
 
+    // A project that declares branchPrefixChoices gets its own wording, which is
+    // what the command shows: the universe carries them when it declares any
+    const storyTypeChoices = DOCS_SCENARIO.branchPrefixChoices || [
+      {
+        title: "\u{1F3D7}️ Feature",
+        value: "feature",
+        description: "New feature, enhancement or configuration change",
+      },
+      {
+        title: "\u{1F6E0}️ Fix",
+        value: "fix",
+        description: "Fix a defect found in an org",
+      },
+    ];
     log("action", "What type of User Story do you want to create?", {
       isQuestion: true,
     });
@@ -1535,20 +1558,9 @@ const DOCS_SCENARIOS = {
       message: "What type of User Story do you want to create?",
       description:
         "Select the category of work that best describes your User Story",
-      choices: [
-        {
-          title: "\u{1F3D7}️ Feature",
-          value: "feature",
-          description: "New feature, enhancement or configuration change",
-        },
-        {
-          title: "\u{1F6E0}️ Fix",
-          value: "fix",
-          description: "Fix a defect found in an org",
-        },
-      ],
+      choices: storyTypeChoices,
     });
-    log("log", "\u{1F3D7}️ Feature");
+    log("log", storyTypeChoices[0].title);
     await sleep(150);
 
     log(
@@ -1614,10 +1626,23 @@ const DOCS_SCENARIOS = {
           description:
             "Scratch orgs are configured on my project so I want to create or reuse one",
         },
+        // Offered whenever a default org is set, which it is once a learner
+        // has connected their orgs
+        ...(DOCS_SCENARIO.currentOrgChoice
+          ? [
+              {
+                title: `\u{1F60E} Current org ${DOCS_DEV_ORG_URL.replace(/^https:\/\//, "")}`,
+                value: "currentOrg",
+                description: `Use your default org with username ${DOCS_DEV_ORG_USER}`,
+              },
+            ]
+          : []),
         {
           title: "\u{1F920} I'm hardcore, I don't need an org !",
           value: "noOrg",
-          description: "Work with XML and sfdx-hardis configuration only",
+          description: DOCS_SCENARIO.currentOrgChoice
+            ? "Work with XML and sfdx-hardis configuration only, without a connected org"
+            : "Work with XML and sfdx-hardis configuration only",
         },
       ],
     });
