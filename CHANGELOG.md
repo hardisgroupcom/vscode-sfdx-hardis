@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Custom functions: declare your own Node.js, Python or Bash scripts as deployment action types, from a new **Custom Functions** tab in Pipeline Settings
+  - The deployment action editor offers them next to the built-in types, and builds its form from the inputs each function declares (text, number, checkbox, picklist, long text, secret)
+  - A secret input asks for the name of a CI/CD variable, never for its value
+  - Requires sfdx-hardis 8.9.0
+
 ## [8.6.1] 2026-09-14
 
 - Questions asked in the command panel

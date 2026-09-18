@@ -425,6 +425,71 @@
                 </div>
               </lightning-tab>
             </template>
+
+            <!-- Custom functions: project scoped only, so the tab is hidden on a branch -->
+            <template if:false={isBranch}>
+              <lightning-tab label={i18n.customFunctionsTab} value="customFunctions" icon-name="utility:script" icon-assistive-text={i18n.customFunctionsTab}>
+                <div class="slds-p-around_medium pipeline-config-tab-body">
+                  <div class="slds-text-body_regular slds-text-color_weak slds-m-bottom_medium">
+                    {i18n.customFunctionsTabDescription}
+                  </div>
+
+                  <div class="hardis-page-head-actions slds-m-bottom_medium">
+                    <lightning-button
+                      class="hardis-btn-tinted-blue"
+                      variant="neutral"
+                      label={i18n.addCustomFunction}
+                      onclick={handleAddCustomFunction}
+                    ></lightning-button>
+                    <lightning-button
+                      variant="neutral"
+                      label={i18n.refreshLabel}
+                      onclick={handleRefreshCustomFunctions}
+                    ></lightning-button>
+                  </div>
+
+                  <template if:false={hasCustomFunctions}>
+                    <div class="hardis-note">{i18n.noCustomFunctionYet}</div>
+                  </template>
+
+                  <template if:true={hasCustomFunctions}>
+                    <div class="hardis-card-grid">
+                      <template for:each={customFunctionCards} for:item="fn">
+                        <div key={fn.id} class="hardis-card">
+                          <div class="hardis-card-head">
+                            <div class="hardis-tile purple">
+                              <lightning-icon icon-name="utility:script" size="small"></lightning-icon>
+                            </div>
+                            <div>
+                              <div class="hardis-card-title">{fn.label}</div>
+                              <div class="hardis-card-desc">{fn.summary}</div>
+                            </div>
+                          </div>
+                          <template if:true={fn.runtimeMissing}>
+                            <div class="hardis-note warning">{fn.runtimeMissingLabel}</div>
+                          </template>
+                          <div class="hardis-card-actions">
+                            <lightning-button
+                              variant="neutral"
+                              label={i18n.edit}
+                              data-function-id={fn.id}
+                              onclick={handleEditCustomFunction}
+                            ></lightning-button>
+                            <lightning-button
+                              variant="neutral"
+                              class="hardis-btn-tinted-red"
+                              label={i18n.deleteLabel}
+                              data-function-id={fn.id}
+                              onclick={handleDeleteCustomFunction}
+                            ></lightning-button>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+                  </template>
+                </div>
+              </lightning-tab>
+            </template>
           </lightning-tabset>
         </div>
       </template>
@@ -448,6 +513,7 @@
           action={currentDeploymentAction}
           is-edit-mode={deploymentActionModalEditMode}
           apex-scripts={projectApexScripts}
+          custom-functions={customFunctions}
           sfdmu-workspaces={projectSfdmuWorkspaces}
           schedulable-classes={projectSchedulableClasses}
           schedulable-classes-loading={schedulableClassesLoading}
@@ -460,6 +526,17 @@
           onloadcommunities={handleLoadCommunities}
           onsave={handleSaveDeploymentActionItem}
       ></s-deployment-action>
+    </template>
+
+    <!-- Custom function editor -->
+    <template if:true={showCustomFunctionModal}>
+      <s-custom-function
+          custom-function={currentCustomFunction}
+          is-create={customFunctionModalIsCreate}
+          parent-translations={translations}
+          onclose={handleCloseCustomFunctionModal}
+          onsave={handleSaveCustomFunction}
+      ></s-custom-function>
     </template>
   </div>
 </template>
