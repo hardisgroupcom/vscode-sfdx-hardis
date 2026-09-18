@@ -904,11 +904,23 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
 
   handleTypeChange(event) {
     const newType = event.detail.value;
+    const previousType = this.editedAction.type;
     this.editedAction.type = newType;
     this.validationError = "";
-    // Switching type invalidates the parameters of the previous one, and a custom function
-    // starts from the defaults its declaration carries.
-    this.editedAction.parameters = this._buildInitialParametersForType(newType);
+    // Parameters are only reset when a custom function is on either side of the switch: the CLI
+    // rejects a parameter a function does not declare, so leftovers from the previous type would
+    // make the action invalid. Switching between two built-in types keeps the previous behavior,
+    // which leaves the old parameters in place.
+    const leavesCustomFunction = !!this.customFunctions.find(
+      (fn) => fn.id === previousType,
+    );
+    const entersCustomFunction = !!this.customFunctions.find(
+      (fn) => fn.id === newType,
+    );
+    if (leavesCustomFunction || entersCustomFunction) {
+      this.editedAction.parameters =
+        this._buildInitialParametersForType(newType);
+    }
     this._applyCustomFunctionDefaults(newType);
     this._updateWhenAndContextOptions(newType);
     this._requestSchedulableClassesIfNeeded(newType);
