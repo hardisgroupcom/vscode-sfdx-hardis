@@ -1,4 +1,5 @@
 {
+  "excludeIdsFromCSVFiles": true,
   "objects": [
     {
       "query": "SELECT Name, Type, Industry, BillingCity, BillingCountry, Phone, Description FROM Account",
@@ -6,22 +7,22 @@
       "externalId": "Name"
     },
     {
-      "query": "SELECT FirstName, LastName, Email, Title, Phone, Account.Name FROM Contact",
+      "query": "SELECT FirstName, LastName, Email, Title, Phone, AccountId FROM Contact",
       "operation": "Upsert",
       "externalId": "Email"
     },
     {
-      "query": "SELECT Name, StageName, CloseDate, Amount, Type, Account.Name FROM Opportunity",
+      "query": "SELECT Name, StageName, CloseDate, Amount, Type, AccountId FROM Opportunity",
       "operation": "Upsert",
       "externalId": "Name"
     },
     {
-      "query": "SELECT External_Id__c, Account__r.Name, Status__c, Install_Date__c, Roof_Type__c, Crew_Size__c, Total_Capacity_kW__c FROM Installation__c",
+      "query": "SELECT External_Id__c, Account__c, Status__c, Install_Date__c, Roof_Type__c, Crew_Size__c, Total_Capacity_kW__c FROM Installation__c",
       "operation": "Upsert",
       "externalId": "External_Id__c"
     },
     {
-      "query": "SELECT External_Id__c, Installation__r.External_Id__c, Quantity__c, Arrival_Date__c, Serial_Prefix__c, Cost__c FROM Panel_Batch__c",
+      "query": "SELECT External_Id__c, Installation__c, Quantity__c, Arrival_Date__c, Serial_Prefix__c, Cost__c FROM Panel_Batch__c",
       "operation": "Upsert",
       "externalId": "External_Id__c"
     }

@@ -1299,8 +1299,17 @@ suite("Documentation screenshots", function () {
       // "Search Metadata": the panel opens on an empty state
       clicks: [{ x: 571, y: 301 }],
     });
-    // The three rows of US-014, in the order the panel sorts them (by type,
-    // then name): the field, the layout, the permission set. Where they sit
+    // A universe can sort the list first, the way its readers are told to:
+    // "x,y" points separated by ";", clicked in order (a column header twice
+    // sorts it descending)
+    for (const point of (universeSetting("retrieverSortClicks") || "")
+      .split(";")
+      .map((part) => part.split(",").map((v) => Number(v.trim())))
+      .filter((xy) => xy.length === 2 && xy.every((v) => Number.isFinite(v)))) {
+      await click(point[0], point[1]);
+      await sleep(900);
+    }
+    // The rows of US-014, in the order the panel shows them. Where they sit
     // depends on what else the fixture lists, so a universe names its own rows
     const rows = (universeSetting("retrieverRows") || "561,712,763")
       .split(",")
@@ -1326,12 +1335,19 @@ suite("Documentation screenshots", function () {
     if (!workspaceRoot) {
       this.skip();
     }
-    // What a retrieve of the three US-014 components leaves behind
-    const written = [
-      "force-app/main/default/objects/Installation__c/fields/Panels_Required__c.field-meta.xml",
-      "force-app/main/default/layouts/Installation__c-Installation Layout.layout-meta.xml",
-      "force-app/main/default/permissionsets/Helios_Delivery_Crew.permissionset-meta.xml",
-    ];
+    // What a retrieve of the US-014 components leaves behind. A universe names
+    // its own files, comma separated, when its story retrieves something else
+    const written = (
+      universeSetting("retrievedFiles") ||
+      [
+        "force-app/main/default/objects/Installation__c/fields/Panels_Required__c.field-meta.xml",
+        "force-app/main/default/layouts/Installation__c-Installation Layout.layout-meta.xml",
+        "force-app/main/default/permissionsets/Helios_Delivery_Crew.permissionset-meta.xml",
+      ].join(",")
+    )
+      .split(",")
+      .map((relative) => relative.trim())
+      .filter(Boolean);
     for (const relative of written) {
       const file = path.join(workspaceRoot!, relative);
       fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -1346,7 +1362,7 @@ suite("Documentation screenshots", function () {
     }
     // The harness writes .vscode/settings.json after the initial commit, so it
     // shows up as a change of its own. Hide it: it is harness plumbing, and a
-    // reader counting the files would count four instead of three.
+    // reader counting the files would count one more than the story retrieved.
     const excludeFile = path.join(workspaceRoot!, ".git", "info", "exclude");
     fs.mkdirSync(path.dirname(excludeFile), { recursive: true });
     fs.appendFileSync(excludeFile, ".vscode/\n");
@@ -1549,15 +1565,22 @@ suite("Documentation screenshots", function () {
     );
     const panel = panelManager.getPanel(panelId);
 
-    // 1. Which branch this story will be merged into
-    await waitFor(() => asked("targetBranch"), 30000, "target branch prompt");
-    await sleep(1500);
-    await cleanChrome();
-    capture("work-new-target-branch");
-    panel.simulateWebviewMessage({
-      type: "submit",
-      data: { targetBranch: "integration" },
-    });
+    // 1. Which branch this story will be merged into. A project that allows a
+    //    single target branch is not asked: the command names it and goes on
+    await waitFor(
+      () => asked("targetBranch") || asked("storyType"),
+      30000,
+      "target branch or story type prompt",
+    );
+    if (asked("targetBranch")) {
+      await sleep(1500);
+      await cleanChrome();
+      capture("work-new-target-branch");
+      panel.simulateWebviewMessage({
+        type: "submit",
+        data: { targetBranch: "integration" },
+      });
+    }
 
     // 2. Feature or fix, which decides the branch prefix
     await waitFor(() => asked("storyType"), 30000, "story type prompt");

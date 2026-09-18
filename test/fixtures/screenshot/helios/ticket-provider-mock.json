@@ -19,6 +19,13 @@
       "author": "You",
       "authorLabel": "You"
     },
+    "US-017": {
+      "subject": "Record who signed an installation off",
+      "status": "In Progress",
+      "statusLabel": "In Progress",
+      "author": "Amina Diallo",
+      "authorLabel": "Amina Diallo"
+    },
     "US-018": {
       "subject": "Cap the crew size a planner can assign",
       "status": "In Progress",

@@ -114,6 +114,17 @@
         "description": "The shared integration org, where every contributor merges"
       }
     ],
+    "branchPrefixChoices": [
+      {
+        "title": "Feature: a new capability or an improvement",
+        "value": "features"
+      },
+      {
+        "title": "Fix: correct something that is broken",
+        "value": "fix"
+      }
+    ],
+    "currentOrgChoice": true,
     "storyName": "US-014 Show the crew how many panels a job needs",
     "storyNameExample": "US-014-panels-required",
     "storyBranch": "features/US-014-panels-required",
@@ -200,7 +211,7 @@
       "Installation__c-Installation Layout",
       "You",
       "modified",
-      "2026-09-17T14:49:00.000+0000"
+      "2026-09-17T14:43:00.000+0000"
     ],
     [
       "CustomObject",
@@ -255,8 +266,8 @@
       "PermissionSet",
       "Helios_Delivery_Manager",
       "You",
-      "created",
-      "2026-09-15T09:12:00.000+0000"
+      "modified",
+      "2026-09-17T14:48:00.000+0000"
     ]
   ],
   "apexClasses": [

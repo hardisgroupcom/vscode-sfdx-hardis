@@ -32,6 +32,10 @@ branchPrefixChoices:
     title: "Fix: correct something that is broken"
 newTaskNameRegex: '^US-\d{3}-[a-z0-9-]+$'
 newTaskNameRegexExample: "US-014-panels-required"
+# The stories live in the backlog of this course, not in a ticketing tool. These two
+# keys let the Pull Request comments link every US-nnn they meet to its story.
+genericTicketingProviderRegex: "(US-[0-9]{3})"
+genericTicketingProviderUrlBuilder: "https://hardisgroupcom.github.io/sfdx-hardis-training/BACKLOG/#{REF}"
 
 # --- Quality --------------------------------------------------------------
 testLevel: RunLocalTests

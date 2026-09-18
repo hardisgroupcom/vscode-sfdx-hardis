@@ -49,7 +49,7 @@
         {
           "provider": "GENERIC",
           "id": "US-024",
-          "url": "https://hardisgroupcom.github.io/sfdx-hardis-training/BACKLOG/#us-024-crew-size-becomes-mandatory",
+          "url": "https://hardisgroupcom.github.io/sfdx-hardis-training/BACKLOG/#US-024",
           "subject": "Crew size becomes mandatory",
           "status": "In Progress",
           "statusLabel": "In Progress"
@@ -91,7 +91,7 @@
         {
           "provider": "GENERIC",
           "id": "US-018",
-          "url": "https://hardisgroupcom.github.io/sfdx-hardis-training/BACKLOG/#us-018-cap-the-crew-size-a-planner-can-assign",
+          "url": "https://hardisgroupcom.github.io/sfdx-hardis-training/BACKLOG/#US-018",
           "subject": "Cap the crew size a planner can assign",
           "status": "In Progress",
           "statusLabel": "In Progress"
@@ -133,7 +133,7 @@
         {
           "provider": "GENERIC",
           "id": "US-019",
-          "url": "https://hardisgroupcom.github.io/sfdx-hardis-training/BACKLOG/#us-019-generate-a-quote-pdf-from-an-opportunity",
+          "url": "https://hardisgroupcom.github.io/sfdx-hardis-training/BACKLOG/#US-019",
           "subject": "Generate a quote PDF from an opportunity",
           "status": "In Progress",
           "statusLabel": "In Progress"
@@ -175,7 +175,7 @@
         {
           "provider": "GENERIC",
           "id": "US-020",
-          "url": "https://hardisgroupcom.github.io/sfdx-hardis-training/BACKLOG/#us-020-refactor-installationscheduler",
+          "url": "https://hardisgroupcom.github.io/sfdx-hardis-training/BACKLOG/#US-020",
           "subject": "Refactor InstallationScheduler",
           "status": "In Progress",
           "statusLabel": "In Progress"
@@ -205,7 +205,7 @@
           {
             "provider": "GENERIC",
             "id": "US-014",
-            "url": "https://hardisgroupcom.github.io/sfdx-hardis-training/BACKLOG/#us-014-show-the-crew-how-many-panels-a-job-needs",
+            "url": "https://hardisgroupcom.github.io/sfdx-hardis-training/BACKLOG/#US-014",
             "subject": "Show the crew how many panels a job needs",
             "status": "In Progress",
             "statusLabel": "In Progress"
@@ -232,7 +232,7 @@
           {
             "provider": "GENERIC",
             "id": "US-016",
-            "url": "https://hardisgroupcom.github.io/sfdx-hardis-training/BACKLOG/#us-016-let-the-crew-leave-notes-on-an-installation",
+            "url": "https://hardisgroupcom.github.io/sfdx-hardis-training/BACKLOG/#US-016",
             "subject": "Let the crew leave notes on an installation",
             "status": "In Progress",
             "statusLabel": "In Progress"
