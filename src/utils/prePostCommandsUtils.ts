@@ -8,17 +8,36 @@ import { CacheManager } from "./cache-manager";
 import { PullRequest } from "./gitProviders/types";
 import { GLOB_IGNORE_PATTERNS, normalizeGlobBase } from "./projectUtils";
 
+/** Action types implemented by sfdx-hardis itself. A project custom function id is also valid. */
+export type BuiltInActionType =
+  | "command"
+  | "data"
+  | "apex"
+  | "publish-community"
+  | "manual"
+  | "schedule-batch"
+  | "remove-packagexml-items";
+
+export const BUILT_IN_ACTION_TYPES: BuiltInActionType[] = [
+  "command",
+  "data",
+  "apex",
+  "publish-community",
+  "manual",
+  "schedule-batch",
+  "remove-packagexml-items",
+];
+
+export function isBuiltInActionType(type: string): boolean {
+  return (BUILT_IN_ACTION_TYPES as string[]).includes(type);
+}
+
 export interface PrePostCommand {
   id: string;
   label: string;
-  type:
-    | "command"
-    | "data"
-    | "apex"
-    | "publish-community"
-    | "manual"
-    | "schedule-batch"
-    | "remove-packagexml-items";
+  // A built-in type, or the id of a custom function declared in customFunctions.
+  // Widened so built-in literals still autocomplete and narrow.
+  type: BuiltInActionType | (string & {});
   when: "pre-deploy" | "post-deploy";
   // Known parameters used by action implementations. Additional keys allowed.
   parameters?: {
