@@ -208,8 +208,8 @@
       "runOnlyOnceByOrg": true
     },
     {
-      "id": "planning-board-setting",
-      "label": "Turn on the planning board in Setup",
+      "id": "email-deliverability",
+      "label": "Let the org send the batch summary email",
       "type": "manual",
       "phase": "post",
       "context": "all",

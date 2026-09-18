@@ -31,7 +31,7 @@ commandsPostDeploy:
     parameters:
       apexScript: scripts/apex/backfill-crew-size.apex
     command: ""
-    context: all
+    context: process-deployment-only
     runOnlyOnceByOrg: true
   - id: 7a1c3d2e-2d0b-4f1e-8e3b-024b00000005
     label: Schedule the nightly crew capacity recalculation
@@ -52,15 +52,15 @@ commandsPostDeploy:
     command: ""
     context: process-deployment-only
   - id: 7a1c3d2e-2d0b-4f1e-8e3b-024b00000007
-    label: Turn on the planning board in Setup
+    label: Let the org send the batch summary email
     type: manual
     when: post-deploy
     parameters:
       instructions: |
-        1. Open **Setup**, type `Installed Packages` in the Quick Find box.
-        2. Find **Helios Planning** and click **Configure**.
-        3. Tick **Use crew capacity rules**, then click **Save**.
-        4. Check: the planning board shows a capacity column. If it was already ticked, there is nothing to do: tick the box anyway.
+        1. Open **Setup**, type `Deliverability` in the Quick Find box, and open it.
+        2. Under **Access to Send Email**, set **Access level** to **All email**.
+        3. Click **Save**.
+        4. Check: the page reads **All email**. If it already did, there is nothing to do.
     command: ""
     context: all
   # Target orgs examples: the warehouse system is only connected to the uat and
