@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Pipeline Settings: the **Monitoring repository** of a CI/CD project can be set on the Salesforce Project tab, and the Org Monitoring Workbench then offers to open it
+- DevOps Pipeline: with the generic ticketing provider, the tickets of Pull Requests show their title and status when the project sets `genericTicketingProviderDetailsUrlBuilder`
 ## [8.6.1] 2026-09-14
 
 - Questions asked in the command panel
