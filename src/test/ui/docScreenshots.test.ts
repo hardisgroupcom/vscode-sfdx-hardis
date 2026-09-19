@@ -1470,6 +1470,7 @@ suite("Documentation screenshots", function () {
     // The prompt file an earlier backpromote capture leaves is plumbing too
     fs.appendFileSync(excludeFile, ".vscode/\nbackpromote-*\n");
     try {
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
       await vscode.commands.executeCommand("workbench.view.scm");
       await sleep(3000);
       await cleanChrome();
