@@ -476,6 +476,10 @@ export function activate(context: vscode.ExtensionContext) {
   return {
     commands,
     hardisCommandsProvider,
+    // The documentation screenshots expand a section of this tree before
+    // capturing it. Expanding by element rather than by pixel keeps working when
+    // a project declares its own menus and pushes every row down.
+    hardisCommandsTreeView: treeView,
     hardisStatusProvider,
     hardisPluginsProvider,
     getLwcPanelManager: () => LwcPanelManager.getInstance(),

@@ -293,26 +293,40 @@ export default class Welcome extends SharedMixin(LightningElement) {
         (card) => this.buildCard(card, group.featured),
       ),
     }));
-    if (this.customMenus && this.customMenus.length > 0) {
-      groups.push({
-        id: "custom",
-        label: this.t("welcomeCustomMenusGroup"),
-        featured: false,
-        groupClass: "welcome-group",
-        cards: this.customMenus.map((menu) => ({
-          id: menu.id,
-          menuId: menu.id,
-          target: "",
-          icon: menu.sldsIcon,
-          iconSize: "x-small",
-          title: menu.label,
-          description: menu.description,
-          tileClass: this.tileClassForHue(menu.welcomeIconClass),
-          cardClass: "hardis-card clickable",
-        })),
-      });
+    // Custom menus declared in .sfdx-hardis.yml. customCommandsPosition says
+    // whether they belong above the built-in cards or below them, and it has to
+    // mean the same thing here as it does in the Commands tree: a project whose
+    // own menu is the first thing its people need must be able to say so.
+    const first = this.customMenuGroup("first");
+    const last = this.customMenuGroup("last");
+    return [...(first ? [first] : []), ...groups, ...(last ? [last] : [])];
+  }
+
+  /** One Welcome group holding the custom menus declared for that position. */
+  customMenuGroup(position) {
+    const menus = (this.customMenus || []).filter(
+      (menu) => (menu.position || "last") === position,
+    );
+    if (menus.length === 0) {
+      return null;
     }
-    return groups;
+    return {
+      id: `custom-${position}`,
+      label: this.t("welcomeCustomMenusGroup"),
+      featured: false,
+      groupClass: "welcome-group",
+      cards: menus.map((menu) => ({
+        id: menu.id,
+        menuId: menu.id,
+        target: "",
+        icon: menu.sldsIcon,
+        iconSize: "x-small",
+        title: menu.label,
+        description: menu.description,
+        tileClass: this.tileClassForHue(menu.welcomeIconClass),
+        cardClass: "hardis-card clickable",
+      })),
+    };
   }
 
   /**

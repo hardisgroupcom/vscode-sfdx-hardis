@@ -8,8 +8,10 @@ import {
   WEBSITE_CONTACT_FORM_URL,
 } from "./constants";
 import {
-  loadAllCustomCommandGroups,
-  isAllCustomCommandsLoaded,
+  isAllConfigLoaded,
+  isPluginCommandsLoaded,
+  listCustomCommands,
+  listPluginCustomCommands,
   CustomCommandMenu,
   CustomCommandsPosition,
 } from "./utils/sfdx-hardis-config-utils";
@@ -23,6 +25,27 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
 
   getTreeItem(element: CommandTreeItem): vscode.TreeItem {
     return element;
+  }
+
+  /**
+   * Parent of a node. `TreeView.reveal` refuses to run without it, and revealing
+   * a section is how the documentation screenshots expand one: expanding by
+   * element keeps working when a project declares its own menus and pushes every
+   * row down, which clicking a row at a fixed height does not.
+   *
+   * Topics sit at the root and have no parent; a command belongs to the topic
+   * that declares it.
+   */
+  async getParent(element: CommandTreeItem): Promise<CommandTreeItem | null> {
+    const topics = await this.listTopicAndCommands();
+    const ownerTopic = topics.find((topic: any) =>
+      (topic.commands || []).some((command: any) => command.id === element.id),
+    );
+    if (!ownerTopic) {
+      return null;
+    }
+    const topicItems = await this.listTopics();
+    return topicItems.find((item) => item.id === ownerTopic.id) || null;
   }
 
   getChildren(element?: CommandTreeItem): Thenable<CommandTreeItem[]> {
@@ -1206,31 +1229,45 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
     return hardisCommands;
   }
 
-  // Add custom commands defined within .sfdx-hardis.yml and plugin-provided commands
+  // Add custom commands defined within .sfdx-hardis.yml and plugin-provided commands.
+  // The two sources are independent: the project menus are a local YAML read and
+  // show within a second, while the plugin menus need `sf plugins` and one call per
+  // plugin. Each source that is not ready yet loads in the background and refreshes
+  // the tree on its own, so the project menus never wait for the plugins.
   private async completeWithCustomCommands(hardisCommands: Array<any>) {
-    if (!isAllCustomCommandsLoaded()) {
-      // Config or plugins not ready yet: load both in parallel in the background,
-      // then trigger a single tree refresh once everything is available.
-      void (async () => {
-        const groups = await loadAllCustomCommandGroups(); // awaits both configs, populates caches
-        if (groups.length > 0) {
-          vscode.commands.executeCommand(
-            "vscode-sfdx-hardis.refreshCommandsView",
-            true,
-          );
-        }
-      })();
-    } else {
-      const allGroups = await loadAllCustomCommandGroups();
-      for (const group of allGroups) {
-        hardisCommands = this.addCommands(
-          group.menus,
-          group.position,
-          hardisCommands,
-        );
-      }
+    const configReady = isAllConfigLoaded();
+    const pluginsReady = isPluginCommandsLoaded();
+    const groups = [
+      ...(configReady ? await listCustomCommands() : []),
+      ...(pluginsReady ? await listPluginCustomCommands() : []),
+    ];
+    for (const group of groups) {
+      hardisCommands = this.addCommands(
+        group.menus,
+        group.position,
+        hardisCommands,
+      );
     }
-
+    const refreshWhenLoaded = (loading: Promise<Array<any>>) => {
+      void loading
+        .then((loaded) => {
+          if (loaded.length > 0) {
+            vscode.commands.executeCommand(
+              "vscode-sfdx-hardis.refreshCommandsView",
+              true,
+            );
+          }
+        })
+        .catch(() => {
+          // A broken configuration or plugin leaves the built-in menus as they are
+        });
+    };
+    if (!configReady) {
+      refreshWhenLoaded(listCustomCommands());
+    }
+    if (!pluginsReady) {
+      refreshWhenLoaded(listPluginCustomCommands());
+    }
     return hardisCommands;
   }
 
@@ -1255,8 +1292,16 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
       hardisCommands.push(...customCommands);
       hardisCommands.push(lastElement);
     } else {
-      // First position
-      hardisCommands = customCommands.concat(hardisCommands);
+      // First position, but after the Welcome page, which always opens the menu
+      const welcomeIndex = hardisCommands.findIndex(
+        (item) => item.id === "vscode-sfdx-hardis.showWelcome",
+      );
+      const insertAt = welcomeIndex === -1 ? 0 : welcomeIndex + 1;
+      hardisCommands = [
+        ...hardisCommands.slice(0, insertAt),
+        ...customCommands,
+        ...hardisCommands.slice(insertAt),
+      ];
     }
     return hardisCommands;
   }
