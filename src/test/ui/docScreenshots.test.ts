@@ -52,8 +52,41 @@ async function sleep(ms: number): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// The gate the running test was let through by. Every capture records it in
+// <OUT_DIR>/.shot-gates.json, so a caller that needs one image again (the
+// training course) knows which name to pass instead of taking everything.
+let currentGate = "";
+
 function shouldTake(name: string): boolean {
-  return ONLY.length === 0 || ONLY.includes(name);
+  const take = ONLY.length === 0 || ONLY.includes(name);
+  if (take) {
+    currentGate = name;
+  }
+  return take;
+}
+
+function recordGate(name: string): void {
+  if (!currentGate || currentGate.startsWith("rec-")) {
+    return;
+  }
+  const file = path.join(OUT_DIR, ".shot-gates.json");
+  let gates: Record<string, { gate: string; state?: string }> = {};
+  try {
+    gates = JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch {
+    // First capture into this folder
+  }
+  const entry: { gate: string; state?: string } = { gate: currentGate };
+  if (process.env.SF_MOCK_PIPELINE_STATE) {
+    entry.state = process.env.SF_MOCK_PIPELINE_STATE;
+  }
+  gates[name] = entry;
+  const sorted = Object.fromEntries(
+    Object.keys(gates)
+      .sort()
+      .map((key) => [key, gates[key]]),
+  );
+  fs.writeFileSync(file, `${JSON.stringify(sorted, null, 2)}\n`);
 }
 
 /**
@@ -106,6 +139,7 @@ function capture(
       timeout: 150000,
     });
     console.log(`      [shot] ${out.toString().trim()}`);
+    recordGate(name);
   } catch (error: any) {
     console.log(
       `      [shot] ${name}: FAILED ${error?.stderr?.toString() || error?.message}`,
