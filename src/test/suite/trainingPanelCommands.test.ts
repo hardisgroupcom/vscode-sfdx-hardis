@@ -52,20 +52,26 @@ suite("Training commands in the Command Runner panel", () => {
       true,
     );
     assert.strictEqual(
-      isTrainingPanelCommandIn("node scripts/training.mjs seed --org helios-dev", root),
+      isTrainingPanelCommandIn(
+        "node scripts/training.mjs seed --org helios-dev",
+        root,
+      ),
       true,
     );
     assert.strictEqual(
-      isTrainingPanelCommandIn("node scripts/training.mjs check --level=3", root),
+      isTrainingPanelCommandIn(
+        "node scripts/training.mjs check --level=3",
+        root,
+      ),
       true,
     );
   });
 
   test("a fork of the course is allowed, any owner", () => {
-    const fork = makeClone("git@github.com:someone-else/sfdx-hardis-training.git", [
-      "scripts/training.mjs",
-      "training-universe.json",
-    ]);
+    const fork = makeClone(
+      "git@github.com:someone-else/sfdx-hardis-training.git",
+      ["scripts/training.mjs", "training-universe.json"],
+    );
     try {
       assert.strictEqual(
         isTrainingPanelCommandIn("node scripts/training.mjs status", fork),
@@ -84,7 +90,10 @@ suite("Training commands in the Command Runner panel", () => {
   });
 
   test("a clone with no marker file is refused", () => {
-    const bare = makeClone("https://github.com/a-learner/sfdx-hardis-training.git", []);
+    const bare = makeClone(
+      "https://github.com/a-learner/sfdx-hardis-training.git",
+      [],
+    );
     try {
       assert.strictEqual(
         isTrainingPanelCommandIn("node scripts/training.mjs check", bare),
