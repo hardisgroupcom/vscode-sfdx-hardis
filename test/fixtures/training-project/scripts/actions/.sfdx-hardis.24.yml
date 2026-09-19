@@ -15,6 +15,18 @@ commandsPreDeploy:
         - "Profile:*"
     command: ""
     context: check-deployment-only
+  - id: 7a1c3d2e-2d0b-4f1e-8e3b-024b00000007
+    label: Set Email Deliverability to All Email
+    type: manual
+    when: pre-deploy
+    parameters:
+      instructions: |
+        1. Open **Setup**, type `Deliverability` in the Quick Find box, and open it.
+        2. Under **Access to Send Email**, set **Access level** to **All email**.
+        3. Click **Save**.
+        4. Check: the page reads **All email**. If it already did, there is nothing to do.
+    command: ""
+    context: all
 commandsPostDeploy:
   - id: 7a1c3d2e-2d0b-4f1e-8e3b-024b00000002
     label: Load the crew capacity reference data
@@ -51,18 +63,6 @@ commandsPostDeploy:
       communityName: Helios Installer Portal
     command: ""
     context: process-deployment-only
-  - id: 7a1c3d2e-2d0b-4f1e-8e3b-024b00000007
-    label: Set Email Deliverability to All Email
-    type: manual
-    when: pre-deploy
-    parameters:
-      instructions: |
-        1. Open **Setup**, type `Deliverability` in the Quick Find box, and open it.
-        2. Under **Access to Send Email**, set **Access level** to **All email**.
-        3. Click **Save**.
-        4. Check: the page reads **All email**. If it already did, there is nothing to do.
-    command: ""
-    context: all
   # Target orgs examples: the warehouse system is only connected to the uat and
   # production orgs, and the demo installations must never reach production
   - id: 7a1c3d2e-2d0b-4f1e-8e3b-024b00000008

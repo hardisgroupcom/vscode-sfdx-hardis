@@ -9,7 +9,7 @@
   "retrieverSortClicks": "1680,413;1680,413",
   "retrieverRows": "459,510,561,611",
   "retrievedFiles": "force-app/main/default/objects/Installation__c/fields/Panels_Required__c.field-meta.xml,force-app/main/default/layouts/Installation__c-Installation Layout.layout-meta.xml,force-app/main/default/permissionsets/Helios_Delivery_Crew.permissionset-meta.xml,force-app/main/default/permissionsets/Helios_Delivery_Manager.permissionset-meta.xml",
-  "actionEditorOrder": "command,remove-packagexml-items,data,apex,schedule-batch,publish-community,manual,target-orgs-include,target-orgs-exclude",
+  "actionEditorOrder": "command,remove-packagexml-items,manual,data,apex,schedule-batch,publish-community,target-orgs-include,target-orgs-exclude",
   "branches": [
     "uat",
     "preprod",

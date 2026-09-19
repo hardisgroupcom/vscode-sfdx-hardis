@@ -31,6 +31,8 @@ branchPrefixChoices:
     title: "Feature: a new capability or an improvement"
   - value: fix
     title: "Fix: correct something that is broken"
+  - value: retrofit
+    title: "Retrofit: bring into the repository a change made directly in production (release manager)"
 newTaskNameRegex: '^US-\d{3}-[a-z0-9-]+$'
 newTaskNameRegexExample: "US-014-panels-required"
 # The stories live in the backlog of this course, not in a ticketing tool. These

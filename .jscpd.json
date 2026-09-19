@@ -26,6 +26,7 @@
     "**/eslint.config.mjs",
     "**/CLAUDE.md",
     "**/README.md",
-    "**/.claude/**"
+    "**/.claude/**",
+    "**/test/fixtures/**"
   ]
 }

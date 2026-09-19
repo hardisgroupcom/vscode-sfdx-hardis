@@ -122,6 +122,10 @@
       {
         "title": "Fix: correct something that is broken",
         "value": "fix"
+      },
+      {
+        "title": "Retrofit: bring into the repository a change made directly in production (release manager)",
+        "value": "retrofit"
       }
     ],
     "currentOrgChoice": true,

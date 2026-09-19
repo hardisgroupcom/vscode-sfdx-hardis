@@ -2038,7 +2038,7 @@ const DOCS_SCENARIOS = {
     const keyFile = `config/branches/.jwt/${branch}.key`;
     const consumerKey =
       "3MVG9Rd3qC6oMalVq8Hk2vT0bXa1cLmNpQrStUvWxYz4AbCdEfGhIjKlMnOpQrStUvWxYz0123456789AbCdEfGhIjKlMnOpQrStUvWxYz01234567";
-    const decryptionKey = "7f3a9c1e5b2d8f4a6c0e9b7d3f1a5c8e";
+    const decryptionKey = "7f3a9c1e5b2d8f4a6c0e9b7d3f1a5c8e"; // gitleaks:allow (fake value of a mocked command)
 
     log(
       "action",

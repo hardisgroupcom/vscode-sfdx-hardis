@@ -722,7 +722,15 @@ suite("Documentation screenshots", function () {
     await click(1720, 104); // gear menu of the header
     await sleep(2500);
     await captureStable("pipeline-settings-menu");
-    await click(1100, 104); // anywhere else closes the menu
+    // A click elsewhere does not close a lightning menu: the panel is opened again
+    await shootPanel(panelManager, {
+      name: "devops-pipeline",
+      command: "vscode-sfdx-hardis.showPipeline",
+      lwcId: "s-pipeline",
+      ready: pipelineFullyLoaded,
+      settleMs: 9000,
+      force: true,
+    });
     await click(1772, 104); // "Deployment packages" menu
     await sleep(2500);
     await captureStable("pipeline-packages-menu");
@@ -1459,7 +1467,8 @@ suite("Documentation screenshots", function () {
     // reader counting the files would count one more than the story retrieved.
     const excludeFile = path.join(workspaceRoot!, ".git", "info", "exclude");
     fs.mkdirSync(path.dirname(excludeFile), { recursive: true });
-    fs.appendFileSync(excludeFile, ".vscode/\n");
+    // The prompt file an earlier backpromote capture leaves is plumbing too
+    fs.appendFileSync(excludeFile, ".vscode/\nbackpromote-*\n");
     try {
       await vscode.commands.executeCommand("workbench.view.scm");
       await sleep(3000);
@@ -1520,7 +1529,7 @@ suite("Documentation screenshots", function () {
     const story = "features/US-034-crew-override";
     // The fixture may already carry the story branch, for the pipeline diagram:
     // it is put back where it was afterwards
-    let storyWas = "";
+    let storyWas: string;
     try {
       storyWas = git(`rev-parse --verify --quiet refs/heads/${story}`);
     } catch {
@@ -1530,6 +1539,8 @@ suite("Documentation screenshots", function () {
     fs.mkdirSync(path.dirname(excludeFile), { recursive: true });
     fs.appendFileSync(excludeFile, ".vscode/\n");
     git("stash push --include-untracked --message screenshot-git-merge");
+    // Nothing open behind the pickers: an editor left by an earlier test is noise
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
     // The "..." of a view only shows while the mouse is over it: keep it visible
     const workbench = vscode.workspace.getConfiguration("workbench");
     await workbench.update(
