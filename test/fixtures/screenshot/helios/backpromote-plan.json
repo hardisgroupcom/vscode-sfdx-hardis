@@ -209,9 +209,9 @@
     },
     {
       "id": "email-deliverability",
-      "label": "Let the org send the batch summary email",
+      "label": "Set Email Deliverability to All Email",
       "type": "manual",
-      "phase": "post",
+      "phase": "pre",
       "context": "all",
       "pullRequest": 53,
       "alreadyRunOn": null,

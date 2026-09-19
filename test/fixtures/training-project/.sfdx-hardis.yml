@@ -55,7 +55,6 @@ autoCleanTypes:
   - productrequest
   - flowPositions
   - minimizeProfiles
-  - listViewsMine
 
 # Permissions that must never travel through a Profile on this project.
 # This is what makes the Lab 2.6 failure happen, and it is deliberate.
