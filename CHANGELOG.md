@@ -7,6 +7,7 @@
 - Pipeline Settings: the **Monitoring repository** of a CI/CD project can be set on the Salesforce Project tab, and the Org Monitoring Workbench then offers to open it
 - DevOps Pipeline: with the generic ticketing provider, the tickets of Pull Requests show their title and status when the project sets `genericTicketingProviderDetailsUrlBuilder`
 - DevOps Pipeline: the No Overwrite and Destructive Changes packages open even when the file does not exist yet, and the first item added creates it
+- Commands menu: the lessons of the sfdx-hardis training course run in the Command Runner panel instead of a terminal, with their questions and the files they write, and only in a clone of the course
 ## [8.6.1] 2026-09-14
 
 - Questions asked in the command panel
