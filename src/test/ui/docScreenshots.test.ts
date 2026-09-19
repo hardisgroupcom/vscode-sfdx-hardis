@@ -720,11 +720,11 @@ suite("Documentation screenshots", function () {
       force: true,
     });
     await click(1720, 104); // gear menu of the header
-    await sleep(800);
+    await sleep(2500);
     await captureStable("pipeline-settings-menu");
     await click(1100, 104); // anywhere else closes the menu
     await click(1772, 104); // "Deployment packages" menu
-    await sleep(800);
+    await sleep(2500);
     await captureStable("pipeline-packages-menu");
     await shootPanel(panelManager, {
       name: "package-xml",
