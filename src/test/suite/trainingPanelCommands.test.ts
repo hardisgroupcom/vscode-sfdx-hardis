@@ -153,6 +153,9 @@ suite("Training commands in the Command Runner panel", () => {
       "node scripts/training.mjs check `whoami`",
       "node scripts/training.mjs check $(whoami)",
       "node scripts/training.mjs check\nrm -rf /",
+      "node scripts/training.mjs check\nnode evil.mjs",
+      "node scripts/training.mjs check\r\ngit push --force",
+      "node\nscripts/training.mjs check",
       "node scripts/training.mjs --eval=require('fs')",
     ];
     for (const command of refused) {

@@ -25,8 +25,11 @@ import * as vscode from "vscode";
  */
 const ARGUMENT = "[A-Za-z0-9][A-Za-z0-9._:@/-]*";
 const FLAG = `--?[A-Za-z][A-Za-z0-9-]*(?:=${ARGUMENT})?`;
+// Spaces and tabs between the words, never a line break: `\s` would match one,
+// and a second line is a second command as far as a shell is concerned.
+const SPACE = "[^\\S\\n\\r]+";
 const TRAINING_COMMAND = new RegExp(
-  `^node\\s+scripts/training\\.mjs(?:\\s+(?:${FLAG}|${ARGUMENT}))+$`,
+  `^node${SPACE}scripts/training\\.mjs(?:${SPACE}(?:${FLAG}|${ARGUMENT}))+$`,
 );
 
 /** Files only a clone of the course has, both written by the course itself. */

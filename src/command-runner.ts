@@ -376,12 +376,17 @@ export class CommandRunner {
     command: string,
     extraEnv?: Record<string, string>,
   ) {
-    if (isBackgroundMode && this.isCommandAllowedInBackground(command)) {
+    if (isBackgroundMode) {
+      // Before the decision, not after: a training command is allowed in the
+      // panel only while the WebSocket server is listening, and right after
+      // activation it is still binding its port.
       await this.waitForWebSocketServerReady();
-      this.executeCommandBackground(command, extraEnv);
-    } else {
-      this.executeCommandTerminal(command, extraEnv);
+      if (this.isCommandAllowedInBackground(command)) {
+        this.executeCommandBackground(command, extraEnv);
+        return;
+      }
     }
+    this.executeCommandTerminal(command, extraEnv);
   }
 
   /**
@@ -415,11 +420,14 @@ export class CommandRunner {
     type: "background" | "terminal" = "background",
     process?: any,
   ): string | null {
-    // Block dangerous or invalid commands
+    // Block dangerous or invalid commands. A training lesson is the one command
+    // shape that is not an sf command and may still run here: it carries no
+    // shell operator by construction (see isTrainingPanelCommand).
     if (
       !(
         command.trimStart().startsWith("sf ") ||
-        command.trimStart().startsWith("npm install @salesforce/")
+        command.trimStart().startsWith("npm install @salesforce/") ||
+        isTrainingPanelCommand(command)
       ) ||
       command.includes("&&") ||
       command.includes("||")
