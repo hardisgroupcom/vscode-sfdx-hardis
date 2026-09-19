@@ -1,4 +1,8 @@
 import { killProcessTree } from "./utils/processUtils";
+import {
+  isTrainingPanelCommand,
+  trainingCommandLabel,
+} from "./utils/trainingPanelCommands";
 import * as vscode from "vscode";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { t } from "./i18n/i18n";
@@ -133,6 +137,20 @@ export class CommandRunner {
         this.isSfStandardCommand(trimmedCommand) ||
         isCommandAllowedByCustomOrPluginRegistry(trimmedCommand)
       );
+    }
+    // The training course runs its lessons through `node scripts/training.mjs`,
+    // and teaches a learner who is never sent to a terminal. Only that command
+    // shape, only in a clone of the course, only when the menu entry it comes
+    // from is a registered one, and only when the panel it would talk to is
+    // actually listening: with no WebSocket server the lesson would run with
+    // its output going nowhere the learner can see, and a terminal is better
+    // than that.
+    if (
+      isTrainingPanelCommand(trimmedCommand) &&
+      isCommandAllowedByCustomOrPluginRegistry(trimmedCommand) &&
+      this.commandsInstance?.disposableWebSocketServer?.websocketHostPort
+    ) {
+      return true;
     }
     return false;
   }
@@ -562,6 +580,19 @@ export class CommandRunner {
     if (extraEnv && typeof extraEnv === "object") {
       spawnOptions.env = { ...spawnOptions.env, ...extraEnv };
     }
+    // A training command is not an sf command, so it gets the WebSocket address
+    // through the environment rather than through a --websocket flag. With it,
+    // its script talks to the panel the way the CLI does; without it, it still
+    // runs and only prints.
+    const isTrainingCommand = isTrainingPanelCommand(preprocessedCommand);
+    const trainingWebSocketHostPort = isTrainingCommand
+      ? this.commandsInstance?.disposableWebSocketServer?.websocketHostPort
+      : null;
+    if (trainingWebSocketHostPort) {
+      spawnOptions.env.SFDX_HARDIS_WEBSOCKET = String(
+        trainingWebSocketHostPort,
+      );
+    }
     const gitBashPath = getGitBashPath();
     if (process.platform === "win32" && gitBashPath) {
       spawnOptions.shell = gitBashPath;
@@ -576,12 +607,15 @@ export class CommandRunner {
     let pendingCommandName: string | null = null;
     if (
       config.get("userInput") === "ui-lwc" &&
-      preprocessedCommand.trimStart().startsWith("sf hardis")
+      (preprocessedCommand.trimStart().startsWith("sf hardis") ||
+        trainingWebSocketHostPort)
     ) {
       try {
         const provisionalContextId = generateProvisionalContextId();
         const commandId = extractCommandId(preprocessedCommand);
-        pendingCommandName = commandId || preprocessedCommand;
+        pendingCommandName = isTrainingCommand
+          ? trainingCommandLabel(preprocessedCommand)
+          : commandId || preprocessedCommand;
         pendingPanelLwcId = `s-command-execution-${provisionalContextId}`;
         spawnOptions.env.SFDX_HARDIS_COMMAND_CONTEXT_ID = provisionalContextId;
         const panelManager = LwcPanelManager.getInstance();

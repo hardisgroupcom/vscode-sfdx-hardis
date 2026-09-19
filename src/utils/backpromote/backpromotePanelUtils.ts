@@ -1389,6 +1389,7 @@ function orgTypeOf(org: {
   isScratch?: boolean;
   isSandbox?: boolean;
   orgType?: string;
+  orgEdition?: string;
 }): string {
   if (org.orgType) {
     return org.orgType;
@@ -1399,6 +1400,12 @@ function orgTypeOf(org: {
   }
   if (org.isSandbox || url.includes(".sandbox")) {
     return "sandbox";
+  }
+  // A Developer Edition org is a development environment, not production. The
+  // edition reported by the CLI is the reliable signal: a Developer Edition org
+  // with a custom My Domain has no "dev-ed" in its URL.
+  if (String(org.orgEdition || "") === "Developer Edition") {
+    return "developer";
   }
   return url.includes("dev-ed") || url.includes("test")
     ? "other"

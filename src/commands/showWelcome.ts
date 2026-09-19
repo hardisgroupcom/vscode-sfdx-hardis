@@ -13,8 +13,11 @@ import {
   SFDX_HARDIS_REPOSITORY_URL,
 } from "../constants";
 import {
-  loadAllCustomCommandGroups,
-  isAllCustomCommandsLoaded,
+  isAllConfigLoaded,
+  isPluginCommandsLoaded,
+  listCustomCommands,
+  listPluginCustomCommands,
+  CustomCommandsGroup,
   CustomCommandMenu,
 } from "../utils/sfdx-hardis-config-utils";
 import { CacheManager } from "../utils/cache-manager";
@@ -83,13 +86,18 @@ export function registerShowWelcome(command: Commands) {
       const extensionVersion =
         vscode.extensions.getExtension(EXTENSION_ID)?.packageJSON?.version ??
         "";
-      let customMenus: CustomCommandMenu[] = [];
-      const allCustomCommandsLoaded = isAllCustomCommandsLoaded();
-      if (allCustomCommandsLoaded) {
-        customMenus = (await loadAllCustomCommandGroups()).flatMap(
-          (g) => g.menus,
-        );
-      }
+      // The project menus (a local YAML read) and the plugin menus (`sf plugins`,
+      // then one call per plugin) load independently: whichever is ready is shown
+      // now, and the other is pushed to the page when it arrives.
+      const configReady = isAllConfigLoaded();
+      const pluginsReady = isPluginCommandsLoaded();
+      let configMenus: CustomCommandMenu[] = configReady
+        ? withPosition(await listCustomCommands())
+        : [];
+      let pluginMenus: CustomCommandMenu[] = pluginsReady
+        ? withPosition(await listPluginCustomCommands())
+        : [];
+      const customMenus = [...configMenus, ...pluginMenus];
 
       const panel = lwcManager.getOrCreatePanel("s-welcome", {
         showWelcomeAtStartup: showWelcomeAtStartup,
@@ -131,18 +139,29 @@ export function registerShowWelcome(command: Commands) {
       });
       panel.updateTitle(t("welcomeTitle"));
 
-      // If not all custom commands were ready, load them in the background and push once available
-      if (!allCustomCommandsLoaded) {
-        void (async () => {
-          const allGroups = await loadAllCustomCommandGroups();
-          const allMenus = allGroups.flatMap((g) => g.menus);
-          if (!panel.isDisposed()) {
-            panel.sendMessage({
-              type: "updateCustomMenus",
-              data: allMenus,
-            });
-          }
-        })();
+      const pushMenus = () => {
+        if (!panel.isDisposed()) {
+          panel.sendMessage({
+            type: "updateCustomMenus",
+            data: [...configMenus, ...pluginMenus],
+          });
+        }
+      };
+      if (!configReady) {
+        void listCustomCommands()
+          .then((groups) => {
+            configMenus = withPosition(groups);
+            pushMenus();
+          })
+          .catch(() => undefined);
+      }
+      if (!pluginsReady) {
+        void listPluginCustomCommands()
+          .then((groups) => {
+            pluginMenus = withPosition(groups);
+            pushMenus();
+          })
+          .catch(() => undefined);
       }
 
       // Never block the Welcome page on the dependencies computation: it
@@ -170,4 +189,16 @@ export function registerShowWelcome(command: Commands) {
     },
   );
   command.disposables.push(disposable);
+}
+
+// The insertion position declared by customCommandsPosition travels with each
+// menu, so the Welcome page places custom menus above or below the built-in
+// cards the way the Commands tree does
+function withPosition(groups: CustomCommandsGroup[]): CustomCommandMenu[] {
+  return groups.flatMap((g) =>
+    (g.menus || []).map((menu) => ({
+      ...menu,
+      position: g.position || "last",
+    })),
+  );
 }

@@ -43,7 +43,11 @@ export class GitProviderMock extends GitProvider {
   }
 
   async initialize(): Promise<void> {
-    this.isActive = true;
+    // A fixture can declare itself inactive, which is what a provider looks
+    // like before anybody signed in: greyed icon, no Pull Requests, no jobs.
+    // The training needs that state, because it is what a learner sees the
+    // first time they open the panel.
+    this.isActive = this.fixture?.isActive !== false;
   }
 
   handlesNativeGitAuth(): boolean {

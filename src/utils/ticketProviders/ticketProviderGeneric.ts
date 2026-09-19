@@ -2,6 +2,7 @@ import { TicketProvider } from "./ticketProvider";
 import { Ticket, TicketProviderName } from "./types";
 import { Logger } from "../../logger";
 import { getConfig } from "../pipeline/sfdxHardisConfig";
+import { getJson } from "../httpUtils";
 
 export class GenericTicketingProvider extends TicketProvider {
   static readonly providerName: TicketProviderName = "GENERIC";
@@ -74,19 +75,61 @@ export class GenericTicketingProvider extends TicketProvider {
     if (!urlBuilder) {
       return "";
     }
+    return GenericTicketingProvider.fillPlaceholder(urlBuilder, ticketId);
+  }
 
-    // Support the documented {ticketId} placeholder as well as the legacy {REF}
-    // and {{TICKET_ID}} variants so existing configurations keep working.
+  // Support the documented {REF} placeholder as well as the {ticketId}
+  // and {{TICKET_ID}} variants so existing configurations keep working.
+  static fillPlaceholder(urlBuilder: string, ticketId: string): string {
     return urlBuilder
       .replace(/\{\{?\s*ticketId\s*\}?\}/gi, ticketId)
       .replace(/\{\{?\s*TICKET_ID\s*\}?\}/g, ticketId)
       .replace(/\{REF\}/g, ticketId);
   }
 
+  /**
+   * Reads the title and the status of the ticket from
+   * genericTicketingProviderDetailsUrlBuilder, like the CLI does: one JSON
+   * document per ticket, with subject (or title, or summary) and status.
+   * Without that key, the ticket stays a bare link.
+   */
   async completeTicketDetails(ticket: Ticket): Promise<Ticket> {
-    // Generic provider has no server to fetch details from
-    // Just mark as found (since we don't have a way to verify)
     ticket.foundOnServer = false;
+    const config = await getConfig("project");
+    const detailsUrlBuilder =
+      process.env.GENERIC_TICKETING_PROVIDER_DETAILS_URL_BUILDER ||
+      config.genericTicketingProviderDetailsUrlBuilder;
+    if (!detailsUrlBuilder) {
+      return ticket;
+    }
+    const headers: Record<string, string> = { Accept: "application/json" };
+    if (process.env.GENERIC_TICKETING_PROVIDER_TOKEN) {
+      headers.Authorization = `Bearer ${process.env.GENERIC_TICKETING_PROVIDER_TOKEN}`;
+    }
+    const data = await getJson(
+      GenericTicketingProvider.fillPlaceholder(detailsUrlBuilder, ticket.id),
+      { headers, timeoutMs: 15000 },
+    );
+    const text = (keys: string[]): string => {
+      for (const key of keys) {
+        const value = data?.[key];
+        if (typeof value === "string" && value.trim() !== "") {
+          return value.replace(/\s+/g, " ").trim();
+        }
+      }
+      return "";
+    };
+    const subject = text(["subject", "title", "summary"]);
+    if (!subject) {
+      return ticket;
+    }
+    ticket.foundOnServer = true;
+    ticket.subject = subject;
+    const status = text(["status"]);
+    if (status) {
+      ticket.status = status;
+      ticket.statusLabel = text(["statusLabel"]) || status;
+    }
     return ticket;
   }
 }

@@ -54,6 +54,12 @@ export class TicketProviderMock extends TicketProvider {
   }
 
   async buildTicketUrl(ticketId: string): Promise<string> {
+    // A universe whose tickets do not live in JIRA declares its own shape, for
+    // example a generic provider pointing at a backlog page. Without the
+    // template the JIRA path is kept, so existing fixtures are unaffected.
+    if (this.fixture.ticketUrlTemplate) {
+      return String(this.fixture.ticketUrlTemplate).replace("{id}", ticketId);
+    }
     return `${this.fixture.webUrl || ""}/browse/${ticketId}`;
   }
 
