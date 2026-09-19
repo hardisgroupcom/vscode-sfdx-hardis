@@ -108,16 +108,26 @@ function Get-SfhWindow {
       Where-Object { $_.MainWindowHandle -ne 0 -and $_.MainWindowTitle -like "*$TitleMatch*" } |
       Select-Object -First 1
     if ($proc) {
-      Set-Content -Path $cacheFile -Value ([string][int64]$proc.MainWindowHandle) -Encoding ascii
+      Set-Content -Path $cacheFile -Value ("$($proc.Id) " + [string][int64]$proc.MainWindowHandle) -Encoding ascii
       return $proc.MainWindowHandle
     }
     Start-Sleep -Milliseconds 500
   }
+  # The cache is only good for the run that wrote it. Windows reuses handles, so
+  # an entry left by a previous VS Code can point at somebody else's window, and
+  # capturing it silently is worse than failing.
   if (Test-Path $cacheFile) {
-    $cached = [IntPtr][int64](Get-Content -Path $cacheFile -Raw).Trim()
-    if ([SfhWin]::IsWindow($cached) -and [SfhWin]::IsWindowVisible($cached)) {
-      return $cached
+    $parts = ((Get-Content -Path $cacheFile -Raw).Trim() -split '\s+')
+    if ($parts.Count -eq 2) {
+      $cachedPid = [int]$parts[0]
+      $cached = [IntPtr][int64]$parts[1]
+      $owner = Get-Process -Id $cachedPid -ErrorAction SilentlyContinue
+      if ($owner -and $owner.MainWindowHandle -eq $cached -and
+          [SfhWin]::IsWindow($cached) -and [SfhWin]::IsWindowVisible($cached)) {
+        return $cached
+      }
     }
+    Remove-Item -Path $cacheFile -Force -ErrorAction SilentlyContinue
   }
   $seen = (Get-Process | Where-Object { $_.MainWindowHandle -ne 0 } |
     ForEach-Object { "$($_.ProcessName): $($_.MainWindowTitle)" }) -join " | "

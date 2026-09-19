@@ -2864,6 +2864,14 @@
       "title": "Skip update .gitignore file",
       "type": "boolean"
     },
+    "offerSandboxInit": {
+      "$id": "#/properties/offerSandboxInit",
+      "default": false,
+      "description": "Set to true to have New User Story (hardis:work:new) offer to initialize the selected dev sandbox: install the installed packages, assign initPermissionSets, run scratchOrgInitApexScripts and load scripts/data/ScratchInit.\nIt never deploys metadata: bring what the team merged into a sandbox with a backpromote.\nIgnored when sharedDevSandboxes is true.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-create-new-user-story/",
+      "title": "Offer to initialize the sandbox on New User Story",
+      "type": "boolean"
+    },
     "sharedDevSandboxes": {
       "$id": "#/properties/sharedDevSandboxes",
       "default": false,

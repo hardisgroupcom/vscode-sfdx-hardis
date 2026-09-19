@@ -1391,6 +1391,13 @@ function orgTypeOf(org: {
   orgType?: string;
   orgEdition?: string;
 }): string {
+  // Read before org.orgType: the list this comes from classifies an org from
+  // its instance URL, and a Developer Edition org with a custom My Domain is
+  // "production" there. The edition the CLI reports is the reliable signal, and
+  // a Developer Edition org is a development environment.
+  if (String(org.orgEdition || "") === "Developer Edition" && !org.isSandbox) {
+    return "developer";
+  }
   if (org.orgType) {
     return org.orgType;
   }
@@ -1400,12 +1407,6 @@ function orgTypeOf(org: {
   }
   if (org.isSandbox || url.includes(".sandbox")) {
     return "sandbox";
-  }
-  // A Developer Edition org is a development environment, not production. The
-  // edition reported by the CLI is the reliable signal: a Developer Edition org
-  // with a custom My Domain has no "dev-ed" in its URL.
-  if (String(org.orgEdition || "") === "Developer Edition") {
-    return "developer";
   }
   return url.includes("dev-ed") || url.includes("test")
     ? "other"

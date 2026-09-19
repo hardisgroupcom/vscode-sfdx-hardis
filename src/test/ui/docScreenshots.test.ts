@@ -515,8 +515,8 @@ async function cleanChrome(): Promise<void> {
  * only drops the hover when it receives a real move, so this clicks the empty
  * editor background, which has nothing to activate.
  */
-async function parkPointer(): Promise<void> {
-  await click(1200, 500);
+async function parkPointer(x = 1200, y = 500): Promise<void> {
+  await click(x, y);
   await sleep(500);
 }
 
@@ -2005,7 +2005,10 @@ suite("Documentation screenshots", function () {
     await vscode.commands.executeCommand("workbench.action.zoomOut");
     await vscode.commands.executeCommand("workbench.action.zoomOut");
     await sleep(1500);
-    await parkPointer();
+    // The pipeline panel fills the editor area here, so the usual parking spot
+    // is the diagram: a click there can open a branch window over the cards.
+    // The header strip of the panel activates nothing.
+    await parkPointer(1200, 60);
     await cleanChrome();
     await captureStable("pipeline-cards");
     await vscode.commands.executeCommand("workbench.action.zoomIn");
