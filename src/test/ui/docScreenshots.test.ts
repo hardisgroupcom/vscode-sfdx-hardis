@@ -2055,6 +2055,36 @@ suite("Documentation screenshots", function () {
     await captureStable("pipeline-config-branch-edit");
   });
 
+  // The User Stories tab, unlocked and scrolled to the two lists a contributor
+  // picks a target branch from. Lab 3.1 of the training adds a line to each of
+  // them, and the pairing is by position, which only a picture makes obvious.
+  test("pipeline configuration (User Stories, editing)", async function () {
+    if (!shouldTake("pipeline-config-user-stories")) {
+      this.skip();
+    }
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await vscode.commands.executeCommand(
+      "vscode-sfdx-hardis.showPipelineConfig",
+      null,
+      "User Stories",
+    );
+    await sleep(4500);
+    capture("pipeline-config-user-stories");
+    await sleep(600);
+    // Edit, same place as on the branch panel above
+    await click(1848, 104);
+    await sleep(3000);
+    await cleanChrome();
+    // The two target branch fields sit below the fold once the tab is unlocked
+    await captureStable("pipeline-config-user-stories-top");
+    await click(1100, 500, { scroll: -6 });
+    await sleep(1200);
+    await captureStable("pipeline-config-user-stories-mid");
+    await click(1100, 500, { scroll: -6 });
+    await sleep(1200);
+    await captureStable("pipeline-config-user-stories");
+  });
+
   // Connecting an org, stopped on the question that names it. The training's
   // first lab connects two orgs and has to show that the suggested name, taken
   // from the org address, is not the one to keep.

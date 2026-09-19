@@ -124,7 +124,7 @@
         "value": "fix"
       },
       {
-        "title": "Retrofit: bring into the repository a change made directly in production (release manager)",
+        "title": "Retrofit: merge production back down into the pipeline after a hotfix (release manager)",
         "value": "retrofit"
       }
     ],
