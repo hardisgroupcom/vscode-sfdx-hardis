@@ -977,11 +977,15 @@ function answerBackpromote() {
       ? plan.pullRequests.map((pullRequest) => pullRequest.number)
       : [415, 417, 418];
     const runnableActionIds = ownPlan
-      ? plan.actions.filter((action) => !action.manual).map((action) => action.id)
+      ? plan.actions
+          .filter((action) => !action.manual)
+          .map((action) => action.id)
       : ["load-sla-thresholds"];
     const skippedActionIds = ownPlan ? [] : ["recalculate-quote-sharing"];
     const manualActionIds = ownPlan
-      ? plan.actions.filter((action) => action.manual).map((action) => action.id)
+      ? plan.actions
+          .filter((action) => action.manual)
+          .map((action) => action.id)
       : ["enable-sla-approval"];
     plan.result = {
       deployed: plan.items.filter(
@@ -1563,11 +1567,9 @@ const DOCS_SCENARIOS = {
     log("log", storyTypeChoices[0].title);
     await sleep(150);
 
-    log(
-      "action",
-      "What is the name of your new User Story?",
-      { isQuestion: true },
-    );
+    log("action", "What is the name of your new User Story?", {
+      isQuestion: true,
+    });
     await askPrompt({
       name: "storyName",
       type: "text",
@@ -2026,7 +2028,8 @@ const DOCS_SCENARIOS = {
       ...(DOCS_SCENARIO.authConfig || {}),
     };
     const orgs = universeValue("orgs", DOCS_ORGS);
-    const byUrl = (a, b) => (a.instanceUrl || "").localeCompare(b.instanceUrl || "");
+    const byUrl = (a, b) =>
+      (a.instanceUrl || "").localeCompare(b.instanceUrl || "");
     const orgList = [
       ...[...(orgs.scratchOrgs || [])].sort(byUrl),
       ...[...(orgs.nonScratchOrgs || [])].sort(byUrl),
@@ -2051,7 +2054,8 @@ const DOCS_SCENARIOS = {
       type: "select",
       message:
         "Please select or login into the org you want to configure the SF CLI Authentication",
-      description: "Choose a Salesforce org from the list of authenticated orgs",
+      description:
+        "Choose a Salesforce org from the list of authenticated orgs",
       choices: [
         {
           title: "\u{1F30D} Login to another org",
@@ -2069,7 +2073,8 @@ const DOCS_SCENARIOS = {
             (o.devHubUsername ? ` (Hub: ${o.devHubUsername})` : ""),
         })),
         {
-          title: "\u{1F631} I already authenticated my org but I don't see it !",
+          title:
+            "\u{1F631} I already authenticated my org but I don't see it !",
           value: "clearCache",
           description:
             "It might be a sfdx-hardis cache issue, reset it and try again !",
@@ -2082,10 +2087,7 @@ const DOCS_SCENARIOS = {
       ],
     });
     log("log", `${org.instanceUrl.replace("https://", "")} (${org.alias})`);
-    log(
-      "action",
-      `Selected Org ${org.username} - ${org.instanceUrl}`,
-    );
+    log("action", `Selected Org ${org.username} - ${org.instanceUrl}`);
     await subCommand(`sf config set target-org=${org.username}`, 500);
     log(
       "action",
@@ -2118,7 +2120,8 @@ const DOCS_SCENARIOS = {
           description: "Your current default org",
         },
         {
-          title: "\u{1F4DD} Custom login URL (Sandbox, DevHub or Production Org)",
+          title:
+            "\u{1F4DD} Custom login URL (Sandbox, DevHub or Production Org)",
           value: "custom",
           description:
             "Recommended option \u{1F60A} Example: https://myclient--preprod.sandbox.lightning.force.com/",
@@ -2126,7 +2129,8 @@ const DOCS_SCENARIOS = {
         {
           title: "\u{1F9EA} Sandbox or Scratch org (test.salesforce.com)",
           value: "https://test.salesforce.com",
-          description: "The org I want to connect is a sandbox or a scratch org",
+          description:
+            "The org I want to connect is a sandbox or a scratch org",
         },
         {
           title:
@@ -2286,7 +2290,11 @@ const DOCS_SCENARIOS = {
     });
     log("log", "✅ Yes");
 
-    const appName = `sfdxhardis${branch.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase().replace(/_+/g, "_").substring(0, 20)}`;
+    const appName = `sfdxhardis${branch
+      .replace(/[^a-zA-Z0-9]/g, "_")
+      .toLowerCase()
+      .replace(/_+/g, "_")
+      .substring(0, 20)}`;
     await question({
       name: "appName",
       type: "text",
@@ -2300,7 +2308,8 @@ const DOCS_SCENARIOS = {
     await question({
       name: "contactEmail",
       type: "text",
-      message: "Enter a contact email for the External Client App (ex: teoman.sertcelik@gmail.com)",
+      message:
+        "Enter a contact email for the External Client App (ex: teoman.sertcelik@gmail.com)",
       initial: auth.contactEmail,
     });
     log("log", auth.contactEmail);
@@ -2399,7 +2408,10 @@ const DOCS_SCENARIOS = {
     await sleep(200);
 
     log("action", "Naming the org helios-dev");
-    log("success", "Org helios.deploy+helios-dev@heliostraining.invalid is now known as helios-dev");
+    log(
+      "success",
+      "Org helios.deploy+helios-dev@heliostraining.invalid is now known as helios-dev",
+    );
     await sleep(200);
   },
 
