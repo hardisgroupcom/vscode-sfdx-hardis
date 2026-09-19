@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Commands menu and Welcome page: the custom menus of the project show as soon as its configuration is read, without waiting for the menus that installed plugins provide
 - Commands menu: **Welcome page** is always the first entry, above the custom menus a project declares
 - Pipeline Settings: the **Monitoring repository** of a CI/CD project can be set on the Salesforce Project tab, and the Org Monitoring Workbench then offers to open it
 - DevOps Pipeline: with the generic ticketing provider, the tickets of Pull Requests show their title and status when the project sets `genericTicketingProviderDetailsUrlBuilder`

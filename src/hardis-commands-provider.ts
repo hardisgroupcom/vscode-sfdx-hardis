@@ -8,8 +8,10 @@ import {
   WEBSITE_CONTACT_FORM_URL,
 } from "./constants";
 import {
-  loadAllCustomCommandGroups,
-  isAllCustomCommandsLoaded,
+  isAllConfigLoaded,
+  isPluginCommandsLoaded,
+  listCustomCommands,
+  listPluginCustomCommands,
   CustomCommandMenu,
   CustomCommandsPosition,
 } from "./utils/sfdx-hardis-config-utils";
@@ -1227,31 +1229,45 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
     return hardisCommands;
   }
 
-  // Add custom commands defined within .sfdx-hardis.yml and plugin-provided commands
+  // Add custom commands defined within .sfdx-hardis.yml and plugin-provided commands.
+  // The two sources are independent: the project menus are a local YAML read and
+  // show within a second, while the plugin menus need `sf plugins` and one call per
+  // plugin. Each source that is not ready yet loads in the background and refreshes
+  // the tree on its own, so the project menus never wait for the plugins.
   private async completeWithCustomCommands(hardisCommands: Array<any>) {
-    if (!isAllCustomCommandsLoaded()) {
-      // Config or plugins not ready yet: load both in parallel in the background,
-      // then trigger a single tree refresh once everything is available.
-      void (async () => {
-        const groups = await loadAllCustomCommandGroups(); // awaits both configs, populates caches
-        if (groups.length > 0) {
-          vscode.commands.executeCommand(
-            "vscode-sfdx-hardis.refreshCommandsView",
-            true,
-          );
-        }
-      })();
-    } else {
-      const allGroups = await loadAllCustomCommandGroups();
-      for (const group of allGroups) {
-        hardisCommands = this.addCommands(
-          group.menus,
-          group.position,
-          hardisCommands,
-        );
-      }
+    const configReady = isAllConfigLoaded();
+    const pluginsReady = isPluginCommandsLoaded();
+    const groups = [
+      ...(configReady ? await listCustomCommands() : []),
+      ...(pluginsReady ? await listPluginCustomCommands() : []),
+    ];
+    for (const group of groups) {
+      hardisCommands = this.addCommands(
+        group.menus,
+        group.position,
+        hardisCommands,
+      );
     }
-
+    const refreshWhenLoaded = (loading: Promise<Array<any>>) => {
+      void loading
+        .then((loaded) => {
+          if (loaded.length > 0) {
+            vscode.commands.executeCommand(
+              "vscode-sfdx-hardis.refreshCommandsView",
+              true,
+            );
+          }
+        })
+        .catch(() => {
+          // A broken configuration or plugin leaves the built-in menus as they are
+        });
+    };
+    if (!configReady) {
+      refreshWhenLoaded(listCustomCommands());
+    }
+    if (!pluginsReady) {
+      refreshWhenLoaded(listPluginCustomCommands());
+    }
     return hardisCommands;
   }
 
