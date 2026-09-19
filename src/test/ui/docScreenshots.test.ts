@@ -702,6 +702,57 @@ suite("Documentation screenshots", function () {
     });
   });
 
+  // The two menus of the DevOps Pipeline header, opened, then the package
+  // viewer each entry of the second one opens. The course sends learners to
+  // manifest/package.xml through this viewer, never through the Explorer, and
+  // creates package-no-overwrite.xml from it (the viewer shows a missing one
+  // empty, and its first Add writes it).
+  test("pipeline: header menus and package viewer", async function () {
+    if (!shouldTake("pipeline-menus")) {
+      this.skip();
+    }
+    await shootPanel(panelManager, {
+      name: "devops-pipeline",
+      command: "vscode-sfdx-hardis.showPipeline",
+      lwcId: "s-pipeline",
+      ready: pipelineFullyLoaded,
+      settleMs: 9000,
+      force: true,
+    });
+    await click(1720, 104); // gear menu of the header
+    await sleep(800);
+    await captureStable("pipeline-settings-menu");
+    await click(1100, 104); // anywhere else closes the menu
+    await click(1772, 104); // "Deployment packages" menu
+    await sleep(800);
+    await captureStable("pipeline-packages-menu");
+    await shootPanel(panelManager, {
+      name: "package-xml",
+      command: "vscode-sfdx-hardis.showPackageXml",
+      commandArgs: {
+        packageType: "deploy",
+        filePath: "manifest/package.xml",
+        title: "Package XML - All Deployable Elements",
+      },
+      lwcId: "s-package-xml",
+      settleMs: 2500,
+      force: true,
+    });
+    await shootPanel(panelManager, {
+      name: "package-no-overwrite",
+      command: "vscode-sfdx-hardis.showPackageXml",
+      commandArgs: {
+        packageType: "no-overwrite",
+        filePath: "manifest/package-no-overwrite.xml",
+        fallbackFilePath: "manifest/packageDeployOnce.xml",
+        title: "No Overwrite Package - Protected Metadata",
+      },
+      lwcId: "s-package-xml",
+      settleMs: 2500,
+      force: true,
+    });
+  });
+
   test("pipeline: contribution cards and branch modal", async function () {
     if (!shouldTake("pipeline-modals")) {
       this.skip();
