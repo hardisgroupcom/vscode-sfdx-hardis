@@ -751,6 +751,15 @@ suite("Documentation screenshots", function () {
       settleMs: 2500,
       force: true,
     });
+    // Edit mode, then the Add type window: how the training creates the list
+    // without typing XML. Nothing is added: the window is cancelled
+    await click(1582, 87); // "Edit mode" toggle
+    await sleep(1200);
+    await captureStable("package-no-overwrite-edit");
+    await click(1830, 316); // "Add type", where Expand all was
+    await sleep(1200);
+    await captureStable("package-no-overwrite-add-type");
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
   });
 
   test("pipeline: contribution cards and branch modal", async function () {
