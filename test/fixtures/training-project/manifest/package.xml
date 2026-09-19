@@ -65,6 +65,11 @@
         <name>PermissionSet</name>
     </types>
     <types>
+        <members>Admin</members>
+        <members>Helios Crew</members>
+        <name>Profile</name>
+    </types>
+    <types>
         <members>Helios_Warehouse</members>
         <name>RemoteSiteSetting</name>
     </types>

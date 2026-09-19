@@ -1,4 +1,4 @@
-import { execFileSync, spawn } from "child_process";
+import { execFileSync, execSync, spawn } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
@@ -1460,6 +1460,182 @@ suite("Documentation screenshots", function () {
       for (const relative of written) {
         fs.rmSync(path.join(workspaceRoot!, relative), { force: true });
       }
+      await vscode.commands.executeCommand(
+        "workbench.view.extension.sfdx-hardis-explorer",
+      );
+      await sleep(800);
+    }
+  });
+
+  // A merge of integration into a story branch that conflicts on a permission
+  // set, as the training's Lab 2.7 has it: the Source Control menu, the branch
+  // picker, the conflicting file under Merge Changes, and the merge editor. The
+  // branches are built for the shot in the test workspace, then removed.
+  test("git: merge a branch and resolve the conflict", async function () {
+    if (!shouldTake("git-merge")) {
+      this.skip();
+    }
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!workspaceRoot) {
+      this.skip();
+    }
+    const git = (args: string) =>
+      execSync(`git ${args}`, { cwd: workspaceRoot, stdio: "pipe" })
+        .toString()
+        .trim();
+    const relative =
+      "force-app/main/default/permissionsets/Helios_Delivery_Manager.permissionset-meta.xml";
+    const file = path.join(workspaceRoot!, relative);
+    const permissionSet = (field: string) =>
+      [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">',
+        "    <fieldPermissions>",
+        "        <editable>true</editable>",
+        `        <field>${field}</field>`,
+        "        <readable>true</readable>",
+        "    </fieldPermissions>",
+        "    <hasActivationRequired>false</hasActivationRequired>",
+        "    <label>Helios Delivery Manager</label>",
+        "</PermissionSet>",
+        "",
+      ].join("\n");
+    const startBranch = git("rev-parse --abbrev-ref HEAD");
+    const otherBranches = git(
+      "for-each-ref --format=%(refname:short)=%(objectname) refs/heads",
+    )
+      .split(/\r?\n/)
+      .filter(Boolean)
+      .map((line) => line.split("="))
+      .filter(([name]) => name !== "features/US-034-crew-override");
+    const story = "features/US-034-crew-override";
+    // The fixture may already carry the story branch, for the pipeline diagram:
+    // it is put back where it was afterwards
+    let storyWas = "";
+    try {
+      storyWas = git(`rev-parse --verify --quiet refs/heads/${story}`);
+    } catch {
+      storyWas = "";
+    }
+    const excludeFile = path.join(workspaceRoot!, ".git", "info", "exclude");
+    fs.mkdirSync(path.dirname(excludeFile), { recursive: true });
+    fs.appendFileSync(excludeFile, ".vscode/\n");
+    git("stash push --include-untracked --message screenshot-git-merge");
+    // The "..." of a view only shows while the mouse is over it: keep it visible
+    const workbench = vscode.workspace.getConfiguration("workbench");
+    await workbench.update(
+      "view.alwaysShowHeaderActions",
+      true,
+      vscode.ConfigurationTarget.Global,
+    );
+    try {
+      // Detached, so that no helper branch shows in the branch picker
+      git("checkout -q --detach");
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, permissionSet("Installation__c.Crew_Size__c"));
+      git(`add "${relative}"`);
+      git('commit -q -m "base"');
+      // What Mariia merged into integration
+      fs.writeFileSync(
+        file,
+        permissionSet("Installation__c.Crew_Capacity_Cap__c"),
+      );
+      git(
+        `commit -q -a -m "US-018 Cap the crew size" --author "Mariia Pyvovarchuk <mariia@helios-training.invalid>"`,
+      );
+      git("update-ref refs/remotes/origin/integration HEAD");
+      // Your story, branched before she merged
+      git(`checkout -q -B ${story} HEAD~1`);
+      fs.writeFileSync(file, permissionSet("Installation__c.Crew_Notes__c"));
+      git('commit -q -a -m "US-034 Crew override"');
+      await vscode.commands.executeCommand("git.refresh");
+      await vscode.commands.executeCommand("workbench.view.scm");
+      await sleep(3000);
+      await cleanChrome();
+      // The Command Palette, filtered on the git commands a reader runs. The
+      // "..." menu of the view cannot be taken: activating the window for the
+      // capture closes any workbench menu
+      void vscode.commands.executeCommand(
+        "workbench.action.quickOpen",
+        ">Git: Fetch",
+      );
+      await sleep(2000);
+      await captureStable("git-palette-fetch");
+      await vscode.commands.executeCommand("workbench.action.closeQuickOpen");
+      void vscode.commands.executeCommand(
+        "workbench.action.quickOpen",
+        ">Git: Merge",
+      );
+      await sleep(2000);
+      await captureStable("git-palette-merge");
+      await vscode.commands.executeCommand("workbench.action.closeQuickOpen");
+      await sleep(600);
+      // Only the story branch stays local while the picker is open, so that
+      // origin/integration is in view: the others are put back afterwards
+      for (const [name] of otherBranches) {
+        git(`branch -D "${name}"`);
+      }
+      await vscode.commands.executeCommand("git.refresh");
+      await sleep(1500);
+      // The branch picker of Merge..., not awaited: it waits for a choice
+      void vscode.commands.executeCommand("git.merge");
+      await sleep(2500);
+      await captureStable("git-merge-pick");
+      await vscode.commands.executeCommand("workbench.action.closeQuickOpen");
+      await sleep(600);
+      // The merge itself, as the picker would have run it
+      try {
+        git("merge origin/integration");
+      } catch {
+        // A conflict exits with 1: that is the point of the shot
+      }
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+      await vscode.commands.executeCommand("git.refresh");
+      await sleep(3000);
+      await captureStable("git-merge-conflicts");
+      await vscode.commands.executeCommand(
+        "git.openMergeEditor",
+        vscode.Uri.file(file),
+      );
+      await sleep(4000);
+      await captureStable("git-merge-editor");
+      // Both sides accepted: the result holds the two lines
+      await click(556, 187); // "Accept Incoming" above the conflict of Incoming
+      await sleep(1200);
+      await click(1297, 187); // "Accept Current" above the conflict of Current
+      await sleep(1500);
+      await captureStable("git-merge-editor-accepted");
+    } finally {
+      await vscode.commands.executeCommand(
+        "workbench.action.revertAndCloseActiveEditor",
+      );
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+      await workbench.update(
+        "view.alwaysShowHeaderActions",
+        undefined,
+        vscode.ConfigurationTarget.Global,
+      );
+      try {
+        git("merge --abort");
+      } catch {
+        // Nothing to abort when the merge did not start
+      }
+      for (const [name, sha] of otherBranches) {
+        try {
+          git(`branch -f "${name}" ${sha}`);
+        } catch {
+          // Still there: it was never deleted
+        }
+      }
+      git(`checkout -q -f ${startBranch}`);
+      git(storyWas ? `branch -f ${story} ${storyWas}` : `branch -D ${story}`);
+      git("update-ref -d refs/remotes/origin/integration");
+      try {
+        git("stash pop");
+      } catch {
+        // Nothing was stashed
+      }
+      await vscode.commands.executeCommand("git.refresh");
       await vscode.commands.executeCommand(
         "workbench.view.extension.sfdx-hardis-explorer",
       );

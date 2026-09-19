@@ -6,13 +6,14 @@ projectName: HeliosEnergy
 
 # --- Pipeline -------------------------------------------------------------
 # At Levels 1 and 2 the pipeline is integration then uat, both deploying to
-# scratch orgs that Set up my training environment creates. preprod and main
-# exist in the fork and have no org yet: Lab 3.1 is where they join.
+# scratch orgs that Set up my training environment creates. main exists in the
+# fork with no org yet, and preprod does not exist: Lab 3.1 creates it, and gives
+# both their orgs.
 developmentBranch: integration
 productionBranch: main
 # How the CI job gets into an org. Levels 1 and 2 use auth URLs kept in
 # GitHub secrets, which is the shortcut, so there is no certificate to look for
-# and the pipeline is right not to ask for one. Lab 3.2 replaces it with
+# and the pipeline is right not to ask for one. Lab 3.1 replaces it with
 # a JWT certificate and puts this back to encryptedCert.
 orgAuthenticationMode: secretsOnly
 # One entry on purpose. A contributor at Levels 1 and 2 has exactly one place
@@ -48,7 +49,7 @@ testCoverageNotBlocking: false
 
 # --- Automated cleaning ---------------------------------------------------
 # Applied by hardis:work:save before the Pull Request. Lab 1.5 reads the
-# result, Lab 3.5 explains why each one is here.
+# result, Lab 3.4 explains why each one is here.
 autoCleanTypes:
   - destructivechanges
   - localfields
@@ -219,12 +220,12 @@ customCommands:
         sldsIcon: utility:groups
         tooltip: Creates the teammate branches and Pull Requests a Level 3 lab needs
         command: node scripts/training.mjs simulate --level 3
-        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-3-review-a-contributor-pull-request/
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-2-review-a-contributor-pull-request/
       - id: training-l3-publish
         label: Publish my pipeline configuration
         vscodeIcon: cloud-upload
         sldsIcon: utility:upload
-        tooltip: Commits the pipeline configuration you changed on integration and pushes it, the one thing a release manager does not send through a Pull Request
+        tooltip: Puts the pipeline configuration you changed on a branch of its own and opens its Pull Request into integration
         command: node scripts/training.mjs publish
         helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-1-configure-the-pipeline-up-to-production/
       - id: training-l3-check
