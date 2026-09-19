@@ -1276,8 +1276,16 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
       hardisCommands.push(...customCommands);
       hardisCommands.push(lastElement);
     } else {
-      // First position
-      hardisCommands = customCommands.concat(hardisCommands);
+      // First position, but after the Welcome page, which always opens the menu
+      const welcomeIndex = hardisCommands.findIndex(
+        (item) => item.id === "vscode-sfdx-hardis.showWelcome",
+      );
+      const insertAt = welcomeIndex === -1 ? 0 : welcomeIndex + 1;
+      hardisCommands = [
+        ...hardisCommands.slice(0, insertAt),
+        ...customCommands,
+        ...hardisCommands.slice(insertAt),
+      ];
     }
     return hardisCommands;
   }

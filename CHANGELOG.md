@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Commands menu: **Welcome page** is always the first entry, above the custom menus a project declares
 - Pipeline Settings: the **Monitoring repository** of a CI/CD project can be set on the Salesforce Project tab, and the Org Monitoring Workbench then offers to open it
 - DevOps Pipeline: with the generic ticketing provider, the tickets of Pull Requests show their title and status when the project sets `genericTicketingProviderDetailsUrlBuilder`
 - DevOps Pipeline: the No Overwrite and Destructive Changes packages open even when the file does not exist yet, and the first item added creates it
