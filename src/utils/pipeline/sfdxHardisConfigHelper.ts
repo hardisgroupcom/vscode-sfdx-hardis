@@ -153,6 +153,7 @@ export class SfdxHardisConfigHelper {
     { name: "flowDeleteRetryDelayMs", scopes: ["global"] },
     { name: "flowDeleteInterviews", scopes: ["global"] },
     { name: "anonymization", scopes: ["global"] },
+    { name: "monitoringRepository", scopes: ["global"] },
   ];
   static readonly SECTIONS = [
     {
@@ -210,6 +211,7 @@ export class SfdxHardisConfigHelper {
         "autoCleanTypes",
         "autoRetrieveWhenPull",
         "autoRemoveUserPermissions",
+        "monitoringRepository",
       ],
     },
     {

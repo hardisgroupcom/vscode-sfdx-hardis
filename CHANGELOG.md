@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Pipeline Settings: the **Monitoring repository** of a CI/CD project can be set on the Salesforce Project tab, and the Org Monitoring Workbench then offers to open it
 ## [8.6.1] 2026-09-14
 
 - Questions asked in the command panel
