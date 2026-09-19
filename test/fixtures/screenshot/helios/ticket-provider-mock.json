@@ -40,6 +40,13 @@
       "author": "Amina Diallo",
       "authorLabel": "Amina Diallo"
     },
+    "US-052": {
+      "subject": "Total Capacity back on the Installation layout",
+      "status": "In Progress",
+      "statusLabel": "In Progress",
+      "author": "Marco Bianchi",
+      "authorLabel": "Marco Bianchi"
+    },
     "US-020": {
       "subject": "Refactor InstallationScheduler",
       "status": "In Progress",
@@ -104,11 +111,32 @@
       "authorLabel": "You"
     },
     "US-045": {
-      "subject": "Installations can no longer be saved",
+      "subject": "Cancelled installations can no longer be back-dated",
       "status": "In Progress",
       "statusLabel": "In Progress",
-      "author": "You",
-      "authorLabel": "You"
+      "author": "Amina Diallo",
+      "authorLabel": "Amina Diallo"
+    },
+    "US-046": {
+      "subject": "Needs Reinspection status, added in production by an admin",
+      "status": "In Progress",
+      "statusLabel": "In Progress",
+      "author": "Marco Bianchi",
+      "authorLabel": "Marco Bianchi"
+    },
+    "US-055": {
+      "subject": "Install Date says which day it means",
+      "status": "In Progress",
+      "statusLabel": "In Progress",
+      "author": "Amina Diallo",
+      "authorLabel": "Amina Diallo"
+    },
+    "US-056": {
+      "subject": "Show the panels each crew member has to lay",
+      "status": "In Progress",
+      "statusLabel": "In Progress",
+      "author": "Amina Diallo",
+      "authorLabel": "Amina Diallo"
     }
   }
 }

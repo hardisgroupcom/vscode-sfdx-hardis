@@ -39,7 +39,9 @@ genericTicketingProviderUrlBuilder: "https://hardisgroupcom.github.io/sfdx-hardi
 
 # --- Quality --------------------------------------------------------------
 testLevel: RunLocalTests
-apexTestsMinCoverageOrgWide: 75
+# Salesforce refuses a deployment under 75%. This project asks for 80, like most real ones:
+# Lab 2.5 is where a Pull Request meets it.
+apexTestsMinCoverageOrgWide: 80
 testCoverageNotBlocking: false
 
 # --- Automated cleaning ---------------------------------------------------
@@ -217,6 +219,13 @@ customCommands:
         tooltip: Creates the teammate branches and Pull Requests a Level 3 lab needs
         command: node scripts/training.mjs simulate --level 3
         helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-3-review-a-contributor-pull-request/
+      - id: training-l3-publish
+        label: Publish my pipeline configuration
+        vscodeIcon: cloud-upload
+        sldsIcon: utility:upload
+        tooltip: Commits the pipeline configuration you changed on integration and pushes it, the one thing a release manager does not send through a Pull Request
+        command: node scripts/training.mjs publish
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-1-configure-the-pipeline-up-to-production/
       - id: training-l3-check
         label: Check my work
         vscodeIcon: pass
