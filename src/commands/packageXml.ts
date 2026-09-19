@@ -12,6 +12,12 @@ export function registerShowPackageXml(commandThis: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showPackageXml",
     async (packageXml) => {
+      // A package configuration (packageType, filePath, title), as the
+      // DevOps Pipeline menu sends it
+      if (packageXml?.packageType) {
+        await showPackageXmlPanel(packageXml);
+        return;
+      }
       // get relative path if uri is absolute
       const packageXmlRelativePath = packageXml?.fsPath
         ? path.relative(getWorkspaceRoot(), packageXml.fsPath)
@@ -57,9 +63,15 @@ export async function showPackageXmlPanel(
           packageData = await loadPackageXmlData(config.fallbackFilePath);
           actualFilePath = config.fallbackFilePath; // Update to show the actual loaded file
         } catch {
-          showLoadError(error);
-          return;
+          if (!canStartEmpty(config)) {
+            showLoadError(error);
+            return;
+          }
+          // Neither file exists yet: show the main one empty, the first Add creates it
+          packageData = await loadPackageXmlData(config.filePath, true);
         }
+      } else if (canStartEmpty(config)) {
+        packageData = await loadPackageXmlData(config.filePath, true);
       } else {
         showLoadError(error);
         return;
@@ -238,7 +250,10 @@ async function mutatePackageXml(
 ) {
   try {
     const relativeFilePath = data?.filePath || config.filePath;
-    const currentData = await loadPackageXmlData(relativeFilePath);
+    const currentData = await loadPackageXmlData(
+      relativeFilePath,
+      canStartEmpty(config),
+    );
     const mutatedData = mutator(currentData);
     const sortedData = sortPackageData(mutatedData);
 
@@ -397,7 +412,10 @@ async function refreshPackageData(
 ) {
   try {
     const refreshFilePath = data?.filePath || config.filePath;
-    const newPackageData = await loadPackageXmlData(refreshFilePath);
+    const newPackageData = await loadPackageXmlData(
+      refreshFilePath,
+      canStartEmpty(config),
+    );
     panel.sendMessage({
       type: "packageDataUpdated",
       data: {
@@ -416,13 +434,24 @@ async function refreshPackageData(
   }
 }
 
+// A project starts with no package-no-overwrite.xml and no destructiveChanges.xml.
+// Opening one that does not exist yet shows it empty, and the first Add writes it,
+// so nobody has to create the XML file by hand.
+function canStartEmpty(config: { packageType: any }): boolean {
+  return ["no-overwrite", "destructive"].includes(config.packageType);
+}
+
 async function loadPackageXmlData(
   relativeFilePath: string = "manifest/package-skip-items.xml",
+  allowMissing = false,
 ): Promise<any> {
   const workspaceRoot = getWorkspaceRoot();
   const packagePath = path.join(workspaceRoot, relativeFilePath);
 
   if (!fs.existsSync(packagePath)) {
+    if (allowMissing) {
+      return { apiVersion: projectApiVersion(workspaceRoot), types: [] };
+    }
     throw new Error(`Package file not found: ${relativeFilePath}`);
   }
 
@@ -433,6 +462,17 @@ async function loadPackageXmlData(
     throw new Error(`Failed to read package-skip-items.xml: ${error.message}`, {
       cause: error,
     });
+  }
+}
+
+function projectApiVersion(workspaceRoot: string): string {
+  try {
+    const project = JSON.parse(
+      fs.readFileSync(path.join(workspaceRoot, "sfdx-project.json"), "utf8"),
+    );
+    return project.sourceApiVersion || "65.0";
+  } catch {
+    return "65.0";
   }
 }
 

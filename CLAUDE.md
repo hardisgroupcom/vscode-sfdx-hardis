@@ -222,6 +222,28 @@ When writing translations, look at other translations in the same language file 
 - **Italian**: Informal ("tu")
 - **Japanese**: Natural UI wording, reuse upstream sfdx-hardis terminology
 
+## Training impact (sfdx-hardis-training)
+
+The [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training/) course teaches this extension click by click, with screenshots captured from the real panels. **A panel redesign, a renamed button or a changed WebSocket message can break a lab silently**: the lab text still reads fine and the screenshot no longer matches what the learner sees.
+
+The skills that decide and perform the update live in the sibling sfdx-hardis clone, not here:
+
+- `../sfdx-hardis/.claude/skills/training-impact` names the affected labs
+- `../sfdx-hardis/.claude/skills/training-update` performs the edits and recaptures the screenshots
+
+Load them from there when a change touches an LWC panel, a command flow or a prompt. This is a pointer, not a copy: there is exactly one definition of these skills.
+
+### The Helios screenshot fixtures
+
+`test/fixtures/screenshot/helios/` and `test/fixtures/training-project/` are the training universe, selected with `SF_MOCK_UNIVERSE=helios`. They are **generated** by `scripts/build/mocks.mjs` in the training repository: never edit them here.
+
+**`SF_MOCK_UNIVERSE` unset must keep the product documentation screenshots byte for byte unchanged.** That is the invariant of the whole design. After touching anything in the harness, prove it:
+
+```bash
+yarn screenshots                      # writes doc-screenshots/, the MyCompany-CRM universe
+git status --porcelain doc-screenshots # must be empty
+```
+
 ## CI/CD
 
 - **GitHub Actions** in `.github/workflows/`:
