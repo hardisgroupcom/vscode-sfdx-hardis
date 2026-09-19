@@ -38,7 +38,7 @@
     {
       "number": 51,
       "title": "US-018 Cap the crew size a planner can assign",
-      "author": "Florian Rames",
+      "author": "Mariia Pyvovarchuk",
       "mergeDate": "2026-09-11T14:12:00+02:00",
       "sourceBranch": "training/mate-us-018-crew-capacity",
       "commit": "e418000000000000000000000000000000000000",
@@ -55,7 +55,7 @@
     {
       "number": 52,
       "title": "US-019 Generate a quote PDF from an opportunity",
-      "author": "Julie Verbeke",
+      "author": "Romain Panda",
       "mergeDate": "2026-09-10T10:03:00+02:00",
       "sourceBranch": "training/mate-us-019-quote-pdf",
       "commit": "d417000000000000000000000000000000000000",

@@ -17,28 +17,28 @@
     },
     "US-017": {
       "subject": "Record who signed an installation off",
-      "author": "Julie Verbeke",
-      "authorLabel": "Julie Verbeke"
+      "author": "Romain Panda",
+      "authorLabel": "Romain Panda"
     },
     "US-018": {
       "subject": "Cap the crew size a planner can assign",
-      "author": "Florian Rames",
-      "authorLabel": "Florian Rames"
+      "author": "Mariia Pyvovarchuk",
+      "authorLabel": "Mariia Pyvovarchuk"
     },
     "US-019": {
       "subject": "Generate a quote PDF from an opportunity",
-      "author": "Julie Verbeke",
-      "authorLabel": "Julie Verbeke"
+      "author": "Romain Panda",
+      "authorLabel": "Romain Panda"
     },
     "US-052": {
       "subject": "Total Capacity back on the Installation layout",
-      "author": "Florian Rames",
-      "authorLabel": "Florian Rames"
+      "author": "Mariia Pyvovarchuk",
+      "authorLabel": "Mariia Pyvovarchuk"
     },
     "US-020": {
       "subject": "Refactor InstallationScheduler",
-      "author": "Florian Rames",
-      "authorLabel": "Florian Rames"
+      "author": "Mariia Pyvovarchuk",
+      "authorLabel": "Mariia Pyvovarchuk"
     },
     "US-021": {
       "subject": "Warn the planner when a crew is too small",
@@ -82,23 +82,23 @@
     },
     "US-045": {
       "subject": "Cancelled installations can no longer be back-dated",
-      "author": "Julie Verbeke",
-      "authorLabel": "Julie Verbeke"
+      "author": "Romain Panda",
+      "authorLabel": "Romain Panda"
     },
     "US-046": {
       "subject": "Needs Reinspection status, added in production by an admin",
-      "author": "Florian Rames",
-      "authorLabel": "Florian Rames"
+      "author": "Mariia Pyvovarchuk",
+      "authorLabel": "Mariia Pyvovarchuk"
     },
     "US-055": {
       "subject": "Install Date says which day it means",
-      "author": "Julie Verbeke",
-      "authorLabel": "Julie Verbeke"
+      "author": "Romain Panda",
+      "authorLabel": "Romain Panda"
     },
     "US-056": {
       "subject": "Show the panels each crew member has to lay",
-      "author": "Julie Verbeke",
-      "authorLabel": "Julie Verbeke"
+      "author": "Romain Panda",
+      "authorLabel": "Romain Panda"
     }
   }
 }

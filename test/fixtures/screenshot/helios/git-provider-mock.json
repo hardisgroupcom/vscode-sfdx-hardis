@@ -63,10 +63,10 @@
       "sourceBranch": "training/mate-us-018-crew-capacity",
       "targetBranch": "integration",
       "author": {
-        "name": "Florian Rames",
-        "username": "florian-rames"
+        "name": "Mariia Pyvovarchuk",
+        "username": "mariia-pyvovarchuk"
       },
-      "authorLabel": "Florian Rames",
+      "authorLabel": "Mariia Pyvovarchuk",
       "state": "open",
       "createdAt": "2026-09-10T08:15:00.000Z",
       "updatedAt": "2026-09-10T11:15:00.000Z",
@@ -104,10 +104,10 @@
       "sourceBranch": "training/mate-us-019-quote-pdf",
       "targetBranch": "integration",
       "author": {
-        "name": "Julie Verbeke",
-        "username": "julie-verbeke"
+        "name": "Romain Panda",
+        "username": "romain-panda"
       },
-      "authorLabel": "Julie Verbeke",
+      "authorLabel": "Romain Panda",
       "state": "open",
       "createdAt": "2026-09-11T08:15:00.000Z",
       "updatedAt": "2026-09-11T11:15:00.000Z",
@@ -145,10 +145,10 @@
       "sourceBranch": "training/mate-us-020-apex-refactor",
       "targetBranch": "integration",
       "author": {
-        "name": "Florian Rames",
-        "username": "florian-rames"
+        "name": "Mariia Pyvovarchuk",
+        "username": "mariia-pyvovarchuk"
       },
-      "authorLabel": "Florian Rames",
+      "authorLabel": "Mariia Pyvovarchuk",
       "state": "open",
       "createdAt": "2026-09-12T08:15:00.000Z",
       "updatedAt": "2026-09-12T11:15:00.000Z",
