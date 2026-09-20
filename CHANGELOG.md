@@ -10,6 +10,7 @@
   - With the generic ticketing provider, the tickets of Pull Requests show their title and status when the project sets `genericTicketingProviderDetailsUrlBuilder`
   - The No Overwrite and Destructive Changes packages open even when the file does not exist yet, and the first item added creates it
 - Pipeline Settings: the **Monitoring repository** of a CI/CD project can be set on the Salesforce Project tab, and the Org Monitoring Workbench then offers to open it
+- A choice the extension saves (a decision taken in the Backpromote panel, a panel preference, a cached org list) is no longer lost when VS Code silently drops the write that carried it
 
 ## [8.6.1] 2026-09-14
 

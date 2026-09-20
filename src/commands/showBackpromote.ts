@@ -467,8 +467,10 @@ function buildPanelData(panelState: BackpromotePanelState): any {
 /** The whole state of the panel, as a state message (the translations are not sent again) */
 function pushData(current: BackpromotePanelState): void {
   if (!isStale(current)) {
-    current.panel.sendStateUpdate(buildPanelData(current));
+    // Saved before the webview is told: what the panel shows is what a later
+    // opening on the backpromote branch gets back
     saveSession(current);
+    current.panel.sendStateUpdate(buildPanelData(current));
   }
 }
 
@@ -540,6 +542,10 @@ function sendSelectionSummary(panelState: BackpromotePanelState): void {
   ) {
     return;
   }
+  // A tick or a decision changed: kept for the next opening on the backpromote
+  // branch before the webview is answered, so the answer never tells of a
+  // decision that is not saved yet
+  saveSession(panelState);
   panelState.panel.sendMessage({
     type: "selectionSummary",
     data: {
@@ -554,8 +560,6 @@ function sendSelectionSummary(panelState: BackpromotePanelState): void {
       ),
     },
   });
-  // A tick or a decision changed: kept for the next opening on the backpromote branch
-  saveSession(panelState);
 }
 
 function acceptSelection(panelState: BackpromotePanelState, data: any): void {
