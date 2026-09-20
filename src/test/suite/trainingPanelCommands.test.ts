@@ -2,6 +2,7 @@ import * as assert from "assert";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
+import yaml from "js-yaml";
 import { isTrainingPanelCommandIn } from "../../utils/trainingPanelCommands";
 
 /**
@@ -140,6 +141,32 @@ suite("Training commands in the Command Runner panel", () => {
         isTrainingPanelCommandIn(command, root),
         false,
         `should be refused: ${command}`,
+      );
+    }
+  });
+
+  // The gate is only useful if the course's own menu entries go through it: a
+  // new entry written in another shape would quietly fall back to a terminal.
+  test("every Training menu entry of the course fixture is allowed", () => {
+    const configPath = path.resolve(
+      __dirname,
+      "../../../test/fixtures/training-project/.sfdx-hardis.yml",
+    );
+    const config: any = yaml.load(fs.readFileSync(configPath, "utf8"));
+    const commands: string[] = [];
+    for (const menu of config.customCommands || []) {
+      for (const entry of menu.commands || []) {
+        if (entry.command) {
+          commands.push(entry.command);
+        }
+      }
+    }
+    assert.ok(commands.length > 0, "the fixture declares no custom command");
+    for (const command of commands) {
+      assert.strictEqual(
+        isTrainingPanelCommandIn(command, root),
+        true,
+        `the Training menu entry "${command}" would run in a terminal`,
       );
     }
   });
