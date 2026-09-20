@@ -141,7 +141,10 @@ export function registerShowPipelineConfig(commands: Commands) {
           const isCreate = data.mode === "create";
           const command =
             `sf hardis:project:function:${isCreate ? "create" : "update"} --agent ` +
-            buildFunctionCommandFlags(data.customFunction, isCreate ? "create" : "update");
+            buildFunctionCommandFlags(
+              data.customFunction,
+              isCreate ? "create" : "update",
+            );
           const saved = await runFunctionCommand(
             command,
             isCreate
@@ -149,7 +152,9 @@ export function registerShowPipelineConfig(commands: Commands) {
               : t("customFunctionUpdated", { id: data.customFunction.id }),
           );
           if (saved) {
-            customFunctions = await listCustomFunctions({ checkRuntimes: true });
+            customFunctions = await listCustomFunctions({
+              checkRuntimes: true,
+            });
             panel.sendMessage({
               type: "customFunctionsRefreshed",
               data: { customFunctions },
@@ -165,7 +170,9 @@ export function registerShowPipelineConfig(commands: Commands) {
             t("customFunctionDeleted", { id: data.functionId }),
           );
           if (deleted) {
-            customFunctions = await listCustomFunctions({ checkRuntimes: true });
+            customFunctions = await listCustomFunctions({
+              checkRuntimes: true,
+            });
             panel.sendMessage({
               type: "customFunctionsRefreshed",
               data: { customFunctions },

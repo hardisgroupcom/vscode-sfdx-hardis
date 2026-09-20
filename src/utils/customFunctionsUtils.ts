@@ -119,7 +119,9 @@ export function buildFunctionCommandFlags(
     flags.push("--when any");
   }
   if (definition.allowedContexts !== undefined) {
-    flags.push(`--allowed-contexts ${quote(definition.allowedContexts.join(","))}`);
+    flags.push(
+      `--allowed-contexts ${quote(definition.allowedContexts.join(","))}`,
+    );
   }
   flags.push(`--inputs ${quote(serializeInputs(definition.inputs || []))}`);
   flags.push(`--outputs ${quote(serializeOutputs(definition.outputs || []))}`);
@@ -157,7 +159,9 @@ export function serializeInputs(inputs: CustomFunctionInput[]): string {
 export function serializeOutputs(outputs: CustomFunctionOutput[]): string {
   return outputs
     .filter((output) => output && output.name)
-    .map((output) => (output.type ? `${output.name}:${output.type}` : output.name))
+    .map((output) =>
+      output.type ? `${output.name}:${output.type}` : output.name,
+    )
     .join(";");
 }
 

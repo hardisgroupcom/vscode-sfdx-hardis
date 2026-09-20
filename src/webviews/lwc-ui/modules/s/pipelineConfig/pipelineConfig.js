@@ -1499,10 +1499,14 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
         `${customFunction.runtime} - ${customFunction.script}`,
       ];
       if (inputNames) {
-        summaryParts.push(this.t("customFunctionInputsSummary", { names: inputNames }));
+        summaryParts.push(
+          this.t("customFunctionInputsSummary", { names: inputNames }),
+        );
       }
       if (outputNames) {
-        summaryParts.push(this.t("customFunctionOutputsSummary", { names: outputNames }));
+        summaryParts.push(
+          this.t("customFunctionOutputsSummary", { names: outputNames }),
+        );
       }
       return {
         id: customFunction.id,

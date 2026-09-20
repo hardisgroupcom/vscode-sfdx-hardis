@@ -69,7 +69,10 @@ suite("customFunctionsUtils", () => {
   suite("serializeOutputs", () => {
     test("serializes names and optional types", () => {
       assert.strictEqual(
-        serializeOutputs([{ name: "messageId" }, { name: "permalink", type: "string" }]),
+        serializeOutputs([
+          { name: "messageId" },
+          { name: "permalink", type: "string" },
+        ]),
         "messageId;permalink:string",
       );
     });

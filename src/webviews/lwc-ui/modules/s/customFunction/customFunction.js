@@ -21,7 +21,14 @@ export default class CustomFunction extends SharedMixin(LightningElement) {
   set customFunction(val) {
     this.editedFunction = val
       ? JSON.parse(JSON.stringify(val))
-      : { id: "", label: "", runtime: "node", script: "", inputs: [], outputs: [] };
+      : {
+          id: "",
+          label: "",
+          runtime: "node",
+          script: "",
+          inputs: [],
+          outputs: [],
+        };
     this.editedFunction.inputs = this.editedFunction.inputs || [];
     this.editedFunction.outputs = this.editedFunction.outputs || [];
   }
@@ -156,7 +163,10 @@ export default class CustomFunction extends SharedMixin(LightningElement) {
   }
 
   handleAddInput() {
-    const inputs = [...(this.editedFunction.inputs || []), { name: "", type: "string" }];
+    const inputs = [
+      ...(this.editedFunction.inputs || []),
+      { name: "", type: "string" },
+    ];
     this.editedFunction = { ...this.editedFunction, inputs: inputs };
   }
 

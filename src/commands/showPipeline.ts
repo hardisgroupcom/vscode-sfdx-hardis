@@ -1213,7 +1213,9 @@ export function registerShowPipeline(commands: Commands) {
       perfStep("listProjectDataWorkspaces");
       // Custom functions are deployment action types, so the action editor needs the catalog.
       // Same rule as the lists above: full pass only, the mermaid render never uses it.
-      const customFunctions = browseGitProvider ? await listCustomFunctions() : [];
+      const customFunctions = browseGitProvider
+        ? await listCustomFunctions()
+        : [];
       perfStep("listCustomFunctions");
 
       // Read enableDeploymentApexTestClasses from config/.sfdx-hardis.yml
