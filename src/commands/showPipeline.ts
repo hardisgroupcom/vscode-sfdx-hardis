@@ -18,6 +18,7 @@ import {
 } from "../utils/prePostCommandsUtils";
 import { getCurrentGitBranch } from "../utils/pipeline/sfdxHardisConfig";
 import { handleDeploymentActionPickerMessage } from "../utils/pipeline/deploymentActionPickers";
+import { listCustomFunctions } from "../utils/customFunctionsUtils";
 import { execCommandWithProgress, getWorkspaceRoot } from "../utils";
 import { t } from "../i18n/i18n";
 import path from "path";
@@ -1210,6 +1211,12 @@ export function registerShowPipeline(commands: Commands) {
         ? await listProjectDataWorkspaces()
         : [];
       perfStep("listProjectDataWorkspaces");
+      // Custom functions are deployment action types, so the action editor needs the catalog.
+      // Same rule as the lists above: full pass only, the mermaid render never uses it.
+      const customFunctions = browseGitProvider
+        ? await listCustomFunctions()
+        : [];
+      perfStep("listCustomFunctions");
 
       // Read enableDeploymentApexTestClasses from config/.sfdx-hardis.yml
       const projectHardisConfig = await readSfdxHardisConfig();
@@ -1242,6 +1249,7 @@ export function registerShowPipeline(commands: Commands) {
         projectApexScripts: projectApexScripts,
         projectSfdmuWorkspaces: projectDataWorkspaces,
         projectCommunities: [],
+        customFunctions: customFunctions,
         enableDeploymentApexTestClasses: enableDeploymentApexTestClasses,
         availableApexTestClasses: availableApexTestClasses,
       };
@@ -1284,6 +1292,7 @@ type PipelineInfo = {
   projectApexScripts: any[];
   projectSfdmuWorkspaces: any[];
   projectCommunities: any[];
+  customFunctions: any[];
   enableDeploymentApexTestClasses: boolean;
   availableApexTestClasses: string[];
 };

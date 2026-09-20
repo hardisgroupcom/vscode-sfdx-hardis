@@ -6,11 +6,16 @@
   - **Welcome page** is always the first entry, above the custom menus a project declares
   - The custom menus of the project show as soon as its configuration is read, without waiting for the menus that installed plugins provide
   - The lessons of the sfdx-hardis training course run in the Command Runner panel instead of a terminal, with their questions and the files they write, and only in a clone of the course
+- Custom functions: declare your own Node.js, Python or Bash scripts as deployment action types, from a new **Custom Functions** tab in Pipeline Settings
+  - The deployment action editor offers them next to the built-in types, and builds its form from the inputs each function declares (text, number, checkbox, picklist, long text, secret)
+  - A secret input asks for the name of a CI/CD variable, never for its value
+  - Requires sfdx-hardis 8.9.0
 - DevOps Pipeline
   - With the generic ticketing provider, the tickets of Pull Requests show their title and status when the project sets `genericTicketingProviderDetailsUrlBuilder`
   - The No Overwrite and Destructive Changes packages open even when the file does not exist yet, and the first item added creates it
 - Pipeline Settings: the **Monitoring repository** of a CI/CD project can be set on the Salesforce Project tab, and the Org Monitoring Workbench then offers to open it
 - A choice the extension saves (a decision taken in the Backpromote panel, a panel preference, a cached org list) is no longer lost when VS Code silently drops the write that carried it
+- Icons that showed as an empty square are fixed: the Publish Community action type, the custom function cards, and the Node.js, Git, Salesforce CLI, SFDMU, sfdx-git-delta and sf-git-merge-driver rows of the Setup panel
 
 ## [8.6.1] 2026-09-14
 

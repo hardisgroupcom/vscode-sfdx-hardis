@@ -4,6 +4,7 @@ import yaml from "js-yaml";
 import { getJson } from "../httpUtils";
 import { t } from "../../i18n/i18n";
 import * as vscode from "vscode";
+import type { CustomFunctionDefinition } from "../customFunctionsUtils";
 
 // Async existence check (fs has no promise-based equivalent to fs.existsSync)
 async function pathExists(targetPath: string): Promise<boolean> {
@@ -75,6 +76,8 @@ export interface SfdxHardisConfigEditorInput {
   // Lists proposed by the deployment action editor
   projectApexScripts?: Array<{ label: string; value: string }>;
   projectSfdmuWorkspaces?: Array<{ label: string; value: string }>;
+  // Custom functions of the project: deployment action types backed by a project script
+  customFunctions?: CustomFunctionDefinition[];
 }
 
 export interface SfdxHardisConfigEditorSaveData {

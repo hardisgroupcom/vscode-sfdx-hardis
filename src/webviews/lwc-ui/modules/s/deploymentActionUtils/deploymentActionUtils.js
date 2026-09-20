@@ -24,7 +24,7 @@ const TYPE_ICON_BY_CODE = {
   data: "utility:database",
   apex: "utility:apex_alt",
   "schedule-batch": "utility:event",
-  "publish-community": "utility:global",
+  "publish-community": "utility:world",
   "remove-packagexml-items": "utility:filterList",
   manual: "utility:task",
 };
@@ -62,19 +62,41 @@ const CONTEXT_LABEL_KEY_BY_CODE = {
   "process-deployment-only": "processDeploymentOnly",
 };
 
-// t: the SharedMixin translate function of the calling component
-export function getActionTypeLabel(typeCode, t) {
+// t: the SharedMixin translate function of the calling component.
+// customFunctions: the project custom function catalog, so a type that is a function id is
+// labelled with the function label instead of falling back to "unknown".
+export function getActionTypeLabel(typeCode, t, customFunctions = []) {
   const labelKey = TYPE_LABEL_KEY_BY_CODE[typeCode];
-  return labelKey ? t(labelKey) : t("unknownLabel");
+  if (labelKey) {
+    return t(labelKey);
+  }
+  const customFunction = (customFunctions || []).find(
+    (fn) => fn.id === typeCode,
+  );
+  if (customFunction) {
+    return customFunction.label || customFunction.id;
+  }
+  // A function that was deleted while actions still reference it: show the id, which is what
+  // the user needs to fix the action, rather than an opaque "unknown"
+  return typeCode ? typeCode : t("unknownLabel");
 }
 
 export function getActionTypeIconName(typeCode) {
-  return TYPE_ICON_BY_CODE[typeCode] || "utility:question";
+  if (TYPE_ICON_BY_CODE[typeCode]) {
+    return TYPE_ICON_BY_CODE[typeCode];
+  }
+  // Custom functions all share one icon: they are scripts of the project
+  return isBuiltInActionType(typeCode) ? "utility:question" : "utility:macros";
 }
 
 // CSS classes of the colored pill displaying an action type
 export function getActionTypePillClass(typeCode) {
-  return getPillClass(TYPE_HUE_BY_CODE[typeCode]);
+  const hue = TYPE_HUE_BY_CODE[typeCode] || "purple";
+  return getPillClass(hue);
+}
+
+export function isBuiltInActionType(typeCode) {
+  return Object.prototype.hasOwnProperty.call(TYPE_LABEL_KEY_BY_CODE, typeCode);
 }
 
 // CSS classes of the colored pill displaying when an action runs

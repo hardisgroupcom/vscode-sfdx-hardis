@@ -45,6 +45,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track prLoading = true;
   @track loadError = null;
   @track projectApexScripts = [];
+  // Custom functions of the project: they are action types, so the deployment action editor
+  // needs them to label a type and to render the fields of its declared inputs
+  @track customFunctions = [];
   @track projectSfdmuWorkspaces = [];
   @track projectSchedulableClasses = [];
   @track schedulableClassesLoading = false;
@@ -816,6 +819,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       this.autoFixPullRequest = data.autoFixPullRequest || null;
     }
     // Store project resources
+    if (Object.prototype.hasOwnProperty.call(data, "customFunctions")) {
+      this.customFunctions = data.customFunctions || [];
+    }
     if (Object.prototype.hasOwnProperty.call(data, "projectApexScripts")) {
       this.projectApexScripts = data.projectApexScripts || [];
     }
@@ -3643,7 +3649,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   _getActionTypeLabel(typeCode) {
-    return getActionTypeLabel(typeCode, (labelKey) => this.t(labelKey));
+    return getActionTypeLabel(
+      typeCode,
+      (labelKey) => this.t(labelKey),
+      this.customFunctions,
+    );
   }
 
   _getActionTypeIconName(typeCode) {

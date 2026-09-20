@@ -958,6 +958,9 @@ suite("Documentation screenshots", function () {
       // their editor also shows the branch selector (taller modal)
       { name: "pipeline-edit-action-target-orgs-include", row: 7, editY: 796 },
       { name: "pipeline-edit-action-target-orgs-exclude", row: 8, editY: 796 },
+      // A custom function type: the form below the common fields is built from
+      // the inputs the function declares, so the modal is taller again
+      { name: "pipeline-edit-action-custom-function", row: 9, editY: 796 },
     ];
     // A universe whose Pull Request declares its actions in another order says
     // so, because these shots are taken by row position. The names are the shot
@@ -1312,6 +1315,44 @@ suite("Documentation screenshots", function () {
       lwcId: "s-pipeline-config",
       settleMs: 3500,
     });
+  });
+
+  // Custom Functions tab of the same panel: the catalog of functions the project
+  // declares, then the editor of one of them. The tab only exists on the project
+  // scope, since a function id is a deployment action type.
+  // Feeds screenshot-custom-functions-tab.jpg and screenshot-custom-function-editor.jpg
+  // of salesforce-devops-work-on-user-story-custom-functions.md.
+  test("pipeline configuration (custom functions)", async function () {
+    if (!shouldTake("pipeline-config-custom-functions")) {
+      this.skip();
+    }
+    // Edit button of the first function card. The two cards sit side by side in
+    // the card grid, so this is the left one.
+    const FIRST_CARD_EDIT_X = 772;
+    const FIRST_CARD_EDIT_Y = 350;
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await sleep(800);
+    try {
+      await shootPanel(panelManager, {
+        name: "pipeline-config-custom-functions",
+        command: "vscode-sfdx-hardis.showPipelineConfig",
+        commandArgs: [null, "Custom Functions"],
+        lwcId: "s-pipeline-config",
+        settleMs: 3500,
+        force: true,
+      });
+      // The editor of the first function, so the form shows a filled contract
+      // (runtime, script, and the inputs and outputs it declares) rather than
+      // the empty form the Add button opens
+      await click(FIRST_CARD_EDIT_X, FIRST_CARD_EDIT_Y);
+      await sleep(1500);
+      await captureStable("pipeline-config-custom-function-editor");
+    } finally {
+      await vscode.commands.executeCommand("workbench.action.zoomIn");
+      await vscode.commands.executeCommand("workbench.action.zoomIn");
+      await sleep(800);
+    }
   });
 
   // Deployment tab of the same panel, zoomed out so the whole section fits in
