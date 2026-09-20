@@ -16,9 +16,11 @@ paths = [
 ]
 regexes = [
   '''cf83e6dc-2621-4cb6-b92b-30905d1c8476''',
-  # The name of a translation key, not a value: it labels the "Secret" input type
-  # of a custom function, whose whole point is that the user types the NAME of a
-  # CI/CD variable and never its value. The key is 28 alphanumeric characters, so
-  # it has the shape of a Box API token and is flagged in all nine locale files.
-  '''customFunctionInputTypeSecret''',
+  # Translation key NAMES of the custom functions feature, never values. A long
+  # camelCase key such as customFunctionInputTypeMultiline is a run of 32
+  # alphanumeric characters, which is also the shape of a Box API access token,
+  # so the scanner reports one of them per run in each of the nine locale files.
+  # The labels themselves are UI strings ("Long text", "Checkbox"), and the
+  # Secret input type stores the NAME of a CI/CD variable, never its value.
+  '''customFunction[A-Za-z]+''',
 ]
