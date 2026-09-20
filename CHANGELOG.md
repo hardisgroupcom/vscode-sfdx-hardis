@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [8.7.0] 2026-09-20
+
 - Commands menu and Welcome page
   - **Welcome page** is always the first entry, above the custom menus a project declares
   - The custom menus of the project show as soon as its configuration is read, without waiting for the menus that installed plugins provide
