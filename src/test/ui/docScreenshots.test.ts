@@ -1664,6 +1664,9 @@ suite("Documentation screenshots", function () {
     }
   });
 
+  /* jscpd:ignore-start */
+  // Deliberately the same shape as the git-merge test above: both build a tiny
+  // history in the workspace, capture one picker, and put it all back.
   // The branch picker of Git: Merge..., on a retrofit branch, where the answer is
   // origin/main and not the local main: Lab 3.7 of the training turns on that
   // click, so it gets its own shot rather than reusing the origin/integration one.
@@ -1785,6 +1788,7 @@ suite("Documentation screenshots", function () {
       await sleep(800);
     }
   });
+  /* jscpd:ignore-end */
 
   test("data workbench", async function () {
     await shootPanel(panelManager, {
