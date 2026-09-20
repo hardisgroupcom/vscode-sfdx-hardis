@@ -1,0 +1,260 @@
+# Helios Energy - sfdx-hardis training project
+# This file is read by sfdx-hardis and by the VS Code extension.
+# Doc: https://sfdx-hardis.cloudity.com/salesforce-devops-config-home/
+
+projectName: HeliosEnergy
+
+# --- Pipeline -------------------------------------------------------------
+# At Levels 1 and 2 the pipeline is integration then uat, both deploying to
+# scratch orgs that Set up my training environment creates. main exists in the
+# fork with no org yet, and preprod does not exist: Lab 3.1 creates it, and gives
+# both their orgs.
+developmentBranch: integration
+productionBranch: main
+# How the CI job gets into an org. Levels 1 and 2 use auth URLs kept in
+# GitHub secrets, which is the shortcut, so there is no certificate to look for
+# and the pipeline is right not to ask for one. Lab 3.1 replaces it with
+# a JWT certificate and puts this back to encryptedCert.
+orgAuthenticationMode: secretsOnly
+# One entry on purpose. A contributor at Levels 1 and 2 has exactly one place
+# to send a User Story, and a question with one answer is a question that
+# cannot be got wrong. uat is a major branch all the same: work reaches it by
+# promotion, never by a User Story. Lab 3.1 adds preprod here, for hotfixes.
+availableTargetBranches:
+  - integration
+availableTargetBranchesLabels:
+  - "The shared integration org, where every contributor merges"
+
+# Branch naming for new User Stories
+branchPrefixChoices:
+  - value: features
+    title: "Feature: a new capability or an improvement"
+  - value: fix
+    title: "Fix: correct something that is broken"
+  - value: retrofit
+    title: "Retrofit: merge production back down into the pipeline after a hotfix (release manager)"
+newTaskNameRegex: '^US-\d{3}-[a-z0-9-]+$'
+newTaskNameRegexExample: "US-014-panels-required"
+# The stories live in the backlog of this course, not in a ticketing tool. These
+# keys let the Pull Request comments link every US-nnn they meet to its page, and
+# write its title next to the link, read from the JSON the site publishes per story.
+genericTicketingProviderRegex: "(US-[0-9]{3})"
+genericTicketingProviderUrlBuilder: "https://hardisgroupcom.github.io/sfdx-hardis-training/BACKLOG/{REF}/"
+genericTicketingProviderDetailsUrlBuilder: "https://hardisgroupcom.github.io/sfdx-hardis-training/BACKLOG/{REF}.json"
+
+# --- Quality --------------------------------------------------------------
+testLevel: RunLocalTests
+# Salesforce refuses a deployment under 75%. This project asks for 80, like most real ones:
+# Lab 2.5 is where a Pull Request meets it.
+apexTestsMinCoverageOrgWide: 80
+testCoverageNotBlocking: false
+
+# --- Automated cleaning ---------------------------------------------------
+# Applied by hardis:work:save before the Pull Request. Lab 1.5 reads the
+# result, Lab 3.4 explains why each one is here.
+autoCleanTypes:
+  - destructivechanges
+  - localfields
+  - productrequest
+  - flowPositions
+  - minimizeProfiles
+
+# Permissions that must never travel through a Profile on this project.
+# This is what makes the Lab 2.6 failure happen, and it is deliberate.
+autoRemoveUserPermissions:
+  - EnableCommunityAppLauncher
+  - FieldServiceAccess
+  - OmnichannelInventorySync
+  - SendExternalEmailAvailable
+  - WorkCalibrationUser
+
+# --- Data -----------------------------------------------------------------
+dataPackages:
+  - dataPath: scripts/data/HeliosBaseline
+    importInScratchOrgs: false
+  - dataPath: scripts/data/HeliosCrewRefData
+    importInScratchOrgs: false
+
+# --- The Training menu ----------------------------------------------------
+# Rendered by the VS Code extension as cards on the Welcome page and as menus
+# in the Commands panel. This is how a learner runs anything the product does
+# not already own a button for.
+#
+# One menu per level, not one menu for the course. A learner is always inside
+# exactly one level, and the commands that level needs are four or five out of
+# seven. Splitting them means the menu in front of you only holds things you
+# have a reason to click, and the ones that are shared are simply repeated.
+# It also lets each entry carry its own level, so "Check my work" and "Reset
+# this level" stop by asking which level you are on: they already know.
+customCommandsPosition: first
+customCommands:
+  - id: training-level-1
+    label: "Training: Level 1"
+    description: Contributor basics - the commands the Level 1 labs ask for
+    vscodeIcon: mortar-board
+    sldsIcon: utility:education
+    welcomeIconClass: cyan
+    commands:
+      - id: training-l1-init
+        label: Set up my training environment
+        vscodeIcon: repo-forked
+        sldsIcon: utility:merge
+        tooltip: Forks the repository, creates your scratch orgs with the Helios app, and wires the pipeline to them
+        command: node scripts/training.mjs init
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-2-create-your-dev-hub-scratch-orgs-and-pipeline/
+      - id: training-l1-status
+        label: Where am I?
+        vscodeIcon: compass
+        sldsIcon: utility:location
+        tooltip: Shows the level and lab you reached, and what to do next
+        command: node scripts/training.mjs status
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/
+      - id: training-l1-check
+        label: Check my work
+        vscodeIcon: pass
+        sldsIcon: utility:check
+        tooltip: Verifies the Level 1 lab you just finished and prints your receipt
+        command: node scripts/training.mjs check --level 1
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/badges/
+      - id: training-l1-claim
+        label: Claim my badge
+        vscodeIcon: mortar-board
+        sldsIcon: utility:favorite
+        tooltip: Checks the whole of level 1, then opens the badge claim form with your answers already in it
+        command: node scripts/training.mjs claim --level 1
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/badges/
+      - id: training-l1-reset
+        label: Reset this level
+        vscodeIcon: debug-restart
+        sldsIcon: utility:refresh
+        tooltip: Puts your repository back to the start of Level 1
+        command: node scripts/training.mjs reset --level 1
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/
+
+  - id: training-level-2
+    label: "Training: Level 2"
+    description: Contributor advanced - the commands the Level 2 labs ask for
+    vscodeIcon: mortar-board
+    sldsIcon: utility:education
+    welcomeIconClass: indigo
+    commands:
+      - id: training-l2-init
+        label: Set up my training environment
+        vscodeIcon: repo-forked
+        sldsIcon: utility:merge
+        tooltip: Rebuilds a scratch org that expired, with the Helios app, and points the pipeline at it again
+        command: node scripts/training.mjs init
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-2-create-your-dev-hub-scratch-orgs-and-pipeline/
+      - id: training-l2-status
+        label: Where am I?
+        vscodeIcon: compass
+        sldsIcon: utility:location
+        tooltip: Shows the level and lab you reached, and what to do next
+        command: node scripts/training.mjs status
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/
+      - id: training-l2-simulate
+        label: Simulate my teammates
+        vscodeIcon: organization
+        sldsIcon: utility:groups
+        tooltip: Creates the teammate branches and Pull Requests a Level 2 lab needs
+        command: node scripts/training.mjs simulate --level 2
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-7-resolve-a-git-merge-conflict/
+      - id: training-l2-seed
+        label: Set up one of my training orgs
+        vscodeIcon: cloud-upload
+        sldsIcon: utility:upload
+        tooltip: Deploys the Helios Energy app and its sample data into the org you choose
+        command: node scripts/training.mjs seed
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/
+      - id: training-l2-check
+        label: Check my work
+        vscodeIcon: pass
+        sldsIcon: utility:check
+        tooltip: Verifies the Level 2 lab you just finished and prints your receipt
+        command: node scripts/training.mjs check --level 2
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/badges/
+      - id: training-l2-claim
+        label: Claim my badge
+        vscodeIcon: mortar-board
+        sldsIcon: utility:favorite
+        tooltip: Checks the whole of level 2, then opens the badge claim form with your answers already in it
+        command: node scripts/training.mjs claim --level 2
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/badges/
+      - id: training-l2-reset
+        label: Reset this level
+        vscodeIcon: debug-restart
+        sldsIcon: utility:refresh
+        tooltip: Puts your repository back to the start of Level 2
+        command: node scripts/training.mjs reset --level 2
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/
+
+  - id: training-level-3
+    label: "Training: Level 3"
+    description: Release Manager - the commands the Level 3 labs ask for
+    vscodeIcon: mortar-board
+    sldsIcon: utility:education
+    welcomeIconClass: violet
+    commands:
+      - id: training-l3-init
+        label: Set up my training environment
+        vscodeIcon: repo-forked
+        sldsIcon: utility:merge
+        tooltip: Rebuilds a scratch org that expired, with the Helios app, and points the pipeline at it again
+        command: node scripts/training.mjs init
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-2-create-your-dev-hub-scratch-orgs-and-pipeline/
+      - id: training-l3-status
+        label: Where am I?
+        vscodeIcon: compass
+        sldsIcon: utility:location
+        tooltip: Shows the level and lab you reached, and what to do next
+        command: node scripts/training.mjs status
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/
+      - id: training-l3-seed
+        label: Set up one of my training orgs
+        vscodeIcon: cloud-upload
+        sldsIcon: utility:upload
+        tooltip: Deploys the Helios Energy app and its sample data into the org you choose
+        command: node scripts/training.mjs seed
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-1-configure-the-pipeline-up-to-production/
+      - id: training-l3-simulate
+        label: Simulate my teammates
+        vscodeIcon: organization
+        sldsIcon: utility:groups
+        tooltip: Creates the teammate branches and Pull Requests a Level 3 lab needs
+        command: node scripts/training.mjs simulate --level 3
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-2-review-a-contributor-pull-request/
+      - id: training-l3-publish
+        label: Publish my pipeline configuration
+        vscodeIcon: cloud-upload
+        sldsIcon: utility:upload
+        tooltip: Puts the pipeline configuration you changed on a branch of its own and opens its Pull Request into integration
+        command: node scripts/training.mjs publish
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-1-configure-the-pipeline-up-to-production/
+      - id: training-l3-check
+        label: Check my work
+        vscodeIcon: pass
+        sldsIcon: utility:check
+        tooltip: Verifies the Level 3 lab you just finished and prints your receipt
+        command: node scripts/training.mjs check --level 3
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/badges/
+      - id: training-l3-claim
+        label: Claim my badge
+        vscodeIcon: mortar-board
+        sldsIcon: utility:favorite
+        tooltip: Checks the whole of level 3, then opens the badge claim form with your answers already in it
+        command: node scripts/training.mjs claim --level 3
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/badges/
+      - id: training-l3-reset
+        label: Reset this level
+        vscodeIcon: debug-restart
+        sldsIcon: utility:refresh
+        tooltip: Puts your repository back to the start of Level 3
+        command: node scripts/training.mjs reset --level 3
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/
+      - id: training-l3-teardown
+        label: Clean up a training org
+        vscodeIcon: trash
+        sldsIcon: utility:delete
+        tooltip: Removes the Helios app and its data from an org, once you are done with the course
+        command: node scripts/training.mjs teardown
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/

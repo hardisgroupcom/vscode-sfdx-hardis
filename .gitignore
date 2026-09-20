@@ -14,3 +14,4 @@ config/user/
 
 # Output of the documentation screenshot harness (yarn screenshots)
 doc-screenshots/
+.sf/

@@ -1,0 +1,5 @@
+External_Id__c,Crew_Type__c,Roof_Type__c,Panels_Per_Day__c
+CAP-ROOF-TILE,Roof,Tile,18
+CAP-ROOF-SLATE,Roof,Slate,14
+CAP-ROOF-FLAT,Roof,Flat,26
+CAP-ROOF-METAL,Roof,Metal,22
