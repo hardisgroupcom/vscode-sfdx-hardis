@@ -1,0 +1,87 @@
+commandsPreDeploy:
+  - id: 7a1c3d2e-2d0b-4f1e-8e3b-024b00000001
+    label: Check org limits before the deployment
+    type: command
+    when: pre-deploy
+    command: sf hardis:org:monitor:limits
+    context: all
+    allowFailure: true
+  - id: 7a1c3d2e-2d0b-4f1e-8e3b-024b00000003
+    label: Remove profiles from the delta package
+    type: remove-packagexml-items
+    when: pre-deploy
+    parameters:
+      packageXmlItems:
+        - "Profile:*"
+    command: ""
+    context: check-deployment-only
+  - id: 7a1c3d2e-2d0b-4f1e-8e3b-024b00000007
+    label: Set Email Deliverability to All Email
+    type: manual
+    when: pre-deploy
+    parameters:
+      instructions: |
+        1. Open **Setup**, type `Deliverability` in the Quick Find box, and open it.
+        2. Under **Access to Send Email**, set **Access level** to **All email**.
+        3. Click **Save**.
+        4. Check: the page reads **All email**. If it already did, there is nothing to do.
+    command: ""
+    context: all
+commandsPostDeploy:
+  - id: 7a1c3d2e-2d0b-4f1e-8e3b-024b00000002
+    label: Load the crew capacity reference data
+    type: data
+    when: post-deploy
+    parameters:
+      sfdmuProject: HeliosCrewRefData
+    command: sf hardis:org:data:import --path scripts/data/HeliosCrewRefData
+    context: process-deployment-only
+  - id: 7a1c3d2e-2d0b-4f1e-8e3b-024b00000004
+    label: Backfill Crew Size on existing installations
+    type: apex
+    when: post-deploy
+    parameters:
+      apexScript: scripts/apex/backfill-crew-size.apex
+    command: ""
+    context: process-deployment-only
+    runOnlyOnceByOrg: true
+  - id: 7a1c3d2e-2d0b-4f1e-8e3b-024b00000005
+    label: Schedule the nightly crew capacity recalculation
+    type: schedule-batch
+    when: post-deploy
+    parameters:
+      className: CrewCapacityBatch
+      cronExpression: 0 0 2 * * ?
+      jobName: Helios crew capacity nightly
+    command: ""
+    context: process-deployment-only
+  - id: 7a1c3d2e-2d0b-4f1e-8e3b-024b00000006
+    label: Publish the Helios Installer Portal community
+    type: publish-community
+    when: post-deploy
+    parameters:
+      communityName: Helios Installer Portal
+    command: ""
+    context: process-deployment-only
+  # Target orgs examples: the warehouse system is only connected to the uat and
+  # production orgs, and the demo installations must never reach production
+  - id: 7a1c3d2e-2d0b-4f1e-8e3b-024b00000008
+    label: Enable the warehouse stock integration
+    type: command
+    when: post-deploy
+    command: >-
+      sf data update record --sobject Integration_Setting__c --where "Name='Warehouse'" --values "IsActive__c=true" --json
+    context: process-deployment-only
+    includeTargetBranches:
+      - uat
+      - main
+  - id: 7a1c3d2e-2d0b-4f1e-8e3b-024b00000009
+    label: Upsert the demo installations used by the sales team
+    type: apex
+    when: post-deploy
+    parameters:
+      apexScript: scripts/apex/upsert-demo-installations.apex
+    command: ""
+    context: process-deployment-only
+    excludeTargetBranches:
+      - main

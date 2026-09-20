@@ -1,4 +1,11 @@
 import { killProcessTree } from "./utils/processUtils";
+import {
+  autorunEntryFor,
+  isAutorunAuthorized,
+  isTrainingPanelCommand,
+  trainingCommandLabel,
+  trainingWorkspaceRoot,
+} from "./utils/trainingPanelCommands";
 import * as vscode from "vscode";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { t } from "./i18n/i18n";
@@ -133,6 +140,20 @@ export class CommandRunner {
         this.isSfStandardCommand(trimmedCommand) ||
         isCommandAllowedByCustomOrPluginRegistry(trimmedCommand)
       );
+    }
+    // The training course runs its lessons through `node scripts/training.mjs`,
+    // and teaches a learner who is never sent to a terminal. Only that command
+    // shape, only in a clone of the course, only when the menu entry it comes
+    // from is a registered one, and only when the panel it would talk to is
+    // actually listening: with no WebSocket server the lesson would run with
+    // its output going nowhere the learner can see, and a terminal is better
+    // than that.
+    if (
+      isTrainingPanelCommand(trimmedCommand) &&
+      isCommandAllowedByCustomOrPluginRegistry(trimmedCommand) &&
+      this.commandsInstance?.disposableWebSocketServer?.websocketHostPort
+    ) {
+      return true;
     }
     return false;
   }
@@ -296,9 +317,17 @@ export class CommandRunner {
 
     // For custom/plugin commands: check autorunCommands and offer "Always authorize" option
     if (isCustomOrPluginCommand) {
+      // A learner meets a dozen Training menu entries across the three levels,
+      // and each is its own command line. Answering the same question a dozen
+      // times teaches nothing, so one answer covers the menu: the stored entry
+      // is the script rather than the line, and isTrainingPanelCommand() is
+      // asked again below every time it is used.
+      const isTrainingCommand = isTrainingPanelCommand(trimmedCommand);
       const autorunCommands = config.get<string[]>("autorunCommands", []);
-      const isAutorun = autorunCommands.some((cmd) =>
-        trimmedCommand.startsWith(cmd.trim()),
+      const isAutorun = isAutorunAuthorized(
+        trimmedCommand,
+        autorunCommands,
+        trainingWorkspaceRoot(),
       );
 
       if (isAutorun) {
@@ -314,9 +343,13 @@ export class CommandRunner {
       // Not in autorun list - ask for confirmation with "Always authorize" option
       vscode.window
         .showWarningMessage(
-          t("customOrPluginCommandAuthorizationPrompt", {
-            command: trimmedCommand,
-          }),
+          isTrainingCommand
+            ? t("trainingCommandAuthorizationPrompt", {
+                command: trimmedCommand,
+              })
+            : t("customOrPluginCommandAuthorizationPrompt", {
+                command: trimmedCommand,
+              }),
           t("allowOnce"),
           t("alwaysAllow"),
           t("cancel"),
@@ -329,8 +362,17 @@ export class CommandRunner {
               extraEnv,
             );
           } else if (selection === t("alwaysAllow")) {
-            // Add command to autorunCommands
-            const updated = [...autorunCommands, trimmedCommand];
+            // One entry for the whole Training menu, the exact line for anything
+            // else: a project's other custom commands are still approved one by one
+            const entry = autorunEntryFor(
+              trimmedCommand,
+              trainingWorkspaceRoot(),
+            );
+            const updated = autorunCommands.some(
+              (cmd) => cmd.trim() === entry,
+            )
+              ? autorunCommands
+              : [...autorunCommands, entry];
             await config.update(
               "autorunCommands",
               updated,
@@ -358,12 +400,17 @@ export class CommandRunner {
     command: string,
     extraEnv?: Record<string, string>,
   ) {
-    if (isBackgroundMode && this.isCommandAllowedInBackground(command)) {
+    if (isBackgroundMode) {
+      // Before the decision, not after: a training command is allowed in the
+      // panel only while the WebSocket server is listening, and right after
+      // activation it is still binding its port.
       await this.waitForWebSocketServerReady();
-      this.executeCommandBackground(command, extraEnv);
-    } else {
-      this.executeCommandTerminal(command, extraEnv);
+      if (this.isCommandAllowedInBackground(command)) {
+        this.executeCommandBackground(command, extraEnv);
+        return;
+      }
     }
+    this.executeCommandTerminal(command, extraEnv);
   }
 
   /**
@@ -397,11 +444,14 @@ export class CommandRunner {
     type: "background" | "terminal" = "background",
     process?: any,
   ): string | null {
-    // Block dangerous or invalid commands
+    // Block dangerous or invalid commands. A training lesson is the one command
+    // shape that is not an sf command and may still run here: it carries no
+    // shell operator by construction (see isTrainingPanelCommand).
     if (
       !(
         command.trimStart().startsWith("sf ") ||
-        command.trimStart().startsWith("npm install @salesforce/")
+        command.trimStart().startsWith("npm install @salesforce/") ||
+        isTrainingPanelCommand(command)
       ) ||
       command.includes("&&") ||
       command.includes("||")
@@ -562,6 +612,19 @@ export class CommandRunner {
     if (extraEnv && typeof extraEnv === "object") {
       spawnOptions.env = { ...spawnOptions.env, ...extraEnv };
     }
+    // A training command is not an sf command, so it gets the WebSocket address
+    // through the environment rather than through a --websocket flag. With it,
+    // its script talks to the panel the way the CLI does; without it, it still
+    // runs and only prints.
+    const isTrainingCommand = isTrainingPanelCommand(preprocessedCommand);
+    const trainingWebSocketHostPort = isTrainingCommand
+      ? this.commandsInstance?.disposableWebSocketServer?.websocketHostPort
+      : null;
+    if (trainingWebSocketHostPort) {
+      spawnOptions.env.SFDX_HARDIS_WEBSOCKET = String(
+        trainingWebSocketHostPort,
+      );
+    }
     const gitBashPath = getGitBashPath();
     if (process.platform === "win32" && gitBashPath) {
       spawnOptions.shell = gitBashPath;
@@ -576,12 +639,15 @@ export class CommandRunner {
     let pendingCommandName: string | null = null;
     if (
       config.get("userInput") === "ui-lwc" &&
-      preprocessedCommand.trimStart().startsWith("sf hardis")
+      (preprocessedCommand.trimStart().startsWith("sf hardis") ||
+        trainingWebSocketHostPort)
     ) {
       try {
         const provisionalContextId = generateProvisionalContextId();
         const commandId = extractCommandId(preprocessedCommand);
-        pendingCommandName = commandId || preprocessedCommand;
+        pendingCommandName = isTrainingCommand
+          ? trainingCommandLabel(preprocessedCommand)
+          : commandId || preprocessedCommand;
         pendingPanelLwcId = `s-command-execution-${provisionalContextId}`;
         spawnOptions.env.SFDX_HARDIS_COMMAND_CONTEXT_ID = provisionalContextId;
         const panelManager = LwcPanelManager.getInstance();

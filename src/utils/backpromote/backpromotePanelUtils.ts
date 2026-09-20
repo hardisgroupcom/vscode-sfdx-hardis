@@ -1389,7 +1389,15 @@ function orgTypeOf(org: {
   isScratch?: boolean;
   isSandbox?: boolean;
   orgType?: string;
+  orgEdition?: string;
 }): string {
+  // Read before org.orgType: the list this comes from classifies an org from
+  // its instance URL, and a Developer Edition org with a custom My Domain is
+  // "production" there. The edition the CLI reports is the reliable signal, and
+  // a Developer Edition org is a development environment.
+  if (String(org.orgEdition || "") === "Developer Edition" && !org.isSandbox) {
+    return "developer";
+  }
   if (org.orgType) {
     return org.orgType;
   }

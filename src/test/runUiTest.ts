@@ -39,10 +39,37 @@ async function main() {
     process.argv.includes("--real-cli-perf") ||
     process.env.SFDX_HARDIS_REAL_CLI_PERF === "true";
 
+  // Alternate fixture universe for the screenshot run (SF_MOCK_UNIVERSE).
+  //
+  // Unset keeps the MyCompany-CRM universe exactly as it is, byte for byte.
+  // Set to a name, the run reads test/fixtures/screenshot/<name>/universe.json
+  // and takes its SFDX project fixture, workspace name, branch topology, git
+  // remote and provider fixtures from that folder instead. Nothing existing is
+  // edited or repointed: a new universe is new files in new folders.
+  //
+  // "helios" is the sfdx-hardis training universe. See the training repository.
+  const universeName = docScreenshots ? process.env.SF_MOCK_UNIVERSE || "" : "";
+  const universeDir = universeName
+    ? path.join(
+        extensionDevelopmentPath,
+        "test",
+        "fixtures",
+        "screenshot",
+        universeName,
+      )
+    : "";
+  const universe = universeName
+    ? JSON.parse(
+        fs.readFileSync(path.join(universeDir, "universe.json"), "utf8"),
+      )
+    : null;
+
   // 1. Copy the SFDX project fixture into a temp workspace
-  const fixtureName = docScreenshots
-    ? "doc-screenshots-project"
-    : "dummy-sfdx-project";
+  const fixtureName = universe
+    ? universe.fixtureProject
+    : docScreenshots
+      ? "doc-screenshots-project"
+      : "dummy-sfdx-project";
   const fixtureSource = path.join(
     extensionDevelopmentPath,
     "test",
@@ -58,10 +85,12 @@ async function main() {
   const workDir = fs.mkdtempSync(path.join(tmpBase, "sfh-uitest-"));
   // The workspace folder name is the project name shown in the VS Code title
   // bar, so the screenshot fixture uses a realistic one.
-  const workspaceDir = path.join(
-    workDir,
-    docScreenshots ? "MyCompany-CRM" : "dummy-sfdx-project",
-  );
+  const workspaceName = universe
+    ? universe.workspaceName
+    : docScreenshots
+      ? "MyCompany-CRM"
+      : "dummy-sfdx-project";
+  const workspaceDir = path.join(workDir, workspaceName);
   fs.cpSync(fixtureSource, workspaceDir, { recursive: true });
 
   // 2. Make it a git repository (several extension features probe git)
@@ -74,7 +103,23 @@ async function main() {
   git("add -A");
   git("commit -m init --no-gpg-sign");
 
-  if (docScreenshots) {
+  // A pipeline nobody has worked in yet: no feature branches, no open Pull
+  // Requests, no jobs. It is what a learner's own fork looks like at the end of
+  // the training setup, and the picture Level 1 has to show them.
+  const pipelineState = process.env.SF_MOCK_PIPELINE_STATE || "";
+  const freshPipeline = pipelineState.startsWith("fresh");
+  // ...and before the extension itself was signed in to the git provider
+  const disconnectedProvider = pipelineState === "fresh-disconnected";
+
+  if (universe) {
+    for (const branch of universe.branches || []) {
+      if (freshPipeline && /^(features|fixes|training)\//.test(branch)) {
+        continue;
+      }
+      git(`branch ${branch}`);
+    }
+    git(`remote add origin ${universe.remote}`);
+  } else if (docScreenshots) {
     // Major branches + feature branches, so the pipeline diagram has something
     // to draw. A fake "origin" remote makes the branches look tracked.
     for (const branch of ["uat", "preprod", "main"]) {
@@ -94,16 +139,71 @@ async function main() {
     git("remote add origin https://github.com/mycompany/salesforce-crm.git");
   }
 
+  // The pipeline as Level 3 of the training finishes it: four major branches,
+  // each pointing at its org and merging into the next. Levels 1 and 2 stop at
+  // uat, so the committed fixture does too, and the Level 3 captures need the
+  // finished shape: a four column diagram, and a branch window that lists what
+  // is waiting to be promoted rather than a go-live selector.
+  if (pipelineState === "level3") {
+    const branchDir = path.join(workspaceDir, "config", "branches");
+    fs.mkdirSync(branchDir, { recursive: true });
+    const writeBranch = (
+      branch: string,
+      org: string,
+      loginUrl: string,
+      mergeTargets: string[],
+    ) =>
+      fs.writeFileSync(
+        path.join(branchDir, `.sfdx-hardis.${branch}.yml`),
+        [
+          `# Helios ${org} org`,
+          `targetUsername: helios.deploy+helios-${org}@heliostraining.invalid`,
+          `instanceUrl: ${loginUrl}`,
+          `mergeTargets: [${mergeTargets.join(", ")}]`,
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+    // integration and uat are scratch orgs, preprod and main Developer Editions
+    writeBranch("integration", "integration", "https://test.salesforce.com", [
+      "uat",
+    ]);
+    writeBranch("uat", "uat", "https://test.salesforce.com", ["preprod"]);
+    writeBranch("preprod", "preprod", "https://login.salesforce.com", ["main"]);
+    writeBranch("main", "prod", "https://login.salesforce.com", []);
+    execSync("git add -A && git commit -m level3 --no-gpg-sign", {
+      cwd: workspaceDir,
+      stdio: "pipe",
+    });
+  }
+
   // Git provider fixture of the run: the promotion variant merges its overlay
   // into the base one and writes the result next to the temp workspace, so the
   // committed fixtures stay independent from each other.
-  let gitProviderFixtureFile = path.join(
-    extensionDevelopmentPath,
-    "test",
-    "fixtures",
-    "screenshot",
-    "git-provider-mock.json",
-  );
+  let gitProviderFixtureFile = universe
+    ? path.join(universeDir, "git-provider-mock.json")
+    : path.join(
+        extensionDevelopmentPath,
+        "test",
+        "fixtures",
+        "screenshot",
+        "git-provider-mock.json",
+      );
+  if (freshPipeline) {
+    const fixture = JSON.parse(fs.readFileSync(gitProviderFixtureFile, "utf8"));
+    fixture.openPullRequests = [];
+    fixture.mergedPullRequestsByBranch = {};
+    fixture.branchJobs = {};
+    if (disconnectedProvider) {
+      fixture.isActive = false;
+    }
+    gitProviderFixtureFile = path.join(workDir, "git-provider-mock.json");
+    fs.writeFileSync(
+      gitProviderFixtureFile,
+      JSON.stringify(fixture, null, 2),
+      "utf8",
+    );
+  }
   if (promotionVariant) {
     // The promotion branch exists on the repository, like any branch pushed by
     // hardis:project:promotion:create
@@ -189,7 +289,7 @@ async function main() {
     workspaceSettings["update.showReleaseNotes"] = false;
     // Stable title: it is both what the screenshots show and what the capture
     // script matches on to find the window
-    workspaceSettings["window.title"] = "MyCompany-CRM";
+    workspaceSettings["window.title"] = workspaceName;
     workspaceSettings["workbench.secondarySideBar.defaultVisibility"] =
       "hidden";
     workspaceSettings["chat.commandCenter.enabled"] = false;
@@ -315,13 +415,25 @@ async function main() {
               SFDX_HARDIS_MOCK_GIT_PROVIDER_FILE: gitProviderFixtureFile,
               // Connected JIRA ticketing provider with the tickets referenced
               // by the mocked pull requests (see ticketProviderMock.ts)
-              SFDX_HARDIS_MOCK_TICKET_PROVIDER_FILE: path.join(
-                extensionDevelopmentPath,
-                "test",
-                "fixtures",
-                "screenshot",
-                "ticket-provider-mock.json",
-              ),
+              SFDX_HARDIS_MOCK_TICKET_PROVIDER_FILE: universe
+                ? path.join(universeDir, "ticket-provider-mock.json")
+                : path.join(
+                    extensionDevelopmentPath,
+                    "test",
+                    "fixtures",
+                    "screenshot",
+                    "ticket-provider-mock.json",
+                  ),
+              // Selects the fixture set inside the mocked CLI. Empty means the
+              // base universe, unchanged.
+              SF_MOCK_UNIVERSE: universeName,
+              SF_MOCK_UNIVERSE_DIR: universeDir,
+              // Feature branch the contribution cards are captured from
+              SFDX_HARDIS_DOC_SCREENSHOTS_BRANCH: universe
+                ? universe.featureBranch || ""
+                : "",
+              // What the capture script matches on to find the window
+              SFDX_HARDIS_DOC_SCREENSHOTS_TITLE: workspaceName,
               SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION: promotionVariant
                 ? "true"
                 : "",

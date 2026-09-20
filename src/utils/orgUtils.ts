@@ -10,6 +10,10 @@ export type SalesforceOrg = {
   isDefaultDevHubUsername?: boolean;
   isScratch?: boolean;
   isSandbox?: boolean;
+  // "Developer Edition", "Enterprise Edition"... The only reliable way to tell a
+  // Developer Edition org from a production one: a custom My Domain leaves no
+  // trace of it in the instance URL.
+  orgEdition?: string;
   instanceUrl?: string;
   instanceApiVersion?: string;
   apiVersion?: string;
@@ -106,6 +110,7 @@ export async function listAllOrgs(
       isDevHub: !!org.isDevHub,
       isScratch: !!org.isScratch,
       isSandbox: !!org.isSandbox,
+      orgEdition: org.orgEdition,
       instanceUrl: org.instanceUrl,
       instanceApiVersion: org.instanceApiVersion,
       apiVersion: org.instanceApiVersion || org.apiVersion,
