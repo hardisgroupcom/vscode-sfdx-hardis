@@ -86,3 +86,13 @@ commandsPostDeploy:
     context: process-deployment-only
     excludeTargetBranches:
       - main
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-128a00000010
+    label: Notify the release channel
+    type: notifyReleaseChannel
+    when: post-deploy
+    parameters:
+      channel: "#crm-releases"
+      severity: info
+      webhookToken: SLACK_WEBHOOK_TOKEN
+    command: ""
+    context: process-deployment-only

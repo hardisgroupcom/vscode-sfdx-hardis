@@ -24,7 +24,7 @@ const TYPE_ICON_BY_CODE = {
   data: "utility:database",
   apex: "utility:apex_alt",
   "schedule-batch": "utility:event",
-  "publish-community": "utility:global",
+  "publish-community": "utility:world",
   "remove-packagexml-items": "utility:filterList",
   manual: "utility:task",
 };
@@ -86,7 +86,7 @@ export function getActionTypeIconName(typeCode) {
     return TYPE_ICON_BY_CODE[typeCode];
   }
   // Custom functions all share one icon: they are scripts of the project
-  return isBuiltInActionType(typeCode) ? "utility:question" : "utility:script";
+  return isBuiltInActionType(typeCode) ? "utility:question" : "utility:macros";
 }
 
 // CSS classes of the colored pill displaying an action type

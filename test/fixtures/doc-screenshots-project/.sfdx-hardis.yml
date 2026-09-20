@@ -137,3 +137,41 @@ useLangchainLlm: false
 useOpenaiDirect: false
 promptsLanguage: en,fr,de,es
 promptsParallelCallNumber: 20
+
+# Custom functions of the project, shown in the Custom Functions tab of Pipeline Settings and
+# offered as deployment action types in the action editor.
+customFunctions:
+  - id: notifyReleaseChannel
+    label: Notify the release channel
+    description: Post a release note to Slack and return the link to it
+    runtime: node
+    script: scripts/functions/notify-release.js
+    inputs:
+      - name: channel
+        type: string
+        required: true
+        default: "#crm-releases"
+      - name: severity
+        type: select
+        options:
+          - info
+          - warning
+          - critical
+        default: info
+      - name: webhookToken
+        type: secret
+        required: true
+    outputs:
+      - name: messageId
+      - name: permalink
+  - id: checkErpAvailability
+    label: Check that the ERP is reachable
+    description: Ping the ERP before a deployment that depends on it
+    runtime: bash
+    script: scripts/functions/check-erp.sh
+    inputs:
+      - name: endpoint
+        type: string
+        required: true
+    outputs:
+      - name: erpStatus

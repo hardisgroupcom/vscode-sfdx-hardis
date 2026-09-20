@@ -613,6 +613,18 @@ async function main() {
     return 0;
   }
 
+  // Custom functions catalog, read by the Custom Functions tab of Pipeline Settings and by the
+  // deployment action editor, which builds its form from the inputs a function declares. The
+  // payload mirrors the customFunctions block of the fixture project .sfdx-hardis.yml, which is
+  // what a real project holds and what the real command reads.
+  if (first === "hardis:project:function:list" && DOCS_PROFILE) {
+    const customFunctions = JSON.parse(
+      fs.readFileSync(path.join(__dirname, "custom-functions.json"), "utf8"),
+    );
+    outputJsonIfRequested({ status: 0, result: customFunctions }, "");
+    return 0;
+  }
+
   // Backpromote panel: plan, prepare, run, confirm and reset answer plan documents
   if (
     first === "hardis:work:backpromote" &&

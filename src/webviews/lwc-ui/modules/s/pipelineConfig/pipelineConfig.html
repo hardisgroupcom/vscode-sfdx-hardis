@@ -428,7 +428,7 @@
 
             <!-- Custom functions: project scoped only, so the tab is hidden on a branch -->
             <template if:false={isBranch}>
-              <lightning-tab label={i18n.customFunctionsTab} value="customFunctions" icon-name="utility:script" icon-assistive-text={i18n.customFunctionsTab}>
+              <lightning-tab label={i18n.customFunctionsTab} value="customFunctions" icon-name="utility:macros" icon-assistive-text={i18n.customFunctionsTab}>
                 <div class="slds-p-around_medium pipeline-config-tab-body">
                   <div class="slds-text-body_regular slds-text-color_weak slds-m-bottom_medium">
                     {i18n.customFunctionsTabDescription}
@@ -458,7 +458,7 @@
                         <div key={fn.id} class="hardis-card">
                           <div class="hardis-card-head">
                             <div class="hardis-tile purple">
-                              <lightning-icon icon-name="utility:script" size="small"></lightning-icon>
+                              <lightning-icon icon-name="utility:macros" size="small"></lightning-icon>
                             </div>
                             <div>
                               <div class="hardis-card-title">{fn.label}</div>
