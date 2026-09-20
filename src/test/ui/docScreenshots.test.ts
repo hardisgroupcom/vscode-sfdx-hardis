@@ -1664,6 +1664,128 @@ suite("Documentation screenshots", function () {
     }
   });
 
+  // The branch picker of Git: Merge..., on a retrofit branch, where the answer is
+  // origin/main and not the local main: Lab 3.7 of the training turns on that
+  // click, so it gets its own shot rather than reusing the origin/integration one.
+  test("git: pick origin/main on a retrofit branch", async function () {
+    if (!shouldTake("git-retrofit")) {
+      this.skip();
+    }
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!workspaceRoot) {
+      this.skip();
+    }
+    const git = (args: string) =>
+      execSync(`git ${args}`, { cwd: workspaceRoot, stdio: "pipe" })
+        .toString()
+        .trim();
+    const relative =
+      "force-app/main/default/objects/Installation__c/validationRules/Installation_Date_Not_Past.validationRule-meta.xml";
+    const file = path.join(workspaceRoot!, relative);
+    const rule = (cancelled: boolean) =>
+      [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">',
+        "    <fullName>Installation_Date_Not_Past</fullName>",
+        "    <active>true</active>",
+        "    <errorConditionFormula>AND(",
+        "  ISCHANGED(Install_Date__c),",
+        "  Install_Date__c &lt; TODAY(),",
+        '  NOT(ISPICKVAL(Status__c, &quot;Completed&quot;))' +
+          (cancelled ? "," : ""),
+        ...(cancelled
+          ? ['  NOT(ISPICKVAL(Status__c, &quot;Cancelled&quot;))']
+          : []),
+        ")</errorConditionFormula>",
+        "    <errorDisplayField>Install_Date__c</errorDisplayField>",
+        "    <errorMessage>The install date cannot be moved into the past.</errorMessage>",
+        "</ValidationRule>",
+        "",
+      ].join("\n");
+    const startBranch = git("rev-parse --abbrev-ref HEAD");
+    const retrofit = "retrofit/US-045-retrofit";
+    const otherBranches = git(
+      "for-each-ref --format=%(refname:short)=%(objectname) refs/heads",
+    )
+      .split(/\r?\n/)
+      .filter(Boolean)
+      .map((line) => line.split("="))
+      .filter(([name]) => name !== retrofit);
+    const excludeFile = path.join(workspaceRoot!, ".git", "info", "exclude");
+    fs.mkdirSync(path.dirname(excludeFile), { recursive: true });
+    fs.appendFileSync(excludeFile, ".vscode/\n");
+    git("stash push --include-untracked --message screenshot-git-retrofit");
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    const workbench = vscode.workspace.getConfiguration("workbench");
+    await workbench.update(
+      "view.alwaysShowHeaderActions",
+      true,
+      vscode.ConfigurationTarget.Global,
+    );
+    try {
+      git("checkout -q --detach");
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, rule(false));
+      git(`add "${relative}"`);
+      git('commit -q -m "base"');
+      // What the hotfix put into production
+      fs.writeFileSync(file, rule(true));
+      git(
+        'commit -q -a -m "US-045 Hotfix: cancelled installations can be back-dated again" --author "Romain Deloux <romain@helios-training.invalid>"',
+      );
+      git("update-ref refs/remotes/origin/main HEAD");
+      // The retrofit branch, cut from integration before the hotfix
+      git(`checkout -q -B ${retrofit} HEAD~1`);
+      await vscode.commands.executeCommand("git.refresh");
+      await vscode.commands.executeCommand("workbench.view.scm");
+      await sleep(3000);
+      await cleanChrome();
+      // Only the retrofit branch stays local while the picker is open, so that
+      // origin/main is what the list shows: the others are put back afterwards
+      for (const [name] of otherBranches) {
+        git(`branch -D "${name}"`);
+      }
+      await vscode.commands.executeCommand("git.refresh");
+      await sleep(1500);
+      void vscode.commands.executeCommand("git.merge");
+      await sleep(2500);
+      await captureStable("git-retrofit-pick");
+      await vscode.commands.executeCommand("workbench.action.closeQuickOpen");
+      await sleep(600);
+    } finally {
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+      await workbench.update(
+        "view.alwaysShowHeaderActions",
+        undefined,
+        vscode.ConfigurationTarget.Global,
+      );
+      for (const [name, sha] of otherBranches) {
+        try {
+          git(`branch -f "${name}" ${sha}`);
+        } catch {
+          // Still there: it was never deleted
+        }
+      }
+      git(`checkout -q -f ${startBranch}`);
+      try {
+        git(`branch -D ${retrofit}`);
+      } catch {
+        // Already gone
+      }
+      git("update-ref -d refs/remotes/origin/main");
+      try {
+        git("stash pop");
+      } catch {
+        // Nothing was stashed
+      }
+      await vscode.commands.executeCommand("git.refresh");
+      await vscode.commands.executeCommand(
+        "workbench.view.extension.sfdx-hardis-explorer",
+      );
+      await sleep(800);
+    }
+  });
+
   test("data workbench", async function () {
     await shootPanel(panelManager, {
       name: "data-workbench",
