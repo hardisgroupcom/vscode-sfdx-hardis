@@ -21,19 +21,23 @@ suite("Training commands in the Command Runner panel", () => {
   let root = "";
   let notTraining = "";
 
-  const makeClone = (remote: string, markers: string[]): string => {
+  /** A folder with the marker files and whatever .git/config a test needs. */
+  const makeCloneWithConfig = (config: string, markers: string[]): string => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "training-gate-"));
     for (const marker of markers) {
       fs.mkdirSync(path.join(dir, path.dirname(marker)), { recursive: true });
       fs.writeFileSync(path.join(dir, marker), "// fixture\n");
     }
     fs.mkdirSync(path.join(dir, ".git"), { recursive: true });
-    fs.writeFileSync(
-      path.join(dir, ".git", "config"),
-      `[remote "origin"]\n\turl = ${remote}\n\tfetch = +refs/heads/*:refs/remotes/origin/*\n`,
-    );
+    fs.writeFileSync(path.join(dir, ".git", "config"), config);
     return dir;
   };
+
+  const makeClone = (remote: string, markers: string[]): string =>
+    makeCloneWithConfig(
+      `[remote "origin"]\n\turl = ${remote}\n\tfetch = +refs/heads/*:refs/remotes/origin/*\n`,
+      markers,
+    );
 
   suiteSetup(() => {
     root = makeClone("https://github.com/a-learner/sfdx-hardis-training.git", [
@@ -295,13 +299,10 @@ suite("Training commands in the Command Runner panel", () => {
   suite("the remote of the clone", () => {
     const dirs: string[] = [];
     const clone = (config: string): string => {
-      const dir = fs.mkdtempSync(path.join(os.tmpdir(), "training-remote-"));
-      for (const marker of ["scripts/training.mjs", "training-universe.json"]) {
-        fs.mkdirSync(path.join(dir, path.dirname(marker)), { recursive: true });
-        fs.writeFileSync(path.join(dir, marker), "// fixture\n");
-      }
-      fs.mkdirSync(path.join(dir, ".git"), { recursive: true });
-      fs.writeFileSync(path.join(dir, ".git", "config"), config);
+      const dir = makeCloneWithConfig(config, [
+        "scripts/training.mjs",
+        "training-universe.json",
+      ]);
       dirs.push(dir);
       return dir;
     };
