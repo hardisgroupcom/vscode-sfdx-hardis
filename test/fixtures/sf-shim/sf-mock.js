@@ -78,6 +78,50 @@ function docsPlugins() {
   return DOCS_PLUGINS;
 }
 
+// ---------------------------------------------------------------------------
+// Alternate fixture universe (SF_MOCK_UNIVERSE).
+//
+// Unset means everything above, byte for byte: no existing command, script or
+// CI job changes meaning. Set to a universe name, the mock reads
+//   test/fixtures/screenshot/<name>/sf-mock-overlay.json
+// and uses only the keys that file declares, falling back to the values above
+// for everything else.
+//
+// It is how the sfdx-hardis training gets screenshots showing Helios Energy
+// instead of MyCompany-CRM without editing a single existing fixture value.
+// ---------------------------------------------------------------------------
+const MOCK_UNIVERSE = process.env.SF_MOCK_UNIVERSE || "";
+const UNIVERSE_OVERLAY = (() => {
+  if (!MOCK_UNIVERSE) {
+    return {};
+  }
+  // The shim is copied to a temporary folder for the documentation run, so the
+  // folder is passed explicitly. The relative path is the fallback for a shim
+  // still sitting in the repository.
+  const file = process.env.SF_MOCK_UNIVERSE_DIR
+    ? path.join(process.env.SF_MOCK_UNIVERSE_DIR, "sf-mock-overlay.json")
+    : path.join(
+        __dirname,
+        "..",
+        "screenshot",
+        MOCK_UNIVERSE,
+        "sf-mock-overlay.json",
+      );
+  try {
+    return JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch {
+    // An unreadable overlay must never silently change the base universe
+    return {};
+  }
+})();
+
+/** The overlay value for a key, or the base fixture when the overlay is silent. */
+function universeValue(key, fallback) {
+  return Object.prototype.hasOwnProperty.call(UNIVERSE_OVERLAY, key)
+    ? UNIVERSE_OVERLAY[key]
+    : fallback;
+}
+
 const DOCS_ORGS = {
   nonScratchOrgs: [
     {
@@ -301,14 +345,19 @@ const DOCS_SOURCE_MEMBERS = [
 function docsSourceMemberRecords() {
   // The extension queries "... ORDER BY MemberType, MemberName": honor it so
   // the Metadata Retriever results are ordered by type like with a real org
-  const sorted = [...DOCS_SOURCE_MEMBERS].sort((a, b) =>
+  const source = universeValue("sourceMembers", DOCS_SOURCE_MEMBERS);
+  const sorted = [...source].sort((a, b) =>
     a[0] === b[0] ? a[1].localeCompare(b[1]) : a[0].localeCompare(b[0]),
   );
-  return sorted.map(([type, name, author, operation], index) => ({
+  // A row may carry its own date, for a universe where when a change happened
+  // is what tells the reader which rows are theirs
+  return sorted.map(([type, name, author, operation, date], index) => ({
     attributes: { type: "SourceMember" },
     MemberType: type,
     MemberName: name,
-    LastModifiedDate: `2026-08-1${(index % 8) + 1}T0${(index % 9) + 1}:2${index % 9}:00.000+0000`,
+    LastModifiedDate:
+      date ||
+      `2026-08-1${(index % 8) + 1}T0${(index % 9) + 1}:2${index % 9}:00.000+0000`,
     LastModifiedBy: { Name: author },
     IsNewMember: operation === "created",
     IsDeleted: false,
@@ -402,7 +451,13 @@ async function main() {
     const typeIndex = args.indexOf("--metadata-type");
     const type = typeIndex > -1 ? args[typeIndex + 1] : "";
     outputJsonIfRequested(
-      { status: 0, result: DOCS_PROFILE ? docsMetadataFor(type) : [] },
+      {
+        status: 0,
+        result: DOCS_PROFILE
+          ? (universeValue("metadata", null) || {})[type] ||
+            docsMetadataFor(type)
+          : [],
+      },
       "",
     );
     return 0;
@@ -412,7 +467,10 @@ async function main() {
     // Outside the docs profile, one developer sandbox (the default org): the target of the
     // Backpromote panel tests, whose plan fixture names it
     outputJsonIfRequested(
-      { status: 0, result: DOCS_PROFILE ? DOCS_ORGS : TEST_ORGS },
+      {
+        status: 0,
+        result: DOCS_PROFILE ? universeValue("orgs", DOCS_ORGS) : TEST_ORGS,
+      },
       "",
     );
     return 0;
@@ -423,14 +481,14 @@ async function main() {
       DOCS_PROFILE
         ? {
             status: 0,
-            result: {
+            result: universeValue("orgDisplay", {
               id: "00D5f0000012XybEAE",
               username: "deploy.user@mycompany.com.integ",
               instanceUrl: "https://mycompany--integ.sandbox.my.salesforce.com",
               apiVersion: "67.0",
               connectedStatus: "Connected",
               alias: "INTEGRATION",
-            },
+            }),
           }
         : {
             status: 0,
@@ -444,7 +502,7 @@ async function main() {
             },
           },
       DOCS_PROFILE
-        ? "deploy.user@mycompany.com.integ (Connected)"
+        ? `${universeValue("orgDisplay", { username: "deploy.user@mycompany.com.integ" }).username} (Connected)`
         : "test-user@example.com (Connected)",
     );
     return 0;
@@ -457,7 +515,7 @@ async function main() {
       records = docsSourceMemberRecords();
     } else if (DOCS_PROFILE && query.includes("FROM ApexClass")) {
       // Schedulable classes picker of the deployment action editor
-      records = [
+      records = universeValue("apexClasses", [
         {
           Name: "AccountHierarchySyncBatch",
           Body: "global class AccountHierarchySyncBatch implements Database.Batchable<SObject>, Schedulable {",
@@ -474,7 +532,7 @@ async function main() {
           Name: "OpportunityService",
           Body: "public with sharing class OpportunityService {",
         },
-      ];
+      ]);
     } else if (DOCS_PROFILE && query.includes("FROM Network")) {
       // Communities picker of the deployment action editor
       records = [{ Name: "Customer Portal" }, { Name: "Partner Community" }];
@@ -604,12 +662,17 @@ function answerBackpromote() {
     );
     return 2;
   }
-  const plan = JSON.parse(
-    fs.readFileSync(
-      path.join(__dirname, "..", "backpromote", "backpromote-plan.json"),
-      "utf8",
-    ),
-  );
+  // A fixture universe can serve its own plan, so the Backpromote screenshots
+  // of that universe show its own orgs and Pull Requests. Without one, the base
+  // plan is used, unchanged.
+  const universePlan = process.env.SF_MOCK_UNIVERSE_DIR
+    ? path.join(process.env.SF_MOCK_UNIVERSE_DIR, "backpromote-plan.json")
+    : "";
+  const planFile =
+    universePlan && fs.existsSync(universePlan)
+      ? universePlan
+      : path.join(__dirname, "..", "backpromote", "backpromote-plan.json");
+  const plan = JSON.parse(fs.readFileSync(planFile, "utf8"));
   const flagValue = (name) => {
     const index = args.indexOf(name);
     return index >= 0 ? args[index + 1] : null;
@@ -906,6 +969,24 @@ function answerBackpromote() {
       plan.items.some((item) => item.key === key && !held.has(item.key)),
     );
     const actions = flagValue("--actions");
+    // A fixture universe serves its own plan, so what the run reports has to
+    // come from that plan. Without a universe the base fixture answers exactly
+    // as before, which is what keeps the product screenshots unchanged.
+    const ownPlan = MOCK_UNIVERSE !== "";
+    const commentedPullRequests = ownPlan
+      ? plan.pullRequests.map((pullRequest) => pullRequest.number)
+      : [415, 417, 418];
+    const runnableActionIds = ownPlan
+      ? plan.actions
+          .filter((action) => !action.manual)
+          .map((action) => action.id)
+      : ["load-sla-thresholds"];
+    const skippedActionIds = ownPlan ? [] : ["recalculate-quote-sharing"];
+    const manualActionIds = ownPlan
+      ? plan.actions
+          .filter((action) => action.manual)
+          .map((action) => action.id)
+      : ["enable-sla-approval"];
     plan.result = {
       deployed: plan.items.filter(
         (item) => !held.has(item.key) && !excluded.includes(item.key),
@@ -915,15 +996,15 @@ function answerBackpromote() {
       actions: {
         run: args.includes("--skip-actions")
           ? []
-          : ["load-sla-thresholds"].filter(
+          : runnableActionIds.filter(
               (id) => !actions || actions.split(",").includes(id),
             ),
-        skipped: ["recalculate-quote-sharing"],
+        skipped: skippedActionIds,
         failed: [],
-        pending: args.includes("--skip-actions") ? [] : ["enable-sla-approval"],
+        pending: args.includes("--skip-actions") ? [] : manualActionIds,
       },
       conflictPending: [],
-      commentedPullRequests: [415, 417, 418],
+      commentedPullRequests,
       pushed: mergedFiles.length > 0,
       pushRejected: false,
       deployReport: path.join(
@@ -1337,8 +1418,82 @@ async function runShowcaseScenario(send, askPrompt, sleep) {
  * runs of these commands (see hardis-report/commands/*.log of any sfdx-hardis
  * CI/CD project).
  */
-const DOCS_REPO_URL = "https://github.com/mycompany/salesforce-crm";
-const DOCS_STORY_BRANCH = "feature/CRM-123-Sync-accounts-with-SAP";
+// The story the recorded command scenarios walk through. An alternate universe
+// (SF_MOCK_UNIVERSE) overrides the whole block through its "scenario" key, so a
+// screenshot never tells the reader to pick a name that exists nowhere in their
+// project.
+const DOCS_SCENARIO = {
+  repoUrl: "https://github.com/mycompany/salesforce-crm.git",
+  targetBranch: "integration",
+  targetBranches: [
+    {
+      title: "integration",
+      value: "integration",
+      description: "New features and enhancements (BUILD)",
+    },
+    {
+      title: "preprod",
+      value: "preprod",
+      description: "Hotfixes on the production version (RUN)",
+    },
+  ],
+  storyName: "CRM-123 Sync accounts with SAP",
+  storyBranch: "feature/CRM-123-Sync-accounts-with-SAP",
+  devOrgs: [
+    {
+      title: "https://mycompany--dev.sandbox.my.salesforce.com",
+      value: "dev",
+      description: "alex.martin@mycompany.com.dev",
+    },
+    {
+      title: "https://mycompany--dev2.sandbox.my.salesforce.com",
+      value: "dev2",
+      description: "sam.dubois@mycompany.com.dev2",
+    },
+  ],
+  publishItems: null,
+  ...universeValue("scenario", {}),
+};
+
+const DOCS_REPO_URL = DOCS_SCENARIO.repoUrl.replace(/\.git$/, "");
+const DOCS_STORY_BRANCH = DOCS_SCENARIO.storyBranch;
+const DOCS_TARGET_BRANCH = DOCS_SCENARIO.targetBranch;
+const DOCS_DEV_ORG = DOCS_SCENARIO.devOrgs[0];
+const DOCS_DEV_ORG_URL = DOCS_DEV_ORG.title;
+const DOCS_DEV_ORG_USER = DOCS_DEV_ORG.description;
+const DOCS_MANUAL_ACTIONS_URL =
+  DOCS_SCENARIO.manualActionsUrl ||
+  "https://mycompany.sharepoint.com/sites/crm/ManualActions.xlsx";
+
+// The delta package.xml the Save / Publish scenario shows, taken from the
+// universe so the components named are the ones the learner just changed
+const DOCS_PACKAGE_TYPES = DOCS_SCENARIO.packageXmlTypes || [
+  { name: "ApexClass", members: ["AccountSyncService"] },
+  { name: "CustomField", members: ["Account.SAP_Reference__c"] },
+  { name: "Flow", members: ["Account_Sync_With_SAP"] },
+];
+
+const DOCS_PACKAGE_MEMBER_COUNT = DOCS_PACKAGE_TYPES.reduce(
+  (total, type) => total + type.members.length,
+  0,
+);
+
+function deltaPackageXml() {
+  const lines = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<Package xmlns="http://soap.sforce.com/2006/04/metadata">',
+  ];
+  for (const type of DOCS_PACKAGE_TYPES) {
+    lines.push("    <types>");
+    for (const member of type.members) {
+      lines.push(`        <members>${member}</members>`);
+    }
+    lines.push(`        <name>${type.name}</name>`);
+    lines.push("    </types>");
+  }
+  lines.push("    <version>64.0</version>", "</Package>");
+  return lines.join("\n");
+}
 
 const DOCS_SCENARIOS = {
   "hardis:work:new": async (send, askPrompt, sleep) => {
@@ -1360,32 +1515,44 @@ const DOCS_SCENARIOS = {
       data: { command: "git stash", success: true },
     });
 
-    log(
-      "action",
-      "What will be the target branch of your new User Story ? (the branch where you will make your Pull Request after the User Story is completed)",
-      { isQuestion: true },
-    );
-    await askPrompt({
-      name: "targetBranch",
-      type: "select",
-      message:
+    // hardis:work:new only asks when the project allows more than one target
+    // branch: with a single one it says which it took and moves on
+    if (DOCS_SCENARIO.targetBranches.length > 1) {
+      log(
+        "action",
         "What will be the target branch of your new User Story ? (the branch where you will make your Pull Request after the User Story is completed)",
-      choices: [
-        {
-          title: "integration",
-          value: "integration",
-          description: "New features and enhancements (BUILD)",
-        },
-        {
-          title: "preprod",
-          value: "preprod",
-          description: "Hotfixes on the production version (RUN)",
-        },
-      ],
-    });
-    log("log", "integration");
+        { isQuestion: true },
+      );
+      await askPrompt({
+        name: "targetBranch",
+        type: "select",
+        message:
+          "What will be the target branch of your new User Story ? (the branch where you will make your Pull Request after the User Story is completed)",
+        choices: DOCS_SCENARIO.targetBranches,
+      });
+      log("log", DOCS_TARGET_BRANCH);
+    } else {
+      log(
+        "action",
+        `Automatically selected target branch is ${DOCS_TARGET_BRANCH}`,
+      );
+    }
     await sleep(150);
 
+    // A project that declares branchPrefixChoices gets its own wording, which is
+    // what the command shows: the universe carries them when it declares any
+    const storyTypeChoices = DOCS_SCENARIO.branchPrefixChoices || [
+      {
+        title: "\u{1F3D7}️ Feature",
+        value: "feature",
+        description: "New feature, enhancement or configuration change",
+      },
+      {
+        title: "\u{1F6E0}️ Fix",
+        value: "fix",
+        description: "Fix a defect found in an org",
+      },
+    ];
     log("action", "What type of User Story do you want to create?", {
       isQuestion: true,
     });
@@ -1395,34 +1562,25 @@ const DOCS_SCENARIOS = {
       message: "What type of User Story do you want to create?",
       description:
         "Select the category of work that best describes your User Story",
-      choices: [
-        {
-          title: "\u{1F3D7}️ Feature",
-          value: "feature",
-          description: "New feature, enhancement or configuration change",
-        },
-        {
-          title: "\u{1F6E0}️ Fix",
-          value: "fix",
-          description: "Fix a defect found in an org",
-        },
-      ],
+      choices: storyTypeChoices,
     });
-    log("log", "\u{1F3D7}️ Feature");
+    log("log", storyTypeChoices[0].title);
     await sleep(150);
 
-    log(
-      "action",
-      "What is the name of your new User Story? Please avoid accents and special characters.",
-      { isQuestion: true },
-    );
+    log("action", "What is the name of your new User Story?", {
+      isQuestion: true,
+    });
     await askPrompt({
       name: "storyName",
       type: "text",
-      message:
-        "What is the name of your new User Story? Please avoid accents and special characters. (ex: CRM-1042 Account hierarchy)",
+      message: "What is the name of your new User Story?",
+      description:
+        "Enter a descriptive name for your User Story. It becomes the name of your git branch, so avoid accents and special characters.",
+      placeholder: `Ex: ${DOCS_SCENARIO.storyNameExample || DOCS_SCENARIO.storyName}`,
     });
-    log("log", "CRM-123 Sync accounts with SAP");
+    // What the user typed, which is what the branch is named after: the two
+    // have to agree or the screenshot teaches a name that produces another branch
+    log("log", DOCS_SCENARIO.storyNameExample || DOCS_SCENARIO.storyName);
     await sleep(150);
 
     log(
@@ -1470,93 +1628,164 @@ const DOCS_SCENARIOS = {
           description:
             "Scratch orgs are configured on my project so I want to create or reuse one",
         },
+        // Offered whenever a default org is set, which it is once a learner
+        // has connected their orgs
+        ...(DOCS_SCENARIO.currentOrgChoice
+          ? [
+              {
+                title: `\u{1F60E} Current org ${DOCS_DEV_ORG_URL.replace(/^https:\/\//, "")}`,
+                value: "currentOrg",
+                description: `Use your default org with username ${DOCS_DEV_ORG_USER}`,
+              },
+            ]
+          : []),
         {
           title: "\u{1F920} I'm hardcore, I don't need an org !",
           value: "noOrg",
-          description: "Work with XML and sfdx-hardis configuration only",
+          description: DOCS_SCENARIO.currentOrgChoice
+            ? "Work with XML and sfdx-hardis configuration only, without a connected org"
+            : "Work with XML and sfdx-hardis configuration only",
         },
       ],
     });
-    log("log", "\u{1F30E} Sandbox org with source tracking");
-    await sleep(150);
+    // A universe whose contributors build in scratch orgs (the training) answers
+    // with the scratch org list, the one hardis:work:new shows for that choice.
+    // It has no sandbox initialization question, and it opens the org itself.
+    if (DOCS_SCENARIO.devOrgType === "scratch") {
+      log("log", "\u{1FA90} Scratch org");
+      await sleep(150);
 
-    log(
-      "action",
-      `Select a sandbox org to work in branch ${DOCS_STORY_BRANCH}`,
-      { isQuestion: true },
-    );
-    await askPrompt({
-      name: "sandboxOrg",
-      type: "select",
-      message: `Select a sandbox org to work in branch ${DOCS_STORY_BRANCH}`,
-      choices: [
-        {
-          title: "https://mycompany--dev.sandbox.my.salesforce.com",
-          value: "dev",
-          description: "alex.martin@mycompany.com.dev",
+      log("action", `Select a scratch org for branch ${DOCS_STORY_BRANCH}`, {
+        isQuestion: true,
+      });
+      await askPrompt({
+        name: "scratchOrg",
+        type: "select",
+        message: `Select a scratch org for branch ${DOCS_STORY_BRANCH}`,
+        description:
+          "Choose whether to create a new scratch org or reuse an existing one",
+        choices: [
+          {
+            title: "Create new scratch org",
+            value: "newScratchOrg",
+            description:
+              "Generate a new scratch org; you'll be ready to work in a few minutes",
+          },
+          {
+            title: "Reuse current org",
+            value: "currentOrg",
+            description: `Reuse current org ${DOCS_DEV_ORG_URL}. Beware of conflicts if others have merged changes.`,
+          },
+          ...DOCS_SCENARIO.devOrgs.map((org) => ({
+            title: `Reuse scratch org ${org.value}`,
+            value: org.value,
+            description: org.title,
+          })),
+        ],
+      });
+      log(
+        "action",
+        `Selected scratch org ${DOCS_DEV_ORG_URL} with user ${DOCS_DEV_ORG_USER}`,
+      );
+      send({
+        event: "commandSubCommandStart",
+        data: {
+          command: `sf config set target-org=${DOCS_DEV_ORG_USER}`,
+          cwd: ".",
         },
-        {
-          title: "https://mycompany--dev2.sandbox.my.salesforce.com",
-          value: "dev2",
-          description: "sam.dubois@mycompany.com.dev2",
+      });
+      await sleep(800);
+      send({
+        event: "commandSubCommandEnd",
+        data: {
+          command: `sf config set target-org=${DOCS_DEV_ORG_USER}`,
+          success: true,
         },
-        {
-          title: "\u{1F517} Connect to another org",
-          value: "other",
-          description: "Authenticate to an org that is not in the list yet",
-        },
-      ],
-    });
-    log("log", "https://mycompany--dev.sandbox.my.salesforce.com");
-    await sleep(150);
+      });
+      log("action", "Opening scratch org in browser...");
+      send({
+        event: "commandSubCommandStart",
+        data: { command: "sf org open", cwd: "." },
+      });
+      await sleep(800);
+      send({
+        event: "commandSubCommandEnd",
+        data: { command: "sf org open", success: true },
+      });
+    } else {
+      log("log", "\u{1F30E} Sandbox org with source tracking");
+      await sleep(150);
 
-    log(
-      "action",
-      "Setting https://mycompany--dev.sandbox.my.salesforce.com (alex.martin@mycompany.com.dev) as default org...",
-    );
-    send({
-      event: "commandSubCommandStart",
-      data: {
-        command: "sf config set target-org=alex.martin@mycompany.com.dev",
-        cwd: ".",
-      },
-    });
-    await sleep(1000);
-    send({
-      event: "commandSubCommandEnd",
-      data: {
-        command: "sf config set target-org=alex.martin@mycompany.com.dev",
-        success: true,
-      },
-    });
+      log(
+        "action",
+        `Select a sandbox org to work in branch ${DOCS_STORY_BRANCH}`,
+        { isQuestion: true },
+      );
+      await askPrompt({
+        name: "sandboxOrg",
+        type: "select",
+        message: `Select a sandbox org to work in branch ${DOCS_STORY_BRANCH}`,
+        choices: [
+          ...DOCS_SCENARIO.devOrgs,
+          {
+            title: "\u{1F517} Connect to another org",
+            value: "other",
+            description: "Authenticate to an org that is not in the list yet",
+          },
+        ],
+      });
+      log("log", DOCS_DEV_ORG_URL);
+      await sleep(150);
 
-    log(
-      "action",
-      "Do you want to open org alex.martin@mycompany.com.dev in your browser?",
-      { isQuestion: true },
-    );
-    await askPrompt({
-      name: "openOrg",
-      type: "select",
-      message:
-        "Do you want to open org alex.martin@mycompany.com.dev in your browser?",
-      choices: [
-        { title: "✅ Yes", value: "yes" },
-        { title: "❌ No", value: "no" },
-      ],
-    });
-    log("log", "❌ No");
-    await sleep(200);
+      log(
+        "action",
+        `Setting ${DOCS_DEV_ORG_URL} (${DOCS_DEV_ORG_USER}) as default org...`,
+      );
+      send({
+        event: "commandSubCommandStart",
+        data: {
+          command: `sf config set target-org=${DOCS_DEV_ORG_USER}`,
+          cwd: ".",
+        },
+      });
+      await sleep(1000);
+      send({
+        event: "commandSubCommandEnd",
+        data: {
+          command: `sf config set target-org=${DOCS_DEV_ORG_USER}`,
+          success: true,
+        },
+      });
+
+      // No sandbox initialization question: hardis:work:new only asks it when
+      // the project sets offerSandboxInit, and neither fixture project does
+      log(
+        "action",
+        `The metadata merged in ${DOCS_TARGET_BRANCH} is brought into your org by a backpromote, not by this command`,
+      );
+      await sleep(200);
+
+      log(
+        "action",
+        `Do you want to open org ${DOCS_DEV_ORG_USER} in your browser?`,
+        { isQuestion: true },
+      );
+      await askPrompt({
+        name: "openOrg",
+        type: "select",
+        message: `Do you want to open org ${DOCS_DEV_ORG_USER} in your browser?`,
+        choices: [
+          { title: "✅ Yes", value: "yes" },
+          { title: "❌ No", value: "no" },
+        ],
+      });
+      log("log", "❌ No");
+      await sleep(200);
+    }
 
     log("action", `Ready to work in branch ${DOCS_STORY_BRANCH}`);
-    log(
-      "log",
-      "Use your default org with username alex.martin@mycompany.com.dev",
-    );
-    log(
-      "log",
-      "Your current org URL is https://mycompany--dev.sandbox.my.salesforce.com",
-    );
+    log("log", `Use your default org with username ${DOCS_DEV_ORG_USER}`);
+    log("log", `Your current org URL is ${DOCS_DEV_ORG_URL}`);
     await sleep(600);
   },
 
@@ -1575,7 +1804,7 @@ const DOCS_SCENARIOS = {
     });
     log(
       "action",
-      `Preparing Pull Request from branch ${DOCS_STORY_BRANCH} to integration`,
+      `Preparing Pull Request from branch ${DOCS_STORY_BRANCH} to ${DOCS_TARGET_BRANCH}`,
     );
     await sleep(150);
 
@@ -1627,7 +1856,7 @@ const DOCS_SCENARIOS = {
     send({
       event: "commandSubCommandStart",
       data: {
-        command: `sf sgd:source:delta --from integration --to ${DOCS_STORY_BRANCH} --ignore-whitespace --source-dir force-app --json`,
+        command: `sf sgd:source:delta --from ${DOCS_TARGET_BRANCH} --to ${DOCS_STORY_BRANCH} --ignore-whitespace --source-dir force-app --json`,
         cwd: ".",
       },
     });
@@ -1635,40 +1864,25 @@ const DOCS_SCENARIOS = {
     send({
       event: "commandSubCommandEnd",
       data: {
-        command: `sf sgd:source:delta --from integration --to ${DOCS_STORY_BRANCH} --ignore-whitespace --source-dir force-app --json`,
+        command: `sf sgd:source:delta --from ${DOCS_TARGET_BRANCH} --to ${DOCS_STORY_BRANCH} --ignore-whitespace --source-dir force-app --json`,
         success: true,
       },
     });
     log(
       "log",
-      `Calculating package.xml diff from [integration] to [${DOCS_STORY_BRANCH} - commit]`,
+      `Calculating package.xml diff from [${DOCS_TARGET_BRANCH}] to [${DOCS_STORY_BRANCH} - commit]`,
     );
     log(
       "log",
       [
         "Delta package.xml diff to be merged within manifest/package.xml:",
-        '<?xml version="1.0" encoding="UTF-8"?>',
-        '<Package xmlns="http://soap.sforce.com/2006/04/metadata">',
-        "    <types>",
-        "        <members>AccountSyncService</members>",
-        "        <name>ApexClass</name>",
-        "    </types>",
-        "    <types>",
-        "        <members>Account.SAP_Reference__c</members>",
-        "        <name>CustomField</name>",
-        "    </types>",
-        "    <types>",
-        "        <members>Account_Sync_With_SAP</members>",
-        "        <name>Flow</name>",
-        "    </types>",
-        "    <version>67.0</version>",
-        "</Package>",
+        deltaPackageXml(),
       ].join("\n"),
     );
     send({
       event: "reportFile",
       file: "manifest/package.xml",
-      title: "Git Delta package.xml (3)",
+      title: `Git Delta package.xml (${DOCS_PACKAGE_MEMBER_COUNT})`,
       type: "report",
     });
     await sleep(250);
@@ -1749,7 +1963,7 @@ const DOCS_SCENARIOS = {
     );
     log(
       "warning",
-      "If you have pre-deployment or post-deployment manual actions, record them in https://mycompany.sharepoint.com/sites/crm/ManualActions.xlsx",
+      `If you have pre-deployment or post-deployment manual actions, record them in ${DOCS_MANUAL_ACTIONS_URL}`,
     );
     send({
       event: "reportFile",
@@ -1759,7 +1973,7 @@ const DOCS_SCENARIOS = {
     });
     send({
       event: "reportFile",
-      file: "https://mycompany.sharepoint.com/sites/crm/ManualActions.xlsx",
+      file: DOCS_MANUAL_ACTIONS_URL,
       title: "Update Manual Actions file",
       type: "actionUrl",
     });
@@ -1785,10 +1999,422 @@ const DOCS_SCENARIOS = {
     await sleep(600);
   },
 
+  // CI authentication of a major branch, what the DevOps Pipeline gear menu >
+  // Add/Configure Org runs. Replays the questions, log lines and report files of
+  // sf hardis:project:configure:auth in the order the command asks them, as it
+  // runs once VS Code has relaunched it with the chosen org as default org. The
+  // two values it prints are fake, in the shape of the real ones.
+  "hardis:project:configure:auth": async (send, askPrompt, sleep) => {
+    const log = (logType, message, extra) =>
+      send({ event: "commandLogLine", logType, message, ...(extra || {}) });
+    const question = async (prompt) => {
+      log("action", prompt.message, { isQuestion: true });
+      return askPrompt(prompt);
+    };
+    const subCommand = async (command, ms) => {
+      send({ event: "commandSubCommandStart", data: { command, cwd: "." } });
+      await sleep(ms);
+      send({
+        event: "commandSubCommandEnd",
+        data: { command, success: true },
+      });
+    };
+    const auth = {
+      branchName: "integration",
+      orgAlias: "INTEGRATION",
+      remoteBranches: ["integration", "main", "preprod", "uat"],
+      mergeTargets: ["uat"],
+      contactEmail: "release.manager@mycompany.com",
+      ...(DOCS_SCENARIO.authConfig || {}),
+    };
+    const orgs = universeValue("orgs", DOCS_ORGS);
+    const byUrl = (a, b) =>
+      (a.instanceUrl || "").localeCompare(b.instanceUrl || "");
+    const orgList = [
+      ...[...(orgs.scratchOrgs || [])].sort(byUrl),
+      ...[...(orgs.nonScratchOrgs || [])].sort(byUrl),
+    ];
+    const org = orgList.find((o) => o.alias === auth.orgAlias) || orgList[0];
+    const branch = auth.branchName;
+    const upper = branch.toUpperCase();
+    const branchConfigFile = `./config/branches/.sfdx-hardis.${branch}.yml`;
+    const keyFile = `config/branches/.jwt/${branch}.key`;
+    const consumerKey =
+      "3MVG9Rd3qC6oMalVq8Hk2vT0bXa1cLmNpQrStUvWxYz4AbCdEfGhIjKlMnOpQrStUvWxYz0123456789AbCdEfGhIjKlMnOpQrStUvWxYz01234567";
+    const decryptionKey = "7f3a9c1e5b2d8f4a6c0e9b7d3f1a5c8e"; // gitleaks:allow (fake value of a mocked command)
+
+    log(
+      "action",
+      "This command will configure the authentication between a git branch and a Salesforce org.",
+    );
+    log("action", "Listing your authenticated orgs...");
+    await sleep(300);
+    await question({
+      name: "org",
+      type: "select",
+      message:
+        "Please select or login into the org you want to configure the SF CLI Authentication",
+      description:
+        "Choose a Salesforce org from the list of authenticated orgs",
+      choices: [
+        {
+          title: "\u{1F30D} Login to another org",
+          value: "other",
+          description:
+            "Connect in Web Browser to a Sandbox, a Production Org, a Dev Org or a Scratch Org",
+        },
+        ...orgList.map((o) => ({
+          title: `${o.instanceUrl.replace("https://", "")} (${o.alias})`,
+          // The org the scenario configures answers to a fixed value, so the
+          // test can pick it without knowing the universe's usernames
+          value: o === org ? "configuredOrg" : o.username,
+          description:
+            `Connected with ${o.username}` +
+            (o.devHubUsername ? ` (Hub: ${o.devHubUsername})` : ""),
+        })),
+        {
+          title:
+            "\u{1F631} I already authenticated my org but I don't see it !",
+          value: "clearCache",
+          description:
+            "It might be a sfdx-hardis cache issue, reset it and try again !",
+        },
+        {
+          title: "❌ Cancel",
+          value: "cancel",
+          description: "Get out of here \u{1F60A}",
+        },
+      ],
+    });
+    log("log", `${org.instanceUrl.replace("https://", "")} (${org.alias})`);
+    log("action", `Selected Org ${org.username} - ${org.instanceUrl}`);
+    await subCommand(`sf config set target-org=${org.username}`, 500);
+    log(
+      "action",
+      `Checking if the org username has changed from ${org.username}...`,
+    );
+    await subCommand("sf config get target-org", 300);
+
+    await question({
+      name: "branchName",
+      type: "select",
+      message:
+        "What is the name of the git branch you want to configure Automated CI/CD deployments from?",
+      description: "Enter the git branch name for this org configuration",
+      placeholder: "Select the git branch name",
+      choices: auth.remoteBranches.map((b) => ({ title: b, value: b })),
+    });
+    log("log", branch);
+    await sleep(150);
+
+    await question({
+      name: "instanceUrl",
+      type: "select",
+      message: `What is the base URL or domain or the org you want to connect to, as ${branch} related org ?`,
+      description:
+        "Select the Salesforce environment type or specify a custom URL for authentication",
+      choices: [
+        {
+          title: `♻️ ${org.instanceUrl}`,
+          value: org.instanceUrl,
+          description: "Your current default org",
+        },
+        {
+          title:
+            "\u{1F4DD} Custom login URL (Sandbox, DevHub or Production Org)",
+          value: "custom",
+          description:
+            "Recommended option \u{1F60A} Example: https://myclient--preprod.sandbox.lightning.force.com/",
+        },
+        {
+          title: "\u{1F9EA} Sandbox or Scratch org (test.salesforce.com)",
+          value: "https://test.salesforce.com",
+          description:
+            "The org I want to connect is a sandbox or a scratch org",
+        },
+        {
+          title:
+            "☢️ Other: Dev org, Production org or DevHub org (login.salesforce.com)",
+          value: "https://login.salesforce.com",
+          description: "The org I want to connect is NOT a sandbox",
+        },
+      ],
+    });
+    const instanceUrl = org.loginUrl || "https://test.salesforce.com";
+    log("log", instanceUrl);
+    await sleep(150);
+
+    await question({
+      name: "mergeTargets",
+      type: "multiselect",
+      message: `What are the target git branches that ${branch} will be able to merge in? (very often a single target branch to select)`,
+      description:
+        "Select the git branches that this branch will be able to merge in (for example, integration can merge into uat, and preprod can merge into main)",
+      placeholder: "Select the target git branches",
+      choices: auth.remoteBranches.map((b) => ({ title: b, value: b })),
+      initial: auth.mergeTargets,
+    });
+    log("log", auth.mergeTargets.join(", "));
+    await sleep(150);
+
+    await question({
+      name: "username",
+      type: "text",
+      message:
+        "What is the Salesforce username that will be used for deployments by CI server ? Example: admin.sfdx@myclient.com",
+      description: "Enter the Salesforce username for this configuration",
+      placeholder: "Ex: admin.sfdx@myclient.com",
+      initial: org.username,
+    });
+    log("log", org.username);
+    send({
+      event: "reportFile",
+      file: branchConfigFile,
+      title: `Updated ${branch} config file`,
+      type: "report",
+    });
+    await sleep(150);
+
+    await question({
+      name: "certSource",
+      type: "select",
+      message: "How do you want to provide the SSL certificate?",
+      description:
+        "Choose between generating a self-signed certificate (default) or using your own CA-signed certificate.",
+      choices: [
+        {
+          title: "Generate a self-signed certificate (default)",
+          value: "selfSigned",
+          description:
+            "sfdx-hardis generates the key pair, the certificate, and deploys the External Client App for you.",
+        },
+        {
+          title:
+            "Use a CA-signed certificate I already have (manual External Client App creation)",
+          value: "caSigned",
+          description:
+            "You will create the External Client App manually in Setup; sfdx-hardis only collects the values for CI/CD variables.",
+        },
+      ],
+    });
+    log("log", "Generate a self-signed certificate (default)");
+    log("action", "Generating SSL certificate...");
+    await subCommand(
+      'openssl req -nodes -newkey rsa:2048 -keyout server.key -out server.csr -subj "/C=GB/ST=Paris/L=Paris/O=Hardis Group/OU=sfdx-hardis/CN=hardis-group.com"',
+      700,
+    );
+    await subCommand(
+      "openssl x509 -req -sha256 -days 3650 -in server.csr -signkey server.key -out server.crt",
+      500,
+    );
+    send({
+      event: "reportFile",
+      file: keyFile,
+      title: `Encrypted SSL certificate key for branch ${branch}`,
+      type: "report",
+    });
+
+    await question({
+      name: "createApp",
+      type: "confirm",
+      message:
+        "Do you want sfdx-hardis to configure the SF CLI External Client App or Connected App on your org ?",
+      description:
+        "Creates a Connected App required for CI/CD authentication. Choose yes if you are unsure.",
+      initial: true,
+    });
+    log("log", "✅ Yes");
+    await sleep(150);
+
+    await question({
+      name: "certStorage",
+      type: "select",
+      message: "Which JWT certificate storage mode do you want?",
+      description:
+        "Choose how the encrypted JWT certificate key should be stored for CI/CD authentication.",
+      choices: [
+        {
+          title:
+            "ClientId + decryption key as secret variables + encrypted certificate as file (default)",
+          value: "file",
+          description:
+            "Keep current behavior: store clientId and decryption key as variables, and encrypted certificate as a local file.",
+        },
+        {
+          title:
+            "ClientId + decryption key + encrypted certificate as secret variables",
+          value: "variable",
+          description:
+            "Store clientId, decryption key, and encrypted certificate as CI/CD secret variables (recommended for fully secret-based auth).",
+        },
+      ],
+    });
+    log(
+      "log",
+      "ClientId + decryption key as secret variables + encrypted certificate as file (default)",
+    );
+
+    log(
+      "action",
+      "Please configure both below variables in your CI/CD platform.",
+    );
+    log(
+      "log",
+      `- Variable: SFDX_CLIENT_ID_${upper}\n- Value: <copy>${consumerKey}</copy>`,
+    );
+    log(
+      "log",
+      `- Variable: SFDX_CLIENT_KEY_${upper}\n- Value: <copy>${decryptionKey}</copy>`,
+    );
+    log(
+      "log",
+      "Help to configure CI/CD variables: https://sfdx-hardis.cloudity.com/salesforce-devops-setup-auth/",
+    );
+    log(
+      "warning",
+      `If you are using GitHub or Azure, you also need to manually add references to SFDX_CLIENT_ID_${upper} and SFDX_CLIENT_KEY_${upper} in your pipeline YAML definition file (.github/workflows/*.yml or azure-pipelines-*.yml).`,
+    );
+    send({
+      event: "reportFile",
+      file: "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-auth/",
+      title: "Help to configure CI variables",
+      type: "docUrl",
+    });
+    await question({
+      name: "variablesSet",
+      type: "confirm",
+      message:
+        "Please confirm when variables have been set (copy the variable names and values in the section above)",
+      description:
+        "Confirm when you have configured the required CI/CD environment variables in your deployment platform",
+    });
+    log("log", "✅ Yes");
+
+    const appName = `sfdxhardis${branch
+      .replace(/[^a-zA-Z0-9]/g, "_")
+      .toLowerCase()
+      .replace(/_+/g, "_")
+      .substring(0, 20)}`;
+    await question({
+      name: "appName",
+      type: "text",
+      message: "How would you like to name the External Client App?",
+      description:
+        "Name for the External Client App that will be created in your Salesforce org",
+      placeholder: "Ex: sfdx_hardis",
+      initial: appName,
+    });
+    log("log", appName);
+    await question({
+      name: "contactEmail",
+      type: "text",
+      message:
+        "Enter a contact email for the External Client App (ex: teoman.sertcelik@gmail.com)",
+      initial: auth.contactEmail,
+    });
+    log("log", auth.contactEmail);
+    await question({
+      name: "profile",
+      type: "select",
+      message:
+        "What profile will be pre-authorized for the External Client App ? (ex: System Administrator)",
+      choices: [
+        { title: "System Administrator", value: "System Administrator" },
+        { title: "Standard User", value: "Standard User" },
+      ],
+    });
+    log("log", "System Administrator");
+
+    log(
+      "action",
+      `Deploying External Client App ${appName} into target org ${org.username} ...`,
+    );
+    log(
+      "log",
+      `External Client App metadata files:\n- externalClientApps/${appName}.eca-meta.xml\n- extlClntAppOauthSettings/${appName}OAuthSettings.ecaOauth-meta.xml\n- extlClntAppGlobalOauthSets/${appName}GlblOAuth.ecaGlblOauth-meta.xml (certificate and consumer key hidden)\n- extlClntAppPolicies/${appName}_defaultPolicy.ecaPlcy-meta.xml\n- extlClntAppOauthPolicies/${appName}OAuthSettings_defaultPolicy.ecaOauthPlcy-meta.xml`,
+    );
+    await subCommand(
+      `sf project deploy start --metadata-dir "/tmp/sfdx-hardis-eca" --wait 120 --test-level NoTestRun --api-version 64.0 --target-org ${org.username} --json`,
+      1500,
+    );
+    log("action", `Successfully deployed ${appName} External Client App`);
+    log(
+      "action",
+      `Branch ${branch} successfully configured for authentication!`,
+    );
+    log(
+      "warning",
+      "Make sure you have set the environment variables in your CI/CD platform",
+    );
+    log(
+      "warning",
+      "Don't forget to commit the sfdx-hardis config file and the encrypted certificated key in git!",
+    );
+    await sleep(600);
+  },
+
   // Productivity command example (docs/assets/images/ProductivityCommands.png):
   // replay of a real `sf hardis:org:user:activateinvalid` run (reactivation of
   // sandbox users whose email was suffixed with .invalid by a refresh),
   // anonymized
+  // Connecting an org, which is what the Orgs Manager "Add org" button runs.
+  // The alias question is the point of this scenario: the default is built from
+  // the org address, and on a fresh Developer Edition that address is a random
+  // string, so the name has to be typed rather than accepted.
+  "hardis:org:select": async (send, askPrompt, sleep) => {
+    const log = (logType, message, extra) =>
+      send({ event: "commandLogLine", logType, message, ...(extra || {}) });
+
+    log("action", "Please select the org you want to connect");
+    await sleep(400);
+    await askPrompt({
+      name: "orgSelect",
+      type: "select",
+      message: "Please select an org",
+      description: "Pick an org you already connected, or connect a new one",
+      choices: [
+        { title: "Connect to another org", value: "connectOrg" },
+        {
+          title: "helios-dev",
+          value: "helios-dev",
+          description: "helios.deploy+helios-dev@heliostraining.invalid",
+        },
+      ],
+    });
+    log("log", "Connect to another org");
+    await sleep(300);
+
+    log("action", "Authenticating using web login");
+    log("log", "Please login in the open web browser");
+    await sleep(900);
+    log(
+      "other",
+      "Successfully logged to https://orgfarm-9f2a1c7e4b-dev-ed.develop.my.salesforce.com",
+    );
+    await sleep(300);
+
+    log("action", "What name do you want to give this org?", {
+      isQuestion: true,
+    });
+    await askPrompt({
+      name: "alias",
+      type: "text",
+      message: "What name do you want to give this org?",
+      description:
+        "This alias replaces the long username in every list and every command. Keep the suggestion or type your own.",
+      initial: "orgfarm-9f2a1c7e4b",
+    });
+    log("log", "helios-dev");
+    await sleep(200);
+
+    log("action", "Naming the org helios-dev");
+    log(
+      "success",
+      "Org helios.deploy+helios-dev@heliostraining.invalid is now known as helios-dev",
+    );
+    await sleep(200);
+  },
+
   "hardis:org:user:activateinvalid": async (send, askPrompt, sleep) => {
     const log = (logType, message, extra) =>
       send({ event: "commandLogLine", logType, message, ...(extra || {}) });

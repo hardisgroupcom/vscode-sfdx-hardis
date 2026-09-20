@@ -32,6 +32,12 @@ export interface CustomCommand {
   sourceType?: CustomCommandsSource;
   /** CSS classes for the icon container in the welcome panel. */
   welcomeIconClass?: string;
+  /**
+   * Where the menu belongs on the Welcome page, carried over from the
+   * customCommandsPosition of its source so the setting means the same thing
+   * on the Welcome page as in the Commands tree.
+   */
+  position?: CustomCommandsPosition;
 }
 
 /** A menu group that groups related custom commands */

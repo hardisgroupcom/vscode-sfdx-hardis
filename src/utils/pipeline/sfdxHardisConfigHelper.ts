@@ -117,6 +117,7 @@ export class SfdxHardisConfigHelper {
     { name: "availableTargetBranches", scopes: ["global"] },
     { name: "availableTargetBranchesLabels", scopes: ["global"] },
     { name: "sharedDevSandboxes", scopes: ["global"] },
+    { name: "offerSandboxInit", scopes: ["global"] },
     { name: "newTaskNameRegex", scopes: ["global"] },
     { name: "newTaskNameRegexExample", scopes: ["global"] },
     { name: "installPackagesDuringCheckDeploy", scopes: ["global"] },
@@ -133,6 +134,7 @@ export class SfdxHardisConfigHelper {
     { name: "jiraTicketRegex", scopes: ["global"] },
     { name: "genericTicketingProviderRegex", scopes: ["global"] },
     { name: "genericTicketingProviderUrlBuilder", scopes: ["global"] },
+    { name: "genericTicketingProviderDetailsUrlBuilder", scopes: ["global"] },
     { name: "serviceNowTicketRegex", scopes: ["global"] },
     { name: "serviceNowTablePrefixes", scopes: ["global"] },
     { name: "serviceNowCommentField", scopes: ["global"] },
@@ -155,6 +157,7 @@ export class SfdxHardisConfigHelper {
     { name: "flowDeleteRetryDelayMs", scopes: ["global"] },
     { name: "flowDeleteInterviews", scopes: ["global"] },
     { name: "anonymization", scopes: ["global"] },
+    { name: "monitoringRepository", scopes: ["global"] },
   ];
   static readonly SECTIONS = [
     {
@@ -199,6 +202,7 @@ export class SfdxHardisConfigHelper {
         "availableProjects",
         "allowedOrgTypes",
         "sharedDevSandboxes",
+        "offerSandboxInit",
         "newTaskNameRegex",
         "newTaskNameRegexExample",
       ],
@@ -211,6 +215,7 @@ export class SfdxHardisConfigHelper {
         "autoCleanTypes",
         "autoRetrieveWhenPull",
         "autoRemoveUserPermissions",
+        "monitoringRepository",
       ],
     },
     {
@@ -223,6 +228,7 @@ export class SfdxHardisConfigHelper {
         "jiraTicketRegex",
         "genericTicketingProviderRegex",
         "genericTicketingProviderUrlBuilder",
+        "genericTicketingProviderDetailsUrlBuilder",
         "serviceNowTicketRegex",
         "serviceNowTablePrefixes",
         "serviceNowCommentField",
