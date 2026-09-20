@@ -52,10 +52,15 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
   // instead of the generic form built from the schema, so that both places offer
   // the action types, their parameters and the target orgs restriction
   @track showDeploymentActionModal = false;
+  @track showCustomFunctionModal = false;
+  @track currentCustomFunction = null;
+  @track customFunctionModalIsCreate = false;
   @track currentDeploymentAction = null;
   // The modal opens read-only when the settings panel itself is in view mode
   @track deploymentActionModalEditMode = false;
   @track projectApexScripts = [];
+  // Custom functions of the project, used as deployment action types
+  @track customFunctions = [];
   @track projectSfdmuWorkspaces = [];
   @track projectSchedulableClasses = [];
   @track schedulableClassesLoading = false;
@@ -619,6 +624,9 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
       this.availableBranches = this.initData.availableBranches || [];
       this.projectApexScripts = Array.isArray(this.initData.projectApexScripts)
         ? this.initData.projectApexScripts
+        : [];
+      this.customFunctions = Array.isArray(this.initData.customFunctions)
+        ? this.initData.customFunctions
         : [];
       this.projectSfdmuWorkspaces = Array.isArray(
         this.initData.projectSfdmuWorkspaces,
@@ -1368,7 +1376,11 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
         rowData._displayLabel =
           obj.label || obj.command || obj.id || this.t("unnamedAction");
         const contextCode = obj.context || "all";
-        rowData._typeLabel = getActionTypeLabel(typeCode, translate);
+        rowData._typeLabel = getActionTypeLabel(
+          typeCode,
+          translate,
+          this.customFunctions,
+        );
         rowData._typeIconName = getActionTypeIconName(typeCode);
         rowData._typePillClass = getActionTypePillClass(typeCode);
         rowData._contextLabel = getActionContextLabel(contextCode, translate);
@@ -1463,6 +1475,105 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
       this.handleReturnSchedulableClasses(data);
     } else if (type === "returnCommunities") {
       this.handleReturnCommunities(data);
+    } else if (type === "customFunctionsRefreshed") {
+      this.customFunctions = data.customFunctions || [];
+      this.handleCloseCustomFunctionModal();
     }
+  }
+
+  // --- Custom functions tab ---------------------------------------------------
+
+  get hasCustomFunctions() {
+    return this.customFunctions.length > 0;
+  }
+
+  get customFunctionCards() {
+    return this.customFunctions.map((customFunction) => {
+      const inputNames = (customFunction.inputs || [])
+        .map((input) => input.name)
+        .join(", ");
+      const outputNames = (customFunction.outputs || [])
+        .map((output) => output.name)
+        .join(", ");
+      const summaryParts = [
+        `${customFunction.runtime} - ${customFunction.script}`,
+      ];
+      if (inputNames) {
+        summaryParts.push(
+          this.t("customFunctionInputsSummary", { names: inputNames }),
+        );
+      }
+      if (outputNames) {
+        summaryParts.push(
+          this.t("customFunctionOutputsSummary", { names: outputNames }),
+        );
+      }
+      return {
+        id: customFunction.id,
+        label: customFunction.label || customFunction.id,
+        summary: summaryParts.join(" | "),
+        // listCustomFunctions is called with runtime checking, so false really means missing
+        runtimeMissing: customFunction.runtimeAvailable === false,
+        runtimeMissingLabel: this.t("customFunctionRuntimeMissing", {
+          runtime: customFunction.runtime,
+        }),
+      };
+    });
+  }
+
+  handleAddCustomFunction() {
+    this.currentCustomFunction = {
+      id: "",
+      label: "",
+      runtime: "node",
+      script: "",
+      inputs: [],
+      outputs: [],
+    };
+    this.customFunctionModalIsCreate = true;
+    this.showCustomFunctionModal = true;
+  }
+
+  handleEditCustomFunction(event) {
+    const functionId = event.target.dataset.functionId;
+    const customFunction = this.customFunctions.find(
+      (fn) => fn.id === functionId,
+    );
+    if (!customFunction) {
+      return;
+    }
+    // Edited on a copy, so cancelling leaves the catalog untouched
+    this.currentCustomFunction = JSON.parse(JSON.stringify(customFunction));
+    this.customFunctionModalIsCreate = false;
+    this.showCustomFunctionModal = true;
+  }
+
+  handleDeleteCustomFunction(event) {
+    const functionId = event.target.dataset.functionId;
+    // The CLI refuses to delete a function deployment actions still use, unless forced.
+    // It is the one that knows which actions reference it, so it decides, not the panel.
+    window.sendMessageToVSCode({
+      type: "deleteCustomFunction",
+      data: { functionId: functionId, force: false },
+    });
+  }
+
+  handleRefreshCustomFunctions() {
+    window.sendMessageToVSCode({ type: "refreshCustomFunctions", data: {} });
+  }
+
+  handleCloseCustomFunctionModal() {
+    this.showCustomFunctionModal = false;
+    this.currentCustomFunction = null;
+  }
+
+  handleSaveCustomFunction(event) {
+    window.sendMessageToVSCode({
+      type: "saveCustomFunction",
+      data: {
+        customFunction: event.detail,
+        mode: this.customFunctionModalIsCreate ? "create" : "update",
+      },
+    });
   }
 }

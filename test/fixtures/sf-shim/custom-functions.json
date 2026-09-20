@@ -1,0 +1,43 @@
+{
+  "outputString": "Found 2 custom functions",
+  "customFunctions": [
+    {
+      "id": "notifyReleaseChannel",
+      "label": "Notify the release channel",
+      "description": "Post a release note to Slack and return the link to it",
+      "runtime": "node",
+      "script": "scripts/functions/notify-release.js",
+      "runtimeAvailable": true,
+      "inputs": [
+        {
+          "name": "channel",
+          "type": "string",
+          "required": true,
+          "default": "#crm-releases"
+        },
+        {
+          "name": "severity",
+          "type": "select",
+          "options": ["info", "warning", "critical"],
+          "default": "info"
+        },
+        {
+          "name": "webhookToken",
+          "type": "secret",
+          "required": true
+        }
+      ],
+      "outputs": [{ "name": "messageId" }, { "name": "permalink" }]
+    },
+    {
+      "id": "checkErpAvailability",
+      "label": "Check that the ERP is reachable",
+      "description": "Ping the ERP before a deployment that depends on it",
+      "runtime": "bash",
+      "script": "scripts/functions/check-erp.sh",
+      "runtimeAvailable": true,
+      "inputs": [{ "name": "endpoint", "type": "string", "required": true }],
+      "outputs": [{ "name": "erpStatus" }]
+    }
+  ]
+}

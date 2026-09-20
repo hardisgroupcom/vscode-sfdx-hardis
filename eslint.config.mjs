@@ -198,9 +198,16 @@ export default [
     },
   },
 
-  // JavaScript CommonJS files: src worker, scripts, webpack config
+  // JavaScript CommonJS files: src worker, scripts, webpack config, and the custom function
+  // fixtures, which a deployment action runs in a node process of its own. MegaLinter calls
+  // eslint with --no-ignore, so those fixtures need real node globals rather than an ignore.
   {
-    files: ["src/**/*.js", "scripts/**/*.js", "webpack*.js"],
+    files: [
+      "src/**/*.js",
+      "scripts/**/*.js",
+      "webpack*.js",
+      "test/fixtures/**/scripts/functions/**/*.js",
+    ],
     languageOptions: {
       ecmaVersion: 2020,
       sourceType: "commonjs",
