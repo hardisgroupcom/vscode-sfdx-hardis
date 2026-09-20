@@ -5,4 +5,9 @@ const severity = process.env.SFDX_HARDIS_IN_SEVERITY;
 
 console.log(`Posting a ${severity} release note to ${channel}`);
 
-console.log(JSON.stringify({ messageId: "1758042000.001900", permalink: "https://mycompany.slack.com/archives/C12345/p1758042000001900" }));
+console.log(
+  JSON.stringify({
+    messageId: "1758042000.001900",
+    permalink: "https://mycompany.slack.com/archives/C12345/p1758042000001900",
+  }),
+);
