@@ -10,6 +10,12 @@ import {
   listProjectDataWorkspaces,
 } from "../utils/prePostCommandsUtils";
 import { handleDeploymentActionPickerMessage } from "../utils/pipeline/deploymentActionPickers";
+import {
+  buildFunctionCommandFlags,
+  listCustomFunctions,
+  quote,
+  runFunctionCommand,
+} from "../utils/customFunctionsUtils";
 import { t } from "../i18n/i18n";
 import { readSfdxHardisConfig } from "../utils/sfdx-hardis-config-utils";
 
@@ -41,6 +47,10 @@ export function registerShowPipelineConfig(commands: Commands) {
       const projectApexScripts = await listProjectApexScripts();
       const projectSfdmuWorkspaces = await listProjectDataWorkspaces();
 
+      // Custom functions are deployment action types, so the editor of this panel needs the
+      // catalog. Runtimes are checked here so the Functions tab can flag a missing interpreter.
+      let customFunctions = await listCustomFunctions({ checkRuntimes: true });
+
       // Show progress while loading config editor input
       const configEditorInput = await vscode.window.withProgress(
         {
@@ -57,6 +67,7 @@ export function registerShowPipelineConfig(commands: Commands) {
           input.availableApexTestClasses = availableApexTestClasses;
           input.projectApexScripts = projectApexScripts;
           input.projectSfdmuWorkspaces = projectSfdmuWorkspaces;
+          input.customFunctions = customFunctions;
           return input;
         },
       );
@@ -107,6 +118,7 @@ export function registerShowPipelineConfig(commands: Commands) {
                 input.availableApexTestClasses = availableApexTestClasses;
                 input.projectApexScripts = projectApexScripts;
                 input.projectSfdmuWorkspaces = projectSfdmuWorkspaces;
+                input.customFunctions = customFunctions;
                 return input;
               },
             );
@@ -123,6 +135,48 @@ export function registerShowPipelineConfig(commands: Commands) {
               "Error loading configuration: " + error.message,
             );
           }
+        } else if (type === "saveCustomFunction") {
+          // The CLI is the engine: the panel never writes customFunctions itself, it runs
+          // the same command a terminal user would.
+          const isCreate = data.mode === "create";
+          const command =
+            `sf hardis:project:function:${isCreate ? "create" : "update"} --agent ` +
+            buildFunctionCommandFlags(data.customFunction, isCreate ? "create" : "update");
+          const saved = await runFunctionCommand(
+            command,
+            isCreate
+              ? t("customFunctionCreated", { id: data.customFunction.id })
+              : t("customFunctionUpdated", { id: data.customFunction.id }),
+          );
+          if (saved) {
+            customFunctions = await listCustomFunctions({ checkRuntimes: true });
+            panel.sendMessage({
+              type: "customFunctionsRefreshed",
+              data: { customFunctions },
+            });
+          }
+        } else if (type === "deleteCustomFunction") {
+          const usedByActions = data.force === true;
+          const command =
+            `sf hardis:project:function:delete --agent --id ${quote(data.functionId)}` +
+            (usedByActions ? " --force" : "");
+          const deleted = await runFunctionCommand(
+            command,
+            t("customFunctionDeleted", { id: data.functionId }),
+          );
+          if (deleted) {
+            customFunctions = await listCustomFunctions({ checkRuntimes: true });
+            panel.sendMessage({
+              type: "customFunctionsRefreshed",
+              data: { customFunctions },
+            });
+          }
+        } else if (type === "refreshCustomFunctions") {
+          customFunctions = await listCustomFunctions({ checkRuntimes: true });
+          panel.sendMessage({
+            type: "customFunctionsRefreshed",
+            data: { customFunctions },
+          });
         } else {
           // Lazy-loaded lists of the deployment action editor
           await handleDeploymentActionPickerMessage(panel, type, data);

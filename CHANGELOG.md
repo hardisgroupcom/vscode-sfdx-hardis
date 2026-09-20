@@ -6,6 +6,10 @@
   - **Welcome page** is always the first entry, above the custom menus a project declares
   - The custom menus of the project show as soon as its configuration is read, without waiting for the menus that installed plugins provide
   - The lessons of the sfdx-hardis training course run in the Command Runner panel instead of a terminal, with their questions and the files they write, and only in a clone of the course
+- Custom functions: declare your own Node.js, Python or Bash scripts as deployment action types, from a new **Custom Functions** tab in Pipeline Settings
+  - The deployment action editor offers them next to the built-in types, and builds its form from the inputs each function declares (text, number, checkbox, picklist, long text, secret)
+  - A secret input asks for the name of a CI/CD variable, never for its value
+  - Requires sfdx-hardis 8.9.0
 - DevOps Pipeline
   - With the generic ticketing provider, the tickets of Pull Requests show their title and status when the project sets `genericTicketingProviderDetailsUrlBuilder`
   - The No Overwrite and Destructive Changes packages open even when the file does not exist yet, and the first item added creates it

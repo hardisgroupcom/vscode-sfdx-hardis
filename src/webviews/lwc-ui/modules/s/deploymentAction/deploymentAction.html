@@ -148,6 +148,96 @@
               </div>
             </template>
 
+            <!-- Custom function: one field per declared input, rendered from its contract -->
+            <template if:true={showCustomFunctionInputs}>
+              <template for:each={customFunctionInputFields} for:item="fnInput">
+                <div key={fnInput.key} class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                  <div class="slds-form-element">
+                    <label class="slds-form-element__label hardis-label-inline">
+                      <span>
+                        <template if:true={fnInput.required}>
+                          <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
+                        </template>
+                        {fnInput.label}
+                      </span>
+                      <template if:true={fnInput.hasHelp}>
+                        <s-multiline-helptext content={fnInput.help} class="slds-icon-text-info"></s-multiline-helptext>
+                      </template>
+                    </label>
+                    <template if:true={fnInput.isText}>
+                      <lightning-input
+                        label={fnInput.label}
+                        value={fnInput.value}
+                        data-field={fnInput.fieldPath}
+                        onchange={handleFieldChange}
+                        required={fnInput.requiredInEdit}
+                        disabled={isViewMode}
+                        variant="label-hidden"
+                      ></lightning-input>
+                    </template>
+                    <template if:true={fnInput.isNumber}>
+                      <lightning-input
+                        type="number"
+                        label={fnInput.label}
+                        value={fnInput.value}
+                        data-field={fnInput.fieldPath}
+                        onchange={handleFieldChange}
+                        required={fnInput.requiredInEdit}
+                        disabled={isViewMode}
+                        variant="label-hidden"
+                      ></lightning-input>
+                    </template>
+                    <template if:true={fnInput.isCheckbox}>
+                      <lightning-input
+                        type="checkbox"
+                        label={fnInput.label}
+                        checked={fnInput.checked}
+                        data-field={fnInput.fieldPath}
+                        onchange={handleCheckboxChange}
+                        disabled={isViewMode}
+                        variant="label-hidden"
+                      ></lightning-input>
+                    </template>
+                    <template if:true={fnInput.isSelect}>
+                      <lightning-combobox
+                        label={fnInput.label}
+                        value={fnInput.value}
+                        options={fnInput.options}
+                        data-field={fnInput.fieldPath}
+                        onchange={handleFieldChange}
+                        required={fnInput.requiredInEdit}
+                        disabled={isViewMode}
+                        variant="label-hidden"
+                      ></lightning-combobox>
+                    </template>
+                    <template if:true={fnInput.isTextarea}>
+                      <lightning-textarea
+                        label={fnInput.label}
+                        value={fnInput.value}
+                        data-field={fnInput.fieldPath}
+                        onchange={handleFieldChange}
+                        required={fnInput.requiredInEdit}
+                        disabled={isViewMode}
+                        variant="label-hidden"
+                      ></lightning-textarea>
+                    </template>
+                  </div>
+                </div>
+              </template>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <div class="hardis-note">
+                  <span>{i18n.customFunctionScriptLabel} </span>
+                  <a onclick={handleOpenCustomFunctionScript}>{customFunctionScriptPath}</a>
+                </div>
+              </div>
+            </template>
+
+            <template if:true={showCustomFunctionOutputs}>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <div class="hardis-note">{customFunctionOutputsHint}</div>
+              </div>
+            </template>
+
             <template if:true={showApexScriptField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">

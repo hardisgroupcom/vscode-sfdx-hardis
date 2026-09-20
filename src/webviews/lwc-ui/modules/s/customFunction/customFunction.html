@@ -1,0 +1,277 @@
+<template>
+  <div class="slds-scope slds-theme_default">
+    <section
+      role="dialog"
+      tabindex="-1"
+      aria-modal="true"
+      aria-labelledby="custom-function-modal-heading"
+      class="slds-modal slds-fade-in-open slds-modal_large"
+    >
+      <div class="slds-modal__container">
+        <div class="modal-accent-strip"></div>
+        <header class="slds-modal__header">
+          <button
+            class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+            title={i18n.closeLabel}
+            onclick={handleClose}
+          >
+            <lightning-icon
+              icon-name="utility:close"
+              size="small"
+              alternative-text={i18n.closeLabel}
+            ></lightning-icon>
+            <span class="slds-assistive-text">{i18n.closeLabel}</span>
+          </button>
+          <h2 id="custom-function-modal-heading" class="slds-modal__title slds-hyphenate">
+            {modalTitle}
+          </h2>
+        </header>
+
+        <div class="slds-modal__content slds-p-around_medium">
+          <template if:true={hasValidationError}>
+            <div class="hardis-note error slds-m-bottom_medium" role="alert">
+              <span class="slds-assistive-text">{i18n.errorLabel}</span>
+              <span>{validationError}</span>
+            </div>
+          </template>
+
+          <div class="slds-grid slds-wrap slds-gutters">
+            <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+              <lightning-input
+                label={i18n.customFunctionIdField}
+                value={editedFunction.id}
+                data-field="id"
+                onchange={handleFieldChange}
+                disabled={isIdReadOnly}
+                field-level-help={i18n.customFunctionIdHelp}
+                required
+              ></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+              <lightning-input
+                label={i18n.customFunctionLabelField}
+                value={editedFunction.label}
+                data-field="label"
+                onchange={handleFieldChange}
+                required
+              ></lightning-input>
+            </div>
+
+            <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+              <lightning-input
+                label={i18n.customFunctionDescriptionField}
+                value={editedFunction.description}
+                data-field="description"
+                onchange={handleFieldChange}
+              ></lightning-input>
+            </div>
+
+            <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+              <lightning-combobox
+                label={i18n.customFunctionRuntimeField}
+                value={editedFunction.runtime}
+                options={runtimeOptions}
+                data-field="runtime"
+                onchange={handleFieldChange}
+                field-level-help={i18n.customFunctionRuntimeHelp}
+                required
+              ></lightning-combobox>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+              <lightning-input
+                label={i18n.customFunctionScriptField}
+                value={editedFunction.script}
+                data-field="script"
+                onchange={handleFieldChange}
+                field-level-help={i18n.customFunctionScriptHelp}
+                required
+              ></lightning-input>
+            </div>
+
+            <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+              <lightning-combobox
+                label={i18n.customFunctionWhenField}
+                value={editedFunction.when}
+                options={whenOptions}
+                data-field="when"
+                onchange={handleFieldChange}
+                field-level-help={i18n.customFunctionWhenHelp}
+              ></lightning-combobox>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+              <lightning-input
+                type="number"
+                label={i18n.customFunctionTimeoutField}
+                value={editedFunction.timeout}
+                data-field="timeout"
+                onchange={handleFieldChange}
+                field-level-help={i18n.customFunctionTimeoutHelp}
+              ></lightning-input>
+            </div>
+
+            <!-- Inputs contract -->
+            <div class="slds-col slds-size_1-of-1 slds-m-top_medium">
+              <div class="hardis-group-label">{i18n.customFunctionInputsSection}</div>
+              <div class="hardis-group-desc">{i18n.customFunctionInputsSectionDesc}</div>
+            </div>
+            <template if:false={hasInputs}>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <div class="hardis-note">{i18n.customFunctionNoInput}</div>
+              </div>
+            </template>
+            <template for:each={inputRows} for:item="row">
+              <div key={row.key} class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <div class="slds-grid slds-wrap slds-gutters">
+                  <div class="slds-col slds-size_1-of-4">
+                    <lightning-input
+                      label={i18n.customFunctionInputName}
+                      value={row.name}
+                      data-index={row.index}
+                      data-field="name"
+                      onchange={handleInputChange}
+                    ></lightning-input>
+                  </div>
+                  <div class="slds-col slds-size_1-of-4">
+                    <lightning-input
+                      label={i18n.customFunctionInputLabel}
+                      value={row.label}
+                      data-index={row.index}
+                      data-field="label"
+                      onchange={handleInputChange}
+                    ></lightning-input>
+                  </div>
+                  <div class="slds-col slds-size_1-of-4">
+                    <lightning-combobox
+                      label={i18n.customFunctionInputType}
+                      value={row.type}
+                      options={inputTypeOptions}
+                      data-index={row.index}
+                      data-field="type"
+                      onchange={handleInputChange}
+                    ></lightning-combobox>
+                  </div>
+                  <div class="slds-col slds-size_1-of-8">
+                    <lightning-input
+                      type="checkbox"
+                      label={i18n.customFunctionInputRequired}
+                      checked={row.required}
+                      data-index={row.index}
+                      data-field="required"
+                      onchange={handleInputChange}
+                    ></lightning-input>
+                  </div>
+                  <div class="slds-col slds-size_1-of-8">
+                    <lightning-button
+                      variant="neutral"
+                      class="hardis-btn-tinted-red"
+                      label={i18n.removeLabel}
+                      data-index={row.index}
+                      onclick={handleRemoveInput}
+                    ></lightning-button>
+                  </div>
+                  <template if:true={row.isSelect}>
+                    <div class="slds-col slds-size_1-of-2">
+                      <lightning-input
+                        label={i18n.customFunctionInputOptions}
+                        value={row.optionsText}
+                        data-index={row.index}
+                        data-field="options"
+                        onchange={handleInputChange}
+                        field-level-help={i18n.customFunctionInputOptionsHelp}
+                      ></lightning-input>
+                    </div>
+                  </template>
+                  <template if:true={row.showDefault}>
+                    <div class="slds-col slds-size_1-of-2">
+                      <lightning-input
+                        label={i18n.customFunctionInputDefault}
+                        value={row.default}
+                        data-index={row.index}
+                        data-field="default"
+                        onchange={handleInputChange}
+                      ></lightning-input>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </template>
+            <div class="slds-col slds-size_1-of-1 slds-m-bottom_medium">
+              <lightning-button
+                variant="neutral"
+                label={i18n.customFunctionAddInput}
+                onclick={handleAddInput}
+              ></lightning-button>
+            </div>
+
+            <!-- Outputs contract -->
+            <div class="slds-col slds-size_1-of-1 slds-m-top_medium">
+              <div class="hardis-group-label">{i18n.customFunctionOutputsSection}</div>
+              <div class="hardis-group-desc">{i18n.customFunctionOutputsSectionDesc}</div>
+            </div>
+            <template if:false={hasOutputs}>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <div class="hardis-note">{i18n.customFunctionNoOutput}</div>
+              </div>
+            </template>
+            <template for:each={outputRows} for:item="row">
+              <div key={row.key} class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <div class="slds-grid slds-wrap slds-gutters">
+                  <div class="slds-col slds-size_1-of-3">
+                    <lightning-input
+                      label={i18n.customFunctionOutputName}
+                      value={row.name}
+                      data-index={row.index}
+                      data-field="name"
+                      onchange={handleOutputChange}
+                    ></lightning-input>
+                  </div>
+                  <div class="slds-col slds-size_1-of-3">
+                    <lightning-input
+                      label={i18n.customFunctionOutputLabel}
+                      value={row.label}
+                      data-index={row.index}
+                      data-field="label"
+                      onchange={handleOutputChange}
+                    ></lightning-input>
+                  </div>
+                  <div class="slds-col slds-size_1-of-3">
+                    <lightning-button
+                      variant="neutral"
+                      class="hardis-btn-tinted-red"
+                      label={i18n.removeLabel}
+                      data-index={row.index}
+                      onclick={handleRemoveOutput}
+                    ></lightning-button>
+                  </div>
+                </div>
+              </div>
+            </template>
+            <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+              <lightning-button
+                variant="neutral"
+                label={i18n.customFunctionAddOutput}
+                onclick={handleAddOutput}
+              ></lightning-button>
+            </div>
+          </div>
+        </div>
+
+        <footer class="slds-modal__footer">
+          <lightning-button
+            variant="neutral"
+            label={i18n.cancel}
+            onclick={handleClose}
+            class="slds-m-right_small"
+          ></lightning-button>
+          <lightning-button
+            variant="neutral"
+            class="hardis-btn-tinted-blue"
+            label={i18n.save}
+            onclick={handleSave}
+          ></lightning-button>
+        </footer>
+      </div>
+    </section>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+  </div>
+</template>

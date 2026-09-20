@@ -28,6 +28,22 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
 
   @api apexScripts = [];
   @api sfdmuWorkspaces = [];
+  // Custom functions declared in customFunctions (project config). Each one is an action type,
+  // and its declared inputs become the fields of the form below the type selector.
+  _customFunctions = [];
+
+  @api
+  set customFunctions(val) {
+    this._customFunctions = Array.isArray(val) ? val : [];
+    // The type list is built from them, so it has to be rebuilt when they arrive
+    if (this.translations) {
+      this._initOptions();
+    }
+  }
+  get customFunctions() {
+    return this._customFunctions;
+  }
+
   // Major branch names of the pipeline, used to restrict an action to some target orgs
   @api majorBranches = [];
   _storedSchedulableClasses = null;
@@ -83,7 +99,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   }
 
   _buildTypeOptions() {
-    return [
+    const options = [
       { label: this.t("commandType"), value: "command" },
       { label: this.t("dataType"), value: "data" },
       { label: this.t("apexType"), value: "apex" },
@@ -95,6 +111,36 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       },
       { label: this.t("manualType"), value: "manual" },
     ];
+    // A function restricted to the other phase is not offered, unless the action already uses
+    // it: hiding the type of the action being edited would blank its own selector.
+    const currentWhen = this.displayedAction?.when;
+    const currentType = this.displayedAction?.type;
+    for (const customFunction of this.customFunctions) {
+      if (
+        customFunction.when &&
+        currentWhen &&
+        customFunction.when !== currentWhen &&
+        customFunction.id !== currentType
+      ) {
+        continue;
+      }
+      options.push({
+        label: this.t("customFunctionTypeLabel", {
+          label: customFunction.label || customFunction.id,
+        }),
+        value: customFunction.id,
+      });
+    }
+    return options;
+  }
+
+  /** The custom function definition backing the type currently selected, if any. */
+  get selectedCustomFunction() {
+    const type = this.displayedAction?.type;
+    if (!type) {
+      return null;
+    }
+    return this.customFunctions.find((fn) => fn.id === type) || null;
   }
 
   _initOptions() {
@@ -134,7 +180,24 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
         context: ["all", "check-deployment-only", "process-deployment-only"],
       },
     };
-    return constraintsByType[type] || constraintsByType.command;
+    if (constraintsByType[type]) {
+      return constraintsByType[type];
+    }
+    // Not a built-in type: a custom function, whose own declaration says where it may be used
+    const customFunction = this.customFunctions.find((fn) => fn.id === type);
+    if (customFunction) {
+      return {
+        when: customFunction.when
+          ? [customFunction.when]
+          : ["pre-deploy", "post-deploy"],
+        context:
+          Array.isArray(customFunction.allowedContexts) &&
+          customFunction.allowedContexts.length > 0
+            ? customFunction.allowedContexts
+            : ["all", "check-deployment-only", "process-deployment-only"],
+      };
+    }
+    return constraintsByType.command;
   }
 
   _getWhenOptions(type = "command") {
@@ -426,6 +489,89 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   get showAllowFailureField() {
     const type = this.displayedAction?.type;
     return type !== "manual";
+  }
+
+  get showCustomFunctionInputs() {
+    return this.customFunctionInputFields.length > 0;
+  }
+
+  get showCustomFunctionOutputs() {
+    return (this.selectedCustomFunction?.outputs || []).length > 0;
+  }
+
+  /**
+   * One render descriptor per input the selected custom function declares.
+   *
+   * LWC templates cannot evaluate expressions, so each descriptor carries the boolean flags
+   * the template switches on, plus the resolved label, help text and current value.
+   */
+  get customFunctionInputFields() {
+    const customFunction = this.selectedCustomFunction;
+    if (!customFunction) {
+      return [];
+    }
+    const parameters = this.displayedAction?.parameters || {};
+    return (customFunction.inputs || []).map((input) => {
+      const inputType = input.type || "string";
+      const value = parameters[input.name];
+      const isSecret = inputType === "secret";
+      return {
+        key: input.name,
+        name: input.name,
+        // A secret field holds the NAME of a CI/CD variable, so its label says so
+        label: isSecret
+          ? this.t("customFunctionSecretInputLabel", {
+              label: input.label || input.name,
+            })
+          : input.label || input.name,
+        help: isSecret
+          ? this.t("customFunctionSecretInputHelp")
+          : input.description || "",
+        hasHelp: isSecret || !!input.description,
+        fieldPath: `parameters.${input.name}`,
+        required: input.required === true,
+        requiredInEdit: input.required === true && this.isEditMode,
+        value: value === undefined || value === null ? "" : String(value),
+        checked: value === true || String(value) === "true",
+        isText: ["string", "secret"].includes(inputType),
+        isNumber: inputType === "number",
+        isCheckbox: inputType === "boolean",
+        isSelect: inputType === "select",
+        isTextarea: inputType === "multiline",
+        options: (input.options || []).map((option) => ({
+          label: option,
+          value: option,
+        })),
+      };
+    });
+  }
+
+  /** Names of the outputs the selected function returns, shown as a hint in the editor. */
+  get customFunctionOutputNames() {
+    return (this.selectedCustomFunction?.outputs || [])
+      .map((output) => output.name)
+      .join(", ");
+  }
+
+  get customFunctionOutputsHint() {
+    return this.t("customFunctionOutputsHint", {
+      names: this.customFunctionOutputNames,
+      actionId: this.displayedAction?.id || "<actionId>",
+    });
+  }
+
+  get customFunctionScriptPath() {
+    return this.selectedCustomFunction?.script || "";
+  }
+
+  handleOpenCustomFunctionScript() {
+    const scriptPath = this.customFunctionScriptPath;
+    if (scriptPath) {
+      window.sendMessageToVSCode({
+        type: "openFile",
+        data: { filePath: scriptPath },
+      });
+    }
   }
 
   // --- Target branches restriction -------------------------------------------
@@ -758,8 +904,24 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
 
   handleTypeChange(event) {
     const newType = event.detail.value;
+    const previousType = this.editedAction.type;
     this.editedAction.type = newType;
     this.validationError = "";
+    // Parameters are only reset when a custom function is on either side of the switch: the CLI
+    // rejects a parameter a function does not declare, so leftovers from the previous type would
+    // make the action invalid. Switching between two built-in types keeps the previous behavior,
+    // which leaves the old parameters in place.
+    const leavesCustomFunction = !!this.customFunctions.find(
+      (fn) => fn.id === previousType,
+    );
+    const entersCustomFunction = !!this.customFunctions.find(
+      (fn) => fn.id === newType,
+    );
+    if (leavesCustomFunction || entersCustomFunction) {
+      this.editedAction.parameters =
+        this._buildInitialParametersForType(newType);
+    }
+    this._applyCustomFunctionDefaults(newType);
     this._updateWhenAndContextOptions(newType);
     this._requestSchedulableClassesIfNeeded(newType);
     this._requestCommunitiesIfNeeded(newType);
@@ -767,6 +929,53 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     this.editedAction = { ...this.editedAction };
     // Trigger reactivity by reassigning to force getter recalculation
     this.isEditMode = this.isEditMode;
+  }
+
+  /**
+   * Parameters an action of this type starts with.
+   * A custom function pre-fills the defaults it declares, so the form opens on a usable state
+   * instead of empty fields the user has to retype.
+   */
+  _buildInitialParametersForType(type) {
+    const customFunction = this.customFunctions.find((fn) => fn.id === type);
+    if (!customFunction) {
+      return {};
+    }
+    const parameters = {};
+    for (const input of customFunction.inputs || []) {
+      if (input.default !== undefined && input.default !== null) {
+        parameters[input.name] = input.default;
+      }
+    }
+    return parameters;
+  }
+
+  /** Apply the action-level defaults a custom function declares (allowFailure, branches...). */
+  _applyCustomFunctionDefaults(type) {
+    const customFunction = this.customFunctions.find((fn) => fn.id === type);
+    const defaults = customFunction?.defaults;
+    if (!defaults) {
+      return;
+    }
+    if (defaults.allowFailure !== undefined) {
+      this.editedAction.allowFailure = defaults.allowFailure;
+    }
+    if (defaults.runOnlyOnceByOrg !== undefined) {
+      this.editedAction.runOnlyOnceByOrg = defaults.runOnlyOnceByOrg;
+    }
+    if (Array.isArray(defaults.includeTargetBranches)) {
+      this.editedAction.includeTargetBranches = [
+        ...defaults.includeTargetBranches,
+      ];
+      this.editedAction.excludeTargetBranches = undefined;
+      this.targetBranchesModeOverride = "include";
+    } else if (Array.isArray(defaults.excludeTargetBranches)) {
+      this.editedAction.excludeTargetBranches = [
+        ...defaults.excludeTargetBranches,
+      ];
+      this.editedAction.includeTargetBranches = undefined;
+      this.targetBranchesModeOverride = "exclude";
+    }
   }
 
   _requestSchedulableClassesIfNeeded(type) {
@@ -951,6 +1160,16 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       requiredFields.push("parameters.packageXmlItems");
     } else if (currentType === "schedule-batch") {
       requiredFields.push("parameters.className", "parameters.cronExpression");
+    } else {
+      // Custom function: the contract it declares says which inputs are required
+      const customFunction = this.customFunctions.find(
+        (fn) => fn.id === currentType,
+      );
+      for (const input of customFunction?.inputs || []) {
+        if (input.required === true) {
+          requiredFields.push(`parameters.${input.name}`);
+        }
+      }
     }
 
     return requiredFields;
