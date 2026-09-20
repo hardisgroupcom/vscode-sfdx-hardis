@@ -1694,10 +1694,10 @@ suite("Documentation screenshots", function () {
         "    <errorConditionFormula>AND(",
         "  ISCHANGED(Install_Date__c),",
         "  Install_Date__c &lt; TODAY(),",
-        '  NOT(ISPICKVAL(Status__c, &quot;Completed&quot;))' +
+        "  NOT(ISPICKVAL(Status__c, &quot;Completed&quot;))" +
           (cancelled ? "," : ""),
         ...(cancelled
-          ? ['  NOT(ISPICKVAL(Status__c, &quot;Cancelled&quot;))']
+          ? ["  NOT(ISPICKVAL(Status__c, &quot;Cancelled&quot;))"]
           : []),
         ")</errorConditionFormula>",
         "    <errorDisplayField>Install_Date__c</errorDisplayField>",

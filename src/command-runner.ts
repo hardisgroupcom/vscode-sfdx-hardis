@@ -368,9 +368,7 @@ export class CommandRunner {
               trimmedCommand,
               trainingWorkspaceRoot(),
             );
-            const updated = autorunCommands.some(
-              (cmd) => cmd.trim() === entry,
-            )
+            const updated = autorunCommands.some((cmd) => cmd.trim() === entry)
               ? autorunCommands
               : [...autorunCommands, entry];
             await config.update(
