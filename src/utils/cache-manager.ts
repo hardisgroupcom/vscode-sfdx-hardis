@@ -118,7 +118,9 @@ export class CacheManager {
         return; // A newer write owns the key now
       }
       if (!this.storeHolds(fullKey, value)) {
-        await this.store.update(fullKey, value).then(undefined, () => undefined);
+        await this.store
+          .update(fullKey, value)
+          .then(undefined, () => undefined);
       }
     }
     if (this.pendingWrites.get(fullKey) !== value) {
