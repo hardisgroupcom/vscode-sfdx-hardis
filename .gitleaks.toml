@@ -16,4 +16,9 @@ paths = [
 ]
 regexes = [
   '''cf83e6dc-2621-4cb6-b92b-30905d1c8476''',
+  # The name of a translation key, not a value: it labels the "Secret" input type
+  # of a custom function, whose whole point is that the user types the NAME of a
+  # CI/CD variable and never its value. The key is 28 alphanumeric characters, so
+  # it has the shape of a Box API token and is flagged in all nine locale files.
+  '''customFunctionInputTypeSecret''',
 ]
