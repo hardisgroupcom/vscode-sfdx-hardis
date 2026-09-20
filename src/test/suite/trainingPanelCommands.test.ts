@@ -287,4 +287,70 @@ suite("Training commands in the Command Runner panel", () => {
       }
     });
   });
+
+  /**
+   * The remote is the one thing in the gate a learner's own clone cannot get
+   * wrong by accident, so what it accepts is worth pinning down.
+   */
+  suite("the remote of the clone", () => {
+    const dirs: string[] = [];
+    const clone = (config: string): string => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), "training-remote-"));
+      for (const marker of ["scripts/training.mjs", "training-universe.json"]) {
+        fs.mkdirSync(path.join(dir, path.dirname(marker)), { recursive: true });
+        fs.writeFileSync(path.join(dir, marker), "// fixture\n");
+      }
+      fs.mkdirSync(path.join(dir, ".git"), { recursive: true });
+      fs.writeFileSync(path.join(dir, ".git", "config"), config);
+      dirs.push(dir);
+      return dir;
+    };
+    const allowed = (dir: string) =>
+      isTrainingPanelCommandIn("node scripts/training.mjs check", dir);
+
+    suiteTeardown(() => {
+      for (const dir of dirs) {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+    });
+
+    test("a url outside any remote section does not vouch for the clone", () => {
+      const dir = clone(
+        [
+          "[core]",
+          "\turl = https://github.com/anyone/sfdx-hardis-training.git",
+          '[remote "origin"]',
+          "\turl = https://github.com/attacker/payload.git",
+          "",
+        ].join("\n"),
+      );
+      assert.strictEqual(allowed(dir), false);
+    });
+
+    test("a key that merely begins with url does not count", () => {
+      const dir = clone(
+        [
+          '[remote "origin"]',
+          "\turlPattern = https://github.com/x/sfdx-hardis-training.git",
+          "\turl = https://github.com/attacker/payload.git",
+          "",
+        ].join("\n"),
+      );
+      assert.strictEqual(allowed(dir), false);
+    });
+
+    test("the usual clone of a fork is still allowed", () => {
+      const dir = clone(
+        [
+          '[remote "origin"]',
+          "\turl = https://github.com/a-learner/sfdx-hardis-training.git",
+          "\tfetch = +refs/heads/*:refs/remotes/origin/*",
+          '[remote "upstream"]',
+          "\turl = https://github.com/hardisgroupcom/sfdx-hardis-training.git",
+          "",
+        ].join("\n"),
+      );
+      assert.strictEqual(allowed(dir), true);
+    });
+  });
 });

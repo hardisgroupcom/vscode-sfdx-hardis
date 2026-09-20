@@ -368,14 +368,23 @@ export class CommandRunner {
               trimmedCommand,
               trainingWorkspaceRoot(),
             );
-            const updated = autorunCommands.some((cmd) => cmd.trim() === entry)
-              ? autorunCommands
-              : [...autorunCommands, entry];
-            await config.update(
-              "autorunCommands",
-              updated,
-              vscode.ConfigurationTarget.Global,
-            );
+            // The Training answer is kept on the workspace, not globally: it
+            // stands for "the Training menu of this project", which is what the
+            // question promised, and a folder that merely carries the same file
+            // names and a remote ending in the same words gets nothing from it.
+            // Every other custom command keeps the scope it has always had.
+            const target = isTrainingCommand
+              ? vscode.ConfigurationTarget.Workspace
+              : vscode.ConfigurationTarget.Global;
+            const scoped = config.inspect<string[]>("autorunCommands");
+            const existing =
+              (target === vscode.ConfigurationTarget.Workspace
+                ? scoped?.workspaceValue
+                : scoped?.globalValue) || [];
+            const updated = existing.some((cmd) => cmd.trim() === entry)
+              ? existing
+              : [...existing, entry];
+            await config.update("autorunCommands", updated, target);
             this.executeCommandUsingCurrentMode(
               isBackgroundMode,
               sfdxHardisCommand,

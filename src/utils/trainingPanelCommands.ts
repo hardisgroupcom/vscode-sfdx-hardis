@@ -61,10 +61,28 @@ export function isTrainingWorkspace(root: string): boolean {
     // No .git/config (or unreadable): not a clone of anything
     return false;
   }
-  return gitConfig
-    .split(/\r?\n/)
-    .filter((line) => line.trim().startsWith("url"))
-    .some((line) => TRAINING_REMOTE.test(line.split("=").slice(1).join("=")));
+  // Only the url of a [remote] section, and only a key that is exactly "url".
+  // Taking every line whose first three letters are those would accept a decoy
+  // remote sitting next to the real one, or a "urlPattern" key.
+  let inRemote = false;
+  for (const line of gitConfig.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith("[")) {
+      inRemote = /^\[remote[\s"]/.test(trimmed);
+      continue;
+    }
+    if (!inRemote) {
+      continue;
+    }
+    const separator = trimmed.indexOf("=");
+    if (separator === -1 || trimmed.slice(0, separator).trim() !== "url") {
+      continue;
+    }
+    if (TRAINING_REMOTE.test(trimmed.slice(separator + 1))) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
