@@ -2090,6 +2090,7 @@
   "tokenScopesHint": "トークンを作成する際、次の権限を選択してください: {{scopes}}",
   "totalMembersLabel": "合計メンバー数:",
   "totalTypesLabel": "合計タイプ数:",
+  "trainingCommandAuthorizationPrompt": "これは Salesforce DevOps トレーニングコースのコマンドです。「常に許可」は、このプロジェクトの Training メニューのすべてのコマンドを許可し、それ以外は許可しません。\n{{command}}",
   "tryAdjustingCriteria": "検索条件を調整してみてください",
   "tryAgainLabel": "再試行",
   "typeLabel": "種別",

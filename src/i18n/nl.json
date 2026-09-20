@@ -2090,6 +2090,7 @@
   "tokenScopesHint": "Selecteer bij het aanmaken van het token deze machtigingen: {{scopes}}",
   "totalMembersLabel": "Totaal leden:",
   "totalTypesLabel": "Totaal types:",
+  "trainingCommandAuthorizationPrompt": "Dit is een opdracht van de Salesforce DevOps-trainingscursus. Altijd toestaan autoriseert elke opdracht van het Training-menu van dit project, en verder niets.\n{{command}}",
   "tryAdjustingCriteria": "Probeer je zoekcriteria aan te passen",
   "tryAgainLabel": "Opnieuw proberen",
   "typeLabel": "Type",

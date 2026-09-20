@@ -2090,6 +2090,7 @@
   "tokenScopesHint": "Podczas tworzenia tokenu wybierz następujące uprawnienia: {{scopes}}",
   "totalMembersLabel": "Łączna liczba elementów:",
   "totalTypesLabel": "Łączna liczba typów:",
+  "trainingCommandAuthorizationPrompt": "To jest komenda z kursu szkoleniowego Salesforce DevOps. Zawsze zezwalaj autoryzuje każdą komendę menu Training w tym projekcie i nic więcej.\n{{command}}",
   "tryAdjustingCriteria": "Spróbuj dostosować kryteria wyszukiwania",
   "tryAgainLabel": "Spróbuj ponownie",
   "typeLabel": "Typ",

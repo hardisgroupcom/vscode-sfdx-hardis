@@ -2090,6 +2090,7 @@
   "tokenScopesHint": "Lors de la création du jeton, sélectionnez ces permissions : {{scopes}}",
   "totalMembersLabel": "Total des membres :",
   "totalTypesLabel": "Total des types :",
+  "trainingCommandAuthorizationPrompt": "Ceci est une commande du cours de formation DevOps Salesforce. Toujours autoriser autorise toutes les commandes du menu Training de ce projet, et rien d'autre.\n{{command}}",
   "tryAdjustingCriteria": "Essayez de modifier vos critères de recherche",
   "tryAgainLabel": "Réessayer",
   "typeLabel": "Type",

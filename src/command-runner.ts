@@ -1,7 +1,10 @@
 import { killProcessTree } from "./utils/processUtils";
 import {
+  autorunEntryFor,
+  isAutorunAuthorized,
   isTrainingPanelCommand,
   trainingCommandLabel,
+  trainingWorkspaceRoot,
 } from "./utils/trainingPanelCommands";
 import * as vscode from "vscode";
 import { LwcPanelManager } from "./lwc-panel-manager";
@@ -314,9 +317,17 @@ export class CommandRunner {
 
     // For custom/plugin commands: check autorunCommands and offer "Always authorize" option
     if (isCustomOrPluginCommand) {
+      // A learner meets a dozen Training menu entries across the three levels,
+      // and each is its own command line. Answering the same question a dozen
+      // times teaches nothing, so one answer covers the menu: the stored entry
+      // is the script rather than the line, and isTrainingPanelCommand() is
+      // asked again below every time it is used.
+      const isTrainingCommand = isTrainingPanelCommand(trimmedCommand);
       const autorunCommands = config.get<string[]>("autorunCommands", []);
-      const isAutorun = autorunCommands.some((cmd) =>
-        trimmedCommand.startsWith(cmd.trim()),
+      const isAutorun = isAutorunAuthorized(
+        trimmedCommand,
+        autorunCommands,
+        trainingWorkspaceRoot(),
       );
 
       if (isAutorun) {
@@ -332,9 +343,13 @@ export class CommandRunner {
       // Not in autorun list - ask for confirmation with "Always authorize" option
       vscode.window
         .showWarningMessage(
-          t("customOrPluginCommandAuthorizationPrompt", {
-            command: trimmedCommand,
-          }),
+          isTrainingCommand
+            ? t("trainingCommandAuthorizationPrompt", {
+                command: trimmedCommand,
+              })
+            : t("customOrPluginCommandAuthorizationPrompt", {
+                command: trimmedCommand,
+              }),
           t("allowOnce"),
           t("alwaysAllow"),
           t("cancel"),
@@ -347,8 +362,17 @@ export class CommandRunner {
               extraEnv,
             );
           } else if (selection === t("alwaysAllow")) {
-            // Add command to autorunCommands
-            const updated = [...autorunCommands, trimmedCommand];
+            // One entry for the whole Training menu, the exact line for anything
+            // else: a project's other custom commands are still approved one by one
+            const entry = autorunEntryFor(
+              trimmedCommand,
+              trainingWorkspaceRoot(),
+            );
+            const updated = autorunCommands.some(
+              (cmd) => cmd.trim() === entry,
+            )
+              ? autorunCommands
+              : [...autorunCommands, entry];
             await config.update(
               "autorunCommands",
               updated,

