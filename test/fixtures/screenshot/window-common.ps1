@@ -27,6 +27,8 @@ public class SfhWin {
   public struct RECT { public int Left, Top, Right, Bottom; }
 
   [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
+  [DllImport("user32.dll")] public static extern bool IsWindow(IntPtr hWnd);
+  [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd);
   [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr hWnd, IntPtr hdcBlt, uint nFlags);
   [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
   [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
@@ -94,13 +96,42 @@ Add-Type -AssemblyName System.Windows.Forms, System.Drawing
 
 function Get-SfhWindow {
   param([Parameter(Mandatory = $true)][string]$TitleMatch)
-  $proc = Get-Process |
-    Where-Object { $_.MainWindowHandle -ne 0 -and $_.MainWindowTitle -like "*$TitleMatch*" } |
-    Select-Object -First 1
-  if (-not $proc) {
-    throw "No window matching '$TitleMatch' was found"
+  # The handle is remembered between calls, because the title is not always
+  # readable: while the extension host is busy VS Code reports an empty window
+  # title, and a lookup by title then finds nothing at all. That state can last
+  # longer than a panel takes to render (the Metadata Retriever queries the org
+  # as it opens), and losing the screenshot over it is worse than reusing a
+  # handle we already proved belongs to the right window.
+  $cacheFile = Join-Path $env:TEMP ("sfh-window-" + ($TitleMatch -replace '[^A-Za-z0-9]', '_') + ".txt")
+  for ($attempt = 0; $attempt -lt 20; $attempt++) {
+    $proc = Get-Process |
+      Where-Object { $_.MainWindowHandle -ne 0 -and $_.MainWindowTitle -like "*$TitleMatch*" } |
+      Select-Object -First 1
+    if ($proc) {
+      Set-Content -Path $cacheFile -Value ("$($proc.Id) " + [string][int64]$proc.MainWindowHandle) -Encoding ascii
+      return $proc.MainWindowHandle
+    }
+    Start-Sleep -Milliseconds 500
   }
-  return $proc.MainWindowHandle
+  # The cache is only good for the run that wrote it. Windows reuses handles, so
+  # an entry left by a previous VS Code can point at somebody else's window, and
+  # capturing it silently is worse than failing.
+  if (Test-Path $cacheFile) {
+    $parts = ((Get-Content -Path $cacheFile -Raw).Trim() -split '\s+')
+    if ($parts.Count -eq 2) {
+      $cachedPid = [int]$parts[0]
+      $cached = [IntPtr][int64]$parts[1]
+      $owner = Get-Process -Id $cachedPid -ErrorAction SilentlyContinue
+      if ($owner -and $owner.MainWindowHandle -eq $cached -and
+          [SfhWin]::IsWindow($cached) -and [SfhWin]::IsWindowVisible($cached)) {
+        return $cached
+      }
+    }
+    Remove-Item -Path $cacheFile -Force -ErrorAction SilentlyContinue
+  }
+  $seen = (Get-Process | Where-Object { $_.MainWindowHandle -ne 0 } |
+    ForEach-Object { "$($_.ProcessName): $($_.MainWindowTitle)" }) -join " | "
+  throw "No window matching '$TitleMatch' was found. Open windows: $seen"
 }
 
 function Set-SfhForeground {

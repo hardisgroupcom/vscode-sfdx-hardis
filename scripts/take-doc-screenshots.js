@@ -46,6 +46,25 @@ const NPM_PACKAGES = [
 // published, npm still returns a v7, which the Setup panel would flag in red.
 const MIN_SFDX_HARDIS_VERSION = "8.0.0";
 
+// Same problem one level up: the extension pins the Salesforce CLI version it
+// recommends (RECOMMENDED_SFDX_CLI_VERSION in src/constants.ts), and that pin
+// is regularly ahead of what npm serves as "latest". Reporting npm's latest as
+// installed then puts an "upgrade available" warning on every screenshot.
+function recommendedSfCliVersion() {
+  try {
+    const constants = fs.readFileSync(
+      path.join(repoRoot, "src", "constants.ts"),
+      "utf8",
+    );
+    const match = /RECOMMENDED_SFDX_CLI_VERSION[^=]*=\s*"([^"]+)"/.exec(
+      constants,
+    );
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
+}
+
 function isLowerVersion(version, reference) {
   const toParts = (value) =>
     String(value)
@@ -84,6 +103,14 @@ async function fetchLatestVersions() {
     isLowerVersion(versions["sfdx-hardis"], MIN_SFDX_HARDIS_VERSION)
   ) {
     versions["sfdx-hardis"] = MIN_SFDX_HARDIS_VERSION;
+  }
+  const recommendedSfCli = recommendedSfCliVersion();
+  if (
+    recommendedSfCli &&
+    (!versions["@salesforce/cli"] ||
+      isLowerVersion(versions["@salesforce/cli"], recommendedSfCli))
+  ) {
+    versions["@salesforce/cli"] = recommendedSfCli;
   }
   return versions;
 }

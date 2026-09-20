@@ -28,6 +28,7 @@ Built and maintained by [**Cloudity**](https://cloudity.com/?ref=sfdxhardis) and
 - [Why VS Code SFDX Hardis?](#why-vs-code-sfdx-hardis)
 - [Who is it for?](#who-is-it-for)
 - [Installation](#installation)
+- [Learn by doing](#learn-by-doing)
 - [Feature tour](#feature-tour)
   - [Unified Welcome panel](#unified-welcome-panel)
   - [Orgs Manager](#orgs-manager)
@@ -110,6 +111,18 @@ The only requirement is the same as for VS Code: the IDE must be able to run the
 [![Installation tutorial](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/play-install-tuto.png)](https://www.youtube.com/watch?v=LA8m-t7CjHA)
 
 ---
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+[Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) is a free hands-on course that builds a complete CI/CD pipeline on free orgs, one click at a time.
+
+- [Level 1 - Contributor basics](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/): 7 labs, from your first User Story to a merged Pull Request
+- [Level 2 - Contributor advanced](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/): 9 labs, deployment errors, deployment actions, code quality, conflicts
+- [Level 3 - Release Manager](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/): 10 labs, the pipeline up to production, releases, hotfixes, monitoring
+
+<!-- training-links:end -->
 
 ## Feature tour
 
