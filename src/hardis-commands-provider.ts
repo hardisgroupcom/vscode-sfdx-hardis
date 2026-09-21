@@ -1035,6 +1035,14 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             helpUrl: DOCSITE_URL + "/hardis/doc/data-dictionary/",
           },
           {
+            id: "hardis:doc:metadata-deps",
+            label: t("metadataDeps"),
+            command: "sf hardis:doc:metadata-deps",
+            tooltip: t("metadataDepsTooltip"),
+            requiresProject: true,
+            helpUrl: DOCSITE_URL + "/hardis/doc/metadata-deps/",
+          },
+          {
             id: "hardis:doc:project2markdown-history",
             label: t("projectDocumentationWithHistory"),
             command: "sf hardis:doc:project2markdown --with-history",
