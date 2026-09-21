@@ -153,9 +153,7 @@ function answerFor(prompt: ShownPrompt, rule: LabAnswer): unknown {
     return rule.value === "__INITIAL__" ? prompt.initial : rule.value;
   }
   const pattern = new RegExp(rule.choice, "i");
-  const matches = prompt.choices.filter((choice) =>
-    pattern.test(choice.title),
-  );
+  const matches = prompt.choices.filter((choice) => pattern.test(choice.title));
   if (prompt.type === "multiselect") {
     assert.ok(
       matches.length > 0,
