@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add **Metadata dependencies (used by)** on the Org Monitoring page and in the Commands menu: find which metadata components use a selected Apex class, Flow, custom field or other Tooling type, then export a CSV/Excel report
 - Dependencies panel and Setup panel: check that the SFDX Hardis extension itself runs its latest published version, and offer to update it. A preview build more recent than the latest release is not reported.
 
 ## [8.7.0] 2026-09-20

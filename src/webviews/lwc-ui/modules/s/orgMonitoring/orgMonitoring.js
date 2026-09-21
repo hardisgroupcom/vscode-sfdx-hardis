@@ -66,6 +66,15 @@ const EXTRA_COMMANDS = [
     icon: "utility:database",
     colorClass: "metadata-access",
   },
+  {
+    key: "EXTRA_METADATA_DEPS",
+    titleKey: "metadataDeps",
+    descriptionKey: "metadataDepsDescription",
+    category: "technicalDebt",
+    command: "sf hardis:doc:metadata-deps",
+    icon: "utility:hierarchy",
+    colorClass: "metadata-access",
+  },
 ];
 
 export default class OrgMonitoring extends SharedMixin(LightningElement) {
