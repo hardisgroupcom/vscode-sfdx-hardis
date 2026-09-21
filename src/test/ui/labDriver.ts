@@ -70,7 +70,7 @@ export interface LabSpec {
   title: string;
   /** Panels the lab opens without running a command, e.g. "s-pipeline" */
   openPanels?: string[];
-  steps: LabStep[];
+  steps?: LabStep[];
   /** Why this lab is not driven here (browser step, install step...) */
   skip?: string;
 }
@@ -209,62 +209,93 @@ export async function runLabStep(
     if (message?.type !== "showPrompt" || failure) {
       return result;
     }
-    const prompt = readPrompt(message);
-    if (!prompt) {
-      return result;
+    // Anything thrown here would land in the extension host, as an unhandled
+    // rejection of the WebSocket message handler, and the step would hang until
+    // its timeout with the real reason lost. Every failure becomes `failure`.
+    try {
+      const prompt = readPrompt(message);
+      if (!prompt) {
+        return result;
+      }
+      const key = `${prompt.name}::${prompt.message}`;
+      const rule = rules.find(
+        (candidate) =>
+          !candidate.used && new RegExp(candidate.q, "i").test(prompt.message),
+      );
+      if (!rule && answered.has(key)) {
+        // The panel re-sends a prompt when it is revealed. No rule is left for
+        // this question, so it is that echo and not a new question: ignore it.
+        // A question the command really asks twice (a name that failed the
+        // project's pattern, say) has a second rule, and lands above.
+        return result;
+      }
+      asked.push(prompt);
+      if (!rule) {
+        failure =
+          `${step.label}: the panel asked a question no answer covers:\n` +
+          `  "${prompt.message}"\n` +
+          (prompt.choices.length
+            ? `  choices: ${prompt.choices.map((c) => c.title).join(" | ")}\n`
+            : "") +
+          "  A learner reading this lab would be stuck on it: either the lab " +
+          "does not mention this question, or the command should not be asking it.";
+        return result;
+      }
+      rule.used = true;
+      answered.add(key);
+      console.log(`[lab] ${prompt.message}`);
+      const value = answerFor(prompt, rule);
+      console.log(`[lab]   -> ${JSON.stringify(value)}`);
+      // The extension subscribes to the answer only AFTER this send returns:
+      // hardis-websocket-server sends showPrompt, then registers the handler
+      // that turns a submit into the CLI's response. Answering synchronously
+      // would answer into the void and the command would wait for its own
+      // timeout. Defer to the next tick, once the handler is in place.
+      setTimeout(() => {
+        try {
+          panel.simulateWebviewMessage({
+            type: "submit",
+            data: { [prompt.name]: value },
+          });
+        } catch (error: any) {
+          failure = `${step.label}: submitting the answer to "${prompt.message}" failed: ${error?.message || String(error)}`;
+        }
+      }, 0);
+    } catch (error: any) {
+      failure = `${step.label}: ${error?.message || String(error)}`;
     }
-    const key = `${prompt.name}::${prompt.message}`;
-    const rule = rules.find(
-      (candidate) =>
-        !candidate.used && new RegExp(candidate.q, "i").test(prompt.message),
-    );
-    if (!rule && answered.has(key)) {
-      // The panel re-sends a prompt when it is revealed. No rule is left for
-      // this question, so it is that echo and not a new question: ignore it.
-      // A question the command really asks twice (a name that failed the
-      // project's pattern, say) has a second rule, and lands above.
-      return result;
-    }
-    asked.push(prompt);
-    if (!rule) {
-      failure =
-        `${step.label}: the panel asked a question no answer covers:\n` +
-        `  "${prompt.message}"\n` +
-        (prompt.choices.length
-          ? `  choices: ${prompt.choices.map((c) => c.title).join(" | ")}\n`
-          : "") +
-        "  A learner reading this lab would be stuck on it: either the lab " +
-        "does not mention this question, or the command should not be asking it.";
-      return result;
-    }
-    rule.used = true;
-    answered.add(key);
-    console.log(`[lab] ${prompt.message}`);
-    const value = answerFor(prompt, rule);
-    console.log(`[lab]   -> ${JSON.stringify(value)}`);
-    panel.simulateWebviewMessage({
-      type: "submit",
-      data: { [prompt.name]: value },
-    });
     return result;
   };
 
+  // A disposed panel is no longer served by the manager, but the object still
+  // carries the status it ended on: read it from the reference, not by id.
+  const currentStatus = () => String(panel.commandStatus || "");
+  let finished = false;
   try {
     await waitFor(
       () =>
         failure !== null ||
-        ["completed", "error", "aborted"].includes(
-          String(panelManager.getPanel(panelId)?.commandStatus || ""),
-        ),
+        ["completed", "error", "aborted"].includes(currentStatus()),
       timeoutMs,
       `${step.label} (${step.command}) to finish`,
     );
+    finished = true;
   } finally {
     panel.sendMessage = originalSendMessage;
+    if (!finished || failure) {
+      // Leaving the CLI running would keep it waiting on an unanswered prompt,
+      // against the learner's real repository and org, while the next lab
+      // starts in the same workspace. Disposing the panel cancels the command.
+      try {
+        panelManager.disposePanel(panelId);
+      } catch {
+        // Already gone: the command errored or closed itself
+      }
+    }
   }
 
   assert.ok(!failure, failure || "");
-  const status = String(panelManager.getPanel(panelId)?.commandStatus || "");
+  const status = currentStatus();
   assert.strictEqual(
     status,
     "completed",

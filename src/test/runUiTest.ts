@@ -115,6 +115,16 @@ async function main() {
       console.error(`Not a git repository: ${workspaceDir}`);
       process.exit(1);
     }
+    // The fixture modes write into the workspace (branches, config files,
+    // commits), which in lab mode is the learner's own repository. A leftover
+    // variable from a screenshot session must not silently do that.
+    if (docScreenshots || realCliPerf) {
+      console.error(
+        "The lab driver cannot be combined with the screenshot or perf modes: " +
+          "unset SFDX_HARDIS_DOC_SCREENSHOTS / SFDX_HARDIS_REAL_CLI_PERF",
+      );
+      process.exit(1);
+    }
   } else {
     fs.cpSync(fixtureSource, workspaceDir, { recursive: true });
   }
@@ -172,7 +182,9 @@ async function main() {
   // uat, so the committed fixture does too, and the Level 3 captures need the
   // finished shape: a four column diagram, and a branch window that lists what
   // is waiting to be promoted rather than a go-live selector.
-  if (pipelineState === "level3") {
+  // Never in lab mode: workspaceDir is then the learner's own repository, and
+  // this block writes config/branches/*.yml into it and commits them.
+  if (pipelineState === "level3" && !labDriver) {
     const branchDir = path.join(workspaceDir, "config", "branches");
     fs.mkdirSync(branchDir, { recursive: true });
     const writeBranch = (

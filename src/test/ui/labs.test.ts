@@ -58,6 +58,22 @@ function selected(lab: LabSpec): boolean {
   this.timeout(1800000);
   let panelManager: any;
   const specs = LAB_MODE ? readLabSpecs() : null;
+  const labs = (specs?.labs || []).filter(selected);
+
+  // Mocha does not run suiteSetup for a suite with no runnable test, so an
+  // empty selection would skip every check below and exit 0: a run that
+  // verified nothing would look exactly like a run that passed.
+  if (LAB_MODE && labs.length === 0) {
+    test("the lab driver has something to walk", function () {
+      assert.fail(
+        specs
+          ? `No lab matches SFDX_HARDIS_LAB_ONLY="${process.env.SFDX_HARDIS_LAB_ONLY || ""}". ` +
+              `The spec file declares: ${(specs.labs || []).map((lab) => lab.id).join(", ")}`
+          : `No lab specs at ${labSpecFile()}. Clone the training repository as a ` +
+              "sibling, or set SFDX_HARDIS_LAB_SPECS.",
+      );
+    });
+  }
 
   suiteSetup(async function () {
     // Fail loudly rather than silently green: this suite is worthless if the
@@ -91,7 +107,7 @@ function selected(lab: LabSpec): boolean {
     panelManager = api.getLwcPanelManager();
   });
 
-  for (const lab of (specs?.labs || []).filter(selected)) {
+  for (const lab of labs) {
     const title = `Lab ${lab.id} - ${lab.title}`;
     if (lab.skip) {
       test.skip(`${title} (${lab.skip})`, function () {
@@ -101,6 +117,14 @@ function selected(lab: LabSpec): boolean {
     }
 
     test(title, async function () {
+      // A lab's own budget is the sum of its steps, plus room for the panels it
+      // opens: the suite default would abort a long lab mid-command, and a
+      // command abandoned mid-run leaves the learner's repository half changed.
+      const budget = (lab.steps || []).reduce(
+        (total, step) => total + (step.timeoutMs ?? 600000),
+        120000,
+      );
+      this.timeout(Math.max(budget, 1800000));
       for (const panelId of lab.openPanels || []) {
         const command = PANEL_COMMANDS[panelId];
         assert.ok(
@@ -109,7 +133,7 @@ function selected(lab: LabSpec): boolean {
         );
         await openPanel(panelManager, panelId, command);
       }
-      for (const step of lab.steps) {
+      for (const step of lab.steps || []) {
         console.log(`[lab ${lab.id}] ${step.label}: ${step.command}`);
         await runLabStep(panelManager, step);
       }
