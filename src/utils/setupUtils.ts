@@ -2,10 +2,13 @@ import * as vscode from "vscode";
 import {
   execCommand,
   execCommandWithProgress,
+  getInstalledExtensionVersion,
+  getLatestExtensionVersion,
   getNpmLatestVersion,
   getSfdxHardisInstallTag,
   getWorkspaceRoot,
   isExtensionPreRelease,
+  isExtensionProductionMode,
   getInstalledPluginsInfo,
   resolvePluginInstallKind,
   stripAnsi,
@@ -19,9 +22,14 @@ import { findExecutable } from "./executableUtils";
 import { isMergeDriverEnabled } from "./gitMergeDriverUtils";
 import { t } from "../i18n/i18n";
 import {
+  EXTENSION_MARKETPLACE_ITEM_URL,
   NODE_JS_MINIMUM_VERSION,
   RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
 } from "../constants";
+import {
+  EXTENSION_ID,
+  resolveExtensionUpdateStatus,
+} from "./extensionVersionUtils";
 import { listPluginsProvidingHardisCommands } from "./sfdx-hardis-config-utils";
 
 /**
@@ -264,9 +272,19 @@ export class SetupHelper {
         checkMethod: this.checkSfPlugin.bind(this, "sf-git-merge-driver"),
         installMethod: this.installSfPlugin.bind(this, "sf-git-merge-driver"),
       },
-      // VS Code extension entry sits between recommended sfdx-hardis plugins
+      // VS Code extension entries sit between recommended sfdx-hardis plugins
       // (above) and community/non-recommended plugins (added below). Order
       // matters: the LWC renders cards in this object's insertion order.
+      "vscode:sfdx-hardis": {
+        label: "SFDX Hardis by Cloudity",
+        explanation: t("depVsCodeExtensionExplanation"),
+        installable: true,
+        iconName: "utility:apps",
+        prerequisites: [],
+        helpUrl: EXTENSION_MARKETPLACE_ITEM_URL,
+        checkMethod: this.checkVsCodeExtension.bind(this),
+        installMethod: this.updateVsCodeExtension.bind(this),
+      },
       "vscode:salesforce-extension-pack": {
         label: "Salesforce Extension Pack",
         explanation: t("depSalesforceExtensionPackExplanation"),
@@ -279,6 +297,11 @@ export class SetupHelper {
         installMethod: this.installSalesforceExtensionPack.bind(this),
       },
     };
+    // An extension started from sources or by the tests runs the version of the
+    // local package.json: comparing it to the published one means nothing
+    if (!isExtensionProductionMode()) {
+      delete dependencies["vscode:sfdx-hardis"];
+    }
     const hardisCommandsPlugins = await listPluginsProvidingHardisCommands();
     // Pre-warm npm version cache for community plugins in parallel so checkSfPlugin hits cache
     for (const plugin of hardisCommandsPlugins) {
@@ -413,6 +436,101 @@ export class SetupHelper {
         message: t("depGitMissingMessage"),
         messageLinkLabel: t("depGitDownloadLink"),
       };
+    }
+  }
+
+  // The new version only runs after a window reload, and until then every
+  // check still reads the version of the running one: offer the reload
+  // instead of leaving the card stuck on "upgrade available"
+  private offerWindowReloadAfterExtensionUpdate(): void {
+    const reloadLabel = t("reloadWindow");
+    vscode.window
+      .showInformationMessage(t("vsCodeExtensionUpdatedReload"), reloadLabel)
+      .then((selection) => {
+        if (selection === reloadLabel) {
+          vscode.commands.executeCommand("workbench.action.reloadWindow");
+        }
+      });
+  }
+
+  /**
+   * Is the extension itself running its latest published version? A pre-release
+   * build is ahead of the latest release and stays fine until the releases go
+   * past it (see resolveExtensionUpdateStatus).
+   */
+  async checkVsCodeExtension(): Promise<DependencyCheckResult> {
+    const id = "vscode:sfdx-hardis";
+    const label = "SFDX Hardis by Cloudity";
+    const installedVersion = getInstalledExtensionVersion();
+    // Reads the cached value, never blocks on the network (null when unknown)
+    const latestVersion = await getLatestExtensionVersion();
+    const isPreRelease = isExtensionPreRelease();
+    const updateStatus = resolveExtensionUpdateStatus({
+      installedVersion,
+      latestVersion,
+      isPreRelease,
+    });
+    if (updateStatus.state === "outdated") {
+      return {
+        id,
+        label,
+        installed: true,
+        version: installedVersion,
+        recommended: latestVersion,
+        status: "outdated",
+        helpUrl: EXTENSION_MARKETPLACE_ITEM_URL,
+        message: t("depVsCodeExtensionOutdatedMessage", {
+          version: installedVersion ?? "",
+          latestVersion: latestVersion ?? "",
+        }),
+        upgradeAvailable: true,
+      };
+    }
+    return {
+      id,
+      label,
+      installed: true,
+      version: installedVersion,
+      // An unknown published version (offline, cold cache) is not a
+      // recommendation: leave the card without a target version
+      recommended: updateStatus.state === "ok" ? latestVersion : null,
+      status: "ok",
+      helpUrl: EXTENSION_MARKETPLACE_ITEM_URL,
+      note: updateStatus.isPreviewAhead
+        ? t("depVsCodeExtensionPreviewNote", {
+            version: installedVersion ?? "",
+            latestVersion: latestVersion ?? "",
+          })
+        : undefined,
+    };
+  }
+
+  /**
+   * Installs the latest published version of the extension. A pre-release
+   * build is updated with the latest pre-release, so the user stays on the
+   * channel they chose. VS Code then offers to reload the window.
+   */
+  async updateVsCodeExtension(): Promise<{
+    success: boolean;
+    message?: string;
+  }> {
+    try {
+      await vscode.commands.executeCommand(
+        "workbench.extensions.installExtension",
+        EXTENSION_ID,
+        { installPreReleaseVersion: isExtensionPreRelease() },
+      );
+      this.offerWindowReloadAfterExtensionUpdate();
+      return { success: true };
+    } catch (err: any) {
+      // Older VS Code builds reject the options argument: fall back to opening
+      // the extension page, where the user clicks Update
+      try {
+        await vscode.commands.executeCommand("extension.open", EXTENSION_ID);
+        return { success: true };
+      } catch {
+        return { success: false, message: err?.message || String(err) };
+      }
     }
   }
 

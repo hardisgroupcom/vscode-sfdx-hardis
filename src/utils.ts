@@ -11,7 +11,7 @@ import { CacheManager, CacheSection } from "./utils/cache-manager";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 import { RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION } from "./constants";
 import { resetSfdxHardisConfigCache } from "./utils/sfdx-hardis-config-utils";
-import { getJson } from "./utils/httpUtils";
+import { getJson, postJson } from "./utils/httpUtils";
 import { applySfPerformanceEnv } from "./utils/sfPerformanceUtils";
 import { tryRunSfCommandInProcess } from "./utils/sfCoreInProcess";
 import {
@@ -22,6 +22,14 @@ import {
   parsePluginsData,
   parsePluginsJson,
 } from "./utils/pluginsVersionUtils";
+import {
+  EXTENSION_ID,
+  MARKETPLACE_QUERY_URL,
+  OPEN_VSX_QUERY_URL,
+  buildMarketplaceQueryBody,
+  parseMarketplaceLatestReleaseVersion,
+  parseOpenVsxLatestReleaseVersion,
+} from "./utils/extensionVersionUtils";
 
 // Cached result of isExtensionPreRelease(): the installed extension package
 // can not change while VS Code is running, so it is resolved only once
@@ -32,9 +40,7 @@ export function isExtensionPreRelease(): boolean {
   if (extensionPreRelease !== undefined) {
     return extensionPreRelease;
   }
-  const ext = vscode.extensions.getExtension(
-    "NicolasVuillamy.vscode-sfdx-hardis",
-  );
+  const ext = vscode.extensions.getExtension(EXTENSION_ID);
   if (!ext) {
     // Extension not found in the registry (ex: not installed while running
     // from sources): do not cache, so a later call can still resolve it
@@ -42,6 +48,130 @@ export function isExtensionPreRelease(): boolean {
   }
   extensionPreRelease = ext.packageJSON?.preview === true;
   return extensionPreRelease;
+}
+
+// Set once at activation from context.extensionMode. A development host (F5)
+// or a test run uses the version of the local package.json, which has nothing
+// to do with what is published: the "is the extension up to date" checks are
+// skipped there, so contributors are never told to upgrade their own build.
+let extensionProductionMode = true;
+
+export function setExtensionProductionMode(isProduction: boolean): void {
+  extensionProductionMode = isProduction;
+}
+
+export function isExtensionProductionMode(): boolean {
+  return extensionProductionMode;
+}
+
+/** Version of the installed extension, or null when it can not be resolved */
+export function getInstalledExtensionVersion(): string | null {
+  const ext = vscode.extensions.getExtension(EXTENSION_ID);
+  return ext?.packageJSON?.version || null;
+}
+
+/**
+ * Latest RELEASE version of the extension published on the Visual Studio
+ * Marketplace, with Open VSX as a fallback (the registry of VSCodium and
+ * friends, where the Marketplace is not reachable).
+ *
+ * Same contract as {@link getNpmLatestVersion}: never spawns anything, never
+ * rejects, returns the cached value immediately (or null when nothing is
+ * cached yet) and refreshes in the background.
+ */
+export async function getLatestExtensionVersion(): Promise<string | null> {
+  const STALE_KEY = "extensionLatestVersion";
+  const FRESH_KEY = "extensionLatestVersionFresh";
+  const ONE_DAY_MS = 1000 * 60 * 60 * 24;
+  const SEVEN_DAYS_MS = ONE_DAY_MS * 7;
+
+  const staleValue = CacheManager.get<string>("app", STALE_KEY);
+  const isFresh = CacheManager.get<boolean>("app", FRESH_KEY);
+
+  if (staleValue !== undefined) {
+    if (!isFresh) {
+      triggerExtensionVersionBackgroundRefresh(
+        STALE_KEY,
+        FRESH_KEY,
+        ONE_DAY_MS,
+        SEVEN_DAYS_MS,
+        staleValue,
+      );
+    }
+    return staleValue;
+  }
+
+  triggerExtensionVersionBackgroundRefresh(
+    STALE_KEY,
+    FRESH_KEY,
+    ONE_DAY_MS,
+    SEVEN_DAYS_MS,
+    null,
+  );
+  return null;
+}
+
+// Dedup in-flight background refreshes of the published extension version
+let EXTENSION_VERSION_REFRESH_IN_FLIGHT: Promise<void> | null = null;
+
+function triggerExtensionVersionBackgroundRefresh(
+  staleKey: string,
+  freshKey: string,
+  oneDayMs: number,
+  sevenDaysMs: number,
+  previousValue: string | null,
+): void {
+  if (EXTENSION_VERSION_REFRESH_IN_FLIGHT) {
+    return;
+  }
+  EXTENSION_VERSION_REFRESH_IN_FLIGHT = (async () => {
+    try {
+      const version = await fetchLatestPublishedExtensionVersion();
+      if (!version) {
+        return;
+      }
+      await CacheManager.set("app", staleKey, version, sevenDaysMs);
+      await CacheManager.set("app", freshKey, true, oneDayMs);
+      // Refresh the Dependencies tree so the new decoration is displayed
+      if (version !== previousValue) {
+        vscode.commands.executeCommand(
+          "vscode-sfdx-hardis.refreshPluginsView",
+          true,
+        );
+      }
+    } catch {
+      // Network failure or timeout — leave stale value in cache, no-op
+    } finally {
+      EXTENSION_VERSION_REFRESH_IN_FLIGHT = null;
+    }
+  })();
+}
+
+async function fetchLatestPublishedExtensionVersion(): Promise<string | null> {
+  try {
+    const payload = await postJson(
+      MARKETPLACE_QUERY_URL,
+      buildMarketplaceQueryBody(),
+      {
+        timeoutMs: 4000,
+        headers: { Accept: "application/json;api-version=3.0-preview.1" },
+      },
+    );
+    const marketplaceVersion = parseMarketplaceLatestReleaseVersion(payload);
+    if (marketplaceVersion) {
+      return marketplaceVersion;
+    }
+  } catch (e: any) {
+    Logger.log(
+      "[vscode-sfdx-hardis] Could not read the extension version published on the Marketplace: " +
+        (e?.message || String(e)),
+    );
+  }
+  // Open VSX only receives the releases, which is exactly what is compared
+  const openVsxPayload = await getJson(OPEN_VSX_QUERY_URL, {
+    timeoutMs: 4000,
+  });
+  return parseOpenVsxLatestReleaseVersion(openVsxPayload);
 }
 
 /**
@@ -487,6 +617,11 @@ export function preLoadCache() {
   ];
   for (const npmPackage of npmPackages) {
     getNpmLatestVersion(npmPackage);
+  }
+  // Same tier for the version of the extension published on the Marketplace,
+  // which is only compared against a production install
+  if (isExtensionProductionMode()) {
+    getLatestExtensionVersion();
   }
 }
 

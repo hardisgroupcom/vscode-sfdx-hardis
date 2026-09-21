@@ -29,6 +29,7 @@ const ALL_OK: PrerequisiteStatus[] = [
   prereq({ id: "sf" }),
   prereq({ id: "sfdxHardis" }),
   prereq({ id: "vscodeExtensionPack" }),
+  prereq({ id: "vscodeSfdxHardis" }),
 ];
 
 // Applies overrides on top of ALL_OK for a single (or a few) prerequisites,
@@ -43,10 +44,10 @@ function withOverrides(
 
 suite("dependenciesStatus", () => {
   suite("buildCheckingSummary", () => {
-    test("reports the checking state with all 5 prerequisites pending", () => {
+    test("reports the checking state with all 6 prerequisites pending", () => {
       const summary = buildCheckingSummary();
       assert.strictEqual(summary.state, "checking");
-      assert.strictEqual(summary.prerequisites.length, 5);
+      assert.strictEqual(summary.prerequisites.length, 6);
       assert.ok(summary.prerequisites.every((p) => p.status === "checking"));
       assert.strictEqual(summary.missingCount, 0);
       assert.strictEqual(summary.outdatedCount, 0);

@@ -1,11 +1,14 @@
 import * as vscode from "vscode";
 import {
   execCommand,
+  getInstalledExtensionVersion,
+  getLatestExtensionVersion,
   getNpmLatestVersion,
   getSfdxHardisInstallTag,
   getWorkspaceRoot,
   isToolingCachePreloaded,
   isExtensionPreRelease,
+  isExtensionProductionMode,
   getInstalledPluginsInfo,
   resolvePluginInstallKind,
   stripAnsi,
@@ -31,10 +34,12 @@ import {
 import { isMergeDriverEnabled } from "./utils/gitMergeDriverUtils";
 import { applyPluginsDetailPassInfo } from "./utils/dependenciesStatus";
 import {
+  EXTENSION_MARKETPLACE_ITEM_URL,
   NODE_JS_MINIMUM_VERSION,
   RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
   DOCSITE_URL,
 } from "./constants";
+import { resolveExtensionUpdateStatus } from "./utils/extensionVersionUtils";
 import {
   isAllConfigLoaded,
   listCustomPlugins,
@@ -1072,9 +1077,61 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     }
   }
 
+  /**
+   * Row telling whether the extension itself runs its latest published
+   * version. A pre-release build is expected to be ahead of the latest
+   * release: it is only flagged once the releases have gone past it.
+   */
+  private async getSelfExtensionItem(): Promise<any | null> {
+    // Started from sources or by the tests: the local package.json version has
+    // nothing to compare against what is published
+    if (!isExtensionProductionMode()) {
+      return null;
+    }
+    const installedVersion = getInstalledExtensionVersion();
+    if (!installedVersion) {
+      return null;
+    }
+    // Reads the cached value, never blocks on the network (null when unknown)
+    const latestVersion = await getLatestExtensionVersion();
+    const updateStatus = resolveExtensionUpdateStatus({
+      installedVersion,
+      latestVersion,
+      isPreRelease: isExtensionPreRelease(),
+    });
+    const item: any = {
+      id: "extension-info-sfdx-hardis",
+      label: `SFDX Hardis v${installedVersion}`,
+      command: "",
+      tooltip: t("vsCodeExtensionUpToDate", { version: installedVersion }),
+      status: "dependency-ok",
+      helpUrl: EXTENSION_MARKETPLACE_ITEM_URL,
+    };
+    if (updateStatus.state === "outdated") {
+      item.label = item.label + t("upgradeAvailableSuffix");
+      item.command = "vscode-sfdx-hardis.updateExtension";
+      item.tooltip = t("clickToUpdateVsCodeExtension", {
+        version: latestVersion ?? "",
+      });
+      item.status = "dependency-warning";
+    } else if (updateStatus.isPreviewAhead) {
+      item.label = `${item.label} ${t("pluginPreviewLabel")}`;
+      item.tooltip = t("depVsCodeExtensionPreviewNote", {
+        version: installedVersion,
+        latestVersion: latestVersion ?? "",
+      });
+      item.status = "dependency-preview";
+    }
+    return item;
+  }
+
   // Check for required VsCode extensions
   private async getExtensionsItems(): Promise<any[]> {
     const items: any = [];
+    const selfExtensionItem = await this.getSelfExtensionItem();
+    if (selfExtensionItem) {
+      items.push(selfExtensionItem);
+    }
     const extensions = [
       {
         id: "salesforce.salesforcedx-vscode",

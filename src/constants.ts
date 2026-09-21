@@ -23,6 +23,9 @@ export const SFDX_HARDIS_REPOSITORY_URL =
   "https://github.com/hardisgroupcom/sfdx-hardis";
 export const EXTENSION_MARKETPLACE_URL =
   "https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis&ssr=false#review-details";
+// Marketplace page of the extension, without the anchor sending to the reviews
+export const EXTENSION_MARKETPLACE_ITEM_URL =
+  "https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis";
 export const EXTENSION_OPENVSX_URL =
   "https://open-vsx.org/extension/NicolasVuillamy/vscode-sfdx-hardis/reviews";
 export const WEBSITE_URL = "https://www.cloudity.com?ref=sfdxhardis";
