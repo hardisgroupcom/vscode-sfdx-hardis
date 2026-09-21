@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Dependencies panel and Setup panel: check that the SFDX Hardis extension itself runs its latest published version, and offer to update it. A preview build more recent than the latest release is not reported.
+
 ## [8.7.0] 2026-09-20
 
 - Commands menu and Welcome page

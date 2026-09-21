@@ -8,6 +8,7 @@ import { execCommand, openFolderInExplorer, resetCache } from "./utils";
 import type TelemetryReporter from "@vscode/extension-telemetry";
 import { CommandRunner } from "./command-runner";
 import { runSalesforceCliMcpServer } from "./utils/mcpUtils";
+import { SetupHelper } from "./utils/setupUtils";
 import { registerShowWelcome } from "./commands/showWelcome";
 import { registerShowOrgsManager } from "./commands/showOrgsManager";
 import { registerShowPipeline } from "./commands/showPipeline";
@@ -73,6 +74,7 @@ export class Commands {
     this.registerRefreshStatusView();
     this.registerRefreshPluginsView();
     this.registerOpenExternal();
+    this.registerUpdateExtension();
     this.registerShowCommandDetail();
     this.registerOpenCommandHelp();
     this.registerOpenPluginHelp();
@@ -271,6 +273,17 @@ export class Commands {
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.openExternal",
       (url) => vscode.env.openExternal(url),
+    );
+    this.disposables.push(disposable);
+  }
+
+  registerUpdateExtension() {
+    // Install the latest published version of the extension itself
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.updateExtension",
+      async () => {
+        await SetupHelper.getInstance().updateVsCodeExtension();
+      },
     );
     this.disposables.push(disposable);
   }

@@ -30,6 +30,7 @@ export class HttpError extends Error {
 async function request(
   url: string,
   options: HttpRequestOptions = {},
+  init: { method?: string; body?: string } = {},
 ): Promise<Response> {
   const signal = options.timeoutMs
     ? AbortSignal.timeout(options.timeoutMs)
@@ -37,6 +38,7 @@ async function request(
   const response = await fetch(url, {
     headers: options.headers,
     signal,
+    ...init,
   });
   if (!response.ok) {
     throw new HttpError(
@@ -56,6 +58,29 @@ export async function getJson<T = any>(
   options: HttpRequestOptions = {},
 ): Promise<T> {
   const response = await request(url, options);
+  return (await response.json()) as T;
+}
+
+/**
+ * Posts a JSON body to a URL and parses the response body as JSON.
+ * Throws an HttpError (with a `status` property) on non-2xx responses.
+ */
+export async function postJson<T = any>(
+  url: string,
+  body: any,
+  options: HttpRequestOptions = {},
+): Promise<T> {
+  const response = await request(
+    url,
+    {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+    },
+    { method: "POST", body: JSON.stringify(body) },
+  );
   return (await response.json()) as T;
 }
 

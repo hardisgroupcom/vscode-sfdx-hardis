@@ -97,3 +97,13 @@ export function extractMember(source: string, signature: string): string {
   assert.ok(depth === 0, `unbalanced braces while reading ${signature}`);
   return source.slice(start + 1, open) + source.slice(open, index + 1);
 }
+
+/**
+ * Reads a source file of the extension, relative to `src/`.
+ * Several contract suites assert a behavior is wired on every dependencies
+ * surface by looking for anchors in the sources that feed each UI.
+ * @param relative path inside src (ex: "utils/setupUtils.ts")
+ */
+export function readSourceFile(relative: string): string {
+  return fs.readFileSync(path.join(REPO_ROOT, "src", relative), "utf8");
+}

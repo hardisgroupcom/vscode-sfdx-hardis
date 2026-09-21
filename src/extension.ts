@@ -11,7 +11,11 @@ import { HardisStatusProvider } from "./hardis-status-provider";
 import { LocalWebSocketServer } from "./hardis-websocket-server";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { Logger } from "./logger";
-import { getWorkspaceRoot, preLoadCache } from "./utils";
+import {
+  getWorkspaceRoot,
+  preLoadCache,
+  setExtensionProductionMode,
+} from "./utils";
 import { HardisColors } from "./hardis-colors";
 import { CacheManager } from "./utils/cache-manager";
 import { runSalesforceCliMcpServer } from "./utils/mcpUtils";
@@ -39,6 +43,11 @@ let welcomeShownThisSession = false; // Flag to track if welcome was shown this 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+  // An extension started from sources (F5) or by the tests runs the version of
+  // the local package.json: its "is the extension up to date" checks are off
+  setExtensionProductionMode(
+    context.extensionMode === vscode.ExtensionMode.Production,
+  );
   // Large cached values are offloaded to files under globalStorage: globalState
   // itself is serialized synchronously on every update, so it must stay small
   CacheManager.init(context.globalState, context.globalStorageUri.fsPath);

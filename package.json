@@ -361,6 +361,11 @@
         "icon": "$(link-external)"
       },
       {
+        "command": "vscode-sfdx-hardis.updateExtension",
+        "title": "SFDX Hardis: Update the SFDX Hardis extension",
+        "icon": "$(cloud-download)"
+      },
+      {
         "command": "vscode-sfdx-hardis.openValidationLink",
         "title": "SFDX Hardis: Open encrypted Salesforce account validation / reset password URL",
         "icon": "$(key)"

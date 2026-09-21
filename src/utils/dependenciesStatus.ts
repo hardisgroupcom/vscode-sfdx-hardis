@@ -1,6 +1,10 @@
 import {
   execCommand,
+  getInstalledExtensionVersion,
+  getLatestExtensionVersion,
   getNpmLatestVersion,
+  isExtensionPreRelease,
+  isExtensionProductionMode,
   isToolingCachePreloaded,
   stripAnsi,
 } from "../utils";
@@ -10,8 +14,13 @@ import {
   resolveSfCliPath,
 } from "./setupUtils";
 import { LwcPanelManager } from "../lwc-panel-manager";
-import { NODE_JS_MINIMUM_VERSION, DOCSITE_URL } from "../constants";
+import {
+  EXTENSION_MARKETPLACE_ITEM_URL,
+  NODE_JS_MINIMUM_VERSION,
+  DOCSITE_URL,
+} from "../constants";
 import { resolveRecommendedSfCliVersion } from "./pluginsVersionUtils";
+import { resolveExtensionUpdateStatus } from "./extensionVersionUtils";
 
 /**
  * Lightweight, cache-only aggregate of the environment's core prerequisites
@@ -27,7 +36,12 @@ import { resolveRecommendedSfCliVersion } from "./pluginsVersionUtils";
  */
 
 export type PrerequisiteId =
-  "node" | "git" | "sf" | "sfdxHardis" | "vscodeExtensionPack";
+  | "node"
+  | "git"
+  | "sf"
+  | "sfdxHardis"
+  | "vscodeExtensionPack"
+  | "vscodeSfdxHardis";
 
 export type PrerequisiteState = "checking" | "ok" | "outdated" | "missing";
 
@@ -77,6 +91,7 @@ const PREREQUISITE_LABELS: Record<PrerequisiteId, string> = {
   sf: "Salesforce CLI (sf)",
   sfdxHardis: "sfdx-hardis",
   vscodeExtensionPack: "Salesforce Extension Pack",
+  vscodeSfdxHardis: "SFDX Hardis by Cloudity",
 };
 
 const PREREQUISITE_HELP_URLS: Record<PrerequisiteId, string> = {
@@ -85,6 +100,7 @@ const PREREQUISITE_HELP_URLS: Record<PrerequisiteId, string> = {
   sf: SF_CLI_HELP_URL,
   sfdxHardis: DOCSITE_URL,
   vscodeExtensionPack: VSCODE_EXTENSION_PACK_HELP_URL,
+  vscodeSfdxHardis: EXTENSION_MARKETPLACE_ITEM_URL,
 };
 
 // Last full aggregate computed, exposed synchronously so a Welcome page opened
@@ -167,15 +183,17 @@ async function computeDependenciesStatus(): Promise<DependenciesStatusSummary> {
   if (!isToolingCachePreloaded()) {
     return buildCheckingSummary();
   }
-  const [node, git, sf, sfdxHardis, vscodeExtensionPack] = await Promise.all([
-    computeNodeStatus(),
-    computeGitStatus(),
-    computeSfCliStatus(),
-    computeSfdxHardisStatus(),
-    computeVsCodeExtensionPackStatus(),
-  ]);
+  const [node, git, sf, sfdxHardis, vscodeExtensionPack, vscodeSfdxHardis] =
+    await Promise.all([
+      computeNodeStatus(),
+      computeGitStatus(),
+      computeSfCliStatus(),
+      computeSfdxHardisStatus(),
+      computeVsCodeExtensionPackStatus(),
+      computeVsCodeSfdxHardisStatus(),
+    ]);
   return buildDependenciesStatusSummary(
-    [node, git, sf, sfdxHardis, vscodeExtensionPack],
+    [node, git, sf, sfdxHardis, vscodeExtensionPack, vscodeSfdxHardis],
     LAST_RICH_INFO,
   );
 }
@@ -460,5 +478,36 @@ async function computeVsCodeExtensionPackStatus(): Promise<PrerequisiteStatus> {
     version,
     recommended: null,
     helpUrl: VSCODE_EXTENSION_PACK_HELP_URL,
+  };
+}
+
+/**
+ * The extension itself: outdated when a newer version is published. A
+ * pre-release build is ahead of the latest release and only reported once the
+ * releases have gone past it. Never "missing": it is the running extension.
+ */
+async function computeVsCodeSfdxHardisStatus(): Promise<PrerequisiteStatus> {
+  const label = PREREQUISITE_LABELS.vscodeSfdxHardis;
+  const installedVersion = getInstalledExtensionVersion();
+  // Started from sources or by the tests: the local package.json version has
+  // nothing to compare against what is published
+  const latestVersion = isExtensionProductionMode()
+    ? // Reads the cached value, never blocks on the network (null when unknown)
+      await getLatestExtensionVersion()
+    : null;
+  const updateStatus = resolveExtensionUpdateStatus({
+    installedVersion,
+    latestVersion,
+    isPreRelease: isExtensionPreRelease(),
+  });
+  const isOutdated = updateStatus.state === "outdated";
+  return {
+    id: "vscodeSfdxHardis",
+    label,
+    status: isOutdated ? "outdated" : "ok",
+    installed: true,
+    version: installedVersion,
+    recommended: isOutdated ? latestVersion : null,
+    helpUrl: EXTENSION_MARKETPLACE_ITEM_URL,
   };
 }
