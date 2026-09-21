@@ -39,6 +39,14 @@ async function main() {
     process.argv.includes("--real-cli-perf") ||
     process.env.SFDX_HARDIS_REAL_CLI_PERF === "true";
 
+  // Lab driver run (yarn test:ui:labs): the real CLI, and the learner's own
+  // clone as the workspace instead of a fixture project. It walks the labs of
+  // the training course through the real panels, against real orgs. See
+  // src/test/ui/labDriver.ts.
+  const labDriver =
+    process.argv.includes("--labs") ||
+    process.env.SFDX_HARDIS_LAB_DRIVER === "true";
+
   // Alternate fixture universe for the screenshot run (SF_MOCK_UNIVERSE).
   //
   // Unset keeps the MyCompany-CRM universe exactly as it is, byte for byte.
@@ -90,18 +98,38 @@ async function main() {
     : docScreenshots
       ? "MyCompany-CRM"
       : "dummy-sfdx-project";
-  const workspaceDir = path.join(workDir, workspaceName);
-  fs.cpSync(fixtureSource, workspaceDir, { recursive: true });
+  // The lab driver opens the learner's own clone, in place: that repository,
+  // with its real remote, its real branches and its real orgs, is the object
+  // under test. Nothing is copied into it, initialized in it or written to it.
+  const workspaceDir = labDriver
+    ? path.resolve(process.env.SFDX_HARDIS_LAB_WORKSPACE || "")
+    : path.join(workDir, workspaceName);
+  if (labDriver) {
+    if (!process.env.SFDX_HARDIS_LAB_WORKSPACE) {
+      console.error(
+        "SFDX_HARDIS_LAB_WORKSPACE must point at the learner's clone of the training repository",
+      );
+      process.exit(1);
+    }
+    if (!fs.existsSync(path.join(workspaceDir, ".git"))) {
+      console.error(`Not a git repository: ${workspaceDir}`);
+      process.exit(1);
+    }
+  } else {
+    fs.cpSync(fixtureSource, workspaceDir, { recursive: true });
+  }
 
   // 2. Make it a git repository (several extension features probe git)
   const git = (cmd: string) =>
     execSync(`git ${cmd}`, { cwd: workspaceDir, stdio: "pipe" });
-  git("init");
-  git("config user.email uitest@example.com");
-  git("config user.name UiTest");
-  git("checkout -b integration");
-  git("add -A");
-  git("commit -m init --no-gpg-sign");
+  if (!labDriver) {
+    git("init");
+    git("config user.email uitest@example.com");
+    git("config user.name UiTest");
+    git("checkout -b integration");
+    git("add -A");
+    git("commit -m init --no-gpg-sign");
+  }
 
   // A pipeline nobody has worked in yet: no feature branches, no open Pull
   // Requests, no jobs. It is what a learner's own fork looks like at the end of
@@ -247,7 +275,9 @@ async function main() {
   }
 
   // 3. Deterministic extension settings for the test workspace
-  fs.mkdirSync(path.join(workspaceDir, ".vscode"), { recursive: true });
+  if (!labDriver) {
+    fs.mkdirSync(path.join(workspaceDir, ".vscode"), { recursive: true });
+  }
   const workspaceSettings: Record<string, unknown> = {
     "vsCodeSfdxHardis.showWelcomeAtStartup": false,
     "vsCodeSfdxHardis.disableGitBashCheck": true,
@@ -302,10 +332,22 @@ async function main() {
     workspaceSettings["git.autofetch"] = false;
     workspaceSettings["extensions.ignoreRecommendations"] = true;
   }
-  fs.writeFileSync(
-    path.join(workspaceDir, ".vscode", "settings.json"),
-    JSON.stringify(workspaceSettings, null, 2),
-  );
+  if (labDriver) {
+    // The learner's repository is not ours to write in, and a settings.json
+    // appearing in it would show up in their next commit. The same settings go
+    // to the user level instead, inside the throwaway --user-data-dir.
+    const userSettingsDir = path.join(workDir, "user-data", "User");
+    fs.mkdirSync(userSettingsDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(userSettingsDir, "settings.json"),
+      JSON.stringify(workspaceSettings, null, 2),
+    );
+  } else {
+    fs.writeFileSync(
+      path.join(workspaceDir, ".vscode", "settings.json"),
+      JSON.stringify(workspaceSettings, null, 2),
+    );
+  }
 
   // 4. Prepare the sf CLI shim (mock) and its invocation log
   let shimDir = path.join(
@@ -378,8 +420,21 @@ async function main() {
         `--user-data-dir=${userDataDir}`,
       ],
       extensionTestsEnv: {
+        // The lab driver, like the perf gate, keeps the actual `sf` on the
+        // PATH: it walks the course against real orgs, so a mock would prove
+        // nothing. The CI markers go the same way, for the same reason.
+        ...(labDriver
+          ? {
+              SFDX_HARDIS_LAB_DRIVER: "true",
+              SFDX_HARDIS_LAB_SPECS: process.env.SFDX_HARDIS_LAB_SPECS || "",
+              SFDX_HARDIS_LAB_ONLY: process.env.SFDX_HARDIS_LAB_ONLY || "",
+              CI: undefined,
+              GITHUB_ACTIONS: undefined,
+            }
+          : {}),
         // Real-CLI perf mode keeps the actual `sf` on the PATH; every other
-        // mode answers with the instant mocked CLI (test/fixtures/sf-shim)
+        // mode but the lab driver answers with the instant mocked CLI
+        // (test/fixtures/sf-shim)
         ...(realCliPerf
           ? {
               SFDX_HARDIS_REAL_CLI_PERF: "true",
@@ -390,15 +445,17 @@ async function main() {
               CI: undefined,
               GITHUB_ACTIONS: undefined,
             }
-          : {
-              PATH: `${shimDir}${path.delimiter}${process.env.PATH || ""}`,
-              Path: `${shimDir}${path.delimiter}${process.env.Path || process.env.PATH || ""}`,
-              SF_MOCK_LOG: mockLogFile,
-              SF_MOCK_NODE_MODULES: path.join(
-                extensionDevelopmentPath,
-                "node_modules",
-              ),
-            }),
+          : labDriver
+            ? {}
+            : {
+                PATH: `${shimDir}${path.delimiter}${process.env.PATH || ""}`,
+                Path: `${shimDir}${path.delimiter}${process.env.Path || process.env.PATH || ""}`,
+                SF_MOCK_LOG: mockLogFile,
+                SF_MOCK_NODE_MODULES: path.join(
+                  extensionDevelopmentPath,
+                  "node_modules",
+                ),
+              }),
         VSCODE_SFDX_HARDIS_UI_TEST: "true",
         ...(docScreenshots
           ? {

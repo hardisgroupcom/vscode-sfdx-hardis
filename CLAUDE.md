@@ -22,11 +22,14 @@ yarn lint:fix             # ESLint auto-fix
 yarn compile              # TypeScript compilation (tsc, used for tests)
 yarn test                 # Run unit/extension tests (requires prior compile: yarn pretest)
 yarn test:ui              # Run UI integration tests (real VS Code + mocked sf CLI)
+yarn test:ui:labs         # Walk the training course labs (real VS Code + REAL sf CLI + real orgs)
 yarn screenshots          # Regenerate the documentation screenshots (Windows)
 yarn vsix                 # Package as .vsix for distribution
 ```
 
 `yarn test:ui` requires the webview bundle AND the compiled sources, in this order: `yarn dev` (webpack: webviews + assets) **then** `yarn compile` (tsc: `out/extension.js` + `out/test`).
+
+`yarn test:ui:labs` drives the same harness in "lab driver" mode: it opens a learner's own clone of the [training course](https://hardisgroupcom.github.io/sfdx-hardis-training/) repository (`SFDX_HARDIS_LAB_WORKSPACE`) instead of a fixture project, keeps the **real** `sf` CLI on the PATH, and walks the labs through the real panels against real orgs, answering each question from the rules the course declares in `labs/_assets/lab-drivers.json`. A question no rule covers fails the lab: a learner would be stuck on it too. It is never part of an ordinary `yarn test:ui` run, because it changes real orgs and a real repository. `SFDX_HARDIS_LAB_ONLY=1.3` runs one lab, `=1` a whole level. See `src/test/ui/labDriver.ts`.
 
 `yarn screenshots` drives the same harness in "documentation screenshot" mode: it opens every LWC panel over `test/fixtures/doc-screenshots-project` in light theme and English, captures full-window PNGs (and animated GIF recordings) into `doc-screenshots/`, then `python scripts/build-doc-images.py` crops, annotates and copies them into the sibling `sfdx-hardis/docs/assets/images` folder. See CONTRIBUTING.md.
 
