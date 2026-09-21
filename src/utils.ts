@@ -70,6 +70,81 @@ export function getInstalledExtensionVersion(): string | null {
   return ext?.packageJSON?.version || null;
 }
 
+// How long a "latest version" stays readable from the cache, and how long it
+// is considered fresh enough not to be refreshed again in the background
+const VERSION_CACHE_TTL_MS = 1000 * 60 * 60 * 24 * 7;
+const VERSION_FRESH_TTL_MS = 1000 * 60 * 60 * 24;
+
+// Dedup in-flight background refreshes, keyed by the cache entry they feed
+const VERSION_REFRESH_IN_FLIGHT: Map<string, Promise<void>> = new Map();
+
+/**
+ * Stale-while-revalidate read of a "latest published version" value.
+ *
+ * Never spawns anything, never rejects: it returns whatever is cached
+ * immediately (or null when nothing is cached yet) and, when the fresh marker
+ * expired, kicks off a single background refresh that updates the cache and
+ * refreshes the Dependencies tree when the value actually changed.
+ */
+async function getCachedLatestVersion(
+  staleKey: string,
+  freshKey: string,
+  fetchLatestVersion: () => Promise<string | null>,
+): Promise<string | null> {
+  const staleValue = CacheManager.get<string>("app", staleKey);
+  const isFresh = CacheManager.get<boolean>("app", freshKey);
+
+  if (staleValue !== undefined) {
+    if (!isFresh) {
+      triggerVersionBackgroundRefresh(
+        staleKey,
+        freshKey,
+        fetchLatestVersion,
+        staleValue,
+      );
+    }
+    return staleValue;
+  }
+
+  // Nothing cached at all: try one background fetch but return null right away
+  triggerVersionBackgroundRefresh(staleKey, freshKey, fetchLatestVersion, null);
+  return null;
+}
+
+function triggerVersionBackgroundRefresh(
+  staleKey: string,
+  freshKey: string,
+  fetchLatestVersion: () => Promise<string | null>,
+  previousValue: string | null,
+): void {
+  if (VERSION_REFRESH_IN_FLIGHT.has(staleKey)) {
+    return;
+  }
+  const refreshPromise = (async () => {
+    try {
+      const version = await fetchLatestVersion();
+      if (!version) {
+        return;
+      }
+      await CacheManager.set("app", staleKey, version, VERSION_CACHE_TTL_MS);
+      await CacheManager.set("app", freshKey, true, VERSION_FRESH_TTL_MS);
+      // If the value changed, trigger a targeted panel refresh so users see
+      // the updated decoration
+      if (version !== previousValue) {
+        vscode.commands.executeCommand(
+          "vscode-sfdx-hardis.refreshPluginsView",
+          true,
+        );
+      }
+    } catch {
+      // Network failure or timeout: leave the stale value in cache, no-op
+    } finally {
+      VERSION_REFRESH_IN_FLIGHT.delete(staleKey);
+    }
+  })();
+  VERSION_REFRESH_IN_FLIGHT.set(staleKey, refreshPromise);
+}
+
 /**
  * Latest RELEASE version of the extension published on the Visual Studio
  * Marketplace, with Open VSX as a fallback (the registry of VSCodium and
@@ -80,71 +155,11 @@ export function getInstalledExtensionVersion(): string | null {
  * cached yet) and refreshes in the background.
  */
 export async function getLatestExtensionVersion(): Promise<string | null> {
-  const STALE_KEY = "extensionLatestVersion";
-  const FRESH_KEY = "extensionLatestVersionFresh";
-  const ONE_DAY_MS = 1000 * 60 * 60 * 24;
-  const SEVEN_DAYS_MS = ONE_DAY_MS * 7;
-
-  const staleValue = CacheManager.get<string>("app", STALE_KEY);
-  const isFresh = CacheManager.get<boolean>("app", FRESH_KEY);
-
-  if (staleValue !== undefined) {
-    if (!isFresh) {
-      triggerExtensionVersionBackgroundRefresh(
-        STALE_KEY,
-        FRESH_KEY,
-        ONE_DAY_MS,
-        SEVEN_DAYS_MS,
-        staleValue,
-      );
-    }
-    return staleValue;
-  }
-
-  triggerExtensionVersionBackgroundRefresh(
-    STALE_KEY,
-    FRESH_KEY,
-    ONE_DAY_MS,
-    SEVEN_DAYS_MS,
-    null,
+  return getCachedLatestVersion(
+    "extensionLatestVersion",
+    "extensionLatestVersionFresh",
+    fetchLatestPublishedExtensionVersion,
   );
-  return null;
-}
-
-// Dedup in-flight background refreshes of the published extension version
-let EXTENSION_VERSION_REFRESH_IN_FLIGHT: Promise<void> | null = null;
-
-function triggerExtensionVersionBackgroundRefresh(
-  staleKey: string,
-  freshKey: string,
-  oneDayMs: number,
-  sevenDaysMs: number,
-  previousValue: string | null,
-): void {
-  if (EXTENSION_VERSION_REFRESH_IN_FLIGHT) {
-    return;
-  }
-  EXTENSION_VERSION_REFRESH_IN_FLIGHT = (async () => {
-    try {
-      const version = await fetchLatestPublishedExtensionVersion();
-      if (!version) {
-        return;
-      }
-      await CacheManager.set("app", staleKey, version, sevenDaysMs);
-      await CacheManager.set("app", freshKey, true, oneDayMs);
-      // Refresh the Dependencies tree so the new decoration is displayed
-      if (version !== previousValue) {
-        vscode.commands.executeCommand(
-          "vscode-sfdx-hardis.refreshPluginsView",
-          true,
-        );
-      }
-    } catch {
-      // Network failure or timeout — leave stale value in cache, no-op
-    } finally {
-      EXTENSION_VERSION_REFRESH_IN_FLIGHT = null;
-    }
-  })();
 }
 
 async function fetchLatestPublishedExtensionVersion(): Promise<string | null> {
@@ -280,9 +295,6 @@ let CACHE_ORG_IS_PRELOADED: boolean = false;
 let CACHE_TOOLING_IS_PRELOADED: boolean = false;
 let COMMANDS_RESULTS: Record<string, any> = {};
 let GIT_MENUS: any[] | null = null;
-
-// Dedup in-flight background npm version refreshes
-const NPM_REFRESH_IN_FLIGHT: Map<string, Promise<void>> = new Map();
 
 // ── Fix #4: concurrency limiter for execShell ─────────────────────────────
 // On Windows, each `sf` spawn is CPU-heavy at boot time. Without a limit, a
@@ -628,77 +640,21 @@ export function preLoadCache() {
 export async function getNpmLatestVersion(
   packageName: string,
 ): Promise<string | null> {
-  const NPM_STALE_KEY = `npmLatest:${packageName}`;
-  const NPM_FRESH_KEY = `npmLatestFresh:${packageName}`;
-  const ONE_DAY_MS = 1000 * 60 * 60 * 24;
-  const SEVEN_DAYS_MS = ONE_DAY_MS * 7;
-
-  // Return whatever stale value we have immediately (stale-while-revalidate)
-  const staleValue = CacheManager.get<string>("app", NPM_STALE_KEY);
-  const isFresh = CacheManager.get<boolean>("app", NPM_FRESH_KEY);
-
-  if (staleValue !== undefined) {
-    // If the value is stale (fresh marker expired), kick off a background refresh
-    if (!isFresh) {
-      triggerNpmBackgroundRefresh(
-        packageName,
-        NPM_STALE_KEY,
-        NPM_FRESH_KEY,
-        ONE_DAY_MS,
-        SEVEN_DAYS_MS,
-        staleValue,
-      );
-    }
-    return staleValue;
-  }
-
-  // Nothing cached at all — try one background fetch but return null immediately
-  triggerNpmBackgroundRefresh(
-    packageName,
-    NPM_STALE_KEY,
-    NPM_FRESH_KEY,
-    ONE_DAY_MS,
-    SEVEN_DAYS_MS,
-    null,
+  return getCachedLatestVersion(
+    `npmLatest:${packageName}`,
+    `npmLatestFresh:${packageName}`,
+    () => fetchNpmLatestVersion(packageName),
   );
-  return null;
 }
 
-function triggerNpmBackgroundRefresh(
+async function fetchNpmLatestVersion(
   packageName: string,
-  staleKey: string,
-  freshKey: string,
-  oneDayMs: number,
-  sevenDaysMs: number,
-  previousValue: string | null,
-): void {
-  // Dedup: only one in-flight refresh per package at a time
-  if (NPM_REFRESH_IN_FLIGHT.has(packageName)) {
-    return;
-  }
-  const refreshPromise = (async () => {
-    try {
-      const versionRes = await getJson<{ version: string }>(
-        "https://registry.npmjs.org/" + packageName + "/latest",
-        { timeoutMs: 4000 },
-      );
-      const version: string = versionRes.version;
-      await CacheManager.set("app", staleKey, version, sevenDaysMs);
-      await CacheManager.set("app", freshKey, true, oneDayMs);
-      // If value changed, trigger a targeted panel refresh so users see updated decoration
-      if (version !== previousValue) {
-        vscode.commands.executeCommand(
-          "vscode-sfdx-hardis.refreshPluginsView",
-          true,
-        );
-      }
-    } catch {
-      // Network failure or timeout — leave stale value in cache, no-op
-    } finally {
-      NPM_REFRESH_IN_FLIGHT.delete(packageName);
-    }
-  })();
-  NPM_REFRESH_IN_FLIGHT.set(packageName, refreshPromise);
+): Promise<string | null> {
+  const versionRes = await getJson<{ version: string }>(
+    "https://registry.npmjs.org/" + packageName + "/latest",
+    { timeoutMs: 4000 },
+  );
+  return versionRes?.version || null;
 }
 
 export async function resetCache() {

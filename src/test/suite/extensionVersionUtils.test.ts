@@ -1,6 +1,4 @@
 import * as assert from "assert";
-import * as fs from "fs";
-import * as path from "path";
 import {
   EXTENSION_ID,
   buildMarketplaceQueryBody,
@@ -8,7 +6,7 @@ import {
   parseOpenVsxLatestReleaseVersion,
   resolveExtensionUpdateStatus,
 } from "../../utils/extensionVersionUtils";
-import { REPO_ROOT, assertKeysTranslated } from "./lwcSourceUtils";
+import { assertKeysTranslated, readSourceFile } from "./lwcSourceUtils";
 
 // Shape returned by the Marketplace gallery query, trimmed to the fields read
 // here. The gallery returns the versions newest first and mixes the
@@ -31,7 +29,12 @@ function marketplacePayload(
                       value: "true",
                     },
                   ]
-                : [{ key: "Microsoft.VisualStudio.Code.Engine", value: "^1.95" }],
+                : [
+                    {
+                      key: "Microsoft.VisualStudio.Code.Engine",
+                      value: "^1.95",
+                    },
+                  ],
             })),
           },
         ],
@@ -59,7 +62,10 @@ suite("extensionVersionUtils", () => {
         { version: "8.7.0" },
         { version: "8.6.1" },
       ]);
-      assert.strictEqual(parseMarketplaceLatestReleaseVersion(payload), "8.7.0");
+      assert.strictEqual(
+        parseMarketplaceLatestReleaseVersion(payload),
+        "8.7.0",
+      );
     });
 
     test("skips the pre-release versions published from the alpha branch", () => {
@@ -68,7 +74,10 @@ suite("extensionVersionUtils", () => {
         { version: "8.7.1", preRelease: true },
         { version: "8.7.0" },
       ]);
-      assert.strictEqual(parseMarketplaceLatestReleaseVersion(payload), "8.7.0");
+      assert.strictEqual(
+        parseMarketplaceLatestReleaseVersion(payload),
+        "8.7.0",
+      );
     });
 
     test("returns null when the payload carries no usable version", () => {
@@ -98,7 +107,10 @@ suite("extensionVersionUtils", () => {
     test("returns null when the payload has no version", () => {
       assert.strictEqual(parseOpenVsxLatestReleaseVersion(null), null);
       assert.strictEqual(parseOpenVsxLatestReleaseVersion({}), null);
-      assert.strictEqual(parseOpenVsxLatestReleaseVersion({ version: "" }), null);
+      assert.strictEqual(
+        parseOpenVsxLatestReleaseVersion({ version: "" }),
+        null,
+      );
     });
   });
 
@@ -180,11 +192,8 @@ suite("extensionVersionUtils", () => {
     // The same question ("is the extension itself up to date?") is answered in
     // three places, each feeding a different UI. A fix in one of them is
     // worthless if the other two keep reporting a stale build as fine.
-    const readSource = (relative: string): string =>
-      fs.readFileSync(path.join(REPO_ROOT, "src", relative), "utf8");
-
     test("the Dependencies tree view flags it", () => {
-      const source = readSource("hardis-plugins-provider.ts");
+      const source = readSourceFile("hardis-plugins-provider.ts");
       assert.ok(
         source.includes("resolveExtensionUpdateStatus"),
         "the tree view must compare the running extension to the published one",
@@ -196,7 +205,7 @@ suite("extensionVersionUtils", () => {
     });
 
     test("the Setup panel flags it", () => {
-      const source = readSource("utils/setupUtils.ts");
+      const source = readSourceFile("utils/setupUtils.ts");
       assert.ok(
         source.includes("resolveExtensionUpdateStatus"),
         "the Setup LWC must compare the running extension to the published one",
@@ -208,7 +217,7 @@ suite("extensionVersionUtils", () => {
     });
 
     test("the Welcome page dependencies aggregate counts it", () => {
-      const source = readSource("utils/dependenciesStatus.ts");
+      const source = readSourceFile("utils/dependenciesStatus.ts");
       assert.ok(
         source.includes("resolveExtensionUpdateStatus"),
         "the aggregate must compare the running extension to the published one",
@@ -228,7 +237,7 @@ suite("extensionVersionUtils", () => {
         "utils/dependenciesStatus.ts",
       ]) {
         assert.ok(
-          readSource(relative).includes("isExtensionProductionMode"),
+          readSourceFile(relative).includes("isExtensionProductionMode"),
           `${relative} must skip the check outside a production install`,
         );
       }

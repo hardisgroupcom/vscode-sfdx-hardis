@@ -10,9 +10,11 @@ import {
   parsePluginsJson,
   stripAnsiCodes,
 } from "../../utils/pluginsVersionUtils";
-import * as fs from "fs";
-import * as path from "path";
-import { REPO_ROOT, assertKeysTranslated, loadLocale } from "./lwcSourceUtils";
+import {
+  assertKeysTranslated,
+  loadLocale,
+  readSourceFile,
+} from "./lwcSourceUtils";
 
 // Real `sf plugins` output samples (Windows, Salesforce CLI 2.146.3)
 const PLUGINS_TEXT_LINKED = [
@@ -675,11 +677,8 @@ suite("outdated preview plugin messages", () => {
 suite("outdated preview is reported on every dependencies surface", () => {
   // The same check exists in three places, each feeding a different UI. A fix in
   // one of them is worthless if the other two still show the stale build as fine.
-  const readSource = (relative: string): string =>
-    fs.readFileSync(path.join(REPO_ROOT, "src", relative), "utf8");
-
   test("the Dependencies tree view flags it", () => {
-    const source = readSource("hardis-plugins-provider.ts");
+    const source = readSourceFile("hardis-plugins-provider.ts");
     assert.ok(
       source.includes("isOutdatedPreviewPlugin"),
       "the tree view must compare an accepted preview against npm latest",
@@ -691,7 +690,7 @@ suite("outdated preview is reported on every dependencies surface", () => {
   });
 
   test("the Setup panel flags it", () => {
-    const source = readSource("utils/setupUtils.ts");
+    const source = readSourceFile("utils/setupUtils.ts");
     assert.ok(
       source.includes("isOutdatedPreviewPlugin"),
       "the Setup LWC must compare an accepted preview against npm latest",
