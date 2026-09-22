@@ -729,11 +729,20 @@ export async function execCommand(
   let commandResult: any;
   // Build a per-call env copy; set FORCE_COLOR=0 here so the child process
   // never emits ANSI codes without mutating the global process.env.
+  // NO_NEW_COMMAND_TAB: everything running through execCommand is a background call a panel
+  // or a tree makes to feed itself (commands the user starts go through CommandRunner), so
+  // sfdx-hardis must not open a command execution tab for it. Without it, a panel that reads
+  // a `sf hardis:... --json` catalog on every refresh opens a tab on every refresh.
   const execOptions: any = {
     maxBuffer: 10000 * 10000,
     cwd: options.cwd || vscode.workspace.rootPath,
     env: applySfPerformanceEnv(
-      { ...process.env, ...(options.env || {}), FORCE_COLOR: "0" },
+      {
+        ...process.env,
+        ...(options.env || {}),
+        FORCE_COLOR: "0",
+        NO_NEW_COMMAND_TAB: "true",
+      },
       command,
     ),
   };
