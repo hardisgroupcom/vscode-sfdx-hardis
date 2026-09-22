@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Command execution panel: a command can name itself through the new `commandLabel` WebSocket event. The label takes the place of the command line in the header and the command line becomes its tooltip, so a training command reads as "Set up my training environment" instead of `training.mjs init`. Commands that do not send it are unchanged.
+- The first training command a person runs switches Advanced details on, so a learner sees the steps rather than a folded summary. It happens once: from then on the setting is theirs and the panel reads it as usual.
 - Dependencies panel and Setup panel: check that the SFDX Hardis extension itself runs its latest published version, and offer to update it. A preview build more recent than the latest release is not reported.
 
 ## [8.7.0] 2026-09-20

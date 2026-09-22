@@ -720,6 +720,7 @@
     "test": "node ./out/test/runTest.js",
     "test:ui": "node ./out/test/runUiTest.js",
     "test:ui:perf": "node ./out/test/runUiTest.js --real-cli-perf",
+    "test:ui:labs": "node ./out/test/runUiTest.js --labs",
     "screenshots": "node ./scripts/take-doc-screenshots.js",
     "vsix": "vsce package --allow-package-secrets github"
   },
