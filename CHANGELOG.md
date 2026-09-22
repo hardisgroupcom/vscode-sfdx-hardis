@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- A panel or a tree reading data in the background no longer opens a command execution tab. The DevOps Pipeline opened one for `hardis:project:function:list` on every click and every refresh.
+
 ## [8.7.1] 2026-09-22
 
 - Command execution panel: a command can name itself through the new `commandLabel` WebSocket event. The label takes the place of the command line in the header and the command line becomes its tooltip, so a training command reads as "Set up my training environment" instead of `training.mjs init`. Commands that do not send it are unchanged.
