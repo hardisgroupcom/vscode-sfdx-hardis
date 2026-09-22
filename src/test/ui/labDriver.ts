@@ -3,6 +3,10 @@ import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
 import { runCommandAndWaitForPanel, waitFor } from "./uiTestUtils";
+import {
+  autorunEntryFor,
+  trainingWorkspaceRoot,
+} from "../../utils/trainingPanelCommands";
 import { stripAnsiCodes } from "../../utils/ansiColors";
 
 /**
@@ -150,7 +154,24 @@ function readPrompt(message: any): ShownPrompt | null {
 /** Resolves the rule's answer against the choices the panel really rendered. */
 function answerFor(prompt: ShownPrompt, rule: LabAnswer): unknown {
   if (rule.choice === undefined) {
-    return rule.value === "__INITIAL__" ? prompt.initial : rule.value;
+    // A rule with neither `choice` nor `value` (a typo such as "choices", a
+    // dropped field) would otherwise submit `undefined`, the command would read
+    // it as a falsy answer and walk a different path, and the lab would pass
+    // having exercised the wrong branch. A question no rule really covers fails.
+    assert.ok(
+      "value" in rule,
+      `The rule for "${prompt.message}" has neither "choice" nor "value": ` +
+        `${JSON.stringify(rule)}`,
+    );
+    if (rule.value === "__INITIAL__") {
+      assert.ok(
+        prompt.initial !== undefined,
+        `The rule for "${prompt.message}" asks for __INITIAL__, but the panel ` +
+          "offered no initial value.",
+      );
+      return prompt.initial;
+    }
+    return rule.value;
   }
   const pattern = new RegExp(rule.choice, "i");
   const matches = prompt.choices.filter((choice) => pattern.test(choice.title));
@@ -188,6 +209,8 @@ export async function runLabStep(
   const timeoutMs = step.timeoutMs ?? 600000;
   const asked: ShownPrompt[] = [];
 
+  await authorizeLikeTheLearner(step.command);
+
   const panelId = await runCommandAndWaitForPanel(
     panelManager,
     step.command,
@@ -201,7 +224,6 @@ export async function runLabStep(
   // click there is: the same message in, the same message out.
   const originalSendMessage = panel.sendMessage.bind(panel);
   let failure: string | null = null;
-  const answered = new Set<string>();
   panel.sendMessage = (message: any) => {
     const result = originalSendMessage(message);
     if (message?.type !== "showPrompt" || failure) {
@@ -215,18 +237,17 @@ export async function runLabStep(
       if (!prompt) {
         return result;
       }
-      const key = `${prompt.name}::${prompt.message}`;
       const rule = rules.find(
         (candidate) =>
           !candidate.used && new RegExp(candidate.q, "i").test(prompt.message),
       );
-      if (!rule && answered.has(key)) {
-        // The panel re-sends a prompt when it is revealed. No rule is left for
-        // this question, so it is that echo and not a new question: ignore it.
-        // A question the command really asks twice (a name that failed the
-        // project's pattern, say) has a second rule, and lands above.
-        return result;
-      }
+      // There is deliberately no "this is just an echo, ignore it" branch here.
+      // `showPrompt` is emitted from one place in hardis-websocket-server.ts and
+      // never replayed, so a second arrival with no rule left is a question the
+      // command really asked twice. Dropping it silently left the CLI blocked on
+      // an unanswered prompt until the step's whole timeout ran out, and the
+      // question that blocked it was never named, which is the one thing this
+      // driver exists to do.
       asked.push(prompt);
       if (!rule) {
         failure =
@@ -240,7 +261,6 @@ export async function runLabStep(
         return result;
       }
       rule.used = true;
-      answered.add(key);
       console.log(`[lab] ${prompt.message}`);
       const value = answerFor(prompt, rule);
       console.log(`[lab]   -> ${JSON.stringify(value)}`);
@@ -285,7 +305,12 @@ export async function runLabStep(
       // against the learner's real repository and org, while the next lab
       // starts in the same workspace. Disposing the panel cancels the command.
       try {
-        panelManager.disposePanel(panelId);
+        // By the panel's current id, not the provisional one: rekeyPanel drops
+        // the provisional id from activePanels once the CLI reports its context
+        // id, and disposePanel looks the id up there. Disposing by `panelId`
+        // was a no-op exactly when it mattered, leaving the aborted command
+        // running against the learner's real org while the next lab started.
+        panelManager.disposePanel(panel.getLwcId());
       } catch {
         // Already gone: the command errored or closed itself
       }
@@ -318,6 +343,31 @@ export async function runLabStep(
   }
 
   return asked;
+}
+
+/**
+ * Stores the authorization a learner gives once, by hand, on Lab 1.2 step 5.
+ *
+ * A Training card runs a custom command, and the extension asks before running
+ * one: "Allow once", "Always allow", "Cancel". The lab tells the learner to
+ * click **Always allow**, and the extension stores the entry. The driver has
+ * nobody to click a modal, so it stores the same entry the click would have
+ * stored. This grants the authorization the lab grants, it does not bypass it:
+ * a command the learner was never told to authorize is still never authorized.
+ */
+async function authorizeLikeTheLearner(command: string): Promise<void> {
+  const entry = autorunEntryFor(command, trainingWorkspaceRoot());
+  const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+  const current = config.get<string[]>("autorunCommands", []);
+  if (current.includes(entry)) {
+    return;
+  }
+  await config.update(
+    "autorunCommands",
+    [...current, entry],
+    vscode.ConfigurationTarget.Global,
+  );
+  console.log(`[lab] authorized "${entry}" the way Always allow does`);
 }
 
 /** Opens a panel by its VS Code command and waits for it to expose its data. */
