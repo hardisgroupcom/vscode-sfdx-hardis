@@ -184,7 +184,11 @@ export class Commands {
         runOptions?: { label?: string; showCommandDetails?: boolean },
       ) => {
         // Use CommandRunner for all terminal and LWC panel logic
-        this.commandRunner.executeCommand(sfdxHardisCommand, envVars, runOptions);
+        this.commandRunner.executeCommand(
+          sfdxHardisCommand,
+          envVars,
+          runOptions,
+        );
       },
     );
     this.disposables.push(disposable);
