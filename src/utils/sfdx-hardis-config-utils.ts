@@ -30,6 +30,21 @@ export interface CustomCommand {
   sldsIcon?: string;
   /** Source of this command, used to style and label it in UI. */
   sourceType?: CustomCommandsSource;
+  /**
+   * The label exactly as written in the configuration, kept before `label` gets
+   * its "(Custom)" or "(Plugin)" suffix. It is what the command runner shows
+   * while the command runs, in place of the command line.
+   */
+  runLabel?: string;
+  /**
+   * Open the command runner with "Advanced details" already switched on, so the
+   * person running the command sees every step instead of the summary. Set by
+   * teaching commands, where what the command does IS the point.
+   *
+   * It applies to this run only: it does not change the user's
+   * `showCommandsDetails` setting, and the toggle still works.
+   */
+  showCommandDetails?: boolean;
   /** CSS classes for the icon container in the welcome panel. */
   welcomeIconClass?: string;
   /**
@@ -321,6 +336,9 @@ function applyDefaultCommandIcons(
     welcomeIconClass: menu.welcomeIconClass ?? iconClass,
     commands: (menu.commands || []).map((cmd) => ({
       ...cmd,
+      // Before the source suffix: the command runner wants the name the author
+      // wrote, not "Set up my training environment (Custom)"
+      runLabel: cmd.runLabel ?? cmd.label,
       label: `${cmd.label} ${sourceLabel}`,
       icon: cmd.icon ?? "cloudity-logo.svg",
       vscodeIcon: cmd.vscodeIcon ?? "run",

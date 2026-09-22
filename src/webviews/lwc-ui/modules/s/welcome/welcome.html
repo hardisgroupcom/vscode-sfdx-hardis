@@ -235,6 +235,8 @@
                         <div key={cmd.id}
                             class="hardis-card clickable"
                             data-command={cmd.command}
+                            data-label={cmd.runLabel}
+                            data-details={cmd.showCommandDetails}
                             role="button"
                             tabindex="0"
                             onclick={executeCustomCommand}

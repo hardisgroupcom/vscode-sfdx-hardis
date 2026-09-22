@@ -93,6 +93,20 @@ export const INTERNAL_MAINTENANCE_COMMAND_PATTERNS: RegExp[] = [
 ];
 
 /**
+ * What the caller knows about a command that the command line does not say.
+ *
+ * Custom commands declare a label and, optionally, that the run should be
+ * watched step by step. Both travel from the tree item or the Welcome card to
+ * the command execution panel, and neither changes how the command is run.
+ */
+export interface CommandRunOptions {
+  /** Name shown in the panel while it runs, in place of the command line */
+  label?: string;
+  /** Open the panel with "Advanced details" already on, for this run only */
+  showCommandDetails?: boolean;
+}
+
+/**
  * CommandRunner handles all logic related to terminal management and command execution.
  * It is designed to be used by the Commands class.
  */
@@ -213,6 +227,7 @@ export class CommandRunner {
   async executeCommand(
     sfdxHardisCommand: string,
     extraEnv?: Record<string, string>,
+    runOptions?: CommandRunOptions,
   ) {
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     this.debugNodeJs = config.get("debugSfdxHardisCommands") ?? false;
@@ -262,7 +277,7 @@ export class CommandRunner {
     if (isHardisCommand || isSfStandard || isNpmInstallSf) {
       if (isBackgroundMode) {
         await this.waitForWebSocketServerReady();
-        this.executeCommandBackground(sfdxHardisCommand, extraEnv);
+        this.executeCommandBackground(sfdxHardisCommand, extraEnv, runOptions);
       } else {
         this.executeCommandTerminal(sfdxHardisCommand, extraEnv);
       }
@@ -276,7 +291,7 @@ export class CommandRunner {
     if (!isAllCustomCommandsLoaded()) {
       void this.ensureCustomCommandsLoadedWithMessage()
         .then(() => {
-          this.executeCommand(sfdxHardisCommand, extraEnv);
+          this.executeCommand(sfdxHardisCommand, extraEnv, runOptions);
         })
         .catch((error) => {
           const errorMessage =
@@ -336,6 +351,7 @@ export class CommandRunner {
           isBackgroundMode,
           sfdxHardisCommand,
           extraEnv,
+          runOptions,
         );
         return;
       }
@@ -360,6 +376,7 @@ export class CommandRunner {
               isBackgroundMode,
               sfdxHardisCommand,
               extraEnv,
+              runOptions,
             );
           } else if (selection === t("alwaysAllow")) {
             // One entry for the whole Training menu, the exact line for anything
@@ -389,6 +406,7 @@ export class CommandRunner {
               isBackgroundMode,
               sfdxHardisCommand,
               extraEnv,
+              runOptions,
             );
           }
         });
@@ -406,6 +424,7 @@ export class CommandRunner {
     isBackgroundMode: boolean,
     command: string,
     extraEnv?: Record<string, string>,
+    runOptions?: CommandRunOptions,
   ) {
     if (isBackgroundMode) {
       // Before the decision, not after: a training command is allowed in the
@@ -413,7 +432,7 @@ export class CommandRunner {
       // activation it is still binding its port.
       await this.waitForWebSocketServerReady();
       if (this.isCommandAllowedInBackground(command)) {
-        this.executeCommandBackground(command, extraEnv);
+        this.executeCommandBackground(command, extraEnv, runOptions);
         return;
       }
     }
@@ -571,6 +590,7 @@ export class CommandRunner {
   executeCommandBackground(
     sfdxHardisCommand: string,
     extraEnv?: Record<string, string>,
+    runOptions?: CommandRunOptions,
   ) {
     // Preprocess, validate, and send telemetry, and register as active
     let preprocessedCommand: string | null = null;
@@ -652,15 +672,23 @@ export class CommandRunner {
       try {
         const provisionalContextId = generateProvisionalContextId();
         const commandId = extractCommandId(preprocessedCommand);
-        pendingCommandName = isTrainingCommand
-          ? trainingCommandLabel(preprocessedCommand)
-          : commandId || preprocessedCommand;
+        // A custom command names itself. Otherwise the oclif command id, or the
+        // training script and its verb.
+        pendingCommandName =
+          runOptions?.label ||
+          (isTrainingCommand
+            ? trainingCommandLabel(preprocessedCommand)
+            : commandId || preprocessedCommand);
         pendingPanelLwcId = `s-command-execution-${provisionalContextId}`;
         spawnOptions.env.SFDX_HARDIS_COMMAND_CONTEXT_ID = provisionalContextId;
         const panelManager = LwcPanelManager.getInstance();
         const panel = panelManager.getOrCreatePanel(pendingPanelLwcId, {
           id: provisionalContextId,
           command: pendingCommandName,
+          // Kept apart from `command`: when the CLI connects it overwrites
+          // `command` with its own id, and the label has to survive that
+          commandLabel: runOptions?.label || undefined,
+          showCommandDetails: runOptions?.showCommandDetails === true,
           commandLine: sfdxHardisCommand.trim(),
           // Org forced on the command line: displayed right away, without
           // waiting for the CLI. When there is none, the WebSocket server
@@ -682,6 +710,8 @@ export class CommandRunner {
           // Command as requested by the user (before --skipauth/--websocket are
           // appended): the panel replays exactly this on "Run again"
           commandLine: sfdxHardisCommand.trim(),
+          commandLabel: runOptions?.label,
+          showCommandDetails: runOptions?.showCommandDetails === true,
           createdAt: Date.now(),
           onAdopted: () => {
             pendingPanelAdopted = true;

@@ -230,8 +230,13 @@ export class LocalWebSocketServer {
         await this.sendCommandReady(ws);
       }
 
-      // Set the panel title to include command info
-      const commandName = data.context.command || "SFDX Hardis Command";
+      // Set the panel title to include command info. A custom command named
+      // itself at click time, and the CLI has just overwritten data.context
+      // with its own id: the label wins, the id stays as the tooltip.
+      const commandName =
+        pendingPanel?.commandLabel ||
+        data.context.command ||
+        "SFDX Hardis Command";
       panel.updateTitle(t("commandTitleRunning", { commandName }));
 
       // Initialize the command in the panel, including commandDocUrl if available
@@ -253,6 +258,14 @@ export class LocalWebSocketServer {
       // replays it with its original arguments
       if (pendingPanel?.commandLine) {
         initData.data.commandLine = pendingPanel.commandLine;
+      }
+      // Declared by a custom command at click time. The CLI does not know about
+      // either, and its context would otherwise replace them with nothing.
+      if (pendingPanel?.commandLabel) {
+        initData.data.commandLabel = pendingPanel.commandLabel;
+      }
+      if (pendingPanel?.showCommandDetails) {
+        initData.data.showCommandDetails = true;
       }
       // Enrich with the org the command targets, so the panel header shows it:
       // an org forced with --target-org/-o/--targetusername/-u on the command

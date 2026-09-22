@@ -561,11 +561,20 @@ export class LwcUiPanel {
   private async handleRunCommand(data: {
     command: string;
     envVars?: Record<string, string>;
+    /** Name the command execution panel shows, declared by a custom command */
+    label?: string;
+    /** Open that panel with "Advanced details" already on, for this run only */
+    showCommandDetails?: boolean;
   }): Promise<void> {
+    const runOptions =
+      data.label || data.showCommandDetails
+        ? { label: data.label, showCommandDetails: data.showCommandDetails }
+        : undefined;
     vscode.commands.executeCommand(
       "vscode-sfdx-hardis.execute-command",
       data.command,
       data.envVars,
+      runOptions,
     );
   }
 
