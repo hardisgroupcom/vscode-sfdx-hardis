@@ -97,6 +97,14 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
       if (item.vscodeIconColor) {
         options.vscodeIconColor = item.vscodeIconColor;
       }
+      // Custom commands only: what the command runner shows while it runs, and
+      // whether it opens with Advanced details already on
+      if (item.runLabel) {
+        options.runLabel = item.runLabel;
+      }
+      if (item.showCommandDetails) {
+        options.showCommandDetails = true;
+      }
       items.push(
         new CommandTreeItem(
           item.label,
@@ -1343,10 +1351,19 @@ class CommandTreeItem extends vscode.TreeItem {
           arguments: [hardisCommand.split(" ")[1]],
         };
       } else {
+        const runOptions: Record<string, any> = {};
+        if ((options as any).runLabel) {
+          runOptions.label = (options as any).runLabel;
+        }
+        if ((options as any).showCommandDetails) {
+          runOptions.showCommandDetails = true;
+        }
         this.command = {
           title: label,
           command: "vscode-sfdx-hardis.execute-command",
-          arguments: [hardisCommand],
+          arguments: Object.keys(runOptions).length
+            ? [hardisCommand, undefined, runOptions]
+            : [hardisCommand],
         };
         this.tooltip = this.tooltip
           ? this.tooltip + "\nCommand: " + hardisCommand

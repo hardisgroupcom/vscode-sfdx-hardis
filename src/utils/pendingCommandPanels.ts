@@ -28,6 +28,14 @@ export interface PendingCommandPanel {
    * replay the command with its original arguments ("Run again" button).
    */
   commandLine?: string;
+  /**
+   * Name the panel shows while the command runs, declared by a custom command.
+   * The CLI overwrites the context `command` with its own id when it connects,
+   * so the label is carried here and put back afterwards.
+   */
+  commandLabel?: string;
+  /** Open the panel with "Advanced details" already on, for this run only */
+  showCommandDetails?: boolean;
   createdAt: number;
   /** Called when the CLI adopts the panel, so click-time wiring can detach */
   onAdopted?: () => void;

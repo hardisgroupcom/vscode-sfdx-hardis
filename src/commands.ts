@@ -178,9 +178,13 @@ export class Commands {
     // Execute SFDX Hardis command
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.execute-command",
-      (sfdxHardisCommand: string, envVars?: Record<string, string>) => {
+      (
+        sfdxHardisCommand: string,
+        envVars?: Record<string, string>,
+        runOptions?: { label?: string; showCommandDetails?: boolean },
+      ) => {
         // Use CommandRunner for all terminal and LWC panel logic
-        this.commandRunner.executeCommand(sfdxHardisCommand, envVars);
+        this.commandRunner.executeCommand(sfdxHardisCommand, envVars, runOptions);
       },
     );
     this.disposables.push(disposable);

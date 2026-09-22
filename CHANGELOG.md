@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Custom commands: a command runs under its own label in the command execution panel, with the command line kept as the tooltip, instead of showing the raw command. New optional `showCommandDetails` opens that panel with Advanced details already on, for teaching commands where what happens is the point. It applies to that run only and never changes the user's setting.
 - Dependencies panel and Setup panel: check that the SFDX Hardis extension itself runs its latest published version, and offer to update it. A preview build more recent than the latest release is not reported.
 
 ## [8.7.0] 2026-09-20

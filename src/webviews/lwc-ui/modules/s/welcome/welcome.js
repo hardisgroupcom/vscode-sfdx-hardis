@@ -403,9 +403,16 @@ export default class Welcome extends SharedMixin(LightningElement) {
         data: { command: command.split(" ")[0] },
       });
     } else {
+      // A dataset value is always a string: "true" is the only truthy form here
+      const showCommandDetails =
+        event.currentTarget.dataset.details === "true" ? true : undefined;
       window.sendMessageToVSCode({
         type: "runCommand",
-        data: { command: command },
+        data: {
+          command: command,
+          label: event.currentTarget.dataset.label || undefined,
+          showCommandDetails,
+        },
       });
     }
   }

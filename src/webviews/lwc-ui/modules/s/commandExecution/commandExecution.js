@@ -94,6 +94,13 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
   // sfdx-hardis query id -> id of the log line showing that query (structured query events)
   queryLogIds = {};
   @track detailsMode = "simple"; // 'advanced' or 'simple'
+  // The command asked for the detailed view rather than the user preference.
+  // Cleared as soon as the user touches the toggle.
+  detailsModeAskedByCommand = false;
+  // The panel is initialized twice, once when it opens and once when the CLI
+  // connects and adopts it. Without this, a learner who folded the details away
+  // in between would see them unfold again by themselves.
+  detailsModeTouchedByUser = false;
   @track currentProgressSection = null; // Track current progress section
   readyMessageSent = false;
   @track isInAutocloseList = false;
@@ -486,6 +493,11 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
   }
 
   handleVsCodeSfdxHardisConfigurationChanged(data) {
+    // A command that asked to be watched step by step keeps its view: the user
+    // changing their global preference elsewhere must not fold this run back up
+    if (this.detailsModeAskedByCommand) {
+      return;
+    }
     const vsCodeSfdxHardisConfiguration = data.vsCodeSfdxHardisConfiguration;
     const newDetailsMode = vsCodeSfdxHardisConfiguration?.[
       "showCommandsDetails"
@@ -499,6 +511,10 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
 
   // Handler for lightning-input toggle
   handleToggleDetailsMode(event) {
+    // Toggling by hand is a decision about this panel and about the preference:
+    // the command no longer owns the view
+    this.detailsModeAskedByCommand = false;
+    this.detailsModeTouchedByUser = true;
     // lightning-input toggle passes event.detail.checked
     this.detailsMode =
       event.detail && event.detail.checked ? "advanced" : "simple";
@@ -788,6 +804,15 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
       // Load autoclose configuration
       this.autocloseCommands = vscodeConfig?.["autocloseCommands"] || [];
       this.updateAutocloseStatus();
+    }
+
+    // A command can ask for the detailed view, which is what a teaching command
+    // does: what it is doing IS the point. It applies to this panel only and
+    // never writes the user's showCommandsDetails preference, so their default
+    // is the same the next time they run anything else.
+    if (context.showCommandDetails === true && !this.detailsModeTouchedByUser) {
+      this.detailsMode = "advanced";
+      this.detailsModeAskedByCommand = true;
     }
 
     // Only set commandDocUrl if it's provided, preserve existing value otherwise
@@ -1650,12 +1675,27 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     }
   }
 
-  // Raw command name for the header title (status lives in the pill, not here)
+  // Header title: the name a custom command gave itself, otherwise the command
+  // itself. Status lives in the pill, not here.
   get commandName() {
+    if (this.commandContext && this.commandContext.commandLabel) {
+      return this.commandContext.commandLabel;
+    }
     if (!this.commandContext || !this.commandContext.command) {
       return this.i18n.commandExecution;
     }
     return this.commandContext.command;
+  }
+
+  // Tooltip of the header title: what actually runs. When the title is already
+  // the command, repeating it as its own tooltip says nothing.
+  get commandNameTooltip() {
+    if (!this.commandContext) {
+      return this.commandName;
+    }
+    const technical =
+      this.commandContext.commandLine || this.commandContext.command;
+    return technical || this.commandName;
   }
 
   // Status pill (hardis-pill kit): orange starting, blue running, green
