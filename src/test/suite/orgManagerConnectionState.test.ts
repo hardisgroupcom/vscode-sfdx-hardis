@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import { readModuleFile } from "./lwcSourceUtils";
+import { extractFunction, readModuleFile } from "./lwcSourceUtils";
 
 /**
  * Contract of the Org Manager connection state.
@@ -10,20 +10,7 @@ import { readModuleFile } from "./lwcSourceUtils";
  */
 function loadOrgConnectionState(): (org: any) => string {
   const source = readModuleFile("orgManager", "orgManager.js");
-  const start = source.indexOf("function orgConnectionState(org) {");
-  assert.ok(start > -1, "orgConnectionState not found in the component source");
-  const open = source.indexOf("{", start);
-  let depth = 0;
-  let index = open;
-  for (; index < source.length; index++) {
-    if (source[index] === "{") {
-      depth++;
-    } else if (source[index] === "}" && --depth === 0) {
-      break;
-    }
-  }
-  assert.strictEqual(depth, 0, "unbalanced braces while reading the helper");
-  const body = source.slice(start, index + 1);
+  const body = extractFunction(source, "orgConnectionState");
   return new Function(`${body}; return orgConnectionState;`)();
 }
 
