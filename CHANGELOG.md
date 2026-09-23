@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) are no longer experimental: the DevOps Pipeline buttons, the Pipeline Settings and the README now read Beta.
+
 ## [8.7.2] 2026-09-22
 
 - A panel or a tree reading data in the background no longer opens a command execution tab. The DevOps Pipeline opened one for `hardis:project:function:list` on every click and every refresh.
