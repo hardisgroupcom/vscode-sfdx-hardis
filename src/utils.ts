@@ -14,6 +14,7 @@ import { resetSfdxHardisConfigCache } from "./utils/sfdx-hardis-config-utils";
 import { getJson, postJson } from "./utils/httpUtils";
 import { applySfPerformanceEnv } from "./utils/sfPerformanceUtils";
 import { tryRunSfCommandInProcess } from "./utils/sfCoreInProcess";
+import { findWorkerScript } from "./utils/executableUtils";
 import {
   InstalledPluginInfo,
   PluginInstallKind,
@@ -399,7 +400,7 @@ export function isMultithreadActive() {
   const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
   if (
     config?.enableMultithread === true &&
-    fs.existsSync(path.join(__dirname, "worker.js"))
+    findWorkerScript(__dirname) !== null
   ) {
     MULTITHREAD_ACTIVE = true;
     return true;
@@ -431,7 +432,7 @@ export async function execShell(
   try {
     if (isMultithreadActive()) {
       if (!sharedWorker) {
-        sharedWorker = new Worker(path.join(__dirname, "worker.js"));
+        sharedWorker = new Worker(findWorkerScript(__dirname) as string);
         sharedWorker.on("message", (result: any) => {
           const reqId = result && result.requestId;
           if (!reqId || !sharedWorkerCallbacks.has(reqId)) {
