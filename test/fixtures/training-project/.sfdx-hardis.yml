@@ -116,6 +116,13 @@ customCommands:
         tooltip: Verifies the Level 1 lab you just finished and prints your receipt
         command: node scripts/training.mjs check --level 1
         helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/badges/
+      - id: training-l1-trigger
+        label: Trigger my workflows
+        vscodeIcon: play-circle
+        sldsIcon: utility:play
+        tooltip: Pushes one line so a fork whose Actions you have just enabled starts the checks of your Pull Request
+        command: node scripts/training.mjs trigger
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-6-pull-request-deployment-check-and-merge/
       - id: training-l1-claim
         label: Claim my badge
         vscodeIcon: mortar-board
