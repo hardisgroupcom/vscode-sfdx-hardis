@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Org Manager: a scratch org no longer reads as disconnected. `sf org list` never probes one, it asks its Dev Hub, and the panel only looked at the probe, so every scratch org lost its **Open** action and was offered **Reconnect** instead.
 - [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) are no longer experimental: the DevOps Pipeline buttons, the Pipeline Settings and the README now read Beta.
 
 ## [8.7.2] 2026-09-22
