@@ -353,7 +353,7 @@ const FEATURE_BRANCH =
  * Promotion branches variant of the run (SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION):
  * enablePromotionBranches is on in the workspace config and the git provider
  * fixture holds the uat window and the open promotion to preprod. The feature is
- * experimental and off by default, so its shots are taken apart rather than
+ * in Beta and off by default, so its shots are taken apart rather than
  * changing every pipeline screenshot of the documentation.
  */
 const PROMOTION_VARIANT =
@@ -864,7 +864,7 @@ suite("Documentation screenshots", function () {
     await captureStable("pipeline-branch-modal-actions");
   });
 
-  // Promotion branches (experimental), for
+  // Promotion branches (Beta), for
   // docs/salesforce-devops-promotion-branches.md. Only in the promotion variant
   // of the run:
   //   SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION=true \

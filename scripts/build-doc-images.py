@@ -65,7 +65,7 @@ PANEL_SHOTS = {
     "backpromote-running.png": "backpromote-running",
     "backpromote-deploy-failed.png": "backpromote-deploy-failed",
     "backpromote-resumed.png": "backpromote-resumed",
-    # Promotion branches (experimental), taken by the promotion variant of the
+    # Promotion branches (Beta), taken by the promotion variant of the
     # run into doc-screenshots/promotion (see CONTRIBUTING.md)
     "promotion-pipeline.png": "promotion/promotion-pipeline",
     "promotion-settings.png": "promotion/promotion-settings",

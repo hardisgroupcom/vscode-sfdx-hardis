@@ -34,7 +34,7 @@ Built and maintained by [**Cloudity**](https://cloudity.com/?ref=sfdxhardis) and
   - [Orgs Manager](#orgs-manager)
   - [DevOps Pipeline (CI/CD)](#devops-pipeline-cicd)
   - [User Story workflow](#user-story-workflow)
-  - [Promotion branches (experimental)](#promotion-branches-experimental)
+  - [Promotion branches (Beta)](#promotion-branches-beta)
   - [Backpromote (Beta)](#backpromote-beta)
   - [Metadata Retriever](#metadata-retriever)
   - [Data Workbench (SFDMU)](#data-workbench-sfdmu)
@@ -158,7 +158,7 @@ Designed for consultant profiles: **start a user story → work in the org → s
 - [Pull from org](https://sfdx-hardis.cloudity.com/hardis/scratch/pull/) - retrieves only what you actually changed.
 - [Save / publish](https://sfdx-hardis.cloudity.com/hardis/work/save/) - cleans sources, commits, and opens the merge request.
 
-### Promotion branches (experimental)
+### Promotion branches (Beta)
 
 Ship the approved User Stories of a branch without waiting for the rest of the window.
 Open a major branch in the DevOps Pipeline, tick the stories business signed off, and click **Create promotion**: the branch is assembled by cherry-pick, its Pull Request declares what it carries, and the deployment jobs give those stories their deployment actions, Apex test classes and tickets as if they had been merged directly.

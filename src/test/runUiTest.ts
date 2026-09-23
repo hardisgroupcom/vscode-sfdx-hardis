@@ -23,7 +23,7 @@ async function main() {
   // to display, and only the docScreenshots suite runs.
   const docScreenshots = process.env.SFDX_HARDIS_DOC_SCREENSHOTS === "true";
 
-  // Promotion branches variant of the screenshot run: the experimental feature
+  // Promotion branches variant of the screenshot run: the Beta feature
   // is off in the base fixture, so the ordinary screenshots show a project that
   // does not use it. This variant turns it on, adds the promotion branch to the
   // workspace and serves a git provider fixture holding the User Stories
