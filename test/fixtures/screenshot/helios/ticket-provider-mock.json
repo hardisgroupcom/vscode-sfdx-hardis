@@ -99,6 +99,16 @@
       "subject": "Show the panels each crew member has to lay",
       "author": "Romain Panda",
       "authorLabel": "Romain Panda"
+    },
+    "US-057": {
+      "subject": "Park an installation that is waiting for parts",
+      "author": "Mariia Pyvovarchuk",
+      "authorLabel": "Mariia Pyvovarchuk"
+    },
+    "US-058": {
+      "subject": "Record the warranty term on a panel batch",
+      "author": "Romain Panda",
+      "authorLabel": "Romain Panda"
     }
   }
 }

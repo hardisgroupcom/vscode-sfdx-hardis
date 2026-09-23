@@ -328,6 +328,24 @@ function universeSetting(key: string): string | null {
   }
 }
 
+/** "x,y" from a universe setting, with a fallback when it says nothing usable */
+function parsePoint(
+  raw: string | null,
+  fallbackX: number,
+  fallbackY: number,
+): { x: number; y: number } {
+  // Number("") is 0, not NaN, so a missing setting would silently click the
+  // left edge of the window instead of falling back to the point below
+  const [x, y] = (raw || "").split(",").map((part) => {
+    const text = part.trim();
+    return text === "" ? Number.NaN : Number(text);
+  });
+  return {
+    x: Number.isFinite(x) ? x : fallbackX,
+    y: Number.isFinite(y) ? y : fallbackY,
+  };
+}
+
 const BRANCH_NODE = (() => {
   // The universe carries the point, so a fixture that changes the diagram
   // updates it in the same commit rather than in an environment variable
@@ -358,19 +376,31 @@ const FEATURE_BRANCH =
  */
 const PROMOTION_VARIANT =
   process.env.SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION === "true";
-/** uat branch node of the diagram, in the coordinates of the captured PNG */
-const PROMOTION_UAT_NODE = { x: 1097, y: 366 };
-/** Promotion branch of the fixture, source of the open promotion #130 */
-const PROMOTION_BRANCH = "promotion/uat/preprod/2026-08-20-0930";
 /**
- * Checkboxes of the two approved User Stories of the uat window (#115 and
- * #113): the same two the promotion of the fixture carries, so the branch
- * window and the promotion Pull Request screenshots tell one story.
+ * uat branch node of the diagram, in the coordinates of the captured PNG.
+ * Mermaid lays it out from the branches the fixture carries, so a universe
+ * names its own point through `promotionNode` in its universe.json.
  */
-const PROMOTION_TICKED_ROWS = [
-  { x: 512, y: 422 },
-  { x: 512, y: 500 },
-];
+const PROMOTION_UAT_NODE = parsePoint(
+  universeSetting("promotionNode"),
+  1097,
+  366,
+);
+/** Promotion branch of the fixture, source of the open promotion it carries */
+const PROMOTION_BRANCH =
+  universeSetting("promotionBranch") || "promotion/uat/preprod/2026-08-20-0930";
+/**
+ * Checkboxes of the approved User Stories of the uat window (#115 and #113 in
+ * the base fixture): the same ones the promotion of the fixture carries, so the
+ * branch window and the promotion Pull Request screenshots tell one story. A
+ * universe with a different number of rows names its own through
+ * `promotionRows`, as "x,y;x,y".
+ */
+const PROMOTION_TICKED_ROWS = (
+  universeSetting("promotionRows") || "512,422;512,500"
+)
+  .split(";")
+  .map((pair) => parsePoint(pair, 512, 422));
 const PROMOTION_MODAL_CLOSE = { x: 1843, y: 78 };
 const PIPELINE_ACTIONS_DEEP_LINK = { focus: "deploymentActions" };
 
