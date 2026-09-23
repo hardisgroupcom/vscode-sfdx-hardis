@@ -27,7 +27,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { Worker } from "worker_threads";
 import { Logger } from "../logger";
-import { findExecutable, findUpwardsFromExecutable } from "./executableUtils";
+import { findExecutable, findUpwardsFromExecutable, findWorkerScript } from "./executableUtils";
 import { parseSfCommand } from "./sfCoreCommands";
 import { isSfPerformanceEnhancementDisabled } from "./sfPerformanceUtils";
 import * as vscode from "vscode";
@@ -155,7 +155,15 @@ function getCoreWorker(): Worker | null {
     // src/worker.ts, bundled next to extension.js. The worker gets a copy of
     // process.env: the log file of core is disabled there without touching the
     // environment of the extension host or of the commands it spawns.
-    const worker = new Worker(path.join(__dirname, "worker.js"), {
+    const workerScript = findWorkerScript(__dirname);
+    if (!workerScript) {
+      Logger.log(
+        "[sfdx-hardis][in-process] no worker.js next to this build: using the CLI for every command",
+      );
+      coreWorkerFailed = true;
+      return null;
+    }
+    const worker = new Worker(workerScript, {
       env: { ...process.env, SF_DISABLE_LOG_FILE: "true" },
     });
     worker.on("message", (message: any) => {
