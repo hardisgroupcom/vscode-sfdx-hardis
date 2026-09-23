@@ -27,7 +27,11 @@ import * as fs from "fs";
 import * as path from "path";
 import { Worker } from "worker_threads";
 import { Logger } from "../logger";
-import { findExecutable, findUpwardsFromExecutable, findWorkerScript } from "./executableUtils";
+import {
+  findExecutable,
+  findUpwardsFromExecutable,
+  findWorkerScript,
+} from "./executableUtils";
 import { parseSfCommand } from "./sfCoreCommands";
 import { isSfPerformanceEnhancementDisabled } from "./sfPerformanceUtils";
 import * as vscode from "vscode";
