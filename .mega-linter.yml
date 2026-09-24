@@ -29,6 +29,8 @@ FILTER_REGEX_EXCLUDE: (\.vscode|\.claude)
 # Lychee link check: skip the files that only hold placeholder links (mock projects used by the
 # screenshot / UI tests) and the JSON schema synced from upstream sfdx-hardis. Excluded URLs are in .lycheeignore.
 SPELL_LYCHEE_FILTER_REGEX_EXCLUDE: (test/fixtures/|resources/sfdx-hardis\.jsonschema\.json)
+# The promotion-conflict fixture holds git conflict markers on purpose (merge-conflict screenshot), so its XML does not parse.
+XML_XMLLINT_FILTER_REGEX_EXCLUDE: (test/fixtures/screenshot/helios/promotion-conflict/)
 SHOW_ELAPSED_TIME: true
 CONFIG_REPORTER: false
 FILEIO_REPORTER: false

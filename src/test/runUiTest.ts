@@ -246,8 +246,12 @@ async function main() {
   }
   if (promotionVariant) {
     // The promotion branch exists on the repository, like any branch pushed by
-    // hardis:project:promotion:create
-    git("branch promotion/uat/preprod/2026-08-20-0930");
+    // hardis:project:promotion:create. An alternate universe names its own, so
+    // its screenshots tell the story of its own project rather than this one.
+    const promotionBranch =
+      (universe && universe.promotionBranch) ||
+      "promotion/uat/preprod/2026-08-20-0930";
+    git(`branch ${promotionBranch}`);
     // enablePromotionBranches + allowedPromotionSteps, the two project settings
     // the feature needs (see the promotion-branches documentation page)
     const configFile = path.join(workspaceDir, ".sfdx-hardis.yml");
@@ -261,13 +265,21 @@ async function main() {
         "",
       ].join("\n"),
     );
-    const overlayFile = path.join(
-      extensionDevelopmentPath,
-      "test",
-      "fixtures",
-      "screenshot",
-      "git-provider-mock-promotion.json",
-    );
+    // Same rule as the base fixture: a universe brings its own overlay when it
+    // has one, and falls back to the MyCompany-CRM one when it has not.
+    const universeOverlay = universeDir
+      ? path.join(universeDir, "git-provider-mock-promotion.json")
+      : "";
+    const overlayFile =
+      universeOverlay && fs.existsSync(universeOverlay)
+        ? universeOverlay
+        : path.join(
+            extensionDevelopmentPath,
+            "test",
+            "fixtures",
+            "screenshot",
+            "git-provider-mock-promotion.json",
+          );
     const fixture = JSON.parse(fs.readFileSync(gitProviderFixtureFile, "utf8"));
     const overlay = JSON.parse(fs.readFileSync(overlayFile, "utf8"));
     fixture.openPullRequests = [
