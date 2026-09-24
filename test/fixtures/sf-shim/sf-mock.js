@@ -2011,6 +2011,247 @@ const DOCS_SCENARIOS = {
     await sleep(600);
   },
 
+  // A promotion branch (Beta), what the Create promotion button of the uat
+  // window of the DevOps Pipeline runs. Replays the log lines, the two
+  // questions and the report files of sf hardis:project:promotion:create, in
+  // the order the command produces them (src/commands/hardis/project/promotion/
+  // create.ts and promotionCreateUtils.ts of sfdx-hardis): the candidate table,
+  // the selection to confirm, one cherry-pick that conflicts, the recommended
+  // answer, and the run finishing with a prompt for a coding agent.
+  "hardis:project:promotion:create": async (send, askPrompt, sleep) => {
+    const log = (logType, message, extra) =>
+      send({ event: "commandLogLine", logType, message, ...(extra || {}) });
+    const question = async (prompt) => {
+      log("action", prompt.message, { isQuestion: true });
+      return askPrompt(prompt);
+    };
+    const subCommand = async (command, ms, success = true) => {
+      send({ event: "commandSubCommandStart", data: { command, cwd: "." } });
+      await sleep(ms);
+      send({ event: "commandSubCommandEnd", data: { command, success } });
+    };
+    // The window of the base universe is the one of the promotion branches
+    // documentation: four stories waiting in uat, PR 113 and PR 115 approved,
+    // the scheduler written on top of the pricing story it is not promoted with
+    const promo = {
+      sourceBranch: "uat",
+      targetBranch: "preprod",
+      allowedSteps: "uat > preprod",
+      branchName: "promotion/uat/preprod/2026-08-20-0930",
+      candidates: [
+        {
+          number: 113,
+          title: "CRM-1001 Renewal reminder emails",
+          author: "lisa-chen",
+          commit: "7c41ab9",
+          date: "2026-08-10 14:12",
+          branch: "feature/CRM-1001-renewal-reminder-emails",
+        },
+        {
+          number: 114,
+          title: "CRM-1008 Contract pricing rules",
+          author: "sam-dubois",
+          commit: "a91c0e4",
+          date: "2026-08-11 09:40",
+          branch: "feature/CRM-1008-contract-pricing-rules",
+        },
+        {
+          number: 115,
+          title: "CRM-1012 Service appointment scheduler",
+          author: "sam-dubois",
+          commit: "2f90d34",
+          date: "2026-08-11 16:05",
+          branch: "feature/CRM-1012-service-appointment-scheduler",
+        },
+        {
+          number: 116,
+          title: "CRM-1015 Territory assignment rules",
+          author: "nadia-ferreira",
+          commit: "c07e5b2",
+          date: "2026-08-12 08:55",
+          branch: "feature/CRM-1015-territory-assignment-rules",
+        },
+      ],
+      selected: [113, 115],
+      conflict: {
+        number: 115,
+        files: [
+          "force-app/main/default/layouts/Contract-Contract Layout.layout-meta.xml",
+          "force-app/main/default/permissionsets/Sales_Manager.permissionset-meta.xml",
+        ],
+      },
+      pullRequestNumber: 130,
+      pullRequestUrl: "https://github.com/mycompany/salesforce-crm/pull/130",
+      candidatesReport: "hardis-report/promotion-candidates-2026-08-20-0930",
+      promptReport:
+        "hardis-report/promotion-conflicts-prompt-2026-08-20-0931.md",
+      ...(DOCS_SCENARIO.promotionCreate || {}),
+    };
+    // The label the command gives a candidate everywhere: numbers, title,
+    // author of the Pull Request, short SHA
+    const labelOf = (c) =>
+      `#${c.number} ${c.title} (${c.author}) [${c.commit}]`;
+    const selectedCandidates = promo.candidates.filter((c) =>
+      promo.selected.includes(c.number),
+    );
+
+    log(
+      "log",
+      `Promotion steps allowed by allowedPromotionSteps: ${promo.allowedSteps}`,
+    );
+    log("log", "Git provider connected: GitHub");
+    await subCommand("git status --porcelain", 200);
+    log(
+      "action",
+      `Listing the Pull Requests merged into ${promo.sourceBranch} and not yet promoted to ${promo.targetBranch}...`,
+    );
+    await subCommand(
+      `git fetch origin ${promo.sourceBranch} ${promo.targetBranch}`,
+      700,
+    );
+    await sleep(300);
+    log(
+      "table",
+      JSON.stringify(
+        promo.candidates.map((c) => ({
+          "Pull Requests": `#${c.number}`,
+          Title: c.title,
+          Author: c.author,
+          Commit: c.commit,
+          Date: c.date,
+          "Already promoted by": "",
+        })),
+      ),
+    );
+    send({
+      event: "reportFile",
+      file: `${promo.candidatesReport}.csv`,
+      title: `Pull Requests waiting for promotion from ${promo.sourceBranch} to ${promo.targetBranch} (CSV)`,
+      type: "report",
+    });
+    send({
+      event: "reportFile",
+      file: `${promo.candidatesReport}.xlsx`,
+      title: `Pull Requests waiting for promotion from ${promo.sourceBranch} to ${promo.targetBranch} (XLSX)`,
+      type: "report",
+    });
+    await sleep(300);
+
+    // Newest first in the prompt, the stories the panel ticked already selected
+    await question({
+      name: "pullRequests",
+      type: "multiselect",
+      message:
+        "Select the Pull Requests to carry in the promotion branch (space to select, enter to confirm)",
+      description:
+        "Select the Pull Requests to carry in the promotion branch (space to select, enter to confirm)",
+      choices: [...promo.candidates].reverse().map((c) => ({
+        title: labelOf(c),
+        value: c.commit,
+        description: c.branch,
+      })),
+      initial: selectedCandidates.map((c) => c.commit),
+    });
+    log("log", selectedCandidates.map((c) => `#${c.number}`).join(", "));
+    log(
+      "action",
+      `${selectedCandidates.length} Pull Request(s) selected for the promotion`,
+    );
+    await sleep(200);
+
+    log(
+      "action",
+      `Creating promotion branch ${promo.branchName} from origin/${promo.targetBranch}...`,
+    );
+    await subCommand(
+      `git checkout -b ${promo.branchName} origin/${promo.targetBranch}`,
+      600,
+    );
+    for (const candidate of selectedCandidates) {
+      log("action", `Cherry-picking ${labelOf(candidate)}...`);
+      const conflicts = candidate.number === promo.conflict.number;
+      await subCommand(
+        `git cherry-pick -x ${candidate.commit}`,
+        700,
+        !conflicts,
+      );
+      if (!conflicts) {
+        continue;
+      }
+      log(
+        "warning",
+        `Cherry-pick of ${labelOf(candidate)} conflicts. This User Story probably depends on another one that is not part of the promotion. Conflicting files:\n${promo.conflict.files.join("\n")}`,
+      );
+      await question({
+        name: "conflict",
+        type: "select",
+        message: `What do you want to do with ${labelOf(candidate)}?`,
+        description: `What do you want to do with ${labelOf(candidate)}?`,
+        choices: [
+          {
+            title:
+              "Recommended: commit this User Story and every following conflict with their conflict markers, without asking again",
+            value: "commit-with-markers-all",
+            description:
+              "The promotion is assembled in one go, then a coding agent solves every conflict at once: copy the prompt from the Pull Request description (also saved in hardis-report/) and paste it to Claude Code, Codex, Copilot... This is the recommended way, as a promotion window usually conflicts on the same files story after story.",
+          },
+          {
+            title: "Leave this User Story out of the promotion and continue",
+            value: "skip",
+          },
+          {
+            title:
+              "Commit this User Story anyway, with its conflict markers, to solve them later on the branch (by hand or with a coding agent)",
+            value: "commit-with-markers",
+          },
+          { title: "Stop and undo the promotion branch", value: "abort" },
+        ],
+      });
+      log("log", "commit-with-markers-all");
+      log("action", "Conflict handling: commit-with-markers-all");
+      await subCommand("git add -A", 200);
+      await subCommand("git -c core.editor=true cherry-pick --continue", 400);
+      log(
+        "warning",
+        `${labelOf(candidate)} committed with conflict markers in: ${promo.conflict.files.join(", ")}. Solve them on the branch before merging`,
+      );
+    }
+
+    log("action", `Pushing promotion branch ${promo.branchName}...`);
+    await subCommand(`git push -u origin ${promo.branchName}`, 900);
+    log(
+      "action",
+      `Creating the Pull Request from ${promo.branchName} to ${promo.targetBranch}...`,
+    );
+    await sleep(700);
+    log("success", `Promotion Pull Request created: ${promo.pullRequestUrl}`);
+    log(
+      "success",
+      `Promotion branch ${promo.branchName} assembled with ${selectedCandidates.length} User Story(ies): ${selectedCandidates.map((c) => `#${c.number}`).join(", ")}`,
+    );
+    log(
+      "warning",
+      `1 User Story(ies) carry conflict markers to solve before the Pull Request can be merged: ${promo.conflict.files.join(", ")}`,
+    );
+    log(
+      "warning",
+      `A prompt to solve the committed conflicts with a coding agent (Claude Code, Codex, Copilot...) is saved in ${promo.promptReport} and embedded in the Pull Request description`,
+    );
+    send({
+      event: "reportFile",
+      file: promo.promptReport,
+      title: "Prompt for a coding agent to solve the promotion conflicts",
+      type: "report",
+    });
+    send({
+      event: "reportFile",
+      file: promo.pullRequestUrl,
+      title: "Open the promotion Pull Request",
+      type: "actionUrl",
+    });
+    await sleep(600);
+  },
+
   // CI authentication of a major branch, what the DevOps Pipeline gear menu >
   // Add/Configure Org runs. Replays the questions, log lines and report files of
   // sf hardis:project:configure:auth in the order the command asks them, as it

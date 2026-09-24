@@ -193,7 +193,71 @@
         "title": "Helios_Delivery_Crew",
         "value": "Helios_Delivery_Crew"
       }
-    ]
+    ],
+    "promotionCreate": {
+      "sourceBranch": "uat",
+      "targetBranch": "preprod",
+      "allowedSteps": "uat > preprod",
+      "branchName": "promotion/uat/preprod/2026-09-24-0930",
+      "candidates": [
+        {
+          "number": 61,
+          "title": "US-058 Record the warranty term on a panel batch",
+          "author": "you",
+          "commit": "9d2c4e1",
+          "date": "2026-09-21 10:15",
+          "branch": "training/mate-us-058-warranty-term"
+        },
+        {
+          "number": 62,
+          "title": "US-057 Park an installation that is waiting for parts",
+          "author": "you",
+          "commit": "7c41ab9",
+          "date": "2026-09-21 14:15",
+          "branch": "training/mate-us-057-awaiting-parts"
+        },
+        {
+          "number": 63,
+          "title": "US-059 Record the supplier of a panel batch",
+          "author": "you",
+          "commit": "d1e90e9",
+          "date": "2026-09-22 10:15",
+          "branch": "training/mate-us-059-supplier"
+        },
+        {
+          "number": 64,
+          "title": "US-060 Flag an installation that needs scaffolding",
+          "author": "you",
+          "commit": "b3f7a25",
+          "date": "2026-09-22 14:15",
+          "branch": "training/mate-us-060-scaffolding"
+        },
+        {
+          "number": 65,
+          "title": "US-061 Record the gate code of a site",
+          "author": "you",
+          "commit": "5b7e2c1",
+          "date": "2026-09-23 10:15",
+          "branch": "training/mate-us-061-gate-code"
+        }
+      ],
+      "selected": [
+        62,
+        63,
+        65
+      ],
+      "conflict": {
+        "number": 63,
+        "files": [
+          "force-app/main/default/layouts/Panel_Batch__c-Panel Batch Layout.layout-meta.xml",
+          "force-app/main/default/permissionsets/Helios_Delivery_Manager.permissionset-meta.xml"
+        ]
+      },
+      "pullRequestNumber": 66,
+      "pullRequestUrl": "https://github.com/hardisgroupcom/sfdx-hardis-training/pull/66",
+      "candidatesReport": "hardis-report/promotion-candidates-2026-09-24-0930",
+      "promptReport": "hardis-report/promotion-conflicts-prompt-2026-09-24-0931.md"
+    }
   },
   "sourceMembers": [
     [

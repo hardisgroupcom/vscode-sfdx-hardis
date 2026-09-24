@@ -1510,10 +1510,12 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
         subCommandId: subCommand.id,
       });
     });
-
-    if (!subCommandData.success) {
-      this.hasError = true;
-    }
+    // A failed sub-command is shown red on its own row and decides nothing about
+    // the run: sfdx-hardis runs plenty of commands it expects to fail and goes on
+    // (a git cherry-pick that conflicts and is committed on purpose by
+    // hardis:project:promotion:create, an org lookup that answers "not found").
+    // The status pill follows the command's own completion status, which is
+    // what the CLI reports when it exits.
   }
 
   replaceSubCommandLog(subCommandId, newLogData) {
