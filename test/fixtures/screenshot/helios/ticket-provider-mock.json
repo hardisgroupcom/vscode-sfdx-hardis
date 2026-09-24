@@ -109,6 +109,21 @@
       "subject": "Record the warranty term on a panel batch",
       "author": "Romain Panda",
       "authorLabel": "Romain Panda"
+    },
+    "US-059": {
+      "subject": "Record the supplier of a panel batch",
+      "author": "Romain Panda",
+      "authorLabel": "Romain Panda"
+    },
+    "US-060": {
+      "subject": "Flag an installation that needs scaffolding",
+      "author": "Mariia Pyvovarchuk",
+      "authorLabel": "Mariia Pyvovarchuk"
+    },
+    "US-061": {
+      "subject": "Record the gate code of a site",
+      "author": "Mariia Pyvovarchuk",
+      "authorLabel": "Mariia Pyvovarchuk"
     }
   }
 }

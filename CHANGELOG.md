@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Pipeline Settings: [promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta) gain `promotionConflictMarkersIgnoredFiles`, the files allowed to hold git conflict markers.
+- Command execution panel: a sub-command that fails no longer marks a run that completed successfully as Failed. A promotion assembled with a cherry-pick conflict committed on purpose read Failed next to its own "Command success" line.
 - README: Level 3 of the [sfdx-hardis training](https://hardisgroupcom.github.io/sfdx-hardis-training/) now has 11 labs, with the new lab on promotion branches.
 
 ## [8.8.0] 2026-09-23

@@ -48,6 +48,11 @@ testLevel: RunLocalTests
 # Lab 2.5 is where a Pull Request meets it.
 apexTestsMinCoverageOrgWide: 80
 testCoverageNotBlocking: false
+# Lab 2.7 shows what a merge conflict looks like, markers included. Without this,
+# the check of every promotion Pull Request (Lab 3.10) would fail on the lab
+# text itself.
+promotionConflictMarkersIgnoredFiles:
+  - labs/*/level-2-contributor-advanced/2-7-resolve-a-git-merge-conflict.md
 
 # --- Automated cleaning ---------------------------------------------------
 # Applied by hardis:work:save before the Pull Request. Lab 1.5 reads the

@@ -403,6 +403,77 @@ const PROMOTION_TICKED_ROWS = (
   .map((pair) => parsePoint(pair, 512, 422));
 const PROMOTION_MODAL_CLOSE = { x: 1843, y: 78 };
 const PIPELINE_ACTIONS_DEEP_LINK = { focus: "deploymentActions" };
+/**
+ * The commits the selection prompt of hardis:project:promotion:create is
+ * answered with: the ones of the stories the scenario says the panel ticked,
+ * read from the universe overlay when it carries the scenario, else the two of
+ * the base universe (PR 113 and PR 115 of the promotion documentation).
+ */
+function promotionSelectedCommits(): string[] {
+  const dir = process.env.SF_MOCK_UNIVERSE_DIR;
+  if (dir) {
+    try {
+      const overlay = JSON.parse(
+        fs.readFileSync(path.join(dir, "sf-mock-overlay.json"), "utf8"),
+      );
+      const scenario = overlay?.scenario?.promotionCreate;
+      if (scenario?.candidates && scenario?.selected) {
+        return scenario.candidates
+          .filter((c: any) => scenario.selected.includes(c.number))
+          .map((c: any) => c.commit);
+      }
+    } catch {
+      // No overlay, or an unreadable one: the base universe's answer below
+    }
+  }
+  return ["7c41ab9", "2f90d34"];
+}
+/**
+ * A layout as hardis:project:promotion:create commits it when a cherry-pick
+ * conflicts and the answer is to keep the markers: the target side is empty,
+ * the story side brings its own item with the one it was written under. The
+ * base universe's stand-in for the conflict editor shot; a universe ships its
+ * own files under promotion-conflict/.
+ */
+const DEFAULT_CONFLICT_SAMPLE = [
+  '<?xml version="1.0" encoding="UTF-8"?>',
+  '<Layout xmlns="http://soap.sforce.com/2006/04/metadata">',
+  "    <layoutSections>",
+  "        <customLabel>false</customLabel>",
+  "        <detailHeading>false</detailHeading>",
+  "        <editHeading>true</editHeading>",
+  "        <label>Information</label>",
+  "        <layoutColumns>",
+  "            <layoutItems>",
+  "                <behavior>Required</behavior>",
+  "                <field>Name</field>",
+  "            </layoutItems>",
+  "            <layoutItems>",
+  "                <behavior>Edit</behavior>",
+  "                <field>StartDate</field>",
+  "            </layoutItems>",
+  "<<<<<<< HEAD",
+  "=======",
+  "            <layoutItems>",
+  "                <behavior>Edit</behavior>",
+  "                <field>Pricing_Rule__c</field>",
+  "            </layoutItems>",
+  "            <layoutItems>",
+  "                <behavior>Edit</behavior>",
+  "                <field>Appointment_Slot__c</field>",
+  "            </layoutItems>",
+  ">>>>>>> 2f90d34 (CRM-1012 Service appointment scheduler (#115))",
+  "            <layoutItems>",
+  "                <behavior>Edit</behavior>",
+  "                <field>ContractTerm</field>",
+  "            </layoutItems>",
+  "        </layoutColumns>",
+  "        <layoutColumns/>",
+  "        <style>TwoColumnsTopToBottom</style>",
+  "    </layoutSections>",
+  "</Layout>",
+  "",
+].join("\n");
 
 /**
  * Records the window while `scenario` drives the UI, into
@@ -954,6 +1025,119 @@ suite("Documentation screenshots", function () {
       settleMs: 3500,
       force: true,
     });
+  });
+
+  // The command the Create promotion button runs, captured at the conflict
+  // question and at the end of the run: the scenario comes from the mocked CLI
+  // (DOCS_SCENARIOS in test/fixtures/sf-shim/sf-mock.js) and names the stories
+  // of the current fixture universe. A lab compares the questions with the ones
+  // it gets, so the panel has to replay the real command, never a stand-in.
+  test("command runner (promotion create)", async function () {
+    if (!PROMOTION_VARIANT || !shouldTake("promotion-create")) {
+      this.skip();
+    }
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await sleep(400);
+    const asked = trackAskedPrompts();
+    const panelId = await runCommandAndWaitForPanel(
+      panelManager,
+      universeSetting("promotionCreateCommand") ||
+        "sf hardis:project:promotion:create --source-branch uat --target-branch preprod --pull-requests 113,115",
+    );
+    const panel = panelManager.getPanel(panelId);
+    // The panel passed the ticked stories, the command asks to confirm them:
+    // what the prompt pre-fills is what the button ticked, and the answer is
+    // the commits of those stories, read from the scenario the mock replays
+    await waitFor(() => asked("pullRequests"), 30000, "selection prompt");
+    await sleep(1500);
+    await cleanChrome();
+    capture("promotion-create-select");
+    panel.simulateWebviewMessage({
+      type: "submit",
+      data: { pullRequests: promotionSelectedCommits() },
+    });
+    // One cherry-pick conflicts: the four answers, the recommended one first
+    await waitFor(() => asked("conflict"), 30000, "conflict prompt");
+    await sleep(1500);
+    await cleanChrome();
+    capture("promotion-create-conflict");
+    panel.simulateWebviewMessage({
+      type: "submit",
+      data: { conflict: "commit-with-markers-all" },
+    });
+    await waitFor(
+      () => panelManager.getPanel(panelId)?.commandStatus === "completed",
+      60000,
+      "promotion create to complete",
+    );
+    await captureBottomOfPage("promotion-create-completed");
+  });
+
+  // A file the promotion committed with its conflict markers, open in the
+  // editor: the built-in merge-conflict extension draws the Accept Current /
+  // Accept Incoming / Accept Both code lenses over each block, which is the
+  // by-hand route of solving a promotion conflict. The files come from the
+  // universe fixture (promotion-conflict/ next to its universe.json), committed
+  // on the promotion branch of the workspace for the shot and gone with it.
+  test("promotion conflict editor", async function () {
+    if (!PROMOTION_VARIANT || !shouldTake("promotion-conflict")) {
+      this.skip();
+    }
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!workspaceRoot) {
+      throw new Error("No workspace folder to write the conflicted file in");
+    }
+    const conflictFile =
+      universeSetting("promotionConflictFile") ||
+      "force-app/main/default/layouts/Contract-Contract Layout.layout-meta.xml";
+    const sampleDir = process.env.SF_MOCK_UNIVERSE_DIR
+      ? path.join(process.env.SF_MOCK_UNIVERSE_DIR, "promotion-conflict")
+      : "";
+    const gitIn = (args: string[]) =>
+      execFileSync("git", args, { cwd: workspaceRoot, stdio: "pipe" });
+    checkoutWorkspaceBranch(PROMOTION_BRANCH);
+    try {
+      const target = path.join(workspaceRoot, conflictFile);
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      if (sampleDir && fs.existsSync(sampleDir)) {
+        fs.cpSync(sampleDir, workspaceRoot, { recursive: true });
+      } else {
+        // The base universe: the same shape on a MyCompany-CRM layout
+        fs.writeFileSync(target, DEFAULT_CONFLICT_SAMPLE, "utf8");
+      }
+      gitIn(["add", "-A"]);
+      gitIn([
+        "commit",
+        "-q",
+        "--no-gpg-sign",
+        "-m",
+        "CRM-1012 Service appointment scheduler (#115)",
+      ]);
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+      await sleep(400);
+      const document = await vscode.workspace.openTextDocument(target);
+      const editor = await vscode.window.showTextDocument(document, {
+        preview: false,
+      });
+      // The first conflict block in the middle of the editor, its code lenses
+      // in view
+      const firstMarker = document
+        .getText()
+        .split("\n")
+        .findIndex((line) => line.startsWith("<<<<<<< "));
+      const anchor = Math.max(0, firstMarker);
+      editor.revealRange(
+        new vscode.Range(anchor, 0, anchor + 14, 0),
+        vscode.TextEditorRevealType.InCenter,
+      );
+      await sleep(3500);
+      await cleanChrome();
+      await captureStable("promotion-conflict-editor");
+    } finally {
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+      await sleep(300);
+      checkoutWorkspaceBranch("integration");
+    }
   });
 
   // One screenshot of the "Edit Deployment Action" editor per action type,
