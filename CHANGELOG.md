@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Pipeline Settings: [promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta) gain `promotionConflictMarkersIgnoredFiles`, the files allowed to hold git conflict markers.
+- README: Level 3 of the [sfdx-hardis training](https://hardisgroupcom.github.io/sfdx-hardis-training/) now has 11 labs, with the new lab on promotion branches.
+
 ## [8.8.0] 2026-09-23
 
 - Org Manager: a scratch org no longer reads as disconnected. `sf org list` never probes one, it asks its Dev Hub, and the panel only looked at the probe, so every scratch org lost its **Open** action and was offered **Reconnect** instead.
