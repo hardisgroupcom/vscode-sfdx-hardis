@@ -434,6 +434,12 @@ function promotionSelectedCommits(): string[] {
  * the story side brings its own item with the one it was written under. The
  * base universe's stand-in for the conflict editor shot; a universe ships its
  * own files under promotion-conflict/.
+ *
+ * Cut where git cuts it, not on an element boundary: the <layoutItems> and
+ * <behavior> lines that open the first incoming row also open the row that
+ * follows on the target, so git keeps them above the markers, and the incoming
+ * side runs from the first field to the opening lines of the row after the
+ * last one. Proven on a real promotion on 2026-09-24.
  */
 const DEFAULT_CONFLICT_SAMPLE = [
   '<?xml version="1.0" encoding="UTF-8"?>',
@@ -452,19 +458,19 @@ const DEFAULT_CONFLICT_SAMPLE = [
   "                <behavior>Edit</behavior>",
   "                <field>StartDate</field>",
   "            </layoutItems>",
-  "<<<<<<< HEAD",
-  "=======",
   "            <layoutItems>",
   "                <behavior>Edit</behavior>",
+  "<<<<<<< HEAD",
+  "=======",
   "                <field>Pricing_Rule__c</field>",
   "            </layoutItems>",
   "            <layoutItems>",
   "                <behavior>Edit</behavior>",
   "                <field>Appointment_Slot__c</field>",
   "            </layoutItems>",
-  ">>>>>>> 2f90d34 (CRM-1012 Service appointment scheduler (#115))",
   "            <layoutItems>",
   "                <behavior>Edit</behavior>",
+  ">>>>>>> 2f90d34 (CRM-1012 Service appointment scheduler (#115))",
   "                <field>ContractTerm</field>",
   "            </layoutItems>",
   "        </layoutColumns>",
