@@ -2039,10 +2039,38 @@ const DOCS_SCENARIOS = {
       allowedSteps: "uat > preprod",
       branchName: "promotion/uat/preprod/2026-08-20-0930",
       candidates: [
-        { number: 113, title: "CRM-1001 Renewal reminder emails", author: "lisa-chen", commit: "7c41ab9", date: "2026-08-10 14:12", branch: "feature/CRM-1001-renewal-reminder-emails" },
-        { number: 114, title: "CRM-1008 Contract pricing rules", author: "sam-dubois", commit: "a91c0e4", date: "2026-08-11 09:40", branch: "feature/CRM-1008-contract-pricing-rules" },
-        { number: 115, title: "CRM-1012 Service appointment scheduler", author: "sam-dubois", commit: "2f90d34", date: "2026-08-11 16:05", branch: "feature/CRM-1012-service-appointment-scheduler" },
-        { number: 116, title: "CRM-1015 Territory assignment rules", author: "nadia-ferreira", commit: "c07e5b2", date: "2026-08-12 08:55", branch: "feature/CRM-1015-territory-assignment-rules" },
+        {
+          number: 113,
+          title: "CRM-1001 Renewal reminder emails",
+          author: "lisa-chen",
+          commit: "7c41ab9",
+          date: "2026-08-10 14:12",
+          branch: "feature/CRM-1001-renewal-reminder-emails",
+        },
+        {
+          number: 114,
+          title: "CRM-1008 Contract pricing rules",
+          author: "sam-dubois",
+          commit: "a91c0e4",
+          date: "2026-08-11 09:40",
+          branch: "feature/CRM-1008-contract-pricing-rules",
+        },
+        {
+          number: 115,
+          title: "CRM-1012 Service appointment scheduler",
+          author: "sam-dubois",
+          commit: "2f90d34",
+          date: "2026-08-11 16:05",
+          branch: "feature/CRM-1012-service-appointment-scheduler",
+        },
+        {
+          number: 116,
+          title: "CRM-1015 Territory assignment rules",
+          author: "nadia-ferreira",
+          commit: "c07e5b2",
+          date: "2026-08-12 08:55",
+          branch: "feature/CRM-1015-territory-assignment-rules",
+        },
       ],
       selected: [113, 115],
       conflict: {
@@ -2055,12 +2083,14 @@ const DOCS_SCENARIOS = {
       pullRequestNumber: 130,
       pullRequestUrl: "https://github.com/mycompany/salesforce-crm/pull/130",
       candidatesReport: "hardis-report/promotion-candidates-2026-08-20-0930",
-      promptReport: "hardis-report/promotion-conflicts-prompt-2026-08-20-0931.md",
+      promptReport:
+        "hardis-report/promotion-conflicts-prompt-2026-08-20-0931.md",
       ...(DOCS_SCENARIO.promotionCreate || {}),
     };
     // The label the command gives a candidate everywhere: numbers, title,
     // author of the Pull Request, short SHA
-    const labelOf = (c) => `#${c.number} ${c.title} (${c.author}) [${c.commit}]`;
+    const labelOf = (c) =>
+      `#${c.number} ${c.title} (${c.author}) [${c.commit}]`;
     const selectedCandidates = promo.candidates.filter((c) =>
       promo.selected.includes(c.number),
     );
@@ -2075,7 +2105,10 @@ const DOCS_SCENARIOS = {
       "action",
       `Listing the Pull Requests merged into ${promo.sourceBranch} and not yet promoted to ${promo.targetBranch}...`,
     );
-    await subCommand(`git fetch origin ${promo.sourceBranch} ${promo.targetBranch}`, 700);
+    await subCommand(
+      `git fetch origin ${promo.sourceBranch} ${promo.targetBranch}`,
+      700,
+    );
     await sleep(300);
     log(
       "table",
@@ -2137,7 +2170,11 @@ const DOCS_SCENARIOS = {
     for (const candidate of selectedCandidates) {
       log("action", `Cherry-picking ${labelOf(candidate)}...`);
       const conflicts = candidate.number === promo.conflict.number;
-      await subCommand(`git cherry-pick -x ${candidate.commit}`, 700, !conflicts);
+      await subCommand(
+        `git cherry-pick -x ${candidate.commit}`,
+        700,
+        !conflicts,
+      );
       if (!conflicts) {
         continue;
       }

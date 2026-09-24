@@ -20,7 +20,10 @@ suite("Command Runner sub-command failure contract", () => {
   test("a failed sub-command does not flip the run to Failed", () => {
     const start = componentSource.indexOf("addSubCommandEnd(subCommandData)");
     assert.ok(start > -1, "commandExecution must handle sub-command ends");
-    const end = componentSource.indexOf("replaceSubCommandLog(subCommandId", start);
+    const end = componentSource.indexOf(
+      "replaceSubCommandLog(subCommandId",
+      start,
+    );
     const handler = componentSource.slice(start, end);
     assert.ok(
       !/this\.hasError\s*=\s*true/.test(handler),
