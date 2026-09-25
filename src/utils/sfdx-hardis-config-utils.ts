@@ -289,8 +289,7 @@ export async function writeSfdxHardisConfig(
     // undefined removes the key
     if (value === undefined) {
       delete config[key];
-    }
-    else {
+    } else {
       config[key] = value;
     }
     await fs.promises.writeFile(configFile, dumpRepositoryYaml(config));

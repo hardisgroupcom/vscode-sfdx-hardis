@@ -221,7 +221,9 @@ const REPOSITORY_URL_REGEX =
 
 // Asks for deploymentRepository and writes it in .sfdx-hardis.yml. An empty value removes it.
 // Returns the new value (null when removed), or undefined when nothing changed.
-async function promptDeploymentRepository(): Promise<string | null | undefined> {
+async function promptDeploymentRepository(): Promise<
+  string | null | undefined
+> {
   const current = await resolveDeploymentRepository();
   const value = await vscode.window.showInputBox({
     title: t("deploymentRepositoryInputTitle"),
