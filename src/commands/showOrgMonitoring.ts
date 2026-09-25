@@ -14,7 +14,10 @@ import {
   clearMonitoringCatalogCache,
   MonitoringCatalogPayload,
 } from "../utils/monitoringConfigUtils";
-import { readSfdxHardisConfig } from "../utils/sfdx-hardis-config-utils";
+import {
+  readSfdxHardisConfig,
+  writeSfdxHardisConfig,
+} from "../utils/sfdx-hardis-config-utils";
 import simpleGit from "simple-git";
 import { gitRemoteToHttps } from "../utils/gitUrlUtils";
 
@@ -88,7 +91,6 @@ export function registerShowOrgMonitoring(commands: Commands) {
         });
       });
       panel.updateTitle(t("orgMonitoringWorkbench"));
-      watchDeploymentRepository(panel);
 
       // Handle messages from the Org Monitoring panel
       panel.onMessage(async (type: string, data: any) => {
@@ -159,6 +161,16 @@ export function registerShowOrgMonitoring(commands: Commands) {
             }
             break;
           }
+          case "setDeploymentRepository": {
+            const saved = await promptDeploymentRepository();
+            if (saved !== undefined) {
+              panel.sendMessage({
+                type: "deploymentRepositoryUpdated",
+                data: { deploymentRepository: saved },
+              });
+            }
+            break;
+          }
           default:
             break;
         }
@@ -203,39 +215,50 @@ async function resolveDeploymentRepository(): Promise<string | null> {
   return null;
 }
 
-// deploymentRepository is set by sf hardis:org:configure:monitoring-deployment-repository, which the
-// panel runs: the CLI validates, suggests and writes the value. Watch the file it writes, so the panel
-// shows the new value as soon as the command (or a hand edit) saves it.
-let _monitoringConfigWatcher: vscode.FileSystemWatcher | null = null;
+// Same check as sfdx-hardis configure:monitoring: https://host/path, ssh://host/path or user@host:path
+const REPOSITORY_URL_REGEX =
+  /^(?:https?:\/\/[^\s/]+\/\S+|ssh:\/\/\S+\/\S+|[\w.-]+@[\w.-]+:\S+)$/i;
 
-function watchDeploymentRepository(panel: any) {
-  _monitoringConfigWatcher?.dispose();
-  _monitoringConfigWatcher = null;
-  const workspaceRoot = getWorkspaceRoot();
-  if (!workspaceRoot) {
-    return;
-  }
-  _monitoringConfigWatcher = vscode.workspace.createFileSystemWatcher(
-    new vscode.RelativePattern(workspaceRoot, ".sfdx-hardis.yml"),
-  );
-  const pushDeploymentRepository = async () => {
-    if (panel.isDisposed()) {
-      _monitoringConfigWatcher?.dispose();
-      _monitoringConfigWatcher = null;
-      return;
-    }
-    panel.sendMessage({
-      type: "deploymentRepositoryUpdated",
-      data: { deploymentRepository: await resolveDeploymentRepository() },
-    });
-  };
-  _monitoringConfigWatcher.onDidChange(pushDeploymentRepository);
-  _monitoringConfigWatcher.onDidCreate(pushDeploymentRepository);
-  _monitoringConfigWatcher.onDidDelete(pushDeploymentRepository);
-  LwcPanelManager.getInstance().setDisposalCallback("s-org-monitoring", () => {
-    _monitoringConfigWatcher?.dispose();
-    _monitoringConfigWatcher = null;
+// Asks for deploymentRepository and writes it in .sfdx-hardis.yml. An empty value removes it.
+// Returns the new value (null when removed), or undefined when nothing changed.
+async function promptDeploymentRepository(): Promise<string | null | undefined> {
+  const current = await resolveDeploymentRepository();
+  const value = await vscode.window.showInputBox({
+    title: t("deploymentRepositoryInputTitle"),
+    prompt: t("deploymentRepositoryInputPrompt"),
+    placeHolder: "https://github.com/my-company/my-project",
+    value: current || "",
+    ignoreFocusOut: true,
+    validateInput: (input) =>
+      input.trim() === "" || REPOSITORY_URL_REGEX.test(input.trim())
+        ? null
+        : t("deploymentRepositoryInputInvalid"),
   });
+  if (value === undefined) {
+    return undefined;
+  }
+  const newValue = value.trim();
+  if (newValue === "" && !current) {
+    return undefined;
+  }
+  if (newValue === (current || "")) {
+    return undefined;
+  }
+  try {
+    await writeSfdxHardisConfig(
+      "deploymentRepository",
+      newValue === "" ? undefined : newValue,
+    );
+  } catch (e: any) {
+    vscode.window.showErrorMessage(e?.message || String(e));
+    return undefined;
+  }
+  vscode.window.showInformationMessage(
+    newValue === ""
+      ? t("deploymentRepositoryRemovedCommit")
+      : t("deploymentRepositorySavedCommit"),
+  );
+  return newValue === "" ? null : newValue;
 }
 
 // Opens the repository in a new VS Code window, from the clone next to this repository

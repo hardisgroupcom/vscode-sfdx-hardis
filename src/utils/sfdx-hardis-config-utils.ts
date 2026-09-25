@@ -286,7 +286,13 @@ export async function writeSfdxHardisConfig(
         throw new Error(`${configFile} does not hold a YAML mapping`);
       }
     }
-    config[key] = value;
+    // undefined removes the key
+    if (value === undefined) {
+      delete config[key];
+    }
+    else {
+      config[key] = value;
+    }
     await fs.promises.writeFile(configFile, dumpRepositoryYaml(config));
   }
   return {};
