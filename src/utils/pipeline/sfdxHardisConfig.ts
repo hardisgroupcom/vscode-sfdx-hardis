@@ -15,6 +15,7 @@ import * as c from "../ansiColors";
 import { cosmiconfig } from "cosmiconfig";
 import * as fs from "fs";
 import * as yaml from "js-yaml";
+import { dumpRepositoryYaml } from "../yamlUtils";
 import * as os from "os";
 import * as path from "path";
 import { simpleGit } from "simple-git";
@@ -225,7 +226,7 @@ export async function setInConfigFile(
   }
   doc = Object.assign(doc, propValues);
   await fs.promises.mkdir(path.dirname(configFile), { recursive: true });
-  await fs.promises.writeFile(configFile, yaml.dump(doc));
+  await fs.promises.writeFile(configFile, dumpRepositoryYaml(doc));
   if (explorer) {
     explorer.clearCaches();
   }
