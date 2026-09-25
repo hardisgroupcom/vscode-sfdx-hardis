@@ -14,10 +14,7 @@ import {
   clearMonitoringCatalogCache,
   MonitoringCatalogPayload,
 } from "../utils/monitoringConfigUtils";
-import {
-  readSfdxHardisConfig,
-  writeSfdxHardisConfig,
-} from "../utils/sfdx-hardis-config-utils";
+import { readSfdxHardisConfig } from "../utils/sfdx-hardis-config-utils";
 import simpleGit from "simple-git";
 import { gitRemoteToHttps } from "../utils/gitUrlUtils";
 
@@ -91,6 +88,7 @@ export function registerShowOrgMonitoring(commands: Commands) {
         });
       });
       panel.updateTitle(t("orgMonitoringWorkbench"));
+      watchDeploymentRepository(panel);
 
       // Handle messages from the Org Monitoring panel
       panel.onMessage(async (type: string, data: any) => {
@@ -161,16 +159,6 @@ export function registerShowOrgMonitoring(commands: Commands) {
             }
             break;
           }
-          case "setDeploymentRepository": {
-            const saved = await promptDeploymentRepository();
-            if (saved !== null) {
-              panel.sendMessage({
-                type: "deploymentRepositoryUpdated",
-                data: { deploymentRepository: saved || null },
-              });
-            }
-            break;
-          }
           default:
             break;
         }
@@ -215,28 +203,39 @@ async function resolveDeploymentRepository(): Promise<string | null> {
   return null;
 }
 
-const REPOSITORY_URL_REGEX = /^(https?:\/\/|ssh:\/\/|[\w.-]+@[\w.-]+:).+/;
+// deploymentRepository is set by sf hardis:org:configure:monitoring-deployment-repository, which the
+// panel runs: the CLI validates, suggests and writes the value. Watch the file it writes, so the panel
+// shows the new value as soon as the command (or a hand edit) saves it.
+let _monitoringConfigWatcher: vscode.FileSystemWatcher | null = null;
 
-// Returns the stored value, or null when the user cancelled
-async function promptDeploymentRepository(): Promise<string | null> {
-  const current = await resolveDeploymentRepository();
-  const value = await vscode.window.showInputBox({
-    title: t("deploymentRepositoryInputTitle"),
-    prompt: t("deploymentRepositoryInputPrompt"),
-    placeHolder: "https://github.com/my-company/my-project",
-    value: current || "",
-    ignoreFocusOut: true,
-    validateInput: (input) =>
-      REPOSITORY_URL_REGEX.test(input.trim())
-        ? null
-        : t("deploymentRepositoryInputInvalid"),
-  });
-  if (value === undefined || value.trim() === "") {
-    return null;
+function watchDeploymentRepository(panel: any) {
+  _monitoringConfigWatcher?.dispose();
+  _monitoringConfigWatcher = null;
+  const workspaceRoot = getWorkspaceRoot();
+  if (!workspaceRoot) {
+    return;
   }
-  await writeSfdxHardisConfig("deploymentRepository", value.trim());
-  vscode.window.showInformationMessage(t("deploymentRepositorySavedCommit"));
-  return value.trim();
+  _monitoringConfigWatcher = vscode.workspace.createFileSystemWatcher(
+    new vscode.RelativePattern(workspaceRoot, ".sfdx-hardis.yml"),
+  );
+  const pushDeploymentRepository = async () => {
+    if (panel.isDisposed()) {
+      _monitoringConfigWatcher?.dispose();
+      _monitoringConfigWatcher = null;
+      return;
+    }
+    panel.sendMessage({
+      type: "deploymentRepositoryUpdated",
+      data: { deploymentRepository: await resolveDeploymentRepository() },
+    });
+  };
+  _monitoringConfigWatcher.onDidChange(pushDeploymentRepository);
+  _monitoringConfigWatcher.onDidCreate(pushDeploymentRepository);
+  _monitoringConfigWatcher.onDidDelete(pushDeploymentRepository);
+  LwcPanelManager.getInstance().setDisposalCallback("s-org-monitoring", () => {
+    _monitoringConfigWatcher?.dispose();
+    _monitoringConfigWatcher = null;
+  });
 }
 
 // Opens the repository in a new VS Code window, from the clone next to this repository

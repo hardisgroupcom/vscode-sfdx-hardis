@@ -329,9 +329,14 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
     }
   }
 
+  // The CLI asks, validates and writes the value; the extension watches .sfdx-hardis.yml and
+  // sends deploymentRepositoryUpdated once it is saved
   setDeploymentRepository() {
     window.sendMessageToVSCode({
-      type: "setDeploymentRepository",
+      type: "runCommand",
+      data: {
+        command: "sf hardis:org:configure:monitoring-deployment-repository",
+      },
     });
   }
 
