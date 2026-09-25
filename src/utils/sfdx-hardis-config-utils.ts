@@ -269,8 +269,30 @@ export async function writeSfdxHardisConfig(
       ? rootConfigFile
       : configConfigFile;
     await fs.promises.mkdir(path.dirname(configFile), { recursive: true });
-    const config = await readSfdxHardisConfig();
-    config[key] = value;
+    // Read the file strictly: loadFromLocalConfigFile returns {} for a YAML syntax error, and writing
+    // that back would replace the whole configuration with this one key
+    let config: any = {};
+    if (fs.existsSync(configFile)) {
+      const content = fs.readFileSync(configFile, "utf8");
+      try {
+        config = yaml.load(content) ?? {};
+      } catch (e: any) {
+        throw new Error(
+          `${configFile} is not valid YAML, fix it before saving: ${e?.message || e}`,
+          { cause: e },
+        );
+      }
+      if (typeof config !== "object" || Array.isArray(config)) {
+        throw new Error(`${configFile} does not hold a YAML mapping`);
+      }
+    }
+    // undefined removes the key
+    if (value === undefined) {
+      delete config[key];
+    }
+    else {
+      config[key] = value;
+    }
     await fs.promises.writeFile(configFile, dumpRepositoryYaml(config));
   }
   return {};

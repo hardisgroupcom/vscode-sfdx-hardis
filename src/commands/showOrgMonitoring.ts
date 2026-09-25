@@ -14,7 +14,12 @@ import {
   clearMonitoringCatalogCache,
   MonitoringCatalogPayload,
 } from "../utils/monitoringConfigUtils";
-import { readSfdxHardisConfig } from "../utils/sfdx-hardis-config-utils";
+import {
+  readSfdxHardisConfig,
+  writeSfdxHardisConfig,
+} from "../utils/sfdx-hardis-config-utils";
+import simpleGit from "simple-git";
+import { gitRemoteToHttps } from "../utils/gitUrlUtils";
 
 async function safeFetchMonitoringCatalog(): Promise<MonitoringCatalogPayload | null> {
   try {
@@ -61,11 +66,13 @@ export function registerShowOrgMonitoring(commands: Commands) {
       }
 
       const instanceUrl = await resolveMonitoringInstanceUrl();
+      const deploymentRepository = await resolveDeploymentRepository();
 
       const panel = lwcManager.getOrCreatePanel("s-org-monitoring", {
         isInstalled: isInstalled,
         isCiCdRepo: isCiCdRepo,
         monitoringRepository: monitoringRepository,
+        deploymentRepository: deploymentRepository,
         instanceUrl: instanceUrl,
         monitoringHomeUrl: DOCSITE_URL + "/salesforce-monitoring-home/",
         monitoringConfigUrl:
@@ -120,6 +127,7 @@ export function registerShowOrgMonitoring(commands: Commands) {
                 isInstalled: currentStatus,
                 isCiCdRepo: isCiCdRepo2,
                 monitoringRepository: monitoringRepository2,
+                deploymentRepository: await resolveDeploymentRepository(),
                 instanceUrl: instanceUrl2,
                 catalogLoading: true,
               },
@@ -144,6 +152,23 @@ export function registerShowOrgMonitoring(commands: Commands) {
             await vscode.commands.executeCommand(
               "vscode-sfdx-hardis.showMonitoringConfig",
             );
+            break;
+          }
+          case "openDeploymentRepository": {
+            const repositoryUrl = await resolveDeploymentRepository();
+            if (repositoryUrl) {
+              await openRepositoryInNewWindow(repositoryUrl);
+            }
+            break;
+          }
+          case "setDeploymentRepository": {
+            const saved = await promptDeploymentRepository();
+            if (saved !== undefined) {
+              panel.sendMessage({
+                type: "deploymentRepositoryUpdated",
+                data: { deploymentRepository: saved },
+              });
+            }
             break;
           }
           default:
@@ -173,6 +198,152 @@ async function checkOrgMonitoringInstallation(): Promise<boolean> {
     Logger.log("Error checking org monitoring installation: " + error);
     return false;
   }
+}
+
+// In a monitoring repository, deploymentRepository is the CI/CD repository that deploys to the
+// monitored org: the mirror of monitoringRepository in that CI/CD repository
+async function resolveDeploymentRepository(): Promise<string | null> {
+  try {
+    const config = await readSfdxHardisConfig();
+    const value = config?.deploymentRepository;
+    if (typeof value === "string" && value.trim() !== "") {
+      return value.trim();
+    }
+  } catch (e) {
+    Logger.log(`Unable to read deploymentRepository from config: ${e}`);
+  }
+  return null;
+}
+
+// Same check as sfdx-hardis configure:monitoring: https://host/path, ssh://host/path or user@host:path
+const REPOSITORY_URL_REGEX =
+  /^(?:https?:\/\/[^\s/]+\/\S+|ssh:\/\/\S+\/\S+|[\w.-]+@[\w.-]+:\S+)$/i;
+
+// Asks for deploymentRepository and writes it in .sfdx-hardis.yml. An empty value removes it.
+// Returns the new value (null when removed), or undefined when nothing changed.
+async function promptDeploymentRepository(): Promise<string | null | undefined> {
+  const current = await resolveDeploymentRepository();
+  const value = await vscode.window.showInputBox({
+    title: t("deploymentRepositoryInputTitle"),
+    prompt: t("deploymentRepositoryInputPrompt"),
+    placeHolder: "https://github.com/my-company/my-project",
+    value: current || "",
+    ignoreFocusOut: true,
+    validateInput: (input) =>
+      input.trim() === "" || REPOSITORY_URL_REGEX.test(input.trim())
+        ? null
+        : t("deploymentRepositoryInputInvalid"),
+  });
+  if (value === undefined) {
+    return undefined;
+  }
+  const newValue = value.trim();
+  if (newValue === "" && !current) {
+    return undefined;
+  }
+  if (newValue === (current || "")) {
+    return undefined;
+  }
+  try {
+    await writeSfdxHardisConfig(
+      "deploymentRepository",
+      newValue === "" ? undefined : newValue,
+    );
+  } catch (e: any) {
+    vscode.window.showErrorMessage(e?.message || String(e));
+    return undefined;
+  }
+  vscode.window.showInformationMessage(
+    newValue === ""
+      ? t("deploymentRepositoryRemovedCommit")
+      : t("deploymentRepositorySavedCommit"),
+  );
+  return newValue === "" ? null : newValue;
+}
+
+// Opens the repository in a new VS Code window, from the clone next to this repository
+// (the place the monitoring AGENTS.md tells coding agents to use), cloning it there if needed
+async function openRepositoryInNewWindow(repositoryUrl: string) {
+  const browsableUrl = gitRemoteToHttps(repositoryUrl);
+  const repositoryName = browsableUrl.split("/").pop() || "";
+  const workspaceRoot = getWorkspaceRoot();
+  if (!workspaceRoot || !repositoryName) {
+    if (browsableUrl) {
+      vscode.env.openExternal(vscode.Uri.parse(browsableUrl));
+    }
+    return;
+  }
+  const targetFolder = path.join(path.dirname(workspaceRoot), repositoryName);
+  if (fs.existsSync(targetFolder)) {
+    let origin = "";
+    try {
+      origin =
+        (await simpleGit(targetFolder).remote(["get-url", "origin"])) || "";
+    } catch (e) {
+      Logger.log(`Unable to read the origin of ${targetFolder}: ${e}`);
+    }
+    if (
+      gitRemoteToHttps(origin.trim()).toLowerCase() !==
+      browsableUrl.toLowerCase()
+    ) {
+      const openAnyway = t("deploymentRepositoryOpenFolderAnyway");
+      const openInBrowser = t("deploymentRepositoryOpenInBrowser");
+      const choice = await vscode.window.showWarningMessage(
+        t("deploymentRepositoryFolderOtherRemote", { folder: targetFolder }),
+        openAnyway,
+        openInBrowser,
+      );
+      if (choice === openInBrowser && browsableUrl) {
+        vscode.env.openExternal(vscode.Uri.parse(browsableUrl));
+        return;
+      }
+      if (choice !== openAnyway) {
+        return;
+      }
+    }
+  } else {
+    const cloneLabel = t("deploymentRepositoryClone");
+    const confirm = await vscode.window.showInformationMessage(
+      t("deploymentRepositoryCloneConfirm", {
+        url: browsableUrl,
+        folder: targetFolder,
+      }),
+      { modal: true },
+      cloneLabel,
+    );
+    if (confirm !== cloneLabel) {
+      return;
+    }
+    try {
+      await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: t("deploymentRepositoryCloning", { url: browsableUrl }),
+        },
+        () =>
+          simpleGit(path.dirname(targetFolder)).clone(
+            repositoryUrl,
+            targetFolder,
+          ),
+      );
+    } catch (e: any) {
+      Logger.log(`Unable to clone ${browsableUrl}: ${e?.message || e}`);
+      const openInBrowser = t("deploymentRepositoryOpenInBrowser");
+      const choice = await vscode.window.showErrorMessage(
+        t("deploymentRepositoryCloneFailed"),
+        openInBrowser,
+      );
+      if (choice === openInBrowser && browsableUrl) {
+        vscode.env.openExternal(vscode.Uri.parse(browsableUrl));
+      }
+      return;
+    }
+  }
+  await vscode.commands.executeCommand(
+    "vscode.openFolder",
+    vscode.Uri.file(targetFolder),
+    { forceNewWindow: true },
+  );
 }
 
 async function resolveMonitoringInstanceUrl(): Promise<string | null> {
