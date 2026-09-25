@@ -42,7 +42,7 @@ suite("dumpRepositoryYaml", () => {
     );
   });
 
-  test("requotes keys, and values under a quoted key", () => {
+  test("quotes keys, and values under a quoted key, like Prettier", () => {
     assertDump(
       { '"a": b': ['"x"'], 'k"q': '"y"' },
       '\'"a": b\':\n  - \'"x"\'\nk"q: \'"y"\'\n',
