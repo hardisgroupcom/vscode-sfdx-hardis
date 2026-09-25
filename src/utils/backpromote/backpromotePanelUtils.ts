@@ -57,11 +57,7 @@ export const BACKPROMOTE_DIFF_CHOICES: BackpromoteDiffChoice[] = [
 ];
 
 export type BackpromoteComparisonStatus =
-  | "same"
-  | "different"
-  | "missingInOrg"
-  | "pendingInOrg"
-  | "notCompared";
+  "same" | "different" | "missingInOrg" | "pendingInOrg" | "notCompared";
 
 export interface BackpromoteLeftOutItem {
   key: string;
