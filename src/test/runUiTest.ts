@@ -4,6 +4,45 @@ import * as os from "os";
 import { execSync } from "child_process";
 
 import { runTests } from "@vscode/test-electron";
+import * as yaml from "js-yaml";
+
+/**
+ * SFDX_HARDIS_DOC_SCREENSHOTS_ACTIONS_KEEP: a comma-separated list of action
+ * ids. The fixture Pull Request carries one action of each type so that every
+ * action editor can be captured; a capture that shows the list a lab describes
+ * (one action in Lab 2.3 of the training) keeps only those ids, in the copy of
+ * the fixture the test opens.
+ */
+function keepOnlyDeploymentActions(workspaceDir: string): void {
+  const keep = (process.env.SFDX_HARDIS_DOC_SCREENSHOTS_ACTIONS_KEEP || "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter((id) => id);
+  const actionsDir = path.join(workspaceDir, "scripts", "actions");
+  if (
+    process.env.SFDX_HARDIS_DOC_SCREENSHOTS !== "true" ||
+    keep.length === 0 ||
+    !fs.existsSync(actionsDir)
+  ) {
+    return;
+  }
+  for (const file of fs.readdirSync(actionsDir)) {
+    if (!/^\.sfdx-hardis\..+\.ya?ml$/.test(file)) {
+      continue;
+    }
+    const filePath = path.join(actionsDir, file);
+    const doc = (yaml.load(fs.readFileSync(filePath, "utf8")) || {}) as Record<
+      string,
+      any
+    >;
+    for (const key of ["commandsPreDeploy", "commandsPostDeploy"]) {
+      if (Array.isArray(doc[key])) {
+        doc[key] = doc[key].filter((action: any) => keep.includes(action?.id));
+      }
+    }
+    fs.writeFileSync(filePath, yaml.dump(doc, { lineWidth: -1 }));
+  }
+}
 
 /**
  * Launches the UI integration tests: a real VS Code (Extension Development
@@ -127,6 +166,7 @@ async function main() {
     }
   } else {
     fs.cpSync(fixtureSource, workspaceDir, { recursive: true });
+    keepOnlyDeploymentActions(workspaceDir);
   }
 
   // 2. Make it a git repository (several extension features probe git)
@@ -509,10 +549,12 @@ async function main() {
               // base universe, unchanged.
               SF_MOCK_UNIVERSE: universeName,
               SF_MOCK_UNIVERSE_DIR: universeDir,
-              // Feature branch the contribution cards are captured from
-              SFDX_HARDIS_DOC_SCREENSHOTS_BRANCH: universe
-                ? universe.featureBranch || ""
-                : "",
+              // Feature branch the contribution cards are captured from. A
+              // capture can name its own, like the Level 1 story of a fresh
+              // pipeline.
+              SFDX_HARDIS_DOC_SCREENSHOTS_BRANCH:
+                process.env.SFDX_HARDIS_DOC_SCREENSHOTS_BRANCH ||
+                (universe ? universe.featureBranch || "" : ""),
               // What the capture script matches on to find the window
               SFDX_HARDIS_DOC_SCREENSHOTS_TITLE: workspaceName,
               SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION: promotionVariant

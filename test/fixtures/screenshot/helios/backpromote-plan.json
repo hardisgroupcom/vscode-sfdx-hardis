@@ -9,8 +9,8 @@
     "username": "helios.deploy+helios-dev@heliostraining.invalid",
     "instanceUrl": "https://velocity-power-7123-dev-ed.scratch.my.salesforce.com",
     "orgId": "00D5g000004ABCDEAA",
-    "sandboxName": "helios-dev",
-    "orgType": "sandbox",
+    "sandboxName": "00d8e00000100001eaa",
+    "orgType": "scratch",
     "tracksSource": true,
     "refusal": null
   },
@@ -20,14 +20,14 @@
   ],
   "gitRoot": "/tmp/mock-workspace",
   "backpromoteBranch": {
-    "name": "backpromote/integration/helios-dev",
+    "name": "backpromote/integration/00d8e00000100001eaa",
     "existsOnOrigin": true,
     "head": "b1d1000000000000000000000000000000000000",
     "pendingMerges": []
   },
   "checkout": {
-    "originalBranch": "features/US-021-crew-size-warning",
-    "currentBranch": "features/US-021-crew-size-warning",
+    "originalBranch": "integration",
+    "currentBranch": "integration",
     "clean": true,
     "dirtyFiles": [],
     "stashed": false,
@@ -36,13 +36,13 @@
   },
   "pullRequests": [
     {
-      "number": 51,
-      "title": "US-018 Cap the crew size a planner can assign",
-      "author": "Mariia Pyvovarchuk",
+      "number": 3,
+      "title": "US-017 Record who signed an installation off",
+      "author": "my-username",
       "mergeDate": "2026-09-11T14:12:00+02:00",
-      "sourceBranch": "training/mate-us-018-crew-capacity",
+      "sourceBranch": "training/mate-us-017-sign-off",
       "commit": "e418000000000000000000000000000000000000",
-      "webUrl": "https://github.com/hardisgroupcom/sfdx-hardis-training/pull/51",
+      "webUrl": "https://github.com/hardisgroupcom/sfdx-hardis-training/pull/3",
       "itemCount": 3,
       "actionCount": 0,
       "backpromote": null,
@@ -53,14 +53,14 @@
       "scanned": true
     },
     {
-      "number": 52,
-      "title": "US-019 Generate a quote PDF from an opportunity",
-      "author": "Romain Panda",
+      "number": 2,
+      "title": "US-016 Crew Notes and the Open Installations list view",
+      "author": "my-username",
       "mergeDate": "2026-09-10T10:03:00+02:00",
-      "sourceBranch": "training/mate-us-019-quote-pdf",
+      "sourceBranch": "features/US-016-crew-notes",
       "commit": "d417000000000000000000000000000000000000",
-      "webUrl": "https://github.com/hardisgroupcom/sfdx-hardis-training/pull/52",
-      "itemCount": 2,
+      "webUrl": "https://github.com/hardisgroupcom/sfdx-hardis-training/pull/2",
+      "itemCount": 5,
       "actionCount": 0,
       "backpromote": null,
       "beforeRefresh": false,
@@ -70,15 +70,15 @@
       "scanned": true
     },
     {
-      "number": 53,
-      "title": "US-026 Crew capacity reference data and nightly recalculation",
-      "author": "You",
+      "number": 1,
+      "title": "US-014 Panels Required on Installation",
+      "author": "my-username",
       "mergeDate": "2026-09-09T09:41:00+02:00",
-      "sourceBranch": "features/US-026-crew-capacity-data",
+      "sourceBranch": "features/US-014-panels-required",
       "commit": "c415000000000000000000000000000000000000",
-      "webUrl": "https://github.com/hardisgroupcom/sfdx-hardis-training/pull/53",
-      "itemCount": 2,
-      "actionCount": 2,
+      "webUrl": "https://github.com/hardisgroupcom/sfdx-hardis-training/pull/1",
+      "itemCount": 5,
+      "actionCount": 0,
       "backpromote": null,
       "beforeRefresh": false,
       "beforeLastBackpromote": false,
@@ -96,44 +96,70 @@
   "window": {
     "fromCommit": "a412000000000000000000000000000000000000",
     "toCommit": "e418000000000000000000000000000000000000",
-    "startPullRequest": 51
+    "startPullRequest": 1
   },
   "items": [
     {
-      "key": "Flow:Installation_Assign_Crew",
-      "type": "Flow",
-      "name": "Installation_Assign_Crew",
-      "files": [
-        "force-app/main/default/flows/Installation_Assign_Crew.flow-meta.xml"
-      ],
-      "pullRequests": [
-        51
-      ],
-      "excludedLastTime": false,
-      "noOverwrite": false
-    },
-    {
-      "key": "PermissionSet:Helios_Delivery_Manager",
-      "type": "PermissionSet",
-      "name": "Helios_Delivery_Manager",
-      "files": [
-        "force-app/main/default/permissionsets/Helios_Delivery_Manager.permissionset-meta.xml"
-      ],
-      "pullRequests": [
-        51
-      ],
-      "excludedLastTime": false,
-      "noOverwrite": false
-    },
-    {
-      "key": "CustomField:Installation__c.Crew_Capacity_Cap__c",
+      "key": "CustomField:Installation__c.Crew_Notes__c",
       "type": "CustomField",
-      "name": "Installation__c.Crew_Capacity_Cap__c",
+      "name": "Installation__c.Crew_Notes__c",
       "files": [
-        "force-app/main/default/objects/Installation__c/fields/Crew_Capacity_Cap__c.field-meta.xml"
+        "force-app/main/default/objects/Installation__c/fields/Crew_Notes__c.field-meta.xml"
       ],
       "pullRequests": [
-        51
+        2
+      ],
+      "excludedLastTime": false,
+      "noOverwrite": false
+    },
+    {
+      "key": "CustomField:Installation__c.Panels_Required__c",
+      "type": "CustomField",
+      "name": "Installation__c.Panels_Required__c",
+      "files": [
+        "force-app/main/default/objects/Installation__c/fields/Panels_Required__c.field-meta.xml"
+      ],
+      "pullRequests": [
+        1
+      ],
+      "excludedLastTime": false,
+      "noOverwrite": false
+    },
+    {
+      "key": "CustomField:Installation__c.Signed_Off_By__c",
+      "type": "CustomField",
+      "name": "Installation__c.Signed_Off_By__c",
+      "files": [
+        "force-app/main/default/objects/Installation__c/fields/Signed_Off_By__c.field-meta.xml"
+      ],
+      "pullRequests": [
+        3
+      ],
+      "excludedLastTime": false,
+      "noOverwrite": false
+    },
+    {
+      "key": "Layout:Installation__c-Installation Layout",
+      "type": "Layout",
+      "name": "Installation__c-Installation Layout",
+      "files": [
+        "force-app/main/default/layouts/Installation__c-Installation Layout.layout-meta.xml"
+      ],
+      "pullRequests": [
+        3
+      ],
+      "excludedLastTime": false,
+      "noOverwrite": false
+    },
+    {
+      "key": "ListView:Installation__c.Open_Installations",
+      "type": "ListView",
+      "name": "Installation__c.Open_Installations",
+      "files": [
+        "force-app/main/default/objects/Installation__c/listViews/Open_Installations.listView-meta.xml"
+      ],
+      "pullRequests": [
+        2
       ],
       "excludedLastTime": false,
       "noOverwrite": false
@@ -146,81 +172,27 @@
         "force-app/main/default/permissionsets/Helios_Delivery_Crew.permissionset-meta.xml"
       ],
       "pullRequests": [
-        52
+        1
       ],
       "excludedLastTime": false,
       "noOverwrite": false
     },
     {
-      "key": "Layout:Opportunity-Opportunity Layout",
-      "type": "Layout",
-      "name": "Opportunity-Opportunity Layout",
+      "key": "PermissionSet:Helios_Delivery_Manager",
+      "type": "PermissionSet",
+      "name": "Helios_Delivery_Manager",
       "files": [
-        "force-app/main/default/layouts/Opportunity-Opportunity Layout.layout-meta.xml"
+        "force-app/main/default/permissionsets/Helios_Delivery_Manager.permissionset-meta.xml"
       ],
       "pullRequests": [
-        52
-      ],
-      "excludedLastTime": false,
-      "noOverwrite": false
-    },
-    {
-      "key": "CustomObject:Crew_Capacity__c",
-      "type": "CustomObject",
-      "name": "Crew_Capacity__c",
-      "files": [
-        "force-app/main/default/objects/Crew_Capacity__c/Crew_Capacity__c.object-meta.xml"
-      ],
-      "pullRequests": [
-        53
-      ],
-      "excludedLastTime": false,
-      "noOverwrite": false
-    },
-    {
-      "key": "ApexClass:CrewCapacityBatch",
-      "type": "ApexClass",
-      "name": "CrewCapacityBatch",
-      "files": [
-        "force-app/main/default/classes/CrewCapacityBatch.cls",
-        "force-app/main/default/classes/CrewCapacityBatch.cls-meta.xml"
-      ],
-      "pullRequests": [
-        53
+        3
       ],
       "excludedLastTime": false,
       "noOverwrite": false
     }
   ],
   "deletions": [],
-  "actions": [
-    {
-      "id": "load-crew-capacity",
-      "label": "Load the crew capacity reference data",
-      "type": "data",
-      "phase": "post",
-      "context": "all",
-      "pullRequest": 53,
-      "alreadyRunOn": null,
-      "manual": false,
-      "customUsername": null,
-      "runnable": true,
-      "runOnlyOnceByOrg": true
-    },
-    {
-      "id": "email-deliverability",
-      "label": "Set Email Deliverability to All Email",
-      "type": "manual",
-      "phase": "pre",
-      "context": "all",
-      "pullRequest": 53,
-      "alreadyRunOn": null,
-      "manual": true,
-      "customUsername": null,
-      "runnable": false,
-      "runOnlyOnceByOrg": true
-    }
-  ],
+  "actions": [],
   "comparison": [
     {
       "file": "force-app/main/default/classes/InvoiceCalculator.cls",

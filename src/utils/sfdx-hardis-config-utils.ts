@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { getConfig } from "./pipeline/sfdxHardisConfig";
 import * as yaml from "js-yaml";
+import { dumpRepositoryYaml } from "./yamlUtils";
 import * as fs from "fs";
 import * as path from "path";
 import { getText } from "./httpUtils";
@@ -270,7 +271,7 @@ export async function writeSfdxHardisConfig(
     await fs.promises.mkdir(path.dirname(configFile), { recursive: true });
     const config = await readSfdxHardisConfig();
     config[key] = value;
-    await fs.promises.writeFile(configFile, yaml.dump(config));
+    await fs.promises.writeFile(configFile, dumpRepositoryYaml(config));
   }
   return {};
 }

@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import yaml from "js-yaml";
+import { dumpRepositoryYaml } from "../yamlUtils";
 import { getJson } from "../httpUtils";
 import { t } from "../../i18n/i18n";
 import * as vscode from "vscode";
@@ -580,7 +581,7 @@ export class SfdxHardisConfigHelper {
         applyEditedValues(existingBranchConfig, branchOnly);
         await fs.promises.writeFile(
           branchPath,
-          yaml.dump(existingBranchConfig),
+          dumpRepositoryYaml(existingBranchConfig),
           "utf8",
         );
       } else {
@@ -588,7 +589,7 @@ export class SfdxHardisConfigHelper {
         applyEditedValues(newBranchConfig, branchOnly);
         await fs.promises.writeFile(
           branchPath,
-          yaml.dump(newBranchConfig),
+          dumpRepositoryYaml(newBranchConfig),
           "utf8",
         );
       }
@@ -615,7 +616,7 @@ export class SfdxHardisConfigHelper {
         applyEditedValues(existingGlobalConfig, globalOnly);
         await fs.promises.writeFile(
           effectiveGlobalPath,
-          yaml.dump(existingGlobalConfig),
+          dumpRepositoryYaml(existingGlobalConfig),
           "utf8",
         );
       } else {
@@ -624,7 +625,7 @@ export class SfdxHardisConfigHelper {
         applyEditedValues(newGlobalConfig, globalOnly);
         await fs.promises.writeFile(
           effectiveGlobalPath,
-          yaml.dump(newGlobalConfig),
+          dumpRepositoryYaml(newGlobalConfig),
           "utf8",
         );
       }
@@ -664,7 +665,11 @@ export class SfdxHardisConfigHelper {
         await fs.promises.readFile(globalPath, "utf8"),
       ) as SfdxHardisConfig) || {};
     const merged: SfdxHardisConfig = { ...configFileConfig, ...rootConfig };
-    await fs.promises.writeFile(rootConfigPath, yaml.dump(merged), "utf8");
+    await fs.promises.writeFile(
+      rootConfigPath,
+      dumpRepositoryYaml(merged),
+      "utf8",
+    );
     await fs.promises.rm(globalPath, { recursive: true, force: true });
     vscode.window.showInformationMessage(t("duplicateConfigFilesMergeSuccess"));
   }

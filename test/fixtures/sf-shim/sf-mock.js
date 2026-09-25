@@ -816,14 +816,18 @@ function answerBackpromote() {
           (comparison) => comparison.file === file && held.has(comparison.item),
         ),
     );
-  // The step lines of a run, worded like sfdx-hardis (the documentation screenshots show them)
+  // The step lines of a run, worded like sfdx-hardis (the documentation screenshots show them).
+  // A scratch org is named by its alias there: its sandboxName is its org id.
+  const orgName =
+    plan.targetOrg.orgType === "scratch" && plan.targetOrg.alias
+      ? plan.targetOrg.alias
+      : plan.targetOrg.sandboxName;
   const stepLabel = (step) =>
     ({
       checkout: "Checking out " + plan.backpromoteBranch.name,
       preActions: "Running the pre-deployment actions",
-      deploy: "Deploying the metadata to " + plan.targetOrg.sandboxName,
-      destructive:
-        "Deleting the removed metadata from " + plan.targetOrg.sandboxName,
+      deploy: "Deploying the metadata to " + orgName,
+      destructive: "Deleting the removed metadata from " + orgName,
       postActions: "Running the post-deployment actions",
       comments: "Updating the Backpromotes comments of the Pull Requests",
       push: "Pushing " + plan.backpromoteBranch.name,
