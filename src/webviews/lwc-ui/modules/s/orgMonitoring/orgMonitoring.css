@@ -64,6 +64,11 @@
     padding-left: 0;
 }
 
+.deployment-repository-note {
+    align-items: center;
+    margin: 0 0 1rem 0;
+}
+
 .status-actions {
     display: flex;
     gap: 1rem;

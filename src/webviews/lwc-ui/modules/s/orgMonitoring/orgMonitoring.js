@@ -73,6 +73,7 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
   @track isLoading = true;
   @track isCiCdRepo = false;
   @track monitoringRepository = null;
+  @track deploymentRepository = null;
   @track instanceUrl = null;
   @track monitoringHomeUrl = "";
   @track monitoringConfigUrl = "";
@@ -87,6 +88,7 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
     this.isInstalled = data?.isInstalled || false;
     this.isCiCdRepo = data?.isCiCdRepo || false;
     this.monitoringRepository = data?.monitoringRepository || null;
+    this.deploymentRepository = data?.deploymentRepository || null;
     this.instanceUrl = data?.instanceUrl || null;
     this.monitoringHomeUrl = data?.monitoringHomeUrl || "";
     this.monitoringConfigUrl = data?.monitoringConfigUrl || "";
@@ -113,6 +115,9 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
       if (data?.monitoringRepository !== undefined) {
         this.monitoringRepository = data.monitoringRepository || null;
       }
+      if (data?.deploymentRepository !== undefined) {
+        this.deploymentRepository = data.deploymentRepository || null;
+      }
       if (data?.instanceUrl !== undefined) {
         this.instanceUrl = data.instanceUrl || null;
       }
@@ -121,6 +126,8 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
         this.catalogLoading = true;
         this.catalog = null;
       }
+    } else if (type === "deploymentRepositoryUpdated") {
+      this.deploymentRepository = data?.deploymentRepository || null;
     } else if (type === "monitoringCatalogLoaded") {
       this.catalog = data?.catalog || null;
       this.catalogLoading = false;
@@ -312,6 +319,20 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
         data: this.monitoringRepository,
       });
     }
+  }
+
+  openDeploymentRepository() {
+    if (this.deploymentRepository) {
+      window.sendMessageToVSCode({
+        type: "openDeploymentRepository",
+      });
+    }
+  }
+
+  setDeploymentRepository() {
+    window.sendMessageToVSCode({
+      type: "setDeploymentRepository",
+    });
   }
 
   checkInstallationStatus() {
