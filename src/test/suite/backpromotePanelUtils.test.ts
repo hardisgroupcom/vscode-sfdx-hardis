@@ -1307,7 +1307,7 @@ suite("backpromotePanelUtils", () => {
     assert.strictEqual(
       getTargetOrgDisplayName({
         alias: "helios-dev",
-        sandboxName: "00dcu00000heexpuab",
+        sandboxName: "00d000000000000001",
         orgType: "scratch",
         username: USERNAME,
       }),
@@ -1315,11 +1315,11 @@ suite("backpromotePanelUtils", () => {
     );
     assert.strictEqual(
       getTargetOrgDisplayName({
-        sandboxName: "00dcu00000heexpuab",
+        sandboxName: "00d000000000000001",
         orgType: "scratch",
         username: USERNAME,
       }),
-      "00dcu00000heexpuab",
+      "00d000000000000001",
     );
   });
 
