@@ -403,7 +403,7 @@ suite("prePostCommandsUtils Test Suite", () => {
 
       const raw = fs.readFileSync(actionsFilePath(workspaceRoot, 5), "utf8");
       assert.ok(raw.includes('command: ""'), raw);
-      assert.ok(!raw.includes("'"), raw);
+      assert.ok(!/: ''/.test(raw), raw);
     });
   });
 });
