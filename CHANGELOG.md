@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Org Monitoring: in a monitoring repository, the panel shows the CI/CD repository that deploys to the org (`deploymentRepository`) and opens it in a new VS Code window, or invites you to set it so that [coding agents](https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/#ask-questions-with-a-coding-agent) can search it too.
 - Deployment actions, pipeline settings and monitoring settings are written in YAML that MegaLinter leaves alone, so saving an action no longer brings a "chore(megalinter): apply linters fixes" commit onto the branch of its Pull Request.
 - Backpromote (Beta): a scratch org is named by its alias in the panel, not by its org id.
 - Pipeline Settings: [promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta) gain `promotionConflictMarkersIgnoredFiles`, the files allowed to hold git conflict markers.
