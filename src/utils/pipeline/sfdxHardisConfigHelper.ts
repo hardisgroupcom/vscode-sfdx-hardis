@@ -665,7 +665,11 @@ export class SfdxHardisConfigHelper {
         await fs.promises.readFile(globalPath, "utf8"),
       ) as SfdxHardisConfig) || {};
     const merged: SfdxHardisConfig = { ...configFileConfig, ...rootConfig };
-    await fs.promises.writeFile(rootConfigPath, dumpRepositoryYaml(merged), "utf8");
+    await fs.promises.writeFile(
+      rootConfigPath,
+      dumpRepositoryYaml(merged),
+      "utf8",
+    );
     await fs.promises.rm(globalPath, { recursive: true, force: true });
     vscode.window.showInformationMessage(t("duplicateConfigFilesMergeSuccess"));
   }
