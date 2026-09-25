@@ -279,8 +279,7 @@ async function openRepositoryInNewWindow(repositoryUrl: string) {
         return;
       }
     }
-  }
-  else {
+  } else {
     const cloneLabel = t("deploymentRepositoryClone");
     const confirm = await vscode.window.showInformationMessage(
       t("deploymentRepositoryCloneConfirm", {
