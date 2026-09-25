@@ -509,10 +509,12 @@ async function main() {
               // base universe, unchanged.
               SF_MOCK_UNIVERSE: universeName,
               SF_MOCK_UNIVERSE_DIR: universeDir,
-              // Feature branch the contribution cards are captured from
-              SFDX_HARDIS_DOC_SCREENSHOTS_BRANCH: universe
-                ? universe.featureBranch || ""
-                : "",
+              // Feature branch the contribution cards are captured from. A
+              // capture can name its own, like the Level 1 story of a fresh
+              // pipeline.
+              SFDX_HARDIS_DOC_SCREENSHOTS_BRANCH:
+                process.env.SFDX_HARDIS_DOC_SCREENSHOTS_BRANCH ||
+                (universe ? universe.featureBranch || "" : ""),
               // What the capture script matches on to find the window
               SFDX_HARDIS_DOC_SCREENSHOTS_TITLE: workspaceName,
               SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION: promotionVariant
