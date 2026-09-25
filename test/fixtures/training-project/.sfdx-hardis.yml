@@ -135,6 +135,13 @@ customCommands:
         tooltip: Checks the whole of level 1, then opens the badge claim form with your answers already in it
         command: node scripts/training.mjs claim --level 1
         helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/badges/
+      - id: training-l1-update
+        label: Update my course
+        vscodeIcon: sync
+        sldsIcon: utility:sync
+        tooltip: Brings the changes the course received since you forked it, through a Pull Request into integration
+        command: node scripts/training.mjs update
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/help/#when-the-course-changed-after-you-forked
       - id: training-l1-reset
         label: Reset this level
         vscodeIcon: debug-restart
@@ -192,6 +199,13 @@ customCommands:
         tooltip: Checks the whole of level 2, then opens the badge claim form with your answers already in it
         command: node scripts/training.mjs claim --level 2
         helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/badges/
+      - id: training-l2-update
+        label: Update my course
+        vscodeIcon: sync
+        sldsIcon: utility:sync
+        tooltip: Brings the changes the course received since you forked it, through a Pull Request into integration
+        command: node scripts/training.mjs update
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/help/#when-the-course-changed-after-you-forked
       - id: training-l2-reset
         label: Reset this level
         vscodeIcon: debug-restart
@@ -256,6 +270,13 @@ customCommands:
         tooltip: Checks the whole of level 3, then opens the badge claim form with your answers already in it
         command: node scripts/training.mjs claim --level 3
         helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/badges/
+      - id: training-l3-update
+        label: Update my course
+        vscodeIcon: sync
+        sldsIcon: utility:sync
+        tooltip: Brings the changes the course received since you forked it, through a Pull Request into integration
+        command: node scripts/training.mjs update
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/help/#when-the-course-changed-after-you-forked
       - id: training-l3-reset
         label: Reset this level
         vscodeIcon: debug-restart

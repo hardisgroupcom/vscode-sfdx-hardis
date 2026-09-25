@@ -57,7 +57,11 @@ export const BACKPROMOTE_DIFF_CHOICES: BackpromoteDiffChoice[] = [
 ];
 
 export type BackpromoteComparisonStatus =
-  "same" | "different" | "missingInOrg" | "pendingInOrg" | "notCompared";
+  | "same"
+  | "different"
+  | "missingInOrg"
+  | "pendingInOrg"
+  | "notCompared";
 
 export interface BackpromoteLeftOutItem {
   key: string;
@@ -1714,12 +1718,17 @@ export function getBackpromoteErrorMessage(result: any): string {
 /**
  * Short name of the target sandbox for the panel: the `sandboxName` of the plan, else the
  * short host of its instance URL (the label of the status bar badge), else its username.
+ * A scratch org has no sandbox name, and sfdx-hardis puts its org id there: its alias is
+ * the name its owner knows it by.
  */
 export function getTargetOrgDisplayName(
   targetOrg: Partial<BackpromotePlan["targetOrg"]> | null | undefined,
 ): string {
   if (!targetOrg) {
     return "";
+  }
+  if (targetOrg.orgType === "scratch" && targetOrg.alias) {
+    return targetOrg.alias;
   }
   if (targetOrg.sandboxName) {
     return targetOrg.sandboxName;

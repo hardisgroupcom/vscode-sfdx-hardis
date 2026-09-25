@@ -1,4 +1,4 @@
-import { execFileSync, execSync, spawn } from "child_process";
+import { execFileSync, execSync, spawn, spawnSync } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
@@ -301,10 +301,22 @@ function checkoutWorkspaceBranch(branchName: string): void {
   if (!workspaceRoot) {
     throw new Error("No workspace folder to check out a branch in");
   }
-  execFileSync("git", ["checkout", "-q", branchName], {
-    cwd: workspaceRoot,
-    stdio: "pipe",
-  });
+  // A fresh pipeline has no feature branch at all: the learner of Level 1 has
+  // just made their first one, with no Pull Request yet, so it is made here
+  const fresh = (process.env.SF_MOCK_PIPELINE_STATE || "").startsWith("fresh");
+  const branchExists =
+    spawnSync("git", ["rev-parse", "--verify", "-q", branchName], {
+      cwd: workspaceRoot,
+      stdio: "pipe",
+    }).status === 0;
+  execFileSync(
+    "git",
+    ["checkout", "-q", ...(fresh && !branchExists ? ["-b"] : []), branchName],
+    {
+      cwd: workspaceRoot,
+      stdio: "pipe",
+    },
+  );
 }
 
 /**

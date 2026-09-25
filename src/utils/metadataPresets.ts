@@ -4,6 +4,7 @@ import * as path from "path";
 import * as yaml from "js-yaml";
 import { Logger } from "../logger";
 import { getMetadataTypes } from "./metadataTypes";
+import { dumpRepositoryYaml } from "./yamlUtils";
 import {
   readSfdxHardisConfig,
   loadExtensionSettingsSfdxHardisConfiguration,
@@ -328,10 +329,9 @@ function buildDefaultPresetsYamlBlock(): string {
     description: preset.description,
     types: preset.types,
   }));
-  const yamlBody = yaml.dump(
-    { [METADATA_PRESETS_CONFIG_KEY]: presets },
-    { lineWidth: 120 },
-  );
+  const yamlBody = dumpRepositoryYaml({
+    [METADATA_PRESETS_CONFIG_KEY]: presets,
+  });
   return [
     "",
     "# Metadata Retriever presets: query several metadata types at once.",
