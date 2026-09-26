@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [8.8.1] 2026-09-26
+
 - Org Monitoring: in a monitoring repository, the panel shows the CI/CD repository that deploys to the org (`deploymentRepository`) and opens it in a new VS Code window, or invites you to set it so that [coding agents](https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/#ask-questions-with-a-coding-agent) can search it too.
 - Saving documentation settings or an org color no longer overwrites a `.sfdx-hardis.yml` that has a YAML syntax error: the save fails and names the file to fix.
 - Deployment actions, pipeline settings and monitoring settings are written in YAML that MegaLinter leaves alone, so saving an action no longer brings a "chore(megalinter): apply linters fixes" commit onto the branch of its Pull Request.
