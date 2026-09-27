@@ -1488,7 +1488,6 @@
   "metadataDeployedOnlyIfNotExisting": "Lijst van metadata die alleen wordt geïmplementeerd als deze nog niet aanwezig is in de doelorg",
   "metadataDeps": "Metadata-afhankelijkheden (gebruikt door)",
   "metadataDepsDescription": "Zoek welke metadatacomponenten een geselecteerde Apex-klasse, Flow, custom field of ander Tooling-type gebruiken, en exporteer een CSV/Excel-rapport.",
-  "metadataDepsTooltip": "Zoek welke metadatacomponenten een geselecteerde Apex-klasse, Flow, custom field of ander Tooling-type gebruiken, en exporteer een CSV/Excel-rapport.",
   "metadataNameLabel": "Naam",
   "metadataNamePlaceholder": "bijv. MyClass, Account",
   "metadataPresetLabel": "Metadata-preset",

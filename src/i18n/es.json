@@ -1488,7 +1488,6 @@
   "metadataDeployedOnlyIfNotExisting": "Lista de metadatos que se desplegarán solo si no existen ya en la org destino",
   "metadataDeps": "Dependencias de metadatos (usado por)",
   "metadataDepsDescription": "Identifique qué componentes de metadatos usan una clase Apex, un Flow, un campo personalizado u otro tipo Tooling seleccionado, y exporte un informe CSV/Excel.",
-  "metadataDepsTooltip": "Identifique qué componentes de metadatos usan una clase Apex, un Flow, un campo personalizado u otro tipo Tooling seleccionado, y exporte un informe CSV/Excel.",
   "metadataNameLabel": "Nombre del metadato",
   "metadataNamePlaceholder": "p. ej., MyClass, Account",
   "metadataPresetLabel": "Preajuste de metadatos",

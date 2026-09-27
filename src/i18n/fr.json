@@ -1488,7 +1488,6 @@
   "metadataDeployedOnlyIfNotExisting": "Liste des métadonnées qui seront déployées uniquement si elles n'existent pas encore dans l'org cible",
   "metadataDeps": "Dépendances de métadonnées (utilisé par)",
   "metadataDepsDescription": "Identifiez les composants de métadonnées qui utilisent une classe Apex, un Flow, un champ personnalisé ou un autre type Tooling sélectionné, puis exportez un rapport CSV/Excel.",
-  "metadataDepsTooltip": "Identifiez les composants de métadonnées qui utilisent une classe Apex, un Flow, un champ personnalisé ou un autre type Tooling sélectionné, puis exportez un rapport CSV/Excel.",
   "metadataNameLabel": "Nom de la métadonnée",
   "metadataNamePlaceholder": "ex. MyClass, Account",
   "metadataPresetLabel": "Présélection de métadonnées",

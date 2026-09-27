@@ -1488,7 +1488,6 @@
   "metadataDeployedOnlyIfNotExisting": "Liste der Metadaten, die nur bereitgestellt werden, wenn sie in der Ziel-Org noch nicht vorhanden sind",
   "metadataDeps": "Metadaten-Abhängigkeiten (verwendet von)",
   "metadataDepsDescription": "Ermitteln Sie, welche Metadatenkomponenten eine ausgewählte Apex-Klasse, einen Flow, ein benutzerdefiniertes Feld oder einen anderen Tooling-Typ verwenden, und exportieren Sie einen CSV-/Excel-Bericht.",
-  "metadataDepsTooltip": "Ermitteln Sie, welche Metadatenkomponenten eine ausgewählte Apex-Klasse, einen Flow, ein benutzerdefiniertes Feld oder einen anderen Tooling-Typ verwenden, und exportieren Sie einen CSV-/Excel-Bericht.",
   "metadataNameLabel": "Metadatenname",
   "metadataNamePlaceholder": "z. B. MyClass, Account",
   "metadataPresetLabel": "Metadaten-Voreinstellung",
