@@ -84,18 +84,35 @@ export function extractMember(source: string, signature: string): string {
     start > -1,
     `member not found in the component source: ${signature}`,
   );
+  return source.slice(start + 1, endOfBlock(source, start, signature) + 1);
+}
+
+/**
+ * Lifts a top-level function out of an LWC component source, the way
+ * extractMember lifts a class member. A component computing one thing in one
+ * place, so its pills and its row actions cannot disagree, does it outside the
+ * class, and that helper is worth a test of its own.
+ * @param source the component source, read with readModuleFile
+ * @param name the function name, ex: "orgConnectionState"
+ */
+export function extractFunction(source: string, name: string): string {
+  const start = source.indexOf(`function ${name}(`);
+  assert.ok(start > -1, `function not found in the component source: ${name}`);
+  return source.slice(start, endOfBlock(source, start, name) + 1);
+}
+
+/** The index of the brace closing the first block opened after `start`. */
+function endOfBlock(source: string, start: number, what: string): number {
   const open = source.indexOf("{", start);
   let depth = 0;
-  let index = open;
-  for (; index < source.length; index++) {
+  for (let index = open; index < source.length; index++) {
     if (source[index] === "{") {
       depth++;
     } else if (source[index] === "}" && --depth === 0) {
-      break;
+      return index;
     }
   }
-  assert.ok(depth === 0, `unbalanced braces while reading ${signature}`);
-  return source.slice(start + 1, open) + source.slice(open, index + 1);
+  return assert.fail(`unbalanced braces while reading ${what}`);
 }
 
 /**

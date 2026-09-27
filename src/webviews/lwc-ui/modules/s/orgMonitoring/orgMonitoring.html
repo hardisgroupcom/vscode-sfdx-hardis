@@ -140,6 +140,41 @@
                                     ></lightning-button>
                                 </div>
                             </template>
+                            <template if:true={deploymentRepository}>
+                                <div class="instance-url-row">
+                                    <span class="slds-text-title_bold instance-url-label">{i18n.deploymentRepositoryLabel}</span>
+                                    <lightning-button
+                                        variant="base"
+                                        label={deploymentRepository}
+                                        title={i18n.openDeploymentRepositoryTooltip}
+                                        icon-name="utility:new_window"
+                                        icon-position="right"
+                                        onclick={openDeploymentRepository}
+                                        class="instance-url-button"
+                                    ></lightning-button>
+                                    <lightning-button-icon
+                                        icon-name="utility:edit"
+                                        variant="bare"
+                                        alternative-text={i18n.changeDeploymentRepository}
+                                        title={i18n.changeDeploymentRepository}
+                                        onclick={setDeploymentRepository}
+                                    ></lightning-button-icon>
+                                </div>
+                            </template>
+                            <template if:false={deploymentRepository}>
+                                <div class="hardis-note deployment-repository-note">
+                                    <lightning-icon icon-name="utility:link" size="x-small"></lightning-icon>
+                                    <p>{i18n.deploymentRepositoryMissing}</p>
+                                    <lightning-button
+                                        variant="neutral"
+                                        class="hardis-btn-tinted-blue"
+                                        label={i18n.setDeploymentRepository}
+                                        title={i18n.setDeploymentRepositoryTooltip}
+                                        icon-name="utility:link"
+                                        onclick={setDeploymentRepository}
+                                    ></lightning-button>
+                                </div>
+                            </template>
                         </div>
                     </div>
                 </template>

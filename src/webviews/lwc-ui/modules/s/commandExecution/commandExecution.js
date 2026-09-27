@@ -93,6 +93,8 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
   @track lastQueryLogId = null;
   // sfdx-hardis query id -> id of the log line showing that query (structured query events)
   queryLogIds = {};
+  // Set by the commandLabel WebSocket event, when a command names itself
+  @track commandLabel = null;
   @track detailsMode = "simple"; // 'advanced' or 'simple'
   @track currentProgressSection = null; // Track current progress section
   readyMessageSent = false;
@@ -434,6 +436,13 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
           }
         } else {
           this.addLogLine(data);
+        }
+        break;
+      case "setCommandLabel":
+        // The command named itself: what it says replaces the command line in
+        // the header, and the command line becomes the tooltip
+        if (data && typeof data.label === "string" && data.label.trim()) {
+          this.commandLabel = data.label.trim();
         }
         break;
       case "addSubCommandStart":
@@ -1501,10 +1510,12 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
         subCommandId: subCommand.id,
       });
     });
-
-    if (!subCommandData.success) {
-      this.hasError = true;
-    }
+    // A failed sub-command is shown red on its own row and decides nothing about
+    // the run: sfdx-hardis runs plenty of commands it expects to fail and goes on
+    // (a git cherry-pick that conflicts and is committed on purpose by
+    // hardis:project:promotion:create, an org lookup that answers "not found").
+    // The status pill follows the command's own completion status, which is
+    // what the CLI reports when it exits.
   }
 
   replaceSubCommandLog(subCommandId, newLogData) {
@@ -1650,12 +1661,30 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     }
   }
 
-  // Raw command name for the header title (status lives in the pill, not here)
+  // Header title: the command line, unless the command named itself through the
+  // commandLabel event. Status lives in the pill, not here.
   get commandName() {
+    if (this.commandLabel) {
+      return this.commandLabel;
+    }
     if (!this.commandContext || !this.commandContext.command) {
       return this.i18n.commandExecution;
     }
     return this.commandContext.command;
+  }
+
+  // Tooltip of the header title. When a label took the title's place, this is
+  // where what actually runs stays readable; otherwise it repeats the title,
+  // as it always did.
+  get commandNameTooltip() {
+    if (!this.commandLabel || !this.commandContext) {
+      return this.commandName;
+    }
+    return (
+      this.commandContext.commandLine ||
+      this.commandContext.command ||
+      this.commandName
+    );
   }
 
   // Status pill (hardis-pill kit): orange starting, blue running, green

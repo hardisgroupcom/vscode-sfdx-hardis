@@ -125,3 +125,29 @@ export function findUpwardsFromExecutable(
   }
   return null;
 }
+
+/**
+ * Where the worker bundle really is.
+ *
+ * webpack writes it as `out/worker.js`, next to the extension bundle, and the
+ * code that loads it used to resolve it as `__dirname/worker.js`. That is right
+ * for the bundle, whose `__dirname` is `out`, and wrong for a tsc build, where
+ * this module lives in `out/utils` and the same expression points at
+ * `out/utils/worker.js`, which nothing ever writes. Both builds write
+ * `out/extension.js`, so whichever of `yarn dev` and `yarn compile` runs last
+ * decides which one VS Code loads, and a tsc-last build lost the worker without
+ * saying anything but a log line: every command then spawned its own CLI.
+ *
+ * Returns the path, or null when there is genuinely no worker to run.
+ */
+export function findWorkerScript(fromDir: string): string | null {
+  for (const candidate of [
+    path.join(fromDir, "worker.js"),
+    path.join(fromDir, "..", "worker.js"),
+  ]) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
+}

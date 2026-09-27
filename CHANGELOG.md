@@ -3,6 +3,33 @@
 ## Unreleased
 
 - Add **Metadata dependencies (used by)** on the Org Monitoring page and in the Commands menu: find which metadata components use a selected Apex class, Flow, custom field or other Tooling type, then export a CSV/Excel report
+- Training screenshots: the Helios project carries the default package-no-overwrite.xml, as the course repository now does.
+- Deployment actions: the SFDMU workspace list shows the label of every workspace, including one labelled like its folder, which read "Label not defined in export.json".
+
+## [8.8.1] 2026-09-26
+
+- Org Monitoring: in a monitoring repository, the panel shows the CI/CD repository that deploys to the org (`deploymentRepository`) and opens it in a new VS Code window, or invites you to set it so that [coding agents](https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/#ask-questions-with-a-coding-agent) can search it too.
+- Saving documentation settings or an org color no longer overwrites a `.sfdx-hardis.yml` that has a YAML syntax error: the save fails and names the file to fix.
+- Deployment actions, pipeline settings and monitoring settings are written in YAML that MegaLinter leaves alone, so saving an action no longer brings a "chore(megalinter): apply linters fixes" commit onto the branch of its Pull Request.
+- Backpromote (Beta): a scratch org is named by its alias in the panel, not by its org id.
+- Pipeline Settings: [promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta) gain `promotionConflictMarkersIgnoredFiles`, the files allowed to hold git conflict markers.
+- Command execution panel: a sub-command that fails no longer marks a run that completed successfully as Failed. A promotion assembled with a cherry-pick conflict committed on purpose read Failed next to its own "Command success" line.
+- README: Level 3 of the [sfdx-hardis training](https://hardisgroupcom.github.io/sfdx-hardis-training/) now has 11 labs, with the new lab on promotion branches.
+- Documentation screenshots: the promotion conflict shown in the editor is the block git really writes, not a simplified one.
+
+## [8.8.0] 2026-09-23
+
+- Org Manager: a scratch org no longer reads as disconnected. `sf org list` never probes one, it asks its Dev Hub, and the panel only looked at the probe, so every scratch org lost its **Open** action and was offered **Reconnect** instead.
+- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) are no longer experimental: the DevOps Pipeline buttons, the Pipeline Settings and the README now read Beta.
+
+## [8.7.2] 2026-09-22
+
+- A panel or a tree reading data in the background no longer opens a command execution tab. The DevOps Pipeline opened one for `hardis:project:function:list` on every click and every refresh.
+
+## [8.7.1] 2026-09-22
+
+- Command execution panel: a command can name itself through the new `commandLabel` WebSocket event. The label takes the place of the command line in the header and the command line becomes its tooltip, so a training command reads as "Set up my training environment" instead of `training.mjs init`. Commands that do not send it are unchanged.
+- The first training command a person runs switches Advanced details on, so a learner sees the steps rather than a folded summary. It happens once: from then on the setting is theirs and the panel reads it as usual.
 - Dependencies panel and Setup panel: check that the SFDX Hardis extension itself runs its latest published version, and offer to update it. A preview build more recent than the latest release is not reported.
 
 ## [8.7.0] 2026-09-20

@@ -6,7 +6,7 @@
 <!-- The VS Code installs badge is hardcoded: no live badge service exposes the Marketplace install count anymore, so its value is refreshed by the daily Pull Request of .github/workflows/update-badges.yml -->
 
 [![Visual Studio Marketplace Version](https://img.shields.io/github/v/release/hardisgroupcom/vscode-sfdx-hardis?label=VS%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
-[![Visual Studio Marketplace Installs](https://img.shields.io/badge/VS%20Code%20installs-14.7k-blue)](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
+[![Visual Studio Marketplace Installs](https://img.shields.io/badge/VS%20Code%20installs-14.8k-blue)](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 [![Open VSX Downloads](https://img.shields.io/open-vsx/dt/NicolasVuillamy/vscode-sfdx-hardis?label=Open%20VSX%20installs)](https://open-vsx.org/extension/NicolasVuillamy/vscode-sfdx-hardis)
 [![Tests](https://img.shields.io/github/actions/workflow/status/hardisgroupcom/vscode-sfdx-hardis/test.yml?branch=main&label=Tests)](https://github.com/hardisgroupcom/vscode-sfdx-hardis/actions/workflows/test.yml)
 [![Mega-Linter](https://img.shields.io/github/actions/workflow/status/hardisgroupcom/vscode-sfdx-hardis/mega-linter.yml?branch=main&label=Mega-Linter)](https://megalinter.io)
@@ -34,7 +34,7 @@ Built and maintained by [**Cloudity**](https://cloudity.com/?ref=sfdxhardis) and
   - [Orgs Manager](#orgs-manager)
   - [DevOps Pipeline (CI/CD)](#devops-pipeline-cicd)
   - [User Story workflow](#user-story-workflow)
-  - [Promotion branches (experimental)](#promotion-branches-experimental)
+  - [Promotion branches (Beta)](#promotion-branches-beta)
   - [Backpromote (Beta)](#backpromote-beta)
   - [Metadata Retriever](#metadata-retriever)
   - [Data Workbench (SFDMU)](#data-workbench-sfdmu)
@@ -120,7 +120,7 @@ The only requirement is the same as for VS Code: the IDE must be able to run the
 
 - [Level 1 - Contributor basics](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/): 7 labs, from your first User Story to a merged Pull Request
 - [Level 2 - Contributor advanced](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/): 9 labs, deployment errors, deployment actions, code quality, conflicts
-- [Level 3 - Release Manager](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/): 10 labs, the pipeline up to production, releases, hotfixes, monitoring
+- [Level 3 - Release Manager](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/): 11 labs, the pipeline up to production, releases, hotfixes, monitoring
 
 <!-- training-links:end -->
 
@@ -158,7 +158,7 @@ Designed for consultant profiles: **start a user story → work in the org → s
 - [Pull from org](https://sfdx-hardis.cloudity.com/hardis/scratch/pull/) - retrieves only what you actually changed.
 - [Save / publish](https://sfdx-hardis.cloudity.com/hardis/work/save/) - cleans sources, commits, and opens the merge request.
 
-### Promotion branches (experimental)
+### Promotion branches (Beta)
 
 Ship the approved User Stories of a branch without waiting for the rest of the window.
 Open a major branch in the DevOps Pipeline, tick the stories business signed off, and click **Create promotion**: the branch is assembled by cherry-pick, its Pull Request declares what it carries, and the deployment jobs give those stories their deployment actions, Apex test classes and tickets as if they had been merged directly.

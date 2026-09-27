@@ -2,7 +2,7 @@
   "name": "vscode-sfdx-hardis",
   "displayName": "SFDX Hardis by Cloudity",
   "description": "Handle Salesforce DX and Git without knowing Salesforce DX or Git !",
-  "version": "8.7.0",
+  "version": "8.8.1",
   "preview": false,
   "icon": "resources/sfdx-hardis-logo-square.png",
   "publisher": "NicolasVuillamy",
@@ -720,6 +720,7 @@
     "test": "node ./out/test/runTest.js",
     "test:ui": "node ./out/test/runUiTest.js",
     "test:ui:perf": "node ./out/test/runUiTest.js --real-cli-perf",
+    "test:ui:labs": "node ./out/test/runUiTest.js --labs",
     "screenshots": "node ./scripts/take-doc-screenshots.js",
     "vsix": "vsce package --allow-package-secrets github"
   },

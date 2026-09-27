@@ -421,6 +421,48 @@ export class CommandRunner {
   }
 
   /**
+   * Switches "Advanced details" on the first time somebody runs a training
+   * command, and never again.
+   *
+   * A learner watching their first command run should see what it is doing;
+   * the folded summary is for people who already know. After this the setting
+   * is theirs: it has a value, so this does nothing on every later run and the
+   * panel simply reads the configuration, including when they switch it off.
+   *
+   * "Never chosen" is read from the setting itself rather than from a flag of
+   * our own: `inspect` tells us whether a value was ever written, at any scope.
+   * There is nothing to keep in sync and nothing to reset.
+   */
+  private async turnOnCommandDetailsForFirstTraining(): Promise<void> {
+    try {
+      const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+      const current = config.inspect<boolean>("showCommandsDetails");
+      const chosenAlready =
+        current?.globalValue !== undefined ||
+        current?.workspaceValue !== undefined ||
+        current?.workspaceFolderValue !== undefined;
+      if (chosenAlready) {
+        return;
+      }
+      await config.update(
+        "showCommandsDetails",
+        true,
+        vscode.ConfigurationTarget.Global,
+      );
+      Logger.log(
+        "First training command: switched Advanced details on, so the steps are visible. The setting is now the user's.",
+      );
+    } catch (error) {
+      // A preference that could not be written is not a reason to not run the
+      // command the person asked for
+      Logger.log(
+        "Could not switch Advanced details on for the first training command: " +
+          String(error),
+      );
+    }
+  }
+
+  /**
    * Waits until the local WebSocket server is listening (bounded by a timeout)
    * so that commands clicked right after activation are not rejected with
    * "not initialized yet" while the server binds its port.
@@ -624,6 +666,9 @@ export class CommandRunner {
     // its script talks to the panel the way the CLI does; without it, it still
     // runs and only prints.
     const isTrainingCommand = isTrainingPanelCommand(preprocessedCommand);
+    if (isTrainingCommand) {
+      void this.turnOnCommandDetailsForFirstTraining();
+    }
     const trainingWebSocketHostPort = isTrainingCommand
       ? this.commandsInstance?.disposableWebSocketServer?.websocketHostPort
       : null;

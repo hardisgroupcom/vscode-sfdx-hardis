@@ -14,6 +14,7 @@ import { resetSfdxHardisConfigCache } from "./utils/sfdx-hardis-config-utils";
 import { getJson, postJson } from "./utils/httpUtils";
 import { applySfPerformanceEnv } from "./utils/sfPerformanceUtils";
 import { tryRunSfCommandInProcess } from "./utils/sfCoreInProcess";
+import { findWorkerScript } from "./utils/executableUtils";
 import {
   InstalledPluginInfo,
   PluginInstallKind,
@@ -399,7 +400,7 @@ export function isMultithreadActive() {
   const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
   if (
     config?.enableMultithread === true &&
-    fs.existsSync(path.join(__dirname, "worker.js"))
+    findWorkerScript(__dirname) !== null
   ) {
     MULTITHREAD_ACTIVE = true;
     return true;
@@ -431,7 +432,7 @@ export async function execShell(
   try {
     if (isMultithreadActive()) {
       if (!sharedWorker) {
-        sharedWorker = new Worker(path.join(__dirname, "worker.js"));
+        sharedWorker = new Worker(findWorkerScript(__dirname) as string);
         sharedWorker.on("message", (result: any) => {
           const reqId = result && result.requestId;
           if (!reqId || !sharedWorkerCallbacks.has(reqId)) {
@@ -729,11 +730,20 @@ export async function execCommand(
   let commandResult: any;
   // Build a per-call env copy; set FORCE_COLOR=0 here so the child process
   // never emits ANSI codes without mutating the global process.env.
+  // NO_NEW_COMMAND_TAB: everything running through execCommand is a background call a panel
+  // or a tree makes to feed itself (commands the user starts go through CommandRunner), so
+  // sfdx-hardis must not open a command execution tab for it. Without it, a panel that reads
+  // a `sf hardis:... --json` catalog on every refresh opens a tab on every refresh.
   const execOptions: any = {
     maxBuffer: 10000 * 10000,
     cwd: options.cwd || vscode.workspace.rootPath,
     env: applySfPerformanceEnv(
-      { ...process.env, ...(options.env || {}), FORCE_COLOR: "0" },
+      {
+        ...process.env,
+        ...(options.env || {}),
+        FORCE_COLOR: "0",
+        NO_NEW_COMMAND_TAB: "true",
+      },
       command,
     ),
   };

@@ -10,7 +10,15 @@ function orgConnectionState(org) {
     return "pending";
   }
   const status = (org.connectedStatus || "").toString().toLowerCase();
-  return status.match(/connected|authorized/) ? "connected" : "disconnected";
+  if (status) {
+    return status.match(/connected|authorized/) ? "connected" : "disconnected";
+  }
+  // A scratch org is never probed: `sf org list` asks its Dev Hub instead, and
+  // the answer lands in `status`, not in `connectedStatus`. Without this every
+  // scratch org reads as disconnected while the CLI shows it Active, and its
+  // Open action is replaced by Reconnect.
+  const scratchStatus = (org.status || "").toString().toLowerCase();
+  return scratchStatus === "active" ? "connected" : "disconnected";
 }
 
 export default class OrgManager extends SharedMixin(LightningElement) {

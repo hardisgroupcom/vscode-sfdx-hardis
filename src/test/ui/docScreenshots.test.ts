@@ -1,4 +1,4 @@
-import { execFileSync, execSync, spawn } from "child_process";
+import { execFileSync, execSync, spawn, spawnSync } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
@@ -301,10 +301,22 @@ function checkoutWorkspaceBranch(branchName: string): void {
   if (!workspaceRoot) {
     throw new Error("No workspace folder to check out a branch in");
   }
-  execFileSync("git", ["checkout", "-q", branchName], {
-    cwd: workspaceRoot,
-    stdio: "pipe",
-  });
+  // A fresh pipeline has no feature branch at all: the learner of Level 1 has
+  // just made their first one, with no Pull Request yet, so it is made here
+  const fresh = (process.env.SF_MOCK_PIPELINE_STATE || "").startsWith("fresh");
+  const branchExists =
+    spawnSync("git", ["rev-parse", "--verify", "-q", branchName], {
+      cwd: workspaceRoot,
+      stdio: "pipe",
+    }).status === 0;
+  execFileSync(
+    "git",
+    ["checkout", "-q", ...(fresh && !branchExists ? ["-b"] : []), branchName],
+    {
+      cwd: workspaceRoot,
+      stdio: "pipe",
+    },
+  );
 }
 
 /**
@@ -326,6 +338,24 @@ function universeSetting(key: string): string | null {
   } catch {
     return null;
   }
+}
+
+/** "x,y" from a universe setting, with a fallback when it says nothing usable */
+function parsePoint(
+  raw: string | null,
+  fallbackX: number,
+  fallbackY: number,
+): { x: number; y: number } {
+  // Number("") is 0, not NaN, so a missing setting would silently click the
+  // left edge of the window instead of falling back to the point below
+  const [x, y] = (raw || "").split(",").map((part) => {
+    const text = part.trim();
+    return text === "" ? Number.NaN : Number(text);
+  });
+  return {
+    x: Number.isFinite(x) ? x : fallbackX,
+    y: Number.isFinite(y) ? y : fallbackY,
+  };
 }
 
 const BRANCH_NODE = (() => {
@@ -353,26 +383,115 @@ const FEATURE_BRANCH =
  * Promotion branches variant of the run (SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION):
  * enablePromotionBranches is on in the workspace config and the git provider
  * fixture holds the uat window and the open promotion to preprod. The feature is
- * experimental and off by default, so its shots are taken apart rather than
+ * in Beta and off by default, so its shots are taken apart rather than
  * changing every pipeline screenshot of the documentation.
  */
 const PROMOTION_VARIANT =
   process.env.SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION === "true";
-/** uat branch node of the diagram, in the coordinates of the captured PNG */
-const PROMOTION_UAT_NODE = { x: 1097, y: 366 };
-/** Promotion branch of the fixture, source of the open promotion #130 */
-const PROMOTION_BRANCH = "promotion/uat/preprod/2026-08-20-0930";
 /**
- * Checkboxes of the two approved User Stories of the uat window (#115 and
- * #113): the same two the promotion of the fixture carries, so the branch
- * window and the promotion Pull Request screenshots tell one story.
+ * uat branch node of the diagram, in the coordinates of the captured PNG.
+ * Mermaid lays it out from the branches the fixture carries, so a universe
+ * names its own point through `promotionNode` in its universe.json.
  */
-const PROMOTION_TICKED_ROWS = [
-  { x: 512, y: 422 },
-  { x: 512, y: 500 },
-];
+const PROMOTION_UAT_NODE = parsePoint(
+  universeSetting("promotionNode"),
+  1097,
+  366,
+);
+/** Promotion branch of the fixture, source of the open promotion it carries */
+const PROMOTION_BRANCH =
+  universeSetting("promotionBranch") || "promotion/uat/preprod/2026-08-20-0930";
+/**
+ * Checkboxes of the approved User Stories of the uat window (#115 and #113 in
+ * the base fixture): the same ones the promotion of the fixture carries, so the
+ * branch window and the promotion Pull Request screenshots tell one story. A
+ * universe with a different number of rows names its own through
+ * `promotionRows`, as "x,y;x,y".
+ */
+const PROMOTION_TICKED_ROWS = (
+  universeSetting("promotionRows") || "512,422;512,500"
+)
+  .split(";")
+  .map((pair) => parsePoint(pair, 512, 422));
 const PROMOTION_MODAL_CLOSE = { x: 1843, y: 78 };
 const PIPELINE_ACTIONS_DEEP_LINK = { focus: "deploymentActions" };
+/**
+ * The commits the selection prompt of hardis:project:promotion:create is
+ * answered with: the ones of the stories the scenario says the panel ticked,
+ * read from the universe overlay when it carries the scenario, else the two of
+ * the base universe (PR 113 and PR 115 of the promotion documentation).
+ */
+function promotionSelectedCommits(): string[] {
+  const dir = process.env.SF_MOCK_UNIVERSE_DIR;
+  if (dir) {
+    try {
+      const overlay = JSON.parse(
+        fs.readFileSync(path.join(dir, "sf-mock-overlay.json"), "utf8"),
+      );
+      const scenario = overlay?.scenario?.promotionCreate;
+      if (scenario?.candidates && scenario?.selected) {
+        return scenario.candidates
+          .filter((c: any) => scenario.selected.includes(c.number))
+          .map((c: any) => c.commit);
+      }
+    } catch {
+      // No overlay, or an unreadable one: the base universe's answer below
+    }
+  }
+  return ["7c41ab9", "2f90d34"];
+}
+/**
+ * A layout as hardis:project:promotion:create commits it when a cherry-pick
+ * conflicts and the answer is to keep the markers: the target side is empty,
+ * the story side brings its own item with the one it was written under. The
+ * base universe's stand-in for the conflict editor shot; a universe ships its
+ * own files under promotion-conflict/.
+ *
+ * Cut where git cuts it, not on an element boundary: the <layoutItems> and
+ * <behavior> lines that open the first incoming row also open the row that
+ * follows on the target, so git keeps them above the markers, and the incoming
+ * side runs from the first field to the opening lines of the row after the
+ * last one. Proven on a real promotion on 2026-09-24.
+ */
+const DEFAULT_CONFLICT_SAMPLE = [
+  '<?xml version="1.0" encoding="UTF-8"?>',
+  '<Layout xmlns="http://soap.sforce.com/2006/04/metadata">',
+  "    <layoutSections>",
+  "        <customLabel>false</customLabel>",
+  "        <detailHeading>false</detailHeading>",
+  "        <editHeading>true</editHeading>",
+  "        <label>Information</label>",
+  "        <layoutColumns>",
+  "            <layoutItems>",
+  "                <behavior>Required</behavior>",
+  "                <field>Name</field>",
+  "            </layoutItems>",
+  "            <layoutItems>",
+  "                <behavior>Edit</behavior>",
+  "                <field>StartDate</field>",
+  "            </layoutItems>",
+  "            <layoutItems>",
+  "                <behavior>Edit</behavior>",
+  "<<<<<<< HEAD",
+  "=======",
+  "                <field>Pricing_Rule__c</field>",
+  "            </layoutItems>",
+  "            <layoutItems>",
+  "                <behavior>Edit</behavior>",
+  "                <field>Appointment_Slot__c</field>",
+  "            </layoutItems>",
+  "            <layoutItems>",
+  "                <behavior>Edit</behavior>",
+  ">>>>>>> 2f90d34 (CRM-1012 Service appointment scheduler (#115))",
+  "                <field>ContractTerm</field>",
+  "            </layoutItems>",
+  "        </layoutColumns>",
+  "        <layoutColumns/>",
+  "        <style>TwoColumnsTopToBottom</style>",
+  "    </layoutSections>",
+  "</Layout>",
+  "",
+].join("\n");
 
 /**
  * Records the window while `scenario` drives the UI, into
@@ -705,8 +824,8 @@ suite("Documentation screenshots", function () {
   // The two menus of the DevOps Pipeline header, opened, then the package
   // viewer each entry of the second one opens. The course sends learners to
   // manifest/package.xml through this viewer, never through the Explorer, and
-  // creates package-no-overwrite.xml from it (the viewer shows a missing one
-  // empty, and its first Add writes it).
+  // adds a type to package-no-overwrite.xml from it. In the training fixture the
+  // list is the sfdx-hardis default minus RemoteSiteSetting, which Lab 3.5 adds.
   test("pipeline: header menus and package viewer", async function () {
     if (!shouldTake("pipeline-menus")) {
       this.skip();
@@ -768,6 +887,63 @@ suite("Documentation screenshots", function () {
     await sleep(1200);
     await captureStable("package-no-overwrite-add-type");
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+  });
+
+  // Training Labs 2.2 and 2.4: the package viewer filtered the way Lab 2.2 step 4
+  // filters it, then a retrieved field and a data workspace CSV opened in the
+  // editor, with the Explorer showing where each file sits. Only the training
+  // universe names these files, so the product documentation run skips it.
+  test("training: package filter and project files", async function () {
+    if (!shouldTake("training-files")) {
+      this.skip();
+    }
+    const filterText = universeSetting("packageXmlFilter");
+    const fieldFile = universeSetting("labFieldFile");
+    const csvFile = universeSetting("labCsvFile");
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!filterText || !fieldFile || !csvFile || !workspaceRoot) {
+      this.skip();
+    }
+    await shootPanel(panelManager, {
+      name: "package-xml-filtered",
+      command: "vscode-sfdx-hardis.showPackageXml",
+      commandArgs: {
+        packageType: "deploy",
+        filePath: "manifest/package.xml",
+        title: "Package XML - All Deployable Elements",
+        filterText,
+      },
+      lwcId: "s-package-xml",
+      settleMs: 2500,
+      // The one row the filter leaves, opened so the flow it carries shows
+      clicks: [{ x: 1862, y: 471 }],
+      force: true,
+    });
+    try {
+      for (const [name, file] of [
+        ["editor-field-file", fieldFile],
+        ["editor-crew-capacity-csv", csvFile],
+      ]) {
+        await vscode.commands.executeCommand(
+          "workbench.action.closeAllEditors",
+        );
+        await sleep(400);
+        const uri = vscode.Uri.file(path.join(workspaceRoot, file as string));
+        const document = await vscode.workspace.openTextDocument(uri);
+        await vscode.window.showTextDocument(document, { preview: false });
+        await vscode.commands.executeCommand("revealInExplorer", uri);
+        await sleep(2500);
+        await cleanChrome();
+        await captureStable(name as string);
+      }
+    } finally {
+      // Every later capture shows the side bar: give it back to sfdx-hardis
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+      await vscode.commands.executeCommand(
+        "workbench.view.extension.sfdx-hardis-explorer",
+      );
+      await sleep(800);
+    }
   });
 
   test("pipeline: contribution cards and branch modal", async function () {
@@ -864,7 +1040,7 @@ suite("Documentation screenshots", function () {
     await captureStable("pipeline-branch-modal-actions");
   });
 
-  // Promotion branches (experimental), for
+  // Promotion branches (Beta), for
   // docs/salesforce-devops-promotion-branches.md. Only in the promotion variant
   // of the run:
   //   SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION=true \
@@ -924,6 +1100,119 @@ suite("Documentation screenshots", function () {
       settleMs: 3500,
       force: true,
     });
+  });
+
+  // The command the Create promotion button runs, captured at the conflict
+  // question and at the end of the run: the scenario comes from the mocked CLI
+  // (DOCS_SCENARIOS in test/fixtures/sf-shim/sf-mock.js) and names the stories
+  // of the current fixture universe. A lab compares the questions with the ones
+  // it gets, so the panel has to replay the real command, never a stand-in.
+  test("command runner (promotion create)", async function () {
+    if (!PROMOTION_VARIANT || !shouldTake("promotion-create")) {
+      this.skip();
+    }
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await sleep(400);
+    const asked = trackAskedPrompts();
+    const panelId = await runCommandAndWaitForPanel(
+      panelManager,
+      universeSetting("promotionCreateCommand") ||
+        "sf hardis:project:promotion:create --source-branch uat --target-branch preprod --pull-requests 113,115",
+    );
+    const panel = panelManager.getPanel(panelId);
+    // The panel passed the ticked stories, the command asks to confirm them:
+    // what the prompt pre-fills is what the button ticked, and the answer is
+    // the commits of those stories, read from the scenario the mock replays
+    await waitFor(() => asked("pullRequests"), 30000, "selection prompt");
+    await sleep(1500);
+    await cleanChrome();
+    capture("promotion-create-select");
+    panel.simulateWebviewMessage({
+      type: "submit",
+      data: { pullRequests: promotionSelectedCommits() },
+    });
+    // One cherry-pick conflicts: the four answers, the recommended one first
+    await waitFor(() => asked("conflict"), 30000, "conflict prompt");
+    await sleep(1500);
+    await cleanChrome();
+    capture("promotion-create-conflict");
+    panel.simulateWebviewMessage({
+      type: "submit",
+      data: { conflict: "commit-with-markers-all" },
+    });
+    await waitFor(
+      () => panelManager.getPanel(panelId)?.commandStatus === "completed",
+      60000,
+      "promotion create to complete",
+    );
+    await captureBottomOfPage("promotion-create-completed");
+  });
+
+  // A file the promotion committed with its conflict markers, open in the
+  // editor: the built-in merge-conflict extension draws the Accept Current /
+  // Accept Incoming / Accept Both code lenses over each block, which is the
+  // by-hand route of solving a promotion conflict. The files come from the
+  // universe fixture (promotion-conflict/ next to its universe.json), committed
+  // on the promotion branch of the workspace for the shot and gone with it.
+  test("promotion conflict editor", async function () {
+    if (!PROMOTION_VARIANT || !shouldTake("promotion-conflict")) {
+      this.skip();
+    }
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!workspaceRoot) {
+      throw new Error("No workspace folder to write the conflicted file in");
+    }
+    const conflictFile =
+      universeSetting("promotionConflictFile") ||
+      "force-app/main/default/layouts/Contract-Contract Layout.layout-meta.xml";
+    const sampleDir = process.env.SF_MOCK_UNIVERSE_DIR
+      ? path.join(process.env.SF_MOCK_UNIVERSE_DIR, "promotion-conflict")
+      : "";
+    const gitIn = (args: string[]) =>
+      execFileSync("git", args, { cwd: workspaceRoot, stdio: "pipe" });
+    checkoutWorkspaceBranch(PROMOTION_BRANCH);
+    try {
+      const target = path.join(workspaceRoot, conflictFile);
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      if (sampleDir && fs.existsSync(sampleDir)) {
+        fs.cpSync(sampleDir, workspaceRoot, { recursive: true });
+      } else {
+        // The base universe: the same shape on a MyCompany-CRM layout
+        fs.writeFileSync(target, DEFAULT_CONFLICT_SAMPLE, "utf8");
+      }
+      gitIn(["add", "-A"]);
+      gitIn([
+        "commit",
+        "-q",
+        "--no-gpg-sign",
+        "-m",
+        "CRM-1012 Service appointment scheduler (#115)",
+      ]);
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+      await sleep(400);
+      const document = await vscode.workspace.openTextDocument(target);
+      const editor = await vscode.window.showTextDocument(document, {
+        preview: false,
+      });
+      // The first conflict block in the middle of the editor, its code lenses
+      // in view
+      const firstMarker = document
+        .getText()
+        .split("\n")
+        .findIndex((line) => line.startsWith("<<<<<<< "));
+      const anchor = Math.max(0, firstMarker);
+      editor.revealRange(
+        new vscode.Range(anchor, 0, anchor + 14, 0),
+        vscode.TextEditorRevealType.InCenter,
+      );
+      await sleep(3500);
+      await cleanChrome();
+      await captureStable("promotion-conflict-editor");
+    } finally {
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+      await sleep(300);
+      checkoutWorkspaceBranch("integration");
+    }
   });
 
   // One screenshot of the "Edit Deployment Action" editor per action type,

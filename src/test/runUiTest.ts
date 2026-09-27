@@ -4,6 +4,45 @@ import * as os from "os";
 import { execSync } from "child_process";
 
 import { runTests } from "@vscode/test-electron";
+import * as yaml from "js-yaml";
+
+/**
+ * SFDX_HARDIS_DOC_SCREENSHOTS_ACTIONS_KEEP: a comma-separated list of action
+ * ids. The fixture Pull Request carries one action of each type so that every
+ * action editor can be captured; a capture that shows the list a lab describes
+ * (one action in Lab 2.3 of the training) keeps only those ids, in the copy of
+ * the fixture the test opens.
+ */
+function keepOnlyDeploymentActions(workspaceDir: string): void {
+  const keep = (process.env.SFDX_HARDIS_DOC_SCREENSHOTS_ACTIONS_KEEP || "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter((id) => id);
+  const actionsDir = path.join(workspaceDir, "scripts", "actions");
+  if (
+    process.env.SFDX_HARDIS_DOC_SCREENSHOTS !== "true" ||
+    keep.length === 0 ||
+    !fs.existsSync(actionsDir)
+  ) {
+    return;
+  }
+  for (const file of fs.readdirSync(actionsDir)) {
+    if (!/^\.sfdx-hardis\..+\.ya?ml$/.test(file)) {
+      continue;
+    }
+    const filePath = path.join(actionsDir, file);
+    const doc = (yaml.load(fs.readFileSync(filePath, "utf8")) || {}) as Record<
+      string,
+      any
+    >;
+    for (const key of ["commandsPreDeploy", "commandsPostDeploy"]) {
+      if (Array.isArray(doc[key])) {
+        doc[key] = doc[key].filter((action: any) => keep.includes(action?.id));
+      }
+    }
+    fs.writeFileSync(filePath, yaml.dump(doc, { lineWidth: -1 }));
+  }
+}
 
 /**
  * Launches the UI integration tests: a real VS Code (Extension Development
@@ -23,7 +62,7 @@ async function main() {
   // to display, and only the docScreenshots suite runs.
   const docScreenshots = process.env.SFDX_HARDIS_DOC_SCREENSHOTS === "true";
 
-  // Promotion branches variant of the screenshot run: the experimental feature
+  // Promotion branches variant of the screenshot run: the Beta feature
   // is off in the base fixture, so the ordinary screenshots show a project that
   // does not use it. This variant turns it on, adds the promotion branch to the
   // workspace and serves a git provider fixture holding the User Stories
@@ -38,6 +77,14 @@ async function main() {
   const realCliPerf =
     process.argv.includes("--real-cli-perf") ||
     process.env.SFDX_HARDIS_REAL_CLI_PERF === "true";
+
+  // Lab driver run (yarn test:ui:labs): the real CLI, and the learner's own
+  // clone as the workspace instead of a fixture project. It walks the labs of
+  // the training course through the real panels, against real orgs. See
+  // src/test/ui/labDriver.ts.
+  const labDriver =
+    process.argv.includes("--labs") ||
+    process.env.SFDX_HARDIS_LAB_DRIVER === "true";
 
   // Alternate fixture universe for the screenshot run (SF_MOCK_UNIVERSE).
   //
@@ -90,18 +137,49 @@ async function main() {
     : docScreenshots
       ? "MyCompany-CRM"
       : "dummy-sfdx-project";
-  const workspaceDir = path.join(workDir, workspaceName);
-  fs.cpSync(fixtureSource, workspaceDir, { recursive: true });
+  // The lab driver opens the learner's own clone, in place: that repository,
+  // with its real remote, its real branches and its real orgs, is the object
+  // under test. Nothing is copied into it, initialized in it or written to it.
+  const workspaceDir = labDriver
+    ? path.resolve(process.env.SFDX_HARDIS_LAB_WORKSPACE || "")
+    : path.join(workDir, workspaceName);
+  if (labDriver) {
+    if (!process.env.SFDX_HARDIS_LAB_WORKSPACE) {
+      console.error(
+        "SFDX_HARDIS_LAB_WORKSPACE must point at the learner's clone of the training repository",
+      );
+      process.exit(1);
+    }
+    if (!fs.existsSync(path.join(workspaceDir, ".git"))) {
+      console.error(`Not a git repository: ${workspaceDir}`);
+      process.exit(1);
+    }
+    // The fixture modes write into the workspace (branches, config files,
+    // commits), which in lab mode is the learner's own repository. A leftover
+    // variable from a screenshot session must not silently do that.
+    if (docScreenshots || realCliPerf) {
+      console.error(
+        "The lab driver cannot be combined with the screenshot or perf modes: " +
+          "unset SFDX_HARDIS_DOC_SCREENSHOTS / SFDX_HARDIS_REAL_CLI_PERF",
+      );
+      process.exit(1);
+    }
+  } else {
+    fs.cpSync(fixtureSource, workspaceDir, { recursive: true });
+    keepOnlyDeploymentActions(workspaceDir);
+  }
 
   // 2. Make it a git repository (several extension features probe git)
   const git = (cmd: string) =>
     execSync(`git ${cmd}`, { cwd: workspaceDir, stdio: "pipe" });
-  git("init");
-  git("config user.email uitest@example.com");
-  git("config user.name UiTest");
-  git("checkout -b integration");
-  git("add -A");
-  git("commit -m init --no-gpg-sign");
+  if (!labDriver) {
+    git("init");
+    git("config user.email uitest@example.com");
+    git("config user.name UiTest");
+    git("checkout -b integration");
+    git("add -A");
+    git("commit -m init --no-gpg-sign");
+  }
 
   // A pipeline nobody has worked in yet: no feature branches, no open Pull
   // Requests, no jobs. It is what a learner's own fork looks like at the end of
@@ -144,7 +222,9 @@ async function main() {
   // uat, so the committed fixture does too, and the Level 3 captures need the
   // finished shape: a four column diagram, and a branch window that lists what
   // is waiting to be promoted rather than a go-live selector.
-  if (pipelineState === "level3") {
+  // Never in lab mode: workspaceDir is then the learner's own repository, and
+  // this block writes config/branches/*.yml into it and commits them.
+  if (pipelineState === "level3" && !labDriver) {
     const branchDir = path.join(workspaceDir, "config", "branches");
     fs.mkdirSync(branchDir, { recursive: true });
     const writeBranch = (
@@ -206,8 +286,12 @@ async function main() {
   }
   if (promotionVariant) {
     // The promotion branch exists on the repository, like any branch pushed by
-    // hardis:project:promotion:create
-    git("branch promotion/uat/preprod/2026-08-20-0930");
+    // hardis:project:promotion:create. An alternate universe names its own, so
+    // its screenshots tell the story of its own project rather than this one.
+    const promotionBranch =
+      (universe && universe.promotionBranch) ||
+      "promotion/uat/preprod/2026-08-20-0930";
+    git(`branch ${promotionBranch}`);
     // enablePromotionBranches + allowedPromotionSteps, the two project settings
     // the feature needs (see the promotion-branches documentation page)
     const configFile = path.join(workspaceDir, ".sfdx-hardis.yml");
@@ -221,13 +305,21 @@ async function main() {
         "",
       ].join("\n"),
     );
-    const overlayFile = path.join(
-      extensionDevelopmentPath,
-      "test",
-      "fixtures",
-      "screenshot",
-      "git-provider-mock-promotion.json",
-    );
+    // Same rule as the base fixture: a universe brings its own overlay when it
+    // has one, and falls back to the MyCompany-CRM one when it has not.
+    const universeOverlay = universeDir
+      ? path.join(universeDir, "git-provider-mock-promotion.json")
+      : "";
+    const overlayFile =
+      universeOverlay && fs.existsSync(universeOverlay)
+        ? universeOverlay
+        : path.join(
+            extensionDevelopmentPath,
+            "test",
+            "fixtures",
+            "screenshot",
+            "git-provider-mock-promotion.json",
+          );
     const fixture = JSON.parse(fs.readFileSync(gitProviderFixtureFile, "utf8"));
     const overlay = JSON.parse(fs.readFileSync(overlayFile, "utf8"));
     fixture.openPullRequests = [
@@ -247,7 +339,9 @@ async function main() {
   }
 
   // 3. Deterministic extension settings for the test workspace
-  fs.mkdirSync(path.join(workspaceDir, ".vscode"), { recursive: true });
+  if (!labDriver) {
+    fs.mkdirSync(path.join(workspaceDir, ".vscode"), { recursive: true });
+  }
   const workspaceSettings: Record<string, unknown> = {
     "vsCodeSfdxHardis.showWelcomeAtStartup": false,
     "vsCodeSfdxHardis.disableGitBashCheck": true,
@@ -302,10 +396,22 @@ async function main() {
     workspaceSettings["git.autofetch"] = false;
     workspaceSettings["extensions.ignoreRecommendations"] = true;
   }
-  fs.writeFileSync(
-    path.join(workspaceDir, ".vscode", "settings.json"),
-    JSON.stringify(workspaceSettings, null, 2),
-  );
+  if (labDriver) {
+    // The learner's repository is not ours to write in, and a settings.json
+    // appearing in it would show up in their next commit. The same settings go
+    // to the user level instead, inside the throwaway --user-data-dir.
+    const userSettingsDir = path.join(workDir, "user-data", "User");
+    fs.mkdirSync(userSettingsDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(userSettingsDir, "settings.json"),
+      JSON.stringify(workspaceSettings, null, 2),
+    );
+  } else {
+    fs.writeFileSync(
+      path.join(workspaceDir, ".vscode", "settings.json"),
+      JSON.stringify(workspaceSettings, null, 2),
+    );
+  }
 
   // 4. Prepare the sf CLI shim (mock) and its invocation log
   let shimDir = path.join(
@@ -378,8 +484,21 @@ async function main() {
         `--user-data-dir=${userDataDir}`,
       ],
       extensionTestsEnv: {
+        // The lab driver, like the perf gate, keeps the actual `sf` on the
+        // PATH: it walks the course against real orgs, so a mock would prove
+        // nothing. The CI markers go the same way, for the same reason.
+        ...(labDriver
+          ? {
+              SFDX_HARDIS_LAB_DRIVER: "true",
+              SFDX_HARDIS_LAB_SPECS: process.env.SFDX_HARDIS_LAB_SPECS || "",
+              SFDX_HARDIS_LAB_ONLY: process.env.SFDX_HARDIS_LAB_ONLY || "",
+              CI: undefined,
+              GITHUB_ACTIONS: undefined,
+            }
+          : {}),
         // Real-CLI perf mode keeps the actual `sf` on the PATH; every other
-        // mode answers with the instant mocked CLI (test/fixtures/sf-shim)
+        // mode but the lab driver answers with the instant mocked CLI
+        // (test/fixtures/sf-shim)
         ...(realCliPerf
           ? {
               SFDX_HARDIS_REAL_CLI_PERF: "true",
@@ -390,15 +509,17 @@ async function main() {
               CI: undefined,
               GITHUB_ACTIONS: undefined,
             }
-          : {
-              PATH: `${shimDir}${path.delimiter}${process.env.PATH || ""}`,
-              Path: `${shimDir}${path.delimiter}${process.env.Path || process.env.PATH || ""}`,
-              SF_MOCK_LOG: mockLogFile,
-              SF_MOCK_NODE_MODULES: path.join(
-                extensionDevelopmentPath,
-                "node_modules",
-              ),
-            }),
+          : labDriver
+            ? {}
+            : {
+                PATH: `${shimDir}${path.delimiter}${process.env.PATH || ""}`,
+                Path: `${shimDir}${path.delimiter}${process.env.Path || process.env.PATH || ""}`,
+                SF_MOCK_LOG: mockLogFile,
+                SF_MOCK_NODE_MODULES: path.join(
+                  extensionDevelopmentPath,
+                  "node_modules",
+                ),
+              }),
         VSCODE_SFDX_HARDIS_UI_TEST: "true",
         ...(docScreenshots
           ? {
@@ -428,10 +549,12 @@ async function main() {
               // base universe, unchanged.
               SF_MOCK_UNIVERSE: universeName,
               SF_MOCK_UNIVERSE_DIR: universeDir,
-              // Feature branch the contribution cards are captured from
-              SFDX_HARDIS_DOC_SCREENSHOTS_BRANCH: universe
-                ? universe.featureBranch || ""
-                : "",
+              // Feature branch the contribution cards are captured from. A
+              // capture can name its own, like the Level 1 story of a fresh
+              // pipeline.
+              SFDX_HARDIS_DOC_SCREENSHOTS_BRANCH:
+                process.env.SFDX_HARDIS_DOC_SCREENSHOTS_BRANCH ||
+                (universe ? universe.featureBranch || "" : ""),
               // What the capture script matches on to find the window
               SFDX_HARDIS_DOC_SCREENSHOTS_TITLE: workspaceName,
               SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION: promotionVariant

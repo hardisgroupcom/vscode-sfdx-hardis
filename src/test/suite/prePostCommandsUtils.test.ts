@@ -383,4 +383,27 @@ suite("prePostCommandsUtils Test Suite", () => {
       assert.strictEqual(saved.commandsPreDeploy[0].label, "Stays edited");
     });
   });
+  suite("file written the way Prettier writes it", () => {
+    test("quotes an empty command with double quotes, so MegaLinter has nothing to fix", async () => {
+      await savePrePostCommand(
+        5,
+        {
+          id: "backfill-crew-size",
+          label: "Backfill Crew Size on existing installations",
+          type: "apex",
+          command: "",
+          parameters: { apexScript: "scripts/apex/backfill-crew-size.apex" },
+          when: "post-deploy",
+          context: "process-deployment-only",
+          runOnlyOnceByOrg: true,
+        } as any,
+        null,
+        workspaceRoot,
+      );
+
+      const raw = fs.readFileSync(actionsFilePath(workspaceRoot, 5), "utf8");
+      assert.ok(raw.includes('command: ""'), raw);
+      assert.ok(!/: ''/.test(raw), raw);
+    });
+  });
 });

@@ -353,6 +353,30 @@ export class LocalWebSocketServer {
         });
       }
     }
+    // The command names itself.
+    //
+    // Nothing has to send this: without it the panel shows the command line, as
+    // it always has. With it, the label takes that place and the command line
+    // becomes its tooltip, so a person reading the panel sees what they asked
+    // for ("Set up my training environment") and can still check what actually
+    // runs.
+    else if (data.event === "commandLabel") {
+      // Ignore if not lwc UI
+      if (this.config.get("userInput") !== "ui-lwc") {
+        return;
+      }
+      const clientData = this.clients[data.context?.id];
+      const label = typeof data.label === "string" ? data.label.trim() : "";
+      if (clientData?.panel && label) {
+        clientData.panel.sendMessage({
+          type: "setCommandLabel",
+          data: { label },
+        });
+        clientData.panel.updateTitle(
+          t("commandTitleRunning", { commandName: label }),
+        );
+      }
+    }
     // Sub-command start
     else if (data.event === "commandSubCommandStart") {
       // Ignore if not lwc UI
