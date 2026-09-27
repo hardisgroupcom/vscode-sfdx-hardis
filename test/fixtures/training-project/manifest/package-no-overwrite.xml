@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+  <!-- The list every sfdx-hardis project starts with (sf hardis:project:create).
+       Remote site settings are left out on purpose: Lab 3.5 adds Helios_Warehouse. -->
+  <!-- Approval processes can contain reference to usernames -->
+  <types>
+      <members>*</members>
+      <name>ApprovalProcess</name>
+  </types>
+    <!-- Certificates are a very sensitive data. If should not be visible from git sources -->
+  <types>
+      <members>*</members>
+      <name>Certificate</name>
+  </types>
+  <!-- Connected apps contain org unique auth info so must never be overwritten -->
+  <types>
+      <members>*</members>
+      <name>ConnectedApp</name>
+  </types>
+  <!-- External Client Apps (API 59.0+): OAuth consumer key and secret are org-specific and must never be overwritten -->
+  <types>
+      <members>*</members>
+      <name>ExtlClntAppGlobalOauthSettings</name>
+  </types>
+  <types>
+    <!-- Once a dashboard is published, it is always managed directly in production -->
+    <members>*</members>
+    <name>Dashboard</name>
+  </types>
+  <types>
+    <!-- FlowDefinition is a deprecated Metadata, it should not be part of a sfdx repo. Caution: this is not Flow metadata, who should be in sources and deployed :) -->
+    <members>*</members>
+    <name>FlowDefinition</name>
+  </types>
+  <!-- External Credentials (Named Credentials v2, API 57.0+): auth protocol and named principals are org-specific -->
+  <types>
+      <members>*</members>
+      <name>ExternalCredential</name>
+  </types>
+  <types>
+    <!-- Named Credentials can contain auth info that differs between dev, uat, preprod and prod: let's not overwrite them ! -->
+    <members>*</members>
+    <name>NamedCredential</name>
+  </types>
+  <types>
+    <!-- Reports are maintained directly in production -->
+    <members>*</members>
+    <name>Report</name>
+  </types>
+    <!-- SSO Config must be performed directly in org setup -->
+  <types>
+      <members>*</members>
+      <name>SamlSsoConfig</name>
+  </types>
+  <!-- Wave items in case you want to manage them directly in production -->
+  <types>
+    <members>*</members>
+    <name>WaveApplication</name>
+  </types>
+  <types>
+    <members>*</members>
+    <name>WaveDashboard</name>
+  </types>
+  <types>
+    <members>*</members>
+    <name>WaveDataflow</name>
+  </types>
+  <types>
+    <members>*</members>
+    <name>WaveDataset</name>
+  </types>
+  <types>
+    <members>*</members>
+    <name>WaveRecipe</name>
+  </types>
+  <types>
+    <members>*</members>
+    <name>WaveXmd</name>
+  </types>
+  <version>59.0</version>
+</Package>

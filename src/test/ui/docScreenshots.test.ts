@@ -824,8 +824,8 @@ suite("Documentation screenshots", function () {
   // The two menus of the DevOps Pipeline header, opened, then the package
   // viewer each entry of the second one opens. The course sends learners to
   // manifest/package.xml through this viewer, never through the Explorer, and
-  // creates package-no-overwrite.xml from it (the viewer shows a missing one
-  // empty, and its first Add writes it).
+  // adds a type to package-no-overwrite.xml from it. In the training fixture the
+  // list is the sfdx-hardis default minus RemoteSiteSetting, which Lab 3.5 adds.
   test("pipeline: header menus and package viewer", async function () {
     if (!shouldTake("pipeline-menus")) {
       this.skip();

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Training screenshots: the Helios project carries the default package-no-overwrite.xml, as the course repository now does.
 - Deployment actions: the SFDMU workspace list shows the label of every workspace, including one labelled like its folder, which read "Label not defined in export.json".
 
 ## [8.8.1] 2026-09-26
