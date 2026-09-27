@@ -915,6 +915,8 @@ suite("Documentation screenshots", function () {
       },
       lwcId: "s-package-xml",
       settleMs: 2500,
+      // The one row the filter leaves, opened so the flow it carries shows
+      clicks: [{ x: 1862, y: 471 }],
       force: true,
     });
     try {
