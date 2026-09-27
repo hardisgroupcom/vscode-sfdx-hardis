@@ -42,6 +42,9 @@ export async function showPackageXmlPanel(
     filePath: packageConfig.filePath || "",
     fallbackFilePath: packageConfig.fallbackFilePath || null,
     title: packageConfig.title || "Package Configuration",
+    // Opens the panel already filtered, the way a reader filters it by hand:
+    // what a documentation or training screenshot shows
+    filterText: packageConfig.filterText || "",
   };
 
   try {
