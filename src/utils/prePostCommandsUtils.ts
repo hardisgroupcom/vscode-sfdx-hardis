@@ -558,12 +558,14 @@ export async function listProjectDataWorkspaces(): Promise<
             "utf8",
           );
           const parsed = JSON.parse(jsonContent);
-          hardisLabel = parsed.sfdxHardisLabel || item;
+          hardisLabel = parsed.sfdxHardisLabel || "";
         } catch {
           // Ignore JSON parse errors
         }
+        // A label equal to the folder name is still a label: comparing the two made
+        // a workspace named after its own folder read as having none
         options.push({
-          label: `${item} - ${item !== hardisLabel ? `: ${hardisLabel}` : "Label not defined in export.json"}`,
+          label: `${item} - ${hardisLabel || "Label not defined in export.json"}`,
           value: item.replace(/\\/g, "/"),
         });
       }

@@ -25,6 +25,7 @@ export default class PackageXml extends SharedMixin(LightningElement) {
   @track packageFilePath = "";
   @track packageConfig = null;
   @track filterText = "";
+  initialFilterApplied = false;
   @track editMode = false;
   @track isMutating = false;
   @track showAddTypeModal = false;
@@ -47,6 +48,11 @@ export default class PackageXml extends SharedMixin(LightningElement) {
     this.packageConfig = data?.config || {};
     this.packageFilePath =
       this.packageConfig.filePath || "manifest/package.xml";
+    // Applied once: a refresh after an edit keeps what the reader typed since
+    if (this.packageConfig.filterText && !this.initialFilterApplied) {
+      this.filterText = String(this.packageConfig.filterText).toLowerCase();
+      this.initialFilterApplied = true;
+    }
 
     this.packageType =
       this.packageConfig.type ||

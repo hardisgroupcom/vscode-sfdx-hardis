@@ -889,6 +889,63 @@ suite("Documentation screenshots", function () {
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
   });
 
+  // Training Labs 2.2 and 2.4: the package viewer filtered the way Lab 2.2 step 4
+  // filters it, then a retrieved field and a data workspace CSV opened in the
+  // editor, with the Explorer showing where each file sits. Only the training
+  // universe names these files, so the product documentation run skips it.
+  test("training: package filter and project files", async function () {
+    if (!shouldTake("training-files")) {
+      this.skip();
+    }
+    const filterText = universeSetting("packageXmlFilter");
+    const fieldFile = universeSetting("labFieldFile");
+    const csvFile = universeSetting("labCsvFile");
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!filterText || !fieldFile || !csvFile || !workspaceRoot) {
+      this.skip();
+    }
+    await shootPanel(panelManager, {
+      name: "package-xml-filtered",
+      command: "vscode-sfdx-hardis.showPackageXml",
+      commandArgs: {
+        packageType: "deploy",
+        filePath: "manifest/package.xml",
+        title: "Package XML - All Deployable Elements",
+        filterText,
+      },
+      lwcId: "s-package-xml",
+      settleMs: 2500,
+      // The one row the filter leaves, opened so the flow it carries shows
+      clicks: [{ x: 1862, y: 471 }],
+      force: true,
+    });
+    try {
+      for (const [name, file] of [
+        ["editor-field-file", fieldFile],
+        ["editor-crew-capacity-csv", csvFile],
+      ]) {
+        await vscode.commands.executeCommand(
+          "workbench.action.closeAllEditors",
+        );
+        await sleep(400);
+        const uri = vscode.Uri.file(path.join(workspaceRoot, file as string));
+        const document = await vscode.workspace.openTextDocument(uri);
+        await vscode.window.showTextDocument(document, { preview: false });
+        await vscode.commands.executeCommand("revealInExplorer", uri);
+        await sleep(2500);
+        await cleanChrome();
+        await captureStable(name as string);
+      }
+    } finally {
+      // Every later capture shows the side bar: give it back to sfdx-hardis
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+      await vscode.commands.executeCommand(
+        "workbench.view.extension.sfdx-hardis-explorer",
+      );
+      await sleep(800);
+    }
+  });
+
   test("pipeline: contribution cards and branch modal", async function () {
     if (!shouldTake("pipeline-modals")) {
       this.skip();

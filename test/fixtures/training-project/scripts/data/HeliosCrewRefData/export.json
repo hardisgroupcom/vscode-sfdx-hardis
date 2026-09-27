@@ -1,4 +1,6 @@
 {
+  "sfdxHardisLabel": "Crew capacity reference data",
+  "sfdxHardisDescription": "The 12 Crew Capacity records every org needs: panels a day per crew type and roof type.",
   "objects": [
     {
       "query": "SELECT External_Id__c, Crew_Type__c, Roof_Type__c, Panels_Per_Day__c FROM Crew_Capacity__c",
