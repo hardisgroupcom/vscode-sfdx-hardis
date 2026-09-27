@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Deployment actions: the SFDMU workspace list shows the label of every workspace, including one labelled like its folder, which read "Label not defined in export.json".
+
 ## [8.8.1] 2026-09-26
 
 - Org Monitoring: in a monitoring repository, the panel shows the CI/CD repository that deploys to the org (`deploymentRepository`) and opens it in a new VS Code window, or invites you to set it so that [coding agents](https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/#ask-questions-with-a-coding-agent) can search it too.
