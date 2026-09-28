@@ -71,7 +71,7 @@ const EXTRA_COMMANDS = [
     titleKey: "metadataDeps",
     descriptionKey: "metadataDepsDescription",
     category: "technicalDebt",
-    command: "sf hardis:doc:metadata-deps",
+    command: "vscode-sfdx-hardis.showMetadataDependencies",
     icon: "utility:hierarchy",
     colorClass: "metadata-access",
   },
@@ -458,6 +458,14 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
   handleRunCommand(event) {
     const command = event.currentTarget?.dataset?.command;
     if (!command) {
+      return;
+    }
+    // A card can open a panel of the extension instead of running a CLI command
+    if (command.startsWith("vscode-sfdx-hardis.")) {
+      window.sendMessageToVSCode({
+        type: "runVsCodeCommand",
+        data: { command },
+      });
       return;
     }
     window.sendMessageToVSCode({

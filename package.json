@@ -356,6 +356,11 @@
         "icon": "$(diff)"
       },
       {
+        "command": "vscode-sfdx-hardis.showMetadataDependencies",
+        "title": "SFDX Hardis: Metadata dependencies",
+        "icon": "$(references)"
+      },
+      {
         "command": "vscode-sfdx-hardis.findMetadataDependencies",
         "title": "SFDX Hardis: Find where this metadata is used",
         "icon": "$(references)"

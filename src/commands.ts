@@ -28,6 +28,7 @@ import {
   registerDisplayLogDebugOnly,
 } from "./commands/runAnonymousApex";
 import { registerShowMetadataRetriever } from "./commands/showMetadataRetriever";
+import { registerShowMetadataDependencies } from "./commands/showMetadataDependencies";
 import { registerShowPackageXml } from "./commands/packageXml";
 import { registerGitMergeDriverToggle } from "./commands/gitMergeDriver";
 import { registerShowDocumentationWorkbench } from "./commands/showDocumentationWorkbench";
@@ -104,6 +105,7 @@ export class Commands {
     registerRunAnonymousApex(this);
     registerDisplayLogDebugOnly(this);
     registerShowMetadataRetriever(this);
+    registerShowMetadataDependencies(this);
     registerShowPackageXml(this);
     registerShowDocumentationWorkbench(this);
     registerShowBackpromote(this);
@@ -518,7 +520,7 @@ export class Commands {
   }
 
   registerFindMetadataDependencies() {
-    // The CLI resolves the file to its metadata component, then queries the default org
+    // Opens the Metadata Dependencies panel on the file: the CLI resolves it to its metadata component
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.findMetadataDependencies",
       async (uri?: vscode.Uri) => {
@@ -528,11 +530,9 @@ export class Commands {
           return;
         }
         // Absolute path: a path relative to one folder of a multi-root workspace would not resolve
-        const filePath = target.fsPath.replace(/"/g, '\\"');
-        const command = `sf hardis:doc:metadata-deps --source-file "${filePath}"`;
         vscode.commands.executeCommand(
-          "vscode-sfdx-hardis.execute-command",
-          command,
+          "vscode-sfdx-hardis.showMetadataDependencies",
+          { sourceFile: target.fsPath },
         );
       },
     );

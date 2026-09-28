@@ -1202,14 +1202,18 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
   }
 
   handleFindUsage(row) {
-    // The CLI resolves the component in the selected org and shows what uses it in the command runner
-    const quote = (value) => `"${String(value).replace(/"/g, '\\"')}"`;
+    // Opens the Metadata Dependencies panel on this component, in the selected org
     window.sendMessageToVSCode({
-      type: "runCommand",
+      type: "runVsCodeCommand",
       data: {
-        command:
-          `sf hardis:doc:metadata-deps --type ${quote(row.MemberType)}` +
-          ` --name ${quote(row.MemberName)} --target-org ${quote(this.selectedOrg)}`,
+        command: "vscode-sfdx-hardis.showMetadataDependencies",
+        args: [
+          {
+            type: row.MemberType,
+            name: row.MemberName,
+            username: this.selectedOrg,
+          },
+        ],
       },
     });
   }

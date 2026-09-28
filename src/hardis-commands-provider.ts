@@ -1037,7 +1037,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "hardis:doc:metadata-deps",
             label: t("metadataDeps"),
-            command: "sf hardis:doc:metadata-deps",
+            command: "vscode-sfdx-hardis.showMetadataDependencies",
             tooltip: t("metadataDepsDescription"),
             requiresProject: true,
             helpUrl: DOCSITE_URL + "/hardis/doc/metadata-deps/",

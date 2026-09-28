@@ -1,0 +1,121 @@
+{
+  "outputString": "Used-by report written for Invoice__c (10 row(s))",
+  "component": {
+    "id": "01I5g000000InvAAE",
+    "name": "Invoice__c",
+    "type": "CustomObject",
+    "org": "nicolas.v@mycompany.com.dev"
+  },
+  "usedBy": [
+    {
+      "usedById": "01p5g00000Inv01AAA",
+      "usedByName": "InvoiceBatchScheduler",
+      "usedByType": "ApexClass",
+      "targetId": "01I5g000000InvAAE",
+      "targetName": "Invoice",
+      "targetType": "CustomObject",
+      "usedByApiName": "InvoiceBatchScheduler",
+      "usedBySetupPath": "/01p5g00000Inv01AAA",
+      "usedByLocalFile": "force-app/main/default/classes/InvoiceBatchScheduler.cls"
+    },
+    {
+      "usedById": "01p5g00000Inv02AAA",
+      "usedByName": "InvoiceService",
+      "usedByType": "ApexClass",
+      "targetId": "01I5g000000InvAAE",
+      "targetName": "Invoice",
+      "targetType": "CustomObject",
+      "usedByApiName": "InvoiceService",
+      "usedBySetupPath": "/01p5g00000Inv02AAA",
+      "usedByLocalFile": "force-app/main/default/classes/InvoiceService.cls"
+    },
+    {
+      "usedById": "01p5g00000Inv03AAA",
+      "usedByName": "InvoiceServiceTest",
+      "usedByType": "ApexClass",
+      "targetId": "01I5g000000InvAAE",
+      "targetName": "Invoice",
+      "targetType": "CustomObject",
+      "usedByApiName": "InvoiceServiceTest",
+      "usedBySetupPath": "/01p5g00000Inv03AAA",
+      "usedByLocalFile": ""
+    },
+    {
+      "usedById": "01q5g00000Inv01AAA",
+      "usedByName": "InvoiceTrigger",
+      "usedByType": "ApexTrigger",
+      "targetId": "01I5g000000InvAAE",
+      "targetName": "Invoice",
+      "targetType": "CustomObject",
+      "usedByApiName": "InvoiceTrigger",
+      "usedBySetupPath": "/01q5g00000Inv01AAA",
+      "usedByLocalFile": "force-app/main/default/triggers/InvoiceTrigger.trigger"
+    },
+    {
+      "usedById": "00N5g00000Inv01AAA",
+      "usedByName": "Invoice",
+      "usedByType": "CustomField",
+      "targetId": "01I5g000000InvAAE",
+      "targetName": "Invoice",
+      "targetType": "CustomObject",
+      "usedByApiName": "Opportunity.Invoice__c",
+      "usedBySetupPath": "/00N5g00000Inv01AAA",
+      "usedByLocalFile": "force-app/main/default/objects/Opportunity/fields/Invoice__c.field-meta.xml"
+    },
+    {
+      "usedById": "0M05g00000Inv01AAA",
+      "usedByName": "Invoice_Record_Page",
+      "usedByType": "FlexiPage",
+      "targetId": "01I5g000000InvAAE",
+      "targetName": "Invoice",
+      "targetType": "CustomObject",
+      "usedByApiName": "Invoice_Record_Page",
+      "usedBySetupPath": "/0M05g00000Inv01AAA",
+      "usedByLocalFile": ""
+    },
+    {
+      "usedById": "3015g00000Inv01AAA",
+      "usedByName": "Invoice Approval",
+      "usedByType": "Flow",
+      "targetId": "01I5g000000InvAAE",
+      "targetName": "Invoice",
+      "targetType": "CustomObject",
+      "usedByApiName": "Invoice_Approval",
+      "usedBySetupPath": "/builder_platform_interaction/flowBuilder.app?flowId=3015g00000Inv01AAA",
+      "usedByLocalFile": "force-app/main/default/flows/Invoice_Approval.flow-meta.xml"
+    },
+    {
+      "usedById": "3015g00000Inv02AAA",
+      "usedByName": "Invoice Reminder",
+      "usedByType": "Flow",
+      "targetId": "01I5g000000InvAAE",
+      "targetName": "Invoice",
+      "targetType": "CustomObject",
+      "usedByApiName": "Invoice_Reminder",
+      "usedBySetupPath": "/builder_platform_interaction/flowBuilder.app?flowId=3015g00000Inv02AAA",
+      "usedByLocalFile": ""
+    },
+    {
+      "usedById": "00h5g00000Inv01AAA",
+      "usedByName": "Invoice Layout",
+      "usedByType": "Layout",
+      "targetId": "01I5g000000InvAAE",
+      "targetName": "Invoice",
+      "targetType": "CustomObject",
+      "usedByApiName": "Invoice__c-Invoice Layout",
+      "usedBySetupPath": "/00h5g00000Inv01AAA",
+      "usedByLocalFile": "force-app/main/default/layouts/Invoice__c-Invoice Layout.layout-meta.xml"
+    },
+    {
+      "usedById": "0Rb5g00000Inv01AAA",
+      "usedByName": "invoiceSummary",
+      "usedByType": "LightningComponentBundle",
+      "targetId": "01I5g000000InvAAE",
+      "targetName": "Invoice",
+      "targetType": "CustomObject",
+      "usedByApiName": "invoiceSummary",
+      "usedBySetupPath": "/lightning/setup/LightningComponentBundles/home",
+      "usedByLocalFile": "force-app/main/default/lwc/invoiceSummary/invoiceSummary.js"
+    }
+  ]
+}

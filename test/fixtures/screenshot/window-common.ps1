@@ -20,6 +20,7 @@ $ErrorActionPreference = "Stop"
 
 Add-Type -TypeDefinition @'
 using System;
+using System.Text;
 using System.Runtime.InteropServices;
 
 public class SfhWin {
@@ -43,6 +44,31 @@ public class SfhWin {
   [DllImport("user32.dll")] public static extern bool ScreenToClient(IntPtr hWnd, ref POINT point);
   [DllImport("user32.dll")] public static extern IntPtr SendMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
   [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+  [DllImport("user32.dll", EntryPoint = "GetWindowThreadProcessId")] public static extern uint GetWindowProcessId(IntPtr hWnd, out uint pid);
+
+  public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+  [DllImport("user32.dll")] public static extern bool EnumWindows(EnumWindowsProc callback, IntPtr lParam);
+  [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int maxCount);
+
+  // First visible top-level window whose title contains the fragment. Get-Process
+  // only reports one "main" window per process, and on some machines it reports
+  // none for VS Code at all: enumerating the windows does not depend on that.
+  public static IntPtr FindWindowByTitle(string fragment) {
+    IntPtr found = IntPtr.Zero;
+    EnumWindows((hWnd, lParam) => {
+      if (!IsWindowVisible(hWnd)) {
+        return true;
+      }
+      StringBuilder title = new StringBuilder(512);
+      GetWindowText(hWnd, title, title.Capacity);
+      if (title.ToString().IndexOf(fragment, StringComparison.OrdinalIgnoreCase) >= 0) {
+        found = hWnd;
+        return false;
+      }
+      return true;
+    }, IntPtr.Zero);
+    return found;
+  }
 
   [StructLayout(LayoutKind.Sequential)]
   public struct POINT { public int X, Y; }
@@ -111,6 +137,14 @@ function Get-SfhWindow {
       Set-Content -Path $cacheFile -Value ("$($proc.Id) " + [string][int64]$proc.MainWindowHandle) -Encoding ascii
       return $proc.MainWindowHandle
     }
+    # Get-Process can miss the VS Code window entirely: look through the top-level windows
+    $hwnd = [SfhWin]::FindWindowByTitle($TitleMatch)
+    if ($hwnd -ne [IntPtr]::Zero) {
+      $ownerPid = [uint32]0
+      [void][SfhWin]::GetWindowProcessId($hwnd, [ref]$ownerPid)
+      Set-Content -Path $cacheFile -Value ("$ownerPid " + [string][int64]$hwnd) -Encoding ascii
+      return $hwnd
+    }
     Start-Sleep -Milliseconds 500
   }
   # The cache is only good for the run that wrote it. Windows reuses handles, so
@@ -121,9 +155,12 @@ function Get-SfhWindow {
     if ($parts.Count -eq 2) {
       $cachedPid = [int]$parts[0]
       $cached = [IntPtr][int64]$parts[1]
-      $owner = Get-Process -Id $cachedPid -ErrorAction SilentlyContinue
-      if ($owner -and $owner.MainWindowHandle -eq $cached -and
-          [SfhWin]::IsWindow($cached) -and [SfhWin]::IsWindowVisible($cached)) {
+      # The handle must still belong to the process that owned it when it was cached
+      $ownerPid = [uint32]0
+      if ([SfhWin]::IsWindow($cached) -and [SfhWin]::IsWindowVisible($cached)) {
+        [void][SfhWin]::GetWindowProcessId($cached, [ref]$ownerPid)
+      }
+      if ($ownerPid -ne 0 -and $ownerPid -eq $cachedPid) {
         return $cached
       }
     }

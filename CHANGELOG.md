@@ -2,7 +2,10 @@
 
 ## Unreleased
 
-- Add **Metadata dependencies (used by)** on the Org Monitoring page, in the Commands menu, in the right-click menu of metadata files and in the Metadata Retriever row menu: find which metadata components use an Apex class, Flow, custom field or other component, then export a CSV/Excel report
+- Add the **Metadata Dependencies** panel: find which components of an org use an Apex class, a Flow, a field or any other metadata
+  - Open it from the Metadata Retriever row menu, the right-click menu of metadata files, the Commands menu or the Org Monitoring page
+  - Open each dependent's local file or its Setup page, drill down to what uses it, and retrieve the selected ones into the project
+  - Generate a CSV/Excel report on request
 - Training screenshots: the Helios project carries the default package-no-overwrite.xml, as the course repository now does.
 - Deployment actions: the SFDMU workspace list shows the label of every workspace, including one labelled like its folder, which read "Label not defined in export.json".
 

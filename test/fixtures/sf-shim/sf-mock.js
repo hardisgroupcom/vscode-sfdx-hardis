@@ -613,6 +613,16 @@ async function main() {
     return 0;
   }
 
+  // Metadata Dependencies panel: the components of the fixture org that use Invoice__c,
+  // with the fields the CLI adds for the panel (API name, Setup path, local file)
+  if (first === "hardis:doc:metadata-deps" && DOCS_PROFILE && args.includes("--json")) {
+    const dependencies = JSON.parse(
+      fs.readFileSync(path.join(__dirname, "metadata-dependencies.json"), "utf8"),
+    );
+    outputJsonIfRequested({ status: 0, result: dependencies }, "");
+    return 0;
+  }
+
   // Custom functions catalog, read by the Custom Functions tab of Pipeline Settings and by the
   // deployment action editor, which builds its form from the inputs a function declares. The
   // payload mirrors the customFunctions block of the fixture project .sfdx-hardis.yml, which is
