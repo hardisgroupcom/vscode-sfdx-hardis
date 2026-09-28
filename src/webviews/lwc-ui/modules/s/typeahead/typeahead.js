@@ -180,7 +180,9 @@ export default class Typeahead extends SharedMixin(LightningElement) {
 
   get filteredOptions() {
     const matching = this.matchingOptions;
-    const list = this.optionsCap ? matching.slice(0, this.optionsCap) : matching;
+    const list = this.optionsCap
+      ? matching.slice(0, this.optionsCap)
+      : matching;
     return list.map((opt, index) => {
       const selected = opt.value === this._value;
       const active = index === this._activeIndex;

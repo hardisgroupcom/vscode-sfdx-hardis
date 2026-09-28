@@ -104,13 +104,25 @@ async function listMetadataNames(
     if (response?.status === 0 && response?.result) {
       return {
         kind: response.result.kind || "components",
-        items: Array.isArray(response.result.items) ? response.result.items : [],
+        items: Array.isArray(response.result.items)
+          ? response.result.items
+          : [],
         listable: response.result.listable !== false,
       };
     }
-    return { kind: "components", items: [], listable: false, error: response?.message };
+    return {
+      kind: "components",
+      items: [],
+      listable: false,
+      error: response?.message,
+    };
   } catch (error: any) {
-    return { kind: "components", items: [], listable: false, error: error?.message || String(error) };
+    return {
+      kind: "components",
+      items: [],
+      listable: false,
+      error: error?.message || String(error),
+    };
   }
 }
 

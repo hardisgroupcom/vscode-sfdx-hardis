@@ -631,10 +631,19 @@ async function main() {
   }
 
   // Name suggestions of the Metadata Dependencies panel: the listing of a type in the fixture org
-  if (first === "hardis:org:list:metadata" && DOCS_PROFILE && args.includes("--json")) {
+  if (
+    first === "hardis:org:list:metadata" &&
+    DOCS_PROFILE &&
+    args.includes("--json")
+  ) {
     const type = args[args.indexOf("--type") + 1] || "";
     const names = {
-      ApexClass: ["InvoiceBatchScheduler", "InvoiceService", "InvoiceServiceTest", "OpportunityService"],
+      ApexClass: [
+        "InvoiceBatchScheduler",
+        "InvoiceService",
+        "InvoiceServiceTest",
+        "OpportunityService",
+      ],
       CustomObject: ["Account", "Invoice__c", "Opportunity", "Timesheet__c"],
     };
     const items = (names[type] || []).map((fullName, index) => ({
@@ -642,7 +651,17 @@ async function main() {
       id: `000000000000${index}AAA`,
     }));
     outputJsonIfRequested(
-      { status: 0, result: { type, folder: null, kind: "components", items, listable: true, fromCache: true } },
+      {
+        status: 0,
+        result: {
+          type,
+          folder: null,
+          kind: "components",
+          items,
+          listable: true,
+          fromCache: true,
+        },
+      },
       "",
     );
     return 0;

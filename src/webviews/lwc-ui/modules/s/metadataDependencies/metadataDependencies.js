@@ -264,7 +264,10 @@ export default class MetadataDependencies extends SharedMixin(
   // ---- Search form ---------------------------------------------------------
 
   get typeOptions() {
-    const options = this.metadataTypes.map((type) => ({ label: type, value: type }));
+    const options = this.metadataTypes.map((type) => ({
+      label: type,
+      value: type,
+    }));
     // A typed type, or one reaching the panel from a file or a drill-down, stays selectable
     if (this.formType && !this.metadataTypes.includes(this.formType)) {
       options.unshift({ label: this.formType, value: this.formType });
@@ -277,7 +280,9 @@ export default class MetadataDependencies extends SharedMixin(
   }
 
   get typeError() {
-    return this.formType && !this.isTypeValid ? this.t("invalidMetadataType") : null;
+    return this.formType && !this.isTypeValid
+      ? this.t("invalidMetadataType")
+      : null;
   }
 
   get formNamePlaceholder() {
@@ -347,7 +352,11 @@ export default class MetadataDependencies extends SharedMixin(
   }
 
   requestNames() {
-    if (!this.username || !this.isTypeValid || NOT_LISTABLE_TYPES.includes(this.formType)) {
+    if (
+      !this.username ||
+      !this.isTypeValid ||
+      NOT_LISTABLE_TYPES.includes(this.formType)
+    ) {
       return;
     }
     const key = this.namesKey();
@@ -394,7 +403,10 @@ export default class MetadataDependencies extends SharedMixin(
         value: `${FOLDER_PREFIX}${item.fullName}`,
       }));
     }
-    return entry.items.map((item) => ({ label: item.fullName, value: item.fullName }));
+    return entry.items.map((item) => ({
+      label: item.fullName,
+      value: item.fullName,
+    }));
   }
 
   get namesLoading() {
