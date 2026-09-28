@@ -101,8 +101,7 @@ export default class MetadataDependencies extends SharedMixin(
     } else if (type === "retrieveDone") {
       this.isRetrieving = false;
       this.selectedIds = [];
-      // Refresh the "In project" column of the current level
-      this.refreshCurrentLevel();
+      this.applyRetrievedFiles(data?.files || []);
     } else if (type === "reportGenerated") {
       this.isGeneratingReport = false;
       this.reportFiles = (data?.reportFiles || []).map((file) => ({
@@ -198,6 +197,30 @@ export default class MetadataDependencies extends SharedMixin(
     this.levels = [...this.levels];
   }
 
+  // Marks the retrieved dependents as in the project, in every level of the path
+  applyRetrievedFiles(files) {
+    const filesByComponent = new Map();
+    for (const file of files) {
+      const key = `${file.type}:${file.fullName}`;
+      filesByComponent.set(key, [...(filesByComponent.get(key) || []), file.filePath]);
+    }
+    const pickFile = (paths, name) =>
+      [".js", ".cmp", ".app"]
+        .map((extension) => paths.find((p) => p.endsWith(`/${name}${extension}`)))
+        .find(Boolean) ||
+      paths.find((p) => !p.endsWith("-meta.xml")) ||
+      paths[0];
+    for (const level of this.levels) {
+      for (const row of level.result?.usedBy || []) {
+        const paths = filesByComponent.get(`${row.usedByType}:${row.usedByApiName}`);
+        if (paths && paths.length > 0) {
+          row.usedByLocalFile = pickFile(paths, row.usedByApiName);
+        }
+      }
+    }
+    this.levels = [...this.levels];
+  }
+
   levelError(message) {
     if (this.level) {
       this.level.error = message || this.t("metadataDependenciesError");
@@ -275,7 +298,13 @@ export default class MetadataDependencies extends SharedMixin(
 
   handleOrgChange(event) {
     this.username = event.detail.value;
-    // Another org gives other dependencies: search again at the current level
+    // Another org gives other dependencies: every level of the path is read again when shown
+    for (const level of this.levels) {
+      level.result = null;
+      level.error = null;
+      level.readAt = null;
+    }
+    this.levels = [...this.levels];
     this.refreshCurrentLevel();
   }
 
@@ -317,6 +346,10 @@ export default class MetadataDependencies extends SharedMixin(
     const level = this.levels[index];
     this.formType = level.type || this.formType;
     this.formName = level.title || this.formName;
+    // A level left without result (the org changed since) is read again
+    if (!level.result && !level.loading) {
+      this.requestDependencies(level);
+    }
   }
 
   // ---- States --------------------------------------------------------------

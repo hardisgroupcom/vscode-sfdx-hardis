@@ -121,6 +121,23 @@ async function openInSetup(username: string, setupPath: string) {
   await vscode.env.openExternal(vscode.Uri.parse(url));
 }
 
+// Retrieved files of a sf project retrieve result, relative to the workspace
+function retrievedFiles(
+  retrieveResult: any,
+): Array<{ type: string; fullName: string; filePath: string }> {
+  const files = Array.isArray(retrieveResult?.result?.files)
+    ? retrieveResult.result.files
+    : [];
+  const root = getWorkspaceRoot();
+  return files
+    .filter((file: any) => file?.state !== "Failed" && file?.filePath)
+    .map((file: any) => ({
+      type: String(file.type || ""),
+      fullName: String(file.fullName || ""),
+      filePath: path.relative(root, file.filePath).replace(/\\/g, "/"),
+    }));
+}
+
 export function registerShowMetadataDependencies(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showMetadataDependencies",
@@ -193,13 +210,17 @@ export function registerShowMetadataDependencies(commands: Commands) {
           if (!data?.username || components.length === 0) {
             return;
           }
-          await executeMetadataRetrieve(
+          const retrieveResult = await executeMetadataRetrieve(
             data.username,
             components,
             t("metadataDependenciesRetrieving", { count: components.length }),
             panel,
           );
-          panel.sendMessage({ type: "retrieveDone", data: {} });
+          // The retrieved files update the "In this project" column: no new org call
+          panel.sendMessage({
+            type: "retrieveDone",
+            data: { files: retrievedFiles(retrieveResult) },
+          });
         }
       });
     },
