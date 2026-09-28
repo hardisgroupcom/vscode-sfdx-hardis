@@ -535,7 +535,7 @@ function normalizeCrudReadResult(result: any): any | null {
   };
 }
 
-async function executeMetadataRetrieve(
+export async function executeMetadataRetrieve(
   username: string,
   metadataList: any[],
   displayTitle: string,
