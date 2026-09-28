@@ -172,6 +172,27 @@ export default class MetadataDependencies extends SharedMixin(
     return this.currentLevel >= 0 ? this.levels[this.currentLevel] : null;
   }
 
+  // What the current level shows: its result in the selected direction
+  get view() {
+    return this.level ? this.level.views[this.level.direction] || null : null;
+  }
+
+  // One per direction of a level: switching direction shows the other view, without a new level
+  newView() {
+    return {
+      result: null,
+      error: null,
+      loading: true,
+      requestId: null,
+      readAt: null,
+    };
+  }
+
+  // The query of a level in its current direction
+  levelQuery(level) {
+    return { ...level.query, direction: level.direction };
+  }
+
   openLevel(query) {
     const title =
       query.name ||
@@ -180,16 +201,14 @@ export default class MetadataDependencies extends SharedMixin(
       "";
     const direction = query.direction === USES ? USES : USED_BY;
     this.formDirection = direction;
+    const baseQuery = { ...query };
+    delete baseQuery.direction;
     const level = {
-      query: { ...query, direction },
+      query: baseQuery,
       direction,
       title,
       type: query.type || "",
-      result: null,
-      error: null,
-      loading: true,
-      requestId: null,
-      readAt: null,
+      views: { [direction]: this.newView() },
     };
     this.levels = [...this.levels.slice(0, this.currentLevel + 1), level];
     this.currentLevel = this.levels.length - 1;
@@ -205,16 +224,19 @@ export default class MetadataDependencies extends SharedMixin(
   }
 
   requestDependencies(level) {
+    const view =
+      level.views[level.direction] ||
+      (level.views[level.direction] = this.newView());
     this.requestSequence += 1;
-    level.requestId = this.requestSequence;
-    level.loading = true;
-    level.error = null;
+    view.requestId = this.requestSequence;
+    view.loading = true;
+    view.error = null;
     this.levels = [...this.levels];
     window.sendMessageToVSCode({
       type: "findDependencies",
       data: {
-        requestId: level.requestId,
-        query: level.query,
+        requestId: view.requestId,
+        query: this.levelQuery(level),
         username: this.username,
       },
     });
@@ -227,25 +249,38 @@ export default class MetadataDependencies extends SharedMixin(
   }
 
   handleDependencies(type, data) {
-    const level = this.levels.find((item) => item.requestId === data.requestId);
+    let level = null;
+    let view = null;
+    for (const item of this.levels) {
+      view = Object.values(item.views).find(
+        (candidate) => candidate.requestId === data.requestId,
+      );
+      if (view) {
+        level = item;
+        break;
+      }
+    }
     if (!level) {
       // Answer to a level the user already left
       return;
     }
-    level.loading = false;
+    view.loading = false;
     if (type === "dependenciesError") {
-      level.error = data.error || this.t("metadataDependenciesError");
+      view.error = data.error || this.t("metadataDependenciesError");
     } else {
-      level.result = data.result || null;
-      level.readAt = new Date();
+      view.result = data.result || null;
+      view.readAt = new Date();
       const component = data.result?.selected;
       if (component) {
         level.title = component.name || level.title;
-        level.type = component.type || level.type;
+        // Same pill in both directions: a standard object is a CustomObject for the form too
+        level.type = component.type
+          ? metadataTypeOf({ type: component.type })
+          : level.type;
       }
-      // Only the level on screen updates the form: an answer for a level the user went back from
-      // must not overwrite what they see or type
-      if (level === this.level) {
+      // Only the view on screen updates the form: an answer for a level or a direction the user
+      // left must not overwrite what they see or type
+      if (level === this.level && view === this.view) {
         if (component) {
           if (component.type && component.type !== "Unknown") {
             this.formType = metadataTypeOf({ type: component.type });
@@ -278,8 +313,9 @@ export default class MetadataDependencies extends SharedMixin(
         .find(Boolean) ||
       paths.find((p) => !p.endsWith("-meta.xml")) ||
       paths[0];
-    for (const level of this.levels) {
-      for (const row of level.result?.dependencies || []) {
+    const views = this.levels.flatMap((level) => Object.values(level.views));
+    for (const view of views) {
+      for (const row of view.result?.dependencies || []) {
         const paths = filesByComponent.get(
           `${metadataTypeOf(row)}:${row.apiName}`,
         );
@@ -292,8 +328,8 @@ export default class MetadataDependencies extends SharedMixin(
   }
 
   levelError(message) {
-    if (this.level) {
-      this.level.error = message || this.t("metadataDependenciesError");
+    if (this.view) {
+      this.view.error = message || this.t("metadataDependenciesError");
       this.levels = [...this.levels];
     }
   }
@@ -546,7 +582,8 @@ export default class MetadataDependencies extends SharedMixin(
     ];
   }
 
-  // Reads the current component the other way: a new level, so going back shows the previous one
+  // Shows the current component the other way, on the same level of the path. Each direction keeps
+  // its result: switching back and forth reads the org once per direction (Refresh reads it again).
   handleDirectionChange(event) {
     const direction = event.detail.value;
     this.formDirection = direction;
@@ -554,7 +591,14 @@ export default class MetadataDependencies extends SharedMixin(
     if (!level || level.direction === direction) {
       return;
     }
-    this.openLevel({ ...level.query, direction });
+    level.direction = direction;
+    this.selectedIds = [];
+    this.reportFiles = [];
+    if (level.views[direction]) {
+      this.levels = [...this.levels];
+    } else {
+      this.requestDependencies(level);
+    }
   }
 
   get orgOptions() {
@@ -575,7 +619,7 @@ export default class MetadataDependencies extends SharedMixin(
   }
 
   get refreshDisabled() {
-    return !this.level || this.level.loading;
+    return !this.view || this.view.loading;
   }
 
   handleRefresh() {
@@ -589,9 +633,7 @@ export default class MetadataDependencies extends SharedMixin(
     this.namesLoadingKeys = [];
     // Another org gives other dependencies: every level of the path is read again when shown
     for (const level of this.levels) {
-      level.result = null;
-      level.error = null;
-      level.readAt = null;
+      level.views = {};
     }
     this.levels = [...this.levels];
     this.refreshCurrentLevel();
@@ -650,7 +692,8 @@ export default class MetadataDependencies extends SharedMixin(
     this.nameFolder = null;
     this.typeDraft = null;
     // A level left without result (the org changed since) is read again
-    if (!level.result && !level.loading) {
+    const view = level.views[level.direction];
+    if (!view || (!view.result && !view.loading)) {
       this.requestDependencies(level);
     }
   }
@@ -658,7 +701,7 @@ export default class MetadataDependencies extends SharedMixin(
   // ---- States --------------------------------------------------------------
 
   get isLoading() {
-    return this.level?.loading === true;
+    return this.view?.loading === true;
   }
 
   get isUsesLevel() {
@@ -673,11 +716,11 @@ export default class MetadataDependencies extends SharedMixin(
   }
 
   get errorMessage() {
-    return this.level && !this.level.loading ? this.level.error : null;
+    return this.view && !this.view.loading ? this.view.error : null;
   }
 
   get dependencies() {
-    return this.level?.result?.dependencies || [];
+    return this.view?.result?.dependencies || [];
   }
 
   get showEmptyForm() {
@@ -686,19 +729,19 @@ export default class MetadataDependencies extends SharedMixin(
 
   get showNoResult() {
     return (
-      !!this.level &&
-      !this.level.loading &&
-      !this.level.error &&
-      !!this.level.result &&
+      !!this.view &&
+      !this.view.loading &&
+      !this.view.error &&
+      !!this.view.result &&
       this.dependencies.length === 0
     );
   }
 
   get showResults() {
     return (
-      !!this.level &&
-      !this.level.loading &&
-      !this.level.error &&
+      !!this.view &&
+      !this.view.loading &&
+      !this.view.error &&
       this.dependencies.length > 0
     );
   }
@@ -730,7 +773,7 @@ export default class MetadataDependencies extends SharedMixin(
   }
 
   get readFromOrgText() {
-    const readAt = this.level?.readAt;
+    const readAt = this.view?.readAt;
     const time = readAt
       ? readAt.toLocaleTimeString(this.locale, {
           hour: "2-digit",
@@ -964,7 +1007,7 @@ export default class MetadataDependencies extends SharedMixin(
   }
 
   get reportDisabled() {
-    return this.isGeneratingReport || !this.level?.result;
+    return this.isGeneratingReport || !this.view?.result;
   }
 
   handleRetrieveSelected() {
@@ -996,7 +1039,7 @@ export default class MetadataDependencies extends SharedMixin(
     this.reportFiles = [];
     window.sendMessageToVSCode({
       type: "generateReport",
-      data: { query: this.level.query, username: this.username },
+      data: { query: this.levelQuery(this.level), username: this.username },
     });
   }
 
