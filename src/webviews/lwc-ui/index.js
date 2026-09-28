@@ -76,6 +76,7 @@ const lwcModules = {
   "s-pipeline-config": () => import("s/pipelineConfig"),
   "s-monitoring-config": () => import("s/monitoringConfig"),
   "s-extension-config": () => import("s/extensionConfig"),
+  "s-metadata-dependencies": () => import("s/metadataDependencies"),
   "s-metadata-retriever": () => import("s/metadataRetriever"),
   "s-multiline-helptext": () => import("s/multilineHelptext"),
   "s-installed-packages": () => import("s/installedPackages"),
