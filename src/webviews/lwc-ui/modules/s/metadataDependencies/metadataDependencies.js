@@ -47,6 +47,14 @@ function metadataTypeOf(row) {
   return row.type === "StandardEntity" ? "CustomObject" : row.type;
 }
 
+const SALESFORCE_ID_RE = /^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/;
+
+// A component can be drilled into by its API name, else by a real Salesforce Id
+// (some dependency rows carry a name instead of an Id, like "User")
+function canDrill(row) {
+  return !!row.apiName || SALESFORCE_ID_RE.test(row.id || "");
+}
+
 function decodeName(value) {
   try {
     return decodeURIComponent(value);
@@ -234,14 +242,20 @@ export default class MetadataDependencies extends SharedMixin(
       if (component) {
         level.title = component.name || level.title;
         level.type = component.type || level.type;
-        if (component.type && component.type !== "Unknown") {
-          this.formType = component.type;
-          this.typeDraft = null;
-        }
-        this.formName = component.name || this.formName;
       }
-      // The result is shown: prefetch the names of this type in the background, at low priority
-      this.requestNames();
+      // Only the level on screen updates the form: an answer for a level the user went back from
+      // must not overwrite what they see or type
+      if (level === this.level) {
+        if (component) {
+          if (component.type && component.type !== "Unknown") {
+            this.formType = metadataTypeOf({ type: component.type });
+            this.typeDraft = null;
+          }
+          this.formName = component.name || this.formName;
+        }
+        // The result is shown: prefetch the names of this type in the background, at low priority
+        this.requestNames();
+      }
     }
     this.levels = [...this.levels];
   }
@@ -508,7 +522,7 @@ export default class MetadataDependencies extends SharedMixin(
     this.openLevel({
       type: this.formType,
       name: this.formName.trim(),
-      direction: this.formDirection,
+      direction: this.currentDirection,
     });
   }
 
@@ -537,7 +551,7 @@ export default class MetadataDependencies extends SharedMixin(
     const direction = event.detail.value;
     this.formDirection = direction;
     const level = this.level;
-    if (!level || level.direction === direction || level.loading) {
+    if (!level || level.direction === direction) {
       return;
     }
     this.openLevel({ ...level.query, direction });
@@ -628,8 +642,11 @@ export default class MetadataDependencies extends SharedMixin(
     this.selectedIds = [];
     this.reportFiles = [];
     const level = this.levels[index];
-    this.formType = level.type || this.formType;
+    this.formType = level.type
+      ? metadataTypeOf({ type: level.type })
+      : this.formType;
     this.formName = level.title || this.formName;
+    this.formDirection = level.direction;
     this.nameFolder = null;
     this.typeDraft = null;
     // A level left without result (the org changed since) is read again
@@ -864,11 +881,13 @@ export default class MetadataDependencies extends SharedMixin(
         label: this.t("findWhereUsedLabel"),
         name: "drill",
         iconName: "utility:arrowup",
+        disabled: !canDrill(row),
       },
       {
         label: this.t("seeWhatItUsesLabel"),
         name: "drillUses",
         iconName: "utility:arrowdown",
+        disabled: !canDrill(row),
       },
       {
         label: row.apiName
@@ -910,7 +929,10 @@ export default class MetadataDependencies extends SharedMixin(
           name: row.displayName,
         },
       });
-    } else if (actionName === "drill" || actionName === "drillUses") {
+    } else if (
+      (actionName === "drill" || actionName === "drillUses") &&
+      canDrill(row)
+    ) {
       // Without an API name, the component is found by its Id
       const direction = actionName === "drillUses" ? USES : USED_BY;
       this.openLevel(
