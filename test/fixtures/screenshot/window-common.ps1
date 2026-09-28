@@ -20,6 +20,7 @@ $ErrorActionPreference = "Stop"
 
 Add-Type -TypeDefinition @'
 using System;
+using System.Text;
 using System.Runtime.InteropServices;
 
 public class SfhWin {
@@ -43,6 +44,29 @@ public class SfhWin {
   [DllImport("user32.dll")] public static extern bool ScreenToClient(IntPtr hWnd, ref POINT point);
   [DllImport("user32.dll")] public static extern IntPtr SendMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
   [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+  [DllImport("user32.dll", EntryPoint = "GetWindowThreadProcessId")] public static extern uint GetWindowProcessId(IntPtr hWnd, out uint pid);
+
+  public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+  [DllImport("user32.dll")] public static extern bool EnumWindows(EnumWindowsProc callback, IntPtr lParam);
+  [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int maxCount);
+
+  // Visible top-level windows whose title contains the fragment. Get-Process only
+  // reports one "main" window per process, and on some machines it reports none
+  // for VS Code at all: enumerating the windows does not depend on that.
+  public static IntPtr[] FindWindowsByTitle(string fragment) {
+    System.Collections.Generic.List<IntPtr> found = new System.Collections.Generic.List<IntPtr>();
+    EnumWindows((hWnd, lParam) => {
+      if (IsWindowVisible(hWnd)) {
+        StringBuilder title = new StringBuilder(512);
+        GetWindowText(hWnd, title, title.Capacity);
+        if (title.ToString().IndexOf(fragment, StringComparison.OrdinalIgnoreCase) >= 0) {
+          found.Add(hWnd);
+        }
+      }
+      return true;
+    }, IntPtr.Zero);
+    return found.ToArray();
+  }
 
   [StructLayout(LayoutKind.Sequential)]
   public struct POINT { public int X, Y; }
@@ -94,6 +118,31 @@ public class SfhWin {
 [void][SfhWin]::SetProcessDPIAware()
 Add-Type -AssemblyName System.Windows.Forms, System.Drawing
 
+# Handle cached by an earlier call of this run, when it is still a visible window of
+# the same process. The cache is only good for the run that wrote it: Windows reuses
+# handles, so an entry left by a previous VS Code can point at somebody else's window,
+# and capturing it silently is worse than failing.
+function Get-SfhCachedWindow {
+  param([Parameter(Mandatory = $true)][string]$CacheFile)
+  if (-not (Test-Path $CacheFile)) {
+    return $null
+  }
+  $parts = ((Get-Content -Path $CacheFile -Raw).Trim() -split '\s+')
+  if ($parts.Count -ne 2) {
+    return $null
+  }
+  $cachedPid = [int]$parts[0]
+  $cached = [IntPtr][int64]$parts[1]
+  $ownerPid = [uint32]0
+  if ([SfhWin]::IsWindow($cached) -and [SfhWin]::IsWindowVisible($cached)) {
+    [void][SfhWin]::GetWindowProcessId($cached, [ref]$ownerPid)
+  }
+  if ($ownerPid -ne 0 -and $ownerPid -eq $cachedPid) {
+    return $cached
+  }
+  return $null
+}
+
 function Get-SfhWindow {
   param([Parameter(Mandatory = $true)][string]$TitleMatch)
   # The handle is remembered between calls, because the title is not always
@@ -111,24 +160,26 @@ function Get-SfhWindow {
       Set-Content -Path $cacheFile -Value ("$($proc.Id) " + [string][int64]$proc.MainWindowHandle) -Encoding ascii
       return $proc.MainWindowHandle
     }
-    Start-Sleep -Milliseconds 500
-  }
-  # The cache is only good for the run that wrote it. Windows reuses handles, so
-  # an entry left by a previous VS Code can point at somebody else's window, and
-  # capturing it silently is worse than failing.
-  if (Test-Path $cacheFile) {
-    $parts = ((Get-Content -Path $cacheFile -Raw).Trim() -split '\s+')
-    if ($parts.Count -eq 2) {
-      $cachedPid = [int]$parts[0]
-      $cached = [IntPtr][int64]$parts[1]
-      $owner = Get-Process -Id $cachedPid -ErrorAction SilentlyContinue
-      if ($owner -and $owner.MainWindowHandle -eq $cached -and
-          [SfhWin]::IsWindow($cached) -and [SfhWin]::IsWindowVisible($cached)) {
-        return $cached
+    # A handle already proven to be the test VS Code wins over a new title match
+    $proven = Get-SfhCachedWindow -CacheFile $cacheFile
+    if ($proven) {
+      return $proven
+    }
+    # Get-Process can miss the VS Code window entirely: look through the top-level windows,
+    # and only accept one owned by a VS Code process (never a browser tab or an Explorer window
+    # that happens to show the same title)
+    foreach ($hwnd in [SfhWin]::FindWindowsByTitle($TitleMatch)) {
+      $ownerPid = [uint32]0
+      [void][SfhWin]::GetWindowProcessId($hwnd, [ref]$ownerPid)
+      $owner = Get-Process -Id $ownerPid -ErrorAction SilentlyContinue
+      if ($owner -and $owner.ProcessName -like "Code*") {
+        Set-Content -Path $cacheFile -Value ("$ownerPid " + [string][int64]$hwnd) -Encoding ascii
+        return $hwnd
       }
     }
-    Remove-Item -Path $cacheFile -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Milliseconds 500
   }
+  Remove-Item -Path $cacheFile -Force -ErrorAction SilentlyContinue
   $seen = (Get-Process | Where-Object { $_.MainWindowHandle -ne 0 } |
     ForEach-Object { "$($_.ProcessName): $($_.MainWindowTitle)" }) -join " | "
   throw "No window matching '$TitleMatch' was found. Open windows: $seen"

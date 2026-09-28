@@ -317,6 +317,10 @@ export class ThemeUtils {
         hardis: "dollar.svg",
       },
       "hardis:doc:data-dictionary": { vscode: "book", hardis: "data.svg" },
+      "hardis:doc:metadata-deps": {
+        vscode: "type-hierarchy",
+        hardis: "doc.svg",
+      },
       "org:test:apex": { vscode: "testing-run-all-icon", hardis: "test.svg" },
       "hardis:org:test:agents": {
         vscode: "sparkle",
