@@ -615,9 +615,16 @@ async function main() {
 
   // Metadata Dependencies panel: the components of the fixture org that use Invoice__c,
   // with the fields the CLI adds for the panel (API name, Setup path, local file)
-  if (first === "hardis:doc:metadata-deps" && DOCS_PROFILE && args.includes("--json")) {
+  if (
+    first === "hardis:doc:metadata-deps" &&
+    DOCS_PROFILE &&
+    args.includes("--json")
+  ) {
     const dependencies = JSON.parse(
-      fs.readFileSync(path.join(__dirname, "metadata-dependencies.json"), "utf8"),
+      fs.readFileSync(
+        path.join(__dirname, "metadata-dependencies.json"),
+        "utf8",
+      ),
     );
     outputJsonIfRequested({ status: 0, result: dependencies }, "");
     return 0;

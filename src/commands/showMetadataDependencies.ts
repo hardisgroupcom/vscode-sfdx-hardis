@@ -86,7 +86,8 @@ async function listConnectedOrgs(): Promise<any[]> {
   try {
     const orgs = await listAllOrgs(false);
     return orgs.filter(
-      (org: any) => org.connectedStatus === "Connected" || org.status === "Active",
+      (org: any) =>
+        org.connectedStatus === "Connected" || org.status === "Active",
     );
   } catch (error: any) {
     Logger.log(`Error listing orgs: ${error?.message || error}`);

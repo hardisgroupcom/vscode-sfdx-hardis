@@ -68,7 +68,10 @@ export default class MetadataDependencies extends SharedMixin(
     }
     if (data.query) {
       // The same init data can arrive twice when the panel is created: search once
-      const initKey = JSON.stringify({ query: data.query, username: this.username });
+      const initKey = JSON.stringify({
+        query: data.query,
+        username: this.username,
+      });
       if (initKey === this.lastInitKey && Date.now() - this.lastInitAt < 3000) {
         return;
       }
@@ -105,7 +108,9 @@ export default class MetadataDependencies extends SharedMixin(
       this.reportFiles = (data?.reportFiles || []).map((file) => ({
         file: file.file,
         label:
-          file.type === "xlsx" ? this.t("openExcelReport") : this.t("openCsvReport"),
+          file.type === "xlsx"
+            ? this.t("openExcelReport")
+            : this.t("openCsvReport"),
       }));
     } else if (type === "reportError") {
       this.isGeneratingReport = false;
@@ -462,7 +467,9 @@ export default class MetadataDependencies extends SharedMixin(
         pillClass: getMetadataTypePillClass(row.usedByType),
         displayName,
         componentLabel:
-          row.usedByName && row.usedByName !== displayName ? row.usedByName : "",
+          row.usedByName && row.usedByName !== displayName
+            ? row.usedByName
+            : "",
         openDisabled: !hasLocalFile,
         openTitle: hasLocalFile ? row.usedByLocalFile : this.t("notInProject"),
         localText: hasLocalFile ? this.t("inProject") : this.t("onlyInOrg"),
@@ -474,7 +481,8 @@ export default class MetadataDependencies extends SharedMixin(
     const field = this.sortedBy;
     return rows.sort(
       (a, b) =>
-        direction * String(a[field] || "").localeCompare(String(b[field] || "")) ||
+        direction *
+          String(a[field] || "").localeCompare(String(b[field] || "")) ||
         a.displayName.localeCompare(b.displayName),
     );
   }
@@ -611,7 +619,10 @@ export default class MetadataDependencies extends SharedMixin(
   handleOpenReportFile(event) {
     const file = event.currentTarget.dataset.file;
     if (file) {
-      window.sendMessageToVSCode({ type: "openReportFile", data: { path: file } });
+      window.sendMessageToVSCode({
+        type: "openReportFile",
+        data: { path: file },
+      });
     }
   }
 }
