@@ -37,12 +37,13 @@
             allow-free-text
             max-options={maxNameOptions}
             onchange={handleTypeChange}
+            ontextchange={handleTypeText}
           ></s-typeahead>
           <template lwc:if={typeError}>
             <p class="deps-field-error">{typeError}</p>
           </template>
         </div>
-        <div class="deps-name" onfocusin={handleNameFocus}>
+        <div class="deps-name" onfocusin={handleNameFocus} onkeydown={handleNameKeydown}>
           <s-typeahead
             label={i18n.apiNameLabel}
             value={formName}
@@ -53,6 +54,7 @@
             loading={namesLoading}
             empty-text={namesEmptyText}
             onchange={handleNameChange}
+            ontextchange={handleNameText}
           ></s-typeahead>
         </div>
         <div class="deps-search-action">

@@ -13,7 +13,9 @@ import { SharedMixin } from "s/sharedMixin";
  * Opt-in options (the default behavior is unchanged):
  * - `allowFreeText`: any typed text is a value, committed on Enter, blur or
  *   Escape; the options are suggestions. A value that is not an option is shown
- *   as it is.
+ *   as it is. A `textchange` event (detail.value) reports every keystroke, so the
+ *   parent always knows the current text, and blur commits at once (a click on
+ *   an option never blurs the input, its mousedown is prevented).
  * - `maxOptions`: at most this number of options is rendered, with a line
  *   telling how many more match (0 = no cap). Keeps long lists fast.
  * - `loading`: shows a loading line in the dropdown while options arrive.
@@ -48,6 +50,8 @@ export default class Typeahead extends SharedMixin(LightningElement) {
   @track _validationMessage = "";
 
   _uid = `typeahead-${TYPEAHEAD_UID++}`;
+  // Render-time memo: its properties change during render, so they are never reactive fields
+  _memo = {};
   _blurTimer = null;
   _customValidityMessage = "";
 
@@ -162,15 +166,23 @@ export default class Typeahead extends SharedMixin(LightningElement) {
     return cls;
   }
 
-  // Every option matching the typed text, before the maxOptions cap
+  // Every option matching the typed text, before the maxOptions cap. Filtered
+  // once per (options, text): several getters read it on each render, and the
+  // list can hold thousands of names.
   get matchingOptions() {
-    if (this._dirty && this._searchTerm) {
-      const term = this._searchTerm.toLowerCase();
-      return this._options.filter(
-        (opt) => opt && opt.label && opt.label.toLowerCase().includes(term),
-      );
+    const term =
+      this._dirty && this._searchTerm ? this._searchTerm.toLowerCase() : "";
+    const memo = this._memo.matching;
+    if (memo && memo.options === this._options && memo.term === term) {
+      return memo.result;
     }
-    return this._options;
+    const result = term
+      ? this._options.filter(
+          (opt) => opt && opt.label && opt.label.toLowerCase().includes(term),
+        )
+      : this._options;
+    this._memo.matching = { options: this._options, term, result };
+    return result;
   }
 
   get optionsCap() {
@@ -278,12 +290,21 @@ export default class Typeahead extends SharedMixin(LightningElement) {
     if (this.allowFreeText) {
       // Enter keeps the typed text unless the user picks a suggestion
       this._activeIndex = -1;
+      this.dispatchEvent(
+        new CustomEvent("textchange", { detail: { value: this._searchTerm } }),
+      );
     } else {
       this.highlightFirstFilteredOption();
     }
   }
 
   handleBlur() {
+    if (this.allowFreeText) {
+      // Commit at once, so a button clicked right after typing sees the value
+      this.cancelBlurTimer();
+      this.closeAndReset();
+      return;
+    }
     // Delay closing so a click on an option can register before we reset.
     this.cancelBlurTimer();
     this._blurTimer = setTimeout(() => {

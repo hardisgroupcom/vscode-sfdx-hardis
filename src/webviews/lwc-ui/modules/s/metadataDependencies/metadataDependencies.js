@@ -32,6 +32,9 @@ const FOLDER_PREFIX = "__folder__:";
 // Maximum number of name suggestions rendered at once: filtering narrows the rest
 const MAX_NAME_OPTIONS = 50;
 
+// Same empty list on each render, so the typeahead does not filter again
+const EMPTY_OPTIONS = [];
+
 // Types the CLI can not list: no name suggestions to prefetch
 const NOT_LISTABLE_TYPES = ["Unknown", "StandardEntity"];
 
@@ -52,6 +55,8 @@ export default class MetadataDependencies extends SharedMixin(
   formName = "";
   // Folder picked in the name field, for Report, Dashboard, Document and EmailTemplate
   nameFolder = null;
+  // Text of the type field while it is typed (committed to formType on Enter or blur)
+  typeDraft = null;
   // Every Metadata API type, bundled in the extension: no org call
   metadataTypes = [];
   // Name suggestions per "username|type|folder", filled in the background
@@ -69,6 +74,8 @@ export default class MetadataDependencies extends SharedMixin(
   requestSequence = 0;
   lastInitKey = null;
   lastInitAt = 0;
+  // Render-time memo: its properties change during render, so they are never reactive fields
+  _memo = {};
 
   connectedCallback() {
     super.connectedCallback();
@@ -171,6 +178,7 @@ export default class MetadataDependencies extends SharedMixin(
     }
     this.formName = query.name || "";
     this.nameFolder = null;
+    this.typeDraft = null;
     this.requestDependencies(level);
   }
 
@@ -214,6 +222,7 @@ export default class MetadataDependencies extends SharedMixin(
         level.type = component.type || level.type;
         if (component.type && component.type !== "Unknown") {
           this.formType = component.type;
+          this.typeDraft = null;
         }
         this.formName = component.name || this.formName;
       }
@@ -263,7 +272,16 @@ export default class MetadataDependencies extends SharedMixin(
 
   // ---- Search form ---------------------------------------------------------
 
+  // Built once per (type list, current type): the list holds about 570 types
   get typeOptions() {
+    const memo = this._memo.typeOptions;
+    if (
+      memo &&
+      memo.types === this.metadataTypes &&
+      memo.formType === this.formType
+    ) {
+      return memo.options;
+    }
     const options = this.metadataTypes.map((type) => ({
       label: type,
       value: type,
@@ -272,7 +290,17 @@ export default class MetadataDependencies extends SharedMixin(
     if (this.formType && !this.metadataTypes.includes(this.formType)) {
       options.unshift({ label: this.formType, value: this.formType });
     }
+    this._memo.typeOptions = {
+      types: this.metadataTypes,
+      formType: this.formType,
+      options,
+    };
     return options;
+  }
+
+  // What the type field shows: the text being typed, else the committed type
+  get typeText() {
+    return this.typeDraft !== null ? this.typeDraft : this.formType || "";
   }
 
   get isTypeValid() {
@@ -280,7 +308,8 @@ export default class MetadataDependencies extends SharedMixin(
   }
 
   get typeError() {
-    return this.formType && !this.isTypeValid
+    const text = this.typeText.trim();
+    return text && !METADATA_TYPE_RE.test(text)
       ? this.t("invalidMetadataType")
       : null;
   }
@@ -293,17 +322,24 @@ export default class MetadataDependencies extends SharedMixin(
     return entry ? entry.hint : "";
   }
 
+  // Follows the text of both fields as it is typed, so the button is enabled before any blur
   get searchDisabled() {
+    const name = this.formName.trim();
     return (
       !this.username ||
-      !this.isTypeValid ||
-      !this.formName.trim() ||
-      this.formName.trim().endsWith("/")
+      !METADATA_TYPE_RE.test(this.typeText.trim()) ||
+      !name ||
+      name.endsWith("/")
     );
+  }
+
+  handleTypeText(event) {
+    this.typeDraft = event.detail.value || "";
   }
 
   handleTypeChange(event) {
     const type = (event.detail.value || "").trim();
+    this.typeDraft = null;
     if (type === this.formType) {
       return;
     }
@@ -327,12 +363,40 @@ export default class MetadataDependencies extends SharedMixin(
       this.requestNames();
       return;
     }
+    this.setTypedName(value);
+  }
+
+  // Every keystroke of the name field: the typed text is the name, and its folder part
+  // decides whether the suggestions are the folders or the content of one folder
+  handleNameText(event) {
+    this.setTypedName(event.detail.value || "");
+  }
+
+  setTypedName(value) {
     this.formName = value;
-    // Typing "Folder/" by hand also lists the content of that folder
-    const folder = value.endsWith("/") ? value.slice(0, -1) : null;
-    if (folder && this.namesEntry?.kind === "folders") {
-      this.nameFolder = folder;
-      this.requestNames();
+    // Leaving the picked folder (cleared field, another folder typed) goes back to the folder list
+    if (this.nameFolder && !value.startsWith(`${this.nameFolder}/`)) {
+      this.nameFolder = null;
+    }
+    // "Folder/" typed by hand lists the content of that folder
+    const slash = value.indexOf("/");
+    if (!this.nameFolder && slash > 0) {
+      const folders = this.namesCache[this.namesKey(null)];
+      const folder = value.slice(0, slash);
+      if (
+        folders?.kind === "folders" &&
+        folders.items.some((item) => item.fullName === folder)
+      ) {
+        this.nameFolder = folder;
+        this.requestNames();
+      }
+    }
+  }
+
+  // Enter in the name field searches, once the typeahead has committed the name
+  handleNameKeydown(event) {
+    if (event.key === "Enter") {
+      this.handleSearch(event);
     }
   }
 
@@ -342,13 +406,9 @@ export default class MetadataDependencies extends SharedMixin(
     return `${this.username}|${this.formType}|${folder || ""}`;
   }
 
-  // Suggestions of the current type: the folder content once a folder is picked
+  // Suggestions of the current type: the folder list, or the content of the picked folder
   get namesEntry() {
-    return (
-      this.namesCache[this.namesKey()] ||
-      (this.nameFolder ? null : this.namesCache[this.namesKey(null)]) ||
-      null
-    );
+    return this.namesCache[this.namesKey()] || null;
   }
 
   requestNames() {
@@ -378,35 +438,35 @@ export default class MetadataDependencies extends SharedMixin(
   handleNamesResult(data) {
     const key = data.requestKey;
     this.namesLoadingKeys = this.namesLoadingKeys.filter((k) => k !== key);
-    // A result for an org changed since is dropped
-    if (!key || !key.startsWith(`${this.username}|`)) {
+    // A result for an org changed since is dropped, and a failure is not kept: the next focus tries again
+    if (!key || !key.startsWith(`${this.username}|`) || data.error) {
       return;
     }
+    const kind = data.kind || "components";
+    const items = Array.isArray(data.items) ? data.items : [];
     this.namesCache = {
       ...this.namesCache,
       [key]: {
-        kind: data.kind || "components",
-        items: Array.isArray(data.items) ? data.items : [],
-        listable: data.listable !== false && !data.error,
+        kind,
+        items,
+        listable: data.listable !== false,
+        options:
+          kind === "folders"
+            ? items.map((item) => ({
+                label: `${item.fullName}/`,
+                value: `${FOLDER_PREFIX}${item.fullName}`,
+              }))
+            : items.map((item) => ({
+                label: item.fullName,
+                value: item.fullName,
+              })),
       },
     };
   }
 
+  // Built once per listing, in handleNamesResult: a listing can hold thousands of names
   get nameOptions() {
-    const entry = this.namesEntry;
-    if (!entry) {
-      return [];
-    }
-    if (entry.kind === "folders") {
-      return entry.items.map((item) => ({
-        label: `${item.fullName}/`,
-        value: `${FOLDER_PREFIX}${item.fullName}`,
-      }));
-    }
-    return entry.items.map((item) => ({
-      label: item.fullName,
-      value: item.fullName,
-    }));
+    return this.namesEntry?.options || EMPTY_OPTIONS;
   }
 
   get namesLoading() {
@@ -513,6 +573,7 @@ export default class MetadataDependencies extends SharedMixin(
     this.formType = level.type || this.formType;
     this.formName = level.title || this.formName;
     this.nameFolder = null;
+    this.typeDraft = null;
     // A level left without result (the org changed since) is read again
     if (!level.result && !level.loading) {
       this.requestDependencies(level);
