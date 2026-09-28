@@ -727,10 +727,7 @@ export default class MetadataDependencies extends SharedMixin(
         typeLabel: row.usedByType,
         pillClass: getMetadataTypePillClass(row.usedByType),
         displayName,
-        componentLabel:
-          row.usedByName && row.usedByName !== displayName
-            ? row.usedByName
-            : "",
+        componentLabel: this.buildComponentLabel(row, displayName),
         openDisabled: !hasLocalFile,
         openTitle: hasLocalFile ? row.usedByLocalFile : this.t("notInProject"),
         localText: hasLocalFile ? this.t("inProject") : this.t("onlyInOrg"),
@@ -746,6 +743,34 @@ export default class MetadataDependencies extends SharedMixin(
           String(a[field] || "").localeCompare(String(b[field] || "")) ||
         a.displayName.localeCompare(b.displayName),
     );
+  }
+
+  // Label of the dependent, plus the versions of a Flow that use the component:
+  // "Installation Assign Crew · Versions v4 (active), v3, v2, v1"
+  buildComponentLabel(row, displayName) {
+    const parts = [];
+    const versions = row.usedByVersions || [];
+    // Deleting the obsolete versions of such a Flow removes the dependency
+    if (
+      versions.length > 0 &&
+      versions.every((version) => version.status === "Obsolete")
+    ) {
+      parts.push(this.t("onlyObsoleteFlowVersions"));
+    }
+    if (row.usedByName && row.usedByName !== displayName) {
+      parts.push(row.usedByName);
+    }
+    if (versions.length > 0) {
+      const versionsText = versions
+        .map((version) =>
+          version.status === "Active"
+            ? `v${version.versionNumber} (${this.t("flowVersionActive")})`
+            : `v${version.versionNumber}`,
+        )
+        .join(", ");
+      parts.push(this.t("flowVersionsLabel", { versions: versionsText }));
+    }
+    return parts.join(" · ");
   }
 
   buildRowActions(row, hasLocalFile) {
@@ -808,7 +833,11 @@ export default class MetadataDependencies extends SharedMixin(
     } else if (actionName === "setup" && row.usedBySetupPath) {
       window.sendMessageToVSCode({
         type: "openInSetup",
-        data: { username: this.username, path: row.usedBySetupPath },
+        data: {
+          username: this.username,
+          path: row.usedBySetupPath,
+          name: row.displayName,
+        },
       });
     } else if (actionName === "drill") {
       // Without an API name, the dependent is found by its Id

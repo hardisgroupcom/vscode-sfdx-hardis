@@ -82,7 +82,24 @@
       "targetType": "CustomObject",
       "usedByApiName": "Invoice_Approval",
       "usedBySetupPath": "/builder_platform_interaction/flowBuilder.app?flowId=3015g00000Inv01AAA",
-      "usedByLocalFile": "force-app/main/default/flows/Invoice_Approval.flow-meta.xml"
+      "usedByLocalFile": "force-app/main/default/flows/Invoice_Approval.flow-meta.xml",
+      "usedByVersions": [
+        {
+          "id": "3015g00000Inv01AAA",
+          "versionNumber": 3,
+          "status": "Active"
+        },
+        {
+          "id": "3015g00000Inv03AAA",
+          "versionNumber": 2,
+          "status": "Obsolete"
+        },
+        {
+          "id": "3015g00000Inv04AAA",
+          "versionNumber": 1,
+          "status": "Obsolete"
+        }
+      ]
     },
     {
       "usedById": "3015g00000Inv02AAA",
@@ -93,7 +110,19 @@
       "targetType": "CustomObject",
       "usedByApiName": "Invoice_Reminder",
       "usedBySetupPath": "/builder_platform_interaction/flowBuilder.app?flowId=3015g00000Inv02AAA",
-      "usedByLocalFile": ""
+      "usedByLocalFile": "",
+      "usedByVersions": [
+        {
+          "id": "3015g00000Inv02AAA",
+          "versionNumber": 2,
+          "status": "Obsolete"
+        },
+        {
+          "id": "3015g00000Inv05AAA",
+          "versionNumber": 1,
+          "status": "Obsolete"
+        }
+      ]
     },
     {
       "usedById": "00h5g00000Inv01AAA",

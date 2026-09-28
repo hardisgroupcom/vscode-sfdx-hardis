@@ -161,10 +161,23 @@ function resolveWorkspaceFile(relativeOrAbsolutePath: string): string | null {
   return filePath;
 }
 
-async function openInSetup(username: string, setupPath: string) {
-  const response = await execSfdxJson(
-    `sf org open --target-org ${quote(username)} --path ${quote(setupPath)} --url-only`,
-    { fail: false, output: false, reuseRecentResult: false },
+async function openInSetup(
+  username: string,
+  setupPath: string,
+  componentName: string,
+) {
+  // Getting the URL of the page takes a few seconds: tell the user it is on its way
+  const response = await vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Notification,
+      title: t("openingInSetup", { name: componentName || setupPath }),
+      cancellable: false,
+    },
+    () =>
+      execSfdxJson(
+        `sf org open --target-org ${quote(username)} --path ${quote(setupPath)} --url-only`,
+        { fail: false, output: false, reuseRecentResult: false },
+      ),
   );
   const url = response?.result?.url;
   if (!url) {
@@ -269,7 +282,7 @@ export function registerShowMetadataDependencies(commands: Commands) {
           }
         } else if (type === "openInSetup") {
           if (data?.username && data?.path) {
-            await openInSetup(data.username, data.path);
+            await openInSetup(data.username, data.path, data.name || "");
           }
         } else if (type === "retrieveComponents") {
           const components = Array.isArray(data?.components)
