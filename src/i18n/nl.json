@@ -649,7 +649,6 @@
   "dependenciesCoverageNote": "Salesforce-afhankelijkheidsgegevens (Beta) missen mogelijk enkele typen, zoals Profile, Permission Set en List Views.",
   "dependenciesReadFromOrg": "Gelezen vanuit {{org}} om {{time}}, niet vanuit je lokale bestanden. Wijzigingen die nog niet zijn geïmplementeerd, zijn niet inbegrepen.",
   "dependenciesRefreshing": "Laatste resultaat, gelezen om {{time}}. {{org}} wordt opnieuw gelezen...",
-  "dependenciesRowCapWarning": "Salesforce heeft {{count}} rijen geretourneerd, het maximum voor één query. Sommige afhankelijkheden ontbreken mogelijk.",
   "dependenciesSearchHint": "Kies een metadata type en een API-naam. Tip: klik met de rechtermuisknop op een metadatabestand, of gebruik het rijmenu van de Metadata Ophaler, om dit formulier over te slaan.",
   "dependenciesStatusSummary": "Overzicht van de status van afhankelijkheden",
   "dependenciesUpToDate": "Afhankelijkheden up-to-date",

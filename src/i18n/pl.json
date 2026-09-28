@@ -649,7 +649,6 @@
   "dependenciesCoverageNote": "Dane o zależnościach Salesforce (Beta) mogą nie obejmować niektórych typów, takich jak Profile, Permission Set i widoki list.",
   "dependenciesReadFromOrg": "Odczytano z {{org}} o {{time}}, a nie z lokalnych plików. Zmiany jeszcze niewdrożone nie są uwzględnione.",
   "dependenciesRefreshing": "Ostatni wynik, odczytany o {{time}}. Ponowny odczyt {{org}}...",
-  "dependenciesRowCapWarning": "Salesforce zwrócił {{count}} wierszy, czyli maksimum dla jednego zapytania. Niektóre zależności mogą być pominięte.",
   "dependenciesSearchHint": "Wybierz typ metadata i nazwę API. Wskazówka: kliknij prawym przyciskiem myszy plik metadata lub użyj menu wiersza w Pobieraczu metadata, aby pominąć ten formularz.",
   "dependenciesStatusSummary": "Podsumowanie statusu zależności",
   "dependenciesUpToDate": "Zależności są aktualne",

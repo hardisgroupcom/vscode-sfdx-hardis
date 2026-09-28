@@ -20,9 +20,6 @@ const NAME_HINTS = [
   { value: "CustomPermission", hint: "My_Permission" },
 ];
 
-// Salesforce returns at most this number of rows to one Tooling query
-const TOOLING_ROW_CAP = 2000;
-
 // Same identifier rule as the CLI (isMetadataType)
 const METADATA_TYPE_RE = /^[A-Za-z][A-Za-z0-9_]*$/;
 
@@ -810,12 +807,6 @@ export default class MetadataDependencies extends SharedMixin(
         })
       : "";
     return this.t("dependenciesReadFromOrg", { org: this.orgLabel, time });
-  }
-
-  get rowCapWarning() {
-    return this.dependencies.length >= TOOLING_ROW_CAP
-      ? this.t("dependenciesRowCapWarning", { count: TOOLING_ROW_CAP })
-      : null;
   }
 
   get hasReportFiles() {
