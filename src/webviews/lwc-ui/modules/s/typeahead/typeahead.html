@@ -92,6 +92,34 @@
                     </div>
                   </li>
                 </template>
+                <template if:true={hasMoreOptions}>
+                  <li role="presentation" class="slds-listbox__item">
+                    <div
+                      class="slds-media slds-listbox__option slds-listbox__option_plain slds-media_small"
+                      role="presentation"
+                    >
+                      <span class="slds-media__body">
+                        <span class="slds-truncate slds-text-color_weak"
+                          >{moreOptionsLabel}</span
+                        >
+                      </span>
+                    </div>
+                  </li>
+                </template>
+                <template if:true={showLoading}>
+                  <li role="presentation" class="slds-listbox__item">
+                    <div
+                      class="slds-media slds-listbox__option slds-listbox__option_plain slds-media_small"
+                      role="presentation"
+                    >
+                      <span class="slds-media__body">
+                        <span class="slds-truncate slds-text-color_weak"
+                          >{loadingLabel}</span
+                        >
+                      </span>
+                    </div>
+                  </li>
+                </template>
                 <template if:true={hasNoMatches}>
                   <li role="presentation" class="slds-listbox__item">
                     <div

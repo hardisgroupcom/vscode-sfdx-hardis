@@ -231,20 +231,29 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       });
     }
 
-    // Add download icon column (single-icon button)
-    // Use a 'button-icon' column so users can click the download icon directly
+    // Row actions menu, the same for every row: sf hardis:doc:metadata-deps
+    // finds any metadata type by its API name (deleted rows included: the org
+    // gives the answer)
     cols.push({
-      type: "button-icon",
+      type: "action",
       typeAttributes: {
-        iconName: "utility:download",
-        title: this.t("downloadLabel"),
-        variant: "bare",
-        alternativeText: this.t("downloadLabel"),
-        name: "download",
-      },
-      initialWidth: 30,
-      cellAttributes: {
-        alignment: "center",
+        rowActions: [
+          {
+            label: this.t("downloadLabel"),
+            name: "download",
+            iconName: "utility:download",
+          },
+          {
+            label: this.t("findWhereUsedLabel"),
+            name: "findUsage",
+            iconName: "utility:hierarchy",
+          },
+          {
+            label: this.t("seeWhatItUsesLabel"),
+            name: "findUses",
+            iconName: "utility:arrowdown",
+          },
+        ],
       },
     });
 
@@ -1182,6 +1191,11 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       return;
     }
 
+    if (actionName === "findUsage" || actionName === "findUses") {
+      this.handleFindUsage(row, actionName === "findUses" ? "uses" : "used-by");
+      return;
+    }
+
     if (actionName === "open") {
       // user clicked the metadata name button -> request extension to open file
       window.sendMessageToVSCode({
@@ -1190,6 +1204,25 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       });
       return;
     }
+  }
+
+  // Opens the Metadata Dependencies panel on this component, in the selected org:
+  // what uses it (used-by) or what it uses (uses)
+  handleFindUsage(row, direction) {
+    window.sendMessageToVSCode({
+      type: "runVsCodeCommand",
+      data: {
+        command: "vscode-sfdx-hardis.showMetadataDependencies",
+        args: [
+          {
+            type: row.MemberType,
+            name: row.MemberName,
+            username: this.selectedOrg,
+            direction,
+          },
+        ],
+      },
+    });
   }
 
   handleRetrieve(row) {

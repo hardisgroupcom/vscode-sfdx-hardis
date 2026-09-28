@@ -37,6 +37,7 @@ Built and maintained by [**Cloudity**](https://cloudity.com/?ref=sfdxhardis) and
   - [Promotion branches (Beta)](#promotion-branches-beta)
   - [Backpromote (Beta)](#backpromote-beta)
   - [Metadata Retriever](#metadata-retriever)
+  - [Metadata Dependencies](#metadata-dependencies)
   - [Data Workbench (SFDMU)](#data-workbench-sfdmu)
   - [Files Workbench](#files-workbench)
   - [Documentation Workbench](#documentation-workbench)
@@ -222,6 +223,14 @@ metadataRetrieverPresets:
 # Set to true to hide the presets shipped with the extension
 metadataRetrieverPresetsOverrideDefaults: false
 ```
+
+### Metadata Dependencies
+
+Find which components of an org use an Apex class, a Flow, a field, a layout or any other metadata, or which components it uses: the **Used by / Uses** switch reads the selected component either way. Open it from the row menu of the Metadata Retriever, the right-click menu of a metadata file (in the Explorer or in the file itself), the Commands menu or the Org Monitoring page.
+
+From the list, open the local file of a component or its page in Setup (Flow Builder for a Flow), drill down to what uses it or to what it uses, retrieve the selected ones into your project, and generate a CSV/Excel report. Dependencies are read from the org, so a change that is not deployed yet is not included.
+
+![Metadata Dependencies](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/metadata-dependencies.png)
 
 ### Data Workbench (SFDMU)
 

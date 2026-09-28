@@ -1,0 +1,210 @@
+<template>
+  <div class="slds-p-around_x-small blue-back">
+    <div class="hardis-page-head">
+      <div class="hardis-tile featured violet">
+        <lightning-icon icon-name="utility:hierarchy" size="medium"></lightning-icon>
+      </div>
+      <div class="hardis-page-head-text">
+        <h1 class="hardis-page-title">{i18n.metadataDependencies}</h1>
+        <p class="hardis-page-subtitle">{i18n.metadataDependenciesSubtitle}</p>
+      </div>
+      <div class="hardis-page-head-actions">
+        <lightning-button
+          variant="neutral"
+          label={i18n.refreshLabel}
+          icon-name="utility:refresh"
+          disabled={refreshDisabled}
+          onclick={handleRefresh}
+        ></lightning-button>
+        <lightning-combobox
+          label={i18n.selectedOrgLabel}
+          value={username}
+          options={orgOptions}
+          onchange={handleOrgChange}
+          variant="label-hidden"
+          placeholder={i18n.selectOrgPlaceholder}
+        ></lightning-combobox>
+      </div>
+    </div>
+
+    <div class="hardis-panel-body">
+      <form class="deps-search" onsubmit={handleSearch}>
+        <div class="deps-type">
+          <s-typeahead
+            label={i18n.metadataTypeLabel}
+            value={formType}
+            options={typeOptions}
+            allow-free-text
+            max-options={maxNameOptions}
+            onchange={handleTypeChange}
+            ontextchange={handleTypeText}
+          ></s-typeahead>
+          <template lwc:if={typeError}>
+            <p class="deps-field-error">{typeError}</p>
+          </template>
+        </div>
+        <div class="deps-name" onfocusin={handleNameFocus} onkeydown={handleNameKeydown}>
+          <s-typeahead
+            label={i18n.apiNameLabel}
+            value={formName}
+            options={nameOptions}
+            placeholder={formNamePlaceholder}
+            allow-free-text
+            max-options={maxNameOptions}
+            loading={namesLoading}
+            empty-text={namesEmptyText}
+            onchange={handleNameChange}
+            ontextchange={handleNameText}
+          ></s-typeahead>
+        </div>
+        <div class="deps-search-action">
+          <lightning-radio-group
+            label={i18n.directionLabel}
+            variant="label-hidden"
+            type="button"
+            options={directionOptions}
+            value={currentDirection}
+            onchange={handleDirectionChange}
+          ></lightning-radio-group>
+          <lightning-button
+            variant="neutral"
+            class="hardis-btn-tinted-blue"
+            type="submit"
+            label={searchButtonLabel}
+            disabled={searchDisabled}
+            onclick={handleSearch}
+          ></lightning-button>
+        </div>
+      </form>
+
+      <template lwc:if={hasLevels}>
+        <nav class="deps-path" aria-label={i18n.metadataDependenciesPath}>
+          <template for:each={pathItems} for:item="item">
+            <span key={item.key} class="deps-path-item">
+              <template lwc:if={item.showSeparator}>
+                <span class="deps-path-separator" aria-hidden="true">›</span>
+              </template>
+              <button
+                class={item.buttonClass}
+                data-level={item.index}
+                onclick={handlePathClick}
+                aria-current={item.ariaCurrent}
+                title={item.title}
+              >
+                <lightning-icon
+                  icon-name={item.directionIcon}
+                  size="xx-small"
+                  alternative-text={item.directionLabel}
+                  title={item.directionLabel}
+                ></lightning-icon>
+                <span class={item.pillClass}>{item.type}</span>
+                <span>{item.label}</span>
+              </button>
+            </span>
+          </template>
+        </nav>
+      </template>
+
+      <template lwc:if={isLoading}>
+        <div class="deps-loading">
+          <!-- lightning-spinner centers itself in its closest positioned parent: this box -->
+          <div class="deps-loading-spinner">
+            <lightning-spinner alternative-text={loadingText} size="small" variant="brand"></lightning-spinner>
+          </div>
+          <p class="deps-loading-text">{loadingText}</p>
+        </div>
+      </template>
+
+      <template lwc:if={errorMessage}>
+        <div class="hardis-note error" role="alert">
+          <lightning-icon icon-name="utility:error" size="x-small"></lightning-icon>
+          <p>{errorMessage}</p>
+        </div>
+      </template>
+
+      <template lwc:if={isRefreshing}>
+        <div class="hardis-note deps-refreshing" role="status">
+          <div class="deps-refreshing-spinner">
+            <lightning-spinner alternative-text={refreshingText} size="x-small" variant="brand"></lightning-spinner>
+          </div>
+          <p>{refreshingText}</p>
+        </div>
+      </template>
+
+      <template lwc:if={showEmptyForm}>
+        <div class="hardis-empty">
+          <div class="hardis-tile featured violet">
+            <lightning-icon icon-name="utility:search" size="small"></lightning-icon>
+          </div>
+          <h3 class="hardis-empty-title">{i18n.metadataDependencies}</h3>
+          <p class="hardis-empty-desc">{i18n.dependenciesSearchHint}</p>
+        </div>
+      </template>
+
+      <template lwc:if={showNoResult}>
+        <div class="hardis-empty">
+          <div class="hardis-tile featured slate">
+            <lightning-icon icon-name="utility:search" size="small"></lightning-icon>
+          </div>
+          <h3 class="hardis-empty-title">{noResultTitle}</h3>
+          <p class="hardis-empty-desc">{i18n.deployFirstHint}</p>
+        </div>
+      </template>
+
+      <template lwc:if={showResults}>
+        <div class="hardis-note deps-summary">
+          <lightning-icon icon-name="utility:info" size="x-small"></lightning-icon>
+          <p class="deps-summary-text">{summaryText}</p>
+          <div class="deps-summary-actions">
+            <lightning-button
+              variant="neutral"
+              class="hardis-btn-tinted-blue"
+              label={retrieveSelectedLabel}
+              disabled={retrieveDisabled}
+              onclick={handleRetrieveSelected}
+            ></lightning-button>
+            <lightning-button
+              variant="neutral"
+              label={i18n.generateReport}
+              disabled={reportDisabled}
+              onclick={handleGenerateReport}
+            ></lightning-button>
+          </div>
+        </div>
+
+
+        <s-hardis-datatable
+          key-field="id"
+          data={tableRows}
+          columns={columns}
+          selected-rows={selectedIds}
+          onrowselection={handleRowSelection}
+          onrowaction={handleRowAction}
+          sorted-by={sortedBy}
+          sorted-direction={sortedDirection}
+          onsort={handleSort}
+        ></s-hardis-datatable>
+
+        <p class="deps-footer">{readFromOrgText} {i18n.dependenciesCoverageNote}</p>
+      </template>
+
+      <template lwc:if={hasReportFiles}>
+        <div class="hardis-note success deps-report">
+          <lightning-icon icon-name="utility:success" size="x-small"></lightning-icon>
+          <p>{i18n.reportWritten}</p>
+          <div class="deps-summary-actions">
+            <template for:each={reportFiles} for:item="file">
+              <lightning-button
+                key={file.file}
+                variant="neutral"
+                label={file.label}
+                data-file={file.file}
+                onclick={handleOpenReportFile}
+              ></lightning-button>
+            </template>
+          </div>
+        </div>
+      </template>
+    </div>
+  </div>
+</template>

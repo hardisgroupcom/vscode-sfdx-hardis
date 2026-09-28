@@ -613,6 +613,61 @@ async function main() {
     return 0;
   }
 
+  // Metadata Dependencies panel: the components of the fixture org that use Invoice__c,
+  // with the fields the CLI adds for the panel (API name, Setup path, local file)
+  if (
+    first === "hardis:doc:metadata-deps" &&
+    DOCS_PROFILE &&
+    args.includes("--json")
+  ) {
+    // The uses direction answers its own fixture
+    const fixture = args.includes("uses")
+      ? "metadata-dependencies-uses.json"
+      : "metadata-dependencies.json";
+    const dependencies = JSON.parse(
+      fs.readFileSync(path.join(__dirname, fixture), "utf8"),
+    );
+    outputJsonIfRequested({ status: 0, result: dependencies }, "");
+    return 0;
+  }
+
+  // Name suggestions of the Metadata Dependencies panel: the listing of a type in the fixture org
+  if (
+    first === "hardis:org:list:metadata" &&
+    DOCS_PROFILE &&
+    args.includes("--json")
+  ) {
+    const type = args[args.indexOf("--type") + 1] || "";
+    const names = {
+      ApexClass: [
+        "InvoiceBatchScheduler",
+        "InvoiceService",
+        "InvoiceServiceTest",
+        "OpportunityService",
+      ],
+      CustomObject: ["Account", "Invoice__c", "Opportunity", "Timesheet__c"],
+    };
+    const items = (names[type] || []).map((fullName, index) => ({
+      fullName,
+      id: `000000000000${index}AAA`,
+    }));
+    outputJsonIfRequested(
+      {
+        status: 0,
+        result: {
+          type,
+          folder: null,
+          kind: "components",
+          items,
+          listable: true,
+          fromCache: true,
+        },
+      },
+      "",
+    );
+    return 0;
+  }
+
   // Custom functions catalog, read by the Custom Functions tab of Pipeline Settings and by the
   // deployment action editor, which builds its form from the inputs a function declares. The
   // payload mirrors the customFunctions block of the fixture project .sfdx-hardis.yml, which is

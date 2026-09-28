@@ -197,6 +197,7 @@ export class LwcUiPanel {
       "s-extension-config": t("extensionConfig"),
       "s-files-workbench": t("filesImportExportWorkbench"),
       "s-installed-packages": t("installedPackagesManager"),
+      "s-metadata-dependencies": t("metadataDependencies"),
       "s-metadata-retriever": t("metadataRetriever"),
       "s-org-manager": t("orgsManager"),
       "s-org-monitoring": t("orgMonitoringWorkbench"),

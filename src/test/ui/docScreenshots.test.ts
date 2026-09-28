@@ -1714,6 +1714,37 @@ suite("Documentation screenshots", function () {
     });
   });
 
+  // Metadata Dependencies panel opened from the Metadata Retriever row menu:
+  // what uses the Invoice__c object of the fixture org
+  test("metadata dependencies", async function () {
+    await shootPanel(panelManager, {
+      name: "metadata-dependencies",
+      command: "vscode-sfdx-hardis.showMetadataDependencies",
+      lwcId: "s-metadata-dependencies",
+      settleMs: 5000,
+      commandArgs: { type: "CustomObject", name: "Invoice__c" },
+    });
+  });
+
+  // Same panel in the other direction: what InvoiceService uses
+  test("metadata dependencies: uses", async function () {
+    if (!shouldTake("metadata-dependencies-uses")) {
+      this.skip();
+    }
+    await shootPanel(panelManager, {
+      name: "metadata-dependencies-uses",
+      command: "vscode-sfdx-hardis.showMetadataDependencies",
+      lwcId: "s-metadata-dependencies",
+      settleMs: 5000,
+      force: true,
+      commandArgs: {
+        type: "ApexClass",
+        name: "InvoiceService",
+        direction: "uses",
+      },
+    });
+  });
+
   // The Metadata Retriever doing the job it exists for: "what did I just change
   // in my org, and which of it belongs to my User Story". The training walks a
   // beginner through it before every publish, so it needs the results list and
