@@ -648,6 +648,7 @@
   "depVsCodeExtensionPreviewNote": "Stai usando una versione preliminare ({{version}}) dell'estensione SFDX Hardis, più recente della versione pubblicata {{latestVersion}}",
   "dependenciesCoverageNote": "I dati sulle dipendenze di Salesforce (Beta) potrebbero non coprire alcuni tipi, come Profile, Permission Set e viste elenco.",
   "dependenciesReadFromOrg": "Letto da {{org}} alle {{time}}, non dai tuoi file locali. Le modifiche non ancora distribuite non sono incluse.",
+  "dependenciesRefreshing": "Ultimo risultato, letto alle {{time}}. Nuova lettura di {{org}}...",
   "dependenciesRowCapWarning": "Salesforce ha restituito {{count}} righe, il massimo che una query può dare. Alcune dipendenze potrebbero mancare.",
   "dependenciesSearchHint": "Scegli un tipo di metadato e un nome API. Suggerimento: fai clic con il pulsante destro su un file di metadati, oppure usa il menu della riga di Recupero metadati, per saltare questo modulo.",
   "dependenciesStatusSummary": "Riepilogo dello stato delle dipendenze",

@@ -1,6 +1,7 @@
 import * as assert from "assert";
 import {
   buildMetadataDepsCommand,
+  lastResultKey,
   quote,
 } from "../../commands/showMetadataDependencies";
 
@@ -34,5 +35,22 @@ suite("Metadata Dependencies command line", () => {
     assert.ok(!usedBy.includes("--direction"));
     assert.ok(!usedBy.includes("--target-org"));
     assert.ok(!usedBy.includes("--skip-report"));
+  });
+
+  test("keys the last result on the org, the component and the direction", () => {
+    const query = { type: "ApexClass", name: "MyClass" };
+    assert.strictEqual(lastResultKey(query, null), null);
+    assert.strictEqual(
+      lastResultKey(query, "user@acme.com"),
+      lastResultKey({ ...query, direction: "used-by" }, "user@acme.com"),
+    );
+    assert.notStrictEqual(
+      lastResultKey(query, "user@acme.com"),
+      lastResultKey({ ...query, direction: "uses" }, "user@acme.com"),
+    );
+    assert.notStrictEqual(
+      lastResultKey(query, "user@acme.com"),
+      lastResultKey(query, "other@acme.com"),
+    );
   });
 });

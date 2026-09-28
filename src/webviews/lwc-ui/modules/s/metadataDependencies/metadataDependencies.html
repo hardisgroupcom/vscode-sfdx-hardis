@@ -122,6 +122,15 @@
         </div>
       </template>
 
+      <template lwc:if={isRefreshing}>
+        <div class="hardis-note deps-refreshing" role="status">
+          <div class="deps-refreshing-spinner">
+            <lightning-spinner alternative-text={refreshingText} size="x-small" variant="brand"></lightning-spinner>
+          </div>
+          <p>{refreshingText}</p>
+        </div>
+      </template>
+
       <template lwc:if={showEmptyForm}>
         <div class="hardis-empty">
           <div class="hardis-tile featured violet">

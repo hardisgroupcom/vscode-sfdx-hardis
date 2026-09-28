@@ -648,6 +648,7 @@
   "depVsCodeExtensionPreviewNote": "You are using a preview version ({{version}}) of the SFDX Hardis extension, more recent than the published version {{latestVersion}}",
   "dependenciesCoverageNote": "Salesforce dependency data (Beta) can miss some types, such as profiles, permission sets and list views.",
   "dependenciesReadFromOrg": "Read from {{org}} at {{time}}, not from your local files. Changes not deployed yet are not included.",
+  "dependenciesRefreshing": "Last result, read at {{time}}. Reading {{org}} again...",
   "dependenciesRowCapWarning": "Salesforce returned {{count}} rows, the most one query gives. Some dependencies may be missing.",
   "dependenciesSearchHint": "Pick a metadata type and an API name. Tip: right-click a metadata file, or use the row menu of the Metadata Retriever, to skip this form.",
   "dependenciesStatusSummary": "Dependencies status summary",

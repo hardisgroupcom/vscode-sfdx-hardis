@@ -183,14 +183,16 @@ export default class MetadataDependencies extends SharedMixin(
       result: null,
       error: null,
       loading: true,
+      // A last known result is on screen while the org is read again
+      refreshing: false,
       requestId: null,
       readAt: null,
     };
   }
 
-  // The query of a level in its current direction
-  levelQuery(level) {
-    return { ...level.query, direction: level.direction };
+  // The query of a level in a direction, its current one by default
+  levelQuery(level, direction = level.direction) {
+    return { ...level.query, direction };
   }
 
   openLevel(query) {
@@ -223,21 +225,23 @@ export default class MetadataDependencies extends SharedMixin(
     this.requestDependencies(level);
   }
 
-  requestDependencies(level) {
+  // lowPriority: a background read (the other direction), queued behind what the user asked for
+  requestDependencies(level, direction = level.direction, options = {}) {
     const view =
-      level.views[level.direction] ||
-      (level.views[level.direction] = this.newView());
+      level.views[direction] || (level.views[direction] = this.newView());
     this.requestSequence += 1;
     view.requestId = this.requestSequence;
     view.loading = true;
+    view.refreshing = false;
     view.error = null;
     this.levels = [...this.levels];
     window.sendMessageToVSCode({
       type: "findDependencies",
       data: {
         requestId: view.requestId,
-        query: this.levelQuery(level),
+        query: this.levelQuery(level, direction),
         username: this.username,
+        lowPriority: options.lowPriority === true,
       },
     });
   }
@@ -265,11 +269,14 @@ export default class MetadataDependencies extends SharedMixin(
       return;
     }
     view.loading = false;
+    // A stale answer is the last known result: the fresh one follows with the same request Id
+    view.refreshing = data.stale === true;
     if (type === "dependenciesError") {
       view.error = data.error || this.t("metadataDependenciesError");
     } else {
+      view.error = null;
       view.result = data.result || null;
-      view.readAt = new Date();
+      view.readAt = data.readAt ? new Date(data.readAt) : new Date();
       const component = data.result?.selected;
       if (component) {
         level.title = component.name || level.title;
@@ -290,6 +297,11 @@ export default class MetadataDependencies extends SharedMixin(
         }
         // The result is shown: prefetch the names of this type in the background, at low priority
         this.requestNames();
+      }
+      // The other direction is read in the background, so the Used by / Uses switch answers at once
+      const other = level.direction === USES ? USED_BY : USES;
+      if (!data.stale && !level.views[other]) {
+        this.requestDependencies(level, other, { lowPriority: true });
       }
     }
     this.levels = [...this.levels];
@@ -594,7 +606,9 @@ export default class MetadataDependencies extends SharedMixin(
     level.direction = direction;
     this.selectedIds = [];
     this.reportFiles = [];
-    if (level.views[direction]) {
+    const view = level.views[direction];
+    // A background read that failed is tried again now that the user asks for it
+    if (view && !(view.error && !view.loading)) {
       this.levels = [...this.levels];
     } else {
       this.requestDependencies(level);
@@ -619,7 +633,22 @@ export default class MetadataDependencies extends SharedMixin(
   }
 
   get refreshDisabled() {
-    return !this.view || this.view.loading;
+    return !this.view || this.view.loading || this.view.refreshing;
+  }
+
+  get isRefreshing() {
+    return this.view?.refreshing === true && !this.view.loading;
+  }
+
+  get refreshingText() {
+    const readAt = this.view?.readAt;
+    const time = readAt
+      ? readAt.toLocaleTimeString(this.locale, {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "";
+    return this.t("dependenciesRefreshing", { time, org: this.orgLabel });
   }
 
   handleRefresh() {

@@ -77,6 +77,7 @@ async function runMetadataDeps(
   query: MetadataDependenciesQuery,
   username: string | null,
   skipReport: boolean,
+  lowPriority = false,
 ): Promise<{ result?: any; error?: string }> {
   const command = buildMetadataDepsCommand(query, username, { skipReport });
   try {
@@ -86,6 +87,7 @@ async function runMetadataDeps(
       fail: false,
       output: false,
       reuseRecentResult: false,
+      lowPriority,
     });
     if (response?.status === 0 && response?.result) {
       return { result: response.result };
@@ -93,6 +95,36 @@ async function runMetadataDeps(
     return { error: response?.message || t("metadataDependenciesError") };
   } catch (error: any) {
     return { error: error?.message || String(error) };
+  }
+}
+
+// Last result of each search in this VS Code session, shown at once while the org is read again.
+// It is never the final answer: every search still reads the org.
+const LAST_RESULTS_MAX = 50;
+const lastResults = new Map<string, { result: any; readAt: string }>();
+
+export function lastResultKey(
+  query: MetadataDependenciesQuery,
+  username: string | null,
+): string | null {
+  if (!username) {
+    return null;
+  }
+  return JSON.stringify([
+    username,
+    query.sourceFile || "",
+    query.type || "",
+    query.id || "",
+    query.name || "",
+    query.direction === "uses" ? "uses" : "used-by",
+  ]);
+}
+
+function rememberResult(key: string, result: any) {
+  lastResults.delete(key);
+  lastResults.set(key, { result, readAt: new Date().toISOString() });
+  if (lastResults.size > LAST_RESULTS_MAX) {
+    lastResults.delete(lastResults.keys().next().value as string);
   }
 }
 
@@ -265,11 +297,30 @@ export function registerShowMetadataDependencies(commands: Commands) {
             data: { requestKey: data.requestKey, ...names },
           });
         } else if (type === "findDependencies") {
+          const query: MetadataDependenciesQuery = data?.query || {};
+          // No username (the default org could not be resolved): no last result, the org answers
+          const key = lastResultKey(query, data?.username || null);
+          const last = key ? lastResults.get(key) : undefined;
+          if (last) {
+            panel.sendMessage({
+              type: "dependenciesResult",
+              data: {
+                requestId: data?.requestId,
+                result: last.result,
+                readAt: last.readAt,
+                stale: true,
+              },
+            });
+          }
           const { result, error } = await runMetadataDeps(
-            data?.query || {},
+            query,
             data?.username || null,
             true,
+            data?.lowPriority === true,
           );
+          if (key && result && !error) {
+            rememberResult(key, result);
+          }
           panel.sendMessage({
             type: error ? "dependenciesError" : "dependenciesResult",
             data: { requestId: data?.requestId, result, error },

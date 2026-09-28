@@ -648,6 +648,7 @@
   "depVsCodeExtensionPreviewNote": "Sie verwenden eine Vorabversion ({{version}}) der SFDX Hardis-Erweiterung, die neuer ist als die veröffentlichte Version {{latestVersion}}",
   "dependenciesCoverageNote": "Salesforce-Abhängigkeitsdaten (Beta) können einige Typen übersehen, wie Profile, Permission Sets und List Views.",
   "dependenciesReadFromOrg": "Gelesen aus {{org}} am {{time}}, nicht aus Ihren lokalen Dateien. Noch nicht bereitgestellte Änderungen sind nicht enthalten.",
+  "dependenciesRefreshing": "Letztes Ergebnis, gelesen um {{time}}. {{org}} wird erneut gelesen...",
   "dependenciesRowCapWarning": "Salesforce hat {{count}} Zeilen zurückgegeben, das Maximum für eine Abfrage. Einige Abhängigkeiten fehlen möglicherweise.",
   "dependenciesSearchHint": "Wählen Sie einen Metadatentyp und einen API-Namen. Hinweis: Klicken Sie mit der rechten Maustaste auf eine Metadatendatei, oder verwenden Sie das Zeilenmenü des Metadaten-Abruftools, um dieses Formular zu überspringen.",
   "dependenciesStatusSummary": "Zusammenfassung des Abhängigkeitsstatus",

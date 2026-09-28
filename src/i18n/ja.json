@@ -648,6 +648,7 @@
   "depVsCodeExtensionPreviewNote": "SFDX Hardis 拡張機能のプレビュー版 ({{version}}) を使用しています。これは公開されているバージョン {{latestVersion}} より新しいバージョンです",
   "dependenciesCoverageNote": "Salesforce の依存関係データ (Beta) では、プロファイルや権限セット、リストビューなど一部のタイプを検出できないことがあります。",
   "dependenciesReadFromOrg": "{{time}} 時点の {{org}} から読み込んでいます。ローカルファイルは参照していません。まだデプロイされていない変更は含まれません。",
+  "dependenciesRefreshing": "前回の結果 ({{time}} に読み込み)。{{org}} を再度読み込んでいます...",
   "dependenciesRowCapWarning": "Salesforce は {{count}} 件の行を返しました。これは 1 回のクエリで返せる上限です。一部の依存関係が欠けている可能性があります。",
   "dependenciesSearchHint": "メタデータタイプと API 名を選択してください。ヒント: メタデータファイルを右クリックするか、メタデータ取得の行メニューを使うと、このフォームを省略できます。",
   "dependenciesStatusSummary": "依存関係のステータスサマリー",
