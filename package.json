@@ -583,7 +583,7 @@
         },
         {
           "command": "vscode-sfdx-hardis.findMetadataDependencies",
-          "when": "resourceFilename =~ /-meta\\.xml$/ || resourceExtname =~ /^\\.(cls|trigger|page|component)$/ || resourcePath =~ /[\\/\\\\](lwc|aura)[\\/\\\\][^\\/\\\\]+[\\/\\\\][^\\/\\\\]+$/",
+          "when": "resourceFilename =~ /(\\.(cls|trigger|page|component)(-meta\\.xml)?|\\.(flow|object|flexipage|resource|customPermission)-meta\\.xml|__c\\.field-meta\\.xml)$/ || resourcePath =~ /[\\/\\\\](lwc|aura)[\\/\\\\][^\\/\\\\]+[\\/\\\\][^\\/\\\\]+$/",
           "group": "z_sfdxhardis@25"
         }
       ],
@@ -697,7 +697,7 @@
         },
         {
           "command": "vscode-sfdx-hardis.findMetadataDependencies",
-          "when": "resourceFilename =~ /-meta\\.xml$/ || resourceExtname =~ /^\\.(cls|trigger|page|component)$/ || resourcePath =~ /[\\/\\\\](lwc|aura)[\\/\\\\][^\\/\\\\]+[\\/\\\\][^\\/\\\\]+$/",
+          "when": "resourceFilename =~ /(\\.(cls|trigger|page|component)(-meta\\.xml)?|\\.(flow|object|flexipage|resource|customPermission)-meta\\.xml|__c\\.field-meta\\.xml)$/ || resourcePath =~ /[\\/\\\\](lwc|aura)[\\/\\\\][^\\/\\\\]+[\\/\\\\][^\\/\\\\]+$/",
           "group": "z_sfdxhardis@25"
         }
       ],

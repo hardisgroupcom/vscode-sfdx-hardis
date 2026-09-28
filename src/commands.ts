@@ -527,10 +527,9 @@ export class Commands {
         if (!target) {
           return;
         }
-        const relativePath = vscode.workspace
-          .asRelativePath(target)
-          .replace(/"/g, '\\"');
-        const command = `sf hardis:doc:metadata-deps --source-file "${relativePath}"`;
+        // Absolute path: a path relative to one folder of a multi-root workspace would not resolve
+        const filePath = target.fsPath.replace(/"/g, '\\"');
+        const command = `sf hardis:doc:metadata-deps --source-file "${filePath}"`;
         vscode.commands.executeCommand(
           "vscode-sfdx-hardis.execute-command",
           command,

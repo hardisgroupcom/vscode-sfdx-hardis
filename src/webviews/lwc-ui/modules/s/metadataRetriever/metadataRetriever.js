@@ -18,6 +18,32 @@ const METADATA_DOC_BASE_URL =
 // a single metadata type selection.
 const PRESET_VALUE_PREFIX = "preset::";
 
+// Types sf hardis:doc:metadata-deps can look up by name. Others (Report,
+// Layout, CustomMetadata, object child types...) need a Salesforce Id, so
+// the "Find where it is used" row action is not offered for them.
+const DEPENDENCY_LOOKUP_TYPES = new Set([
+  "ApexClass",
+  "ApexComponent",
+  "ApexPage",
+  "ApexTrigger",
+  "AuraDefinitionBundle",
+  "CustomField",
+  "CustomObject",
+  "CustomPermission",
+  "FlexiPage",
+  "Flow",
+  "LightningComponentBundle",
+  "StaticResource",
+]);
+
+// Salesforce dependency data only holds custom fields
+function isDependencyLookupSupported(memberType, memberName) {
+  if (!DEPENDENCY_LOOKUP_TYPES.has(memberType)) {
+    return false;
+  }
+  return memberType !== "CustomField" || String(memberName).endsWith("__c");
+}
+
 // Change operation of a component in "Recent Changes" mode, displayed as a
 // colored icon in front of the metadata name (hues in global-theme.css).
 const OPERATION_MARKERS = {
@@ -231,22 +257,13 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       });
     }
 
-    // Row actions menu, the same for every row (deleted rows included: the org gives the answer)
+    // Row actions menu: Download on every row, "Find where it is used" on the
+    // types sf hardis:doc:metadata-deps can look up by name (deleted rows
+    // included: the org gives the answer)
     cols.push({
       type: "action",
       typeAttributes: {
-        rowActions: [
-          {
-            label: this.t("downloadLabel"),
-            name: "download",
-            iconName: "utility:download",
-          },
-          {
-            label: this.t("findWhereUsedLabel"),
-            name: "findUsage",
-            iconName: "utility:hierarchy",
-          },
-        ],
+        rowActions: { fieldName: "rowActions" },
       },
     });
 
@@ -1199,6 +1216,24 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
     }
   }
 
+  buildRowActions(record) {
+    const actions = [
+      {
+        label: this.t("downloadLabel"),
+        name: "download",
+        iconName: "utility:download",
+      },
+    ];
+    if (isDependencyLookupSupported(record.MemberType, record.MemberName)) {
+      actions.push({
+        label: this.t("findWhereUsedLabel"),
+        name: "findUsage",
+        iconName: "utility:hierarchy",
+      });
+    }
+    return actions;
+  }
+
   handleFindUsage(row) {
     // The CLI resolves the component in the selected org and shows what uses it in the command runner
     const quote = (value) => `"${String(value).replace(/"/g, '\\"')}"`;
@@ -1417,6 +1452,7 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
           // Colored pill classes, stable per metadata type family
           MemberTypePillClass: getMetadataTypePillClass(record.MemberType),
           MemberNameTitle: `Open metadata for ${record.MemberType} ${record.MemberName}`,
+          rowActions: this.buildRowActions(record),
           LastModifiedDate: record.LastModifiedDate,
           LastModifiedByName: lastModifiedByName,
           // Initials avatar for the "Last Updated By" column (avatarText cell type).
