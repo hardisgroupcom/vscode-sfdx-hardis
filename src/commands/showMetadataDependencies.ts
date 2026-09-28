@@ -12,7 +12,10 @@ import {
 import { Logger } from "../logger";
 import { t } from "../i18n/i18n";
 import { executeMetadataRetrieve } from "./showMetadataRetriever";
-import { getMetadataTypes } from "../utils/metadataTypes";
+import {
+  getMetadataTypes,
+  guessMetadataFromSourceFile,
+} from "../utils/metadataTypes";
 
 // What the panel looks for: a type and an API name, a Salesforce Id, or a local source file
 export interface MetadataDependenciesQuery {
@@ -255,11 +258,16 @@ export function registerShowMetadataDependencies(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showMetadataDependencies",
     async (args?: MetadataDependenciesArgs) => {
+      // A file shows its type and name at once: the CLI answer replaces this guess from its path
+      const guessed =
+        args?.sourceFile && !args.type && !args.name
+          ? guessMetadataFromSourceFile(args.sourceFile)
+          : null;
       const query: MetadataDependenciesQuery | null =
         args && (args.type || args.name || args.id || args.sourceFile)
           ? {
-              type: args.type,
-              name: args.name,
+              type: args.type || guessed?.type,
+              name: args.name || guessed?.name,
               id: args.id,
               sourceFile: args.sourceFile,
               direction: args.direction,
