@@ -93,7 +93,10 @@
 
       <template lwc:if={isLoading}>
         <div class="deps-loading">
-          <lightning-spinner alternative-text={loadingText} size="small" variant="brand"></lightning-spinner>
+          <!-- lightning-spinner centers itself in its closest positioned parent: this box -->
+          <div class="deps-loading-spinner">
+            <lightning-spinner alternative-text={loadingText} size="small" variant="brand"></lightning-spinner>
+          </div>
           <p class="deps-loading-text">{loadingText}</p>
         </div>
       </template>
