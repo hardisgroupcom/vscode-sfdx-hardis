@@ -24,3 +24,9 @@
 
 # Badge target of the README star counter: an action endpoint, not a browsable page
 ^https://github\.com/hardisgroupcom/vscode-sfdx-hardis/stargazers
+
+# Placeholder repository shown as an example in the deploymentRepositoryInputInvalid message
+^https://github\.com/my-company/
+
+# Screenshot published by sfdx-hardis PR #2221 (Metadata Dependencies panel): 404 until that PR is merged
+^https://github\.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/metadata-dependencies\.png$
