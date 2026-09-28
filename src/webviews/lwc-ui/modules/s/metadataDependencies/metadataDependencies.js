@@ -2,9 +2,8 @@ import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
 import { getMetadataTypePillClass } from "s/pillUtils";
 
-// Common types of the search form, with an example API name. Any other type
-// reaches the panel from the Metadata Retriever or a file, and is added to the list.
-const COMMON_TYPES = [
+// Example API name of common types, shown as the placeholder of the name field
+const NAME_HINTS = [
   { value: "ApexClass", hint: "MyClass" },
   { value: "ApexTrigger", hint: "MyTrigger" },
   { value: "ApexPage", hint: "MyPage" },
@@ -24,6 +23,18 @@ const COMMON_TYPES = [
 // Salesforce returns at most this number of rows to one Tooling query
 const TOOLING_ROW_CAP = 2000;
 
+// Same identifier rule as the CLI (isMetadataType)
+const METADATA_TYPE_RE = /^[A-Za-z][A-Za-z0-9_]*$/;
+
+// Value of a folder suggestion in the name field (folder types list their folders first)
+const FOLDER_PREFIX = "__folder__:";
+
+// Maximum number of name suggestions rendered at once: filtering narrows the rest
+const MAX_NAME_OPTIONS = 50;
+
+// Types the CLI can not list: no name suggestions to prefetch
+const NOT_LISTABLE_TYPES = ["Unknown", "StandardEntity"];
+
 function decodeName(value) {
   try {
     return decodeURIComponent(value);
@@ -39,6 +50,13 @@ export default class MetadataDependencies extends SharedMixin(
   username = null;
   formType = "ApexClass";
   formName = "";
+  // Folder picked in the name field, for Report, Dashboard, Document and EmailTemplate
+  nameFolder = null;
+  // Every Metadata API type, bundled in the extension: no org call
+  metadataTypes = [];
+  // Name suggestions per "username|type|folder", filled in the background
+  @track namesCache = {};
+  namesLoadingKeys = [];
   // Drill-down path: one level per searched component, each keeping its result
   @track levels = [];
   currentLevel = -1;
@@ -66,6 +84,9 @@ export default class MetadataDependencies extends SharedMixin(
     if (data.username) {
       this.username = data.username;
     }
+    if (Array.isArray(data.metadataTypes) && data.metadataTypes.length > 0) {
+      this.metadataTypes = data.metadataTypes;
+    }
     if (data.query) {
       // The same init data can arrive twice when the panel is created: search once
       const initKey = JSON.stringify({
@@ -87,7 +108,9 @@ export default class MetadataDependencies extends SharedMixin(
   // "initialize" also reaches initialize() directly: it is not handled here
   @api
   handleMessage(type, data) {
-    if (type === "listOrgsResults") {
+    if (type === "namesResult") {
+      this.handleNamesResult(data || {});
+    } else if (type === "listOrgsResults") {
       this.orgs = data?.orgs || [];
       if (!this.username && this.orgs.length > 0) {
         const defaultOrg =
@@ -147,6 +170,7 @@ export default class MetadataDependencies extends SharedMixin(
       this.formType = query.type;
     }
     this.formName = query.name || "";
+    this.nameFolder = null;
     this.requestDependencies(level);
   }
 
@@ -193,6 +217,8 @@ export default class MetadataDependencies extends SharedMixin(
         }
         this.formName = component.name || this.formName;
       }
+      // The result is shown: prefetch the names of this type in the background, at low priority
+      this.requestNames();
     }
     this.levels = [...this.levels];
   }
@@ -238,31 +264,149 @@ export default class MetadataDependencies extends SharedMixin(
   // ---- Search form ---------------------------------------------------------
 
   get typeOptions() {
-    const options = COMMON_TYPES.map((entry) => ({
-      label: entry.value,
-      value: entry.value,
-    }));
-    if (this.formType && !COMMON_TYPES.some((e) => e.value === this.formType)) {
-      options.push({ label: this.formType, value: this.formType });
+    const options = this.metadataTypes.map((type) => ({ label: type, value: type }));
+    // A typed type, or one reaching the panel from a file or a drill-down, stays selectable
+    if (this.formType && !this.metadataTypes.includes(this.formType)) {
+      options.unshift({ label: this.formType, value: this.formType });
     }
     return options;
   }
 
+  get isTypeValid() {
+    return METADATA_TYPE_RE.test(this.formType || "");
+  }
+
+  get typeError() {
+    return this.formType && !this.isTypeValid ? this.t("invalidMetadataType") : null;
+  }
+
   get formNamePlaceholder() {
-    const entry = COMMON_TYPES.find((e) => e.value === this.formType);
+    if (this.namesEntry?.kind === "folders" && !this.nameFolder) {
+      return this.t("pickFolderHint");
+    }
+    const entry = NAME_HINTS.find((e) => e.value === this.formType);
     return entry ? entry.hint : "";
   }
 
   get searchDisabled() {
-    return !this.username || !this.formType || !this.formName.trim();
+    return (
+      !this.username ||
+      !this.isTypeValid ||
+      !this.formName.trim() ||
+      this.formName.trim().endsWith("/")
+    );
   }
 
   handleTypeChange(event) {
-    this.formType = event.detail.value;
+    const type = (event.detail.value || "").trim();
+    if (type === this.formType) {
+      return;
+    }
+    this.formType = type;
+    this.formName = "";
+    this.nameFolder = null;
+    // Suggestions of the new type load in the background
+    this.requestNames();
+  }
+
+  handleNameFocus() {
+    this.requestNames();
   }
 
   handleNameChange(event) {
-    this.formName = event.detail.value || "";
+    const value = event.detail.value || "";
+    if (value.startsWith(FOLDER_PREFIX)) {
+      // A folder was picked: its content becomes the suggestions
+      this.nameFolder = value.slice(FOLDER_PREFIX.length);
+      this.formName = `${this.nameFolder}/`;
+      this.requestNames();
+      return;
+    }
+    this.formName = value;
+    // Typing "Folder/" by hand also lists the content of that folder
+    const folder = value.endsWith("/") ? value.slice(0, -1) : null;
+    if (folder && this.namesEntry?.kind === "folders") {
+      this.nameFolder = folder;
+      this.requestNames();
+    }
+  }
+
+  // ---- Name suggestions (background, low priority) ----------------------------
+
+  namesKey(folder = this.nameFolder) {
+    return `${this.username}|${this.formType}|${folder || ""}`;
+  }
+
+  // Suggestions of the current type: the folder content once a folder is picked
+  get namesEntry() {
+    return (
+      this.namesCache[this.namesKey()] ||
+      (this.nameFolder ? null : this.namesCache[this.namesKey(null)]) ||
+      null
+    );
+  }
+
+  requestNames() {
+    if (!this.username || !this.isTypeValid || NOT_LISTABLE_TYPES.includes(this.formType)) {
+      return;
+    }
+    const key = this.namesKey();
+    if (this.namesCache[key] || this.namesLoadingKeys.includes(key)) {
+      return;
+    }
+    this.namesLoadingKeys = [...this.namesLoadingKeys, key];
+    window.sendMessageToVSCode({
+      type: "listNames",
+      data: {
+        requestKey: key,
+        username: this.username,
+        type: this.formType,
+        folder: this.nameFolder,
+      },
+    });
+  }
+
+  handleNamesResult(data) {
+    const key = data.requestKey;
+    this.namesLoadingKeys = this.namesLoadingKeys.filter((k) => k !== key);
+    // A result for an org changed since is dropped
+    if (!key || !key.startsWith(`${this.username}|`)) {
+      return;
+    }
+    this.namesCache = {
+      ...this.namesCache,
+      [key]: {
+        kind: data.kind || "components",
+        items: Array.isArray(data.items) ? data.items : [],
+        listable: data.listable !== false && !data.error,
+      },
+    };
+  }
+
+  get nameOptions() {
+    const entry = this.namesEntry;
+    if (!entry) {
+      return [];
+    }
+    if (entry.kind === "folders") {
+      return entry.items.map((item) => ({
+        label: `${item.fullName}/`,
+        value: `${FOLDER_PREFIX}${item.fullName}`,
+      }));
+    }
+    return entry.items.map((item) => ({ label: item.fullName, value: item.fullName }));
+  }
+
+  get namesLoading() {
+    return this.namesLoadingKeys.includes(this.namesKey());
+  }
+
+  get namesEmptyText() {
+    return this.t("noNamesForType");
+  }
+
+  get maxNameOptions() {
+    return MAX_NAME_OPTIONS;
   }
 
   handleSearch(event) {
@@ -305,6 +449,9 @@ export default class MetadataDependencies extends SharedMixin(
 
   handleOrgChange(event) {
     this.username = event.detail.value;
+    // Another org has other names: suggestions load again when needed
+    this.namesCache = {};
+    this.namesLoadingKeys = [];
     // Another org gives other dependencies: every level of the path is read again when shown
     for (const level of this.levels) {
       level.result = null;
@@ -353,6 +500,7 @@ export default class MetadataDependencies extends SharedMixin(
     const level = this.levels[index];
     this.formType = level.type || this.formType;
     this.formName = level.title || this.formName;
+    this.nameFolder = null;
     // A level left without result (the org changed since) is read again
     if (!level.result && !level.loading) {
       this.requestDependencies(level);

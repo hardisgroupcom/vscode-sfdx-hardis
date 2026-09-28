@@ -29,20 +29,32 @@
 
     <div class="hardis-panel-body">
       <form class="deps-search" onsubmit={handleSearch}>
-        <lightning-combobox
-          class="deps-type"
-          label={i18n.metadataTypeLabel}
-          value={formType}
-          options={typeOptions}
-          onchange={handleTypeChange}
-        ></lightning-combobox>
-        <lightning-input
-          class="deps-name"
-          label={i18n.apiNameLabel}
-          value={formName}
-          placeholder={formNamePlaceholder}
-          onchange={handleNameChange}
-        ></lightning-input>
+        <div class="deps-type">
+          <s-typeahead
+            label={i18n.metadataTypeLabel}
+            value={formType}
+            options={typeOptions}
+            allow-free-text
+            max-options={maxNameOptions}
+            onchange={handleTypeChange}
+          ></s-typeahead>
+          <template lwc:if={typeError}>
+            <p class="deps-field-error">{typeError}</p>
+          </template>
+        </div>
+        <div class="deps-name" onfocusin={handleNameFocus}>
+          <s-typeahead
+            label={i18n.apiNameLabel}
+            value={formName}
+            options={nameOptions}
+            placeholder={formNamePlaceholder}
+            allow-free-text
+            max-options={maxNameOptions}
+            loading={namesLoading}
+            empty-text={namesEmptyText}
+            onchange={handleNameChange}
+          ></s-typeahead>
+        </div>
         <div class="deps-search-action">
           <lightning-button
             variant="neutral"

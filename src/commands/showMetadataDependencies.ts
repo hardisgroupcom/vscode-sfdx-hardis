@@ -12,6 +12,7 @@ import {
 import { Logger } from "../logger";
 import { t } from "../i18n/i18n";
 import { executeMetadataRetrieve } from "./showMetadataRetriever";
+import { getMetadataTypes } from "../utils/metadataTypes";
 
 // What the panel looks for: a type and an API name, a Salesforce Id, or a local source file
 export interface MetadataDependenciesQuery {
@@ -80,6 +81,48 @@ async function runMetadataDeps(
   } catch (error: any) {
     return { error: error?.message || String(error) };
   }
+}
+
+// Names of a metadata type in the org, for the suggestions of the name field. Low priority:
+// it never delays a dependency search, and the panel stays usable while it runs.
+async function listMetadataNames(
+  username: string,
+  type: string,
+  folder: string | null,
+): Promise<{ kind: string; items: any[]; listable: boolean; error?: string }> {
+  const folderFlag = folder ? ` --folder ${quote(folder)}` : "";
+  try {
+    const response = await execSfdxJson(
+      `sf hardis:org:list:metadata --type ${quote(type)}${folderFlag} --target-org ${quote(username)} --agent`,
+      {
+        cwd: getWorkspaceRoot(),
+        fail: false,
+        output: false,
+        lowPriority: true,
+      },
+    );
+    if (response?.status === 0 && response?.result) {
+      return {
+        kind: response.result.kind || "components",
+        items: Array.isArray(response.result.items) ? response.result.items : [],
+        listable: response.result.listable !== false,
+      };
+    }
+    return { kind: "components", items: [], listable: false, error: response?.message };
+  } catch (error: any) {
+    return { kind: "components", items: [], listable: false, error: error?.message || String(error) };
+  }
+}
+
+// Every Metadata API type bundled in the extension, for the type field: no org call
+function metadataTypeNames(): string[] {
+  return [
+    ...new Set(
+      getMetadataTypes()
+        .map((metadataType: any) => metadataType?.xmlName)
+        .filter((name: any) => typeof name === "string" && name !== ""),
+    ),
+  ].sort((a, b) => a.localeCompare(b));
 }
 
 async function listConnectedOrgs(): Promise<any[]> {
@@ -159,7 +202,7 @@ export function registerShowMetadataDependencies(commands: Commands) {
       // The panel opens at once; the LWC asks for the dependencies when it has a query
       const panel: LwcUiPanel = LwcPanelManager.getInstance().getOrCreatePanel(
         "s-metadata-dependencies",
-        { query, username, orgs: [] },
+        { query, username, orgs: [], metadataTypes: metadataTypeNames() },
       );
       panel.updateTitle(t("metadataDependencies"));
 
@@ -168,6 +211,19 @@ export function registerShowMetadataDependencies(commands: Commands) {
           panel.sendMessage({
             type: "listOrgsResults",
             data: { orgs: await listConnectedOrgs() },
+          });
+        } else if (type === "listNames") {
+          if (!data?.username || !data?.type) {
+            return;
+          }
+          const names = await listMetadataNames(
+            data.username,
+            data.type,
+            data.folder || null,
+          );
+          panel.sendMessage({
+            type: "namesResult",
+            data: { requestKey: data.requestKey, ...names },
           });
         } else if (type === "findDependencies") {
           const { result, error } = await runMetadataDeps(
