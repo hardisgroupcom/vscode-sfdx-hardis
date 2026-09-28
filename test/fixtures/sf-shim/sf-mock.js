@@ -620,11 +620,12 @@ async function main() {
     DOCS_PROFILE &&
     args.includes("--json")
   ) {
+    // The uses direction answers its own fixture
+    const fixture = args.includes("uses")
+      ? "metadata-dependencies-uses.json"
+      : "metadata-dependencies.json";
     const dependencies = JSON.parse(
-      fs.readFileSync(
-        path.join(__dirname, "metadata-dependencies.json"),
-        "utf8",
-      ),
+      fs.readFileSync(path.join(__dirname, fixture), "utf8"),
     );
     outputJsonIfRequested({ status: 0, result: dependencies }, "");
     return 0;

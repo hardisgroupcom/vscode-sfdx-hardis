@@ -20,6 +20,8 @@ export interface MetadataDependenciesQuery {
   name?: string;
   id?: string;
   sourceFile?: string;
+  // used-by (default): what uses the component; uses: what the component uses
+  direction?: "used-by" | "uses";
 }
 
 interface MetadataDependenciesArgs extends MetadataDependenciesQuery {
@@ -49,6 +51,9 @@ export function buildMetadataDepsCommand(
     } else if (query.name) {
       flags.push(`--name ${quote(query.name)}`);
     }
+  }
+  if (query.direction === "uses") {
+    flags.push("--direction uses");
   }
   if (username) {
     flags.push(`--target-org ${quote(username)}`);
@@ -217,6 +222,7 @@ export function registerShowMetadataDependencies(commands: Commands) {
               name: args.name,
               id: args.id,
               sourceFile: args.sourceFile,
+              direction: args.direction,
             }
           : null;
       const username =

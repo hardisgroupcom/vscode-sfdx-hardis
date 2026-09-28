@@ -248,6 +248,11 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
             name: "findUsage",
             iconName: "utility:hierarchy",
           },
+          {
+            label: this.t("seeWhatItUsesLabel"),
+            name: "findUses",
+            iconName: "utility:arrowdown",
+          },
         ],
       },
     });
@@ -1186,8 +1191,8 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       return;
     }
 
-    if (actionName === "findUsage") {
-      this.handleFindUsage(row);
+    if (actionName === "findUsage" || actionName === "findUses") {
+      this.handleFindUsage(row, actionName === "findUses" ? "uses" : "used-by");
       return;
     }
 
@@ -1201,8 +1206,9 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
     }
   }
 
-  handleFindUsage(row) {
-    // Opens the Metadata Dependencies panel on this component, in the selected org
+  // Opens the Metadata Dependencies panel on this component, in the selected org:
+  // what uses it (used-by) or what it uses (uses)
+  handleFindUsage(row, direction) {
     window.sendMessageToVSCode({
       type: "runVsCodeCommand",
       data: {
@@ -1212,6 +1218,7 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
             type: row.MemberType,
             name: row.MemberName,
             username: this.selectedOrg,
+            direction,
           },
         ],
       },

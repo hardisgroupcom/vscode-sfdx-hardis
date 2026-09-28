@@ -38,6 +38,15 @@ const EMPTY_OPTIONS = [];
 // Types the CLI can not list: no name suggestions to prefetch
 const NOT_LISTABLE_TYPES = ["Unknown", "StandardEntity"];
 
+// Directions of sf hardis:doc:metadata-deps --direction
+const USED_BY = "used-by";
+const USES = "uses";
+
+// A standard object on the used side is a StandardEntity: it is drilled into and retrieved as a CustomObject
+function metadataTypeOf(row) {
+  return row.type === "StandardEntity" ? "CustomObject" : row.type;
+}
+
 function decodeName(value) {
   try {
     return decodeURIComponent(value);
@@ -53,6 +62,8 @@ export default class MetadataDependencies extends SharedMixin(
   username = null;
   formType = "ApexClass";
   formName = "";
+  // Direction of the next search from the form: used-by or uses
+  formDirection = USED_BY;
   // Folder picked in the name field, for Report, Dashboard, Document and EmailTemplate
   nameFolder = null;
   // Text of the type field while it is typed (committed to formType on Enter or blur)
@@ -159,8 +170,11 @@ export default class MetadataDependencies extends SharedMixin(
       (query.sourceFile ? query.sourceFile.split(/[\\/]/).pop() : "") ||
       query.id ||
       "";
+    const direction = query.direction === USES ? USES : USED_BY;
+    this.formDirection = direction;
     const level = {
-      query,
+      query: { ...query, direction },
+      direction,
       title,
       type: query.type || "",
       result: null,
@@ -216,7 +230,7 @@ export default class MetadataDependencies extends SharedMixin(
     } else {
       level.result = data.result || null;
       level.readAt = new Date();
-      const component = data.result?.component;
+      const component = data.result?.selected;
       if (component) {
         level.title = component.name || level.title;
         level.type = component.type || level.type;
@@ -251,12 +265,12 @@ export default class MetadataDependencies extends SharedMixin(
       paths.find((p) => !p.endsWith("-meta.xml")) ||
       paths[0];
     for (const level of this.levels) {
-      for (const row of level.result?.usedBy || []) {
+      for (const row of level.result?.dependencies || []) {
         const paths = filesByComponent.get(
-          `${row.usedByType}:${row.usedByApiName}`,
+          `${metadataTypeOf(row)}:${row.apiName}`,
         );
         if (paths && paths.length > 0) {
-          row.usedByLocalFile = pickFile(paths, row.usedByApiName);
+          row.localFile = pickFile(paths, row.apiName);
         }
       }
     }
@@ -491,7 +505,42 @@ export default class MetadataDependencies extends SharedMixin(
     // A search from the form starts a new path
     this.levels = [];
     this.currentLevel = -1;
-    this.openLevel({ type: this.formType, name: this.formName.trim() });
+    this.openLevel({
+      type: this.formType,
+      name: this.formName.trim(),
+      direction: this.formDirection,
+    });
+  }
+
+  // ---- Direction -------------------------------------------------------------
+
+  // The search button says what it will look for
+  get searchButtonLabel() {
+    return this.currentDirection === USES
+      ? this.t("seeWhatItUsesLabel")
+      : this.t("findWhereUsedLabel");
+  }
+
+  get currentDirection() {
+    return this.level?.direction || this.formDirection;
+  }
+
+  get directionOptions() {
+    return [
+      { label: this.t("directionUsedBy"), value: USED_BY },
+      { label: this.t("directionUses"), value: USES },
+    ];
+  }
+
+  // Reads the current component the other way: a new level, so going back shows the previous one
+  handleDirectionChange(event) {
+    const direction = event.detail.value;
+    this.formDirection = direction;
+    const level = this.level;
+    if (!level || level.direction === direction || level.loading) {
+      return;
+    }
+    this.openLevel({ ...level.query, direction });
   }
 
   get orgOptions() {
@@ -551,6 +600,12 @@ export default class MetadataDependencies extends SharedMixin(
         title: `${level.type} ${decodeName(level.title)}`,
         showSeparator: index > 0,
         pillClass: getMetadataTypePillClass(level.type),
+        directionIcon:
+          level.direction === USES ? "utility:arrowdown" : "utility:arrowup",
+        directionLabel:
+          level.direction === USES
+            ? this.t("directionUses")
+            : this.t("directionUsedBy"),
         // Levels after the current one stay reachable, dimmed like forward pages
         buttonClass: isCurrent
           ? "deps-path-button deps-path-current"
@@ -589,8 +644,12 @@ export default class MetadataDependencies extends SharedMixin(
     return this.level?.loading === true;
   }
 
+  get isUsesLevel() {
+    return this.level?.direction === USES;
+  }
+
   get loadingText() {
-    return this.t("findingDependencies", {
+    return this.t(this.isUsesLevel ? "findingUses" : "findingDependencies", {
       name: decodeName(this.level?.title || ""),
       org: this.orgLabel,
     });
@@ -600,8 +659,8 @@ export default class MetadataDependencies extends SharedMixin(
     return this.level && !this.level.loading ? this.level.error : null;
   }
 
-  get usedBy() {
-    return this.level?.result?.usedBy || [];
+  get dependencies() {
+    return this.level?.result?.dependencies || [];
   }
 
   get showEmptyForm() {
@@ -614,7 +673,7 @@ export default class MetadataDependencies extends SharedMixin(
       !this.level.loading &&
       !this.level.error &&
       !!this.level.result &&
-      this.usedBy.length === 0
+      this.dependencies.length === 0
     );
   }
 
@@ -623,7 +682,7 @@ export default class MetadataDependencies extends SharedMixin(
       !!this.level &&
       !this.level.loading &&
       !this.level.error &&
-      this.usedBy.length > 0
+      this.dependencies.length > 0
     );
   }
 
@@ -633,18 +692,24 @@ export default class MetadataDependencies extends SharedMixin(
   }
 
   get noResultTitle() {
-    return this.t("noComponentUsesItem", {
-      name: decodeName(this.level?.title || ""),
-      org: this.orgLabel,
-    });
+    return this.t(
+      this.isUsesLevel ? "itemUsesNoComponent" : "noComponentUsesItem",
+      {
+        name: decodeName(this.level?.title || ""),
+        org: this.orgLabel,
+      },
+    );
   }
 
   get summaryText() {
-    return this.t("componentsUseItem", {
-      count: this.usedBy.length,
-      name: decodeName(this.level?.title || ""),
-      org: this.orgLabel,
-    });
+    return this.t(
+      this.isUsesLevel ? "itemUsesComponents" : "componentsUseItem",
+      {
+        count: this.dependencies.length,
+        name: decodeName(this.level?.title || ""),
+        org: this.orgLabel,
+      },
+    );
   }
 
   get readFromOrgText() {
@@ -659,7 +724,7 @@ export default class MetadataDependencies extends SharedMixin(
   }
 
   get rowCapWarning() {
-    return this.usedBy.length >= TOOLING_ROW_CAP
+    return this.dependencies.length >= TOOLING_ROW_CAP
       ? this.t("dependenciesRowCapWarning", { count: TOOLING_ROW_CAP })
       : null;
   }
@@ -722,17 +787,17 @@ export default class MetadataDependencies extends SharedMixin(
   }
 
   get tableRows() {
-    const rows = this.usedBy.map((row) => {
-      const displayName = decodeName(row.usedByApiName || row.usedByName || "");
-      const hasLocalFile = !!row.usedByLocalFile;
+    const rows = this.dependencies.map((row) => {
+      const displayName = decodeName(row.apiName || row.name || "");
+      const hasLocalFile = !!row.localFile;
       return {
         ...row,
-        typeLabel: row.usedByType,
-        pillClass: getMetadataTypePillClass(row.usedByType),
+        typeLabel: row.type,
+        pillClass: getMetadataTypePillClass(row.type),
         displayName,
         componentLabel: this.buildComponentLabel(row, displayName),
         openDisabled: !hasLocalFile,
-        openTitle: hasLocalFile ? row.usedByLocalFile : this.t("notInProject"),
+        openTitle: hasLocalFile ? row.localFile : this.t("notInProject"),
         localText: hasLocalFile ? this.t("inProject") : this.t("onlyInOrg"),
         localIcon: hasLocalFile ? "utility:check" : "utility:cloud",
         rowActions: this.buildRowActions(row, hasLocalFile),
@@ -752,7 +817,7 @@ export default class MetadataDependencies extends SharedMixin(
   // "Installation Assign Crew · Versions v4 (active), v3, v2, v1"
   buildComponentLabel(row, displayName) {
     const parts = [];
-    const versions = row.usedByVersions || [];
+    const versions = row.versions || [];
     // Deleting the obsolete versions of such a Flow removes the dependency
     if (
       versions.length > 0 &&
@@ -760,8 +825,8 @@ export default class MetadataDependencies extends SharedMixin(
     ) {
       parts.push(this.t("onlyObsoleteFlowVersions"));
     }
-    if (row.usedByName && row.usedByName !== displayName) {
-      parts.push(row.usedByName);
+    if (row.name && row.name !== displayName) {
+      parts.push(row.name);
     }
     if (versions.length > 0) {
       const versionsText = versions
@@ -788,25 +853,30 @@ export default class MetadataDependencies extends SharedMixin(
       },
       {
         label:
-          row.usedByType === "Flow"
+          row.type === "Flow"
             ? this.t("openInFlowBuilder")
             : this.t("openInSetup"),
         name: "setup",
         iconName: "utility:setup",
-        disabled: !row.usedBySetupPath,
+        disabled: !row.setupPath,
       },
       {
         label: this.t("findWhereUsedLabel"),
         name: "drill",
-        iconName: "utility:hierarchy",
+        iconName: "utility:arrowup",
       },
       {
-        label: row.usedByApiName
+        label: this.t("seeWhatItUsesLabel"),
+        name: "drillUses",
+        iconName: "utility:arrowdown",
+      },
+      {
+        label: row.apiName
           ? this.t("retrieveIntoProject")
           : `${this.t("retrieveIntoProject")} (${this.t("noApiNameCannotRetrieve")})`,
         name: "retrieve",
         iconName: "utility:download",
-        disabled: !row.usedByApiName,
+        disabled: !row.apiName,
       },
     ];
   }
@@ -817,9 +887,7 @@ export default class MetadataDependencies extends SharedMixin(
   }
 
   handleRowSelection(event) {
-    this.selectedIds = (event.detail.selectedRows || []).map(
-      (row) => row.usedById,
-    );
+    this.selectedIds = (event.detail.selectedRows || []).map((row) => row.id);
   }
 
   handleRowAction(event) {
@@ -828,28 +896,29 @@ export default class MetadataDependencies extends SharedMixin(
     if (!row) {
       return;
     }
-    if (actionName === "open" && row.usedByLocalFile) {
+    if (actionName === "open" && row.localFile) {
       window.sendMessageToVSCode({
         type: "openLocalFile",
-        data: { path: row.usedByLocalFile },
+        data: { path: row.localFile },
       });
-    } else if (actionName === "setup" && row.usedBySetupPath) {
+    } else if (actionName === "setup" && row.setupPath) {
       window.sendMessageToVSCode({
         type: "openInSetup",
         data: {
           username: this.username,
-          path: row.usedBySetupPath,
+          path: row.setupPath,
           name: row.displayName,
         },
       });
-    } else if (actionName === "drill") {
-      // Without an API name, the dependent is found by its Id
+    } else if (actionName === "drill" || actionName === "drillUses") {
+      // Without an API name, the component is found by its Id
+      const direction = actionName === "drillUses" ? USES : USED_BY;
       this.openLevel(
-        row.usedByApiName
-          ? { type: row.usedByType, name: row.usedByApiName }
-          : { type: row.usedByType, id: row.usedById },
+        row.apiName
+          ? { type: metadataTypeOf(row), name: row.apiName, direction }
+          : { type: row.type, id: row.id, direction },
       );
-    } else if (actionName === "retrieve" && row.usedByApiName) {
+    } else if (actionName === "retrieve" && row.apiName) {
       this.retrieve([row]);
     }
   }
@@ -857,8 +926,8 @@ export default class MetadataDependencies extends SharedMixin(
   // ---- Retrieve and report ---------------------------------------------------
 
   get retrievableSelectedRows() {
-    return this.usedBy.filter(
-      (row) => this.selectedIds.includes(row.usedById) && row.usedByApiName,
+    return this.dependencies.filter(
+      (row) => this.selectedIds.includes(row.id) && row.apiName,
     );
   }
 
@@ -890,8 +959,8 @@ export default class MetadataDependencies extends SharedMixin(
       data: {
         username: this.username,
         components: rows.map((row) => ({
-          memberType: row.usedByType,
-          memberName: row.usedByApiName,
+          memberType: metadataTypeOf(row),
+          memberName: row.apiName,
         })),
       },
     });

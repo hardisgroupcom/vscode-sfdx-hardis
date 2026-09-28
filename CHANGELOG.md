@@ -7,6 +7,7 @@
   - Open each dependent's local file or its Setup page, drill down to what uses it, and retrieve the selected ones into the project
   - Generate a CSV/Excel report on request
   - Pick the type among every metadata type, and get API name suggestions from the org as you type
+  - See what a component uses too, from the panel, the Metadata Retriever and the right-click menu of metadata files
 - Training screenshots: the Helios project carries the default package-no-overwrite.xml, as the course repository now does.
 - Deployment actions: the SFDMU workspace list shows the label of every workspace, including one labelled like its folder, which read "Label not defined in export.json".
 

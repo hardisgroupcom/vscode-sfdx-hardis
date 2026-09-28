@@ -20,6 +20,13 @@
   color: var(--slds-g-color-palette-red-40);
 }
 
+.deps-search-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
 .deps-path {
   display: flex;
   flex-wrap: wrap;

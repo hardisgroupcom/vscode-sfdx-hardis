@@ -58,11 +58,19 @@
           ></s-typeahead>
         </div>
         <div class="deps-search-action">
+          <lightning-radio-group
+            label={i18n.directionLabel}
+            variant="label-hidden"
+            type="button"
+            options={directionOptions}
+            value={currentDirection}
+            onchange={handleDirectionChange}
+          ></lightning-radio-group>
           <lightning-button
             variant="neutral"
             class="hardis-btn-tinted-blue"
             type="submit"
-            label={i18n.findWhereUsedLabel}
+            label={searchButtonLabel}
             disabled={searchDisabled}
             onclick={handleSearch}
           ></lightning-button>
@@ -83,6 +91,12 @@
                 aria-current={item.ariaCurrent}
                 title={item.title}
               >
+                <lightning-icon
+                  icon-name={item.directionIcon}
+                  size="xx-small"
+                  alternative-text={item.directionLabel}
+                  title={item.directionLabel}
+                ></lightning-icon>
                 <span class={item.pillClass}>{item.type}</span>
                 <span>{item.label}</span>
               </button>
@@ -157,7 +171,7 @@
         </template>
 
         <s-hardis-datatable
-          key-field="usedById"
+          key-field="id"
           data={tableRows}
           columns={columns}
           selected-rows={selectedIds}

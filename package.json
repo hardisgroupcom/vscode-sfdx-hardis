@@ -361,6 +361,11 @@
         "icon": "$(references)"
       },
       {
+        "command": "vscode-sfdx-hardis.findMetadataUses",
+        "title": "SFDX Hardis: See what this metadata uses",
+        "icon": "$(type-hierarchy-sub)"
+      },
+      {
         "command": "vscode-sfdx-hardis.findMetadataDependencies",
         "title": "SFDX Hardis: Find where this metadata is used",
         "icon": "$(references)"
@@ -590,6 +595,11 @@
           "command": "vscode-sfdx-hardis.findMetadataDependencies",
           "when": "resourceFilename =~ /(-meta\\.xml|\\.(cls|trigger|page|component))$/ || resourcePath =~ /[\\/\\\\](lwc|aura)[\\/\\\\][^\\/\\\\]+[\\/\\\\][^\\/\\\\]+$/",
           "group": "z_sfdxhardis@25"
+        },
+        {
+          "command": "vscode-sfdx-hardis.findMetadataUses",
+          "when": "resourceFilename =~ /(-meta\\.xml|\\.(cls|trigger|page|component))$/ || resourcePath =~ /[\\/\\\\](lwc|aura)[\\/\\\\][^\\/\\\\]+[\\/\\\\][^\\/\\\\]+$/",
+          "group": "z_sfdxhardis@26"
         }
       ],
       "view/title": [
@@ -704,6 +714,11 @@
           "command": "vscode-sfdx-hardis.findMetadataDependencies",
           "when": "resourceFilename =~ /(-meta\\.xml|\\.(cls|trigger|page|component))$/ || resourcePath =~ /[\\/\\\\](lwc|aura)[\\/\\\\][^\\/\\\\]+[\\/\\\\][^\\/\\\\]+$/",
           "group": "z_sfdxhardis@25"
+        },
+        {
+          "command": "vscode-sfdx-hardis.findMetadataUses",
+          "when": "resourceFilename =~ /(-meta\\.xml|\\.(cls|trigger|page|component))$/ || resourcePath =~ /[\\/\\\\](lwc|aura)[\\/\\\\][^\\/\\\\]+[\\/\\\\][^\\/\\\\]+$/",
+          "group": "z_sfdxhardis@26"
         }
       ],
       "view/item/context": [

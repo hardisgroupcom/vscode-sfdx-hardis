@@ -520,23 +520,30 @@ export class Commands {
   }
 
   registerFindMetadataDependencies() {
-    // Opens the Metadata Dependencies panel on the file: the CLI resolves it to its metadata component
-    const disposable = vscode.commands.registerCommand(
-      "vscode-sfdx-hardis.findMetadataDependencies",
-      async (uri?: vscode.Uri) => {
-        // No uri when called from the command palette: use the active editor
-        const target = uri ?? vscode.window.activeTextEditor?.document.uri;
-        if (!target) {
-          return;
-        }
-        // Absolute path: a path relative to one folder of a multi-root workspace would not resolve
-        vscode.commands.executeCommand(
-          "vscode-sfdx-hardis.showMetadataDependencies",
-          { sourceFile: target.fsPath },
-        );
-      },
-    );
-    this.disposables.push(disposable);
+    // Open the Metadata Dependencies panel on the file: the CLI resolves it to its metadata component.
+    // "Find where it is used" reads the used-by direction, "See what it uses" the uses direction.
+    const commands: Array<[string, "used-by" | "uses"]> = [
+      ["vscode-sfdx-hardis.findMetadataDependencies", "used-by"],
+      ["vscode-sfdx-hardis.findMetadataUses", "uses"],
+    ];
+    for (const [commandId, direction] of commands) {
+      const disposable = vscode.commands.registerCommand(
+        commandId,
+        async (uri?: vscode.Uri) => {
+          // No uri when called from the command palette: use the active editor
+          const target = uri ?? vscode.window.activeTextEditor?.document.uri;
+          if (!target) {
+            return;
+          }
+          // Absolute path: a path relative to one folder of a multi-root workspace would not resolve
+          vscode.commands.executeCommand(
+            "vscode-sfdx-hardis.showMetadataDependencies",
+            { sourceFile: target.fsPath, direction },
+          );
+        },
+      );
+      this.disposables.push(disposable);
+    }
   }
 
   /* jscpd:ignore-start */
