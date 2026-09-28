@@ -64,6 +64,15 @@
   text-decoration: none;
 }
 
+/* Levels after the current one: still clickable, like forward pages of a history */
+.deps-path-forward {
+  opacity: 0.55;
+}
+
+.deps-path-forward:hover {
+  opacity: 1;
+}
+
 /* Spinner above its text, both centered */
 .deps-loading {
   display: flex;

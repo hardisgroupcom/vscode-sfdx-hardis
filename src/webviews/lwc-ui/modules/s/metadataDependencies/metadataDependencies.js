@@ -551,9 +551,12 @@ export default class MetadataDependencies extends SharedMixin(
         title: `${level.type} ${decodeName(level.title)}`,
         showSeparator: index > 0,
         pillClass: getMetadataTypePillClass(level.type),
+        // Levels after the current one stay reachable, dimmed like forward pages
         buttonClass: isCurrent
           ? "deps-path-button deps-path-current"
-          : "deps-path-button",
+          : index > this.currentLevel
+            ? "deps-path-button deps-path-forward"
+            : "deps-path-button",
         ariaCurrent: isCurrent ? "page" : null,
       };
     });
@@ -564,8 +567,8 @@ export default class MetadataDependencies extends SharedMixin(
     if (Number.isNaN(index) || index === this.currentLevel) {
       return;
     }
-    // Going back keeps the result of each level: no new org call
-    this.levels = this.levels.slice(0, index + 1);
+    // Like a browser history: going back keeps the next levels, to go forward again, and each
+    // level keeps its result (no new org call). Drilling down from here replaces the next levels.
     this.currentLevel = index;
     this.selectedIds = [];
     this.reportFiles = [];
