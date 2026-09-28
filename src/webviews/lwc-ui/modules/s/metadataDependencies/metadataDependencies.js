@@ -202,17 +202,24 @@ export default class MetadataDependencies extends SharedMixin(
     const filesByComponent = new Map();
     for (const file of files) {
       const key = `${file.type}:${file.fullName}`;
-      filesByComponent.set(key, [...(filesByComponent.get(key) || []), file.filePath]);
+      filesByComponent.set(key, [
+        ...(filesByComponent.get(key) || []),
+        file.filePath,
+      ]);
     }
     const pickFile = (paths, name) =>
       [".js", ".cmp", ".app"]
-        .map((extension) => paths.find((p) => p.endsWith(`/${name}${extension}`)))
+        .map((extension) =>
+          paths.find((p) => p.endsWith(`/${name}${extension}`)),
+        )
         .find(Boolean) ||
       paths.find((p) => !p.endsWith("-meta.xml")) ||
       paths[0];
     for (const level of this.levels) {
       for (const row of level.result?.usedBy || []) {
-        const paths = filesByComponent.get(`${row.usedByType}:${row.usedByApiName}`);
+        const paths = filesByComponent.get(
+          `${row.usedByType}:${row.usedByApiName}`,
+        );
         if (paths && paths.length > 0) {
           row.usedByLocalFile = pickFile(paths, row.usedByApiName);
         }
