@@ -1237,6 +1237,7 @@
   "findMinimalPermSets": "最小権限セットを検索",
   "findPermissionSets": "permission sets を検索",
   "findUsers": "ユーザーを検索",
+  "findWhereUsedLabel": "使用箇所を検索",
   "fixInstructions": "修正手順",
   "fixListViewsMine": "スコープ Mine のリストビューを修正",
   "fixListViewsMineTooltip": "スコープ Everything でデプロイされたリストビューのスコープ Mine を復元します",

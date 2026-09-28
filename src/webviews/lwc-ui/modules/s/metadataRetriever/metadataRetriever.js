@@ -231,20 +231,22 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       });
     }
 
-    // Add download icon column (single-icon button)
-    // Use a 'button-icon' column so users can click the download icon directly
+    // Row actions menu, the same for every row (deleted rows included: the org gives the answer)
     cols.push({
-      type: "button-icon",
+      type: "action",
       typeAttributes: {
-        iconName: "utility:download",
-        title: this.t("downloadLabel"),
-        variant: "bare",
-        alternativeText: this.t("downloadLabel"),
-        name: "download",
-      },
-      initialWidth: 30,
-      cellAttributes: {
-        alignment: "center",
+        rowActions: [
+          {
+            label: this.t("downloadLabel"),
+            name: "download",
+            iconName: "utility:download",
+          },
+          {
+            label: this.t("findWhereUsedLabel"),
+            name: "findUsage",
+            iconName: "utility:hierarchy",
+          },
+        ],
       },
     });
 
@@ -1182,6 +1184,11 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       return;
     }
 
+    if (actionName === "findUsage") {
+      this.handleFindUsage(row);
+      return;
+    }
+
     if (actionName === "open") {
       // user clicked the metadata name button -> request extension to open file
       window.sendMessageToVSCode({
@@ -1190,6 +1197,19 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       });
       return;
     }
+  }
+
+  handleFindUsage(row) {
+    // The CLI resolves the component in the selected org and shows what uses it in the command runner
+    const quote = (value) => `"${String(value).replace(/"/g, '\\"')}"`;
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command:
+          `sf hardis:doc:metadata-deps --type ${quote(row.MemberType)}` +
+          ` --name ${quote(row.MemberName)} --target-org ${quote(this.selectedOrg)}`,
+      },
+    });
   }
 
   handleRetrieve(row) {

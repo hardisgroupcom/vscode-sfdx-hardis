@@ -1237,6 +1237,7 @@
   "findMinimalPermSets": "Minimale machtigingensets zoeken",
   "findPermissionSets": "Machtigingensets zoeken",
   "findUsers": "Gebruikers zoeken",
+  "findWhereUsedLabel": "Zoeken waar het wordt gebruikt",
   "fixInstructions": "Instructies herstellen",
   "fixListViewsMine": "List Views met scope Mine herstellen",
   "fixListViewsMineTooltip": "Herstelt de scope Mine op de List Views die met de scope Everything zijn gedeployed",

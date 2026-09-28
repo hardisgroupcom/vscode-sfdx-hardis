@@ -1237,6 +1237,7 @@
   "findMinimalPermSets": "Find Minimal PermSets",
   "findPermissionSets": "Find Permission Sets",
   "findUsers": "Find Users",
+  "findWhereUsedLabel": "Find where it is used",
   "fixInstructions": "Fix Instructions",
   "fixListViewsMine": "Fix List Views with scope Mine",
   "fixListViewsMineTooltip": "Restore the scope Mine on the List Views that have been deployed with the scope Everything",

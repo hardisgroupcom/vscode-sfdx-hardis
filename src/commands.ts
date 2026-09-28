@@ -85,6 +85,7 @@ export class Commands {
     this.registerGeneratePackageXmlDoc();
     this.registerGenerateFlowDocumentation();
     this.registerGenerateFlowVisualGitDiff();
+    this.registerFindMetadataDependencies();
     this.registerRunSalesforceCliMcpServer();
     registerGitMergeDriverToggle(this);
     registerShowExtensionConfig(this);
@@ -507,6 +508,29 @@ export class Commands {
           return;
         }
         const command = `sf hardis:doc:flow2markdown --inputfile "${relativePath}"`;
+        vscode.commands.executeCommand(
+          "vscode-sfdx-hardis.execute-command",
+          command,
+        );
+      },
+    );
+    this.disposables.push(disposable);
+  }
+
+  registerFindMetadataDependencies() {
+    // The CLI resolves the file to its metadata component, then queries the default org
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.findMetadataDependencies",
+      async (uri?: vscode.Uri) => {
+        // No uri when called from the command palette: use the active editor
+        const target = uri ?? vscode.window.activeTextEditor?.document.uri;
+        if (!target) {
+          return;
+        }
+        const relativePath = vscode.workspace
+          .asRelativePath(target)
+          .replace(/"/g, '\\"');
+        const command = `sf hardis:doc:metadata-deps --source-file "${relativePath}"`;
         vscode.commands.executeCommand(
           "vscode-sfdx-hardis.execute-command",
           command,

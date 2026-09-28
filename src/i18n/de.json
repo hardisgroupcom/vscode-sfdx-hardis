@@ -1237,6 +1237,7 @@
   "findMinimalPermSets": "Minimale PermSets finden",
   "findPermissionSets": "Berechtigungssätze suchen",
   "findUsers": "Benutzer suchen",
+  "findWhereUsedLabel": "Verwendungen suchen",
   "fixInstructions": "Korrekturanweisungen",
   "fixListViewsMine": "List Views mit Scope Mine korrigieren",
   "fixListViewsMineTooltip": "Stellt den Scope Mine für die List Views wieder her, die mit dem Scope Everything deployt wurden",

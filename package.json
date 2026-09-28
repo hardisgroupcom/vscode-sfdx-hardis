@@ -356,6 +356,11 @@
         "icon": "$(diff)"
       },
       {
+        "command": "vscode-sfdx-hardis.findMetadataDependencies",
+        "title": "SFDX Hardis: Find where this metadata is used",
+        "icon": "$(references)"
+      },
+      {
         "command": "vscode-sfdx-hardis.openExternal",
         "title": "SFDX Hardis: Open external url",
         "icon": "$(link-external)"
@@ -575,6 +580,11 @@
           "command": "vscode-sfdx-hardis.flowVisualGitDiff",
           "when": "resourceExtname == '.xml' && resourceFilename =~ /\\.flow-meta\\.xml$/",
           "group": "z_sfdxhardis@20"
+        },
+        {
+          "command": "vscode-sfdx-hardis.findMetadataDependencies",
+          "when": "resourceFilename =~ /-meta\\.xml$/ || resourceExtname =~ /^\\.(cls|trigger|page|component)$/ || resourcePath =~ /[\\/\\\\](lwc|aura)[\\/\\\\][^\\/\\\\]+[\\/\\\\][^\\/\\\\]+$/",
+          "group": "z_sfdxhardis@25"
         }
       ],
       "view/title": [
@@ -684,6 +694,11 @@
           "command": "vscode-sfdx-hardis.flowVisualGitDiff",
           "when": "resourceExtname == '.xml' && resourceFilename =~ /\\.flow-meta\\.xml$/",
           "group": "z_sfdxhardis@20"
+        },
+        {
+          "command": "vscode-sfdx-hardis.findMetadataDependencies",
+          "when": "resourceFilename =~ /-meta\\.xml$/ || resourceExtname =~ /^\\.(cls|trigger|page|component)$/ || resourcePath =~ /[\\/\\\\](lwc|aura)[\\/\\\\][^\\/\\\\]+[\\/\\\\][^\\/\\\\]+$/",
+          "group": "z_sfdxhardis@25"
         }
       ],
       "view/item/context": [

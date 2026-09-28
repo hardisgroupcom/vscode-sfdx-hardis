@@ -1237,6 +1237,7 @@
   "findMinimalPermSets": "Encontrar PermSets mínimos",
   "findPermissionSets": "Encontrar Conjuntos de Permissões",
   "findUsers": "Encontrar Usuários",
+  "findWhereUsedLabel": "Encontrar onde é usado",
   "fixInstructions": "Instruções de Correção",
   "fixListViewsMine": "Corrigir exibições de lista com escopo Mine",
   "fixListViewsMineTooltip": "Restaura o escopo Mine nas exibições de lista implantadas com o escopo Everything",

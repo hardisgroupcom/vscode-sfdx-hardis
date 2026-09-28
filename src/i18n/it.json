@@ -1237,6 +1237,7 @@
   "findMinimalPermSets": "Trova PermSet minimi",
   "findPermissionSets": "Trova Permission Sets",
   "findUsers": "Trova utenti",
+  "findWhereUsedLabel": "Trova dove è usato",
   "fixInstructions": "Istruzioni per la correzione",
   "fixListViewsMine": "Correggi le viste elenco con ambito Mine",
   "fixListViewsMineTooltip": "Ripristina l'ambito Mine sulle viste elenco distribuite con l'ambito Everything",
