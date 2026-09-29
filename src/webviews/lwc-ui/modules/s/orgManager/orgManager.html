@@ -18,6 +18,7 @@
             <template if:true={hasSelection}>
                 <lightning-button icon-name="utility:delete" label={i18n.forgetSelectedLabel} variant="neutral" class="hardis-btn-tinted-red" title={i18n.forgetSelectedOrgsTooltip} onclick={handleForgetSelected}></lightning-button>
             </template>
+            <lightning-button-icon icon-name="utility:help" variant="border-filled" alternative-text={i18n.documentation} title={i18n.documentation} onclick={handleOpenPanelDoc}></lightning-button-icon>
         </div>
     </div>
     <div class="hardis-panel-body">

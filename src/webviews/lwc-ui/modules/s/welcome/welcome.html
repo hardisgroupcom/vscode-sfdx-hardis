@@ -32,6 +32,9 @@
                         <button class="icon-selector-button welcome-icon-button" title={i18n.searchCommandsTooltip} onclick={navigateToSearchCommands}>
                             <lightning-icon icon-name="utility:search" size="x-small"></lightning-icon>
                         </button>
+                        <button class="icon-selector-button welcome-icon-button" title={i18n.documentation} onclick={handleOpenPanelDoc}>
+                            <lightning-icon icon-name="utility:help" size="x-small"></lightning-icon>
+                        </button>
                         <div class="icon-selector" title={i18n.langSelectTooltip}>
                             <button class="icon-selector-button" onclick={toggleLangDropdown}>
                                 <img class="icon-selector-img icon-selector-flag" src={currentLangFlagSrc} alt="">
