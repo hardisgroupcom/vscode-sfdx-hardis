@@ -389,9 +389,6 @@ async function main() {
     workspaceSettings["chat.commandCenter.enabled"] = false;
     workspaceSettings["workbench.activityBar.location"] = "default";
     workspaceSettings["workbench.tips.enabled"] = false;
-    // The DevOps Pipeline documentation shows the full diagram: feature
-    // branches (from the mocked open pull requests) included
-    workspaceSettings["vsCodeSfdxHardis.pipelineDisplayFeatureBranches"] = true;
     workspaceSettings["git.openRepositoryInParentFolders"] = "never";
     workspaceSettings["git.autofetch"] = false;
     workspaceSettings["extensions.ignoreRecommendations"] = true;
