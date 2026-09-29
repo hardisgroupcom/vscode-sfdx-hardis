@@ -11,6 +11,7 @@ import { api } from "lwc";
  * Features:
  * - i18n helpers (`i18n`, `translations`, `t`, `initTranslations`, `locale`)
  * - theme helpers (`colorTheme`, `colorContrast`, `handleColorThemeMessage`)
+ * - `handleOpenPanelDoc`: opens the user guide of the panel (Documentation button)
  */
 export const SharedMixin = (BaseClass) =>
   class extends BaseClass {
@@ -151,6 +152,12 @@ export const SharedMixin = (BaseClass) =>
       if (Object.prototype.hasOwnProperty.call(data, "loadError")) {
         this.loadError = data.loadError || null;
       }
+    }
+
+    // Documentation button of a panel header: the extension knows which user
+    // guide belongs to this panel (PANEL_DOC_URLS in src/constants.ts)
+    handleOpenPanelDoc() {
+      window.sendMessageToVSCode({ type: "openPanelDoc", data: {} });
     }
 
     // A render error in a child component would otherwise abort the re-render

@@ -1178,7 +1178,7 @@ export function registerShowPipeline(commands: Commands) {
 
       // Read displayFeatureBranches configuration
       const displayFeatureBranches =
-        config.get<boolean>("pipelineDisplayFeatureBranches") ?? false;
+        config.get<boolean>("pipelineDisplayFeatureBranches") ?? true;
 
       const ticketProvider = await TicketProvider.getInstance({
         reset: false,

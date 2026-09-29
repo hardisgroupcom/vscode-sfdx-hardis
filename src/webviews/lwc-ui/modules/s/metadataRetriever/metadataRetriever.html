@@ -25,6 +25,13 @@
           onchange={handleQueryModeChange}
           type="button"
         ></lightning-radio-group>
+        <lightning-button-icon
+          icon-name="utility:help"
+          variant="border-filled"
+          alternative-text={i18n.documentation}
+          title={i18n.documentation}
+          onclick={handleOpenPanelDoc}
+        ></lightning-button-icon>
       </div>
     </div>
     <div class="hardis-panel-body">

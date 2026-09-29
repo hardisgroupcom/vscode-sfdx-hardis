@@ -838,7 +838,7 @@ suite("Documentation screenshots", function () {
       settleMs: 9000,
       force: true,
     });
-    await click(1720, 104); // gear menu of the header
+    await click(1648, 104); // gear menu of the header
     await sleep(2500);
     await captureStable("pipeline-settings-menu");
     // A click elsewhere does not close a lightning menu: the panel is opened again
@@ -850,7 +850,7 @@ suite("Documentation screenshots", function () {
       settleMs: 9000,
       force: true,
     });
-    await click(1772, 104); // "Deployment packages" menu
+    await click(1700, 104); // "Deployment packages" menu
     await sleep(2500);
     await captureStable("pipeline-packages-menu");
     await shootPanel(panelManager, {
@@ -2209,6 +2209,131 @@ suite("Documentation screenshots", function () {
     });
   });
 
+  // ---------------------------------------------------------------------
+  // VS Code user guides (sfdx-hardis docs/vscode-extension-*.md): the panel
+  // states a guide walks through that no other capture shows, mostly an open
+  // menu or dialog. `yarn screenshots guides` takes them all. Each state starts
+  // from a freshly opened panel, because a click elsewhere does not close a
+  // lightning menu or modal.
+  // ---------------------------------------------------------------------
+  test("user guides: menus and dialogs of the panels", async function () {
+    if (!shouldTake("guides")) {
+      this.skip();
+    }
+    const states: Array<{
+      name: string;
+      command: string;
+      lwcId: string;
+      clicks: Array<{ x: number; y: number }>;
+      commandArgs?: any;
+      settleMs?: number;
+    }> = [
+      {
+        name: "welcome-language-menu",
+        command: "vscode-sfdx-hardis.showWelcome",
+        lwcId: "s-welcome",
+        clicks: [{ x: 1733, y: 73 }], // language flag of the toolbar
+      },
+      {
+        name: "orgs-manager-row-menu",
+        command: "vscode-sfdx-hardis.openOrgsManager",
+        lwcId: "s-org-manager",
+        // The rows are drawn twice: once listed, then again once the
+        // connection of every org is probed, which closes an open menu
+        settleMs: 12000,
+        clicks: [{ x: 1822, y: 273 }], // row menu of the default org
+      },
+      {
+        name: "org-monitoring-packages-menu",
+        command: "vscode-sfdx-hardis.showOrgMonitoring",
+        lwcId: "s-org-monitoring",
+        clicks: [{ x: 1450, y: 218 }], // "Packages" menu
+      },
+      {
+        name: "metadata-retriever-row-menu",
+        command: "vscode-sfdx-hardis.showMetadataRetriever",
+        lwcId: "s-metadata-retriever",
+        // "Search Metadata", then the row menu of the first result
+        clicks: [
+          { x: 578, y: 294 },
+          { x: 1823, y: 459 },
+        ],
+      },
+      {
+        name: "metadata-retriever-presets",
+        command: "vscode-sfdx-hardis.showMetadataRetriever",
+        lwcId: "s-metadata-retriever",
+        clicks: [{ x: 1155, y: 294 }], // "Manage Presets"
+      },
+      {
+        name: "metadata-dependencies-row-menu",
+        command: "vscode-sfdx-hardis.showMetadataDependencies",
+        lwcId: "s-metadata-dependencies",
+        commandArgs: { type: "CustomObject", name: "Invoice__c" },
+        clicks: [{ x: 1833, y: 465 }], // row menu of the first component
+      },
+      {
+        name: "data-workbench-create",
+        command: "vscode-sfdx-hardis.showDataWorkbench",
+        lwcId: "s-data-workbench",
+        clicks: [{ x: 1720, y: 88 }], // "Create Workspace"
+      },
+      {
+        name: "data-workbench-object-editor",
+        command: "vscode-sfdx-hardis.showDataWorkbench",
+        lwcId: "s-data-workbench",
+        // First workspace, then "Edit object" on its first object
+        clicks: [
+          { x: 625, y: 272 },
+          { x: 1607, y: 595 },
+        ],
+      },
+      {
+        name: "data-workbench-global-settings",
+        command: "vscode-sfdx-hardis.showDataWorkbench",
+        lwcId: "s-data-workbench",
+        clicks: [
+          { x: 625, y: 272 },
+          { x: 1780, y: 411 }, // "Edit Global Settings"
+        ],
+      },
+      {
+        name: "files-workbench-create",
+        command: "vscode-sfdx-hardis.showFilesWorkbench",
+        lwcId: "s-files-workbench",
+        clicks: [{ x: 1740, y: 88 }], // "Create Workspace"
+      },
+      {
+        name: "files-workbench-edit",
+        command: "vscode-sfdx-hardis.showFilesWorkbench",
+        lwcId: "s-files-workbench",
+        clicks: [
+          { x: 625, y: 272 },
+          { x: 1673, y: 294 }, // "Edit" of the configuration summary
+        ],
+      },
+    ];
+    // capture() is what maximizes the window, and click() coordinates are
+    // relative to the captured image: the first click of a filtered run would
+    // aim at a window that is still its default size. Its own name, so the
+    // "welcome" capture keeps its "welcome" gate in .shot-gates.json
+    await shootPanel(panelManager, {
+      name: "welcome-for-guides",
+      command: "vscode-sfdx-hardis.showWelcome",
+      lwcId: "s-welcome",
+      settleMs: 3500,
+      force: true,
+    });
+    for (const state of states) {
+      await shootPanel(panelManager, {
+        settleMs: 4000,
+        ...state,
+        force: true,
+      });
+    }
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+  });
+
   test("command runner (showcase run)", async function () {
     if (!shouldTake("command-runner")) {
       this.skip();
@@ -2485,7 +2610,7 @@ suite("Documentation screenshots", function () {
     // page, and a posted wheel never reaches the webview's scroller. Hiding the
     // feature branches is what actually shrinks the diagram, and it is a real
     // control a reader can find, right in the header.
-    await click(1655, 111); // "Show feature branches" toggle
+    await click(1580, 109); // "Show feature branches" toggle
     await sleep(2500);
     // Two levels out on top of that, so the whole row of cards fits rather than
     // being cut off at the bottom edge
@@ -2501,7 +2626,7 @@ suite("Documentation screenshots", function () {
     await vscode.commands.executeCommand("workbench.action.zoomIn");
     await vscode.commands.executeCommand("workbench.action.zoomIn");
     await sleep(1200);
-    await click(1655, 111); // put the toggle back for the captures that follow
+    await click(1580, 109); // put the toggle back for the captures that follow
     await sleep(1500);
   });
 
@@ -2750,11 +2875,11 @@ suite("Documentation screenshots", function () {
       ready: (data) => Array.isArray(data.orgs) && data.orgs.length > 0,
     });
     await record("orgs-manager", 15, async () => {
-      await click(1318, 95); // "View all orgs" toggle
+      await click(1268, 107); // "View all orgs" toggle
       await sleep(2500);
       await click(1846, 211); // row actions of the default org
       await sleep(2500);
-      await click(1318, 95); // back to the recommended orgs
+      await click(1268, 107); // back to the recommended orgs
       await sleep(2000);
     });
   });
@@ -2924,6 +3049,152 @@ suite("Documentation screenshots", function () {
       { prompt: "commitReady", data: { commitReady: "commitReady" } },
       { prompt: "pushCommits", data: { pushCommits: "yes" } },
     ]);
+  });
+
+  // Recordings of the VS Code user guides: one GIF per panel, played at the
+  // top of its guide page
+  test("recording: welcome page", async function () {
+    if (!shouldTake("rec-welcome")) {
+      this.skip();
+    }
+    await shootPanel(panelManager, {
+      name: "welcome-for-recording",
+      force: true,
+      command: "vscode-sfdx-hardis.showWelcome",
+      lwcId: "s-welcome",
+      settleMs: 3500,
+    });
+    await record("welcome", 14, async () => {
+      await sleep(1500);
+      for (let i = 0; i < 3; i++) {
+        await click(1170, 700, { scroll: -2 });
+      }
+      await sleep(2000);
+      for (let i = 0; i < 4; i++) {
+        await click(1170, 700, { scroll: 4 });
+      }
+      await sleep(2500);
+    });
+  });
+
+  test("recording: org monitoring", async function () {
+    if (!shouldTake("rec-org-monitoring")) {
+      this.skip();
+    }
+    await shootPanel(panelManager, {
+      name: "org-monitoring-for-recording",
+      force: true,
+      command: "vscode-sfdx-hardis.showOrgMonitoring",
+      lwcId: "s-org-monitoring",
+      settleMs: 3500,
+    });
+    await record("org-monitoring", 16, async () => {
+      await sleep(1500);
+      await click(1450, 218); // "Packages" menu
+      await sleep(2500);
+      await click(1450, 218); // closed again
+      await sleep(1000);
+      for (let i = 0; i < 4; i++) {
+        await click(1170, 700, { scroll: -3 });
+      }
+      await sleep(2500);
+    });
+  });
+
+  test("recording: command runner", async function () {
+    if (!shouldTake("rec-command-runner")) {
+      this.skip();
+    }
+    await recordWorkflowCommand(
+      "command-runner",
+      "sf hardis:org:mock-showcase",
+      30,
+      [
+        { prompt: "setDefault", data: { setDefault: "yes" } },
+        {
+          prompt: "customSettings",
+          data: { customSettings: ["APITalenDev__c", "Languages__c"] },
+        },
+        { prompt: "auditDays", data: { auditDays: 30 } },
+      ],
+    );
+  });
+
+  test("recording: metadata dependencies", async function () {
+    if (!shouldTake("rec-metadata-dependencies")) {
+      this.skip();
+    }
+    await shootPanel(panelManager, {
+      name: "metadata-dependencies-for-recording",
+      force: true,
+      command: "vscode-sfdx-hardis.showMetadataDependencies",
+      lwcId: "s-metadata-dependencies",
+      settleMs: 4000,
+      commandArgs: { type: "CustomObject", name: "Invoice__c" },
+    });
+    await record("metadata-dependencies", 16, async () => {
+      await sleep(1500);
+      await click(492, 465); // select the first component
+      await sleep(900);
+      await click(492, 515); // and the second one
+      await sleep(1500);
+      await click(1833, 465); // row menu of the first component
+      await sleep(2500);
+      await click(1833, 465); // closed again
+      await sleep(1000);
+      for (let i = 0; i < 3; i++) {
+        await click(1170, 700, { scroll: -2 });
+      }
+      await sleep(2000);
+    });
+  });
+
+  test("recording: data workbench", async function () {
+    if (!shouldTake("rec-data-workbench")) {
+      this.skip();
+    }
+    await shootPanel(panelManager, {
+      name: "data-workbench-for-recording",
+      force: true,
+      command: "vscode-sfdx-hardis.showDataWorkbench",
+      lwcId: "s-data-workbench",
+      settleMs: 3500,
+    });
+    await record("data-workbench", 16, async () => {
+      await sleep(1000);
+      await click(625, 272); // first workspace
+      await sleep(2500);
+      await click(625, 400); // second workspace
+      await sleep(2500);
+      await click(625, 272); // back to the first one
+      await sleep(1500);
+      for (let i = 0; i < 3; i++) {
+        await click(1370, 700, { scroll: -2 });
+      }
+      await sleep(2000);
+    });
+  });
+
+  test("recording: files workbench", async function () {
+    if (!shouldTake("rec-files-workbench")) {
+      this.skip();
+    }
+    await shootPanel(panelManager, {
+      name: "files-workbench-for-recording",
+      force: true,
+      command: "vscode-sfdx-hardis.showFilesWorkbench",
+      lwcId: "s-files-workbench",
+      settleMs: 3500,
+    });
+    await record("files-workbench", 14, async () => {
+      await sleep(1000);
+      await click(625, 272); // first workspace
+      await sleep(2500);
+      await click(625, 400); // second workspace
+      await sleep(2500);
+      await click(1673, 294); // "Edit": the workspace dialog
+      await sleep(3000);
+    });
   });
 
   test("extension configuration", async function () {

@@ -216,6 +216,49 @@ BOX_CROPS = {
     ),
 }
 
+# --- VS Code user guides -----------------------------------------------------
+# The step-by-step pages of sfdx-hardis (docs/vscode-extension-*.md) show each
+# panel in the states a user meets. They land in docs/assets/images/vscode-guide/,
+# where scripts/annotate-doc-images.mjs of sfdx-hardis draws the numbered pills
+# on copies. Pill positions are percentages of these images: changing a crop
+# moves every pill, so check docs/assets/annotations.json after such a change.
+# doc image name -> (capture name, crop): True crops to the webview, a tuple is
+# a (left, top, right, bottom) box. The captures taken zoomed out (the pipeline
+# cards and modals) have a narrower side bar than SIDE_BAR_WIDTH, so they are
+# cropped to the part the step is about.
+GUIDE_SHOTS = {
+    "welcome.png": ("welcome", True),
+    "welcome-language-menu.png": ("welcome-language-menu", True),
+    "devops-pipeline.png": ("devops-pipeline", True),
+    "pipeline-settings-menu.png": ("pipeline-settings-menu", True),
+    "pipeline-packages-menu.png": ("pipeline-packages-menu", True),
+    "pipeline-workflow-cards.png": ("pipeline-workflow-cards", (315, 625, 1905, 835)),
+    "pipeline-pr-actions-list.png": ("pipeline-pr-actions-list", (400, 40, 1865, 825)),
+    "pipeline-branch-modal-actions.png": ("pipeline-branch-modal-actions", True),
+    "org-monitoring.png": ("org-monitoring", True),
+    "org-monitoring-packages-menu.png": ("org-monitoring-packages-menu", True),
+    "command-runner-question.png": ("command-runner-question", True),
+    "command-runner-multiselect.png": ("command-runner-multiselect", True),
+    "command-runner-completed.png": ("command-runner-completed", True),
+    "orgs-manager.png": ("orgs-manager", True),
+    "orgs-manager-row-menu.png": ("orgs-manager-row-menu", True),
+    "metadata-retriever.png": ("metadata-retriever", True),
+    "metadata-retriever-row-menu.png": ("metadata-retriever-row-menu", True),
+    "metadata-retriever-presets.png": ("metadata-retriever-presets", True),
+    "metadata-dependencies.png": ("metadata-dependencies", True),
+    "metadata-dependencies-uses.png": ("metadata-dependencies-uses", True),
+    "metadata-dependencies-row-menu.png": ("metadata-dependencies-row-menu", True),
+    "data-workbench.png": ("data-workbench", True),
+    "data-workbench-create.png": ("data-workbench-create", True),
+    "data-workbench-object-editor.png": ("data-workbench-object-editor", True),
+    "data-workbench-global-settings.png": ("data-workbench-global-settings", True),
+    "files-workbench.png": ("files-workbench", True),
+    "files-workbench-create.png": ("files-workbench-create", True),
+    "files-workbench-edit.png": ("files-workbench-edit", True),
+    "extension-config.png": ("extension-config", True),
+}
+GUIDE_FOLDER = "vscode-guide"
+
 # --- Animated GIFs ------------------------------------------------------------
 # doc GIF name -> recording folder in doc-screenshots/recordings/
 # Frames are recorded at 5 fps by the harness (record() in
@@ -231,6 +274,13 @@ GIF_RECORDINGS = {
     "new-user-story-2026.gif": "work-new",
     "save-publish-pr-2026.gif": "work-save",
     "animation-install-packages.gif": "install-packages",
+    # VS Code user guides: one GIF at the top of each panel's page
+    "welcome.gif": "welcome",
+    "org-monitoring.gif": "org-monitoring",
+    "command-runner.gif": "command-runner",
+    "metadata-dependencies.gif": "metadata-dependencies",
+    "data-workbench.gif": "data-workbench",
+    "files-workbench.gif": "files-workbench",
 }
 
 GIF_FRAME_MS = 200  # 5 fps
@@ -472,6 +522,21 @@ def main():
         if name in WEBVIEW_ONLY:
             image = crop_to_webview(image)
         save(image, os.path.join(args.docs_images, name), args.dry_run)
+
+    print("VS Code user guide screenshots:")
+    guide_dir = os.path.join(args.docs_images, GUIDE_FOLDER)
+    if not args.dry_run:
+        os.makedirs(guide_dir, exist_ok=True)
+    for name, (capture, crop) in GUIDE_SHOTS.items():
+        image = load(capture)
+        if image is None:
+            missing.append(capture)
+            continue
+        if crop is True:
+            image = crop_to_webview(image)
+        elif crop:
+            image = image.crop(crop)
+        save(image, os.path.join(guide_dir, name), args.dry_run)
 
     print("Side bar row crops:")
     for name, (capture, index) in ROW_CROPS.items():

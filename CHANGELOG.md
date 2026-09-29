@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- The DevOps Pipeline shows feature branches by default. Turn off **Show feature branches** to hide them.
+- Each workbench has a **?** button in its header that opens its new [user guide](https://sfdx-hardis.cloudity.com/vscode-extension/) on the documentation site.
 - Add the **Metadata Dependencies** panel: find which components of an org use an Apex class, a Flow, a field or any other metadata
   - Open it from the Metadata Retriever row menu, the right-click menu of metadata files, the Commands menu or the Org Monitoring page
   - Open each dependent's local file or its Setup page, drill down to what uses it, and retrieve the selected ones into the project
