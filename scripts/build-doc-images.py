@@ -241,7 +241,7 @@ GUIDE_SHOTS = {
     "command-runner-multiselect.png": ("command-runner-multiselect", True),
     "command-runner-completed.png": ("command-runner-completed", True),
     "orgs-manager.png": ("orgs-manager", True),
-    "orgs-manager-actions.png": ("orgs-manager-actions", True),
+    "orgs-manager-row-menu.png": ("orgs-manager-row-menu", True),
     "metadata-retriever.png": ("metadata-retriever", True),
     "metadata-retriever-row-menu.png": ("metadata-retriever-row-menu", True),
     "metadata-retriever-presets.png": ("metadata-retriever-presets", True),

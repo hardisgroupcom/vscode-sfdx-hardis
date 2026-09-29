@@ -154,15 +154,15 @@ export const SharedMixin = (BaseClass) =>
       }
     }
 
-    // A render error in a child component would otherwise abort the re-render
-    // and leave the previous DOM (often the loading spinner) on screen with no
-    // feedback: surface the error state (message + Try again) instead.
     // Documentation button of a panel header: the extension knows which user
     // guide belongs to this panel (PANEL_DOC_URLS in src/constants.ts)
     handleOpenPanelDoc() {
       window.sendMessageToVSCode({ type: "openPanelDoc", data: {} });
     }
 
+    // A render error in a child component would otherwise abort the re-render
+    // and leave the previous DOM (often the loading spinner) on screen with no
+    // feedback: surface the error state (message + Try again) instead.
     errorCallback(error, stack) {
       console.error("LWC component error:", error, stack);
       this.loadError = (error && error.message) || String(error);

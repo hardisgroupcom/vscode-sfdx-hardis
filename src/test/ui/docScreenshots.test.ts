@@ -2226,12 +2226,22 @@ suite("Documentation screenshots", function () {
       lwcId: string;
       clicks: Array<{ x: number; y: number }>;
       commandArgs?: any;
+      settleMs?: number;
     }> = [
       {
         name: "welcome-language-menu",
         command: "vscode-sfdx-hardis.showWelcome",
         lwcId: "s-welcome",
         clicks: [{ x: 1733, y: 73 }], // language flag of the toolbar
+      },
+      {
+        name: "orgs-manager-row-menu",
+        command: "vscode-sfdx-hardis.openOrgsManager",
+        lwcId: "s-org-manager",
+        // The rows are drawn twice: once listed, then again once the
+        // connection of every org is probed, which closes an open menu
+        settleMs: 12000,
+        clicks: [{ x: 1822, y: 273 }], // row menu of the default org
       },
       {
         name: "org-monitoring-packages-menu",
@@ -2305,9 +2315,10 @@ suite("Documentation screenshots", function () {
     ];
     // capture() is what maximizes the window, and click() coordinates are
     // relative to the captured image: the first click of a filtered run would
-    // aim at a window that is still its default size
+    // aim at a window that is still its default size. Its own name, so the
+    // "welcome" capture keeps its "welcome" gate in .shot-gates.json
     await shootPanel(panelManager, {
-      name: "welcome",
+      name: "welcome-for-guides",
       command: "vscode-sfdx-hardis.showWelcome",
       lwcId: "s-welcome",
       settleMs: 3500,
@@ -2315,8 +2326,8 @@ suite("Documentation screenshots", function () {
     });
     for (const state of states) {
       await shootPanel(panelManager, {
-        ...state,
         settleMs: 4000,
+        ...state,
         force: true,
       });
     }
