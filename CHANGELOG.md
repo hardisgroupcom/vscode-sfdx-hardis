@@ -2,8 +2,8 @@
 
 ## Unreleased
 
-- The DevOps Pipeline shows feature branches by default. Turn off **Show feature branches** to hide them.
-- Each workbench has a **?** button in its header that opens its new [user guide](https://sfdx-hardis.cloudity.com/vscode-extension/) on the documentation site.
+## [8.9.0] 2026-09-29
+
 - Add the **Metadata Dependencies** panel: find which components of an org use an Apex class, a Flow, a field or any other metadata
   - Open it from the Metadata Retriever row menu, the right-click menu of metadata files, the Commands menu or the Org Monitoring page
   - Open each dependent's local file or its Setup page, drill down to what uses it, and retrieve the selected ones into the project
@@ -11,7 +11,8 @@
   - Pick the type among every metadata type, and get API name suggestions from the org as you type
   - See what a component uses too, from the panel, the Metadata Retriever and the right-click menu of metadata files
   - The Used by / Uses switch answers at once, and a search already run shows its last result while the org is read again
-- Training screenshots: the Helios project carries the default package-no-overwrite.xml, as the course repository now does.
+- The DevOps Pipeline shows feature branches by default. Turn off **Show feature branches** to hide them.
+- Each workbench has a **?** button in its header that opens its new [user guide](https://sfdx-hardis.cloudity.com/vscode-extension/) on the documentation site.
 - Deployment actions: the SFDMU workspace list shows the label of every workspace, including one labelled like its folder, which read "Label not defined in export.json".
 
 ## [8.8.1] 2026-09-26
