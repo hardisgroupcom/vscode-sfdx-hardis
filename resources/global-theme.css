@@ -1523,6 +1523,55 @@ lightning-helptext::part(icon) {
   margin: 0.4rem 0 0.2rem;
 }
 
+/* ---- Action row: a panel toolbar that degrades on narrow widths --------
+   Anatomy:
+   <div class="hardis-action-row">
+     <div class="hardis-action-row-main">buttons</div>
+     <div class="hardis-action-row-aside">toggles / secondary controls</div>
+   </div>
+   Replaces the `slds-grid_align-spread` + `slds-col slds-no-flex` toolbar,
+   which starves the button group of width and then centers the aside against
+   the wrapped button stack.
+
+   The main group grows to push the aside to the right edge, with no auto
+   margin: an auto margin survives wrapping and would keep the aside pinned
+   right on its own line. With flex-grow instead, a wrapped aside starts the
+   new line and stays left aligned, under the buttons.
+
+   No breakpoint on purpose. The wrap threshold is the intrinsic width of the
+   labels, which is what actually differs between the 9 locales: a pixel value
+   tuned on English is always wrong in French or German. */
+.hardis-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+/* No `min-width: 0` here, deliberately: the main group keeps its max-content
+   flex-basis, so the ASIDE is the first thing pushed onto a new line. Only
+   once it is alone on its line do the buttons start wrapping among
+   themselves. */
+.hardis-action-row-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1 1 auto;
+}
+.hardis-action-row-aside {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+  flex: 0 1 auto;
+}
+/* A button wraps to the next line rather than squashing its own label: in a
+   flex row every child would otherwise inherit `flex-shrink: 1`. */
+.hardis-action-row-main > *,
+.hardis-action-row-aside > * {
+  flex: 0 0 auto;
+}
+
 /* ---- Workbench form & modal polish (scoped: root carries .hardis-workbench)
    Shared by the Data and Files Import/Export Workbenches — previously two
    verbatim copies in their component stylesheets. Scoped under the marker

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Metadata Retriever: the filter buttons stay aligned when the panel is narrow. They used to stack one per line, touching each other, while the **Full metadata** and **Check local files** toggles stayed pinned to the right of that stack. The toggles now move onto their own line under the buttons, and a button label is never squeezed.
+
 ## [8.8.0] 2026-09-23
 
 - Org Manager: a scratch org no longer reads as disconnected. `sf org list` never probes one, it asks its Dev Hub, and the panel only looked at the probe, so every scratch org lost its **Open** action and was offered **Reconnect** instead.
