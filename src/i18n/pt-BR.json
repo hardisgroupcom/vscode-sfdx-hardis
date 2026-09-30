@@ -930,7 +930,7 @@
   "dwbGsPromptMissingParentsHelp": "Exibir um prompt de confirmação quando objetos pai referenciados por lookups não estão no export.json.",
   "dwbGsPromptMissingParentsToggle": "Confirmar Objetos Pai Ausentes",
   "dwbGsProxyUrl": "URL do Proxy",
-  "dwbGsProxyUrlHelp": "URL do proxy HTTP para todas as conexões de saída. Exemplo: http://proxy.exemplo.com:8080",
+  "dwbGsProxyUrlHelp": "URL do proxy HTTP para todas as conexões de saída. Exemplo: http://proxy.example.com:8080",
   "dwbGsQueryBulkThreshold": "Limite da Bulk API para Consultas",
   "dwbGsQueryBulkThresholdHelp": "Número de registros acima do qual o SFDMU usa Bulk API para consultas. Padrão: 30000.",
   "dwbGsRestBatchSize": "Tamanho do Batch da REST API",
