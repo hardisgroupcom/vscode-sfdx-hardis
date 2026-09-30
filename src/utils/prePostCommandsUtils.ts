@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import * as fs from "fs";
 import * as yaml from "js-yaml";
+import { dumpRepositoryYaml } from "./yamlUtils";
 import * as path from "path";
 import * as vscode from "vscode";
 import { getWorkspaceRoot, listSfdxProjectPackageDirectories } from "../utils";
@@ -189,7 +190,7 @@ async function savePrConfig(
   prConfigFileName: string,
   prConfigParsed: any,
 ): Promise<void> {
-  const yamlContent = yaml.dump(prConfigParsed);
+  const yamlContent = dumpRepositoryYaml(prConfigParsed);
   await fs.promises.mkdir(path.dirname(prConfigFileName), { recursive: true });
   await fs.promises.writeFile(prConfigFileName, yamlContent, "utf8");
 }
@@ -557,12 +558,14 @@ export async function listProjectDataWorkspaces(): Promise<
             "utf8",
           );
           const parsed = JSON.parse(jsonContent);
-          hardisLabel = parsed.sfdxHardisLabel || item;
+          hardisLabel = parsed.sfdxHardisLabel || "";
         } catch {
           // Ignore JSON parse errors
         }
+        // A label equal to the folder name is still a label: comparing the two made
+        // a workspace named after its own folder read as having none
         options.push({
-          label: `${item} - ${item !== hardisLabel ? `: ${hardisLabel}` : "Label not defined in export.json"}`,
+          label: `${item} - ${hardisLabel || "Label not defined in export.json"}`,
           value: item.replace(/\\/g, "/"),
         });
       }

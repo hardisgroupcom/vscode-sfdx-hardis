@@ -48,6 +48,11 @@ testLevel: RunLocalTests
 # Lab 2.5 is where a Pull Request meets it.
 apexTestsMinCoverageOrgWide: 80
 testCoverageNotBlocking: false
+# Lab 2.7 shows what a merge conflict looks like, markers included. Without this,
+# the check of every promotion Pull Request (Lab 3.10) would fail on the lab
+# text itself.
+promotionConflictMarkersIgnoredFiles:
+  - labs/*/level-2-contributor-advanced/2-7-resolve-a-git-merge-conflict.md
 
 # --- Automated cleaning ---------------------------------------------------
 # Applied by hardis:work:save before the Pull Request. Lab 1.5 reads the
@@ -113,7 +118,7 @@ customCommands:
         label: Check my work
         vscodeIcon: pass
         sldsIcon: utility:check
-        tooltip: Verifies the Level 1 lab you just finished and prints your receipt
+        tooltip: Verifies the Level 1 lab you just finished
         command: node scripts/training.mjs check --level 1
         helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/badges/
       - id: training-l1-trigger
@@ -130,6 +135,13 @@ customCommands:
         tooltip: Checks the whole of level 1, then opens the badge claim form with your answers already in it
         command: node scripts/training.mjs claim --level 1
         helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/badges/
+      - id: training-l1-update
+        label: Update my course
+        vscodeIcon: sync
+        sldsIcon: utility:sync
+        tooltip: Brings the changes the course received since you forked it, through a Pull Request into integration
+        command: node scripts/training.mjs update
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/help/#when-the-course-changed-after-you-forked
       - id: training-l1-reset
         label: Reset this level
         vscodeIcon: debug-restart
@@ -166,6 +178,13 @@ customCommands:
         tooltip: Creates the teammate branches and Pull Requests a Level 2 lab needs
         command: node scripts/training.mjs simulate --level 2
         helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-7-resolve-a-git-merge-conflict/
+      - id: training-l2-records
+        label: Create my lab records
+        vscodeIcon: database
+        sldsIcon: utility:database
+        tooltip: Creates the records a Level 2 lab starts from, in your dev org
+        command: node scripts/training.mjs records
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-4-ship-reference-data-and-a-batch-with-deployment-actions/
       - id: training-l2-seed
         label: Set up one of my training orgs
         vscodeIcon: cloud-upload
@@ -177,7 +196,7 @@ customCommands:
         label: Check my work
         vscodeIcon: pass
         sldsIcon: utility:check
-        tooltip: Verifies the Level 2 lab you just finished and prints your receipt
+        tooltip: Verifies the Level 2 lab you just finished
         command: node scripts/training.mjs check --level 2
         helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/badges/
       - id: training-l2-claim
@@ -187,6 +206,13 @@ customCommands:
         tooltip: Checks the whole of level 2, then opens the badge claim form with your answers already in it
         command: node scripts/training.mjs claim --level 2
         helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/badges/
+      - id: training-l2-update
+        label: Update my course
+        vscodeIcon: sync
+        sldsIcon: utility:sync
+        tooltip: Brings the changes the course received since you forked it, through a Pull Request into integration
+        command: node scripts/training.mjs update
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/help/#when-the-course-changed-after-you-forked
       - id: training-l2-reset
         label: Reset this level
         vscodeIcon: debug-restart
@@ -241,7 +267,7 @@ customCommands:
         label: Check my work
         vscodeIcon: pass
         sldsIcon: utility:check
-        tooltip: Verifies the Level 3 lab you just finished and prints your receipt
+        tooltip: Verifies the Level 3 lab you just finished
         command: node scripts/training.mjs check --level 3
         helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/badges/
       - id: training-l3-claim
@@ -251,6 +277,13 @@ customCommands:
         tooltip: Checks the whole of level 3, then opens the badge claim form with your answers already in it
         command: node scripts/training.mjs claim --level 3
         helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/badges/
+      - id: training-l3-update
+        label: Update my course
+        vscodeIcon: sync
+        sldsIcon: utility:sync
+        tooltip: Brings the changes the course received since you forked it, through a Pull Request into integration
+        command: node scripts/training.mjs update
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/help/#when-the-course-changed-after-you-forked
       - id: training-l3-reset
         label: Reset this level
         vscodeIcon: debug-restart

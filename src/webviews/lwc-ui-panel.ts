@@ -7,6 +7,7 @@ import {
 } from "../utils";
 import { Logger } from "../logger";
 import { getAllTranslations, getCurrentLocale, t } from "../i18n/i18n";
+import { DOCSITE_URL, PANEL_DOC_URLS } from "../constants";
 
 type MessageListener = (messageType: string, data: any) => void;
 type ImagePathMap = Record<string, string[]>;
@@ -197,6 +198,7 @@ export class LwcUiPanel {
       "s-extension-config": t("extensionConfig"),
       "s-files-workbench": t("filesImportExportWorkbench"),
       "s-installed-packages": t("installedPackagesManager"),
+      "s-metadata-dependencies": t("metadataDependencies"),
       "s-metadata-retriever": t("metadataRetriever"),
       "s-org-manager": t("orgsManager"),
       "s-org-monitoring": t("orgMonitoringWorkbench"),
@@ -437,6 +439,13 @@ export class LwcUiPanel {
           break;
         case "openExternal":
           await this.handleOpenExternal(data.url || data);
+          break;
+        case "openPanelDoc":
+          // The user guide of this panel, or the extension overview for a
+          // panel that has none yet
+          await this.handleOpenExternal(
+            PANEL_DOC_URLS[this.lwcId] || DOCSITE_URL + "/vscode-extension/",
+          );
           break;
         case "runVsCodeCommand":
           await this.handleRunVsCodeCommand(data);

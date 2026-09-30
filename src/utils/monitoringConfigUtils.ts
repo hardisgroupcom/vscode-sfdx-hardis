@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import yaml from "js-yaml";
+import { dumpRepositoryYaml } from "./yamlUtils";
 import simpleGit from "simple-git";
 import { execSfdxJson, getWorkspaceRoot } from "../utils";
 import { CacheManager } from "./cache-manager";
@@ -384,5 +385,5 @@ export async function saveMonitoringConfig(
     delete existing.anonymization;
   }
   await fs.promises.mkdir(path.dirname(configPath), { recursive: true });
-  await fs.promises.writeFile(configPath, yaml.dump(existing), "utf8");
+  await fs.promises.writeFile(configPath, dumpRepositoryYaml(existing), "utf8");
 }

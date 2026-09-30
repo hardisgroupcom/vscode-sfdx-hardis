@@ -1,4 +1,4 @@
-import { execFileSync, execSync, spawn } from "child_process";
+import { execFileSync, execSync, spawn, spawnSync } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
@@ -301,10 +301,22 @@ function checkoutWorkspaceBranch(branchName: string): void {
   if (!workspaceRoot) {
     throw new Error("No workspace folder to check out a branch in");
   }
-  execFileSync("git", ["checkout", "-q", branchName], {
-    cwd: workspaceRoot,
-    stdio: "pipe",
-  });
+  // A fresh pipeline has no feature branch at all: the learner of Level 1 has
+  // just made their first one, with no Pull Request yet, so it is made here
+  const fresh = (process.env.SF_MOCK_PIPELINE_STATE || "").startsWith("fresh");
+  const branchExists =
+    spawnSync("git", ["rev-parse", "--verify", "-q", branchName], {
+      cwd: workspaceRoot,
+      stdio: "pipe",
+    }).status === 0;
+  execFileSync(
+    "git",
+    ["checkout", "-q", ...(fresh && !branchExists ? ["-b"] : []), branchName],
+    {
+      cwd: workspaceRoot,
+      stdio: "pipe",
+    },
+  );
 }
 
 /**
@@ -326,6 +338,24 @@ function universeSetting(key: string): string | null {
   } catch {
     return null;
   }
+}
+
+/** "x,y" from a universe setting, with a fallback when it says nothing usable */
+function parsePoint(
+  raw: string | null,
+  fallbackX: number,
+  fallbackY: number,
+): { x: number; y: number } {
+  // Number("") is 0, not NaN, so a missing setting would silently click the
+  // left edge of the window instead of falling back to the point below
+  const [x, y] = (raw || "").split(",").map((part) => {
+    const text = part.trim();
+    return text === "" ? Number.NaN : Number(text);
+  });
+  return {
+    x: Number.isFinite(x) ? x : fallbackX,
+    y: Number.isFinite(y) ? y : fallbackY,
+  };
 }
 
 const BRANCH_NODE = (() => {
@@ -358,21 +388,110 @@ const FEATURE_BRANCH =
  */
 const PROMOTION_VARIANT =
   process.env.SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION === "true";
-/** uat branch node of the diagram, in the coordinates of the captured PNG */
-const PROMOTION_UAT_NODE = { x: 1097, y: 366 };
-/** Promotion branch of the fixture, source of the open promotion #130 */
-const PROMOTION_BRANCH = "promotion/uat/preprod/2026-08-20-0930";
 /**
- * Checkboxes of the two approved User Stories of the uat window (#115 and
- * #113): the same two the promotion of the fixture carries, so the branch
- * window and the promotion Pull Request screenshots tell one story.
+ * uat branch node of the diagram, in the coordinates of the captured PNG.
+ * Mermaid lays it out from the branches the fixture carries, so a universe
+ * names its own point through `promotionNode` in its universe.json.
  */
-const PROMOTION_TICKED_ROWS = [
-  { x: 512, y: 422 },
-  { x: 512, y: 500 },
-];
+const PROMOTION_UAT_NODE = parsePoint(
+  universeSetting("promotionNode"),
+  1097,
+  366,
+);
+/** Promotion branch of the fixture, source of the open promotion it carries */
+const PROMOTION_BRANCH =
+  universeSetting("promotionBranch") || "promotion/uat/preprod/2026-08-20-0930";
+/**
+ * Checkboxes of the approved User Stories of the uat window (#115 and #113 in
+ * the base fixture): the same ones the promotion of the fixture carries, so the
+ * branch window and the promotion Pull Request screenshots tell one story. A
+ * universe with a different number of rows names its own through
+ * `promotionRows`, as "x,y;x,y".
+ */
+const PROMOTION_TICKED_ROWS = (
+  universeSetting("promotionRows") || "512,422;512,500"
+)
+  .split(";")
+  .map((pair) => parsePoint(pair, 512, 422));
 const PROMOTION_MODAL_CLOSE = { x: 1843, y: 78 };
 const PIPELINE_ACTIONS_DEEP_LINK = { focus: "deploymentActions" };
+/**
+ * The commits the selection prompt of hardis:project:promotion:create is
+ * answered with: the ones of the stories the scenario says the panel ticked,
+ * read from the universe overlay when it carries the scenario, else the two of
+ * the base universe (PR 113 and PR 115 of the promotion documentation).
+ */
+function promotionSelectedCommits(): string[] {
+  const dir = process.env.SF_MOCK_UNIVERSE_DIR;
+  if (dir) {
+    try {
+      const overlay = JSON.parse(
+        fs.readFileSync(path.join(dir, "sf-mock-overlay.json"), "utf8"),
+      );
+      const scenario = overlay?.scenario?.promotionCreate;
+      if (scenario?.candidates && scenario?.selected) {
+        return scenario.candidates
+          .filter((c: any) => scenario.selected.includes(c.number))
+          .map((c: any) => c.commit);
+      }
+    } catch {
+      // No overlay, or an unreadable one: the base universe's answer below
+    }
+  }
+  return ["7c41ab9", "2f90d34"];
+}
+/**
+ * A layout as hardis:project:promotion:create commits it when a cherry-pick
+ * conflicts and the answer is to keep the markers: the target side is empty,
+ * the story side brings its own item with the one it was written under. The
+ * base universe's stand-in for the conflict editor shot; a universe ships its
+ * own files under promotion-conflict/.
+ *
+ * Cut where git cuts it, not on an element boundary: the <layoutItems> and
+ * <behavior> lines that open the first incoming row also open the row that
+ * follows on the target, so git keeps them above the markers, and the incoming
+ * side runs from the first field to the opening lines of the row after the
+ * last one. Proven on a real promotion on 2026-09-24.
+ */
+const DEFAULT_CONFLICT_SAMPLE = [
+  '<?xml version="1.0" encoding="UTF-8"?>',
+  '<Layout xmlns="http://soap.sforce.com/2006/04/metadata">',
+  "    <layoutSections>",
+  "        <customLabel>false</customLabel>",
+  "        <detailHeading>false</detailHeading>",
+  "        <editHeading>true</editHeading>",
+  "        <label>Information</label>",
+  "        <layoutColumns>",
+  "            <layoutItems>",
+  "                <behavior>Required</behavior>",
+  "                <field>Name</field>",
+  "            </layoutItems>",
+  "            <layoutItems>",
+  "                <behavior>Edit</behavior>",
+  "                <field>StartDate</field>",
+  "            </layoutItems>",
+  "            <layoutItems>",
+  "                <behavior>Edit</behavior>",
+  "<<<<<<< HEAD",
+  "=======",
+  "                <field>Pricing_Rule__c</field>",
+  "            </layoutItems>",
+  "            <layoutItems>",
+  "                <behavior>Edit</behavior>",
+  "                <field>Appointment_Slot__c</field>",
+  "            </layoutItems>",
+  "            <layoutItems>",
+  "                <behavior>Edit</behavior>",
+  ">>>>>>> 2f90d34 (CRM-1012 Service appointment scheduler (#115))",
+  "                <field>ContractTerm</field>",
+  "            </layoutItems>",
+  "        </layoutColumns>",
+  "        <layoutColumns/>",
+  "        <style>TwoColumnsTopToBottom</style>",
+  "    </layoutSections>",
+  "</Layout>",
+  "",
+].join("\n");
 
 /**
  * Records the window while `scenario` drives the UI, into
@@ -705,8 +824,8 @@ suite("Documentation screenshots", function () {
   // The two menus of the DevOps Pipeline header, opened, then the package
   // viewer each entry of the second one opens. The course sends learners to
   // manifest/package.xml through this viewer, never through the Explorer, and
-  // creates package-no-overwrite.xml from it (the viewer shows a missing one
-  // empty, and its first Add writes it).
+  // adds a type to package-no-overwrite.xml from it. In the training fixture the
+  // list is the sfdx-hardis default minus RemoteSiteSetting, which Lab 3.5 adds.
   test("pipeline: header menus and package viewer", async function () {
     if (!shouldTake("pipeline-menus")) {
       this.skip();
@@ -719,7 +838,7 @@ suite("Documentation screenshots", function () {
       settleMs: 9000,
       force: true,
     });
-    await click(1720, 104); // gear menu of the header
+    await click(1648, 104); // gear menu of the header
     await sleep(2500);
     await captureStable("pipeline-settings-menu");
     // A click elsewhere does not close a lightning menu: the panel is opened again
@@ -731,7 +850,7 @@ suite("Documentation screenshots", function () {
       settleMs: 9000,
       force: true,
     });
-    await click(1772, 104); // "Deployment packages" menu
+    await click(1700, 104); // "Deployment packages" menu
     await sleep(2500);
     await captureStable("pipeline-packages-menu");
     await shootPanel(panelManager, {
@@ -768,6 +887,63 @@ suite("Documentation screenshots", function () {
     await sleep(1200);
     await captureStable("package-no-overwrite-add-type");
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+  });
+
+  // Training Labs 2.2 and 2.4: the package viewer filtered the way Lab 2.2 step 4
+  // filters it, then a retrieved field and a data workspace CSV opened in the
+  // editor, with the Explorer showing where each file sits. Only the training
+  // universe names these files, so the product documentation run skips it.
+  test("training: package filter and project files", async function () {
+    if (!shouldTake("training-files")) {
+      this.skip();
+    }
+    const filterText = universeSetting("packageXmlFilter");
+    const fieldFile = universeSetting("labFieldFile");
+    const csvFile = universeSetting("labCsvFile");
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!filterText || !fieldFile || !csvFile || !workspaceRoot) {
+      this.skip();
+    }
+    await shootPanel(panelManager, {
+      name: "package-xml-filtered",
+      command: "vscode-sfdx-hardis.showPackageXml",
+      commandArgs: {
+        packageType: "deploy",
+        filePath: "manifest/package.xml",
+        title: "Package XML - All Deployable Elements",
+        filterText,
+      },
+      lwcId: "s-package-xml",
+      settleMs: 2500,
+      // The one row the filter leaves, opened so the flow it carries shows
+      clicks: [{ x: 1862, y: 471 }],
+      force: true,
+    });
+    try {
+      for (const [name, file] of [
+        ["editor-field-file", fieldFile],
+        ["editor-crew-capacity-csv", csvFile],
+      ]) {
+        await vscode.commands.executeCommand(
+          "workbench.action.closeAllEditors",
+        );
+        await sleep(400);
+        const uri = vscode.Uri.file(path.join(workspaceRoot, file as string));
+        const document = await vscode.workspace.openTextDocument(uri);
+        await vscode.window.showTextDocument(document, { preview: false });
+        await vscode.commands.executeCommand("revealInExplorer", uri);
+        await sleep(2500);
+        await cleanChrome();
+        await captureStable(name as string);
+      }
+    } finally {
+      // Every later capture shows the side bar: give it back to sfdx-hardis
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+      await vscode.commands.executeCommand(
+        "workbench.view.extension.sfdx-hardis-explorer",
+      );
+      await sleep(800);
+    }
   });
 
   test("pipeline: contribution cards and branch modal", async function () {
@@ -924,6 +1100,119 @@ suite("Documentation screenshots", function () {
       settleMs: 3500,
       force: true,
     });
+  });
+
+  // The command the Create promotion button runs, captured at the conflict
+  // question and at the end of the run: the scenario comes from the mocked CLI
+  // (DOCS_SCENARIOS in test/fixtures/sf-shim/sf-mock.js) and names the stories
+  // of the current fixture universe. A lab compares the questions with the ones
+  // it gets, so the panel has to replay the real command, never a stand-in.
+  test("command runner (promotion create)", async function () {
+    if (!PROMOTION_VARIANT || !shouldTake("promotion-create")) {
+      this.skip();
+    }
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await sleep(400);
+    const asked = trackAskedPrompts();
+    const panelId = await runCommandAndWaitForPanel(
+      panelManager,
+      universeSetting("promotionCreateCommand") ||
+        "sf hardis:project:promotion:create --source-branch uat --target-branch preprod --pull-requests 113,115",
+    );
+    const panel = panelManager.getPanel(panelId);
+    // The panel passed the ticked stories, the command asks to confirm them:
+    // what the prompt pre-fills is what the button ticked, and the answer is
+    // the commits of those stories, read from the scenario the mock replays
+    await waitFor(() => asked("pullRequests"), 30000, "selection prompt");
+    await sleep(1500);
+    await cleanChrome();
+    capture("promotion-create-select");
+    panel.simulateWebviewMessage({
+      type: "submit",
+      data: { pullRequests: promotionSelectedCommits() },
+    });
+    // One cherry-pick conflicts: the four answers, the recommended one first
+    await waitFor(() => asked("conflict"), 30000, "conflict prompt");
+    await sleep(1500);
+    await cleanChrome();
+    capture("promotion-create-conflict");
+    panel.simulateWebviewMessage({
+      type: "submit",
+      data: { conflict: "commit-with-markers-all" },
+    });
+    await waitFor(
+      () => panelManager.getPanel(panelId)?.commandStatus === "completed",
+      60000,
+      "promotion create to complete",
+    );
+    await captureBottomOfPage("promotion-create-completed");
+  });
+
+  // A file the promotion committed with its conflict markers, open in the
+  // editor: the built-in merge-conflict extension draws the Accept Current /
+  // Accept Incoming / Accept Both code lenses over each block, which is the
+  // by-hand route of solving a promotion conflict. The files come from the
+  // universe fixture (promotion-conflict/ next to its universe.json), committed
+  // on the promotion branch of the workspace for the shot and gone with it.
+  test("promotion conflict editor", async function () {
+    if (!PROMOTION_VARIANT || !shouldTake("promotion-conflict")) {
+      this.skip();
+    }
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!workspaceRoot) {
+      throw new Error("No workspace folder to write the conflicted file in");
+    }
+    const conflictFile =
+      universeSetting("promotionConflictFile") ||
+      "force-app/main/default/layouts/Contract-Contract Layout.layout-meta.xml";
+    const sampleDir = process.env.SF_MOCK_UNIVERSE_DIR
+      ? path.join(process.env.SF_MOCK_UNIVERSE_DIR, "promotion-conflict")
+      : "";
+    const gitIn = (args: string[]) =>
+      execFileSync("git", args, { cwd: workspaceRoot, stdio: "pipe" });
+    checkoutWorkspaceBranch(PROMOTION_BRANCH);
+    try {
+      const target = path.join(workspaceRoot, conflictFile);
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      if (sampleDir && fs.existsSync(sampleDir)) {
+        fs.cpSync(sampleDir, workspaceRoot, { recursive: true });
+      } else {
+        // The base universe: the same shape on a MyCompany-CRM layout
+        fs.writeFileSync(target, DEFAULT_CONFLICT_SAMPLE, "utf8");
+      }
+      gitIn(["add", "-A"]);
+      gitIn([
+        "commit",
+        "-q",
+        "--no-gpg-sign",
+        "-m",
+        "CRM-1012 Service appointment scheduler (#115)",
+      ]);
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+      await sleep(400);
+      const document = await vscode.workspace.openTextDocument(target);
+      const editor = await vscode.window.showTextDocument(document, {
+        preview: false,
+      });
+      // The first conflict block in the middle of the editor, its code lenses
+      // in view
+      const firstMarker = document
+        .getText()
+        .split("\n")
+        .findIndex((line) => line.startsWith("<<<<<<< "));
+      const anchor = Math.max(0, firstMarker);
+      editor.revealRange(
+        new vscode.Range(anchor, 0, anchor + 14, 0),
+        vscode.TextEditorRevealType.InCenter,
+      );
+      await sleep(3500);
+      await cleanChrome();
+      await captureStable("promotion-conflict-editor");
+    } finally {
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+      await sleep(300);
+      checkoutWorkspaceBranch("integration");
+    }
   });
 
   // One screenshot of the "Edit Deployment Action" editor per action type,
@@ -1425,6 +1714,37 @@ suite("Documentation screenshots", function () {
     });
   });
 
+  // Metadata Dependencies panel opened from the Metadata Retriever row menu:
+  // what uses the Invoice__c object of the fixture org
+  test("metadata dependencies", async function () {
+    await shootPanel(panelManager, {
+      name: "metadata-dependencies",
+      command: "vscode-sfdx-hardis.showMetadataDependencies",
+      lwcId: "s-metadata-dependencies",
+      settleMs: 5000,
+      commandArgs: { type: "CustomObject", name: "Invoice__c" },
+    });
+  });
+
+  // Same panel in the other direction: what InvoiceService uses
+  test("metadata dependencies: uses", async function () {
+    if (!shouldTake("metadata-dependencies-uses")) {
+      this.skip();
+    }
+    await shootPanel(panelManager, {
+      name: "metadata-dependencies-uses",
+      command: "vscode-sfdx-hardis.showMetadataDependencies",
+      lwcId: "s-metadata-dependencies",
+      settleMs: 5000,
+      force: true,
+      commandArgs: {
+        type: "ApexClass",
+        name: "InvoiceService",
+        direction: "uses",
+      },
+    });
+  });
+
   // The Metadata Retriever doing the job it exists for: "what did I just change
   // in my org, and which of it belongs to my User Story". The training walks a
   // beginner through it before every publish, so it needs the results list and
@@ -1889,6 +2209,131 @@ suite("Documentation screenshots", function () {
     });
   });
 
+  // ---------------------------------------------------------------------
+  // VS Code user guides (sfdx-hardis docs/vscode-extension-*.md): the panel
+  // states a guide walks through that no other capture shows, mostly an open
+  // menu or dialog. `yarn screenshots guides` takes them all. Each state starts
+  // from a freshly opened panel, because a click elsewhere does not close a
+  // lightning menu or modal.
+  // ---------------------------------------------------------------------
+  test("user guides: menus and dialogs of the panels", async function () {
+    if (!shouldTake("guides")) {
+      this.skip();
+    }
+    const states: Array<{
+      name: string;
+      command: string;
+      lwcId: string;
+      clicks: Array<{ x: number; y: number }>;
+      commandArgs?: any;
+      settleMs?: number;
+    }> = [
+      {
+        name: "welcome-language-menu",
+        command: "vscode-sfdx-hardis.showWelcome",
+        lwcId: "s-welcome",
+        clicks: [{ x: 1733, y: 73 }], // language flag of the toolbar
+      },
+      {
+        name: "orgs-manager-row-menu",
+        command: "vscode-sfdx-hardis.openOrgsManager",
+        lwcId: "s-org-manager",
+        // The rows are drawn twice: once listed, then again once the
+        // connection of every org is probed, which closes an open menu
+        settleMs: 12000,
+        clicks: [{ x: 1822, y: 273 }], // row menu of the default org
+      },
+      {
+        name: "org-monitoring-packages-menu",
+        command: "vscode-sfdx-hardis.showOrgMonitoring",
+        lwcId: "s-org-monitoring",
+        clicks: [{ x: 1450, y: 218 }], // "Packages" menu
+      },
+      {
+        name: "metadata-retriever-row-menu",
+        command: "vscode-sfdx-hardis.showMetadataRetriever",
+        lwcId: "s-metadata-retriever",
+        // "Search Metadata", then the row menu of the first result
+        clicks: [
+          { x: 578, y: 294 },
+          { x: 1823, y: 459 },
+        ],
+      },
+      {
+        name: "metadata-retriever-presets",
+        command: "vscode-sfdx-hardis.showMetadataRetriever",
+        lwcId: "s-metadata-retriever",
+        clicks: [{ x: 1155, y: 294 }], // "Manage Presets"
+      },
+      {
+        name: "metadata-dependencies-row-menu",
+        command: "vscode-sfdx-hardis.showMetadataDependencies",
+        lwcId: "s-metadata-dependencies",
+        commandArgs: { type: "CustomObject", name: "Invoice__c" },
+        clicks: [{ x: 1833, y: 465 }], // row menu of the first component
+      },
+      {
+        name: "data-workbench-create",
+        command: "vscode-sfdx-hardis.showDataWorkbench",
+        lwcId: "s-data-workbench",
+        clicks: [{ x: 1720, y: 88 }], // "Create Workspace"
+      },
+      {
+        name: "data-workbench-object-editor",
+        command: "vscode-sfdx-hardis.showDataWorkbench",
+        lwcId: "s-data-workbench",
+        // First workspace, then "Edit object" on its first object
+        clicks: [
+          { x: 625, y: 272 },
+          { x: 1607, y: 595 },
+        ],
+      },
+      {
+        name: "data-workbench-global-settings",
+        command: "vscode-sfdx-hardis.showDataWorkbench",
+        lwcId: "s-data-workbench",
+        clicks: [
+          { x: 625, y: 272 },
+          { x: 1780, y: 411 }, // "Edit Global Settings"
+        ],
+      },
+      {
+        name: "files-workbench-create",
+        command: "vscode-sfdx-hardis.showFilesWorkbench",
+        lwcId: "s-files-workbench",
+        clicks: [{ x: 1740, y: 88 }], // "Create Workspace"
+      },
+      {
+        name: "files-workbench-edit",
+        command: "vscode-sfdx-hardis.showFilesWorkbench",
+        lwcId: "s-files-workbench",
+        clicks: [
+          { x: 625, y: 272 },
+          { x: 1673, y: 294 }, // "Edit" of the configuration summary
+        ],
+      },
+    ];
+    // capture() is what maximizes the window, and click() coordinates are
+    // relative to the captured image: the first click of a filtered run would
+    // aim at a window that is still its default size. Its own name, so the
+    // "welcome" capture keeps its "welcome" gate in .shot-gates.json
+    await shootPanel(panelManager, {
+      name: "welcome-for-guides",
+      command: "vscode-sfdx-hardis.showWelcome",
+      lwcId: "s-welcome",
+      settleMs: 3500,
+      force: true,
+    });
+    for (const state of states) {
+      await shootPanel(panelManager, {
+        settleMs: 4000,
+        ...state,
+        force: true,
+      });
+    }
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+  });
+
   test("command runner (showcase run)", async function () {
     if (!shouldTake("command-runner")) {
       this.skip();
@@ -2165,7 +2610,7 @@ suite("Documentation screenshots", function () {
     // page, and a posted wheel never reaches the webview's scroller. Hiding the
     // feature branches is what actually shrinks the diagram, and it is a real
     // control a reader can find, right in the header.
-    await click(1655, 111); // "Show feature branches" toggle
+    await click(1580, 109); // "Show feature branches" toggle
     await sleep(2500);
     // Two levels out on top of that, so the whole row of cards fits rather than
     // being cut off at the bottom edge
@@ -2181,7 +2626,7 @@ suite("Documentation screenshots", function () {
     await vscode.commands.executeCommand("workbench.action.zoomIn");
     await vscode.commands.executeCommand("workbench.action.zoomIn");
     await sleep(1200);
-    await click(1655, 111); // put the toggle back for the captures that follow
+    await click(1580, 109); // put the toggle back for the captures that follow
     await sleep(1500);
   });
 
@@ -2430,11 +2875,11 @@ suite("Documentation screenshots", function () {
       ready: (data) => Array.isArray(data.orgs) && data.orgs.length > 0,
     });
     await record("orgs-manager", 15, async () => {
-      await click(1318, 95); // "View all orgs" toggle
+      await click(1268, 107); // "View all orgs" toggle
       await sleep(2500);
       await click(1846, 211); // row actions of the default org
       await sleep(2500);
-      await click(1318, 95); // back to the recommended orgs
+      await click(1268, 107); // back to the recommended orgs
       await sleep(2000);
     });
   });
@@ -2604,6 +3049,152 @@ suite("Documentation screenshots", function () {
       { prompt: "commitReady", data: { commitReady: "commitReady" } },
       { prompt: "pushCommits", data: { pushCommits: "yes" } },
     ]);
+  });
+
+  // Recordings of the VS Code user guides: one GIF per panel, played at the
+  // top of its guide page
+  test("recording: welcome page", async function () {
+    if (!shouldTake("rec-welcome")) {
+      this.skip();
+    }
+    await shootPanel(panelManager, {
+      name: "welcome-for-recording",
+      force: true,
+      command: "vscode-sfdx-hardis.showWelcome",
+      lwcId: "s-welcome",
+      settleMs: 3500,
+    });
+    await record("welcome", 14, async () => {
+      await sleep(1500);
+      for (let i = 0; i < 3; i++) {
+        await click(1170, 700, { scroll: -2 });
+      }
+      await sleep(2000);
+      for (let i = 0; i < 4; i++) {
+        await click(1170, 700, { scroll: 4 });
+      }
+      await sleep(2500);
+    });
+  });
+
+  test("recording: org monitoring", async function () {
+    if (!shouldTake("rec-org-monitoring")) {
+      this.skip();
+    }
+    await shootPanel(panelManager, {
+      name: "org-monitoring-for-recording",
+      force: true,
+      command: "vscode-sfdx-hardis.showOrgMonitoring",
+      lwcId: "s-org-monitoring",
+      settleMs: 3500,
+    });
+    await record("org-monitoring", 16, async () => {
+      await sleep(1500);
+      await click(1450, 218); // "Packages" menu
+      await sleep(2500);
+      await click(1450, 218); // closed again
+      await sleep(1000);
+      for (let i = 0; i < 4; i++) {
+        await click(1170, 700, { scroll: -3 });
+      }
+      await sleep(2500);
+    });
+  });
+
+  test("recording: command runner", async function () {
+    if (!shouldTake("rec-command-runner")) {
+      this.skip();
+    }
+    await recordWorkflowCommand(
+      "command-runner",
+      "sf hardis:org:mock-showcase",
+      30,
+      [
+        { prompt: "setDefault", data: { setDefault: "yes" } },
+        {
+          prompt: "customSettings",
+          data: { customSettings: ["APITalenDev__c", "Languages__c"] },
+        },
+        { prompt: "auditDays", data: { auditDays: 30 } },
+      ],
+    );
+  });
+
+  test("recording: metadata dependencies", async function () {
+    if (!shouldTake("rec-metadata-dependencies")) {
+      this.skip();
+    }
+    await shootPanel(panelManager, {
+      name: "metadata-dependencies-for-recording",
+      force: true,
+      command: "vscode-sfdx-hardis.showMetadataDependencies",
+      lwcId: "s-metadata-dependencies",
+      settleMs: 4000,
+      commandArgs: { type: "CustomObject", name: "Invoice__c" },
+    });
+    await record("metadata-dependencies", 16, async () => {
+      await sleep(1500);
+      await click(492, 465); // select the first component
+      await sleep(900);
+      await click(492, 515); // and the second one
+      await sleep(1500);
+      await click(1833, 465); // row menu of the first component
+      await sleep(2500);
+      await click(1833, 465); // closed again
+      await sleep(1000);
+      for (let i = 0; i < 3; i++) {
+        await click(1170, 700, { scroll: -2 });
+      }
+      await sleep(2000);
+    });
+  });
+
+  test("recording: data workbench", async function () {
+    if (!shouldTake("rec-data-workbench")) {
+      this.skip();
+    }
+    await shootPanel(panelManager, {
+      name: "data-workbench-for-recording",
+      force: true,
+      command: "vscode-sfdx-hardis.showDataWorkbench",
+      lwcId: "s-data-workbench",
+      settleMs: 3500,
+    });
+    await record("data-workbench", 16, async () => {
+      await sleep(1000);
+      await click(625, 272); // first workspace
+      await sleep(2500);
+      await click(625, 400); // second workspace
+      await sleep(2500);
+      await click(625, 272); // back to the first one
+      await sleep(1500);
+      for (let i = 0; i < 3; i++) {
+        await click(1370, 700, { scroll: -2 });
+      }
+      await sleep(2000);
+    });
+  });
+
+  test("recording: files workbench", async function () {
+    if (!shouldTake("rec-files-workbench")) {
+      this.skip();
+    }
+    await shootPanel(panelManager, {
+      name: "files-workbench-for-recording",
+      force: true,
+      command: "vscode-sfdx-hardis.showFilesWorkbench",
+      lwcId: "s-files-workbench",
+      settleMs: 3500,
+    });
+    await record("files-workbench", 14, async () => {
+      await sleep(1000);
+      await click(625, 272); // first workspace
+      await sleep(2500);
+      await click(625, 400); // second workspace
+      await sleep(2500);
+      await click(1673, 294); // "Edit": the workspace dialog
+      await sleep(3000);
+    });
   });
 
   test("extension configuration", async function () {

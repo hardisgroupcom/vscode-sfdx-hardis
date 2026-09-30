@@ -4,6 +4,30 @@
 
 - Metadata Retriever: the filter buttons stay aligned when the panel is narrow. They used to stack one per line, touching each other, while the **Full metadata** and **Check local files** toggles stayed pinned to the right of that stack. The toggles now move onto their own line under the buttons, and a button label is never squeezed.
 
+## [8.9.0] 2026-09-29
+
+- Add the **Metadata Dependencies** panel: find which components of an org use an Apex class, a Flow, a field or any other metadata
+  - Open it from the Metadata Retriever row menu, the right-click menu of metadata files, the Commands menu or the Org Monitoring page
+  - Open each dependent's local file or its Setup page, drill down to what uses it, and retrieve the selected ones into the project
+  - Generate a CSV/Excel report on request
+  - Pick the type among every metadata type, and get API name suggestions from the org as you type
+  - See what a component uses too, from the panel, the Metadata Retriever and the right-click menu of metadata files
+  - The Used by / Uses switch answers at once, and a search already run shows its last result while the org is read again
+- The DevOps Pipeline shows feature branches by default. Turn off **Show feature branches** to hide them.
+- Each workbench has a **?** button in its header that opens its new [user guide](https://sfdx-hardis.cloudity.com/vscode-extension/) on the documentation site.
+- Deployment actions: the SFDMU workspace list shows the label of every workspace, including one labelled like its folder, which read "Label not defined in export.json".
+
+## [8.8.1] 2026-09-26
+
+- Org Monitoring: in a monitoring repository, the panel shows the CI/CD repository that deploys to the org (`deploymentRepository`) and opens it in a new VS Code window, or invites you to set it so that [coding agents](https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/#ask-questions-with-a-coding-agent) can search it too.
+- Saving documentation settings or an org color no longer overwrites a `.sfdx-hardis.yml` that has a YAML syntax error: the save fails and names the file to fix.
+- Deployment actions, pipeline settings and monitoring settings are written in YAML that MegaLinter leaves alone, so saving an action no longer brings a "chore(megalinter): apply linters fixes" commit onto the branch of its Pull Request.
+- Backpromote (Beta): a scratch org is named by its alias in the panel, not by its org id.
+- Pipeline Settings: [promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta) gain `promotionConflictMarkersIgnoredFiles`, the files allowed to hold git conflict markers.
+- Command execution panel: a sub-command that fails no longer marks a run that completed successfully as Failed. A promotion assembled with a cherry-pick conflict committed on purpose read Failed next to its own "Command success" line.
+- README: Level 3 of the [sfdx-hardis training](https://hardisgroupcom.github.io/sfdx-hardis-training/) now has 11 labs, with the new lab on promotion branches.
+- Documentation screenshots: the promotion conflict shown in the editor is the block git really writes, not a simplified one.
+
 ## [8.8.0] 2026-09-23
 
 - Org Manager: a scratch org no longer reads as disconnected. `sf org list` never probes one, it asks its Dev Hub, and the panel only looked at the probe, so every scratch org lost its **Open** action and was offered **Reconnect** instead.

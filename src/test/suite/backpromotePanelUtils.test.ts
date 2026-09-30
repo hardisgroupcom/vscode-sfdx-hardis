@@ -1303,6 +1303,26 @@ suite("backpromotePanelUtils", () => {
     assert.strictEqual(getBackpromoteErrorMessage(null), "");
   });
 
+  test("getTargetOrgDisplayName names a scratch org by its alias, not the org id sfdx-hardis gives it", () => {
+    assert.strictEqual(
+      getTargetOrgDisplayName({
+        alias: "helios-dev",
+        sandboxName: "00d000000000000001",
+        orgType: "scratch",
+        username: USERNAME,
+      }),
+      "helios-dev",
+    );
+    assert.strictEqual(
+      getTargetOrgDisplayName({
+        sandboxName: "00d000000000000001",
+        orgType: "scratch",
+        username: USERNAME,
+      }),
+      "00d000000000000001",
+    );
+  });
+
   test("getTargetOrgDisplayName prefers the sandbox name, then the short host of the status bar", () => {
     assert.strictEqual(getTargetOrgDisplayName(loadPlan().targetOrg), "dev1");
     assert.strictEqual(

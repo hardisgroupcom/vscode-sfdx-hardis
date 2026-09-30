@@ -66,6 +66,15 @@ const EXTRA_COMMANDS = [
     icon: "utility:database",
     colorClass: "metadata-access",
   },
+  {
+    key: "EXTRA_METADATA_DEPS",
+    titleKey: "metadataDeps",
+    descriptionKey: "metadataDepsDescription",
+    category: "technicalDebt",
+    command: "vscode-sfdx-hardis.showMetadataDependencies",
+    icon: "utility:hierarchy",
+    colorClass: "metadata-access",
+  },
 ];
 
 export default class OrgMonitoring extends SharedMixin(LightningElement) {
@@ -73,6 +82,7 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
   @track isLoading = true;
   @track isCiCdRepo = false;
   @track monitoringRepository = null;
+  @track deploymentRepository = null;
   @track instanceUrl = null;
   @track monitoringHomeUrl = "";
   @track monitoringConfigUrl = "";
@@ -87,6 +97,7 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
     this.isInstalled = data?.isInstalled || false;
     this.isCiCdRepo = data?.isCiCdRepo || false;
     this.monitoringRepository = data?.monitoringRepository || null;
+    this.deploymentRepository = data?.deploymentRepository || null;
     this.instanceUrl = data?.instanceUrl || null;
     this.monitoringHomeUrl = data?.monitoringHomeUrl || "";
     this.monitoringConfigUrl = data?.monitoringConfigUrl || "";
@@ -113,6 +124,9 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
       if (data?.monitoringRepository !== undefined) {
         this.monitoringRepository = data.monitoringRepository || null;
       }
+      if (data?.deploymentRepository !== undefined) {
+        this.deploymentRepository = data.deploymentRepository || null;
+      }
       if (data?.instanceUrl !== undefined) {
         this.instanceUrl = data.instanceUrl || null;
       }
@@ -121,6 +135,8 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
         this.catalogLoading = true;
         this.catalog = null;
       }
+    } else if (type === "deploymentRepositoryUpdated") {
+      this.deploymentRepository = data?.deploymentRepository || null;
     } else if (type === "monitoringCatalogLoaded") {
       this.catalog = data?.catalog || null;
       this.catalogLoading = false;
@@ -314,6 +330,20 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
     }
   }
 
+  openDeploymentRepository() {
+    if (this.deploymentRepository) {
+      window.sendMessageToVSCode({
+        type: "openDeploymentRepository",
+      });
+    }
+  }
+
+  setDeploymentRepository() {
+    window.sendMessageToVSCode({
+      type: "setDeploymentRepository",
+    });
+  }
+
   checkInstallationStatus() {
     window.sendMessageToVSCode({
       type: "checkOrgMonitoringInstallation",
@@ -428,6 +458,14 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
   handleRunCommand(event) {
     const command = event.currentTarget?.dataset?.command;
     if (!command) {
+      return;
+    }
+    // A card can open a panel of the extension instead of running a CLI command
+    if (command.startsWith("vscode-sfdx-hardis.")) {
+      window.sendMessageToVSCode({
+        type: "runVsCodeCommand",
+        data: { command },
+      });
       return;
     }
     window.sendMessageToVSCode({

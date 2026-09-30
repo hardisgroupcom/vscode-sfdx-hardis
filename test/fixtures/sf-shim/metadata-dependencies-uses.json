@@ -1,0 +1,52 @@
+{
+  "outputString": "Found 5 component(s) used by InvoiceService",
+  "direction": "uses",
+  "selected": {
+    "id": "01p5g00000Inv02AAA",
+    "name": "InvoiceService",
+    "type": "ApexClass",
+    "org": "deploy.user@mycompany.com.integ"
+  },
+  "dependencies": [
+    {
+      "id": "01I5g000000InvAAE",
+      "name": "Invoice",
+      "type": "CustomObject",
+      "apiName": "Invoice__c",
+      "setupPath": "/01I5g000000InvAAE",
+      "localFile": "force-app/main/default/objects/Invoice__c/Invoice__c.object-meta.xml"
+    },
+    {
+      "id": "00N5g00000Inv02AAA",
+      "name": "Amount",
+      "type": "CustomField",
+      "apiName": "Invoice__c.Amount__c",
+      "setupPath": "/00N5g00000Inv02AAA",
+      "localFile": "force-app/main/default/objects/Invoice__c/fields/Amount__c.field-meta.xml"
+    },
+    {
+      "id": "00N5g00000Inv03AAA",
+      "name": "Status",
+      "type": "CustomField",
+      "apiName": "Invoice__c.Status__c",
+      "setupPath": "/00N5g00000Inv03AAA",
+      "localFile": ""
+    },
+    {
+      "id": "Account",
+      "name": "Account",
+      "type": "StandardEntity",
+      "apiName": "Account",
+      "setupPath": "/lightning/setup/ObjectManager/Account/Details/view",
+      "localFile": ""
+    },
+    {
+      "id": "01p5g00000Inv09AAA",
+      "name": "InvoiceSelector",
+      "type": "ApexClass",
+      "apiName": "InvoiceSelector",
+      "setupPath": "/01p5g00000Inv09AAA",
+      "localFile": "force-app/main/default/classes/InvoiceSelector.cls"
+    }
+  ]
+}

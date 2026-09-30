@@ -9,6 +9,18 @@ import { SharedMixin } from "s/sharedMixin";
  * lightning-combobox used across the extension: `label`, `value`, `options`,
  * `placeholder`, `required`, `disabled`, `variant` ("label-hidden") and a
  * `change` event whose detail carries the selected `value`.
+ *
+ * Opt-in options (the default behavior is unchanged):
+ * - `allowFreeText`: any typed text is a value, committed on Enter, blur or
+ *   Escape; the options are suggestions. A value that is not an option is shown
+ *   as it is. A `textchange` event (detail.value) reports every keystroke, so the
+ *   parent always knows the current text, and blur commits at once (a click on
+ *   an option never blurs the input, its mousedown is prevented).
+ * - `maxOptions`: at most this number of options is rendered, with a line
+ *   telling how many more match (0 = no cap). Keeps long lists fast.
+ * - `loading`: shows a loading line in the dropdown while options arrive.
+ * - `emptyText`: text shown instead of "no matching results" when there are
+ *   no options at all.
  */
 
 // Monotonic counter to build unique element ids (deterministic, no Math.random)
@@ -21,6 +33,10 @@ export default class Typeahead extends SharedMixin(LightningElement) {
   @api disabled = false;
   @api variant; // "label-hidden" is supported
   @api name;
+  @api allowFreeText = false;
+  @api maxOptions = 0;
+  @api loading = false;
+  @api emptyText = "";
 
   @track _options = [];
   @track _value = null;
@@ -34,6 +50,8 @@ export default class Typeahead extends SharedMixin(LightningElement) {
   @track _validationMessage = "";
 
   _uid = `typeahead-${TYPEAHEAD_UID++}`;
+  // Render-time memo: its properties change during render, so they are never reactive fields
+  _memo = {};
   _blurTimer = null;
   _customValidityMessage = "";
 
@@ -67,7 +85,11 @@ export default class Typeahead extends SharedMixin(LightningElement) {
       return "";
     }
     const found = this._options.find((opt) => opt && opt.value === val);
-    return found ? found.label : "";
+    if (found) {
+      return found.label;
+    }
+    // In free text mode a value does not need to be an option
+    return this.allowFreeText ? String(val) : "";
   }
 
   // --- Template getters -----------------------------------------------------
@@ -144,14 +166,35 @@ export default class Typeahead extends SharedMixin(LightningElement) {
     return cls;
   }
 
-  get filteredOptions() {
-    let list = this._options;
-    if (this._dirty && this._searchTerm) {
-      const term = this._searchTerm.toLowerCase();
-      list = this._options.filter(
-        (opt) => opt && opt.label && opt.label.toLowerCase().includes(term),
-      );
+  // Every option matching the typed text, before the maxOptions cap. Filtered
+  // once per (options, text): several getters read it on each render, and the
+  // list can hold thousands of names.
+  get matchingOptions() {
+    const term =
+      this._dirty && this._searchTerm ? this._searchTerm.toLowerCase() : "";
+    const memo = this._memo.matching;
+    if (memo && memo.options === this._options && memo.term === term) {
+      return memo.result;
     }
+    const result = term
+      ? this._options.filter(
+          (opt) => opt && opt.label && opt.label.toLowerCase().includes(term),
+        )
+      : this._options;
+    this._memo.matching = { options: this._options, term, result };
+    return result;
+  }
+
+  get optionsCap() {
+    const cap = Number(this.maxOptions);
+    return Number.isFinite(cap) && cap > 0 ? cap : 0;
+  }
+
+  get filteredOptions() {
+    const matching = this.matchingOptions;
+    const list = this.optionsCap
+      ? matching.slice(0, this.optionsCap)
+      : matching;
     return list.map((opt, index) => {
       const selected = opt.value === this._value;
       const active = index === this._activeIndex;
@@ -175,11 +218,36 @@ export default class Typeahead extends SharedMixin(LightningElement) {
   }
 
   get hasNoMatches() {
-    return this.filteredOptions.length === 0;
+    return !this.loading && this.filteredOptions.length === 0;
   }
 
   get noMatchesLabel() {
+    if (this.emptyText && this._options.length === 0) {
+      return this.emptyText;
+    }
     return this.t("noMatchingResults");
+  }
+
+  get showLoading() {
+    return this.loading === true;
+  }
+
+  get loadingLabel() {
+    return this.t("loadingOptions");
+  }
+
+  get moreOptionsCount() {
+    return this.optionsCap
+      ? Math.max(this.matchingOptions.length - this.optionsCap, 0)
+      : 0;
+  }
+
+  get hasMoreOptions() {
+    return this.moreOptionsCount > 0;
+  }
+
+  get moreOptionsLabel() {
+    return this.t("typeToNarrowList", { count: this.moreOptionsCount });
   }
 
   // --- Event handlers -------------------------------------------------------
@@ -219,10 +287,24 @@ export default class Typeahead extends SharedMixin(LightningElement) {
     this._searchTerm = event.target.value;
     this._dirty = true;
     this._open = true;
-    this.highlightFirstFilteredOption();
+    if (this.allowFreeText) {
+      // Enter keeps the typed text unless the user picks a suggestion
+      this._activeIndex = -1;
+      this.dispatchEvent(
+        new CustomEvent("textchange", { detail: { value: this._searchTerm } }),
+      );
+    } else {
+      this.highlightFirstFilteredOption();
+    }
   }
 
   handleBlur() {
+    if (this.allowFreeText) {
+      // Commit at once, so a button clicked right after typing sees the value
+      this.cancelBlurTimer();
+      this.closeAndReset();
+      return;
+    }
     // Delay closing so a click on an option can register before we reset.
     this.cancelBlurTimer();
     this._blurTimer = setTimeout(() => {
@@ -251,6 +333,14 @@ export default class Typeahead extends SharedMixin(LightningElement) {
     } else if (key === "ArrowUp") {
       event.preventDefault();
       this.moveActive(-1);
+    } else if (key === "Enter" && this.allowFreeText) {
+      event.preventDefault();
+      const chosen = this.filteredOptions[this._activeIndex];
+      if (this._open && chosen) {
+        this.commitSelection(chosen.value, chosen.label);
+      } else {
+        this.commitFreeText();
+      }
     } else if (key === "Enter") {
       const opts = this.filteredOptions;
       const chosen =
@@ -310,7 +400,23 @@ export default class Typeahead extends SharedMixin(LightningElement) {
     this.dispatchEvent(new CustomEvent("change", { detail: { value } }));
   }
 
+  // Free text mode: the typed text becomes the value
+  commitFreeText() {
+    const text = (this._searchTerm || "").trim();
+    if (text !== (this._value ?? "")) {
+      this.commitSelection(text, text);
+      return;
+    }
+    this._open = false;
+    this._dirty = false;
+    this._activeIndex = -1;
+  }
+
   closeAndReset() {
+    if (this.allowFreeText && this._dirty) {
+      this.commitFreeText();
+      return;
+    }
     this._open = false;
     this._dirty = false;
     this._activeIndex = -1;

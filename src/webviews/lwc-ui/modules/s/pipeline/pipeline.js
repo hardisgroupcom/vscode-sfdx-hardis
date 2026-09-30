@@ -29,7 +29,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track currentBranchPullRequest = null;
   @track autoFixPullRequest = null;
   @track openPullRequests = [];
-  @track displayFeatureBranches = false;
+  @track displayFeatureBranches = true;
   // Branch modal: promotion and major-to-major Pull Requests are the vehicles that move the
   // User Stories, not stories themselves, so they are hidden unless this toggle is on
   @track modalShowPromotionPrs = false;
@@ -709,7 +709,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.hasWarnings = this.warnings.length > 0;
     this.showOnlyMajor = false;
     if (Object.prototype.hasOwnProperty.call(data, "displayFeatureBranches")) {
-      this.displayFeatureBranches = data.displayFeatureBranches ?? false;
+      this.displayFeatureBranches = data.displayFeatureBranches ?? true;
     }
     if (
       Object.prototype.hasOwnProperty.call(
