@@ -458,6 +458,7 @@ export class GitProviderGitHub extends GitProvider {
     const [owner, repo] = [this.repoInfo.owner, this.repoInfo.repo];
     try {
       const promotions: any[] = [];
+      let complete = false;
       // Newest first, so the walk stops at the first Pull Request older than the bound
       for (let page = 1; page <= GitProviderGitHub.PR_MAX_PAGES; page++) {
         const { data: prs } = await this.gitHubClient.pulls.list({
@@ -493,8 +494,16 @@ export class GitProviderGitHub extends GitProvider {
           }
         }
         if (reachedBound || prs.length < GitProviderGitHub.PR_PAGE_SIZE) {
+          complete = true;
           break;
         }
+      }
+      if (!complete) {
+        // What was found is still true, but an older promotion may be missing: say so rather
+        // than let a story come back in its source branch with no trace of why
+        Logger.log(
+          `[listMergedPromotionPullRequests] stopped after ${GitProviderGitHub.PR_MAX_PAGES} pages of Pull Requests merged into ${targetBranch}: older promotions of ${sourceBranch} may be missing, and their User Stories still counted in ${sourceBranch}`,
+        );
       }
       return await this.convertAndCollectJobsList(promotions, {
         withJobs: false,

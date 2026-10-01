@@ -426,6 +426,12 @@ export class GitProviderGitlab extends GitProvider {
         targetBranch,
         updatedAfter: updatedAfter?.toISOString(),
       });
+      // gitbeaker stops at maxPages without saying so: a full last page means there was more
+      if (mergedMRs.length >= 100 * GitProviderGitlab.MERGED_MR_MAX_PAGES) {
+        Logger.log(
+          `[listMergedPromotionPullRequests] stopped after ${GitProviderGitlab.MERGED_MR_MAX_PAGES} pages of Merge Requests merged into ${targetBranch}: older promotions of ${sourceBranch} may be missing, and their User Stories still counted in ${sourceBranch}`,
+        );
+      }
       const promotions = mergedMRs.filter((mr: any) =>
         isPromotionBranchOfStep(
           mr.sourceBranch || mr.source_branch,
