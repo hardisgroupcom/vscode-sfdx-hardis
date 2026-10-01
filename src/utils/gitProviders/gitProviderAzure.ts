@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { GitProvider } from "./gitProvider";
+import { isPromotionBranchOfStep } from "../pipeline/promotionBranchUtils";
 import {
   CreateTokenOption,
   GoLive,
@@ -443,6 +444,45 @@ export class GitProviderAzure extends GitProvider {
         `Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`,
       );
       return [];
+    }
+  }
+
+  async listMergedPromotionPullRequests(
+    sourceBranch: string,
+    targetBranch: string,
+    updatedAfter?: Date,
+  ): Promise<PullRequest[] | null> {
+    if (!this.repoInfo || !this.gitApi) {
+      return null;
+    }
+    try {
+      const completed = await this.listPullRequestsPaged(
+        {
+          targetRefName: `refs/heads/${targetBranch}`,
+          status: PullRequestStatus.Completed,
+          // 2 = Closed
+          ...(updatedAfter
+            ? { minTime: updatedAfter, queryTimeRangeType: 2 }
+            : {}),
+        },
+        "listMergedPromotionPullRequests",
+      );
+      // The list API cuts the description, and the declaration of a promotion sits below the cut
+      const promotions = await this.completeTruncatedDescriptions(
+        completed.filter((pr) =>
+          isPromotionBranchOfStep(
+            (pr.sourceRefName || "").replace(/^refs\/heads\//, ""),
+            sourceBranch,
+            targetBranch,
+          ),
+        ),
+      );
+      return await this.convertAndCollectJobsList(promotions, targetBranch, {
+        withJobs: false,
+      });
+    } catch (err) {
+      Logger.log(`Error in listMergedPromotionPullRequests: ${String(err)}`);
+      return null;
     }
   }
 

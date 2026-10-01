@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- DevOps Pipeline with [promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta): a User Story a merged promotion carried to the next branch is no longer counted in the branch it left, even after the next branch went to production.
+
 ## [8.9.0] 2026-09-29
 
 - Add the **Metadata Dependencies** panel: find which components of an org use an Apex class, a Flow, a field or any other metadata

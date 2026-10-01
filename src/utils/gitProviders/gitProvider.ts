@@ -410,6 +410,27 @@ export class GitProvider {
   }
 
   /**
+   * The merged promotion Pull Requests of one pipeline step: source branch named
+   * promotion/<sourceBranch>/<targetBranch>/..., merged into targetBranch, without their jobs.
+   * This is what tells which stories left sourceBranch. It is asked to the provider rather than
+   * read from the window of targetBranch, because a promotion drops out of that window at the
+   * next go-live while its stories stay in the window of sourceBranch.
+   * `updatedAfter` bounds the listing: a promotion carrying a story of a window cannot be older
+   * than the oldest story of that window.
+   * Returns null when the provider could not answer, which is not "no promotion".
+   */
+  async listMergedPromotionPullRequests(
+    _sourceBranch: string,
+    _targetBranch: string,
+    _updatedAfter?: Date,
+  ): Promise<PullRequest[] | null> {
+    Logger.log(
+      `listMergedPromotionPullRequests not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
+    );
+    return null;
+  }
+
+  /**
    * Lists the "go lives" (merges/promotions into a top branch such as main/prod),
    * most recent first. Lightweight: no PR contents are loaded — use
    * listPullRequestsInGoLive to fetch the PRs of a selected go live. Powers the

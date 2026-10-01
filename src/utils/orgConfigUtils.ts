@@ -15,6 +15,7 @@ import {
   getPromotionBranchConfig,
   isMergedPullRequest,
   isPromotionPullRequest,
+  listMergedPromotionsOfSteps,
   PromotionBranchConfig,
 } from "./pipeline/promotionBranchUtils";
 import { Logger } from "../logger";
@@ -332,6 +333,34 @@ async function completeMajorOrgsWithPromotionBranches(
       }
     }
   }
+  // Plus the promotions the provider knows and the windows no longer hold: the window of a
+  // target branch is reset at each go-live, so a promotion merged before it is in none of them,
+  // while its stories are still in the window of the branch they left.
+  const { promotions: stepPromotions, unknownSteps } =
+    await listMergedPromotionsOfSteps(
+      majorOrgs.map((org) => ({
+        sourceBranch: org.branchName,
+        // The window of a branch is computed against its first merge target
+        targetBranch: org.mergeTargets[0] || "",
+        pullRequests: org.pullRequestsInBranchSinceLastMerge || [],
+      })),
+      config,
+      (sourceBranch, targetBranch, updatedAfter) =>
+        gitProvider.listMergedPromotionPullRequests(
+          sourceBranch,
+          targetBranch,
+          updatedAfter,
+        ),
+    );
+  if (unknownSteps.length > 0) {
+    Logger.log(
+      `Unable to list the merged promotion Pull Requests of ${unknownSteps.join(", ")}: User Stories a promotion already carried away may still be listed in their source branch`,
+    );
+  }
+  const windowPromotionNumbers = new Set(promotions.map((pr) => pr.number));
+  promotions.push(
+    ...stepPromotions.filter((pr) => !windowPromotionNumbers.has(pr.number)),
+  );
   if (promotions.length === 0) {
     return;
   }
@@ -348,10 +377,11 @@ async function completeMajorOrgsWithPromotionBranches(
 }
 
 /**
- * The index only knows the promotions still inside a loaded window, so it cannot be the only thing
- * deciding where a story is listed: once a go-live resets a window, the promotion that carried a
- * story out of uat drops out of it and the story would show up in two branches. The windows
- * themselves always know, so the invariant is enforced on them directly.
+ * Second guard of the single place rule, on the windows themselves: a story listed in two windows
+ * stays in the downstream one only, whatever the promotion index says. The first guard is the
+ * index, fed with the merged promotions of each step asked to the git provider: the windows alone
+ * cannot tell that a story left a branch once the go-live of the next branch has emptied the
+ * window the promotion was in.
  */
 function enforceInvariant(
   majorOrgs: MajorOrg[],

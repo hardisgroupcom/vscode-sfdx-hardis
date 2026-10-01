@@ -1,5 +1,9 @@
 import * as vscode from "vscode";
 import { GitProvider } from "./gitProvider";
+import {
+  PROMOTION_BRANCH_PREFIX,
+  isPromotionBranchOfStep,
+} from "../pipeline/promotionBranchUtils";
 import { Bitbucket } from "bitbucket";
 import type { Schema } from "bitbucket";
 import {
@@ -441,6 +445,51 @@ export class GitProviderBitbucket extends GitProvider {
         `Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`,
       );
       return [];
+    }
+  }
+
+  async listMergedPromotionPullRequests(
+    sourceBranch: string,
+    targetBranch: string,
+    updatedAfter?: Date,
+  ): Promise<PullRequest[] | null> {
+    if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
+      return null;
+    }
+    try {
+      // "~" is a contains, so the provider only returns the promotion branches of the step
+      const q =
+        `destination.branch.name = "${targetBranch}" AND state = "MERGED"` +
+        ` AND source.branch.name ~ "${PROMOTION_BRANCH_PREFIX}/${sourceBranch}/${targetBranch}/"` +
+        (updatedAfter
+          ? ` AND updated_on >= ${JSON.stringify(updatedAfter.toISOString())}`
+          : "");
+      const values = await this.fetchAllPages(
+        (params) => this.bitbucketClient!.pullrequests.list(params),
+        {
+          workspace: this.workspace,
+          repo_slug: this.repoSlug,
+          q,
+          pagelen: 50,
+        },
+      );
+      await this.logApiCall("pullrequests.list", {
+        caller: "listMergedPromotionPullRequests",
+        q,
+      });
+      const promotions = values.filter((pr: any) =>
+        isPromotionBranchOfStep(
+          pr.source?.branch?.name,
+          sourceBranch,
+          targetBranch,
+        ),
+      );
+      return await this.convertAndCollectJobsList(promotions, {
+        withJobs: false,
+      });
+    } catch (err) {
+      Logger.log(`Error in listMergedPromotionPullRequests: ${String(err)}`);
+      return null;
     }
   }
 

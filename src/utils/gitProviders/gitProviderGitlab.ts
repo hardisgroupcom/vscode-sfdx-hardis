@@ -1,4 +1,5 @@
 import { GitProvider } from "./gitProvider";
+import { isPromotionBranchOfStep } from "../pipeline/promotionBranchUtils";
 import { Gitlab } from "@gitbeaker/rest";
 import type {
   MergeRequestSchemaWithBasicLabels,
@@ -400,6 +401,44 @@ export class GitProviderGitlab extends GitProvider {
         `Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`,
       );
       return [];
+    }
+  }
+
+  async listMergedPromotionPullRequests(
+    sourceBranch: string,
+    targetBranch: string,
+    updatedAfter?: Date,
+  ): Promise<PullRequest[] | null> {
+    if (!this.gitlabClient || !this.gitlabProjectId) {
+      return null;
+    }
+    try {
+      const mergedMRs = await this.gitlabClient.MergeRequests.all({
+        projectId: this.gitlabProjectId,
+        targetBranch,
+        state: "merged",
+        perPage: 100,
+        maxPages: GitProviderGitlab.MERGED_MR_MAX_PAGES,
+        ...(updatedAfter ? { updatedAfter: updatedAfter.toISOString() } : {}),
+      });
+      await this.logApiCall("MergeRequests.all", {
+        caller: "listMergedPromotionPullRequests",
+        targetBranch,
+        updatedAfter: updatedAfter?.toISOString(),
+      });
+      const promotions = mergedMRs.filter((mr: any) =>
+        isPromotionBranchOfStep(
+          mr.sourceBranch || mr.source_branch,
+          sourceBranch,
+          targetBranch,
+        ),
+      );
+      return await this.convertAndCollectJobsList(promotions, {
+        withJobs: false,
+      });
+    } catch (err) {
+      Logger.log(`Error in listMergedPromotionPullRequests: ${String(err)}`);
+      return null;
     }
   }
 

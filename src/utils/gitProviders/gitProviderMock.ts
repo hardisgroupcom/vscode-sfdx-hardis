@@ -95,6 +95,15 @@ export class GitProviderMock extends GitProvider {
     return byBranch[currentBranchName] || [];
   }
 
+  async listMergedPromotionPullRequests(
+    sourceBranch: string,
+    targetBranch: string,
+  ): Promise<PullRequest[] | null> {
+    // Keyed "<source>/<target>". Absent from a fixture: no promotion was merged on that step.
+    const byStep = this.fixture.mergedPromotionPullRequestsByStep || {};
+    return byStep[`${sourceBranch}/${targetBranch}`] || [];
+  }
+
   async getJobsForBranchLatestCommit(
     branchName: string,
   ): Promise<{ jobs: Job[]; jobsStatus: JobStatus } | null> {

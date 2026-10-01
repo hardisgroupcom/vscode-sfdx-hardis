@@ -256,6 +256,23 @@ export function isPromotionBranchName(
 }
 
 /**
+ * True for a promotion branch named for one given pipeline step
+ * (promotion/<sourceBranch>/<targetBranch>/...), whatever the case of the branch names.
+ */
+export function isPromotionBranchOfStep(
+  branchName: string | undefined | null,
+  sourceBranch: string,
+  targetBranch: string,
+): boolean {
+  const parts = parsePromotionBranchName(branchName);
+  return (
+    !!parts &&
+    parts.sourceBranch.toLowerCase() === (sourceBranch || "").toLowerCase() &&
+    parts.targetBranch.toLowerCase() === (targetBranch || "").toLowerCase()
+  );
+}
+
+/**
  * Pull Request numbers declared in the YAML blocks of a description. Accepts numbers
  * and strings ("482", "#482", "!482"), returns null when the key is absent.
  */
@@ -342,6 +359,116 @@ export function isPromotionPullRequest(
  */
 export function isMergedPullRequest(pr: PullRequest): boolean {
   return pr.state === "merged" || !!pr.mergeDate;
+}
+
+/**
+ * The proof that the stories a Pull Request declares have left sourceBranch for targetBranch: a
+ * merged promotion of that very step, going where its name says. An open promotion is not one,
+ * its stories are still waiting in the source branch. Mirror of the sfdx-hardis function of the
+ * same name.
+ */
+export function isMergedPromotionOfStep(
+  pr: PullRequest | null | undefined,
+  sourceBranch: string,
+  targetBranch: string,
+  config: PromotionBranchConfig,
+): boolean {
+  if (!pr || !isPromotionPullRequest(pr, config) || !isMergedPullRequest(pr)) {
+    return false;
+  }
+  if (!isPromotionBranchOfStep(pr.sourceBranch, sourceBranch, targetBranch)) {
+    return false;
+  }
+  // A promotion retargeted by hand proves nothing about the branch its name announces
+  const actualTarget = (pr.targetBranch || "").toLowerCase();
+  return actualTarget === "" || actualTarget === targetBranch.toLowerCase();
+}
+
+/**
+ * The merged promotion Pull Requests of each pipeline step, asked to the git provider.
+ *
+ * They cannot be read from the branch windows: the window of a target branch is reset at each
+ * go-live, so the promotion drops out of it, while the stories it carried stay in the window of
+ * the source branch for as long as nobody merges the two branches directly. A project that only
+ * promotes through promotion branches would see that window grow forever.
+ *
+ * `fetch` answers null when the provider could not tell. That step is then reported in
+ * `unknownSteps` and marks nothing: not knowing is not a reason to hide a story.
+ */
+export async function listMergedPromotionsOfSteps(
+  steps: Array<{
+    sourceBranch: string;
+    targetBranch: string;
+    pullRequests: PullRequest[];
+  }>,
+  config: PromotionBranchConfig,
+  fetch: (
+    sourceBranch: string,
+    targetBranch: string,
+    updatedAfter?: Date,
+  ) => Promise<PullRequest[] | null>,
+): Promise<{ promotions: PullRequest[]; unknownSteps: string[] }> {
+  const promotions: PullRequest[] = [];
+  const unknownSteps: string[] = [];
+  if (!config.enabled) {
+    return { promotions, unknownSteps };
+  }
+  const seen = new Set<number>();
+  const answers = await Promise.all(
+    steps
+      // Nothing is waiting in an empty window, so there is nothing to take out of it
+      .filter((step) => step.targetBranch && step.pullRequests.length > 0)
+      .map(async (step) => {
+        let found: PullRequest[] | null;
+        try {
+          found = await fetch(
+            step.sourceBranch,
+            step.targetBranch,
+            oldestPullRequestDate(step.pullRequests),
+          );
+        } catch {
+          found = null;
+        }
+        return { step, found };
+      }),
+  );
+  for (const { step, found } of answers) {
+    if (found === null) {
+      unknownSteps.push(`${step.sourceBranch} -> ${step.targetBranch}`);
+      continue;
+    }
+    for (const promotion of found) {
+      const number = prNumber(promotion);
+      if (
+        !seen.has(number) &&
+        isMergedPromotionOfStep(
+          promotion,
+          step.sourceBranch,
+          step.targetBranch,
+          config,
+        )
+      ) {
+        seen.add(number);
+        promotions.push(promotion);
+      }
+    }
+  }
+  return { promotions, unknownSteps };
+}
+
+/**
+ * A promotion carrying a story of a window was assembled after that story was created, so the
+ * oldest creation of the window bounds the provider query, as in sfdx-hardis. Not the merge date:
+ * on Bitbucket it is the date of the last update, and a comment written on a story after its
+ * promotion was merged would push the bound past that promotion. Undefined when no date can be
+ * read: the query then stays unbounded rather than silently miss a promotion.
+ */
+function oldestPullRequestDate(pullRequests: PullRequest[]): Date | undefined {
+  const times = pullRequests
+    .flatMap((pr) => [pr.createdAt, pr.mergeDate])
+    .map((date) => new Date(date || "").getTime())
+    .filter((time) => !isNaN(time));
+  return times.length > 0 ? new Date(Math.min(...times)) : undefined;
 }
 
 function prNumber(pr: PullRequest): number {
@@ -467,7 +594,17 @@ export function buildPromotionIndex(
       webUrl: promotion.webUrl || "",
       mergeDate: promotion.mergeDate || "",
     };
-    const fromBranch = (parts?.sourceBranch || "").toLowerCase();
+    // Only a promotion that went where its name says took its stories out of the source branch
+    const fromBranch =
+      parts &&
+      isMergedPromotionOfStep(
+        promotion,
+        parts.sourceBranch,
+        parts.targetBranch,
+        config,
+      )
+        ? parts.sourceBranch.toLowerCase()
+        : "";
     for (const storyNumber of parsePromotionPullRequestIds(
       promotion.description,
     ) || []) {

@@ -18,9 +18,12 @@ import {
   isPromotionSourceAllowed,
   isPromotionStepAllowed,
   parsePromotionSteps,
+  isMergedPromotionOfStep,
   isMergedPullRequest,
   isVehiclePullRequest,
   isPromotionBranchName,
+  isPromotionBranchOfStep,
+  listMergedPromotionsOfSteps,
   isPromotionPullRequest,
   parsePromotionBranchName,
   parsePromotionPullRequestIds,
@@ -566,6 +569,219 @@ suite("promotionBranchUtils", () => {
     assert.strictEqual(added.length, 0);
     assert.strictEqual(fetchCalls, 0);
     assert.strictEqual(window[0].isPromotion, undefined);
+  });
+
+  test("only a merged promotion of the step, going where its name says, proves its stories left", () => {
+    const merged = pr({
+      number: 900,
+      sourceBranch: "promotion/uat/preprod/2026-09-06-1430",
+      targetBranch: "preprod",
+      description: DECLARATION,
+    });
+    assert.strictEqual(
+      isMergedPromotionOfStep(merged, "uat", "preprod", ENABLED),
+      true,
+    );
+    assert.strictEqual(
+      isMergedPromotionOfStep(merged, "UAT", "Preprod", ENABLED),
+      true,
+    );
+    // Still open: its stories are waiting in uat
+    assert.strictEqual(
+      isMergedPromotionOfStep(
+        { ...merged, state: "open" },
+        "uat",
+        "preprod",
+        ENABLED,
+      ),
+      false,
+    );
+    // Another step, a promotion retargeted by hand, no declaration, feature off
+    assert.strictEqual(
+      isMergedPromotionOfStep(merged, "integration", "uat", ENABLED),
+      false,
+    );
+    assert.strictEqual(
+      isMergedPromotionOfStep(
+        { ...merged, targetBranch: "main" },
+        "uat",
+        "preprod",
+        ENABLED,
+      ),
+      false,
+    );
+    assert.strictEqual(
+      isMergedPromotionOfStep(
+        { ...merged, description: "no block" },
+        "uat",
+        "preprod",
+        ENABLED,
+      ),
+      false,
+    );
+    assert.strictEqual(
+      isMergedPromotionOfStep(merged, "uat", "preprod", DISABLED),
+      false,
+    );
+    assert.strictEqual(
+      isPromotionBranchOfStep(
+        "promotion/uat/preprod/2026-09-06-1",
+        "uat",
+        "preprod",
+      ),
+      true,
+    );
+    assert.strictEqual(
+      isPromotionBranchOfStep(
+        "promotion/uat/preprod-2/2026-09-06-1",
+        "uat",
+        "preprod",
+      ),
+      false,
+    );
+  });
+
+  test("a story leaves uat once its promotion is merged, even when no window holds the promotion any more", async () => {
+    // Real case (sfdx-hardis #2260): uat is only promoted through promotion branches, and preprod
+    // went to production since. The promotion is in no window, the uat window never resets, and
+    // its stories were counted as waiting in uat forever.
+    const merged = pr({
+      number: 900,
+      sourceBranch: "promotion/uat/preprod/2026-09-14-0900",
+      targetBranch: "preprod",
+      description: DECLARATION,
+      mergeDate: "2026-09-14T10:00:00Z",
+    });
+    const stillOpen = pr({
+      number: 901,
+      sourceBranch: "promotion/uat/preprod/2026-09-20-0900",
+      targetBranch: "preprod",
+      description: "```yaml\npromotionPullRequests: [490]\n```",
+      state: "open",
+    });
+    const uatWindow = [
+      pr({ number: 482, mergeDate: "2026-09-10T10:00:00Z" }),
+      pr({ number: 487, mergeDate: "2026-09-05T10:00:00Z" }),
+      pr({ number: 490, mergeDate: "2026-09-12T10:00:00Z" }),
+      pr({ number: 495, mergeDate: "2026-09-13T10:00:00Z" }),
+    ];
+    const calls: any[] = [];
+    const { promotions, unknownSteps } = await listMergedPromotionsOfSteps(
+      [
+        {
+          sourceBranch: "uat",
+          targetBranch: "preprod",
+          pullRequests: uatWindow,
+        },
+        // An empty window and a branch without merge target are not asked about
+        { sourceBranch: "integration", targetBranch: "uat", pullRequests: [] },
+        {
+          sourceBranch: "main",
+          targetBranch: "",
+          pullRequests: [pr({ number: 1 })],
+        },
+      ],
+      ENABLED,
+      async (sourceBranch, targetBranch, updatedAfter) => {
+        calls.push([sourceBranch, targetBranch, updatedAfter?.toISOString()]);
+        return [merged, stillOpen];
+      },
+    );
+    // One query, bounded by the oldest date of the window
+    assert.deepStrictEqual(calls, [
+      ["uat", "preprod", "2026-09-05T10:00:00.000Z"],
+    ]);
+
+    // Bitbucket gives the last update as merge date: a comment written on a story after its
+    // promotion was merged must not push the bound past that promotion
+    const commentedLater: any[] = [];
+    await listMergedPromotionsOfSteps(
+      [
+        {
+          sourceBranch: "uat",
+          targetBranch: "preprod",
+          pullRequests: [
+            pr({
+              number: 482,
+              createdAt: "2026-09-01T08:00:00Z",
+              mergeDate: "2026-09-25T10:00:00Z",
+            }),
+          ],
+        },
+      ],
+      ENABLED,
+      async (_sourceBranch, _targetBranch, updatedAfter) => {
+        commentedLater.push(updatedAfter?.toISOString());
+        return [];
+      },
+    );
+    assert.deepStrictEqual(commentedLater, ["2026-09-01T08:00:00.000Z"]);
+    assert.deepStrictEqual(unknownSteps, []);
+    assert.deepStrictEqual(
+      promotions.map((promotion) => promotion.number),
+      [900],
+    );
+
+    annotateAlreadyPromoted(
+      uatWindow,
+      "uat",
+      buildPromotionIndex(promotions, ENABLED),
+      ENABLED,
+    );
+    // 482 and 487 left with the merged promotion; 490 is carried by a promotion still open and
+    // 495 by none, so both are still waiting in uat
+    assert.deepStrictEqual(
+      visiblePullRequests(uatWindow).map((story) => story.number),
+      [490, 495],
+    );
+  });
+
+  test("a provider that cannot list the promotions hides nothing, and says which step", async () => {
+    const window = [pr({ number: 482 })];
+    const steps = [
+      { sourceBranch: "uat", targetBranch: "preprod", pullRequests: window },
+    ];
+    const unanswered = await listMergedPromotionsOfSteps(
+      steps,
+      ENABLED,
+      async () => null,
+    );
+    assert.deepStrictEqual(unanswered, {
+      promotions: [],
+      unknownSteps: ["uat -> preprod"],
+    });
+    const failing = await listMergedPromotionsOfSteps(
+      steps,
+      ENABLED,
+      async () => {
+        throw new Error("rate limited");
+      },
+    );
+    assert.deepStrictEqual(failing.unknownSteps, ["uat -> preprod"]);
+    // Feature off: the provider is not even asked
+    let asked = false;
+    await listMergedPromotionsOfSteps(steps, DISABLED, async () => {
+      asked = true;
+      return [];
+    });
+    assert.strictEqual(asked, false);
+  });
+
+  test("a promotion retargeted by hand takes nothing out of the branch its name announces", () => {
+    const retargeted = pr({
+      number: 900,
+      sourceBranch: PROMOTION_BRANCH,
+      targetBranch: "main",
+      description: DECLARATION,
+    });
+    const window = [pr({ number: 482 })];
+    annotateAlreadyPromoted(
+      window,
+      "uat",
+      buildPromotionIndex([retargeted], ENABLED),
+      ENABLED,
+    );
+    assert.notStrictEqual(window[0].promotedAway, true);
   });
 
   test("flags the stories already shipped by a merged promotion Pull Request", () => {

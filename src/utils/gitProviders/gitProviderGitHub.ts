@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { GitProvider } from "./gitProvider";
+import { isPromotionBranchOfStep } from "../pipeline/promotionBranchUtils";
 import { Octokit } from "@octokit/rest";
 import type { Endpoints } from "@octokit/types";
 import {
@@ -443,6 +444,64 @@ export class GitProviderGitHub extends GitProvider {
         `Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`,
       );
       return [];
+    }
+  }
+
+  async listMergedPromotionPullRequests(
+    sourceBranch: string,
+    targetBranch: string,
+    updatedAfter?: Date,
+  ): Promise<PullRequest[] | null> {
+    if (!this.gitHubClient || !this.repoInfo) {
+      return null;
+    }
+    const [owner, repo] = [this.repoInfo.owner, this.repoInfo.repo];
+    try {
+      const promotions: any[] = [];
+      // Newest first, so the walk stops at the first Pull Request older than the bound
+      for (let page = 1; page <= GitProviderGitHub.PR_MAX_PAGES; page++) {
+        const { data: prs } = await this.gitHubClient.pulls.list({
+          owner,
+          repo,
+          state: "closed",
+          base: targetBranch,
+          per_page: GitProviderGitHub.PR_PAGE_SIZE,
+          sort: "updated",
+          direction: "desc",
+          page,
+        });
+        await this.logApiCall("pulls.list", {
+          caller: "listMergedPromotionPullRequests",
+          targetBranch,
+          page,
+          received: prs.length,
+        });
+        let reachedBound = false;
+        for (const pr of prs) {
+          const updated = new Date(
+            pr.updated_at || pr.merged_at || 0,
+          ).getTime();
+          if (updatedAfter && updated < updatedAfter.getTime()) {
+            reachedBound = true;
+            break;
+          }
+          if (
+            pr.merged_at &&
+            isPromotionBranchOfStep(pr.head?.ref, sourceBranch, targetBranch)
+          ) {
+            promotions.push(pr);
+          }
+        }
+        if (reachedBound || prs.length < GitProviderGitHub.PR_PAGE_SIZE) {
+          break;
+        }
+      }
+      return await this.convertAndCollectJobsList(promotions, {
+        withJobs: false,
+      });
+    } catch (err) {
+      Logger.log(`Error in listMergedPromotionPullRequests: ${String(err)}`);
+      return null;
     }
   }
 
