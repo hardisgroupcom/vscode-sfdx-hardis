@@ -60,11 +60,6 @@
 	min-height: 100vh;
 }
 
-.slds-align-bottom {
-  display: flex;
-  align-items: flex-end;
-}
-
 /* Compact layout */
 lightning-input,
 lightning-combobox {

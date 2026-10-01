@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Metadata Retriever: the filter buttons stay aligned when the panel is narrow. They used to stack one per line, touching each other, while the **Full metadata** and **Check local files** toggles stayed pinned to the right of that stack. The toggles now move onto their own line under the buttons, and a button label is never squeezed.
 - DevOps Pipeline with [promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta): a User Story a merged promotion carried to the next branch is no longer counted in the branch it left, even after the next branch went to production.
 
 ## [8.9.0] 2026-09-29
