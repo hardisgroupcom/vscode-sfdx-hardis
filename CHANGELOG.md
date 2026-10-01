@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Metadata Retriever: the filter buttons stay aligned when the panel is narrow. They used to stack one per line, touching each other, while the **Full metadata** and **Check local files** toggles stayed pinned to the right of that stack. The toggles now move onto their own line under the buttons, and a button label is never squeezed.
+
 ## [8.9.0] 2026-09-29
 
 - Add the **Metadata Dependencies** panel: find which components of an org use an Apex class, a Flow, a field or any other metadata

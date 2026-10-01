@@ -148,15 +148,15 @@
         </template>
 
         <!-- Action Buttons -->
-        <div class="slds-m-top_x-small slds-grid slds-grid_vertical-align-center slds-grid_align-spread">
-          <div class="slds-col">
+        <div class="slds-m-top_x-small hardis-action-row">
+          <div class="hardis-action-row-main">
             <lightning-button
               variant="neutral"
               label={i18n.searchMetadata}
               icon-name="utility:search"
               onclick={handleSearch}
               disabled={cannotSearch}
-              class="slds-m-right_small hardis-btn-tinted-blue"
+              class="hardis-btn-tinted-blue"
               size="small"
             ></lightning-button>
             <lightning-button
@@ -165,7 +165,6 @@
               icon-name="utility:clear"
               onclick={handleClearFilters}
               size="small"
-              class="slds-m-right_small"
             ></lightning-button>
             <lightning-button
               variant="neutral"
@@ -173,7 +172,6 @@
               icon-name="utility:real_time"
               onclick={handleViewHistory}
               size="small"
-              class="slds-m-right_small"
             ></lightning-button>
             <lightning-button
               variant="neutral"
@@ -184,33 +182,30 @@
               title={i18n.managePresetsTooltip}
             ></lightning-button>
           </div>
-          <div class="slds-col slds-no-flex slds-form-element slds-form-element_compact">
-            <div class="slds-form-element__control slds-grid slds-grid_vertical-align-center" style="align-items:center;">
-              <lightning-input
-                class="slds-m-right_large"
-                type="toggle"
-                label={i18n.useCrudApiLabel}
-                aria-label={i18n.useCrudApiLabel}
-                checked={useCrudApi}
-                onchange={handleUseCrudApiChange}
-                variant="standard"
-                title={useCrudApiTooltip}
-                message-toggle-active=""
-                message-toggle-inactive=""
-              ></lightning-input>
-              <lightning-input
-                type="toggle"
-                label={i18n.checkLocalFiles}
-                aria-label={i18n.checkLocalFiles}
-                checked={checkLocalFiles}
-                onchange={handleCheckLocalChange}
-                variant="standard"
-                disabled={checkLocalDisabled}
-                title={checkLocalTooltip}
-                message-toggle-active=""
-                message-toggle-inactive=""
-              ></lightning-input>
-            </div>
+          <div class="hardis-action-row-aside slds-form-element slds-form-element_compact">
+            <lightning-input
+              type="toggle"
+              label={i18n.useCrudApiLabel}
+              aria-label={i18n.useCrudApiLabel}
+              checked={useCrudApi}
+              onchange={handleUseCrudApiChange}
+              variant="standard"
+              title={useCrudApiTooltip}
+              message-toggle-active=""
+              message-toggle-inactive=""
+            ></lightning-input>
+            <lightning-input
+              type="toggle"
+              label={i18n.checkLocalFiles}
+              aria-label={i18n.checkLocalFiles}
+              checked={checkLocalFiles}
+              onchange={handleCheckLocalChange}
+              variant="standard"
+              disabled={checkLocalDisabled}
+              title={checkLocalTooltip}
+              message-toggle-active=""
+              message-toggle-inactive=""
+            ></lightning-input>
           </div>
         </div>
 
