@@ -6,6 +6,7 @@ import type {
   ProviderDescription,
   ProviderName,
   PullRequest,
+  PullRequestListing,
   Job,
   RepoInfo,
   JobStatus,
@@ -418,12 +419,13 @@ export class GitProvider {
    * `updatedAfter` bounds the listing: a promotion carrying a story of a window cannot be older
    * than the oldest story of that window.
    * Returns null when the provider could not answer, which is not "no promotion".
+   * `complete` is false when the listing was cut at a page limit: older promotions may be missing.
    */
   async listMergedPromotionPullRequests(
     _sourceBranch: string,
     _targetBranch: string,
     _updatedAfter?: Date,
-  ): Promise<PullRequest[] | null> {
+  ): Promise<PullRequestListing | null> {
     Logger.log(
       `listMergedPromotionPullRequests not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
     );

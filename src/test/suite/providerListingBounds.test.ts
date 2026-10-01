@@ -64,6 +64,7 @@ suite("Pull Request listing bounds and fan-out", () => {
       const pages: number[] = [];
       const pr = (n: number) => ({
         number: n,
+        base: { ref: "integration" },
         merged_at: iso(1),
         updated_at: iso(1),
         merge_commit_sha: `sha-${n}`,
@@ -102,6 +103,7 @@ suite("Pull Request listing bounds and fan-out", () => {
         return {
           data: Array.from({ length: 100 }, (_, i) => ({
             number: params.page * 100 + i,
+            base: { ref: "integration" },
             merged_at: iso(old ? 400 : 1),
             updated_at: iso(old ? 400 : 1),
             merge_commit_sha: `sha-${params.page}-${i}`,

@@ -7,6 +7,7 @@ import type {
   JobStatus,
   ProviderDescription,
   PullRequest,
+  PullRequestListing,
 } from "./types";
 
 /**
@@ -98,10 +99,13 @@ export class GitProviderMock extends GitProvider {
   async listMergedPromotionPullRequests(
     sourceBranch: string,
     targetBranch: string,
-  ): Promise<PullRequest[] | null> {
+  ): Promise<PullRequestListing | null> {
     // Keyed "<source>/<target>". Absent from a fixture: no promotion was merged on that step.
     const byStep = this.fixture.mergedPromotionPullRequestsByStep || {};
-    return byStep[`${sourceBranch}/${targetBranch}`] || [];
+    return {
+      pullRequests: byStep[`${sourceBranch}/${targetBranch}`] || [],
+      complete: true,
+    };
   }
 
   async getJobsForBranchLatestCommit(

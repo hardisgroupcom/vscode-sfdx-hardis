@@ -6,10 +6,12 @@ import {
   GoLive,
   ProviderDescription,
   PullRequest,
+  PullRequestListing,
   Job,
   JobStatus,
 } from "./types";
 import { mapAzureMergeStatus } from "./mergeStatus";
+import { pickLatestByDate } from "./latestByDate";
 import * as azdev from "azure-devops-node-api";
 import { GitApi } from "azure-devops-node-api/GitApi";
 import {
@@ -266,7 +268,7 @@ export class GitProviderAzure extends GitProvider {
       return [];
     }
     try {
-      const prs = await this.listPullRequestsPaged(
+      const { pullRequests: prs } = await this.listPullRequestsPaged(
         { status: PullRequestStatus.Active },
         "listOpenPullRequests",
       );
@@ -364,29 +366,20 @@ export class GitProviderAzure extends GitProvider {
     }
 
     try {
-      // Step 1: Find the last completed PR from currentBranch to targetBranch
-      const lastMergedPRs = await this.gitApi.getPullRequests(
-        this.repoInfo.repo,
+      // Step 1: Find the last completed PR from currentBranch to targetBranch: the one closed
+      // last, whatever order the listing comes in
+      const { pullRequests: directMerges } = await this.listPullRequestsPaged(
         {
           sourceRefName: `refs/heads/${currentBranchName}`,
           targetRefName: `refs/heads/${targetBranchName}`,
           status: PullRequestStatus.Completed,
         },
-        this.repoInfo.owner,
-        undefined,
-        undefined,
-        1, // top: only need the latest one
+        "listPullRequestsInBranchSinceLastMerge",
       );
-      await this.logApiCall("gitApi.getPullRequests", {
-        caller: "listPullRequestsInBranchSinceLastMerge",
-        action: "findLastMerged",
-        sourceRefName: `refs/heads/${currentBranchName}`,
-        targetRefName: `refs/heads/${targetBranchName}`,
-        status: "Completed",
-      });
-
-      const lastMergedPrToTarget =
-        lastMergedPRs && lastMergedPRs.length > 0 ? lastMergedPRs[0] : null;
+      const lastMergedPrToTarget = pickLatestByDate(
+        directMerges,
+        (pr) => pr.closedDate,
+      );
 
       // Step 2: Get commits since last merge
       const commitsCriteria: any = {
@@ -451,22 +444,23 @@ export class GitProviderAzure extends GitProvider {
     sourceBranch: string,
     targetBranch: string,
     updatedAfter?: Date,
-  ): Promise<PullRequest[] | null> {
+  ): Promise<PullRequestListing | null> {
     if (!this.repoInfo || !this.gitApi) {
       return null;
     }
     try {
-      const completed = await this.listPullRequestsPaged(
-        {
-          targetRefName: `refs/heads/${targetBranch}`,
-          status: PullRequestStatus.Completed,
-          // 2 = Closed
-          ...(updatedAfter
-            ? { minTime: updatedAfter, queryTimeRangeType: 2 }
-            : {}),
-        },
-        "listMergedPromotionPullRequests",
-      );
+      const { pullRequests: completed, complete } =
+        await this.listPullRequestsPaged(
+          {
+            targetRefName: `refs/heads/${targetBranch}`,
+            status: PullRequestStatus.Completed,
+            // 2 = Closed
+            ...(updatedAfter
+              ? { minTime: updatedAfter, queryTimeRangeType: 2 }
+              : {}),
+          },
+          "listMergedPromotionPullRequests",
+        );
       // The list API cuts the description, and the declaration of a promotion sits below the cut
       const promotions = await this.completeTruncatedDescriptions(
         completed.filter((pr) =>
@@ -477,9 +471,14 @@ export class GitProviderAzure extends GitProvider {
           ),
         ),
       );
-      return await this.convertAndCollectJobsList(promotions, targetBranch, {
-        withJobs: false,
-      });
+      return {
+        pullRequests: await this.convertAndCollectJobsList(
+          promotions,
+          targetBranch,
+          { withJobs: false },
+        ),
+        complete,
+      };
     } catch (err) {
       Logger.log(`Error in listMergedPromotionPullRequests: ${String(err)}`);
       return null;
@@ -669,7 +668,7 @@ export class GitProviderAzure extends GitProvider {
       allBranches,
       async (branchName) => {
         try {
-          return await this.listPullRequestsPaged(
+          const { pullRequests } = await this.listPullRequestsPaged(
             {
               targetRefName: `refs/heads/${branchName}`,
               status: PullRequestStatus.Completed,
@@ -684,6 +683,7 @@ export class GitProviderAzure extends GitProvider {
             },
             "collectMergedPRsForCommits",
           );
+          return pullRequests;
         } catch (err) {
           Logger.log(
             `Error fetching completed PRs for branch ${branchName}: ${String(err)}`,
@@ -856,13 +856,16 @@ export class GitProviderAzure extends GitProvider {
   // clocks drift, so the time bound is widened before it is used
   private static readonly PR_WINDOW_MARGIN_DAYS = 7;
 
-  /** Walk the pages of a Pull Request listing, up to the explicit cap. */
+  /**
+   * Walk the pages of a Pull Request listing, up to the explicit cap. `complete` is false when
+   * the cap was reached, which is logged: more Pull Requests may exist.
+   */
   private async listPullRequestsPaged(
     searchCriteria: any,
     caller: string,
-  ): Promise<GitPullRequest[]> {
+  ): Promise<{ pullRequests: GitPullRequest[]; complete: boolean }> {
     if (!this.gitApi || !this.repoInfo) {
-      return [];
+      return { pullRequests: [], complete: true };
     }
     const all: GitPullRequest[] = [];
     for (let page = 0; page < GitProviderAzure.PR_MAX_PAGES; page++) {
@@ -884,13 +887,13 @@ export class GitProviderAzure extends GitProvider {
       all.push(...(prs || []));
       // A short page is the last one
       if (!prs || prs.length < GitProviderAzure.PR_PAGE_SIZE) {
-        return all;
+        return { pullRequests: all, complete: true };
       }
     }
     Logger.log(
-      `[${caller}] stopped after ${GitProviderAzure.PR_MAX_PAGES} pages (${all.length} Pull Requests): the window may be incomplete`,
+      `[${caller}] stopped after ${GitProviderAzure.PR_MAX_PAGES} pages (${all.length} Pull Requests): older ones may be missing`,
     );
-    return all;
+    return { pullRequests: all, complete: false };
   }
 
   /**

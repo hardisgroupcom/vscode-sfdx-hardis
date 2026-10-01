@@ -8,6 +8,7 @@ import {
   GoLive,
   ProviderDescription,
   PullRequest,
+  PullRequestListing,
   Job,
   JobStatus,
 } from "./types";
@@ -20,6 +21,7 @@ import {
   showAuthFailureGuidance,
 } from "../providerCredentials";
 import { mapGitHubMergeable } from "./mergeStatus";
+import { pickLatestByDate } from "./latestByDate";
 
 export class GitProviderGitHub extends GitProvider {
   // A Pull Request updated before the oldest commit of a window cannot belong to it. Widened by a
@@ -29,6 +31,28 @@ export class GitProviderGitHub extends GitProvider {
   private static readonly PR_PAGE_SIZE = 100;
   // Stop rather than walk a huge closed history when no time bound applies
   private static readonly PR_MAX_PAGES = 10;
+  // A comparison serves at most 100 commits per page, oldest first
+  private static readonly COMPARE_PAGE_SIZE = 100;
+  // 5000 commits: a window that is never reset holds more than one page, not an endless crawl
+  private static readonly COMPARE_MAX_PAGES = 50;
+
+  /**
+   * How the server answers the closed Pull Requests listing. GitHub filters on `base` and `head`,
+   * sorts by update date and serves the page size it is asked for. Gitea reuses this class and
+   * does none of the three, so it overrides this.
+   */
+  protected pullListingBehavior(): {
+    // False: a short page is not the last one, and an old Pull Request can precede a newer one
+    filteredAndSortedByServer: boolean;
+    extraParams: Record<string, number | string>;
+    maxPages: number;
+  } {
+    return {
+      filteredAndSortedByServer: true,
+      extraParams: {},
+      maxPages: GitProviderGitHub.PR_MAX_PAGES,
+    };
+  }
 
   private oldestCommitDateWithMargin(commits: any[]): Date | undefined {
     const times = (commits || [])
@@ -383,53 +407,31 @@ export class GitProviderGitHub extends GitProvider {
       return [];
     }
 
-    const [owner, repo] = [this.repoInfo.owner, this.repoInfo.repo];
-
     try {
-      // Step 1: Find the last merged PR from currentBranch to targetBranch
-      const { data: mergedPRs } = await this.gitHubClient.pulls.list({
-        owner,
-        repo,
-        state: "closed",
-        head: `${owner}:${currentBranchName}`,
-        base: targetBranchName,
-        sort: "updated",
-        direction: "desc",
-        per_page: 1,
-      });
-      await this.logApiCall("pulls.list", {
-        caller: "listPullRequestsInBranchSinceLastMerge",
-        action: "findLastMerged",
-        sourceBranch: currentBranchName,
-        targetBranch: targetBranchName,
-      });
-
-      const lastMergeToTarget = mergedPRs.find((pr) => pr.merged_at);
+      // Step 1: Find the last merge of currentBranch into targetBranch. The latest by merge date,
+      // not the first of a listing sorted by update: a comment on an old merge moves it to the top.
+      const { pullRequests: directMerges } =
+        await this.listMergedPullRequestsInto(
+          targetBranchName,
+          "listPullRequestsInBranchSinceLastMerge",
+          { headBranch: currentBranchName },
+        );
+      const lastMergeToTarget = pickLatestByDate(
+        directMerges,
+        (pr) => pr.merged_at,
+      );
 
       // Step 2: Get commits since last merge
-      const compareOptions: any = {
-        owner,
-        repo,
-        base: lastMergeToTarget
-          ? lastMergeToTarget.merge_commit_sha!
-          : targetBranchName,
-        head: currentBranchName,
-        per_page: 1000,
-      };
-
-      const { data: comparison } =
-        await this.gitHubClient.repos.compareCommits(compareOptions);
-      await this.logApiCall("repos.compareCommits", {
-        caller: "listPullRequestsInBranchSinceLastMerge",
-        base: compareOptions.base,
-        head: compareOptions.head,
-      });
-
-      if (!comparison.commits || comparison.commits.length === 0) {
+      const commits = await this.compareCommitsPaged(
+        lastMergeToTarget?.merge_commit_sha || targetBranchName,
+        currentBranchName,
+        "listPullRequestsInBranchSinceLastMerge",
+      );
+      if (commits.length === 0) {
         return [];
       }
 
-      const commitSHAs = new Set(comparison.commits.map((c) => c.sha));
+      const commitSHAs = new Set<string>(commits.map((c) => c.sha));
 
       // Step 3-6: Get merged PRs targeting currentBranch and child branches,
       // keep those whose merge commit belongs to our commit list, dedupe, convert
@@ -437,7 +439,7 @@ export class GitProviderGitHub extends GitProvider {
       return await this.collectMergedPRsForCommits(
         allBranches,
         commitSHAs,
-        this.oldestCommitDateWithMargin(comparison.commits),
+        this.oldestCommitDateWithMargin(commits),
       );
     } catch (err) {
       Logger.log(
@@ -451,67 +453,156 @@ export class GitProviderGitHub extends GitProvider {
     sourceBranch: string,
     targetBranch: string,
     updatedAfter?: Date,
-  ): Promise<PullRequest[] | null> {
+  ): Promise<PullRequestListing | null> {
     if (!this.gitHubClient || !this.repoInfo) {
       return null;
     }
-    const [owner, repo] = [this.repoInfo.owner, this.repoInfo.repo];
     try {
-      const promotions: any[] = [];
-      let complete = false;
-      // Newest first, so the walk stops at the first Pull Request older than the bound
-      for (let page = 1; page <= GitProviderGitHub.PR_MAX_PAGES; page++) {
-        const { data: prs } = await this.gitHubClient.pulls.list({
-          owner,
-          repo,
-          state: "closed",
-          base: targetBranch,
-          per_page: GitProviderGitHub.PR_PAGE_SIZE,
-          sort: "updated",
-          direction: "desc",
-          page,
-        });
-        await this.logApiCall("pulls.list", {
-          caller: "listMergedPromotionPullRequests",
-          targetBranch,
-          page,
-          received: prs.length,
-        });
-        let reachedBound = false;
-        for (const pr of prs) {
-          const updated = new Date(
-            pr.updated_at || pr.merged_at || 0,
-          ).getTime();
-          if (updatedAfter && updated < updatedAfter.getTime()) {
-            reachedBound = true;
-            break;
-          }
-          if (
-            pr.merged_at &&
-            isPromotionBranchOfStep(pr.head?.ref, sourceBranch, targetBranch)
-          ) {
-            promotions.push(pr);
-          }
-        }
-        if (reachedBound || prs.length < GitProviderGitHub.PR_PAGE_SIZE) {
-          complete = true;
-          break;
-        }
-      }
-      if (!complete) {
-        // What was found is still true, but an older promotion may be missing: say so rather
-        // than let a story come back in its source branch with no trace of why
-        Logger.log(
-          `[listMergedPromotionPullRequests] stopped after ${GitProviderGitHub.PR_MAX_PAGES} pages of Pull Requests merged into ${targetBranch}: older promotions of ${sourceBranch} may be missing, and their User Stories still counted in ${sourceBranch}`,
-        );
-      }
-      return await this.convertAndCollectJobsList(promotions, {
-        withJobs: false,
-      });
+      const { pullRequests, complete } = await this.listMergedPullRequestsInto(
+        targetBranch,
+        "listMergedPromotionPullRequests",
+        { updatedAfter },
+      );
+      const promotions = pullRequests.filter((pr) =>
+        isPromotionBranchOfStep(pr.head?.ref, sourceBranch, targetBranch),
+      );
+      return {
+        pullRequests: await this.convertAndCollectJobsList(promotions, {
+          withJobs: false,
+        }),
+        complete,
+      };
     } catch (err) {
       Logger.log(`Error in listMergedPromotionPullRequests: ${String(err)}`);
       return null;
     }
+  }
+
+  /**
+   * The merged Pull Requests into a branch, newest update first, walked page by page.
+   *
+   * `updatedAfter` bounds the walk: a Pull Request updated before it is of no use to the caller.
+   * `headBranch` keeps the Pull Requests coming from one branch only.
+   * `complete` is false when the walk stopped at its page limit, which is logged: older Pull
+   * Requests may then be missing.
+   *
+   * The base and head branches are checked again on every answer, because Gitea ignores both
+   * filters and answers the closed Pull Requests of the whole repository.
+   */
+  private async listMergedPullRequestsInto(
+    branchName: string,
+    caller: string,
+    options: { updatedAfter?: Date; headBranch?: string } = {},
+  ): Promise<{ pullRequests: any[]; complete: boolean }> {
+    const [owner, repo] = [this.repoInfo!.owner, this.repoInfo!.repo];
+    const behavior = this.pullListingBehavior();
+    const bound = options.updatedAfter?.getTime();
+    const merged: any[] = [];
+    for (let page = 1; page <= behavior.maxPages; page++) {
+      const { data: prs } = await this.gitHubClient!.pulls.list({
+        owner,
+        repo,
+        state: "closed",
+        base: branchName,
+        ...(options.headBranch
+          ? { head: `${owner}:${options.headBranch}` }
+          : {}),
+        per_page: GitProviderGitHub.PR_PAGE_SIZE,
+        sort: "updated",
+        direction: "desc",
+        page,
+        ...behavior.extraParams,
+      });
+      await this.logApiCall("pulls.list", {
+        caller,
+        targetBranch: branchName,
+        page,
+        received: prs.length,
+      });
+      let reachedBound = false;
+      for (const pr of prs) {
+        if (
+          pr.base?.ref !== branchName ||
+          (options.headBranch && pr.head?.ref !== options.headBranch)
+        ) {
+          continue;
+        }
+        const updated = new Date(pr.updated_at || pr.merged_at || 0).getTime();
+        if (bound !== undefined && updated < bound) {
+          if (behavior.filteredAndSortedByServer) {
+            // Sorted newest first, so everything after this point is older still
+            reachedBound = true;
+            break;
+          }
+          continue;
+        }
+        if (pr.merged_at) {
+          merged.push(pr);
+        }
+      }
+      const lastPage = behavior.filteredAndSortedByServer
+        ? prs.length < GitProviderGitHub.PR_PAGE_SIZE
+        : prs.length === 0;
+      if (reachedBound || lastPage) {
+        return { pullRequests: merged, complete: true };
+      }
+    }
+    Logger.log(
+      `[${caller}] stopped after ${behavior.maxPages} pages of the Pull Requests merged into ${branchName}: older ones may be missing`,
+    );
+    return { pullRequests: merged, complete: false };
+  }
+
+  /**
+   * The commits of a comparison, walked page by page. A single call returns the OLDEST commits of
+   * the range only, whatever page size is asked for, so on a window that is never reset the
+   * newest stories were the ones to disappear.
+   */
+  private async compareCommitsPaged(
+    base: string,
+    head: string,
+    caller: string,
+  ): Promise<any[]> {
+    const [owner, repo] = [this.repoInfo!.owner, this.repoInfo!.repo];
+    const commits: any[] = [];
+    const seen = new Set<string>();
+    for (let page = 1; page <= GitProviderGitHub.COMPARE_MAX_PAGES; page++) {
+      const { data: comparison } =
+        await this.gitHubClient!.repos.compareCommits({
+          owner,
+          repo,
+          base,
+          head,
+          per_page: GitProviderGitHub.COMPARE_PAGE_SIZE,
+          page,
+        });
+      await this.logApiCall("repos.compareCommits", {
+        caller,
+        base,
+        head,
+        page,
+        received: comparison.commits?.length || 0,
+      });
+      let added = 0;
+      for (const commit of comparison.commits || []) {
+        if (!seen.has(commit.sha)) {
+          seen.add(commit.sha);
+          commits.push(commit);
+          added++;
+        }
+      }
+      // A page that brings nothing new is the end, and also what a server ignoring `page` sends
+      if (
+        added === 0 ||
+        commits.length >= (comparison.total_commits ?? commits.length)
+      ) {
+        return commits;
+      }
+    }
+    Logger.log(
+      `[${caller}] stopped after ${GitProviderGitHub.COMPARE_MAX_PAGES} pages (${commits.length} commits) of the comparison ${base}...${head}: the newest commits are missing, and so are the Pull Requests they brought`,
+    );
+    return commits;
   }
 
   async getBranchLatestCommitId(
@@ -565,7 +656,11 @@ export class GitProviderGitHub extends GitProvider {
         targetBranch: branchName,
       });
       return closedPRs
-        .filter((pr) => pr.merged_at && pr.merge_commit_sha)
+        .filter(
+          (pr) =>
+            // Gitea ignores the base filter and answers every closed Pull Request
+            pr.base?.ref === branchName && pr.merged_at && pr.merge_commit_sha,
+        )
         .map((pr) => ({
           id: pr.merge_commit_sha as string,
           prNumber: pr.number,
@@ -633,24 +728,15 @@ export class GitProviderGitHub extends GitProvider {
       }
 
       // Step 2: Commits introduced by the go live
-      const { data: comparison } = await this.gitHubClient.repos.compareCommits(
-        {
-          owner,
-          repo,
-          base: firstParent,
-          head: mergeCommitSha,
-          per_page: 1000,
-        },
+      const commits = await this.compareCommitsPaged(
+        firstParent,
+        mergeCommitSha,
+        "listPullRequestsInGoLive",
       );
-      await this.logApiCall("repos.compareCommits", {
-        caller: "listPullRequestsInGoLive",
-        base: firstParent,
-        head: mergeCommitSha,
-      });
-      if (!comparison.commits || comparison.commits.length === 0) {
+      if (commits.length === 0) {
         return [];
       }
-      const commitSHAs = new Set(comparison.commits.map((c) => c.sha));
+      const commitSHAs = new Set<string>(commits.map((c) => c.sha));
       // The merge commit itself is the head of the comparison range, not part of
       // comparison.commits, so add it so the go-live promotion PR matches too.
       commitSHAs.add(mergeCommitSha);
@@ -660,7 +746,7 @@ export class GitProviderGitHub extends GitProvider {
       const result = await this.collectMergedPRsForCommits(
         allBranches,
         commitSHAs,
-        this.oldestCommitDateWithMargin(comparison.commits),
+        this.oldestCommitDateWithMargin(commits),
       );
       this.setCachedLatestMergePrs(cacheKey, result);
       return result;
@@ -681,8 +767,6 @@ export class GitProviderGitHub extends GitProvider {
     // Oldest commit of the window: Pull Requests updated before that cannot belong to it
     updatedAfter?: Date,
   ): Promise<PullRequest[]> {
-    const [owner, repo] = [this.repoInfo!.owner, this.repoInfo!.repo];
-
     const prResults = await mapWithConcurrency(
       allBranches,
       async (branchName) => {
@@ -692,44 +776,12 @@ export class GitProviderGitHub extends GitProvider {
           // the rest". Sorted by update date instead, the walk can stop at the first page that
           // predates the window: correct where the old single call silently truncated, and far
           // cheaper than reading the whole closed history.
-          const merged: any[] = [];
-          for (let page = 1; page <= GitProviderGitHub.PR_MAX_PAGES; page++) {
-            const { data: prs } = await this.gitHubClient!.pulls.list({
-              owner,
-              repo,
-              state: "closed",
-              base: branchName,
-              per_page: GitProviderGitHub.PR_PAGE_SIZE,
-              sort: "updated",
-              direction: "desc",
-              page,
-            });
-            await this.logApiCall("pulls.list", {
-              caller: "collectMergedPRsForCommits",
-              action: "fetchMergedPRs",
-              targetBranch: branchName,
-              page,
-              received: prs.length,
-            });
-            let reachedBound = false;
-            for (const pr of prs) {
-              const updated = new Date(
-                pr.updated_at || pr.merged_at || 0,
-              ).getTime();
-              if (updatedAfter && updated < updatedAfter.getTime()) {
-                // Sorted newest first, so everything after this point is older still
-                reachedBound = true;
-                break;
-              }
-              if (pr.merged_at) {
-                merged.push(pr);
-              }
-            }
-            if (reachedBound || prs.length < GitProviderGitHub.PR_PAGE_SIZE) {
-              break;
-            }
-          }
-          return merged;
+          const { pullRequests } = await this.listMergedPullRequestsInto(
+            branchName,
+            "collectMergedPRsForCommits",
+            { updatedAfter },
+          );
+          return pullRequests;
         } catch (err) {
           Logger.log(
             `Error fetching merged PRs for branch ${branchName}: ${String(err)}`,

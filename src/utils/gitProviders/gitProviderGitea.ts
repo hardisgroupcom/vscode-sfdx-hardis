@@ -12,6 +12,24 @@ import {
 export class GitProviderGitea extends GitProviderGitHub {
   secretTokenIdentifier: string = "";
 
+  // What gitea.com serves, and the default ceiling of a Gitea server
+  private static readonly GITEA_PAGE_SIZE = 50;
+  private static readonly GITEA_MAX_PAGES = 40;
+
+  /**
+   * Gitea ignores `per_page`, `base`, `head` and `sort=updated` on the Pull Requests listing: it
+   * answers the closed Pull Requests of every branch, 10 at a time, in its own order. So the page
+   * size goes in `limit`, the walk ends on an empty page only, and it never stops early on the
+   * date bound. The branches are checked on each Pull Request by the caller.
+   */
+  protected pullListingBehavior() {
+    return {
+      filteredAndSortedByServer: false,
+      extraParams: { limit: GitProviderGitea.GITEA_PAGE_SIZE },
+      maxPages: GitProviderGitea.GITEA_MAX_PAGES,
+    };
+  }
+
   getCreateTokenOptions(): CreateTokenOption[] {
     if (!this.repoInfo?.host) {
       return [];

@@ -56,10 +56,12 @@ suite("Azure Pull Request listing bounds", () => {
       return [pullRequest(9999)];
     }, calls);
 
-    const all = await provider.listPullRequestsPaged({ status: 3 }, "test");
+    const { pullRequests: all, complete } =
+      await provider.listPullRequestsPaged({ status: 3 }, "test");
 
     assert.strictEqual(calls.length, 3, "two full pages and the short one");
     assert.strictEqual(all.length, calls[0].top * 2 + 1);
+    assert.strictEqual(complete, true);
     assert.strictEqual(
       calls[1].skip,
       calls[0].top,
@@ -76,16 +78,27 @@ suite("Azure Pull Request listing bounds", () => {
       calls,
     );
 
-    await provider.listPullRequestsPaged({ status: 3 }, "test");
+    const { complete } = await provider.listPullRequestsPaged(
+      { status: 3 },
+      "test",
+    );
 
     assert.ok(calls.length <= 20, `stopped after ${calls.length} pages`);
     assert.ok(calls.length > 1, "but it does page");
+    assert.strictEqual(
+      complete,
+      false,
+      "the caller is told the listing was cut",
+    );
   });
 
   test("an empty first page ends the walk", async () => {
     const calls: any[] = [];
     const provider = buildProvider(() => [], calls);
-    const all = await provider.listPullRequestsPaged({ status: 3 }, "test");
+    const { pullRequests: all } = await provider.listPullRequestsPaged(
+      { status: 3 },
+      "test",
+    );
     assert.strictEqual(all.length, 0);
     assert.strictEqual(calls.length, 1);
   });

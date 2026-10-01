@@ -2,7 +2,6 @@ import * as assert from "assert";
 import * as fs from "fs";
 import * as path from "path";
 import { SfdxHardisConfigHelper } from "../../utils/pipeline/sfdxHardisConfigHelper";
-import { orderWindowsUpstreamFirst } from "../../utils/orgConfigUtils";
 import { PullRequest } from "../../utils/gitProviders/types";
 import { BranchStrategyMermaidBuilder } from "../../utils/pipeline/branchStrategyMermaidBuilder";
 import { extractMember, readModuleFile } from "./lwcSourceUtils";
@@ -571,7 +570,7 @@ suite("promotionBranchUtils", () => {
     assert.strictEqual(window[0].isPromotion, undefined);
   });
 
-  test("only a merged promotion of the step, going where its name says, proves its stories left", () => {
+  test("only a merged promotion named for the step proves its stories left", () => {
     const merged = pr({
       number: 900,
       sourceBranch: "promotion/uat/preprod/2026-09-06-1430",
@@ -596,18 +595,9 @@ suite("promotionBranchUtils", () => {
       ),
       false,
     );
-    // Another step, a promotion retargeted by hand, no declaration, feature off
+    // Another step, no declaration, feature off
     assert.strictEqual(
       isMergedPromotionOfStep(merged, "integration", "uat", ENABLED),
-      false,
-    );
-    assert.strictEqual(
-      isMergedPromotionOfStep(
-        { ...merged, targetBranch: "main" },
-        "uat",
-        "preprod",
-        ENABLED,
-      ),
       false,
     );
     assert.strictEqual(
@@ -666,27 +656,33 @@ suite("promotionBranchUtils", () => {
       pr({ number: 495, mergeDate: "2026-09-13T10:00:00Z" }),
     ];
     const calls: any[] = [];
-    const { promotions, unknownSteps } = await listMergedPromotionsOfSteps(
-      [
-        {
-          sourceBranch: "uat",
-          targetBranch: "preprod",
-          pullRequests: uatWindow,
+    const { promotions, unknownSteps, incompleteSteps } =
+      await listMergedPromotionsOfSteps(
+        [
+          {
+            sourceBranch: "uat",
+            targetBranch: "preprod",
+            pullRequests: uatWindow,
+          },
+          // An empty window and a branch without merge target are not asked about
+          {
+            sourceBranch: "integration",
+            targetBranch: "uat",
+            pullRequests: [],
+          },
+          {
+            sourceBranch: "main",
+            targetBranch: "",
+            pullRequests: [pr({ number: 1 })],
+          },
+        ],
+        ENABLED,
+        async (sourceBranch, targetBranch, updatedAfter) => {
+          calls.push([sourceBranch, targetBranch, updatedAfter?.toISOString()]);
+          // Given twice, as when a window and the provider both know it: it counts once
+          return { pullRequests: [merged, stillOpen, merged], complete: true };
         },
-        // An empty window and a branch without merge target are not asked about
-        { sourceBranch: "integration", targetBranch: "uat", pullRequests: [] },
-        {
-          sourceBranch: "main",
-          targetBranch: "",
-          pullRequests: [pr({ number: 1 })],
-        },
-      ],
-      ENABLED,
-      async (sourceBranch, targetBranch, updatedAfter) => {
-        calls.push([sourceBranch, targetBranch, updatedAfter?.toISOString()]);
-        return [merged, stillOpen];
-      },
-    );
+      );
     // One query, bounded by the oldest date of the window
     assert.deepStrictEqual(calls, [
       ["uat", "preprod", "2026-09-05T10:00:00.000Z"],
@@ -712,13 +708,22 @@ suite("promotionBranchUtils", () => {
       ENABLED,
       async (_sourceBranch, _targetBranch, updatedAfter) => {
         commentedLater.push(updatedAfter?.toISOString());
-        return [];
+        return { pullRequests: [], complete: true };
       },
     );
     assert.deepStrictEqual(commentedLater, ["2026-09-01T08:00:00.000Z"]);
     assert.deepStrictEqual(unknownSteps, []);
+    assert.deepStrictEqual(incompleteSteps, []);
+    // The open promotion is left out. The merged one is kept as many times as it was given: the
+    // index is what makes it count once.
     assert.deepStrictEqual(
       promotions.map((promotion) => promotion.number),
+      [900, 900],
+    );
+    assert.deepStrictEqual(
+      findPromotionsCarrying(482, buildPromotionIndex(promotions, ENABLED)).map(
+        (promotion) => promotion.number,
+      ),
       [900],
     );
 
@@ -749,6 +754,7 @@ suite("promotionBranchUtils", () => {
     assert.deepStrictEqual(unanswered, {
       promotions: [],
       unknownSteps: ["uat -> preprod"],
+      incompleteSteps: [],
     });
     const failing = await listMergedPromotionsOfSteps(
       steps,
@@ -762,26 +768,45 @@ suite("promotionBranchUtils", () => {
     let asked = false;
     await listMergedPromotionsOfSteps(steps, DISABLED, async () => {
       asked = true;
-      return [];
+      return { pullRequests: [], complete: true };
     });
     assert.strictEqual(asked, false);
   });
 
-  test("a promotion retargeted by hand takes nothing out of the branch its name announces", () => {
-    const retargeted = pr({
+  test("a promotion listing cut at a page limit is used, and its step is reported", async () => {
+    const merged = pr({
       number: 900,
-      sourceBranch: PROMOTION_BRANCH,
-      targetBranch: "main",
+      sourceBranch: "promotion/uat/preprod/2026-09-14-0900",
+      targetBranch: "preprod",
       description: DECLARATION,
+      mergeDate: "2026-09-14T10:00:00Z",
     });
-    const window = [pr({ number: 482 })];
-    annotateAlreadyPromoted(
-      window,
-      "uat",
-      buildPromotionIndex([retargeted], ENABLED),
+    const answer = await listMergedPromotionsOfSteps(
+      [
+        {
+          sourceBranch: "uat",
+          targetBranch: "preprod",
+          pullRequests: [pr({ number: 482 })],
+        },
+        {
+          sourceBranch: "integration",
+          targetBranch: "uat",
+          pullRequests: [pr({ number: 482 })],
+        },
+      ],
       ENABLED,
+      async (sourceBranch) =>
+        sourceBranch === "uat"
+          ? { pullRequests: [merged], complete: false }
+          : { pullRequests: [], complete: true },
     );
-    assert.notStrictEqual(window[0].promotedAway, true);
+    // What was found stays valid: the story still leaves uat
+    assert.deepStrictEqual(
+      answer.promotions.map((promotion) => promotion.number),
+      [900],
+    );
+    assert.deepStrictEqual(answer.incompleteSteps, ["uat -> preprod"]);
+    assert.deepStrictEqual(answer.unknownSteps, []);
   });
 
   test("flags the stories already shipped by a merged promotion Pull Request", () => {
@@ -886,68 +911,154 @@ suite("promotionBranchUtils", () => {
     assert.strictEqual(isVehiclePullRequest(retrofit, majors, ENABLED), false);
   });
 
-  test("a story is listed in one branch only, even after the promotion left its window", () => {
-    // The index knows nothing here (no promotion in any loaded window), which is what happens once
-    // a go-live resets the window the promotion was merged into
-    const uatWindow = [pr({ number: 482 }), pr({ number: 500 })];
-    const preprodWindow = [pr({ number: 482 }), pr({ number: 600 })];
+  // What expandPullRequestsWithPromotions leaves in the window a promotion was merged into
+  const carriedBy = (number: number, promotionBranch: string): PullRequest => ({
+    ...pr({ number }),
+    carriedByPullRequest: {
+      number: 900,
+      sourceBranch: promotionBranch,
+      webUrl: "https://git.example.com/pr/900",
+    },
+  });
+
+  test("a story carried by a promotion is hidden in the branch it left and shown in the one it reached", () => {
+    const integrationWindow = [pr({ number: 482 }), pr({ number: 500 })];
+    const uatWindow = [
+      carriedBy(482, "promotion/integration/uat/2026-09-06-1430"),
+      pr({ number: 600 }),
+    ];
+    // Downstream first, as listMajorOrgs hands the windows over: the order does not matter
     enforceSinglePlacePerPullRequest(
       [
         { branchName: "uat", pullRequests: uatWindow },
-        { branchName: "preprod", pullRequests: preprodWindow },
+        { branchName: "integration", pullRequests: integrationWindow },
       ],
       ENABLED,
     );
-    // The downstream window wins: 482 stays in preprod and leaves uat
-    assert.strictEqual(uatWindow[0].promotedAway, true);
-    // Only the upstream copy is flagged: the others are left untouched
-    assert.notStrictEqual(uatWindow[1].promotedAway, true);
-    assert.notStrictEqual(preprodWindow[0].promotedAway, true);
+    assert.deepStrictEqual(
+      visiblePullRequests(integrationWindow).map((story) => story.number),
+      [500],
+    );
+    assert.deepStrictEqual(
+      visiblePullRequests(uatWindow).map((story) => story.number),
+      [482, 600],
+    );
     // Nothing happens for a project that did not enable the feature
     const off = [pr({ number: 482 })];
     enforceSinglePlacePerPullRequest(
       [
-        { branchName: "uat", pullRequests: off },
-        { branchName: "preprod", pullRequests: [pr({ number: 482 })] },
+        { branchName: "integration", pullRequests: off },
+        {
+          branchName: "uat",
+          pullRequests: [
+            carriedBy(482, "promotion/integration/uat/2026-09-06-1430"),
+          ],
+        },
       ],
       DISABLED,
     );
     assert.strictEqual(off[0].promotedAway, undefined);
   });
 
-  test("the windows reach the invariant upstream first, whatever order listMajorOrgs used", () => {
-    // listMajorOrgs sorts by level DESCENDING, so it hands the windows over downstream first.
-    // Passing that order to enforceSinglePlacePerPullRequest made the upstream window win: a story
-    // a promotion had just carried into uat was marked promotedAway in uat while
-    // annotateAlreadyPromoted had already marked it in integration, so it disappeared from both.
-    const carriedIntoUat = pr({ number: 497 });
-    const leftInIntegration = pr({ number: 497 });
-    const majorOrgsAsListed = [
-      { branchName: "main", level: 100, pullRequests: [] as PullRequest[] },
-      { branchName: "preprod", level: 90, pullRequests: [] as PullRequest[] },
-      { branchName: "uat", level: 70, pullRequests: [carriedIntoUat] },
-      {
-        branchName: "integration",
-        level: 50,
-        pullRequests: [leftInIntegration],
-      },
-    ];
-    assert.deepStrictEqual(
-      orderWindowsUpstreamFirst(majorOrgsAsListed).map((org) => org.branchName),
-      ["integration", "uat", "preprod", "main"],
-    );
+  test("a retrofitted hotfix stays visible in main and in integration", () => {
+    // Merged into main, then brought back into integration by a retrofit: it is in production, and
+    // it still has to travel from integration to uat. No promotion carried it, so the same number
+    // in two windows hides nothing.
+    const hotfixInMain = pr({
+      number: 700,
+      sourceBranch: "hotfix/PROJ-12",
+      targetBranch: "main",
+    });
+    const hotfixInIntegration = pr({
+      number: 700,
+      sourceBranch: "hotfix/PROJ-12",
+      targetBranch: "main",
+    });
+    const mainWindow = [hotfixInMain];
+    const integrationWindow = [hotfixInIntegration, pr({ number: 500 })];
     enforceSinglePlacePerPullRequest(
-      orderWindowsUpstreamFirst(majorOrgsAsListed),
+      [
+        { branchName: "integration", pullRequests: integrationWindow },
+        { branchName: "uat", pullRequests: [] },
+        { branchName: "preprod", pullRequests: [] },
+        { branchName: "main", pullRequests: mainWindow },
+      ],
       ENABLED,
     );
-    // The branch the promotion reached keeps the story, the one it left does not
-    assert.notStrictEqual(carriedIntoUat.promotedAway, true);
-    assert.strictEqual(leftInIntegration.promotedAway, true);
+    assert.deepStrictEqual(
+      visiblePullRequests(integrationWindow).map((story) => story.number),
+      [700, 500],
+    );
+    assert.deepStrictEqual(
+      visiblePullRequests(mainWindow).map((story) => story.number),
+      [700],
+    );
+    // The promotion index agrees: no promotion declares the hotfix
+    annotateAlreadyPromoted(
+      integrationWindow,
+      "integration",
+      buildPromotionIndex([], ENABLED),
+      ENABLED,
+    );
+    assert.notStrictEqual(hotfixInIntegration.promotedAway, true);
   });
 
-  test("a promotion carrying another promotion reaches the User Stories", () => {
-    // preprod -> main declares the uat -> preprod promotion, which declares the stories: the flow
-    // hardis:project:promotion:create produces on a four level pipeline
+  test("a story carried from integration to uat then from uat to preprod is shown in preprod only", () => {
+    const integrationWindow = [pr({ number: 482 })];
+    const uatWindow = [
+      carriedBy(482, "promotion/integration/uat/2026-09-06-1430"),
+    ];
+    const preprodWindow = [
+      carriedBy(482, "promotion/uat/preprod/2026-09-10-0900"),
+    ];
+    const windows = [
+      { branchName: "integration", pullRequests: integrationWindow },
+      { branchName: "uat", pullRequests: uatWindow },
+      { branchName: "preprod", pullRequests: preprodWindow },
+    ];
+    enforceSinglePlacePerPullRequest(windows, ENABLED);
+    assert.deepStrictEqual(
+      windows.map((window) => visiblePullRequests(window.pullRequests).length),
+      [0, 0, 1],
+    );
+
+    // Same answer from the promotion index alone, which is what decides once the go-live of
+    // preprod has taken both promotions out of the windows
+    const fromIntegration = pr({
+      number: 900,
+      sourceBranch: "promotion/integration/uat/2026-09-06-1430",
+      targetBranch: "uat",
+      description: DECLARATION,
+    });
+    const fromUat = pr({
+      number: 901,
+      sourceBranch: "promotion/uat/preprod/2026-09-10-0900",
+      targetBranch: "preprod",
+      description: DECLARATION,
+    });
+    const index = buildPromotionIndex([fromIntegration, fromUat], ENABLED);
+    const byIndex = [
+      { branchName: "integration", pullRequests: [pr({ number: 482 })] },
+      { branchName: "uat", pullRequests: [pr({ number: 482 })] },
+      { branchName: "preprod", pullRequests: [pr({ number: 482 })] },
+    ];
+    for (const window of byIndex) {
+      annotateAlreadyPromoted(
+        window.pullRequests,
+        window.branchName,
+        index,
+        ENABLED,
+      );
+    }
+    assert.deepStrictEqual(
+      byIndex.map((window) => visiblePullRequests(window.pullRequests).length),
+      [0, 0, 1],
+    );
+  });
+
+  test("a promotion declaring another promotion by hand still reaches the User Stories", () => {
+    // A promotion carries User Stories only, and hardis:project:promotion:create never declares
+    // another promotion. A description edited by hand could: the expansion follows it down.
     const inner = pr({
       number: 900,
       sourceBranch: "promotion/uat/preprod/2026-09-06-1",
@@ -1010,7 +1121,7 @@ suite("promotionBranchUtils", () => {
     );
   });
 
-  test("a Pull Request number appears in a single window of the pipeline", () => {
+  test("a story a promotion carried away is listed in the branch it reached", () => {
     // promotion/uat/preprod carries 482 out of uat, so 482 is listed in preprod, not in uat
     const promotion = pr({
       number: 900,

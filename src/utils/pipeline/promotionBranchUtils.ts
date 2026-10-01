@@ -1,5 +1,5 @@
 import * as yaml from "js-yaml";
-import { PullRequest } from "../gitProviders/types";
+import { PullRequest, PullRequestListing } from "../gitProviders/types";
 
 /**
  * Promotion branches (sfdx-hardis `enablePromotionBranches`): a branch assembled by
@@ -363,9 +363,9 @@ export function isMergedPullRequest(pr: PullRequest): boolean {
 
 /**
  * The proof that the stories a Pull Request declares have left sourceBranch for targetBranch: a
- * merged promotion of that very step, going where its name says. An open promotion is not one,
- * its stories are still waiting in the source branch. Mirror of the sfdx-hardis function of the
- * same name.
+ * merged promotion named for that very step. An open promotion is not one, its stories are still
+ * waiting in the source branch. sfdx-hardis splits this in two: `isPromotionOfStep` for the name,
+ * and the merged status it asks the provider for.
  */
 export function isMergedPromotionOfStep(
   pr: PullRequest | null | undefined,
@@ -376,12 +376,7 @@ export function isMergedPromotionOfStep(
   if (!pr || !isPromotionPullRequest(pr, config) || !isMergedPullRequest(pr)) {
     return false;
   }
-  if (!isPromotionBranchOfStep(pr.sourceBranch, sourceBranch, targetBranch)) {
-    return false;
-  }
-  // A promotion retargeted by hand proves nothing about the branch its name announces
-  const actualTarget = (pr.targetBranch || "").toLowerCase();
-  return actualTarget === "" || actualTarget === targetBranch.toLowerCase();
+  return isPromotionBranchOfStep(pr.sourceBranch, sourceBranch, targetBranch);
 }
 
 /**
@@ -394,6 +389,9 @@ export function isMergedPromotionOfStep(
  *
  * `fetch` answers null when the provider could not tell. That step is then reported in
  * `unknownSteps` and marks nothing: not knowing is not a reason to hide a story.
+ * A listing the provider cut at a page limit is reported in `incompleteSteps`. What it found is
+ * still true and is used; an older promotion may be missing, and its stories still be listed in
+ * the source branch.
  */
 export async function listMergedPromotionsOfSteps(
   steps: Array<{
@@ -406,20 +404,24 @@ export async function listMergedPromotionsOfSteps(
     sourceBranch: string,
     targetBranch: string,
     updatedAfter?: Date,
-  ) => Promise<PullRequest[] | null>,
-): Promise<{ promotions: PullRequest[]; unknownSteps: string[] }> {
+  ) => Promise<PullRequestListing | null>,
+): Promise<{
+  promotions: PullRequest[];
+  unknownSteps: string[];
+  incompleteSteps: string[];
+}> {
   const promotions: PullRequest[] = [];
   const unknownSteps: string[] = [];
+  const incompleteSteps: string[] = [];
   if (!config.enabled) {
-    return { promotions, unknownSteps };
+    return { promotions, unknownSteps, incompleteSteps };
   }
-  const seen = new Set<number>();
   const answers = await Promise.all(
     steps
       // Nothing is waiting in an empty window, so there is nothing to take out of it
       .filter((step) => step.targetBranch && step.pullRequests.length > 0)
       .map(async (step) => {
-        let found: PullRequest[] | null;
+        let found: PullRequestListing | null;
         try {
           found = await fetch(
             step.sourceBranch,
@@ -433,27 +435,26 @@ export async function listMergedPromotionsOfSteps(
       }),
   );
   for (const { step, found } of answers) {
+    const stepName = `${step.sourceBranch} -> ${step.targetBranch}`;
     if (found === null) {
-      unknownSteps.push(`${step.sourceBranch} -> ${step.targetBranch}`);
+      unknownSteps.push(stepName);
       continue;
     }
-    for (const promotion of found) {
-      const number = prNumber(promotion);
-      if (
-        !seen.has(number) &&
+    if (!found.complete) {
+      incompleteSteps.push(stepName);
+    }
+    promotions.push(
+      ...found.pullRequests.filter((promotion) =>
         isMergedPromotionOfStep(
           promotion,
           step.sourceBranch,
           step.targetBranch,
           config,
-        )
-      ) {
-        seen.add(number);
-        promotions.push(promotion);
-      }
-    }
+        ),
+      ),
+    );
   }
-  return { promotions, unknownSteps };
+  return { promotions, unknownSteps, incompleteSteps };
 }
 
 /**
@@ -506,9 +507,9 @@ export async function expandPullRequestsWithPromotions(
   const all = [...pullRequests];
   const added: PullRequest[] = [];
   const present = new Set(pullRequests.map(prNumber));
-  // Iterate over `all`, which grows as stories are added: a promotion may carry another promotion
-  // (preprod -> main carrying the uat -> preprod one, which the command itself produces), and the
-  // User Stories are one level further down. `present` makes this terminate.
+  // Iterate over `all`, which grows as stories are added. A promotion carries User Stories only,
+  // and hardis:project:promotion:create never declares another promotion. A description edited by
+  // hand could, so the loop still follows it down to the stories. `present` makes this terminate.
   for (let index = 0; index < all.length; index++) {
     const pr = all[index];
     if (!isPromotionPullRequest(pr, config)) {
@@ -594,17 +595,7 @@ export function buildPromotionIndex(
       webUrl: promotion.webUrl || "",
       mergeDate: promotion.mergeDate || "",
     };
-    // Only a promotion that went where its name says took its stories out of the source branch
-    const fromBranch =
-      parts &&
-      isMergedPromotionOfStep(
-        promotion,
-        parts.sourceBranch,
-        parts.targetBranch,
-        config,
-      )
-        ? parts.sourceBranch.toLowerCase()
-        : "";
+    const fromBranch = (parts?.sourceBranch || "").toLowerCase();
     for (const storyNumber of parsePromotionPullRequestIds(
       promotion.description,
     ) || []) {
@@ -681,7 +672,8 @@ export function annotateAlreadyPromoted(
 
 /**
  * The Pull Requests a window shows: a story a promotion took out of the branch is listed in the
- * branch it reached only, so a Pull Request number appears once in the whole pipeline.
+ * branch it reached. A Pull Request that reached two branches by another route (a hotfix merged
+ * into main and brought back by a retrofit) stays listed in both.
  */
 export function visiblePullRequests(
   pullRequests: PullRequest[],
@@ -748,13 +740,18 @@ export function isVehiclePullRequest(
 }
 
 /**
- * The documented invariant of the pipeline: a Pull Request number is listed in one branch only,
- * the one it has reached. Derived from the windows themselves rather than from the promotion
- * index, so it still holds once a promotion has left the window it was merged into.
+ * The rule of the pipeline, read from the windows themselves: a story a merged promotion carried
+ * away is listed in the branch it reached, not in the one it left. The copy of a Pull Request in
+ * the window of branch B is marked `promotedAway`, so `visiblePullRequests` leaves it out, when
+ * another window holds the same number brought by a promotion named promotion/B/<target>/...
  *
- * `orderedBranchNames` goes upstream first (integration, uat, preprod, main): of two windows
- * holding the same number, the downstream one wins, and the upstream copies are marked
- * `promotedAway` so `visiblePullRequests` leaves them out.
+ * Nothing else is hidden. A hotfix merged into main and brought back into integration by a
+ * retrofit is in both windows, and it still has to travel from integration to uat: it stays
+ * listed and counted in both.
+ *
+ * annotateAlreadyPromoted applies the same rule from the promotion index, which also knows the
+ * promotions that dropped out of every window. This pass only needs the windows, so it still
+ * holds when the index could not be completed by the git provider.
  */
 export function enforceSinglePlacePerPullRequest(
   windowsByBranch: Array<{ branchName: string; pullRequests: PullRequest[] }>,
@@ -763,26 +760,42 @@ export function enforceSinglePlacePerPullRequest(
   if (!config.enabled) {
     return;
   }
-  const lastIndexByNumber = new Map<number, number>();
-  windowsByBranch.forEach((entry, index) => {
+  // lowercased branch -> the numbers a promotion assembled from that branch brought elsewhere
+  const carriedOutOf = new Map<string, Set<number>>();
+  for (const entry of windowsByBranch) {
     for (const pr of entry.pullRequests) {
       const number = prNumber(pr);
-      if (number > 0) {
-        lastIndexByNumber.set(number, index);
-      }
-    }
-  });
-  windowsByBranch.forEach((entry, index) => {
-    for (const pr of entry.pullRequests) {
-      const number = prNumber(pr);
-      if (number <= 0) {
+      const carrier = parsePromotionBranchName(
+        pr.carriedByPullRequest?.sourceBranch,
+      );
+      if (number <= 0 || !carrier) {
         continue;
       }
-      // Only a story a promotion moved on is hidden upstream. A vehicle stays where it was merged.
-      const promotedFurther = lastIndexByNumber.get(number) !== index;
-      if (promotedFurther && !isPromotionPullRequest(pr, config)) {
+      const fromBranch = carrier.sourceBranch.toLowerCase();
+      // The window the promotion was merged into is where the story is now, never where it left
+      if (fromBranch === (entry.branchName || "").toLowerCase()) {
+        continue;
+      }
+      const numbers = carriedOutOf.get(fromBranch) || new Set<number>();
+      numbers.add(number);
+      carriedOutOf.set(fromBranch, numbers);
+    }
+  }
+  for (const entry of windowsByBranch) {
+    const carriedAway = carriedOutOf.get(
+      (entry.branchName || "").toLowerCase(),
+    );
+    if (!carriedAway) {
+      continue;
+    }
+    for (const pr of entry.pullRequests) {
+      // A vehicle stays where it was merged
+      if (
+        carriedAway.has(prNumber(pr)) &&
+        !isPromotionPullRequest(pr, config)
+      ) {
         pr.promotedAway = true;
       }
     }
-  });
+  }
 }

@@ -168,12 +168,22 @@ export type PullRequest = {
     mergeDate: string;
   }>;
   // True when a promotion assembled from the branch of this window carried the story away: it is
-  // listed in the branch it reached instead, so a Pull Request number appears once in the pipeline
+  // listed in the branch it reached instead. A Pull Request that reached two branches by another
+  // route (a retrofit) is never marked, and stays listed in both.
   promotedAway?: boolean;
   // Whether the Pull Request still merges cleanly into its target branch. Filled for open Pull
   // Requests only, from data the provider already computes: see PullRequestMergeStatus.
   mergeStatus?: PullRequestMergeStatus;
 };
+
+/**
+ * The answer of a paged Pull Request listing. `complete` is false when the walk stopped at its
+ * page limit: what was found is still valid, older Pull Requests may be missing.
+ */
+export interface PullRequestListing {
+  pullRequests: PullRequest[];
+  complete: boolean;
+}
 
 /**
  * Compute aggregated jobs status from a list of jobs. Preference order:

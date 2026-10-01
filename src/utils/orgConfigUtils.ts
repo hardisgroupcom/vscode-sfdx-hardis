@@ -336,31 +336,37 @@ async function completeMajorOrgsWithPromotionBranches(
   // Plus the promotions the provider knows and the windows no longer hold: the window of a
   // target branch is reset at each go-live, so a promotion merged before it is in none of them,
   // while its stories are still in the window of the branch they left.
-  const { promotions: stepPromotions, unknownSteps } =
-    await listMergedPromotionsOfSteps(
-      majorOrgs.map((org) => ({
-        sourceBranch: org.branchName,
-        // The window of a branch is computed against its first merge target
-        targetBranch: org.mergeTargets[0] || "",
-        pullRequests: org.pullRequestsInBranchSinceLastMerge || [],
-      })),
-      config,
-      (sourceBranch, targetBranch, updatedAfter) =>
-        gitProvider.listMergedPromotionPullRequests(
-          sourceBranch,
-          targetBranch,
-          updatedAfter,
-        ),
-    );
+  const {
+    promotions: stepPromotions,
+    unknownSteps,
+    incompleteSteps,
+  } = await listMergedPromotionsOfSteps(
+    majorOrgs.map((org) => ({
+      sourceBranch: org.branchName,
+      // The window of a branch is computed against its first merge target
+      targetBranch: org.mergeTargets[0] || "",
+      pullRequests: org.pullRequestsInBranchSinceLastMerge || [],
+    })),
+    config,
+    (sourceBranch, targetBranch, updatedAfter) =>
+      gitProvider.listMergedPromotionPullRequests(
+        sourceBranch,
+        targetBranch,
+        updatedAfter,
+      ),
+  );
   if (unknownSteps.length > 0) {
     Logger.log(
       `Unable to list the merged promotion Pull Requests of ${unknownSteps.join(", ")}: User Stories a promotion already carried away may still be listed in their source branch`,
     );
   }
-  const windowPromotionNumbers = new Set(promotions.map((pr) => pr.number));
-  promotions.push(
-    ...stepPromotions.filter((pr) => !windowPromotionNumbers.has(pr.number)),
-  );
+  for (const step of incompleteSteps) {
+    Logger.log(
+      `The merged promotion Pull Requests of ${step} were not all listed (page limit reached): User Stories an older promotion carried away may still be listed in their source branch`,
+    );
+  }
+  // A promotion found both in a window and by the provider is given twice: the index does not mind
+  promotions.push(...stepPromotions);
   if (promotions.length === 0) {
     return;
   }
@@ -377,42 +383,22 @@ async function completeMajorOrgsWithPromotionBranches(
 }
 
 /**
- * Second guard of the single place rule, on the windows themselves: a story listed in two windows
- * stays in the downstream one only, whatever the promotion index says. The first guard is the
- * index, fed with the merged promotions of each step asked to the git provider: the windows alone
- * cannot tell that a story left a branch once the go-live of the next branch has emptied the
- * window the promotion was in.
+ * Same rule as the promotion index, read from the windows themselves: a story a merged promotion
+ * brought into a window is hidden from the window of the branch that promotion was assembled
+ * from, and from no other. The index stays the main source, since it also knows the promotions
+ * the go-live of the next branch took out of every window. The order of the windows does not
+ * matter: the branch a story left is read from the name of the promotion that carried it.
  */
 function enforceInvariant(
   majorOrgs: MajorOrg[],
   config: PromotionBranchConfig,
 ): void {
   enforceSinglePlacePerPullRequest(
-    orderWindowsUpstreamFirst(majorOrgs).map((org) => ({
+    majorOrgs.map((org) => ({
       branchName: org.branchName,
       pullRequests: org.pullRequestsInBranchSinceLastMerge || [],
     })),
     config,
-  );
-}
-
-/**
- * The branch windows ordered upstream first (integration, uat, preprod, main), which is what
- * enforceSinglePlacePerPullRequest needs: of two windows holding the same number, the one that
- * comes last wins, so the story is listed in the branch it reached.
- *
- * listMajorOrgs sorts by level DESCENDING, so it hands them over downstream first. Passing that
- * order straight through made the UPSTREAM window win: a story a promotion had just carried into
- * uat was marked promotedAway in uat, while annotateAlreadyPromoted had already marked it in
- * integration, so it vanished from both windows and from both counters.
- */
-export function orderWindowsUpstreamFirst<
-  T extends { level: number; branchName: string },
->(majorOrgs: T[]): T[] {
-  return [...majorOrgs].sort(
-    (a, b) =>
-      (a.level ?? 0) - (b.level ?? 0) ||
-      (a.branchName || "").localeCompare(b.branchName || ""),
   );
 }
 

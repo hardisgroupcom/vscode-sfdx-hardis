@@ -3,7 +3,10 @@
 ## Unreleased
 
 - Metadata Retriever: the filter buttons stay aligned when the panel is narrow. They used to stack one per line, touching each other, while the **Full metadata** and **Check local files** toggles stayed pinned to the right of that stack. The toggles now move onto their own line under the buttons, and a button label is never squeezed.
-- DevOps Pipeline with [promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta): a User Story a merged promotion carried to the next branch is no longer counted in the branch it left, even after the next branch went to production.
+- DevOps Pipeline: fix the Pull Requests listed and counted in each branch
+  - The list of a branch starts at its last real merge into the next branch. It could start much earlier when an old merge had been commented on recently
+  - With [promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta), a User Story a merged promotion carried to the next branch is no longer counted in the branch it left, even after the next branch went to production
+  - A Pull Request brought back by a retrofit stays listed in the branch it still has to leave
 
 ## [8.9.0] 2026-09-29
 

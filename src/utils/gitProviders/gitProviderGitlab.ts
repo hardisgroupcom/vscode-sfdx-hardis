@@ -10,10 +10,12 @@ import {
   GoLive,
   ProviderDescription,
   PullRequest,
+  PullRequestListing,
   Job,
   JobStatus,
 } from "./types";
 import { mapGitLabMergeStatus } from "./mergeStatus";
+import { pickLatestByDate } from "./latestByDate";
 import { SecretsManager } from "../secretsManager";
 import { CacheManager } from "../cache-manager";
 import { Logger } from "../../logger";
@@ -27,6 +29,7 @@ import {
 export class GitProviderGitlab extends GitProvider {
   // gitbeaker paginates until exhaustion unless it is told otherwise
   private static readonly MERGED_MR_MAX_PAGES = 5;
+  private static readonly MERGED_MR_PAGE_SIZE = 100;
   // A merge request is updated when it is merged, but branches live long and clocks drift, so the
   // time bound is widened before it is used
   private static readonly MR_WINDOW_MARGIN_DAYS = 7;
@@ -408,44 +411,87 @@ export class GitProviderGitlab extends GitProvider {
     sourceBranch: string,
     targetBranch: string,
     updatedAfter?: Date,
-  ): Promise<PullRequest[] | null> {
+  ): Promise<PullRequestListing | null> {
     if (!this.gitlabClient || !this.gitlabProjectId) {
       return null;
     }
     try {
-      const mergedMRs = await this.gitlabClient.MergeRequests.all({
-        projectId: this.gitlabProjectId,
-        targetBranch,
-        state: "merged",
-        perPage: 100,
-        maxPages: GitProviderGitlab.MERGED_MR_MAX_PAGES,
-        ...(updatedAfter ? { updatedAfter: updatedAfter.toISOString() } : {}),
-      });
-      await this.logApiCall("MergeRequests.all", {
-        caller: "listMergedPromotionPullRequests",
-        targetBranch,
-        updatedAfter: updatedAfter?.toISOString(),
-      });
-      // gitbeaker stops at maxPages without saying so: a full last page means there was more
-      if (mergedMRs.length >= 100 * GitProviderGitlab.MERGED_MR_MAX_PAGES) {
-        Logger.log(
-          `[listMergedPromotionPullRequests] stopped after ${GitProviderGitlab.MERGED_MR_MAX_PAGES} pages of Merge Requests merged into ${targetBranch}: older promotions of ${sourceBranch} may be missing, and their User Stories still counted in ${sourceBranch}`,
+      const { mergeRequests, complete } =
+        await this.listMergedMergeRequestsInto(
+          targetBranch,
+          "listMergedPromotionPullRequests",
+          { updatedAfter },
         );
-      }
-      const promotions = mergedMRs.filter((mr: any) =>
+      const promotions = mergeRequests.filter((mr: any) =>
         isPromotionBranchOfStep(
           mr.sourceBranch || mr.source_branch,
           sourceBranch,
           targetBranch,
         ),
       );
-      return await this.convertAndCollectJobsList(promotions, {
-        withJobs: false,
-      });
+      return {
+        pullRequests: await this.convertAndCollectJobsList(promotions, {
+          withJobs: false,
+        }),
+        complete,
+      };
     } catch (err) {
       Logger.log(`Error in listMergedPromotionPullRequests: ${String(err)}`);
       return null;
     }
+  }
+
+  /**
+   * The merged merge requests into a branch, optionally from one source branch and updated since
+   * a date.
+   *
+   * gitbeaker walks EVERY page by default: on a project with hundreds of merged merge requests
+   * that pulled the whole history of the branch to keep the handful a caller needs. The number of
+   * pages is capped so a busy branch cannot turn into an unbounded crawl. gitbeaker stops at the
+   * cap without saying so, and a full last page means there was more: `complete` is then false,
+   * and it is logged.
+   */
+  private async listMergedMergeRequestsInto(
+    targetBranch: string,
+    caller: string,
+    options: {
+      updatedAfter?: Date;
+      sourceBranch?: string;
+      maxPages?: number;
+    } = {},
+  ): Promise<{
+    mergeRequests: Array<
+      | MergeRequestSchemaWithBasicLabels
+      | Camelize<MergeRequestSchemaWithBasicLabels>
+    >;
+    complete: boolean;
+  }> {
+    const maxPages = options.maxPages ?? GitProviderGitlab.MERGED_MR_MAX_PAGES;
+    const mergeRequests = await this.gitlabClient!.MergeRequests.all({
+      projectId: this.gitlabProjectId!,
+      targetBranch,
+      state: "merged",
+      perPage: GitProviderGitlab.MERGED_MR_PAGE_SIZE,
+      maxPages,
+      ...(options.sourceBranch ? { sourceBranch: options.sourceBranch } : {}),
+      ...(options.updatedAfter
+        ? { updatedAfter: options.updatedAfter.toISOString() }
+        : {}),
+    });
+    await this.logApiCall("MergeRequests.all", {
+      caller,
+      sourceBranch: options.sourceBranch,
+      targetBranch,
+      updatedAfter: options.updatedAfter?.toISOString(),
+    });
+    const complete =
+      mergeRequests.length < GitProviderGitlab.MERGED_MR_PAGE_SIZE * maxPages;
+    if (!complete) {
+      Logger.log(
+        `[${caller}] stopped after ${maxPages} pages of the Merge Requests merged into ${targetBranch}: older ones may be missing`,
+      );
+    }
+    return { mergeRequests, complete };
   }
 
   async getBranchLatestCommitId(
@@ -623,27 +669,14 @@ export class GitProviderGitlab extends GitProvider {
       allBranches,
       async (branchName) => {
         try {
-          const mergedMRs = await this.gitlabClient!.MergeRequests.all({
-            projectId: this.gitlabProjectId!,
-            targetBranch: branchName,
-            state: "merged",
-            perPage: 100,
-            // gitbeaker walks EVERY page by default: on a project with hundreds of merged merge
-            // requests that pulled the whole history of the branch to keep the handful that
-            // belong to the window. The window is bounded in time, and the number of pages is
-            // capped so a busy branch cannot turn into an unbounded crawl.
-            maxPages: GitProviderGitlab.MERGED_MR_MAX_PAGES,
-            ...(updatedAfter
-              ? { updatedAfter: updatedAfter.toISOString() }
-              : {}),
-          });
-          await this.logApiCall("MergeRequests.all", {
-            caller: "collectMergedMRsForCommits",
-            action: "fetchMergedMRs",
-            targetBranch: branchName,
-            updatedAfter: updatedAfter?.toISOString(),
-          });
-          return mergedMRs;
+          // The window is bounded in time: only the merge requests updated since its oldest
+          // commit can belong to it
+          const { mergeRequests } = await this.listMergedMergeRequestsInto(
+            branchName,
+            "collectMergedMRsForCommits",
+            { updatedAfter },
+          );
+          return mergeRequests;
         } catch (err) {
           Logger.log(
             `Error fetching merged MRs for branch ${branchName}: ${String(err)}`,
@@ -686,7 +719,11 @@ export class GitProviderGitlab extends GitProvider {
   }
 
   /**
-   * Find the last merge request that was merged from sourceBranch to targetBranch
+   * Find the last merge request that was merged from sourceBranch to targetBranch: the latest by
+   * merge date. It used to be the most recently UPDATED one, and a comment written on a merge of
+   * the previous year made it win over the merge of last month, so the window of the branch
+   * started months too early. Direct merges between two major branches are few: one page holds
+   * them all.
    */
   private async findLastMergedMR(
     sourceBranch: string,
@@ -697,23 +734,19 @@ export class GitProviderGitlab extends GitProvider {
     | null
   > {
     try {
-      const mergedMRs = await this.gitlabClient!.MergeRequests.all({
-        projectId: this.gitlabProjectId!,
-        sourceBranch: sourceBranch,
-        targetBranch: targetBranch,
-        state: "merged",
-        orderBy: "updated_at",
-        sort: "desc",
-        perPage: 1,
-        maxPages: 1,
-      });
-      await this.logApiCall("MergeRequests.all", {
-        caller: "findLastMergedMR",
-        sourceBranch,
+      const { mergeRequests } = await this.listMergedMergeRequestsInto(
         targetBranch,
-      });
-
-      return mergedMRs.length > 0 ? mergedMRs[0] : null;
+        "findLastMergedMR",
+        { sourceBranch, maxPages: 1 },
+      );
+      const mergeDateOf = (mr: any) => mr.mergedAt || mr.merged_at;
+      // The update date is only a fallback for a server that gives no merge date at all
+      return pickLatestByDate(
+        mergeRequests,
+        mergeRequests.some(mergeDateOf)
+          ? mergeDateOf
+          : (mr: any) => mr.updatedAt || mr.updated_at,
+      );
     } catch (err) {
       Logger.log(
         `Error finding last merged MR from ${sourceBranch} to ${targetBranch}: ${String(err)}`,

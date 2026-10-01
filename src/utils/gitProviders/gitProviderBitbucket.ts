@@ -11,12 +11,18 @@ import {
   GoLive,
   ProviderDescription,
   PullRequest,
+  PullRequestListing,
   Job,
   JobStatus,
 } from "./types";
+import { pickLatestByDate } from "./latestByDate";
 import { SecretsManager } from "../secretsManager";
 import { Logger } from "../../logger";
-import { PROVIDER_BATCH_PROFILES, mapWithConcurrency } from "../concurrency";
+import {
+  PROVIDER_BATCH_PROFILES,
+  mapWithConcurrency,
+  mapWithConcurrencySettled,
+} from "../concurrency";
 import { t } from "../../i18n/i18n";
 import {
   promptForToken,
@@ -343,15 +349,18 @@ export class GitProviderBitbucket extends GitProvider {
    * pages exist. This helper follows `next` (via the `page` param) and returns
    * every item across all pages, so callers never silently miss results.
    * `pagelen` maxes out at 50 for pull requests and 100 for commits.
+   * `complete` is false when the walk stopped at `maxPages` with a next page left. That is
+   * logged with `what`, the name of what was being listed: this pages commits as well as Pull
+   * Requests, and the log has to say which.
    */
   private async fetchAllPages(
     listFn: (params: any) => Promise<any>,
     params: any,
+    what: string,
     maxPages: number = 50,
-  ): Promise<any[]> {
+  ): Promise<{ values: any[]; complete: boolean }> {
     const all: any[] = [];
-    let page = 1;
-    while (page <= maxPages) {
+    for (let page = 1; page <= maxPages; page++) {
       const response = await listFn({ ...params, page });
       const values =
         response && response.data && response.data.values
@@ -359,11 +368,107 @@ export class GitProviderBitbucket extends GitProvider {
           : [];
       all.push(...values);
       if (!response?.data?.next || values.length === 0) {
-        break;
+        return { values: all, complete: true };
       }
-      page++;
     }
-    return all;
+    Logger.log(
+      `[fetchAllPages] stopped after ${maxPages} pages (${all.length} items) of ${what}: the rest is missing`,
+    );
+    return { values: all, complete: false };
+  }
+
+  /**
+   * The merged Pull Requests into a branch, optionally narrowed on their source branch
+   * (`sourceQuery`, a clause of the Bitbucket query language) and to those updated since a date.
+   */
+  private async listMergedPullRequestsInto(
+    targetBranch: string,
+    caller: string,
+    options: {
+      updatedAfter?: Date;
+      sourceQuery?: string;
+      sort?: string;
+      maxPages?: number;
+    } = {},
+  ): Promise<{ pullRequests: any[]; complete: boolean }> {
+    const q =
+      `destination.branch.name = "${targetBranch}" AND state = "MERGED"` +
+      (options.sourceQuery ? ` AND ${options.sourceQuery}` : "") +
+      (options.updatedAfter
+        ? ` AND updated_on >= ${JSON.stringify(options.updatedAfter.toISOString())}`
+        : "");
+    const { values, complete } = await this.fetchAllPages(
+      (params) => this.bitbucketClient!.pullrequests.list(params),
+      {
+        workspace: this.workspace!,
+        repo_slug: this.repoSlug!,
+        q,
+        ...(options.sort ? { sort: options.sort } : {}),
+        pagelen: 50,
+      },
+      `the Pull Requests merged into ${targetBranch} (${caller})`,
+      options.maxPages,
+    );
+    await this.logApiCall("pullrequests.list", { caller, q });
+    return { pullRequests: values, complete };
+  }
+
+  /**
+   * The last merge of sourceBranch into targetBranch, which is where the window of sourceBranch
+   * starts.
+   *
+   * A Bitbucket Pull Request has no merge date: `updated_on` is the only date it carries, and it
+   * moves on every comment. So the most recently updated Pull Request is not the last merged one,
+   * and the date of each merge commit is read to decide. Direct merges between two major branches
+   * are few, and a single candidate costs no extra call.
+   */
+  private async findLastMergeBetween(
+    sourceBranch: string,
+    targetBranch: string,
+  ): Promise<any | null> {
+    const { pullRequests: candidates } = await this.listMergedPullRequestsInto(
+      targetBranch,
+      "listPullRequestsInBranchSinceLastMerge",
+      {
+        sourceQuery: `source.branch.name = "${sourceBranch}"`,
+        sort: "-updated_on",
+        maxPages: 1,
+      },
+    );
+    if (candidates.length <= 1) {
+      return candidates[0] || null;
+    }
+    const mergeDates = await mapWithConcurrencySettled(
+      candidates,
+      async (pr: any) => {
+        const hash = pr.merge_commit?.hash;
+        if (!hash) {
+          return undefined;
+        }
+        const response = await this.bitbucketClient!.repositories.getCommit({
+          workspace: this.workspace!,
+          repo_slug: this.repoSlug!,
+          commit: hash,
+        } as any);
+        await this.logApiCall("repositories.getCommit", {
+          caller: "findLastMergeBetween",
+          commit: hash,
+        });
+        return response?.data?.date as string | undefined;
+      },
+      PROVIDER_BATCH_PROFILES.bitbucket,
+      (error, pr: any) =>
+        Logger.log(
+          `Unable to read the merge commit of PR #${pr?.id}: ${String(error)}`,
+        ),
+    );
+    // A candidate whose commit could not be read never wins over a dated one. When none could be
+    // read, the first one stays: the most recently updated, as before.
+    const latest = pickLatestByDate(
+      candidates.map((pr, index) => ({ pr, date: mergeDates[index] })),
+      (candidate) => candidate.date,
+    );
+    return latest?.pr || null;
   }
 
   async listPullRequestsInBranchSinceLastMerge(
@@ -376,37 +481,16 @@ export class GitProviderBitbucket extends GitProvider {
     }
 
     try {
-      // Step 1: Find the last merged PR from currentBranch to targetBranch.
-      // Sort most-recent-first and take a single result so [0] is reliably the
-      // latest merge, independent of the API's default ordering.
-      const lastMergeResponse = await this.bitbucketClient.pullrequests.list({
-        workspace: this.workspace,
-        repo_slug: this.repoSlug,
-        q: `source.branch.name = "${currentBranchName}" AND destination.branch.name = "${targetBranchName}" AND state = "MERGED"`,
-        sort: "-updated_on",
-        pagelen: 1,
-      } as any);
-      await this.logApiCall("pullrequests.list", {
-        caller: "listPullRequestsInBranchSinceLastMerge",
-        action: "findLastMerged",
-        q: `source.branch.name = "${currentBranchName}" AND destination.branch.name = "${targetBranchName}" AND state = "MERGED"`,
-      });
-
-      const lastMergePRs =
-        lastMergeResponse &&
-        lastMergeResponse.data &&
-        lastMergeResponse.data.values
-          ? lastMergeResponse.data.values
-          : [];
-      const lastMergeToTarget =
-        lastMergePRs.length > 0 ? lastMergePRs[0] : null;
+      // Step 1: Find the last merged PR from currentBranch to targetBranch
+      const lastMergeToTarget = await this.findLastMergeBetween(
+        currentBranchName,
+        targetBranchName,
+      );
 
       // Step 2: Get commits between branches (paginated: a busy branch can have
       // far more than one page of commits since the last merge)
-      const exclude = lastMergeToTarget
-        ? lastMergeToTarget.merge_commit?.hash
-        : targetBranchName;
-      const commits = await this.fetchAllPages(
+      const exclude = lastMergeToTarget?.merge_commit?.hash || targetBranchName;
+      const { values: commits } = await this.fetchAllPages(
         (params) => this.bitbucketClient!.commits.list(params),
         {
           workspace: this.workspace,
@@ -415,6 +499,7 @@ export class GitProviderBitbucket extends GitProvider {
           exclude,
           pagelen: 100,
         },
+        `the commits of ${currentBranchName} since ${exclude}`,
       );
       await this.logApiCall("commits.list", {
         caller: "listPullRequestsInBranchSinceLastMerge",
@@ -452,41 +537,33 @@ export class GitProviderBitbucket extends GitProvider {
     sourceBranch: string,
     targetBranch: string,
     updatedAfter?: Date,
-  ): Promise<PullRequest[] | null> {
+  ): Promise<PullRequestListing | null> {
     if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
       return null;
     }
     try {
-      // "~" is a contains, so the provider only returns the promotion branches of the step
-      const q =
-        `destination.branch.name = "${targetBranch}" AND state = "MERGED"` +
-        ` AND source.branch.name ~ "${PROMOTION_BRANCH_PREFIX}/${sourceBranch}/${targetBranch}/"` +
-        (updatedAfter
-          ? ` AND updated_on >= ${JSON.stringify(updatedAfter.toISOString())}`
-          : "");
-      const values = await this.fetchAllPages(
-        (params) => this.bitbucketClient!.pullrequests.list(params),
+      // "~" is a contains: it narrows the answer, and the exact step is checked on it below
+      const { pullRequests, complete } = await this.listMergedPullRequestsInto(
+        targetBranch,
+        "listMergedPromotionPullRequests",
         {
-          workspace: this.workspace,
-          repo_slug: this.repoSlug,
-          q,
-          pagelen: 50,
+          updatedAfter,
+          sourceQuery: `source.branch.name ~ "${PROMOTION_BRANCH_PREFIX}/${sourceBranch}/${targetBranch}/"`,
         },
       );
-      await this.logApiCall("pullrequests.list", {
-        caller: "listMergedPromotionPullRequests",
-        q,
-      });
-      const promotions = values.filter((pr: any) =>
+      const promotions = pullRequests.filter((pr: any) =>
         isPromotionBranchOfStep(
           pr.source?.branch?.name,
           sourceBranch,
           targetBranch,
         ),
       );
-      return await this.convertAndCollectJobsList(promotions, {
-        withJobs: false,
-      });
+      return {
+        pullRequests: await this.convertAndCollectJobsList(promotions, {
+          withJobs: false,
+        }),
+        complete,
+      };
     } catch (err) {
       Logger.log(`Error in listMergedPromotionPullRequests: ${String(err)}`);
       return null;
@@ -531,7 +608,7 @@ export class GitProviderBitbucket extends GitProvider {
     try {
       const q = `destination.branch.name = "${branchName}" AND state = "MERGED"`;
       // A couple of pages of recent promotions is plenty for the selector
-      const values = await this.fetchAllPages(
+      const { values } = await this.fetchAllPages(
         (params) => this.bitbucketClient!.pullrequests.list(params),
         {
           workspace: this.workspace,
@@ -540,6 +617,7 @@ export class GitProviderBitbucket extends GitProvider {
           sort: "-updated_on",
           pagelen: 50,
         },
+        `the go lives of ${branchName}`,
         2,
       );
       await this.logApiCall("pullrequests.list", {
@@ -619,7 +697,7 @@ export class GitProviderBitbucket extends GitProvider {
       }
 
       // Step 2: Commits introduced by the go live (paginated)
-      const commits = await this.fetchAllPages(
+      const { values: commits } = await this.fetchAllPages(
         (params) => this.bitbucketClient!.commits.list(params),
         {
           workspace: this.workspace,
@@ -628,6 +706,7 @@ export class GitProviderBitbucket extends GitProvider {
           exclude: firstParent,
           pagelen: 100,
         },
+        `the commits of the go live ${mergeCommitId}`,
       );
       await this.logApiCall("commits.list", {
         caller: "listPullRequestsInGoLive",
@@ -675,27 +754,13 @@ export class GitProviderBitbucket extends GitProvider {
       allBranches,
       async (branchName) => {
         try {
-          const q =
-            `destination.branch.name = "${branchName}" AND state = "MERGED"` +
-            (updatedAfter
-              ? ` AND updated_on >= ${JSON.stringify(updatedAfter.toISOString())}`
-              : "");
           // Paginate: a branch can have more merged PRs than fit on one page
-          const values = await this.fetchAllPages(
-            (params) => this.bitbucketClient!.pullrequests.list(params),
-            {
-              workspace: this.workspace!,
-              repo_slug: this.repoSlug!,
-              q,
-              pagelen: 50,
-            },
+          const { pullRequests } = await this.listMergedPullRequestsInto(
+            branchName,
+            "collectMergedPRsForCommits",
+            { updatedAfter },
           );
-          await this.logApiCall("pullrequests.list", {
-            caller: "collectMergedPRsForCommits",
-            action: "fetchMergedPRs",
-            q,
-          });
-          return values;
+          return pullRequests;
         } catch (err) {
           Logger.log(
             `Error fetching merged PRs for branch ${branchName}: ${String(err)}`,
