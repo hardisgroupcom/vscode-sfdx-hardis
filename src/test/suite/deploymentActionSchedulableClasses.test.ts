@@ -28,10 +28,10 @@ suite("Deployment action schedulable classes", () => {
   test("a class of the org is never reported as project only", () => {
     // Apex class names are case-insensitive: the file and the org can differ
     const merged = mergeSchedulableClasses(
-      ["crewcapacitybatch"],
-      ["CrewCapacityBatch"],
+      ["nightly_cleanup"],
+      ["Nightly_Cleanup"],
     );
-    assert.deepStrictEqual(merged.values, ["crewcapacitybatch"]);
+    assert.deepStrictEqual(merged.values, ["nightly_cleanup"]);
     assert.deepStrictEqual(merged.projectOnlyValues, []);
   });
 
@@ -39,6 +39,24 @@ suite("Deployment action schedulable classes", () => {
     const merged = mergeSchedulableClasses([], ["CrewCapacityBatch"]);
     assert.deepStrictEqual(merged.values, ["CrewCapacityBatch"]);
     assert.deepStrictEqual(merged.projectOnlyValues, ["CrewCapacityBatch"]);
+  });
+
+  test("no class is reported as project only when the org could not be read", () => {
+    // Saying "not in the default org yet" about an org nobody could read would be a guess
+    const merged = mergeSchedulableClasses(null, ["CrewCapacityBatch"]);
+    assert.deepStrictEqual(merged.values, ["CrewCapacityBatch"]);
+    assert.deepStrictEqual(merged.projectOnlyValues, []);
+  });
+
+  test("the editor asks for the list each time it opens", () => {
+    const js = readModuleFile("deploymentAction", "deploymentAction.js");
+    const start = js.indexOf("_requestSchedulableClassesIfNeeded(type) {");
+    const body = js.slice(
+      start,
+      js.indexOf("_requestCommunitiesIfNeeded(type) {"),
+    );
+    // A list kept by the panel from an earlier opening must not stop the request
+    assert.doesNotMatch(body, /schedulableClasses\.length/);
   });
 
   test("the editor labels the classes found only in the project", () => {

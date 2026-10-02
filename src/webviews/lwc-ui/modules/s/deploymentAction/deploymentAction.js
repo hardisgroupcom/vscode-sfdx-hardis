@@ -1004,12 +1004,9 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     if (this._schedulableClassesRequested) {
       return;
     }
-    if (
-      Array.isArray(this.schedulableClasses) &&
-      this.schedulableClasses.length
-    ) {
-      return;
-    }
+    // Asked again each time the editor opens, even when the panel already holds a
+    // list: a class added to the project, or deployed to the org, since the last
+    // opening must be listed and labelled as it is now
     this._schedulableClassesRequested = true;
     this.dispatchEvent(new CustomEvent("loadschedulableclasses"));
   }

@@ -40,14 +40,16 @@ async function fetchAndCacheOrgNames(
   now: number,
   command: string,
   filter?: (record: any) => boolean,
-): Promise<string[]> {
+): Promise<string[] | null> {
   const result = await execSfdxJson(command, {
     fail: false,
     output: false,
   });
-  const records = Array.isArray(result?.result?.records)
-    ? result.result.records
-    : [];
+  // No records array: the org could not be read, which is not an empty list
+  if (!Array.isArray(result?.result?.records)) {
+    return null;
+  }
+  const records = result.result.records;
   const filtered = filter ? records.filter(filter) : records;
   const values = filtered
     .map((record: any) => String(record?.Name || "").trim())
@@ -64,8 +66,9 @@ async function fetchAndCacheOrgNames(
   return uniqueSorted;
 }
 
+// null when the org could not be read
 export async function listSchedulableClassesFromDefaultOrg(): Promise<
-  string[]
+  string[] | null
 > {
   const orgKey = await getDefaultOrgUsername();
   const now = Date.now();
@@ -99,11 +102,16 @@ export interface PickerValues {
  * A class merged in git and not deployed to the default org yet is only in the
  * project: it can still be scheduled, as the deployment brings it to the target
  * org before the action runs, so it is listed and reported as project only.
+ * When the org could not be read (null), nothing is known about what it holds:
+ * the project classes are listed and none is reported as project only.
  */
 export function mergeSchedulableClasses(
-  orgClasses: string[],
+  orgClasses: string[] | null,
   projectClasses: string[],
 ): PickerValues {
+  if (orgClasses === null) {
+    return { values: [...projectClasses], projectOnlyValues: [] };
+  }
   const orgKeys = new Set(orgClasses.map((name) => name.toLowerCase()));
   const projectOnlyValues = projectClasses.filter(
     (name) => !orgKeys.has(name.toLowerCase()),
@@ -117,7 +125,7 @@ export function mergeSchedulableClasses(
 export async function listSchedulableClasses(): Promise<PickerValues> {
   // One source failing must not hide the other
   const [orgClasses, projectClasses] = await Promise.all([
-    listSchedulableClassesFromDefaultOrg().catch(() => [] as string[]),
+    listSchedulableClassesFromDefaultOrg().catch(() => null),
     listProjectSchedulableClasses().catch(() => [] as string[]),
   ]);
   return mergeSchedulableClasses(orgClasses, projectClasses);
@@ -132,7 +140,14 @@ export async function listCommunitiesFromDefaultOrg(): Promise<string[]> {
   }
   const query = "SELECT Name FROM Network ORDER BY Name";
   const command = `sf data query --query "${query}" --json`;
-  return fetchAndCacheOrgNames(communitiesByOrgCache, orgKey, now, command);
+  return (
+    (await fetchAndCacheOrgNames(
+      communitiesByOrgCache,
+      orgKey,
+      now,
+      command,
+    )) ?? []
+  );
 }
 
 /**
