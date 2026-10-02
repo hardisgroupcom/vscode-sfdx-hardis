@@ -58,24 +58,7 @@ async function fetchAndCacheOrgNames(
   if (!Array.isArray(result?.result?.records)) {
     return null;
   }
-  return cacheOrgNames(
-    cache,
-    orgKey,
-    now,
-    result.result.records,
-    filter,
-    nameOf,
-  );
-}
-
-function cacheOrgNames(
-  cache: Map<string, { expiresAt: number; values: string[] }>,
-  orgKey: string,
-  now: number,
-  records: any[],
-  filter?: (record: any) => boolean,
-  nameOf: (record: any) => string = (record) => String(record?.Name || ""),
-): string[] {
+  const records = result.result.records;
   const filtered = filter ? records.filter(filter) : records;
   const values = filtered
     .map((record: any) => nameOf(record).trim())
@@ -131,21 +114,12 @@ export function isBatchableApexClass(record: any): boolean {
 
 type ApexClassKind = "schedulable" | "batchable";
 
-const APEX_CLASS_KINDS: Record<
+const APEX_CLASS_CACHES: Record<
   ApexClassKind,
-  {
-    cache: Map<string, { expiresAt: number; values: string[] }>;
-    filter: (record: any) => boolean;
-  }
+  Map<string, { expiresAt: number; values: string[] }>
 > = {
-  schedulable: {
-    cache: schedulableClassesByOrgCache,
-    filter: isSchedulableApexClass,
-  },
-  batchable: {
-    cache: batchableClassesByOrgCache,
-    filter: isBatchableApexClass,
-  },
+  schedulable: schedulableClassesByOrgCache,
+  batchable: batchableClassesByOrgCache,
 };
 
 /**
@@ -168,6 +142,51 @@ export function splitApexClassesByKind(
     schedulable: namesOf(isSchedulableApexClass),
     batchable: namesOf(isBatchableApexClass),
   };
+}
+
+// null when the org could not be read
+export async function listSchedulableClassesFromDefaultOrg(): Promise<
+  string[] | null
+> {
+  return listApexClassesFromDefaultOrg("schedulable");
+}
+
+// null when the org could not be read
+export async function listBatchableClassesFromDefaultOrg(): Promise<
+  string[] | null
+> {
+  return listApexClassesFromDefaultOrg("batchable");
+}
+
+/**
+ * The Apex classes of the default org are read once for both pickers: the same
+ * result fills the schedulable and the batchable cache, whichever asks first.
+ * null when the org could not be read.
+ */
+async function listApexClassesFromDefaultOrg(
+  kind: ApexClassKind,
+): Promise<string[] | null> {
+  const orgKey = await getDefaultOrgUsername();
+  const cached = APEX_CLASS_CACHES[kind].get(orgKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.values;
+  }
+  const records = await queryApexClassesOfOrg(orgKey);
+  if (records === null) {
+    return null;
+  }
+  const namesByKind = splitApexClassesByKind(records);
+  const expiresAt = Date.now() + ORG_NAMES_CACHE_TTL_MS;
+  for (const key of Object.keys(APEX_CLASS_CACHES) as ApexClassKind[]) {
+    // An empty list is not cached, so that the org is asked again next time
+    if (namesByKind[key].length > 0) {
+      APEX_CLASS_CACHES[key].set(orgKey, {
+        expiresAt,
+        values: namesByKind[key],
+      });
+    }
+  }
+  return namesByKind[kind];
 }
 
 // Org queries in progress, so that two pickers asking together share one
@@ -194,51 +213,6 @@ async function queryApexClassesOfOrg(orgKey: string): Promise<any[] | null> {
   } finally {
     apexClassQueriesInProgress.delete(orgKey);
   }
-}
-
-/**
- * The Apex classes of the default org are read once for both pickers: the same
- * result fills the schedulable and the batchable cache, whichever asks first.
- * null when the org could not be read.
- */
-async function listApexClassesFromDefaultOrg(
-  kind: ApexClassKind,
-): Promise<string[] | null> {
-  const orgKey = await getDefaultOrgUsername();
-  const cached = APEX_CLASS_KINDS[kind].cache.get(orgKey);
-  if (cached && cached.expiresAt > Date.now()) {
-    return cached.values;
-  }
-  const records = await queryApexClassesOfOrg(orgKey);
-  if (records === null) {
-    return null;
-  }
-  const namesByKind = splitApexClassesByKind(records);
-  const expiresAt = Date.now() + ORG_NAMES_CACHE_TTL_MS;
-  for (const key of Object.keys(APEX_CLASS_KINDS) as ApexClassKind[]) {
-    // An empty list is not cached, so that the org is asked again next time
-    if (namesByKind[key].length > 0) {
-      APEX_CLASS_KINDS[key].cache.set(orgKey, {
-        expiresAt,
-        values: namesByKind[key],
-      });
-    }
-  }
-  return namesByKind[kind];
-}
-
-// null when the org could not be read
-export async function listSchedulableClassesFromDefaultOrg(): Promise<
-  string[] | null
-> {
-  return listApexClassesFromDefaultOrg("schedulable");
-}
-
-// null when the org could not be read
-export async function listBatchableClassesFromDefaultOrg(): Promise<
-  string[] | null
-> {
-  return listApexClassesFromDefaultOrg("batchable");
 }
 
 export interface PickerValues {

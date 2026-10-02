@@ -1123,15 +1123,20 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     this.validationError = "";
     // Parameters are only reset when a custom function is on either side of the switch: the CLI
     // rejects a parameter a function does not declare, so leftovers from the previous type would
-    // make the action invalid. Switching between two built-in types keeps the previous behavior,
-    // which leaves the old parameters in place.
+    // make the action invalid. Run Batch shares className with Schedule Batch and takes another
+    // kind of class, so entering or leaving it also starts from clean parameters, as the CLI does.
+    // Switching between two other built-in types keeps the previous behavior, which leaves the
+    // old parameters in place.
     const leavesCustomFunction = !!this.customFunctions.find(
       (fn) => fn.id === previousType,
     );
     const entersCustomFunction = !!this.customFunctions.find(
       (fn) => fn.id === newType,
     );
-    if (leavesCustomFunction || entersCustomFunction) {
+    const touchesRunBatch =
+      previousType !== newType &&
+      (previousType === "run-batch" || newType === "run-batch");
+    if (leavesCustomFunction || entersCustomFunction || touchesRunBatch) {
       this.editedAction.parameters =
         this._buildInitialParametersForType(newType);
     }
