@@ -178,6 +178,10 @@ BOX_CROPS = {
         "pipeline-edit-action-schedule-batch",
         (760, 195, 1462, 772),
     ),
+    "screenshot-deployment-action-run-batch.jpg": (
+        "pipeline-edit-action-run-batch",
+        (760, 216, 1462, 742),
+    ),
     "screenshot-deployment-action-publish-community.jpg": (
         "pipeline-edit-action-publish-community",
         (760, 264, 1462, 703),

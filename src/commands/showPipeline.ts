@@ -457,7 +457,7 @@ export function registerShowPipeline(commands: Commands) {
                 });
           showCommitReminder(data.prNumber, msg);
         }
-        // Lazy-load the schedulable classes and communities of the deployment
+        // Lazy-load the schedulable classes, batchable classes and communities of the deployment
         // action editor, which the Pipeline Settings panel also opens
         else if (await handleDeploymentActionPickerMessage(panel, type, data)) {
           // Message handled by the shared deployment action pickers

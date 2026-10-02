@@ -159,6 +159,12 @@ Always use modern `sf` CLI format: `sf hardis:category:action [options]`. Never 
 ### Formatting
 **Never run Prettier on LWC `.html` templates or on `CHANGELOG.md`.** MegaLinter has HTML linting disabled, so Prettier is not the formatter of record for these files - running it reformats the entire file and turns a 20-line change into a 600-line diff. Edit them by hand.
 
+### Method order
+
+- Order the methods of a class, and the functions of a module, by visibility first: public (exported), then protected, then private (not exported).
+- Inside each visibility group, follow the order they are called: a caller comes before what it calls, and steps of a flow appear in the order they run.
+- This applies to new code and to methods you add to an existing file. Do not reorder a whole existing file in an unrelated change.
+
 ## Dependencies & Integration Points
 
 ### Dependency policy

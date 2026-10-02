@@ -19,6 +19,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     if (val && wasViewMode) {
       // Switched into edit mode - trigger schedulable class loading if needed
       this._requestSchedulableClassesIfNeeded(this.displayedAction?.type);
+      this._requestBatchableClassesIfNeeded(this.displayedAction?.type);
       this._requestCommunitiesIfNeeded(this.displayedAction?.type);
     }
   }
@@ -47,6 +48,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   // Major branch names of the pipeline, used to restrict an action to some target orgs
   @api majorBranches = [];
   _storedSchedulableClasses = null;
+  _storedBatchableClasses = null;
   _storedCommunities = null;
 
   @api
@@ -57,6 +59,16 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   }
   get schedulableClasses() {
     return this._storedSchedulableClasses || [];
+  }
+
+  @api
+  set batchableClasses(val) {
+    if (Array.isArray(val) && val.length > 0) {
+      this._storedBatchableClasses = val;
+    }
+  }
+  get batchableClasses() {
+    return this._storedBatchableClasses || [];
   }
 
   @api
@@ -72,6 +84,9 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   @api schedulableClassesLoading = false;
   // Schedulable classes found in the project sources and not in the default org
   @api projectOnlySchedulableClasses = [];
+  @api batchableClassesLoading = false;
+  // Batchable classes found in the project sources and not in the default org
+  @api projectOnlyBatchableClasses = [];
   @api communitiesLoading = false;
   @track editedAction = {};
   @track validationError = "";
@@ -88,6 +103,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   // branch can be picked. Null means "derive it from the action".
   @track targetBranchesModeOverride = null;
   _schedulableClassesRequested = false;
+  _batchableClassesRequested = false;
   _communitiesRequested = false;
 
   @api
@@ -106,6 +122,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       { label: this.t("dataType"), value: "data" },
       { label: this.t("apexType"), value: "apex" },
       { label: this.t("scheduleBatchType"), value: "schedule-batch" },
+      { label: this.t("runBatchType"), value: "run-batch" },
       { label: this.t("publishCommunityType"), value: "publish-community" },
       {
         label: this.t("removePackageXmlItemsType"),
@@ -166,6 +183,11 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       },
       "schedule-batch": {
         when: ["post-deploy"],
+        context: ["process-deployment-only"],
+      },
+      "run-batch": {
+        // Unlike a scheduled job, a batch can prepare the org before the metadata deployment
+        when: ["pre-deploy", "post-deploy"],
         context: ["process-deployment-only"],
       },
       "publish-community": {
@@ -306,9 +328,9 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
 
   // A class merged in git and not deployed to the default org yet can still be
   // scheduled: it is listed with a label saying where it was found
-  _schedulableClassOption(className) {
-    const projectOnly = Array.isArray(this.projectOnlySchedulableClasses)
-      ? this.projectOnlySchedulableClasses
+  _apexClassOption(className, projectOnlyClasses) {
+    const projectOnly = Array.isArray(projectOnlyClasses)
+      ? projectOnlyClasses
       : [];
     return {
       label: projectOnly.includes(className)
@@ -318,18 +340,18 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     };
   }
 
-  get schedulableClassOptions() {
+  // Options of an Apex class picker fed by the default org and the project:
+  // the schedulable classes of a "schedule-batch" action, the batchable
+  // classes of a "run-batch" one
+  _apexClassOptions(source) {
     const selectedClassName = this.displayedAction?.parameters?.className;
     if (this.isViewMode) {
       return selectedClassName
         ? [{ label: selectedClassName, value: selectedClassName }]
         : [];
     }
-    if (this.schedulableClassesLoading) {
-      const loadingOption = {
-        label: this.t("loadingSchedulableClasses"),
-        value: "",
-      };
+    if (source.loading) {
+      const loadingOption = { label: source.loadingLabel, value: "" };
       return selectedClassName
         ? [
             { label: selectedClassName, value: selectedClassName },
@@ -337,12 +359,13 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
           ]
         : [loadingOption];
     }
-    const classes = Array.isArray(this.schedulableClasses)
-      ? this.schedulableClasses
-      : [];
-    if (this._schedulableClassesRequested && classes.length === 0) {
-      return [{ label: this.t("noSchedulableClassFound"), value: "" }];
+    const classes = Array.isArray(source.classes) ? source.classes : [];
+    if (source.requested && classes.length === 0) {
+      return [{ label: source.emptyLabel, value: "" }];
     }
+    const options = classes.map((item) =>
+      this._apexClassOption(item, source.projectOnlyClasses),
+    );
     // If a value is selected but not in the available options, add it with a special label
     if (
       selectedClassName &&
@@ -353,10 +376,32 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
           label: this.t("notVisibleFromOrg", { value: selectedClassName }),
           value: selectedClassName,
         },
-        ...classes.map((item) => this._schedulableClassOption(item)),
+        ...options,
       ];
     }
-    return classes.map((item) => this._schedulableClassOption(item));
+    return options;
+  }
+
+  get schedulableClassOptions() {
+    return this._apexClassOptions({
+      classes: this.schedulableClasses,
+      projectOnlyClasses: this.projectOnlySchedulableClasses,
+      loading: this.schedulableClassesLoading,
+      requested: this._schedulableClassesRequested,
+      loadingLabel: this.t("loadingSchedulableClasses"),
+      emptyLabel: this.t("noSchedulableClassFound"),
+    });
+  }
+
+  get batchableClassOptions() {
+    return this._apexClassOptions({
+      classes: this.batchableClasses,
+      projectOnlyClasses: this.projectOnlyBatchableClasses,
+      loading: this.batchableClassesLoading,
+      requested: this._batchableClassesRequested,
+      loadingLabel: this.t("loadingBatchableClasses"),
+      emptyLabel: this.t("noBatchableClassFound"),
+    });
   }
 
   get communityOptions() {
@@ -421,6 +466,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       }
     }
     this._requestSchedulableClassesIfNeeded(this.displayedAction?.type);
+    this._requestBatchableClassesIfNeeded(this.displayedAction?.type);
     this._requestCommunitiesIfNeeded(this.displayedAction?.type);
     this._updateWhenAndContextOptions(this.displayedAction?.type || "command");
   }
@@ -495,6 +541,158 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   get showScheduleBatchJobNameField() {
     const type = this.displayedAction?.type;
     return type === "schedule-batch";
+  }
+
+  // --- Run Batch ---------------------------------------------------------------
+
+  get showRunBatchFields() {
+    const type = this.displayedAction?.type;
+    return type === "run-batch";
+  }
+
+  // The timeout and the tolerance to batch errors only mean something when the
+  // deployment waits for the batch
+  get showRunBatchWaitFields() {
+    return this.showRunBatchFields && this.runBatchRunMode === "wait";
+  }
+
+  get runBatchRunModeOptions() {
+    return [
+      { label: this.t("runBatchRunModeWait"), value: "wait" },
+      { label: this.t("runBatchRunModeNoWait"), value: "no-wait" },
+    ];
+  }
+
+  // The CLI waits for the batch when no run mode is stored
+  get runBatchRunMode() {
+    return this.displayedAction?.parameters?.runMode === "no-wait"
+      ? "no-wait"
+      : "wait";
+  }
+
+  get runBatchBatchSize() {
+    return this._numberParameterAsText("batchSize");
+  }
+
+  get runBatchWaitTimeoutMinutes() {
+    return this._numberParameterAsText("waitTimeoutMinutes");
+  }
+
+  get runBatchSuccessEvenIfBatchErrors() {
+    const value = this.displayedAction?.parameters?.successEvenIfBatchErrors;
+    return value === true || String(value) === "true";
+  }
+
+  // A pre-deployment batch runs before the metadata reaches the target org, so
+  // a class that only exists in the project cannot be there yet
+  get showRunBatchPreDeployClassWarning() {
+    if (
+      !this.showRunBatchFields ||
+      this.displayedAction?.when !== "pre-deploy"
+    ) {
+      return false;
+    }
+    const className = this.displayedAction?.parameters?.className;
+    const projectOnly = Array.isArray(this.projectOnlyBatchableClasses)
+      ? this.projectOnlyBatchableClasses
+      : [];
+    return !!className && projectOnly.includes(className);
+  }
+
+  _numberParameterAsText(name) {
+    const value = this.displayedAction?.parameters?.[name];
+    return value === undefined || value === null ? "" : String(value);
+  }
+
+  handleRunBatchRunModeChange(event) {
+    const runMode = event.detail.value;
+    const parameters = { ...(this.editedAction.parameters || {}), runMode };
+    if (runMode === "no-wait") {
+      delete parameters.waitTimeoutMinutes;
+      delete parameters.successEvenIfBatchErrors;
+    }
+    this.validationError = "";
+    this.editedAction = { ...this.editedAction, parameters };
+  }
+
+  // Numbers are stored as numbers, and an emptied optional field is not stored
+  handleRunBatchNumberChange(event) {
+    const paramName = event.target.dataset.field.substring(11);
+    const rawValue = event.target.value;
+    const parameters = { ...(this.editedAction.parameters || {}) };
+    if (rawValue === "" || rawValue === null || rawValue === undefined) {
+      delete parameters[paramName];
+    } else {
+      const numberValue = Number(rawValue);
+      parameters[paramName] = Number.isFinite(numberValue)
+        ? numberValue
+        : rawValue;
+    }
+    this.validationError = "";
+    this.editedAction = { ...this.editedAction, parameters };
+  }
+
+  handleRunBatchSuccessEvenIfBatchErrorsChange(event) {
+    const parameters = { ...(this.editedAction.parameters || {}) };
+    if (event.target.checked) {
+      parameters.successEvenIfBatchErrors = true;
+    } else {
+      delete parameters.successEvenIfBatchErrors;
+    }
+    this.validationError = "";
+    this.editedAction = { ...this.editedAction, parameters };
+  }
+
+  // Batch size: integer from 1 to 2000. Wait timeout: positive integer.
+  _hasValidRunBatchNumbers() {
+    if (this.editedAction?.type !== "run-batch") {
+      return true;
+    }
+    const parameters = this.editedAction.parameters || {};
+    const isEmpty = (value) =>
+      value === undefined || value === null || value === "";
+    const isIntegerBetween = (value, min, max) => {
+      const numberValue = Number(value);
+      return (
+        Number.isInteger(numberValue) &&
+        numberValue >= min &&
+        numberValue <= max
+      );
+    };
+    const batchSizeValid =
+      isEmpty(parameters.batchSize) ||
+      isIntegerBetween(parameters.batchSize, 1, 2000);
+    const waitTimeoutValid =
+      parameters.runMode === "no-wait" ||
+      isEmpty(parameters.waitTimeoutMinutes) ||
+      isIntegerBetween(
+        parameters.waitTimeoutMinutes,
+        1,
+        Number.MAX_SAFE_INTEGER,
+      );
+    return batchSizeValid && waitTimeoutValid;
+  }
+
+  // What is written to the configuration file: numbers as numbers, no empty
+  // optional value, and nothing about waiting when the batch is not waited for
+  _normalizeRunBatchParameters() {
+    if (this.editedAction?.type !== "run-batch") {
+      return;
+    }
+    const parameters = { ...(this.editedAction.parameters || {}) };
+    for (const name of ["batchSize", "waitTimeoutMinutes"]) {
+      const value = parameters[name];
+      if (value === undefined || value === null || value === "") {
+        delete parameters[name];
+      } else {
+        parameters[name] = Number(value);
+      }
+    }
+    if (parameters.runMode === "no-wait") {
+      delete parameters.waitTimeoutMinutes;
+      delete parameters.successEvenIfBatchErrors;
+    }
+    this.editedAction.parameters = parameters;
   }
 
   get showCommandField() {
@@ -925,21 +1123,27 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     this.validationError = "";
     // Parameters are only reset when a custom function is on either side of the switch: the CLI
     // rejects a parameter a function does not declare, so leftovers from the previous type would
-    // make the action invalid. Switching between two built-in types keeps the previous behavior,
-    // which leaves the old parameters in place.
+    // make the action invalid. Run Batch shares className with Schedule Batch and takes another
+    // kind of class, so entering or leaving it also starts from clean parameters, as the CLI does.
+    // Switching between two other built-in types keeps the previous behavior, which leaves the
+    // old parameters in place.
     const leavesCustomFunction = !!this.customFunctions.find(
       (fn) => fn.id === previousType,
     );
     const entersCustomFunction = !!this.customFunctions.find(
       (fn) => fn.id === newType,
     );
-    if (leavesCustomFunction || entersCustomFunction) {
+    const touchesRunBatch =
+      previousType !== newType &&
+      (previousType === "run-batch" || newType === "run-batch");
+    if (leavesCustomFunction || entersCustomFunction || touchesRunBatch) {
       this.editedAction.parameters =
         this._buildInitialParametersForType(newType);
     }
     this._applyCustomFunctionDefaults(newType);
     this._updateWhenAndContextOptions(newType);
     this._requestSchedulableClassesIfNeeded(newType);
+    this._requestBatchableClassesIfNeeded(newType);
     this._requestCommunitiesIfNeeded(newType);
     // Force re-render to show/hide fields by reassigning the tracked property
     this.editedAction = { ...this.editedAction };
@@ -1028,6 +1232,22 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     this.dispatchEvent(new CustomEvent("loadcommunities"));
   }
 
+  _requestBatchableClassesIfNeeded(type) {
+    if (type !== "run-batch") {
+      return;
+    }
+    if (this.isViewMode) {
+      return;
+    }
+    if (this._batchableClassesRequested) {
+      return;
+    }
+    // Asked again each time the editor opens, like the schedulable classes: the
+    // list and its "not in the default org yet" labels must be the current ones
+    this._batchableClassesRequested = true;
+    this.dispatchEvent(new CustomEvent("loadbatchableclasses"));
+  }
+
   _generateActionId() {
     if (
       typeof crypto !== "undefined" &&
@@ -1068,7 +1288,13 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       return;
     }
 
+    if (!this._hasValidRunBatchNumbers()) {
+      this.validationError = this.t("runBatchInvalidNumbers");
+      return;
+    }
+
     this.validationError = "";
+    this._normalizeRunBatchParameters();
     // A new action is created with an empty id: give it one here, because the id
     // generated while writing it to the configuration file never comes back to
     // this panel, and without it every later edit of the action would be saved
@@ -1173,6 +1399,8 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       requiredFields.push("parameters.packageXmlItems");
     } else if (currentType === "schedule-batch") {
       requiredFields.push("parameters.className", "parameters.cronExpression");
+    } else if (currentType === "run-batch") {
+      requiredFields.push("parameters.className");
     } else {
       // Custom function: the contract it declares says which inputs are required
       const customFunction = this.customFunctions.find(

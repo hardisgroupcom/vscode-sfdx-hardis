@@ -408,6 +408,115 @@
               </div>
             </template>
 
+            <template if:true={showRunBatchFields}>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <label class="slds-form-element__label hardis-label-inline">
+                    <span>
+                      <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
+                      {i18n.scheduleBatchClassNameLabel}
+                    </span>
+                    <s-multiline-helptext content={i18n.runBatchClassNameHelp} class="slds-icon-text-info"></s-multiline-helptext>
+                  </label>
+                  <lightning-combobox
+                    label={i18n.scheduleBatchClassNameLabel}
+                    value={displayedAction.parameters.className}
+                    options={batchableClassOptions}
+                    data-field="parameters.className"
+                    onchange={handleFieldChange}
+                    required={isEditMode}
+                    disabled={isViewMode}
+                    variant="label-hidden"
+                    placeholder={i18n.scheduleBatchSelectClassPlaceholder}
+                  ></lightning-combobox>
+                  <template if:true={showRunBatchPreDeployClassWarning}>
+                    <div class="hardis-note warning slds-m-top_x-small" role="alert">
+                      <span>{i18n.runBatchPreDeployClassWarning}</span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <label class="slds-form-element__label hardis-label-inline">
+                    <span>{i18n.runBatchRunModeLabel}</span>
+                    <s-multiline-helptext content={i18n.runBatchRunModeHelp} class="slds-icon-text-info"></s-multiline-helptext>
+                  </label>
+                  <lightning-combobox
+                    label={i18n.runBatchRunModeLabel}
+                    value={runBatchRunMode}
+                    options={runBatchRunModeOptions}
+                    data-field="parameters.runMode"
+                    onchange={handleRunBatchRunModeChange}
+                    disabled={isViewMode}
+                    variant="label-hidden"
+                  ></lightning-combobox>
+                </div>
+              </div>
+
+              <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <label class="slds-form-element__label hardis-label-inline">
+                    <span>{i18n.runBatchBatchSizeLabel}</span>
+                    <s-multiline-helptext content={i18n.runBatchBatchSizeHelp} class="slds-icon-text-info"></s-multiline-helptext>
+                  </label>
+                  <lightning-input
+                    type="number"
+                    min="1"
+                    max="2000"
+                    step="1"
+                    label={i18n.runBatchBatchSizeLabel}
+                    value={runBatchBatchSize}
+                    data-field="parameters.batchSize"
+                    onchange={handleRunBatchNumberChange}
+                    disabled={isViewMode}
+                    variant="label-hidden"
+                    placeholder="200"
+                  ></lightning-input>
+                </div>
+              </div>
+
+              <template if:true={showRunBatchWaitFields}>
+                <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
+                  <div class="slds-form-element">
+                    <label class="slds-form-element__label hardis-label-inline">
+                      <span>{i18n.runBatchWaitTimeoutLabel}</span>
+                      <s-multiline-helptext content={i18n.runBatchWaitTimeoutHelp} class="slds-icon-text-info"></s-multiline-helptext>
+                    </label>
+                    <lightning-input
+                      type="number"
+                      min="1"
+                      step="1"
+                      label={i18n.runBatchWaitTimeoutLabel}
+                      value={runBatchWaitTimeoutMinutes}
+                      data-field="parameters.waitTimeoutMinutes"
+                      onchange={handleRunBatchNumberChange}
+                      disabled={isViewMode}
+                      variant="label-hidden"
+                      placeholder="60"
+                    ></lightning-input>
+                  </div>
+                </div>
+
+                <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                  <div class="slds-form-element">
+                    <div style="display:flex;align-items:center;gap:0.25rem;">
+                      <lightning-input
+                        type="checkbox"
+                        label={i18n.runBatchSuccessEvenIfBatchErrorsLabel}
+                        checked={runBatchSuccessEvenIfBatchErrors}
+                        data-field="parameters.successEvenIfBatchErrors"
+                        onchange={handleRunBatchSuccessEvenIfBatchErrorsChange}
+                        disabled={isViewMode}
+                      ></lightning-input>
+                      <s-multiline-helptext content={i18n.runBatchSuccessEvenIfBatchErrorsHelp} class="slds-icon-text-info"></s-multiline-helptext>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </template>
+
             <template if:true={showInstructionsField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">

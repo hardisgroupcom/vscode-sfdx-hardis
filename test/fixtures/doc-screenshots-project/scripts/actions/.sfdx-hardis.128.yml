@@ -96,3 +96,15 @@ commandsPostDeploy:
       webhookToken: SLACK_WEBHOOK_TOKEN
     command: ""
     context: process-deployment-only
+  # Kept last: the editor screenshots target the actions by row position
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-128a00000011
+    label: Recalculate the account hierarchy
+    type: run-batch
+    when: post-deploy
+    parameters:
+      className: AccountHierarchySyncBatch
+      runMode: wait
+      batchSize: 200
+      waitTimeoutMinutes: 60
+    command: ""
+    context: process-deployment-only

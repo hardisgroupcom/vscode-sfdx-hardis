@@ -518,12 +518,16 @@
           schedulable-classes={projectSchedulableClasses}
           project-only-schedulable-classes={projectOnlySchedulableClasses}
           schedulable-classes-loading={schedulableClassesLoading}
+          batchable-classes={projectBatchableClasses}
+          project-only-batchable-classes={projectOnlyBatchableClasses}
+          batchable-classes-loading={batchableClassesLoading}
           communities={projectCommunities}
           communities-loading={communitiesLoading}
           major-branches={availableBranches}
           parent-translations={translations}
           onclose={handleCloseDeploymentActionModal}
           onloadschedulableclasses={handleLoadSchedulableClasses}
+          onloadbatchableclasses={handleLoadBatchableClasses}
           onloadcommunities={handleLoadCommunities}
           onsave={handleSaveDeploymentActionItem}
       ></s-deployment-action>

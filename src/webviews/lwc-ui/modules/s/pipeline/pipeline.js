@@ -53,6 +53,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track projectOnlySchedulableClasses = [];
   @track schedulableClassesLoading = false;
   @track schedulableClassesRequestId = null;
+  @track projectBatchableClasses = [];
+  @track projectOnlyBatchableClasses = [];
+  @track batchableClassesLoading = false;
+  @track batchableClassesRequestId = null;
   @track projectCommunities = [];
   @track communitiesLoading = false;
   @track communitiesRequestId = null;
@@ -1882,6 +1886,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       case "returnSchedulableClasses":
         this.handleReturnSchedulableClasses(data);
         break;
+      case "returnBatchableClasses":
+        this.handleReturnBatchableClasses(data);
+        break;
       case "returnCommunities":
         this.handleReturnCommunities(data);
         break;
@@ -1921,6 +1928,33 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       ? data.projectOnlyValues
       : [];
     this.schedulableClassesLoading = false;
+  }
+
+  handleLoadBatchableClasses() {
+    this.batchableClassesLoading = true;
+    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    this.batchableClassesRequestId = requestId;
+    window.sendMessageToVSCode({
+      type: "loadBatchableClasses",
+      data: { requestId },
+    });
+  }
+
+  handleReturnBatchableClasses(data) {
+    if (
+      this.batchableClassesRequestId &&
+      data?.requestId &&
+      data.requestId !== this.batchableClassesRequestId
+    ) {
+      return;
+    }
+    this.projectBatchableClasses = Array.isArray(data?.values)
+      ? data.values
+      : [];
+    this.projectOnlyBatchableClasses = Array.isArray(data?.projectOnlyValues)
+      ? data.projectOnlyValues
+      : [];
+    this.batchableClassesLoading = false;
   }
 
   handleLoadCommunities() {

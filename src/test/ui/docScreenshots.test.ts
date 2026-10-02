@@ -1220,8 +1220,14 @@ suite("Documentation screenshots", function () {
   // (test/fixtures/doc-screenshots-project/scripts/actions/.sfdx-hardis.128.yml).
   // Feeds the docs images screenshot-deployment-action-<type>.jpg of
   // salesforce-devops-work-on-user-story-deployment-actions.md.
+  // "pipeline-action-editors" takes them all. A single editor is taken by its
+  // own name (ex: "pipeline-edit-action-run-batch"), which is much shorter.
   test("pipeline: deployment action editors", async function () {
-    if (!shouldTake("pipeline-action-editors")) {
+    const requestedEditors = ONLY.filter((name) =>
+      name.startsWith("pipeline-edit-action-"),
+    );
+    const takeAllEditors = shouldTake("pipeline-action-editors");
+    if (!takeAllEditors && requestedEditors.length === 0) {
       this.skip();
     }
     // Rows of the Deployment Actions tab of the PR modal, in display order
@@ -1250,6 +1256,8 @@ suite("Documentation screenshots", function () {
       // A custom function type: the form below the common fields is built from
       // the inputs the function declares, so the modal is taller again
       { name: "pipeline-edit-action-custom-function", row: 9, editY: 796 },
+      // Appended last in the fixture, so that the rows above keep their position
+      { name: "pipeline-edit-action-run-batch", row: 10, editY: 714 },
     ];
     // A universe whose Pull Request declares its actions in another order says
     // so, because these shots are taken by row position. The names are the shot
@@ -1279,7 +1287,16 @@ suite("Documentation screenshots", function () {
     await vscode.commands.executeCommand("workbench.action.zoomOut");
     await sleep(800);
     try {
-      for (const shot of ACTION_EDITOR_SHOTS) {
+      const editorShots = takeAllEditors
+        ? ACTION_EDITOR_SHOTS
+        : ACTION_EDITOR_SHOTS.filter((shot) =>
+            requestedEditors.includes(shot.name),
+          );
+      for (const shot of editorShots) {
+        if (!takeAllEditors) {
+          // Recorded as the gate of this image, so it can be asked for alone again
+          currentGate = shot.name;
+        }
         // Reload the panel for each editor, straight on the Deployment Actions
         // tab of the pull request modal (deep link of hardis:work:save):
         // closing all editors resets every modal state, which is more robust

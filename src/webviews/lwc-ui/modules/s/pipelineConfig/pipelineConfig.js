@@ -65,11 +65,15 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
   @track projectSchedulableClasses = [];
   @track projectOnlySchedulableClasses = [];
   @track schedulableClassesLoading = false;
+  @track projectBatchableClasses = [];
+  @track projectOnlyBatchableClasses = [];
+  @track batchableClassesLoading = false;
   @track projectCommunities = [];
   @track communitiesLoading = false;
   _deploymentActionKey = null; // commandsPreDeploy | commandsPostDeploy
   _deploymentActionEditIndex = -1;
   _schedulableClassesRequestId = null;
+  _batchableClassesRequestId = null;
   _communitiesRequestId = null;
   _apexTestsFieldOriginal = [];
   initData = {};
@@ -1008,6 +1012,33 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
     this.schedulableClassesLoading = false;
   }
 
+  handleLoadBatchableClasses() {
+    this.batchableClassesLoading = true;
+    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    this._batchableClassesRequestId = requestId;
+    window.sendMessageToVSCode({
+      type: "loadBatchableClasses",
+      data: { requestId },
+    });
+  }
+
+  handleReturnBatchableClasses(data) {
+    if (
+      this._batchableClassesRequestId &&
+      data?.requestId &&
+      data.requestId !== this._batchableClassesRequestId
+    ) {
+      return;
+    }
+    this.projectBatchableClasses = Array.isArray(data?.values)
+      ? data.values
+      : [];
+    this.projectOnlyBatchableClasses = Array.isArray(data?.projectOnlyValues)
+      ? data.projectOnlyValues
+      : [];
+    this.batchableClassesLoading = false;
+  }
+
   handleLoadCommunities() {
     this.communitiesLoading = true;
     const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -1477,6 +1508,8 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
       this.initialize(data);
     } else if (type === "returnSchedulableClasses") {
       this.handleReturnSchedulableClasses(data);
+    } else if (type === "returnBatchableClasses") {
+      this.handleReturnBatchableClasses(data);
     } else if (type === "returnCommunities") {
       this.handleReturnCommunities(data);
     } else if (type === "customFunctionsRefreshed") {
