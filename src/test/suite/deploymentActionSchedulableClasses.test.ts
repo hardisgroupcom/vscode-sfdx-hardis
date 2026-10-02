@@ -1,0 +1,75 @@
+import * as assert from "assert";
+import { mergeSchedulableClasses } from "../../utils/pipeline/deploymentActionPickers";
+import { LOCALES, loadLocale, readModuleFile } from "./lwcSourceUtils";
+
+/**
+ * The Apex class list of a "schedule-batch" deployment action is read from the
+ * default org and from the project sources.
+ *
+ * A class merged in git reaches the integration org through the pipeline and
+ * never the developer's own org, so a list read from the org alone left it
+ * impossible to pick. These tests verify that such a class is listed, that it
+ * is reported as found in the project only, and that the editor says so.
+ */
+
+suite("Deployment action schedulable classes", () => {
+  test("a class found only in the project is listed and reported", () => {
+    const merged = mergeSchedulableClasses(
+      ["NightlyCleanup"],
+      ["CrewCapacityBatch", "NightlyCleanup"],
+    );
+    assert.deepStrictEqual(merged.values, [
+      "CrewCapacityBatch",
+      "NightlyCleanup",
+    ]);
+    assert.deepStrictEqual(merged.projectOnlyValues, ["CrewCapacityBatch"]);
+  });
+
+  test("a class of the org is never reported as project only", () => {
+    // Apex class names are case-insensitive: the file and the org can differ
+    const merged = mergeSchedulableClasses(
+      ["crewcapacitybatch"],
+      ["CrewCapacityBatch"],
+    );
+    assert.deepStrictEqual(merged.values, ["crewcapacitybatch"]);
+    assert.deepStrictEqual(merged.projectOnlyValues, []);
+  });
+
+  test("the project classes are listed when the org returns nothing", () => {
+    const merged = mergeSchedulableClasses([], ["CrewCapacityBatch"]);
+    assert.deepStrictEqual(merged.values, ["CrewCapacityBatch"]);
+    assert.deepStrictEqual(merged.projectOnlyValues, ["CrewCapacityBatch"]);
+  });
+
+  test("the editor labels the classes found only in the project", () => {
+    const js = readModuleFile("deploymentAction", "deploymentAction.js");
+    assert.match(js, /@api projectOnlySchedulableClasses/);
+    assert.match(js, /this\.t\("inProjectNotInOrg", \{ value: className \}\)/);
+  });
+
+  test("both panels hosting the editor pass it the project only classes", () => {
+    for (const panel of ["pipeline", "pipelineConfig"]) {
+      assert.match(
+        readModuleFile(panel, `${panel}.html`),
+        /project-only-schedulable-classes=\{projectOnlySchedulableClasses\}/,
+        `${panel} must pass the project only classes to the editor`,
+      );
+      assert.match(
+        readModuleFile(panel, `${panel}.js`),
+        /projectOnlySchedulableClasses = Array\.isArray\(data\?\.projectOnlyValues\)/,
+        `${panel} must read the project only classes from the response`,
+      );
+    }
+  });
+
+  test("the label exists in every locale and keeps its placeholder", () => {
+    for (const locale of LOCALES) {
+      const label = loadLocale(locale).inProjectNotInOrg;
+      assert.ok(label, `inProjectNotInOrg is missing in ${locale}`);
+      assert.ok(
+        label.includes("{{value}}"),
+        `inProjectNotInOrg must keep {{value}} in ${locale}`,
+      );
+    }
+  });
+});

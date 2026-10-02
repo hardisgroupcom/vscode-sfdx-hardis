@@ -29,21 +29,21 @@
         {
           "provider": "GENERIC",
           "id": "US-057",
-          "url": "https://hardisgroupcom.github.io/sfdx-hardis-training/BACKLOG/US-057/",
+          "url": "https://sfdx-hardis-training.github.io/BACKLOG/US-057/",
           "subject": "Park an installation that is waiting for parts",
           "foundOnServer": true
         },
         {
           "provider": "GENERIC",
           "id": "US-059",
-          "url": "https://hardisgroupcom.github.io/sfdx-hardis-training/BACKLOG/US-059/",
+          "url": "https://sfdx-hardis-training.github.io/BACKLOG/US-059/",
           "subject": "Record the supplier of a panel batch",
           "foundOnServer": true
         },
         {
           "provider": "GENERIC",
           "id": "US-061",
-          "url": "https://hardisgroupcom.github.io/sfdx-hardis-training/BACKLOG/US-061/",
+          "url": "https://sfdx-hardis-training.github.io/BACKLOG/US-061/",
           "subject": "Record the gate code of a site",
           "foundOnServer": true
         }
@@ -72,7 +72,7 @@
           {
             "provider": "GENERIC",
             "id": "US-061",
-            "url": "https://hardisgroupcom.github.io/sfdx-hardis-training/BACKLOG/US-061/",
+            "url": "https://sfdx-hardis-training.github.io/BACKLOG/US-061/",
             "subject": "Record the gate code of a site",
             "foundOnServer": true
           }
@@ -98,7 +98,7 @@
           {
             "provider": "GENERIC",
             "id": "US-060",
-            "url": "https://hardisgroupcom.github.io/sfdx-hardis-training/BACKLOG/US-060/",
+            "url": "https://sfdx-hardis-training.github.io/BACKLOG/US-060/",
             "subject": "Flag an installation that needs scaffolding",
             "foundOnServer": true
           }
@@ -124,7 +124,7 @@
           {
             "provider": "GENERIC",
             "id": "US-059",
-            "url": "https://hardisgroupcom.github.io/sfdx-hardis-training/BACKLOG/US-059/",
+            "url": "https://sfdx-hardis-training.github.io/BACKLOG/US-059/",
             "subject": "Record the supplier of a panel batch",
             "foundOnServer": true
           }
@@ -150,7 +150,7 @@
           {
             "provider": "GENERIC",
             "id": "US-057",
-            "url": "https://hardisgroupcom.github.io/sfdx-hardis-training/BACKLOG/US-057/",
+            "url": "https://sfdx-hardis-training.github.io/BACKLOG/US-057/",
             "subject": "Park an installation that is waiting for parts",
             "foundOnServer": true
           }
@@ -176,7 +176,7 @@
           {
             "provider": "GENERIC",
             "id": "US-058",
-            "url": "https://hardisgroupcom.github.io/sfdx-hardis-training/BACKLOG/US-058/",
+            "url": "https://sfdx-hardis-training.github.io/BACKLOG/US-058/",
             "subject": "Record the warranty term on a panel batch",
             "foundOnServer": true
           }

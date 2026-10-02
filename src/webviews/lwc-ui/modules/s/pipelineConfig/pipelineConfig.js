@@ -63,6 +63,7 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
   @track customFunctions = [];
   @track projectSfdmuWorkspaces = [];
   @track projectSchedulableClasses = [];
+  @track projectOnlySchedulableClasses = [];
   @track schedulableClassesLoading = false;
   @track projectCommunities = [];
   @track communitiesLoading = false;
@@ -1000,6 +1001,9 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
     }
     this.projectSchedulableClasses = Array.isArray(data?.values)
       ? data.values
+      : [];
+    this.projectOnlySchedulableClasses = Array.isArray(data?.projectOnlyValues)
+      ? data.projectOnlyValues
       : [];
     this.schedulableClassesLoading = false;
   }

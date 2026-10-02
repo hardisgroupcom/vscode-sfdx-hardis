@@ -1,8 +1,10 @@
 import { execSfdxJson } from "../../utils";
 import { Logger } from "../../logger";
+import { listProjectSchedulableClasses } from "../prePostCommandsUtils";
 
 /**
  * Lists proposed in the deployment action editor that are read from the default org.
+ * The schedulable classes are also read from the project sources.
  * Shared by the DevOps Pipeline panel and the Pipeline Settings panel, which both
  * open the same deployment action editor.
  */
@@ -86,6 +88,41 @@ export async function listSchedulableClassesFromDefaultOrg(): Promise<
   );
 }
 
+export interface PickerValues {
+  values: string[];
+  // Values found in the project sources and not in the default org
+  projectOnlyValues?: string[];
+}
+
+/**
+ * Merges the schedulable classes of the default org with those of the project.
+ * A class merged in git and not deployed to the default org yet is only in the
+ * project: it can still be scheduled, as the deployment brings it to the target
+ * org before the action runs, so it is listed and reported as project only.
+ */
+export function mergeSchedulableClasses(
+  orgClasses: string[],
+  projectClasses: string[],
+): PickerValues {
+  const orgKeys = new Set(orgClasses.map((name) => name.toLowerCase()));
+  const projectOnlyValues = projectClasses.filter(
+    (name) => !orgKeys.has(name.toLowerCase()),
+  );
+  const values = [...orgClasses, ...projectOnlyValues].sort((a, b) =>
+    a.localeCompare(b),
+  );
+  return { values, projectOnlyValues };
+}
+
+export async function listSchedulableClasses(): Promise<PickerValues> {
+  // One source failing must not hide the other
+  const [orgClasses, projectClasses] = await Promise.all([
+    listSchedulableClassesFromDefaultOrg().catch(() => [] as string[]),
+    listProjectSchedulableClasses().catch(() => [] as string[]),
+  ]);
+  return mergeSchedulableClasses(orgClasses, projectClasses);
+}
+
 export async function listCommunitiesFromDefaultOrg(): Promise<string[]> {
   const orgKey = await getDefaultOrgUsername();
   const now = Date.now();
@@ -110,15 +147,15 @@ export async function handleDeploymentActionPickerMessage(
 ): Promise<boolean> {
   const pickers: Record<
     string,
-    { responseType: string; list: () => Promise<string[]> }
+    { responseType: string; list: () => Promise<PickerValues> }
   > = {
     loadSchedulableClasses: {
       responseType: "returnSchedulableClasses",
-      list: listSchedulableClassesFromDefaultOrg,
+      list: listSchedulableClasses,
     },
     loadCommunities: {
       responseType: "returnCommunities",
-      list: listCommunitiesFromDefaultOrg,
+      list: async () => ({ values: await listCommunitiesFromDefaultOrg() }),
     },
   };
   const picker = pickers[type];
@@ -126,9 +163,9 @@ export async function handleDeploymentActionPickerMessage(
     return false;
   }
   const requestId = data?.requestId || null;
-  let values: string[] = [];
+  let result: PickerValues = { values: [] };
   try {
-    values = await picker.list();
+    result = await picker.list();
   } catch (error: any) {
     Logger.log(
       `Error loading ${type} for the deployment action editor: ${error?.message || error}`,
@@ -136,7 +173,7 @@ export async function handleDeploymentActionPickerMessage(
   }
   panel.sendMessage({
     type: picker.responseType,
-    data: { requestId, values },
+    data: { requestId, ...result },
   });
   return true;
 }
