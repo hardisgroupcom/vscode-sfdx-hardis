@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [8.9.1] 2026-10-02
+
 - DevOps Pipeline with [promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta): a User Story carried by a merged promotion is no longer counted in the branch it left once the branch it reached has gone live, as merged promotions are now read from the git provider ([sfdx-hardis#2260](https://github.com/hardisgroupcom/sfdx-hardis/issues/2260)).
 - Metadata Retriever: the filter buttons stay aligned when the panel is narrow. They used to stack one per line, touching each other, while the **Full metadata** and **Check local files** toggles stayed pinned to the right of that stack. The toggles now move onto their own line under the buttons, and a button label is never squeezed.
 
