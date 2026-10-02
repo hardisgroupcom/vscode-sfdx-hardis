@@ -40,6 +40,7 @@ async function fetchAndCacheOrgNames(
   now: number,
   command: string,
   filter?: (record: any) => boolean,
+  nameOf: (record: any) => string = (record) => String(record?.Name || ""),
 ): Promise<string[] | null> {
   const result = await execSfdxJson(command, {
     fail: false,
@@ -52,7 +53,7 @@ async function fetchAndCacheOrgNames(
   const records = result.result.records;
   const filtered = filter ? records.filter(filter) : records;
   const values = filtered
-    .map((record: any) => String(record?.Name || "").trim())
+    .map((record: any) => nameOf(record).trim())
     .filter((v: string) => v.length > 0);
   const uniqueSorted: string[] = [...new Set<string>(values)].sort(
     (a: string, b: string) => a.localeCompare(b),
@@ -66,6 +67,33 @@ async function fetchAndCacheOrgNames(
   return uniqueSorted;
 }
 
+// What the Tooling API returns as the body of a managed class that is not global
+const HIDDEN_APEX_BODY = "(hidden)";
+
+/**
+ * A managed package shows the signature of its global classes and hides every
+ * other one, so a body that is readable and mentions Schedulable is a class
+ * that can be scheduled from here, whichever package it comes from.
+ */
+export function isSchedulableApexClass(record: any): boolean {
+  const body = String(record?.Body || "");
+  return (
+    body !== HIDDEN_APEX_BODY && body.toLowerCase().includes("schedulable")
+  );
+}
+
+/**
+ * The name sfdx-hardis schedules the class under: a class of a managed package
+ * carries its namespace, a class of the org or of the project does not.
+ */
+export function schedulableApexClassName(record: any): string {
+  const name = String(record?.Name || "");
+  const namespace = String(record?.NamespacePrefix || "");
+  return namespace && record?.ManageableState !== "unmanaged"
+    ? `${namespace}.${name}`
+    : name;
+}
+
 // null when the org could not be read
 export async function listSchedulableClassesFromDefaultOrg(): Promise<
   string[] | null
@@ -77,17 +105,15 @@ export async function listSchedulableClassesFromDefaultOrg(): Promise<
     return cached.values;
   }
   const query =
-    "SELECT Name, Body FROM ApexClass WHERE ManageableState = 'unmanaged' ORDER BY Name";
+    "SELECT Name, NamespacePrefix, ManageableState, Body FROM ApexClass ORDER BY Name";
   const command = `sf data query --query "${query}" --use-tooling-api --json`;
   return fetchAndCacheOrgNames(
     schedulableClassesByOrgCache,
     orgKey,
     now,
     command,
-    (record: any) =>
-      String(record?.Body || "")
-        .toLowerCase()
-        .includes("schedulable"),
+    isSchedulableApexClass,
+    schedulableApexClassName,
   );
 }
 

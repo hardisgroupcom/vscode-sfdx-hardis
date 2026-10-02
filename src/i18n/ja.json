@@ -2066,7 +2066,7 @@
   "savePublishDescription": "作業内容を保存し、変更をリモートリポジトリに公開します",
   "savePublishUserStory": "ユーザーストーリーを保存 / 公開",
   "savePublishUserStoryTooltip": "commit を実行したら、ここをクリックして Pull Request を準備します。これにより:\n- package.xml と destructiveChanges.xml が自動で更新されます\n- 公開前にメタデータがクリーンアップされます（たとえば、フロー位置の削除や、Profiles からのオブジェクトおよび項目アクセスの削除）",
-  "scheduleBatchClassNameHelp": "Schedulable を実装する Apex クラスです。一覧にはデフォルト組織のクラスとプロジェクトのクラスが表示されます。",
+  "scheduleBatchClassNameHelp": "Schedulable を実装する Apex クラスです。一覧にはデフォルト組織のクラス、インストール済みパッケージの global クラス、プロジェクトのクラスが表示されます。",
   "scheduleBatchClassNameLabel": "Apex クラス名",
   "scheduleBatchCronExpressionExample": "例: '0 0 2 * * ?' は毎日午前 2 時、'0 0 8 ? * MON' は毎週月曜日の午前 8 時を意味します",
   "scheduleBatchCronExpressionHelp": "schedule-batch アクション用の Salesforce cron 式",

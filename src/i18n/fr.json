@@ -2066,7 +2066,7 @@
   "savePublishDescription": "Sauvegarder votre travail et publier les changements vers le dépôt distant",
   "savePublishUserStory": "Sauvegarder / Publier la User Story",
   "savePublishUserStoryTooltip": "Une fois vos commit(s) effectués, cliquez ici pour préparer votre Pull Request. Cela va :\n- Mettre à jour automatiquement package.xml et destructiveChanges.xml\n- Nettoyer les métadonnées avant publication (par exemple supprimer les positions des flows ou supprimer les accès objets et champs des Profiles)",
-  "scheduleBatchClassNameHelp": "Classe Apex implémentant Schedulable. La liste affiche les classes de l'org par défaut et celles du projet.",
+  "scheduleBatchClassNameHelp": "Classe Apex implémentant Schedulable. La liste affiche les classes de l'org par défaut, les classes global de ses packages installés et les classes du projet.",
   "scheduleBatchClassNameLabel": "Nom de la classe Apex",
   "scheduleBatchCronExpressionExample": "Exemples : '0 0 2 * * ?' signifie tous les jours à 2h du matin, '0 0 8 ? * MON' signifie tous les lundis à 8h",
   "scheduleBatchCronExpressionHelp": "Expression cron Salesforce pour les actions schedule-batch",

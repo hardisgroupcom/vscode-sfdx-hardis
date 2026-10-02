@@ -1,5 +1,9 @@
 import * as assert from "assert";
-import { mergeSchedulableClasses } from "../../utils/pipeline/deploymentActionPickers";
+import {
+  isSchedulableApexClass,
+  mergeSchedulableClasses,
+  schedulableApexClassName,
+} from "../../utils/pipeline/deploymentActionPickers";
 import { LOCALES, loadLocale, readModuleFile } from "./lwcSourceUtils";
 
 /**
@@ -57,6 +61,48 @@ suite("Deployment action schedulable classes", () => {
     );
     // A list kept by the panel from an earlier opening must not stop the request
     assert.doesNotMatch(body, /schedulableClasses\.length/);
+  });
+
+  test("a global schedulable class of a managed package is listed with its namespace", () => {
+    const record = {
+      Name: "NightlyScheduler",
+      NamespacePrefix: "acme",
+      ManageableState: "installed",
+      Body: "global class NightlyScheduler implements System.Schedulable {",
+    };
+    assert.strictEqual(isSchedulableApexClass(record), true);
+    assert.strictEqual(
+      schedulableApexClassName(record),
+      "acme.NightlyScheduler",
+    );
+  });
+
+  test("a managed class that is not global is never listed", () => {
+    // Its body is hidden, and nothing outside its package can schedule it
+    assert.strictEqual(
+      isSchedulableApexClass({
+        Name: "InternalScheduler",
+        NamespacePrefix: "acme",
+        ManageableState: "installed",
+        Body: "(hidden)",
+      }),
+      false,
+    );
+  });
+
+  test("a class of the org keeps its bare name, even in a namespaced org", () => {
+    assert.strictEqual(
+      schedulableApexClassName({
+        Name: "NightlyScheduler",
+        NamespacePrefix: "acme",
+        ManageableState: "unmanaged",
+      }),
+      "NightlyScheduler",
+    );
+    assert.strictEqual(
+      schedulableApexClassName({ Name: "NightlyScheduler" }),
+      "NightlyScheduler",
+    );
   });
 
   test("the editor labels the classes found only in the project", () => {
