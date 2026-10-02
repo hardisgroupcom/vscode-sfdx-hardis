@@ -627,30 +627,12 @@ export class GitProviderAzure extends GitProvider {
   ): Promise<PullRequest[]> {
     const prResults = await mapWithConcurrency(
       allBranches,
-      async (branchName) => {
-        try {
-          return await this.listPullRequestsPaged(
-            {
-              targetRefName: `refs/heads/${branchName}`,
-              status: PullRequestStatus.Completed,
-              ...(closedSince
-                ? {
-                    minTime: closedSince,
-                    // 2 = Closed: a Pull Request that brought a commit of this window into the
-                    // branch cannot have closed before that commit existed
-                    queryTimeRangeType: 2,
-                  }
-                : {}),
-            },
-            "collectMergedPRsForCommits",
-          );
-        } catch (err) {
-          Logger.log(
-            `Error fetching completed PRs for branch ${branchName}: ${String(err)}`,
-          );
-          return [];
-        }
-      },
+      async (branchName) =>
+        await this.fetchCompletedPullRequestsRaw(
+          branchName,
+          closedSince,
+          "collectMergedPRsForCommits",
+        ),
       PROVIDER_BATCH_PROFILES.azure,
     );
     const allMergedPRs: any[] = prResults.flat();
@@ -681,6 +663,61 @@ export class GitProviderAzure extends GitProvider {
     return await this.convertAndCollectJobsList(uniquePRs, convertBranchName, {
       withJobs: false,
     });
+  }
+
+  async listMergedPullRequestsIntoBranch(
+    targetBranchName: string,
+    updatedAfter?: Date,
+  ): Promise<PullRequest[]> {
+    if (!this.repoInfo || !this.gitApi) {
+      return [];
+    }
+    const completed = await this.fetchCompletedPullRequestsRaw(
+      targetBranchName,
+      updatedAfter,
+      "listMergedPullRequestsIntoBranch",
+    );
+    // The promotionPullRequests declaration sits below the 400 characters the LIST API keeps
+    const withDescriptions =
+      await this.completeTruncatedDescriptions(completed);
+    return await this.convertAndCollectJobsList(
+      withDescriptions,
+      targetBranchName,
+      { withJobs: false },
+    );
+  }
+
+  /**
+   * The completed Pull Requests targeting one branch, closed since `closedSince`. Never throws:
+   * a branch that cannot be read is an empty list and a log line.
+   */
+  private async fetchCompletedPullRequestsRaw(
+    branchName: string,
+    closedSince: Date | undefined,
+    caller: string,
+  ): Promise<GitPullRequest[]> {
+    try {
+      return await this.listPullRequestsPaged(
+        {
+          targetRefName: `refs/heads/${branchName}`,
+          status: PullRequestStatus.Completed,
+          ...(closedSince
+            ? {
+                minTime: closedSince,
+                // 2 = Closed: a Pull Request that brought a commit of this window into the
+                // branch cannot have closed before that commit existed
+                queryTimeRangeType: 2,
+              }
+            : {}),
+        },
+        caller,
+      );
+    } catch (err) {
+      Logger.log(
+        `Error fetching completed PRs for branch ${branchName}: ${String(err)}`,
+      );
+      return [];
+    }
   }
 
   /**

@@ -576,36 +576,12 @@ export class GitProviderGitlab extends GitProvider {
   ): Promise<PullRequest[]> {
     const mrResults = await mapWithConcurrency(
       allBranches,
-      async (branchName) => {
-        try {
-          const mergedMRs = await this.gitlabClient!.MergeRequests.all({
-            projectId: this.gitlabProjectId!,
-            targetBranch: branchName,
-            state: "merged",
-            perPage: 100,
-            // gitbeaker walks EVERY page by default: on a project with hundreds of merged merge
-            // requests that pulled the whole history of the branch to keep the handful that
-            // belong to the window. The window is bounded in time, and the number of pages is
-            // capped so a busy branch cannot turn into an unbounded crawl.
-            maxPages: GitProviderGitlab.MERGED_MR_MAX_PAGES,
-            ...(updatedAfter
-              ? { updatedAfter: updatedAfter.toISOString() }
-              : {}),
-          });
-          await this.logApiCall("MergeRequests.all", {
-            caller: "collectMergedMRsForCommits",
-            action: "fetchMergedMRs",
-            targetBranch: branchName,
-            updatedAfter: updatedAfter?.toISOString(),
-          });
-          return mergedMRs;
-        } catch (err) {
-          Logger.log(
-            `Error fetching merged MRs for branch ${branchName}: ${String(err)}`,
-          );
-          return [];
-        }
-      },
+      async (branchName) =>
+        await this.fetchMergedMergeRequestsRaw(
+          branchName,
+          updatedAfter,
+          "collectMergedMRsForCommits",
+        ),
       PROVIDER_BATCH_PROFILES.gitlab,
     );
     const allMergedMRs: Array<
@@ -615,7 +591,8 @@ export class GitProviderGitlab extends GitProvider {
 
     const relevantMRs = allMergedMRs.filter((mr) => {
       const mergeCommitSha = (mr.mergeCommitSha || mr.merge_commit_sha) as
-        string | undefined;
+        | string
+        | undefined;
       if (mergeCommitSha && commitSHAs.has(mergeCommitSha)) {
         return true;
       }
@@ -638,6 +615,63 @@ export class GitProviderGitlab extends GitProvider {
     return await this.convertAndCollectJobsList(uniqueMRs, {
       withJobs: false,
     });
+  }
+
+  async listMergedPullRequestsIntoBranch(
+    targetBranchName: string,
+    updatedAfter?: Date,
+  ): Promise<PullRequest[]> {
+    if (!this.gitlabClient || !this.gitlabProjectId) {
+      return [];
+    }
+    const merged = await this.fetchMergedMergeRequestsRaw(
+      targetBranchName,
+      updatedAfter,
+      "listMergedPullRequestsIntoBranch",
+    );
+    return await this.convertAndCollectJobsList(merged, { withJobs: false });
+  }
+
+  /**
+   * The merged merge requests targeting one branch, updated since `updatedAfter`. Never throws:
+   * a branch that cannot be read is an empty list and a log line.
+   */
+  private async fetchMergedMergeRequestsRaw(
+    branchName: string,
+    updatedAfter: Date | undefined,
+    caller: string,
+  ): Promise<
+    Array<
+      | MergeRequestSchemaWithBasicLabels
+      | Camelize<MergeRequestSchemaWithBasicLabels>
+    >
+  > {
+    try {
+      const mergedMRs = await this.gitlabClient!.MergeRequests.all({
+        projectId: this.gitlabProjectId!,
+        targetBranch: branchName,
+        state: "merged",
+        perPage: 100,
+        // gitbeaker walks EVERY page by default: on a project with hundreds of merged merge
+        // requests that pulled the whole history of the branch to keep the handful that
+        // belong to the window. The window is bounded in time, and the number of pages is
+        // capped so a busy branch cannot turn into an unbounded crawl.
+        maxPages: GitProviderGitlab.MERGED_MR_MAX_PAGES,
+        ...(updatedAfter ? { updatedAfter: updatedAfter.toISOString() } : {}),
+      });
+      await this.logApiCall("MergeRequests.all", {
+        caller,
+        action: "fetchMergedMRs",
+        targetBranch: branchName,
+        updatedAfter: updatedAfter?.toISOString(),
+      });
+      return mergedMRs;
+    } catch (err) {
+      Logger.log(
+        `Error fetching merged MRs for branch ${branchName}: ${String(err)}`,
+      );
+      return [];
+    }
   }
 
   /**
