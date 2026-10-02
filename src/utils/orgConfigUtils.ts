@@ -15,6 +15,7 @@ import {
   getPromotionBranchConfig,
   isMergedPullRequest,
   isPromotionPullRequest,
+  parsePromotionBranchName,
   PromotionBranchConfig,
 } from "./pipeline/promotionBranchUtils";
 import { Logger } from "../logger";
@@ -332,6 +333,22 @@ async function completeMajorOrgsWithPromotionBranches(
       }
     }
   }
+  // The windows are not enough: a promotion merged into preprod leaves the preprod window as
+  // soon as preprod goes live, while the stories it carried stay in the uat window until uat is
+  // merged into preprod directly, which a project using promotions may never do again. The
+  // provider is asked for the merged promotions of every step, whatever window they left.
+  promotions.push(
+    ...(await listMergedPromotionsOfSteps(
+      majorOrgs,
+      (targetBranch, updatedAfter) =>
+        gitProvider.listMergedPullRequestsIntoBranch(
+          targetBranch,
+          updatedAfter,
+        ),
+      config,
+      known,
+    )),
+  );
   if (promotions.length === 0) {
     return;
   }
@@ -348,10 +365,123 @@ async function completeMajorOrgsWithPromotionBranches(
 }
 
 /**
- * The index only knows the promotions still inside a loaded window, so it cannot be the only thing
- * deciding where a story is listed: once a go-live resets a window, the promotion that carried a
- * story out of uat drops out of it and the story would show up in two branches. The windows
- * themselves always know, so the invariant is enforced on them directly.
+ * The merged promotion Pull Requests of every step of the pipeline (a branch and one of its merge
+ * targets), read from the provider instead of the loaded windows. The ones a window already holds
+ * are left out, since the caller has them.
+ *
+ * A promotion carrying a story of a window cannot have been updated before the oldest Pull
+ * Request of that window was created, which bounds each provider call: without the bound, every
+ * refresh of the pipeline would page through the whole merged history of every major branch. A
+ * target branch reached from several sources is read once, down to the oldest of their bounds, and
+ * a source window without a readable date leaves the call unbounded rather than missing a
+ * promotion. A step whose source window is empty has nothing to subtract and is skipped.
+ */
+export async function listMergedPromotionsOfSteps(
+  majorOrgs: Array<
+    Pick<
+      MajorOrg,
+      "branchName" | "mergeTargets" | "pullRequestsInBranchSinceLastMerge"
+    >
+  >,
+  listMergedInto: (
+    targetBranch: string,
+    updatedAfter?: Date,
+  ) => Promise<PullRequest[]>,
+  config: PromotionBranchConfig,
+  known: Map<number, PullRequest> = new Map(),
+): Promise<PullRequest[]> {
+  if (!config.enabled) {
+    return [];
+  }
+  // target branch -> the source branches promoting into it, and the oldest bound among them
+  const steps = new Map<
+    string,
+    { sources: Set<string>; updatedAfter: Date | undefined; unbounded: boolean }
+  >();
+  for (const org of majorOrgs) {
+    const window = org.pullRequestsInBranchSinceLastMerge || [];
+    if (window.length === 0) {
+      continue;
+    }
+    const oldest = oldestPullRequestDate(window);
+    for (const target of org.mergeTargets || []) {
+      const step = steps.get(target) || {
+        sources: new Set<string>(),
+        updatedAfter: undefined,
+        unbounded: false,
+      };
+      step.sources.add((org.branchName || "").toLowerCase());
+      if (!oldest) {
+        step.unbounded = true;
+      } else if (!step.updatedAfter || oldest < step.updatedAfter) {
+        step.updatedAfter = oldest;
+      }
+      steps.set(target, step);
+    }
+  }
+  const found: PullRequest[] = [];
+  const seen = new Set<number>();
+  const results = await Promise.all(
+    [...steps.entries()].map(async ([target, step]) => {
+      try {
+        return {
+          target,
+          step,
+          merged: await listMergedInto(
+            target,
+            step.unbounded ? undefined : step.updatedAfter,
+          ),
+        };
+      } catch (e) {
+        Logger.log(
+          `Error listing the merged promotions into ${target}: ${String(e)}`,
+        );
+        return { target, step, merged: [] as PullRequest[] };
+      }
+    }),
+  );
+  for (const { target, step, merged } of results) {
+    for (const pr of merged) {
+      if (!isPromotionPullRequest(pr, config) || !isMergedPullRequest(pr)) {
+        continue;
+      }
+      // Only a promotion of this very step counts: one named for other branches, or retargeted by
+      // hand, proves nothing about what left the source branch (same rule as the CLI)
+      const parts = parsePromotionBranchName(pr.sourceBranch);
+      if (
+        !parts ||
+        !step.sources.has(parts.sourceBranch.toLowerCase()) ||
+        parts.targetBranch.toLowerCase() !== target.toLowerCase()
+      ) {
+        continue;
+      }
+      const number = typeof pr.number === "number" ? pr.number : Number(pr.id);
+      if (!number || seen.has(number) || known.has(number)) {
+        continue;
+      }
+      seen.add(number);
+      found.push(pr);
+    }
+  }
+  return found;
+}
+
+/**
+ * Oldest creation (else merge) date of a set of Pull Requests, to bound a provider query. Null
+ * when none of them carries a readable date.
+ */
+function oldestPullRequestDate(pullRequests: PullRequest[]): Date | null {
+  const times = pullRequests
+    .map((pr) => new Date(pr.createdAt || pr.mergeDate || "").getTime())
+    .filter((time) => !isNaN(time));
+  return times.length > 0 ? new Date(Math.min(...times)) : null;
+}
+
+/**
+ * The index knows the promotions still inside a loaded window and the merged ones the provider
+ * returned for each step, but a provider that answers nothing (no token, an API error) would leave
+ * a story in two branches once a go-live resets the window the promotion was merged into. The
+ * windows themselves always know, so the invariant is enforced on them directly as well.
  */
 function enforceInvariant(
   majorOrgs: MajorOrg[],

@@ -624,36 +624,12 @@ export class GitProviderBitbucket extends GitProvider {
     // one page walk per branch at once makes Bitbucket answer with 429s.
     const prResults = await mapWithConcurrency(
       allBranches,
-      async (branchName) => {
-        try {
-          const q =
-            `destination.branch.name = "${branchName}" AND state = "MERGED"` +
-            (updatedAfter
-              ? ` AND updated_on >= ${JSON.stringify(updatedAfter.toISOString())}`
-              : "");
-          // Paginate: a branch can have more merged PRs than fit on one page
-          const values = await this.fetchAllPages(
-            (params) => this.bitbucketClient!.pullrequests.list(params),
-            {
-              workspace: this.workspace!,
-              repo_slug: this.repoSlug!,
-              q,
-              pagelen: 50,
-            },
-          );
-          await this.logApiCall("pullrequests.list", {
-            caller: "collectMergedPRsForCommits",
-            action: "fetchMergedPRs",
-            q,
-          });
-          return values;
-        } catch (err) {
-          Logger.log(
-            `Error fetching merged PRs for branch ${branchName}: ${String(err)}`,
-          );
-          return [];
-        }
-      },
+      async (branchName) =>
+        await this.fetchMergedPullRequestsRaw(
+          branchName,
+          updatedAfter,
+          "collectMergedPRsForCommits",
+        ),
       PROVIDER_BATCH_PROFILES.bitbucket,
     );
     const allMergedPRs: any[] = prResults.flat();
@@ -682,6 +658,60 @@ export class GitProviderBitbucket extends GitProvider {
     return await this.convertAndCollectJobsList(uniquePRs, {
       withJobs: false,
     });
+  }
+
+  async listMergedPullRequestsIntoBranch(
+    targetBranchName: string,
+    updatedAfter?: Date,
+  ): Promise<PullRequest[]> {
+    if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
+      return [];
+    }
+    const merged = await this.fetchMergedPullRequestsRaw(
+      targetBranchName,
+      updatedAfter,
+      "listMergedPullRequestsIntoBranch",
+    );
+    return await this.convertAndCollectJobsList(merged, { withJobs: false });
+  }
+
+  /**
+   * The merged Pull Requests targeting one branch, updated since `updatedAfter`. Never throws:
+   * a branch that cannot be read is an empty list and a log line.
+   */
+  private async fetchMergedPullRequestsRaw(
+    branchName: string,
+    updatedAfter: Date | undefined,
+    caller: string,
+  ): Promise<any[]> {
+    try {
+      const q =
+        `destination.branch.name = "${branchName}" AND state = "MERGED"` +
+        (updatedAfter
+          ? ` AND updated_on >= ${JSON.stringify(updatedAfter.toISOString())}`
+          : "");
+      // Paginate: a branch can have more merged PRs than fit on one page
+      const values = await this.fetchAllPages(
+        (params) => this.bitbucketClient!.pullrequests.list(params),
+        {
+          workspace: this.workspace!,
+          repo_slug: this.repoSlug!,
+          q,
+          pagelen: 50,
+        },
+      );
+      await this.logApiCall("pullrequests.list", {
+        caller,
+        action: "fetchMergedPRs",
+        q,
+      });
+      return values;
+    } catch (err) {
+      Logger.log(
+        `Error fetching merged PRs for branch ${branchName}: ${String(err)}`,
+      );
+      return [];
+    }
   }
 
   convertToPullRequest(pr: any): PullRequest {

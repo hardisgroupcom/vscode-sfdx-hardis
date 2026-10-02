@@ -398,6 +398,24 @@ export class GitProvider {
   }
 
   /**
+   * Lists the merged Pull Requests whose target is `targetBranchName`, updated since
+   * `updatedAfter` (every one of them when no date is given). No jobs are loaded.
+   *
+   * The DevOps Pipeline reads the merged promotion Pull Requests of a step out of it: a
+   * promotion merged into preprod leaves the preprod window as soon as preprod goes live, and
+   * the stories it carried out of uat would come back in the uat window and counter without it.
+   */
+  async listMergedPullRequestsIntoBranch(
+    _targetBranchName: string,
+    _updatedAfter?: Date,
+  ): Promise<PullRequest[]> {
+    Logger.log(
+      `listMergedPullRequestsIntoBranch not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
+    );
+    return [];
+  }
+
+  /**
    * Fetches a single Pull Request by its provider-native number (GitHub number, GitLab
    * iid, Azure id, Bitbucket id), without its jobs. Used to resolve the stories declared
    * by a promotion Pull Request when they are no longer in a loaded window.

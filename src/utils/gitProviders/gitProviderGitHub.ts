@@ -613,62 +613,14 @@ export class GitProviderGitHub extends GitProvider {
     // Oldest commit of the window: Pull Requests updated before that cannot belong to it
     updatedAfter?: Date,
   ): Promise<PullRequest[]> {
-    const [owner, repo] = [this.repoInfo!.owner, this.repoInfo!.repo];
-
     const prResults = await mapWithConcurrency(
       allBranches,
-      async (branchName) => {
-        try {
-          // GitHub caps a page at 100 whatever is asked for, so the previous per_page: 1000 was
-          // not "everything in one call", it was "the first 100 by creation date and never mind
-          // the rest". Sorted by update date instead, the walk can stop at the first page that
-          // predates the window: correct where the old single call silently truncated, and far
-          // cheaper than reading the whole closed history.
-          const merged: any[] = [];
-          for (let page = 1; page <= GitProviderGitHub.PR_MAX_PAGES; page++) {
-            const { data: prs } = await this.gitHubClient!.pulls.list({
-              owner,
-              repo,
-              state: "closed",
-              base: branchName,
-              per_page: GitProviderGitHub.PR_PAGE_SIZE,
-              sort: "updated",
-              direction: "desc",
-              page,
-            });
-            await this.logApiCall("pulls.list", {
-              caller: "collectMergedPRsForCommits",
-              action: "fetchMergedPRs",
-              targetBranch: branchName,
-              page,
-              received: prs.length,
-            });
-            let reachedBound = false;
-            for (const pr of prs) {
-              const updated = new Date(
-                pr.updated_at || pr.merged_at || 0,
-              ).getTime();
-              if (updatedAfter && updated < updatedAfter.getTime()) {
-                // Sorted newest first, so everything after this point is older still
-                reachedBound = true;
-                break;
-              }
-              if (pr.merged_at) {
-                merged.push(pr);
-              }
-            }
-            if (reachedBound || prs.length < GitProviderGitHub.PR_PAGE_SIZE) {
-              break;
-            }
-          }
-          return merged;
-        } catch (err) {
-          Logger.log(
-            `Error fetching merged PRs for branch ${branchName}: ${String(err)}`,
-          );
-          return [];
-        }
-      },
+      async (branchName) =>
+        await this.fetchMergedPullRequestsRaw(
+          branchName,
+          updatedAfter,
+          "collectMergedPRsForCommits",
+        ),
       PROVIDER_BATCH_PROFILES.github,
     );
     const allMergedPRs: any[] = prResults.flat();
@@ -688,6 +640,83 @@ export class GitProviderGitHub extends GitProvider {
     return await this.convertAndCollectJobsList(uniquePRs, {
       withJobs: false,
     });
+  }
+
+  async listMergedPullRequestsIntoBranch(
+    targetBranchName: string,
+    updatedAfter?: Date,
+  ): Promise<PullRequest[]> {
+    if (!this.gitHubClient || !this.repoInfo) {
+      return [];
+    }
+    const merged = await this.fetchMergedPullRequestsRaw(
+      targetBranchName,
+      updatedAfter,
+      "listMergedPullRequestsIntoBranch",
+    );
+    return await this.convertAndCollectJobsList(merged, { withJobs: false });
+  }
+
+  /**
+   * The merged Pull Requests targeting one branch, newest update first, down to `updatedAfter`.
+   * Never throws: a branch that cannot be read is an empty list and a log line.
+   */
+  private async fetchMergedPullRequestsRaw(
+    branchName: string,
+    updatedAfter: Date | undefined,
+    caller: string,
+  ): Promise<any[]> {
+    const [owner, repo] = [this.repoInfo!.owner, this.repoInfo!.repo];
+    try {
+      // GitHub caps a page at 100 whatever is asked for, so the previous per_page: 1000 was
+      // not "everything in one call", it was "the first 100 by creation date and never mind
+      // the rest". Sorted by update date instead, the walk can stop at the first page that
+      // predates the window: correct where the old single call silently truncated, and far
+      // cheaper than reading the whole closed history.
+      const merged: any[] = [];
+      for (let page = 1; page <= GitProviderGitHub.PR_MAX_PAGES; page++) {
+        const { data: prs } = await this.gitHubClient!.pulls.list({
+          owner,
+          repo,
+          state: "closed",
+          base: branchName,
+          per_page: GitProviderGitHub.PR_PAGE_SIZE,
+          sort: "updated",
+          direction: "desc",
+          page,
+        });
+        await this.logApiCall("pulls.list", {
+          caller,
+          action: "fetchMergedPRs",
+          targetBranch: branchName,
+          page,
+          received: prs.length,
+        });
+        let reachedBound = false;
+        for (const pr of prs) {
+          const updated = new Date(
+            pr.updated_at || pr.merged_at || 0,
+          ).getTime();
+          if (updatedAfter && updated < updatedAfter.getTime()) {
+            // Sorted newest first, so everything after this point is older still
+            reachedBound = true;
+            break;
+          }
+          if (pr.merged_at) {
+            merged.push(pr);
+          }
+        }
+        if (reachedBound || prs.length < GitProviderGitHub.PR_PAGE_SIZE) {
+          break;
+        }
+      }
+      return merged;
+    } catch (err) {
+      Logger.log(
+        `Error fetching merged PRs for branch ${branchName}: ${String(err)}`,
+      );
+      return [];
+    }
   }
 
   // Helper to convert a raw GitHub PR and attach jobs/jobsStatus
