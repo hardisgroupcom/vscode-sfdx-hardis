@@ -29,7 +29,7 @@ yarn vsix                 # Package as .vsix for distribution
 
 `yarn test:ui` requires the webview bundle AND the compiled sources, in this order: `yarn dev` (webpack: webviews + assets) **then** `yarn compile` (tsc: `out/extension.js` + `out/test`).
 
-`yarn test:ui:labs` drives the same harness in "lab driver" mode: it opens a learner's own clone of the [training course](https://hardisgroupcom.github.io/sfdx-hardis-training/) repository (`SFDX_HARDIS_LAB_WORKSPACE`) instead of a fixture project,
+`yarn test:ui:labs` drives the same harness in "lab driver" mode: it opens a learner's own clone of the [training course](https://sfdx-hardis-training.github.io/) repository (`SFDX_HARDIS_LAB_WORKSPACE`) instead of a fixture project,
 keeps the **real** `sf` CLI on the PATH, and walks the labs through the real panels against real orgs,
 answering each question from the rules the course declares in `labs/_assets/lab-drivers.json`.
 A question no rule covers fails the lab: a learner would be stuck on it too.
@@ -232,7 +232,7 @@ When writing translations, look at other translations in the same language file 
 
 ## Training impact (sfdx-hardis-training)
 
-The [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training/) course teaches this extension click by click, with screenshots captured from the real panels. **A panel redesign, a renamed button or a changed WebSocket message can break a lab silently**: the lab text still reads fine and the screenshot no longer matches what the learner sees.
+The [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io/) course teaches this extension click by click, with screenshots captured from the real panels. **A panel redesign, a renamed button or a changed WebSocket message can break a lab silently**: the lab text still reads fine and the screenshot no longer matches what the learner sees.
 
 The skills that decide and perform the update live in the sibling sfdx-hardis clone, not here:
 

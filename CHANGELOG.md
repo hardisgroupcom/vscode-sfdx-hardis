@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- The README links the [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io/) course at its new address.
+
 ## [8.9.2] 2026-10-02
 
 - Deployment actions: a **Schedule Batch** action can now pick an Apex class that is in the project and not in your default org yet, and the list says so. It also lists the global schedulable classes of the installed packages.

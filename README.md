@@ -117,11 +117,11 @@ The only requirement is the same as for VS Code: the IDE must be able to run the
 
 ## Learn by doing
 
-[Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) is a free hands-on course that builds a complete CI/CD pipeline on free orgs, one click at a time.
+[Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) is a free hands-on course that builds a complete CI/CD pipeline on free orgs, one click at a time.
 
-- [Level 1 - Contributor basics](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/): 7 labs, from your first User Story to a merged Pull Request
-- [Level 2 - Contributor advanced](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/): 9 labs, deployment errors, deployment actions, code quality, conflicts
-- [Level 3 - Release Manager](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/): 11 labs, the pipeline up to production, releases, hotfixes, monitoring
+- [Level 1 - Contributor basics](https://sfdx-hardis-training.github.io/en/level-1-contributor-basics/): 7 labs, from your first User Story to a merged Pull Request
+- [Level 2 - Contributor advanced](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/): 9 labs, deployment errors, deployment actions, code quality, conflicts
+- [Level 3 - Release Manager](https://sfdx-hardis-training.github.io/en/level-3-release-manager/): 11 labs, the pipeline up to production, releases, hotfixes, monitoring
 
 <!-- training-links:end -->
 
