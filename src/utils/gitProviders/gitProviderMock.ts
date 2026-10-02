@@ -95,6 +95,15 @@ export class GitProviderMock extends GitProvider {
     return byBranch[currentBranchName] || [];
   }
 
+  async listMergedPullRequestsIntoBranch(
+    targetBranchName: string,
+    _updatedAfter?: Date,
+  ): Promise<PullRequest[]> {
+    // The merged promotions a fixture wants found even after they left their window
+    const byTarget = this.fixture.mergedPullRequestsIntoBranch || {};
+    return byTarget[targetBranchName] || [];
+  }
+
   async getJobsForBranchLatestCommit(
     branchName: string,
   ): Promise<{ jobs: Job[]; jobsStatus: JobStatus } | null> {

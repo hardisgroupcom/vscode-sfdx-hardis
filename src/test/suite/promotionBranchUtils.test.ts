@@ -2,7 +2,10 @@ import * as assert from "assert";
 import * as fs from "fs";
 import * as path from "path";
 import { SfdxHardisConfigHelper } from "../../utils/pipeline/sfdxHardisConfigHelper";
-import { orderWindowsUpstreamFirst } from "../../utils/orgConfigUtils";
+import {
+  listMergedPromotionsOfSteps,
+  orderWindowsUpstreamFirst,
+} from "../../utils/orgConfigUtils";
 import { PullRequest } from "../../utils/gitProviders/types";
 import { BranchStrategyMermaidBuilder } from "../../utils/pipeline/branchStrategyMermaidBuilder";
 import { extractMember, readModuleFile } from "./lwcSourceUtils";
@@ -697,6 +700,113 @@ suite("promotionBranchUtils", () => {
       DISABLED,
     );
     assert.strictEqual(off[0].promotedAway, undefined);
+  });
+
+  test("a promotion that left every window still takes its stories out of the branch it came from", async () => {
+    // The repository of issue sfdx-hardis#2260: uat was last merged into preprod directly months
+    // ago, the stories reach preprod through promotion branches only, and preprod has gone live
+    // since. The promotion is in no loaded window any more (preprod's was reset by the go-live,
+    // main shows the latest go-live only), yet the 63 stories it carried were still counted in uat.
+    const carried = pr({ number: 482, createdAt: "2026-09-01T08:00:00Z" });
+    const pending = pr({ number: 500, createdAt: "2026-09-20T08:00:00Z" });
+    const promotion = pr({
+      number: 900,
+      sourceBranch: PROMOTION_BRANCH,
+      targetBranch: "preprod",
+      description: DECLARATION,
+      mergeDate: "2026-09-14T09:00:00Z",
+    });
+    const otherStep = pr({
+      number: 901,
+      sourceBranch: "promotion/integration/uat/2026-09-14-1",
+      targetBranch: "preprod",
+      description: "```yaml\npromotionPullRequests: [500]\n```",
+      mergeDate: "2026-09-14T09:00:00Z",
+    });
+    const calls: Array<{ target: string; updatedAfter?: Date }> = [];
+    const majorOrgs = [
+      {
+        branchName: "uat",
+        mergeTargets: ["preprod"],
+        pullRequestsInBranchSinceLastMerge: [carried, pending],
+      },
+      {
+        branchName: "preprod",
+        mergeTargets: ["main"],
+        pullRequestsInBranchSinceLastMerge: [pr({ number: 600 })],
+      },
+      // Nothing waiting in integration: nothing to subtract, so no provider call for uat
+      {
+        branchName: "integration",
+        mergeTargets: ["uat"],
+        pullRequestsInBranchSinceLastMerge: [],
+      },
+    ];
+    const fetched = await listMergedPromotionsOfSteps(
+      majorOrgs,
+      async (target, updatedAfter) => {
+        calls.push({ target, updatedAfter });
+        return target === "preprod" ? [promotion, otherStep] : [];
+      },
+      ENABLED,
+    );
+    // One call per target branch, bounded by the oldest Pull Request of the source window
+    assert.deepStrictEqual(calls.map((call) => call.target).sort(), [
+      "main",
+      "preprod",
+    ]);
+    assert.strictEqual(
+      calls
+        .find((call) => call.target === "preprod")!
+        .updatedAfter?.toISOString(),
+      "2026-09-01T08:00:00.000Z",
+    );
+    // Only a promotion of the uat -> preprod step counts: the one named for another step does not
+    assert.deepStrictEqual(
+      fetched.map((p) => p.number),
+      [900],
+    );
+
+    const index = buildPromotionIndex(fetched, ENABLED);
+    annotateAlreadyPromoted(
+      majorOrgs[0].pullRequestsInBranchSinceLastMerge,
+      "uat",
+      index,
+      ENABLED,
+    );
+    assert.strictEqual(carried.promotedAway, true);
+    assert.notStrictEqual(pending.promotedAway, true);
+    assert.deepStrictEqual(
+      visiblePullRequests(majorOrgs[0].pullRequestsInBranchSinceLastMerge).map(
+        (p) => p.number,
+      ),
+      [500],
+    );
+
+    // A promotion a window already holds is not returned twice, and the feature off asks nothing
+    const known = new Map<number, PullRequest>([[900, promotion]]);
+    assert.deepStrictEqual(
+      await listMergedPromotionsOfSteps(
+        majorOrgs,
+        async () => [promotion],
+        ENABLED,
+        known,
+      ),
+      [],
+    );
+    let asked = 0;
+    assert.deepStrictEqual(
+      await listMergedPromotionsOfSteps(
+        majorOrgs,
+        async () => {
+          asked++;
+          return [promotion];
+        },
+        DISABLED,
+      ),
+      [],
+    );
+    assert.strictEqual(asked, 0);
   });
 
   test("the windows reach the invariant upstream first, whatever order listMajorOrgs used", () => {
