@@ -17,6 +17,7 @@ export type BuiltInActionType =
   | "publish-community"
   | "manual"
   | "schedule-batch"
+  | "run-batch"
   | "remove-packagexml-items";
 
 export const BUILT_IN_ACTION_TYPES: BuiltInActionType[] = [
@@ -26,6 +27,7 @@ export const BUILT_IN_ACTION_TYPES: BuiltInActionType[] = [
   "publish-community",
   "manual",
   "schedule-batch",
+  "run-batch",
   "remove-packagexml-items",
 ];
 
@@ -46,9 +48,13 @@ export interface PrePostCommand {
     sfdmuProject?: string; // for 'data' actions
     communityName?: string; // for 'publish-community' actions
     instructions?: string; // for 'manual' actions
-    className?: string; // for 'schedule-batch' actions
+    className?: string; // for 'schedule-batch' and 'run-batch' actions
     cronExpression?: string; // for 'schedule-batch' actions
     jobName?: string; // optional for 'schedule-batch' actions
+    runMode?: "wait" | "no-wait"; // optional for 'run-batch' actions, "wait" when unset
+    batchSize?: number; // optional for 'run-batch' actions, 1 to 2000
+    waitTimeoutMinutes?: number; // optional for 'run-batch' actions in wait mode
+    successEvenIfBatchErrors?: boolean; // optional for 'run-batch' actions in wait mode
     // for 'remove-packagexml-items' actions: entries "TypeName:Member1,Member2"
     // (use "*" as member to remove the whole type). A single string is also accepted.
     packageXmlItems?: string[] | string;
@@ -461,6 +467,17 @@ export async function listProjectApexTestClasses(): Promise<string[]> {
 export async function listProjectSchedulableClasses(): Promise<string[]> {
   return listProjectApexClassNames((content) =>
     content.toLowerCase().includes("schedulable"),
+  );
+}
+
+// A class that can be run by a 'run-batch' action. Same loose test as the list
+// read from the org, so that both sources agree.
+export const BATCHABLE_APEX_CLASS_REGEX = /database\s*\.\s*batchable/i;
+
+// Not cached, for the same reason as the schedulable classes
+export async function listProjectBatchableClasses(): Promise<string[]> {
+  return listProjectApexClassNames((content) =>
+    BATCHABLE_APEX_CLASS_REGEX.test(content),
   );
 }
 

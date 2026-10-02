@@ -1250,6 +1250,8 @@ suite("Documentation screenshots", function () {
       // A custom function type: the form below the common fields is built from
       // the inputs the function declares, so the modal is taller again
       { name: "pipeline-edit-action-custom-function", row: 9, editY: 796 },
+      // Appended last in the fixture, so that the rows above keep their position
+      { name: "pipeline-edit-action-run-batch", row: 10, editY: 735 },
     ];
     // A universe whose Pull Request declares its actions in another order says
     // so, because these shots are taken by row position. The names are the shot

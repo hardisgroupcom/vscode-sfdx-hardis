@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Deployment actions: a new **Run Batch** action runs an Apex batch class once, before or after the deployment, and can wait for it to succeed.
 - The README links the [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io/) course at its new address.
 
 ## [8.9.2] 2026-10-02

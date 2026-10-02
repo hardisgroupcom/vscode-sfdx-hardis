@@ -1,10 +1,14 @@
 import { execSfdxJson } from "../../utils";
 import { Logger } from "../../logger";
-import { listProjectSchedulableClasses } from "../prePostCommandsUtils";
+import {
+  BATCHABLE_APEX_CLASS_REGEX,
+  listProjectBatchableClasses,
+  listProjectSchedulableClasses,
+} from "../prePostCommandsUtils";
 
 /**
  * Lists proposed in the deployment action editor that are read from the default org.
- * The schedulable classes are also read from the project sources.
+ * The schedulable and the batchable classes are also read from the project sources.
  * Shared by the DevOps Pipeline panel and the Pipeline Settings panel, which both
  * open the same deployment action editor.
  */
@@ -12,6 +16,10 @@ import { listProjectSchedulableClasses } from "../prePostCommandsUtils";
 const ORG_NAMES_CACHE_TTL_MS = 15 * 60 * 1000;
 
 const schedulableClassesByOrgCache = new Map<
+  string,
+  { expiresAt: number; values: string[] }
+>();
+const batchableClassesByOrgCache = new Map<
   string,
   { expiresAt: number; values: string[] }
 >();
@@ -50,7 +58,24 @@ async function fetchAndCacheOrgNames(
   if (!Array.isArray(result?.result?.records)) {
     return null;
   }
-  const records = result.result.records;
+  return cacheOrgNames(
+    cache,
+    orgKey,
+    now,
+    result.result.records,
+    filter,
+    nameOf,
+  );
+}
+
+function cacheOrgNames(
+  cache: Map<string, { expiresAt: number; values: string[] }>,
+  orgKey: string,
+  now: number,
+  records: any[],
+  filter?: (record: any) => boolean,
+  nameOf: (record: any) => string = (record) => String(record?.Name || ""),
+): string[] {
   const filtered = filter ? records.filter(filter) : records;
   const values = filtered
     .map((record: any) => nameOf(record).trim())
@@ -94,27 +119,126 @@ export function schedulableApexClassName(record: any): string {
     : name;
 }
 
-// null when the org could not be read
-export async function listSchedulableClassesFromDefaultOrg(): Promise<
-  string[] | null
-> {
-  const orgKey = await getDefaultOrgUsername();
-  const now = Date.now();
-  const cached = schedulableClassesByOrgCache.get(orgKey);
-  if (cached && cached.expiresAt > now) {
-    return cached.values;
+/**
+ * Same rule as the schedulable classes: the body must be readable, which leaves
+ * out the classes of a managed package that are not global, and it must mention
+ * Database.Batchable. Such a class can be run by a "run-batch" action.
+ */
+export function isBatchableApexClass(record: any): boolean {
+  const body = String(record?.Body || "");
+  return body !== HIDDEN_APEX_BODY && BATCHABLE_APEX_CLASS_REGEX.test(body);
+}
+
+type ApexClassKind = "schedulable" | "batchable";
+
+const APEX_CLASS_KINDS: Record<
+  ApexClassKind,
+  {
+    cache: Map<string, { expiresAt: number; values: string[] }>;
+    filter: (record: any) => boolean;
+  }
+> = {
+  schedulable: {
+    cache: schedulableClassesByOrgCache,
+    filter: isSchedulableApexClass,
+  },
+  batchable: {
+    cache: batchableClassesByOrgCache,
+    filter: isBatchableApexClass,
+  },
+};
+
+/**
+ * Splits the Apex classes read from an org into the names each picker lists.
+ * A class implementing both interfaces is in both lists.
+ */
+export function splitApexClassesByKind(
+  records: any[],
+): Record<ApexClassKind, string[]> {
+  const namesOf = (filter: (record: any) => boolean) =>
+    [
+      ...new Set<string>(
+        records
+          .filter(filter)
+          .map((record) => schedulableApexClassName(record).trim())
+          .filter((name) => name.length > 0),
+      ),
+    ].sort((a, b) => a.localeCompare(b));
+  return {
+    schedulable: namesOf(isSchedulableApexClass),
+    batchable: namesOf(isBatchableApexClass),
+  };
+}
+
+// Org queries in progress, so that two pickers asking together share one
+const apexClassQueriesInProgress = new Map<string, Promise<any[] | null>>();
+
+async function queryApexClassesOfOrg(orgKey: string): Promise<any[] | null> {
+  const inProgress = apexClassQueriesInProgress.get(orgKey);
+  if (inProgress) {
+    return inProgress;
   }
   const query =
     "SELECT Name, NamespacePrefix, ManageableState, Body FROM ApexClass ORDER BY Name";
   const command = `sf data query --query "${query}" --use-tooling-api --json`;
-  return fetchAndCacheOrgNames(
-    schedulableClassesByOrgCache,
-    orgKey,
-    now,
-    command,
-    isSchedulableApexClass,
-    schedulableApexClassName,
-  );
+  const promise = (async () => {
+    const result = await execSfdxJson(command, { fail: false, output: false });
+    // No records array: the org could not be read, which is not an empty list
+    return Array.isArray(result?.result?.records)
+      ? (result.result.records as any[])
+      : null;
+  })();
+  apexClassQueriesInProgress.set(orgKey, promise);
+  try {
+    return await promise;
+  } finally {
+    apexClassQueriesInProgress.delete(orgKey);
+  }
+}
+
+/**
+ * The Apex classes of the default org are read once for both pickers: the same
+ * result fills the schedulable and the batchable cache, whichever asks first.
+ * null when the org could not be read.
+ */
+async function listApexClassesFromDefaultOrg(
+  kind: ApexClassKind,
+): Promise<string[] | null> {
+  const orgKey = await getDefaultOrgUsername();
+  const cached = APEX_CLASS_KINDS[kind].cache.get(orgKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.values;
+  }
+  const records = await queryApexClassesOfOrg(orgKey);
+  if (records === null) {
+    return null;
+  }
+  const namesByKind = splitApexClassesByKind(records);
+  const expiresAt = Date.now() + ORG_NAMES_CACHE_TTL_MS;
+  for (const key of Object.keys(APEX_CLASS_KINDS) as ApexClassKind[]) {
+    // An empty list is not cached, so that the org is asked again next time
+    if (namesByKind[key].length > 0) {
+      APEX_CLASS_KINDS[key].cache.set(orgKey, {
+        expiresAt,
+        values: namesByKind[key],
+      });
+    }
+  }
+  return namesByKind[kind];
+}
+
+// null when the org could not be read
+export async function listSchedulableClassesFromDefaultOrg(): Promise<
+  string[] | null
+> {
+  return listApexClassesFromDefaultOrg("schedulable");
+}
+
+// null when the org could not be read
+export async function listBatchableClassesFromDefaultOrg(): Promise<
+  string[] | null
+> {
+  return listApexClassesFromDefaultOrg("batchable");
 }
 
 export interface PickerValues {
@@ -157,6 +281,29 @@ export async function listSchedulableClasses(): Promise<PickerValues> {
   return mergeSchedulableClasses(orgClasses, projectClasses);
 }
 
+/**
+ * Merges the batchable classes of the default org with those of the project,
+ * with the same rules as the schedulable ones. A class found in the project
+ * only is still listed: a post-deployment action finds it in the target org
+ * once the metadata is deployed. A pre-deployment action does not, and the
+ * editor warns about it.
+ */
+export function mergeBatchableClasses(
+  orgClasses: string[] | null,
+  projectClasses: string[],
+): PickerValues {
+  return mergeSchedulableClasses(orgClasses, projectClasses);
+}
+
+export async function listBatchableClasses(): Promise<PickerValues> {
+  // One source failing must not hide the other
+  const [orgClasses, projectClasses] = await Promise.all([
+    listBatchableClassesFromDefaultOrg().catch(() => null),
+    listProjectBatchableClasses().catch(() => [] as string[]),
+  ]);
+  return mergeBatchableClasses(orgClasses, projectClasses);
+}
+
 export async function listCommunitiesFromDefaultOrg(): Promise<string[]> {
   const orgKey = await getDefaultOrgUsername();
   const now = Date.now();
@@ -193,6 +340,10 @@ export async function handleDeploymentActionPickerMessage(
     loadSchedulableClasses: {
       responseType: "returnSchedulableClasses",
       list: listSchedulableClasses,
+    },
+    loadBatchableClasses: {
+      responseType: "returnBatchableClasses",
+      list: listBatchableClasses,
     },
     loadCommunities: {
       responseType: "returnCommunities",
