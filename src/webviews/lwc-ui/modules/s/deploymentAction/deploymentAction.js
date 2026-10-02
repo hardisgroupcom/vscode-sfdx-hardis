@@ -70,6 +70,8 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   }
 
   @api schedulableClassesLoading = false;
+  // Schedulable classes found in the project sources and not in the default org
+  @api projectOnlySchedulableClasses = [];
   @api communitiesLoading = false;
   @track editedAction = {};
   @track validationError = "";
@@ -302,6 +304,20 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     return options;
   }
 
+  // A class merged in git and not deployed to the default org yet can still be
+  // scheduled: it is listed with a label saying where it was found
+  _schedulableClassOption(className) {
+    const projectOnly = Array.isArray(this.projectOnlySchedulableClasses)
+      ? this.projectOnlySchedulableClasses
+      : [];
+    return {
+      label: projectOnly.includes(className)
+        ? this.t("inProjectNotInOrg", { value: className })
+        : className,
+      value: className,
+    };
+  }
+
   get schedulableClassOptions() {
     const selectedClassName = this.displayedAction?.parameters?.className;
     if (this.isViewMode) {
@@ -337,10 +353,10 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
           label: this.t("notVisibleFromOrg", { value: selectedClassName }),
           value: selectedClassName,
         },
-        ...classes.map((item) => ({ label: item, value: item })),
+        ...classes.map((item) => this._schedulableClassOption(item)),
       ];
     }
-    return classes.map((item) => ({ label: item, value: item }));
+    return classes.map((item) => this._schedulableClassOption(item));
   }
 
   get communityOptions() {
@@ -988,12 +1004,9 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     if (this._schedulableClassesRequested) {
       return;
     }
-    if (
-      Array.isArray(this.schedulableClasses) &&
-      this.schedulableClasses.length
-    ) {
-      return;
-    }
+    // Asked again each time the editor opens, even when the panel already holds a
+    // list: a class added to the project, or deployed to the org, since the last
+    // opening must be listed and labelled as it is now
     this._schedulableClassesRequested = true;
     this.dispatchEvent(new CustomEvent("loadschedulableclasses"));
   }

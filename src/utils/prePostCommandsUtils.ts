@@ -370,15 +370,10 @@ const APEX_TEST_CLASSES_CACHE_TTL_MS = 1000 * 60 * 10; // 10 minutes
 // (sequential await) took ~minutes cold on large repos.
 const APEX_TEST_READ_BATCH_SIZE = 60;
 
-export async function listProjectApexTestClasses(): Promise<string[]> {
-  const cached = CacheManager.get<string[]>(
-    "project",
-    APEX_TEST_CLASSES_CACHE_KEY,
-  );
-  if (cached) {
-    return cached;
-  }
-
+// Names of the Apex classes of the project whose source matches, sorted
+async function listProjectApexClassNames(
+  matches: (content: string) => boolean,
+): Promise<string[]> {
   const workspaceRoot = getWorkspaceRoot();
   if (!workspaceRoot) {
     return [];
@@ -401,7 +396,6 @@ export async function listProjectApexTestClasses(): Promise<string[]> {
   );
   const files = Array.from(new Set(uris.map((uri) => uri.fsPath)));
 
-  const isTestRegex = /@istest\b/i;
   const found: string[] = [];
   const seen = new Set<string>();
 
@@ -411,7 +405,7 @@ export async function listProjectApexTestClasses(): Promise<string[]> {
       batch.map(async (absFile) => {
         try {
           const content = await fs.promises.readFile(absFile, "utf8");
-          if (!isTestRegex.test(content || "")) {
+          if (!matches(content || "")) {
             return null;
           }
           return path.basename(absFile, ".cls").trim() || null;
@@ -434,6 +428,25 @@ export async function listProjectApexTestClasses(): Promise<string[]> {
   }
 
   found.sort((a, b) => a.localeCompare(b));
+  return found;
+}
+
+export async function listProjectApexTestClasses(): Promise<string[]> {
+  const cached = CacheManager.get<string[]>(
+    "project",
+    APEX_TEST_CLASSES_CACHE_KEY,
+  );
+  if (cached) {
+    return cached;
+  }
+  if (!getWorkspaceRoot()) {
+    return [];
+  }
+
+  const isTestRegex = /@istest\b/i;
+  const found = await listProjectApexClassNames((content) =>
+    isTestRegex.test(content),
+  );
   await CacheManager.set(
     "project",
     APEX_TEST_CLASSES_CACHE_KEY,
@@ -441,6 +454,14 @@ export async function listProjectApexTestClasses(): Promise<string[]> {
     APEX_TEST_CLASSES_CACHE_TTL_MS,
   );
   return found;
+}
+
+// Not cached: a class added to the project a minute ago must be listed.
+// Same loose test as the list read from the org, so that both sources agree.
+export async function listProjectSchedulableClasses(): Promise<string[]> {
+  return listProjectApexClassNames((content) =>
+    content.toLowerCase().includes("schedulable"),
+  );
 }
 
 /* jscpd:ignore-start */

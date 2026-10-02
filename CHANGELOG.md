@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Deployment actions: a **Schedule Batch** action can now pick an Apex class that is in the project and not in your default org yet, and the list says so. It also lists the global schedulable classes of the installed packages.
+
 ## [8.9.1] 2026-10-02
 
 - DevOps Pipeline with [promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta): a User Story carried by a merged promotion is no longer counted in the branch it left once the branch it reached has gone live, as merged promotions are now read from the git provider ([sfdx-hardis#2260](https://github.com/hardisgroupcom/sfdx-hardis/issues/2260)).

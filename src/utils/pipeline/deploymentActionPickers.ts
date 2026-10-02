@@ -1,8 +1,10 @@
 import { execSfdxJson } from "../../utils";
 import { Logger } from "../../logger";
+import { listProjectSchedulableClasses } from "../prePostCommandsUtils";
 
 /**
  * Lists proposed in the deployment action editor that are read from the default org.
+ * The schedulable classes are also read from the project sources.
  * Shared by the DevOps Pipeline panel and the Pipeline Settings panel, which both
  * open the same deployment action editor.
  */
@@ -38,17 +40,20 @@ async function fetchAndCacheOrgNames(
   now: number,
   command: string,
   filter?: (record: any) => boolean,
-): Promise<string[]> {
+  nameOf: (record: any) => string = (record) => String(record?.Name || ""),
+): Promise<string[] | null> {
   const result = await execSfdxJson(command, {
     fail: false,
     output: false,
   });
-  const records = Array.isArray(result?.result?.records)
-    ? result.result.records
-    : [];
+  // No records array: the org could not be read, which is not an empty list
+  if (!Array.isArray(result?.result?.records)) {
+    return null;
+  }
+  const records = result.result.records;
   const filtered = filter ? records.filter(filter) : records;
   const values = filtered
-    .map((record: any) => String(record?.Name || "").trim())
+    .map((record: any) => nameOf(record).trim())
     .filter((v: string) => v.length > 0);
   const uniqueSorted: string[] = [...new Set<string>(values)].sort(
     (a: string, b: string) => a.localeCompare(b),
@@ -62,8 +67,36 @@ async function fetchAndCacheOrgNames(
   return uniqueSorted;
 }
 
+// What the Tooling API returns as the body of a managed class that is not global
+const HIDDEN_APEX_BODY = "(hidden)";
+
+/**
+ * A managed package shows the signature of its global classes and hides every
+ * other one, so a body that is readable and mentions Schedulable is a class
+ * that can be scheduled from here, whichever package it comes from.
+ */
+export function isSchedulableApexClass(record: any): boolean {
+  const body = String(record?.Body || "");
+  return (
+    body !== HIDDEN_APEX_BODY && body.toLowerCase().includes("schedulable")
+  );
+}
+
+/**
+ * The name sfdx-hardis schedules the class under: a class of a managed package
+ * carries its namespace, a class of the org or of the project does not.
+ */
+export function schedulableApexClassName(record: any): string {
+  const name = String(record?.Name || "");
+  const namespace = String(record?.NamespacePrefix || "");
+  return namespace && record?.ManageableState !== "unmanaged"
+    ? `${namespace}.${name}`
+    : name;
+}
+
+// null when the org could not be read
 export async function listSchedulableClassesFromDefaultOrg(): Promise<
-  string[]
+  string[] | null
 > {
   const orgKey = await getDefaultOrgUsername();
   const now = Date.now();
@@ -72,18 +105,56 @@ export async function listSchedulableClassesFromDefaultOrg(): Promise<
     return cached.values;
   }
   const query =
-    "SELECT Name, Body FROM ApexClass WHERE ManageableState = 'unmanaged' ORDER BY Name";
+    "SELECT Name, NamespacePrefix, ManageableState, Body FROM ApexClass ORDER BY Name";
   const command = `sf data query --query "${query}" --use-tooling-api --json`;
   return fetchAndCacheOrgNames(
     schedulableClassesByOrgCache,
     orgKey,
     now,
     command,
-    (record: any) =>
-      String(record?.Body || "")
-        .toLowerCase()
-        .includes("schedulable"),
+    isSchedulableApexClass,
+    schedulableApexClassName,
   );
+}
+
+export interface PickerValues {
+  values: string[];
+  // Values found in the project sources and not in the default org
+  projectOnlyValues?: string[];
+}
+
+/**
+ * Merges the schedulable classes of the default org with those of the project.
+ * A class merged in git and not deployed to the default org yet is only in the
+ * project: it can still be scheduled, as the deployment brings it to the target
+ * org before the action runs, so it is listed and reported as project only.
+ * When the org could not be read (null), nothing is known about what it holds:
+ * the project classes are listed and none is reported as project only.
+ */
+export function mergeSchedulableClasses(
+  orgClasses: string[] | null,
+  projectClasses: string[],
+): PickerValues {
+  if (orgClasses === null) {
+    return { values: [...projectClasses], projectOnlyValues: [] };
+  }
+  const orgKeys = new Set(orgClasses.map((name) => name.toLowerCase()));
+  const projectOnlyValues = projectClasses.filter(
+    (name) => !orgKeys.has(name.toLowerCase()),
+  );
+  const values = [...orgClasses, ...projectOnlyValues].sort((a, b) =>
+    a.localeCompare(b),
+  );
+  return { values, projectOnlyValues };
+}
+
+export async function listSchedulableClasses(): Promise<PickerValues> {
+  // One source failing must not hide the other
+  const [orgClasses, projectClasses] = await Promise.all([
+    listSchedulableClassesFromDefaultOrg().catch(() => null),
+    listProjectSchedulableClasses().catch(() => [] as string[]),
+  ]);
+  return mergeSchedulableClasses(orgClasses, projectClasses);
 }
 
 export async function listCommunitiesFromDefaultOrg(): Promise<string[]> {
@@ -95,7 +166,14 @@ export async function listCommunitiesFromDefaultOrg(): Promise<string[]> {
   }
   const query = "SELECT Name FROM Network ORDER BY Name";
   const command = `sf data query --query "${query}" --json`;
-  return fetchAndCacheOrgNames(communitiesByOrgCache, orgKey, now, command);
+  return (
+    (await fetchAndCacheOrgNames(
+      communitiesByOrgCache,
+      orgKey,
+      now,
+      command,
+    )) ?? []
+  );
 }
 
 /**
@@ -110,15 +188,15 @@ export async function handleDeploymentActionPickerMessage(
 ): Promise<boolean> {
   const pickers: Record<
     string,
-    { responseType: string; list: () => Promise<string[]> }
+    { responseType: string; list: () => Promise<PickerValues> }
   > = {
     loadSchedulableClasses: {
       responseType: "returnSchedulableClasses",
-      list: listSchedulableClassesFromDefaultOrg,
+      list: listSchedulableClasses,
     },
     loadCommunities: {
       responseType: "returnCommunities",
-      list: listCommunitiesFromDefaultOrg,
+      list: async () => ({ values: await listCommunitiesFromDefaultOrg() }),
     },
   };
   const picker = pickers[type];
@@ -126,9 +204,9 @@ export async function handleDeploymentActionPickerMessage(
     return false;
   }
   const requestId = data?.requestId || null;
-  let values: string[] = [];
+  let result: PickerValues = { values: [] };
   try {
-    values = await picker.list();
+    result = await picker.list();
   } catch (error: any) {
     Logger.log(
       `Error loading ${type} for the deployment action editor: ${error?.message || error}`,
@@ -136,7 +214,7 @@ export async function handleDeploymentActionPickerMessage(
   }
   panel.sendMessage({
     type: picker.responseType,
-    data: { requestId, values },
+    data: { requestId, ...result },
   });
   return true;
 }
