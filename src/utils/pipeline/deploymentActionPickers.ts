@@ -178,8 +178,9 @@ async function listApexClassesFromDefaultOrg(
   const namesByKind = splitApexClassesByKind(records);
   const expiresAt = Date.now() + ORG_NAMES_CACHE_TTL_MS;
   for (const key of Object.keys(APEX_CLASS_CACHES) as ApexClassKind[]) {
-    // An empty list is not cached, so that the org is asked again next time
-    if (namesByKind[key].length > 0) {
+    // The org was read: an empty list of one kind is cached too, or every opening of its
+    // picker would download all the class bodies again. An org without any class is not.
+    if (records.length > 0) {
       APEX_CLASS_CACHES[key].set(orgKey, {
         expiresAt,
         values: namesByKind[key],
