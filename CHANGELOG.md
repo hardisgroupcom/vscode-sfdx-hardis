@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [8.9.2] 2026-10-02
+
 - Deployment actions: a **Schedule Batch** action can now pick an Apex class that is in the project and not in your default org yet, and the list says so. It also lists the global schedulable classes of the installed packages.
 
 ## [8.9.1] 2026-10-02
