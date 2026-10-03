@@ -632,6 +632,21 @@
               </div>
             </template>
 
+            <!-- movedFrom (read-only): the Pull Request a failed action was moved from to fix it -->
+            <template if:true={hasMovedFrom}>
+              <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <label class="slds-form-element__label hardis-label-inline">
+                    <span>{i18n.deploymentActionMovedFrom}</span>
+                    <s-multiline-helptext content={i18n.deploymentActionMovedFromHelp} class="slds-icon-text-info"></s-multiline-helptext>
+                  </label>
+                  <div class="slds-form-element__control">
+                    <span class="hardis-chip">{movedFromLabel}</span>
+                  </div>
+                </div>
+              </div>
+            </template>
+
             <!-- Restrict the action to some target orgs -->
             <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
               <div class="slds-form-element">

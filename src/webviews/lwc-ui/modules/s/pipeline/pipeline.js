@@ -255,79 +255,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   modalTicketColumns = [];
 
-  // Compute actions columns to dynamically set Pull Request label
-  get computedModalActionsColumns() {
-    const columns = [
-      // Action type as a colored pill (hue + icon per type), so a long list of
-      // actions can be scanned by category instead of by reading each label
-      {
-        key: "type",
-        label: this.i18n.typeLabel,
-        fieldName: "type",
-        type: "typePill",
-        typeAttributes: {
-          label: { fieldName: "type" },
-          pillClass: { fieldName: "typePillClass" },
-          iconName: { fieldName: "typeIconName" },
-          tooltip: { fieldName: "type" },
-        },
-        wrapText: false,
-        initialWidth: 170,
-      },
-      {
-        key: "label",
-        label: this.i18n.actionLabelField,
-        fieldName: "label",
-        type: "button",
-        typeAttributes: {
-          label: { fieldName: "label" },
-          name: "view_action",
-          variant: "base",
-        },
-        wrapText: true,
-      },
-      // Pre-Deploy / Post-Deploy pill: the rows are sorted by this value, so
-      // the color makes the two blocks obvious at a glance
-      {
-        key: "when",
-        label: this.i18n.actionWhenField,
-        fieldName: "when",
-        type: "typePill",
-        typeAttributes: {
-          label: { fieldName: "when" },
-          pillClass: { fieldName: "whenPillClass" },
-          tooltip: { fieldName: "when" },
-        },
-        wrapText: false,
-        initialWidth: 130,
-      },
-    ];
-
-    // Only show the pull request author and column when the actions of
-    // several pull requests are aggregated in the same table: branch mode, or
-    // the modal of a Pull Request between two major branches
-    if (this.modalActionsAggregated) {
-      columns.push(this._authorColumn());
-      columns.push(this._pullRequestColumn());
-    } else {
-      columns.push({
-        key: "delete",
-        label: this.i18n.deleteLabel,
-        type: "button-icon",
-        initialWidth: 70,
-        typeAttributes: {
-          name: "delete_action",
-          iconName: "utility:delete",
-          title: this.i18n.deleteLabel,
-          alternativeText: this.i18n.deleteLabel,
-          variant: "bare",
-        },
-      });
-    }
-
-    return columns;
-  }
-
   // Compute ticket columns based on authentication state
   get computedModalTicketColumns() {
     const columns = [
@@ -428,6 +355,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   modalActions = [];
   // Tab the PR modal opens on. Set to "actions" by a deployment actions deep link.
   modalActiveTabValue = "prs";
+  // Status of the deployment actions in each org branch, from sfdx-hardis
+  // (null while loading, or when the installed CLI cannot provide it)
+  modalActionStatuses = null;
   // Tab to activate the next time the single PR modal opens (consumed on open).
   _nextModalTab = null;
   // True when the single-PR modal shows a Pull Request between two major
@@ -1873,6 +1803,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     switch (messageType) {
       case "refreshPipeline":
         this.refreshPipeline();
+        // A retried or closed action changes its status: reload it in the open modal
+        if (this.showPRModal) {
+          this._requestActionStatuses();
+        }
         break;
       case "openPullRequestsUpdated":
         // allow dynamic updates from extension host
@@ -1882,6 +1816,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         break;
       case "returnGetPrInfoForModal":
         this.handleReturnGetPrInfoForModal(data);
+        break;
+      case "returnDeploymentActionStatuses":
+        this.handleReturnDeploymentActionStatuses(data);
         break;
       case "returnSchedulableClasses":
         this.handleReturnSchedulableClasses(data);
@@ -2597,6 +2534,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
     // Aggregate all deployment actions from all PRs
     this.modalActions = this._aggregateActionsFromPRs(pullRequests);
+    this._requestActionStatuses();
 
     // Per-line breakdown for Apex tests (read-only in branch mode)
     const rows = [];
@@ -3033,6 +2971,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.modalActions = this.modalIsMajorPr
       ? this._aggregateActionsFromPRs(pr.aggregatedPullRequests || [])
       : this._aggregateActionsFromPRs([pr]);
+    this._requestActionStatuses();
 
     // Set Apex tests list for this single PR
     const apexTests =
@@ -3055,16 +2994,35 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.showPRModal = true;
   }
 
-  handleActionRowClick(event) {
-    const action = event.detail.action;
-    const row = event.detail.row;
+  // Click on the label of an action: its details
+  handleActionLabelClick(event) {
+    this._onActionRowAction("view_action", event.currentTarget.dataset.rowId);
+  }
 
-    if (!action || !row) {
+  // Retry / Mark as done buttons shown on a failed action
+  handleActionInlineButton(event) {
+    this._onActionRowAction(
+      event.currentTarget.dataset.actionName,
+      event.currentTarget.dataset.rowId,
+    );
+  }
+
+  // Menu at the end of an action row
+  handleActionMenuSelect(event) {
+    this._onActionRowAction(
+      event.detail.value,
+      event.currentTarget.dataset.rowId,
+    );
+  }
+
+  _onActionRowAction(actionName, rowId) {
+    const row = this.modalActions.find((a) => a.id === rowId);
+    if (!actionName || !row) {
       return;
     }
 
     // Handle the view_action button click
-    if (action.name === "view_action") {
+    if (actionName === "view_action") {
       // Find the full action object
       const actionRow = this.modalActions.find((a) => a.id === row.id);
       if (!actionRow || !actionRow._fullAction) {
@@ -3077,8 +3035,385 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       this.showDeploymentActionModal = true;
     }
 
-    if (action.name === "delete_action") {
+    if (actionName === "delete_action") {
       this.handleDeleteDeploymentAction(row);
+    }
+
+    if (
+      [
+        "retry_action",
+        "mark_action_done",
+        "move_action_to_my_pr",
+        "run_action_in_my_org",
+      ].includes(actionName)
+    ) {
+      this.handleRecoverDeploymentAction(actionName, row);
+    }
+  }
+
+  // Retry, close by hand or move a failed action: sfdx-hardis does the work in
+  // the command runner, then refreshes the pipeline (and so the statuses)
+  handleRecoverDeploymentAction(actionName, row) {
+    const fullAction = row?._fullAction;
+    // One action of the Pull Request of this window, tried in the default org of
+    // the user, which sfdx-hardis refuses to touch when it is a major org (--dev-org)
+    if (actionName === "run_action_in_my_org" && fullAction?.id) {
+      const prArg = row.prNumber > 0 ? String(row.prNumber) : "draft";
+      const runId = String(fullAction.id).replace(/"/g, "");
+      window.sendMessageToVSCode({
+        type: "runCommand",
+        data: {
+          command: `sf hardis:project:action:run --pr ${prArg} --action-id "${runId}" --dev-org`,
+        },
+      });
+      return;
+    }
+    const prNumber = parseInt(row?.prNumber, 10);
+    const orgBranch = this.actionStatusOrgBranch;
+    if (!fullAction?.id || !prNumber || !orgBranch) {
+      return;
+    }
+    const actionId = String(fullAction.id).replace(/"/g, "");
+    let command = "";
+    if (actionName === "retry_action") {
+      command = `sf hardis:project:action:run --pr ${prNumber} --action-id "${actionId}" --org-branch ${orgBranch}`;
+    } else if (actionName === "mark_action_done") {
+      // Nothing to answer: recorded in the background, the statuses refresh when it is done
+      window.sendMessageToVSCode({
+        type: "markDeploymentActionDone",
+        data: { prNumber, actionId, orgBranch, label: row.label },
+      });
+      return;
+    } else if (actionName === "move_action_to_my_pr") {
+      const myPrNumber = this.currentBranchPullRequest?.number;
+      const target = myPrNumber === -1 ? "draft" : String(myPrNumber);
+      command = `sf hardis:project:action:update --scope pr --pr-id ${prNumber} --when ${fullAction.when || "post-deploy"} --action-id "${actionId}" --move-to-pr ${target}`;
+    }
+    if (command) {
+      window.sendMessageToVSCode({ type: "runCommand", data: { command } });
+    }
+  }
+
+  handleReturnDeploymentActionStatuses(data) {
+    if (!data || !data.statuses) {
+      this.modalActionStatuses = null;
+      return;
+    }
+    this.modalActionStatuses = data.statuses;
+  }
+
+  // The actions of the modal, one group per Pull Request. Groups with a problem
+  // come first, then the ones waiting for someone, then the rest. Inside a group
+  // the actions keep the order they run in: pre-deploy, then post-deploy, each
+  // in the order of the Pull Request file.
+  get modalActionGroups() {
+    const byPr = new Map();
+    for (const row of this.modalActions) {
+      if (!byPr.has(row.prNumber)) {
+        byPr.set(row.prNumber, []);
+      }
+      byPr.get(row.prNumber).push(row);
+    }
+    const whenRank = { "pre-deploy": 0, "post-deploy": 1 };
+    const groups = [];
+    for (const [prNumber, prRows] of byPr.entries()) {
+      const sortedRows = [...prRows].sort(
+        (a, b) =>
+          (whenRank[a.whenCode] ?? 2) - (whenRank[b.whenCode] ?? 2) ||
+          (a.orderIndex ?? 0) - (b.orderIndex ?? 0),
+      );
+      const rows = sortedRows.map((row, index) => ({
+        ...row,
+        order: index + 1,
+        ...this._actionStatusFields(row, sortedRows),
+      }));
+      const first = rows[0];
+      groups.push({
+        key: `pr-${prNumber}`,
+        prNumber,
+        showHeader: this.modalActionsAggregated,
+        prLabel: `#${prNumber} ${first.prTitle}`.trim(),
+        prWebUrl: first.prWebUrl,
+        authorLabel: first.authorLabel,
+        authorInitials: first.authorInitials,
+        authorAvatarClass: first.authorAvatarClass || "hardis-avatar",
+        summary: this._actionGroupSummary(rows),
+        rank: this._actionGroupRank(rows),
+        rows,
+      });
+    }
+    return groups.sort((a, b) => a.rank - b.rank || b.prNumber - a.prNumber);
+  }
+
+  // 0: something failed or was stopped, 1: waiting for someone, 2: the rest
+  _actionGroupRank(rows) {
+    if (
+      rows.some((row) =>
+        ["failed", "warning", "not-run"].includes(row.statusCode),
+      )
+    ) {
+      return 0;
+    }
+    if (rows.some((row) => row.statusCode === "manual")) {
+      return 1;
+    }
+    return 2;
+  }
+
+  // "1 failed · 2 stopped": what the group holds, once the statuses are known
+  _actionGroupSummary(rows) {
+    if (!this.modalActionStatuses) {
+      return [];
+    }
+    const categories = [
+      {
+        key: "failed",
+        codes: ["failed", "warning"],
+        labelKey: "actionSummaryFailed",
+        pill: "hardis-status-failed",
+      },
+      {
+        key: "stopped",
+        codes: ["not-run"],
+        labelKey: "actionSummaryStopped",
+        pill: "hardis-status-pending",
+      },
+      {
+        key: "waiting",
+        codes: ["manual"],
+        labelKey: "actionSummaryWaiting",
+        pill: "hardis-status-pending",
+      },
+      {
+        key: "moved",
+        codes: ["moved"],
+        labelKey: "actionSummaryMoved",
+        pill: "hardis-status-unknown",
+      },
+      {
+        key: "done",
+        codes: ["success"],
+        labelKey: "actionSummaryDone",
+        pill: "hardis-status-success",
+      },
+    ];
+    return categories
+      .map((category) => ({
+        key: category.key,
+        count: rows.filter((row) => category.codes.includes(row.statusCode))
+          .length,
+        category,
+      }))
+      .filter((item) => item.count > 0)
+      .map((item) => ({
+        key: item.key,
+        label: this.t(item.category.labelKey, { count: item.count }),
+        pillClass: "hardis-pill " + item.category.pill,
+      }));
+  }
+
+  // The org branch the status column describes: the major branch of the
+  // branch window, the target branch of a Pull Request
+  get actionStatusOrgBranch() {
+    if (this.modalMode === "singlePR") {
+      return (this.modalPullRequests[0] || {}).targetBranch || "";
+    }
+    return this.modalBranchName || "";
+  }
+
+  _requestActionStatuses() {
+    this.modalActionStatuses = null;
+    // A draft (no Pull Request yet, number -1) only has the results of the
+    // actions tried in a developer org, kept in a local file
+    const prNumbers = [
+      ...new Set(
+        this.modalActions
+          .map((row) => parseInt(row.prNumber, 10))
+          .map((prNumber) => (prNumber === -1 ? "draft" : prNumber))
+          .filter((prNumber) => prNumber === "draft" || prNumber > 0),
+      ),
+    ];
+    if (prNumbers.length === 0) {
+      return;
+    }
+    window.sendMessageToVSCode({
+      type: "loadDeploymentActionStatuses",
+      data: { prNumbers },
+    });
+  }
+
+  // Status pill of an action in the org branch, and the row actions it allows
+  _actionStatusFields(row, groupRows = []) {
+    const actionId = row._fullAction?.id;
+    const statusKey = row.prNumber === -1 ? "draft" : String(row.prNumber);
+    const prEntries = this.modalActionStatuses?.[statusKey] || [];
+    const entry = prEntries.find(
+      (e) =>
+        e.actionId === actionId && e.orgBranch === this.actionStatusOrgBranch,
+    );
+    // In the window of one Pull Request, the result of the last try in the
+    // developer org of the user, recorded under the branch of the Pull Request
+    const devBranch = this.modalActionsAggregated
+      ? ""
+      : (this.modalPullRequests[0] || {}).sourceBranch || "";
+    const devEntry = devBranch
+      ? prEntries.find((e) => e.actionId === actionId && e.orgBranch === devBranch)
+      : null;
+    const status = entry ? entry.status : "none";
+    const display = this._actionStatusDisplay(status, entry);
+    const menuItems = [
+      {
+        label: this.i18n.deploymentActionViewDetails,
+        name: "view_action",
+        iconName: "utility:preview",
+      },
+    ];
+    const inlineButtons = [];
+    const recoverable =
+      ["failed", "warning", "not-run"].includes(status) &&
+      row.whenCode === "post-deploy";
+    if (recoverable) {
+      const retry = {
+        label: this.i18n.deploymentActionRetry,
+        name: "retry_action",
+        iconName: "utility:refresh",
+      };
+      const markDone = {
+        label: this.i18n.deploymentActionMarkDone,
+        name: "mark_action_done",
+        iconName: "utility:check",
+      };
+      // The failure itself gets visible buttons; the actions it stopped keep
+      // them in the menu, since retrying the failure first usually runs them
+      if (status === "not-run") {
+        menuItems.push(retry, markDone);
+      } else {
+        inlineButtons.push(
+          {
+            ...retry,
+            className:
+              "slds-button slds-button_neutral hardis-btn-tinted-blue da-button",
+          },
+          {
+            ...markDone,
+            className: "slds-button slds-button_neutral da-button",
+          },
+        );
+      }
+      const myPrNumber = this.currentBranchPullRequest?.number;
+      if (myPrNumber && myPrNumber !== row.prNumber) {
+        menuItems.push({
+          label: this.i18n.deploymentActionMoveToMyPr,
+          name: "move_action_to_my_pr",
+          iconName: "utility:move",
+        });
+      }
+    }
+    // Your own Pull Request: try the action in your org (again, after a failed
+    // try), or delete it
+    if (!this.modalActionsAggregated) {
+      const lastTryFailed = ["failed", "warning"].includes(devEntry?.status);
+      inlineButtons.push({
+        label: lastTryFailed
+          ? this.i18n.deploymentActionRerunInMyOrg
+          : this.i18n.deploymentActionRunInMyOrg,
+        name: "run_action_in_my_org",
+        className: "slds-button slds-button_neutral da-button",
+      });
+      menuItems.push({
+        label: this.i18n.deleteLabel,
+        name: "delete_action",
+        iconName: "utility:delete",
+      });
+    }
+    return {
+      statusCode: status,
+      showStatus: !!this.modalActionStatuses,
+      statusLabel: display.label,
+      statusPillClass: "hardis-pill " + display.pillClass,
+      statusDetail: [
+        this._actionStatusDetail(status, entry, groupRows),
+        devEntry ? this._devOrgStatusDetail(devEntry) : "",
+      ]
+        .filter(Boolean)
+        .join(" · "),
+      inlineButtons,
+      menuItems,
+    };
+  }
+
+  // "In your org: Done (2026-10-03)": the last try in the developer org
+  _devOrgStatusDetail(devEntry) {
+    const display = this._actionStatusDisplay(devEntry.status, devEntry);
+    return this.t("actionStatusInMyOrg", {
+      status: display.label,
+      date: (devEntry.date || "").substring(0, 10),
+    });
+  }
+
+  // One line under the label saying why the action is in this state, when the
+  // state alone does not: which action stopped it, where it was moved, or the
+  // note of a run made outside a deployment job
+  _actionStatusDetail(status, entry, groupRows) {
+    if (!entry) {
+      return "";
+    }
+    if (status === "not-run" && entry.blockedBy) {
+      const blocker = groupRows.findIndex(
+        (other) => other._fullAction?.id === entry.blockedBy.actionId,
+      );
+      return blocker >= 0
+        ? this.t("actionStoppedByOrder", { order: blocker + 1 })
+        : this.t("actionStoppedByPr", { pr: entry.blockedBy.pr });
+    }
+    if (status === "moved") {
+      return "";
+    }
+    return entry.note || "";
+  }
+
+  _actionStatusDisplay(status, entry) {
+    switch (status) {
+      case "success":
+        return {
+          label: this.i18n.actionStatusDone,
+          pillClass: "hardis-status-success",
+        };
+      case "failed":
+        return {
+          label: this.i18n.actionStatusFailed,
+          pillClass: "hardis-status-failed",
+        };
+      case "warning":
+        return {
+          label: this.i18n.actionStatusFailedAllowed,
+          pillClass: "hardis-status-failed",
+        };
+      case "not-run":
+        return {
+          label: this.i18n.actionStatusNotRun,
+          pillClass: "hardis-status-pending",
+        };
+      case "manual":
+        return {
+          label: this.i18n.actionStatusManual,
+          pillClass: "hardis-status-pending",
+        };
+      case "moved":
+        return {
+          label: this.t("actionStatusMoved", { pr: entry?.movedTo || "?" }),
+          pillClass: "hardis-status-unknown",
+        };
+      case "skipped":
+        return {
+          label: this.i18n.actionStatusSkipped,
+          pillClass: "hardis-status-unknown",
+        };
+      default:
+        return {
+          label: this.i18n.actionStatusNotRunYet,
+          pillClass: "hardis-status-unknown",
+        };
     }
   }
 
@@ -3635,7 +3970,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
     for (const pr of prs) {
       if (pr.deploymentActions && Array.isArray(pr.deploymentActions)) {
-        for (const action of pr.deploymentActions) {
+        for (const [orderIndex, action] of pr.deploymentActions.entries()) {
           if (action) {
             const when = action.when;
             const whenLabel = this._getActionWhenLabel(when);
@@ -3665,6 +4000,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
               prLabel: `#${pr.number} - ${pr.title || ""}`,
               prWebUrl: pr.webUrl || "",
               prNumber: pr.number || 0,
+              prTitle: pr.title || "",
+              orderIndex,
               _fullAction: fullAction,
             });
           }
