@@ -1243,6 +1243,7 @@
   "failedToRetrieveMetadataDueToConflicts": "Metadata ophalen mislukt door bronconflicten.",
   "failedToRetrieveMetadataType": "{{singleName}} ophalen mislukt: {{errorMsg}}",
   "failedToRetrieveNFiles": "{{count}} bestand(en) ophalen mislukt",
+  "failedToRetrieveUnknownMetadataType": "Salesforce CLI kent het metadatatype {{metadataType}} niet en kan het dus niet ophalen. Vink de {{count}} {{metadataType}}-rij(en) uit en haal opnieuw op.",
   "failedToRunVsCodeCommand": "VS Code-opdracht uitvoeren mislukt: {{command}}",
   "failedToStartCommand": "Opdracht starten mislukt: {{msg}}",
   "failedToUpdateConfigKey": "Configuratie bijwerken mislukt: {{configKey}}",

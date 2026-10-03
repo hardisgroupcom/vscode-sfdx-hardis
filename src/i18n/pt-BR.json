@@ -1243,6 +1243,7 @@
   "failedToRetrieveMetadataDueToConflicts": "Falha ao baixar metadados devido a conflitos de origem.",
   "failedToRetrieveMetadataType": "Falha ao baixar {{singleName}}: {{errorMsg}}",
   "failedToRetrieveNFiles": "Falha ao baixar {{count}} arquivo(s)",
+  "failedToRetrieveUnknownMetadataType": "O Salesforce CLI não conhece o tipo de metadados {{metadataType}}, por isso não consegue baixá-lo. Desmarque as {{count}} linha(s) {{metadataType}} e baixe novamente.",
   "failedToRunVsCodeCommand": "Falha ao executar o comando do VS Code: {{command}}",
   "failedToStartCommand": "Falha ao iniciar o comando: {{msg}}",
   "failedToUpdateConfigKey": "Falha ao atualizar a configuração: {{configKey}}",

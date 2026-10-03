@@ -460,6 +460,17 @@ function collectMetadataErrorDetails(messages: any[]): string[] {
   return errorDetails;
 }
 
+// The metadata type that the Salesforce CLI refused because its registry does
+// not know it (ex: GenOpAgentConfig), or null when the failure is something else
+function getUnknownMetadataType(result: any): string | null {
+  const errorMsg = result?.error?.message || result?.message || "";
+  const match =
+    /Missing metadata type definition in registry for id '([^']+)'/.exec(
+      errorMsg,
+    );
+  return match ? match[1] : null;
+}
+
 function asArray(value: any): any[] {
   if (Array.isArray(value)) {
     return value;
@@ -979,6 +990,23 @@ export async function executeMetadataRetrieve(
           });
         }
       }
+    } else if (getUnknownMetadataType(result)) {
+      // Name the type and the rows to untick, instead of the raw registry error
+      const metadataType = getUnknownMetadataType(result) as string;
+      const count = metadataList.filter(
+        (item) => item?.memberType === metadataType,
+      ).length;
+      Logger.log("Retrieve result:" + JSON.stringify(result));
+      vscode.window
+        .showErrorMessage(
+          t("failedToRetrieveUnknownMetadataType", { metadataType, count }),
+          "View logs",
+        )
+        .then((action) => {
+          if (action === "View logs") {
+            Logger.showOutputChannel();
+          }
+        });
     } else {
       const errorMsg =
         result?.error?.message || result?.message || "Unknown error occurred";
@@ -1452,8 +1480,10 @@ async function handleSourceMemberQuery(
     }
   }
 
-  // Exclude MemberTypes that are not retrievable via Metadata API
-  const excludedTypes = ["AuraDefinition"];
+  // Exclude MemberTypes that are not retrievable via Metadata API.
+  // AuraDefinition and LightningComponentResource are the files of a bundle:
+  // the AuraDefinitionBundle / LightningComponentBundle row retrieves them
+  const excludedTypes = ["AuraDefinition", "LightningComponentResource"];
   if (excludedTypes.length > 0) {
     const excludedConditions = excludedTypes
       .map((t) => `'${t.replace(/'/g, "\\'")}'`)

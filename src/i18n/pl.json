@@ -1243,6 +1243,7 @@
   "failedToRetrieveMetadataDueToConflicts": "Nie udało się pobrać metadata z powodu konfliktów źródeł.",
   "failedToRetrieveMetadataType": "Nie udało się pobrać {{singleName}}: {{errorMsg}}",
   "failedToRetrieveNFiles": "Nie udało się pobrać {{count}} pliku/plików",
+  "failedToRetrieveUnknownMetadataType": "Salesforce CLI nie zna typu metadanych {{metadataType}}, więc nie może go pobrać. Należy odznaczyć {{count}} wiersz(e) {{metadataType}} i ponowić pobieranie.",
   "failedToRunVsCodeCommand": "Nie udało się uruchomić polecenia VS Code: {{command}}",
   "failedToStartCommand": "Nie udało się uruchomić polecenia: {{msg}}",
   "failedToUpdateConfigKey": "Nie udało się zaktualizować konfiguracji: {{configKey}}",
