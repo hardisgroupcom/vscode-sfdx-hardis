@@ -369,6 +369,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   markingDoneKeys = [];
   // Rows whose status details are shown, and the Backpromotes rows by Pull Request
   expandedActionRowIds = [];
+  // "Next promotion" mode of the Deployment Actions tab: what the promotion to the
+  // merge target of the branch will do with each action, computed by sfdx-hardis
+  promotionMode = false;
+  actionForecast = null;
+  actionForecastLoading = false;
   actionBackpromotes = {};
   actionBackpromotesLoading = [];
   markDoneRefreshingKeys = [];
@@ -1840,6 +1845,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       case "returnDeploymentActionBackpromotes":
         this.handleReturnDeploymentActionBackpromotes(data);
         break;
+      case "returnDeploymentActionForecast":
+        this.handleReturnDeploymentActionForecast(data);
+        break;
       case "returnSchedulableClasses":
         this.handleReturnSchedulableClasses(data);
         break;
@@ -2555,6 +2563,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // Aggregate all deployment actions from all PRs
     this.modalActions = this._aggregateActionsFromPRs(pullRequests);
     this._requestActionStatuses();
+    this.actionForecast = null;
+    this.actionForecastLoading = false;
+    if (this.promotionMode && this.promotionTargetBranch) {
+      this._requestActionForecast();
+    }
 
     // Per-line breakdown for Apex tests (read-only in branch mode)
     const rows = [];
@@ -3067,6 +3080,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         "run_action_in_my_org",
         "run_action_in_other_org",
         "mark_action_done_other_org",
+        "mark_action_done_forecast",
       ].includes(actionName)
     ) {
       this.handleRecoverDeploymentAction(actionName, row);
@@ -3119,6 +3133,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     } else if (actionName === "mark_action_done") {
       this._markActionDone(row, orgBranch);
       return;
+    } else if (actionName === "mark_action_done_forecast") {
+      this._markActionDone(row, this.promotionTargetBranch);
+      return;
     } else if (actionName === "mark_action_done_other_org") {
       // sfdx-hardis asks where: a major branch where it is not done yet, or a
       // developer org authenticated on this computer
@@ -3157,6 +3174,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       // Keep spinning until the new statuses show the action as done
       this.markDoneRefreshingKeys = [...this.markDoneRefreshingKeys, key];
       this._requestActionStatuses({ refresh: true });
+      if (this.promotionMode) {
+        this._requestActionForecast({ refresh: true });
+      }
     } else {
       this.markingDoneKeys = this.markingDoneKeys.filter((k) => k !== key);
     }
@@ -3164,6 +3184,385 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   _markDoneKey(prNumber, actionId, orgBranch = this.actionStatusOrgBranch) {
     return `${prNumber}|${actionId}|${orgBranch}`;
+  }
+
+  // ---- "Next promotion" mode ----
+
+  // The first merge target of the branch of the window: preprod for uat
+  get promotionTargetBranch() {
+    if (this.modalMode === "singlePR") {
+      return "";
+    }
+    const org = (this.pipelineData?.orgs || []).find(
+      (o) => o.name === this.modalBranchName,
+    );
+    const targets = Array.isArray(org?.mergeTargets) ? org.mergeTargets : [];
+    return targets[0] || "";
+  }
+
+  // Shown in a branch window that has a merge target, once the statuses are known
+  // (no git provider: no comment to read, no forecast either)
+  get showPromotionToggle() {
+    return (
+      this.modalActionsAggregated &&
+      !!this.promotionTargetBranch &&
+      !!this.modalActionStatuses
+    );
+  }
+
+  get isPromotionModeShown() {
+    return this.promotionMode && this.showPromotionToggle;
+  }
+
+  get promotionToggleCurrentLabel() {
+    return this.t("forecastToggleCurrent", { branch: this.modalBranchName });
+  }
+
+  get promotionToggleNextLabel() {
+    return this.t("forecastToggleNext", { branch: this.promotionTargetBranch });
+  }
+
+  get promotionToggleCurrentClass() {
+    return this.promotionMode ? "da-seg-button" : "da-seg-button da-seg-on";
+  }
+
+  get promotionToggleNextClass() {
+    return this.promotionMode ? "da-seg-button da-seg-on" : "da-seg-button";
+  }
+
+  get promotionModeOffPressed() {
+    return String(!this.promotionMode);
+  }
+
+  get promotionModeOnPressed() {
+    return String(this.promotionMode);
+  }
+
+  handlePromotionModeOff() {
+    this.promotionMode = false;
+  }
+
+  handlePromotionModeOn() {
+    this.promotionMode = true;
+    if (!this.actionForecast && !this.actionForecastLoading) {
+      this._requestActionForecast();
+    }
+  }
+
+  // The open promotion Pull Request, with the job status of the panel's list of
+  // open Pull Requests (the forecast only names it)
+  get promotionPullRequest() {
+    const pr = this.actionForecast?.promotionPullRequest;
+    if (!pr) {
+      return null;
+    }
+    const open = (this.openPullRequests || []).find(
+      (o) => Number(o.number) === Number(pr.number),
+    );
+    return {
+      ...pr,
+      label: `#${pr.number} ${pr.title || ""}`.trim(),
+      jobsLabel: open?.jobsStatusLabel || "",
+      jobsPillClass:
+        open?.statusPillClass || "hardis-pill hardis-status-unknown",
+      jobsUrl: open?.jobsStatusUrl || pr.webUrl,
+    };
+  }
+
+  get promotionNoPrLabel() {
+    return this.t("forecastNoPromotionPr", {
+      source: this.modalBranchName,
+      target: this.promotionTargetBranch,
+    });
+  }
+
+  get promotionToDoLabel() {
+    const count = Object.values(this.actionForecast?.actions || {})
+      .flat()
+      .filter((a) => a.forecast === "waiting").length;
+    return this.t("forecastToDoCount", { count });
+  }
+
+  _requestActionForecast({ refresh = false } = {}) {
+    const prNumbers = [
+      ...new Set(
+        this.modalActions
+          .map((row) => parseInt(row.prNumber, 10))
+          .filter((prNumber) => prNumber > 0),
+      ),
+    ];
+    if (prNumbers.length === 0 || !this.promotionTargetBranch) {
+      return;
+    }
+    if (!refresh) {
+      this.actionForecast = null;
+      this.actionForecastLoading = true;
+    }
+    window.sendMessageToVSCode({
+      type: "loadDeploymentActionForecast",
+      data: {
+        prNumbers,
+        targetBranch: this.promotionTargetBranch,
+        fromBranch: this.modalBranchName,
+      },
+    });
+  }
+
+  handleReturnDeploymentActionForecast(data) {
+    this.actionForecastLoading = false;
+    this.actionForecast = data?.forecast || null;
+  }
+
+  // One pill per action: what the promotion will do with it in the target branch
+  _actionForecastFields(row) {
+    const target = this.promotionTargetBranch;
+    const actionId = row._fullAction?.id;
+    const menuItems = [
+      {
+        label: this.i18n.deploymentActionViewDetails,
+        name: "view_action",
+        iconName: "utility:preview",
+      },
+    ];
+    const inlineButtons = [];
+    const forecast = (
+      this.actionForecast?.actions?.[String(row.prNumber)] || []
+    ).find((a) => a.actionId === actionId);
+    if (!forecast) {
+      const loading = this.actionForecastLoading;
+      return {
+        statusCode: loading ? "loading" : "none",
+        showStatus: true,
+        statusLabel: loading
+          ? this.i18n.loadingLabel
+          : this.i18n.actionStatusNotRun,
+        statusPillClass: loading
+          ? "hardis-pill hardis-status-unknown da-pill-loading"
+          : "hardis-pill hardis-status-unknown",
+        statusDetail: "",
+        inlineButtons,
+        menuItems,
+        expanded: false,
+        statusDetailLines: [],
+        statusToggleTitle: this.i18n.deploymentActionStatusToggle,
+      };
+    }
+    const display = this._forecastDisplay(forecast, target);
+    const markDone = {
+      label: this.t("deploymentActionMarkDoneIn", { orgBranch: target }),
+      name: "mark_action_done_forecast",
+      iconName: "utility:check",
+    };
+    const busy = this.markingDoneKeys.includes(
+      this._markDoneKey(row.prNumber, actionId, target),
+    );
+    if (forecast.forecast === "waiting" || busy) {
+      inlineButtons.push({
+        ...markDone,
+        label: busy
+          ? this.t("deploymentActionMarkingDoneIn", { orgBranch: target })
+          : markDone.label,
+        className: "slds-button slds-button_neutral da-button",
+        busy,
+      });
+    } else if (
+      ["runs-at-validation", "runs-at-deployment", "failed"].includes(
+        forecast.forecast,
+      ) &&
+      // Runs at every deployment whatever its status: marking it done changes nothing
+      forecast.reason !== "every-deployment"
+    ) {
+      menuItems.push(markDone);
+    }
+    if (row.prNumber > 0) {
+      menuItems.push({
+        label: this.i18n.deploymentActionMarkDoneOtherOrg,
+        name: "mark_action_done_other_org",
+        iconName: "utility:check",
+      });
+    }
+    return {
+      statusCode: forecast.forecast,
+      showStatus: true,
+      statusLabel: display.label,
+      statusPillClass: "hardis-pill " + display.pillClass,
+      statusDetail: this._forecastReason(forecast, target),
+      inlineButtons,
+      menuItems,
+      expanded: this.expandedActionRowIds.includes(row.id),
+      statusDetailLines:
+        this.expandedActionRowIds.includes(row.id) && this.modalActionStatuses
+          ? this._actionStatusDetailLines(row)
+          : [],
+      statusToggleTitle: this.i18n.deploymentActionStatusToggle,
+    };
+  }
+
+  _forecastDisplay(forecast, target) {
+    switch (forecast.forecast) {
+      case "waiting":
+        return {
+          label: this.i18n.forecastWaiting,
+          pillClass: "hardis-status-pending",
+        };
+      case "done":
+        return {
+          label: this.t("forecastDone", { branch: target }),
+          pillClass: "hardis-status-success",
+        };
+      case "runs-at-validation":
+        return {
+          label: this.i18n.forecastRunsAtValidation,
+          pillClass: "hardis-status-info",
+        };
+      case "runs-at-deployment":
+        return {
+          label: this.i18n.forecastRunsAtDeployment,
+          pillClass: "hardis-status-info",
+        };
+      case "failed":
+        return {
+          label: this.t("forecastFailed", { branch: target }),
+          pillClass: "hardis-status-failed",
+        };
+      case "moved":
+        return {
+          label: this.t("forecastMoved", { pr: forecast.movedTo || "?" }),
+          pillClass: "hardis-status-unknown",
+        };
+      case "not-in-promotion":
+        return {
+          label: this.i18n.forecastNotInPromotion,
+          pillClass: "hardis-status-unknown",
+        };
+      default:
+        return {
+          label: this.t("forecastNotForBranch", { branch: target }),
+          pillClass: "hardis-status-unknown",
+        };
+    }
+  }
+
+  // The line under the label saying why
+  _forecastReason(forecast, target) {
+    const date = (forecast.date || "").substring(0, 10);
+    const promotionPr =
+      this.actionForecast?.promotionPullRequest?.number || "?";
+    switch (forecast.reason) {
+      case "manual-before-merge":
+        return this.t("forecastReasonBeforeMerge", { branch: target });
+      case "manual-after-merge":
+        return this.t("forecastReasonAfterMerge", { branch: target });
+      case "done-in-branch":
+        return forecast.note || date;
+      case "every-deployment":
+        return this.i18n.forecastReasonEveryDeployment;
+      case "deploy-only":
+        return this.i18n.forecastReasonDeployOnly;
+      case "skipped-by-validation":
+        return this.i18n.forecastReasonSkippedByValidation;
+      case "validation-first":
+        return this.i18n.forecastReasonValidationFirst;
+      case "validation-only":
+        return this.i18n.forecastReasonValidationOnly;
+      case "branch-filter":
+        return this.t("forecastReasonBranchFilter", { branch: target });
+      case "failed-in-branch":
+        return this.t("forecastReasonFailed", { date });
+      case "stopped-in-branch":
+        return this.i18n.forecastReasonStopped;
+      case "not-carried":
+        return this.t("forecastReasonNotCarried", { pr: promotionPr });
+      default:
+        return "";
+    }
+  }
+
+  // What needs a person first, then failures, then the rest
+  _forecastGroupRank(rows) {
+    if (rows.every((row) => row.statusCode === "not-in-promotion")) {
+      return 3;
+    }
+    if (rows.some((row) => ["waiting", "failed"].includes(row.statusCode))) {
+      return 0;
+    }
+    if (
+      rows.some((row) =>
+        ["runs-at-validation", "runs-at-deployment"].includes(row.statusCode),
+      )
+    ) {
+      return 1;
+    }
+    return 2;
+  }
+
+  _forecastGroupSummary(rows) {
+    if (!this.actionForecast) {
+      return [];
+    }
+    if (rows.every((row) => row.statusCode === "not-in-promotion")) {
+      return [
+        {
+          key: "not-in-promotion",
+          label: this.i18n.forecastNotInPromotion,
+          pillClass: "hardis-pill hardis-status-unknown",
+        },
+      ];
+    }
+    const target = this.promotionTargetBranch;
+    const categories = [
+      {
+        key: "waiting",
+        codes: ["waiting"],
+        labelKey: "forecastSummaryToDo",
+        pill: "hardis-status-pending",
+      },
+      {
+        key: "failed",
+        codes: ["failed"],
+        labelKey: "forecastSummaryFailed",
+        pill: "hardis-status-failed",
+      },
+      {
+        key: "validation",
+        codes: ["runs-at-validation"],
+        labelKey: "forecastSummaryValidation",
+        pill: "hardis-status-info",
+      },
+      {
+        key: "deployment",
+        codes: ["runs-at-deployment"],
+        labelKey: "forecastSummaryDeployment",
+        pill: "hardis-status-info",
+      },
+      {
+        key: "done",
+        codes: ["done"],
+        labelKey: "forecastSummaryDone",
+        pill: "hardis-status-success",
+      },
+      {
+        key: "not-for-branch",
+        codes: ["not-for-branch", "moved"],
+        labelKey: "forecastSummaryNotForBranch",
+        pill: "hardis-status-unknown",
+      },
+    ];
+    return categories
+      .map((category) => ({
+        category,
+        count: rows.filter((row) => category.codes.includes(row.statusCode))
+          .length,
+      }))
+      .filter((item) => item.count > 0)
+      .map((item) => ({
+        key: item.category.key,
+        label: this.t(item.category.labelKey, {
+          count: item.count,
+          branch: target,
+        }),
+        pillClass: "hardis-pill " + item.category.pill,
+      }));
   }
 
   // Mark as done in one org branch, in the background: the button spins until
@@ -3341,8 +3740,17 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         authorLabel: first.authorLabel,
         authorInitials: first.authorInitials,
         authorAvatarClass: first.authorAvatarClass || "hardis-avatar",
-        summary: this._actionGroupSummary(rows),
-        rank: this._actionGroupRank(rows),
+        summary: this.isPromotionModeShown
+          ? this._forecastGroupSummary(rows)
+          : this._actionGroupSummary(rows),
+        rank: this.isPromotionModeShown
+          ? this._forecastGroupRank(rows)
+          : this._actionGroupRank(rows),
+        groupClass:
+          this.isPromotionModeShown &&
+          rows.every((row) => row.statusCode === "not-in-promotion")
+            ? "da-group da-group-excluded"
+            : "da-group",
         rows,
       });
     }
@@ -3458,6 +3866,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   // Status pill of an action in the org branch, and the row actions it allows
   _actionStatusFields(row, groupRows = []) {
+    if (this.isPromotionModeShown) {
+      return this._actionForecastFields(row);
+    }
     const actionId = row._fullAction?.id;
     const statusKey = row.prNumber === -1 ? "draft" : String(row.prNumber);
     const prEntries = this.modalActionStatuses?.[statusKey] || [];

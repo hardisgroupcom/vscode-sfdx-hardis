@@ -401,6 +401,66 @@
   gap: 0.5rem;
 }
 
+.da-promo-head {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.da-seg {
+  display: inline-flex;
+  justify-self: start;
+  border: 1px solid var(--slds-g-color-neutral-base-80);
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+.da-seg-button {
+  font: inherit;
+  font-size: 0.8125rem;
+  border: none;
+  background: transparent;
+  color: var(--vscode-descriptionForeground, inherit);
+  padding: 0.3rem 0.8rem;
+  cursor: pointer;
+}
+
+.da-seg-button + .da-seg-button {
+  border-left: 1px solid var(--slds-g-color-neutral-base-80);
+}
+
+.da-seg-button.da-seg-on {
+  background: var(--slds-g-color-palette-blue-90);
+  color: var(--slds-g-color-palette-blue-30);
+  font-weight: 600;
+}
+
+.da-seg-button:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder, currentColor);
+  outline-offset: -2px;
+}
+
+.da-promo-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--slds-g-color-neutral-base-80);
+  border-radius: 0.375rem;
+  background: var(--slds-g-color-neutral-base-95);
+  font-size: 0.8125rem;
+}
+
+.da-promo-todo {
+  margin-left: auto;
+  font-weight: 600;
+}
+
+.da-group-excluded .da-row {
+  opacity: 0.55;
+}
+
 .da-groups {
   display: grid;
   gap: 0.75rem;

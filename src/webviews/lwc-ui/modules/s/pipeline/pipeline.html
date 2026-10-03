@@ -441,9 +441,32 @@
                             <template if:true={modalActions.length}>
                                 <!-- One group per Pull Request: its header says who and what once, its
                                      rows are the actions in the order they run -->
+                                <template if:true={showPromotionToggle}>
+                                    <div class="da-promo-head">
+                                        <div class="da-seg" role="group">
+                                            <button class={promotionToggleCurrentClass} aria-pressed={promotionModeOffPressed} onclick={handlePromotionModeOff}>{promotionToggleCurrentLabel}</button>
+                                            <button class={promotionToggleNextClass} aria-pressed={promotionModeOnPressed} onclick={handlePromotionModeOn}>{promotionToggleNextLabel}</button>
+                                        </div>
+                                        <template if:true={isPromotionModeShown}>
+                                            <div class="da-promo-bar">
+                                                <template if:true={promotionPullRequest}>
+                                                    <span>{i18n.forecastPromotionPr}</span>
+                                                    <a href={promotionPullRequest.webUrl} target="_blank" rel="noopener noreferrer">{promotionPullRequest.label}</a>
+                                                    <template if:true={promotionPullRequest.jobsLabel}>
+                                                        <a class={promotionPullRequest.jobsPillClass} href={promotionPullRequest.jobsUrl} target="_blank" rel="noopener noreferrer"><span class="hardis-pill-dot"></span>{promotionPullRequest.jobsLabel}</a>
+                                                    </template>
+                                                </template>
+                                                <template if:false={promotionPullRequest}>
+                                                    <span>{promotionNoPrLabel}</span>
+                                                </template>
+                                                <span class="da-promo-todo">{promotionToDoLabel}</span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
                                 <div class="da-groups">
                                     <template for:each={modalActionGroups} for:item="group">
-                                        <section key={group.key} class="da-group">
+                                        <section key={group.key} class={group.groupClass}>
                                             <template if:true={group.showHeader}>
                                                 <header class="da-group-head">
                                                     <span class={group.authorAvatarClass} title={group.authorLabel}>{group.authorInitials}</span>

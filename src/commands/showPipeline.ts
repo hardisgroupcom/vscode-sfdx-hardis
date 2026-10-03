@@ -477,7 +477,12 @@ export function registerShowPipeline(commands: Commands) {
         }
         // Status of the deployment actions in each org branch, read by sfdx-hardis from the
         // "Deployment Actions" Pull Request comments
-        else if (type === "loadDeploymentActionBackpromotes") {
+        else if (type === "loadDeploymentActionForecast") {
+          panel.sendMessage({
+            type: "returnDeploymentActionForecast",
+            data: await loadDeploymentActionForecast(data),
+          });
+        } else if (type === "loadDeploymentActionBackpromotes") {
           const prNumber = Number(data?.prNumber);
           panel.sendMessage({
             type: "returnDeploymentActionBackpromotes",
@@ -1333,6 +1338,53 @@ type PipelineInfo = {
  * runner also passes. Returns null statuses when the CLI cannot provide them (older version, no
  * token): the panel then hides the status column.
  */
+/**
+ * What the next promotion (fromBranch to targetBranch) will do with the deployment actions of these
+ * Pull Requests, computed by sfdx-hardis for the "Next promotion" mode of the Deployment Actions tab.
+ */
+async function loadDeploymentActionForecast(
+  data: any,
+): Promise<{ forecast: any | null }> {
+  const numbers = (Array.isArray(data?.prNumbers) ? data.prNumbers : []).filter(
+    (prNumber: any) => Number.isInteger(prNumber) && prNumber > 0,
+  );
+  const targetBranch = String(data?.targetBranch || "");
+  const fromBranch = String(data?.fromBranch || "");
+  if (
+    numbers.length === 0 ||
+    !/^[\w./-]+$/.test(targetBranch) ||
+    !/^[\w./-]+$/.test(fromBranch)
+  ) {
+    return { forecast: null };
+  }
+  let env: Record<string, string> = {};
+  try {
+    env = await collectProviderCredentialEnvVars();
+  } catch (e: any) {
+    Logger.log(
+      `[vscode-sfdx-hardis] Deployment action forecast: provider credentials not collected: ${e?.message || e}`,
+    );
+  }
+  try {
+    const result = await execSfdxJson(
+      `sf hardis:project:action:list --with-status --pr-ids ${numbers.join(",")} --forecast ${targetBranch} --from-branch ${fromBranch}`,
+      {
+        fail: false,
+        output: false,
+        debug: false,
+        reuseRecentResult: false,
+        env,
+      },
+    );
+    return { forecast: result?.result?.forecast || null };
+  } catch (e: any) {
+    Logger.log(
+      `[vscode-sfdx-hardis] Deployment action forecast not available: ${e?.message || e}`,
+    );
+    return { forecast: null };
+  }
+}
+
 /**
  * The rows of the Backpromotes comment of one Pull Request: the deployment actions run in each
  * developer org, read by sfdx-hardis when a status is expanded in the Deployment Actions tab.
