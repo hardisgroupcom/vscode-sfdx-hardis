@@ -3126,7 +3126,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   // 0: something failed or was stopped, 1: waiting for someone, 2: the rest
   _actionGroupRank(rows) {
-    if (rows.some((row) => ["failed", "warning", "not-run"].includes(row.statusCode))) {
+    if (
+      rows.some((row) =>
+        ["failed", "warning", "not-run"].includes(row.statusCode),
+      )
+    ) {
       return 0;
     }
     if (rows.some((row) => row.statusCode === "manual")) {
@@ -3141,16 +3145,42 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       return [];
     }
     const categories = [
-      { key: "failed", codes: ["failed", "warning"], labelKey: "actionSummaryFailed", pill: "hardis-status-failed" },
-      { key: "stopped", codes: ["not-run"], labelKey: "actionSummaryStopped", pill: "hardis-status-pending" },
-      { key: "waiting", codes: ["manual"], labelKey: "actionSummaryWaiting", pill: "hardis-status-pending" },
-      { key: "moved", codes: ["moved"], labelKey: "actionSummaryMoved", pill: "hardis-status-unknown" },
-      { key: "done", codes: ["success"], labelKey: "actionSummaryDone", pill: "hardis-status-success" },
+      {
+        key: "failed",
+        codes: ["failed", "warning"],
+        labelKey: "actionSummaryFailed",
+        pill: "hardis-status-failed",
+      },
+      {
+        key: "stopped",
+        codes: ["not-run"],
+        labelKey: "actionSummaryStopped",
+        pill: "hardis-status-pending",
+      },
+      {
+        key: "waiting",
+        codes: ["manual"],
+        labelKey: "actionSummaryWaiting",
+        pill: "hardis-status-pending",
+      },
+      {
+        key: "moved",
+        codes: ["moved"],
+        labelKey: "actionSummaryMoved",
+        pill: "hardis-status-unknown",
+      },
+      {
+        key: "done",
+        codes: ["success"],
+        labelKey: "actionSummaryDone",
+        pill: "hardis-status-success",
+      },
     ];
     return categories
       .map((category) => ({
         key: category.key,
-        count: rows.filter((row) => category.codes.includes(row.statusCode)).length,
+        count: rows.filter((row) => category.codes.includes(row.statusCode))
+          .length,
         category,
       }))
       .filter((item) => item.count > 0)
@@ -3198,24 +3228,42 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     const status = entry ? entry.status : "none";
     const display = this._actionStatusDisplay(status, entry);
     const menuItems = [
-      { label: this.i18n.deploymentActionViewDetails, name: "view_action", iconName: "utility:preview" },
+      {
+        label: this.i18n.deploymentActionViewDetails,
+        name: "view_action",
+        iconName: "utility:preview",
+      },
     ];
     const inlineButtons = [];
     const recoverable =
       ["failed", "warning", "not-run"].includes(status) &&
       row.whenCode === "post-deploy";
     if (recoverable) {
-      const retry = { label: this.i18n.deploymentActionRetry, name: "retry_action", iconName: "utility:refresh" };
-      const markDone = { label: this.i18n.deploymentActionMarkDone, name: "mark_action_done", iconName: "utility:check" };
+      const retry = {
+        label: this.i18n.deploymentActionRetry,
+        name: "retry_action",
+        iconName: "utility:refresh",
+      };
+      const markDone = {
+        label: this.i18n.deploymentActionMarkDone,
+        name: "mark_action_done",
+        iconName: "utility:check",
+      };
       // The failure itself gets visible buttons; the actions it stopped keep
       // them in the menu, since retrying the failure first usually runs them
       if (status === "not-run") {
         menuItems.push(retry, markDone);
-      }
-      else {
+      } else {
         inlineButtons.push(
-          { ...retry, className: "slds-button slds-button_neutral hardis-btn-tinted-blue da-button" },
-          { ...markDone, className: "slds-button slds-button_neutral da-button" },
+          {
+            ...retry,
+            className:
+              "slds-button slds-button_neutral hardis-btn-tinted-blue da-button",
+          },
+          {
+            ...markDone,
+            className: "slds-button slds-button_neutral da-button",
+          },
         );
       }
       const myPrNumber = this.currentBranchPullRequest?.number;
@@ -3229,7 +3277,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
     // Deleting is for the actions of your own Pull Request, as before
     if (!this.modalActionsAggregated) {
-      menuItems.push({ label: this.i18n.deleteLabel, name: "delete_action", iconName: "utility:delete" });
+      menuItems.push({
+        label: this.i18n.deleteLabel,
+        name: "delete_action",
+        iconName: "utility:delete",
+      });
     }
     return {
       statusCode: status,
