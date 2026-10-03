@@ -3257,7 +3257,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       ? ""
       : (this.modalPullRequests[0] || {}).sourceBranch || "";
     const devEntry = devBranch
-      ? prEntries.find((e) => e.actionId === actionId && e.orgBranch === devBranch)
+      ? prEntries.find(
+          (e) => e.actionId === actionId && e.orgBranch === devBranch,
+        )
       : null;
     const status = entry ? entry.status : "none";
     const display = this._actionStatusDisplay(status, entry);

@@ -1375,29 +1375,38 @@ async function markDeploymentActionDone(data: any): Promise<void> {
   const actionId = String(data?.actionId || "").replace(/["\\]/g, "");
   const orgBranch = String(data?.orgBranch || "");
   const label = String(data?.label || actionId);
-  if (!Number.isInteger(prNumber) || prNumber < 1 || !actionId || !/^[\w./-]+$/.test(orgBranch)) {
+  if (
+    !Number.isInteger(prNumber) ||
+    prNumber < 1 ||
+    !actionId ||
+    !/^[\w./-]+$/.test(orgBranch)
+  ) {
     return;
   }
   let env: Record<string, string> = {};
   try {
     env = await collectProviderCredentialEnvVars();
-  }
-  catch (e: any) {
+  } catch (e: any) {
     Logger.log(
       `[vscode-sfdx-hardis] Mark as done: provider credentials not collected: ${e?.message || e}`,
     );
   }
   const result = await execSfdxJsonWithProgress(
     `sf hardis:project:action:set-status --agent --pr ${prNumber} --action-id "${actionId}" --org-branch ${orgBranch} --status success`,
-    { fail: false, output: false, debug: false, reuseRecentResult: false, env } as any,
+    {
+      fail: false,
+      output: false,
+      debug: false,
+      reuseRecentResult: false,
+      env,
+    } as any,
     t("deploymentActionMarkDoneRunning", { label }),
   );
   if (result?.status === 0) {
     vscode.window.showInformationMessage(
       t("deploymentActionMarkDoneSuccess", { label, orgBranch }),
     );
-  }
-  else {
+  } else {
     vscode.window.showErrorMessage(
       t("deploymentActionMarkDoneError", {
         label,
