@@ -13,6 +13,7 @@
 - Command execution tab
   - **Run again** replays the command in the same tab, instead of opening a new one ([sfdx-hardis#2272](https://github.com/hardisgroupcom/sfdx-hardis/issues/2272))
   - A command tab no longer jumps to another editor group, or takes the focus, when its command starts running
+- DevOps Pipeline on GitHub: a failed or cancelled run is no longer shown green, and the deployment status of a branch no longer counts MegaLinter or the checks of its Pull Requests ([#529](https://github.com/hardisgroupcom/vscode-sfdx-hardis/issues/529)).
 - The README links the [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io/) course at its new address.
 
 ## [8.9.2] 2026-10-02
