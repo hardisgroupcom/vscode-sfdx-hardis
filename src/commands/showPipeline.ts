@@ -22,7 +22,6 @@ import { listCustomFunctions } from "../utils/customFunctionsUtils";
 import {
   execCommandWithProgress,
   execSfdxJson,
-  execSfdxJsonWithProgress,
   getWorkspaceRoot,
 } from "../utils";
 import { collectProviderCredentialEnvVars } from "../utils/providerCredentials";
@@ -470,8 +469,11 @@ export function registerShowPipeline(commands: Commands) {
         }
         // Mark as done: recorded by sfdx-hardis in the background, no command panel for it
         else if (type === "markDeploymentActionDone") {
-          await markDeploymentActionDone(data);
-          panel.sendMessage({ type: "refreshPipeline", data: {} });
+          const ok = await markDeploymentActionDone(data);
+          panel.sendMessage({
+            type: "deploymentActionMarkDoneResult",
+            data: { key: data?.key, ok },
+          });
         }
         // Status of the deployment actions in each org branch, read by sfdx-hardis from the
         // "Deployment Actions" Pull Request comments
@@ -1370,7 +1372,7 @@ async function loadDeploymentActionStatuses(
  * Record a failed or stopped deployment action as done by hand, in the background: the value of
  * every flag comes from the panel, so nothing is asked, and the user only needs the outcome.
  */
-async function markDeploymentActionDone(data: any): Promise<void> {
+async function markDeploymentActionDone(data: any): Promise<boolean> {
   const prNumber = Number(data?.prNumber);
   // Passed to a command line: refused below unless it only holds plain characters
   const actionId = String(data?.actionId || "");
@@ -1382,7 +1384,7 @@ async function markDeploymentActionDone(data: any): Promise<void> {
     !/^[\w .:@/+-]+$/.test(actionId) ||
     !/^[\w./-]+$/.test(orgBranch)
   ) {
-    return;
+    return false;
   }
   let env: Record<string, string> = {};
   try {
@@ -1392,7 +1394,9 @@ async function markDeploymentActionDone(data: any): Promise<void> {
       `[vscode-sfdx-hardis] Mark as done: provider credentials not collected: ${e?.message || e}`,
     );
   }
-  const result = await execSfdxJsonWithProgress(
+  // No progress notification and no success message: the button of the panel
+  // spins, then the status of the action turns to Done
+  const result = await execSfdxJson(
     `sf hardis:project:action:set-status --agent --pr ${prNumber} --action-id "${actionId}" --org-branch ${orgBranch} --status success`,
     {
       fail: false,
@@ -1401,12 +1405,9 @@ async function markDeploymentActionDone(data: any): Promise<void> {
       reuseRecentResult: false,
       env,
     } as any,
-    t("deploymentActionMarkDoneRunning", { label }),
   );
   if (result?.status === 0) {
-    vscode.window.showInformationMessage(
-      t("deploymentActionMarkDoneSuccess", { label, orgBranch }),
-    );
+    return true;
   } else {
     vscode.window.showErrorMessage(
       t("deploymentActionMarkDoneError", {
@@ -1415,4 +1416,5 @@ async function markDeploymentActionDone(data: any): Promise<void> {
       }),
     );
   }
+  return false;
 }

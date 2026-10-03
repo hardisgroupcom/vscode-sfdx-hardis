@@ -479,7 +479,7 @@
                                                     </div>
                                                     <div class="da-buttons">
                                                         <template for:each={row.inlineButtons} for:item="button">
-                                                            <button key={button.name} class={button.className} data-row-id={row.id} data-action-name={button.name} onclick={handleActionInlineButton}>{button.label}</button>
+                                                            <button key={button.name} class={button.className} data-row-id={row.id} data-action-name={button.name} onclick={handleActionInlineButton} disabled={button.busy}><template if:true={button.busy}><span class="da-button-spinner" aria-hidden="true"></span></template>{button.label}</button>
                                                         </template>
                                                         <lightning-button-menu
                                                             icon-size="small"
@@ -490,7 +490,7 @@
                                                             onselect={handleActionMenuSelect}
                                                         >
                                                             <template for:each={row.menuItems} for:item="item">
-                                                                <lightning-menu-item key={item.name} value={item.name} label={item.label} prefix-icon-name={item.iconName}></lightning-menu-item>
+                                                                <lightning-menu-item key={item.name} value={item.name} label={item.label} prefix-icon-name={item.iconName} disabled={item.disabled}></lightning-menu-item>
                                                             </template>
                                                         </lightning-button-menu>
                                                     </div>

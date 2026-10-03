@@ -364,6 +364,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // Status of the deployment actions in each org branch, from sfdx-hardis
   // (null while loading, or when the installed CLI cannot provide it)
   modalActionStatuses = null;
+  actionStatusesLoading = false;
+  // Mark as done running in the background, then waiting for the new statuses
+  markingDoneKeys = [];
+  markDoneRefreshingKeys = [];
   // Tab to activate the next time the single PR modal opens (consumed on open).
   _nextModalTab = null;
   // True when the single-PR modal shows a Pull Request between two major
@@ -1826,6 +1830,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       case "returnDeploymentActionStatuses":
         this.handleReturnDeploymentActionStatuses(data);
         break;
+      case "deploymentActionMarkDoneResult":
+        this.handleDeploymentActionMarkDoneResult(data);
+        break;
       case "returnSchedulableClasses":
         this.handleReturnSchedulableClasses(data);
         break;
@@ -3089,10 +3096,16 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (actionName === "retry_action") {
       command = `sf hardis:project:action:run --pr ${prNumber} --action-id "${actionId}" --org-branch ${orgBranch}`;
     } else if (actionName === "mark_action_done") {
-      // Nothing to answer: recorded in the background, the statuses refresh when it is done
+      // Nothing to answer: recorded in the background, the button spins until
+      // the statuses show it done
+      const key = this._markDoneKey(prNumber, fullAction.id);
+      if (this.markingDoneKeys.includes(key)) {
+        return;
+      }
+      this.markingDoneKeys = [...this.markingDoneKeys, key];
       window.sendMessageToVSCode({
         type: "markDeploymentActionDone",
-        data: { prNumber, actionId, orgBranch, label: row.label },
+        data: { prNumber, actionId, orgBranch, label: row.label, key },
       });
       return;
     } else if (actionName === "move_action_to_my_pr") {
@@ -3106,11 +3119,36 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   handleReturnDeploymentActionStatuses(data) {
+    this.actionStatusesLoading = false;
+    // The actions marked as done are now in the statuses: their buttons stop spinning
+    this.markingDoneKeys = this.markingDoneKeys.filter(
+      (key) => !this.markDoneRefreshingKeys.includes(key),
+    );
+    this.markDoneRefreshingKeys = [];
     if (!data || !data.statuses) {
       this.modalActionStatuses = null;
       return;
     }
     this.modalActionStatuses = data.statuses;
+  }
+
+  // Outcome of a Mark as done run in the background
+  handleDeploymentActionMarkDoneResult(data) {
+    const key = data?.key;
+    if (!key) {
+      return;
+    }
+    if (data.ok) {
+      // Keep spinning until the new statuses show the action as done
+      this.markDoneRefreshingKeys = [...this.markDoneRefreshingKeys, key];
+      this._requestActionStatuses({ refresh: true });
+    } else {
+      this.markingDoneKeys = this.markingDoneKeys.filter((k) => k !== key);
+    }
+  }
+
+  _markDoneKey(prNumber, actionId) {
+    return `${prNumber}|${actionId}|${this.actionStatusOrgBranch}`;
   }
 
   // The actions of the modal, one group per Pull Request. Groups with a problem
@@ -3236,8 +3274,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return this.modalBranchName || "";
   }
 
-  _requestActionStatuses() {
-    this.modalActionStatuses = null;
+  // refresh: keep the statuses on screen while new ones load (after Mark as
+  // done), instead of the grey "Loading..." pills of a first load
+  _requestActionStatuses({ refresh = false } = {}) {
+    if (!refresh) {
+      this.modalActionStatuses = null;
+    }
     // A draft (no Pull Request yet, number -1) only has the results of the
     // actions tried in a developer org, kept in a local file
     const prNumbers = [
@@ -3249,8 +3291,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       ),
     ];
     if (prNumbers.length === 0) {
+      this.actionStatusesLoading = false;
       return;
     }
+    this.actionStatusesLoading = !refresh;
     window.sendMessageToVSCode({
       type: "loadDeploymentActionStatuses",
       data: { prNumbers },
@@ -3285,45 +3329,75 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       },
     ];
     const inlineButtons = [];
-    const recoverable =
-      ["failed", "warning", "not-run"].includes(status) &&
-      row.whenCode === "post-deploy";
+    // What sfdx-hardis can run outside a deployment: not a manual action, not a
+    // change of the deployment package, not a validation-only action
+    const runnable =
+      row.typeCode !== "manual" &&
+      row.typeCode !== "remove-packagexml-items" &&
+      (row.typeCode === "run-batch" ||
+        fullActionContext(row) !== "check-deployment-only");
+    const recoverable = ["failed", "warning", "not-run"].includes(status);
+    const retry = {
+      label: this.i18n.deploymentActionRetry,
+      name: "retry_action",
+      iconName: "utility:refresh",
+    };
+    const markDone = {
+      label: this.i18n.deploymentActionMarkDone,
+      name: "mark_action_done",
+      iconName: "utility:check",
+    };
     if (recoverable) {
-      const retry = {
-        label: this.i18n.deploymentActionRetry,
-        name: "retry_action",
-        iconName: "utility:refresh",
-      };
-      const markDone = {
-        label: this.i18n.deploymentActionMarkDone,
-        name: "mark_action_done",
-        iconName: "utility:check",
-      };
       // The failure itself gets visible buttons; the actions it stopped keep
       // them in the menu, since retrying the failure first usually runs them
       if (status === "not-run") {
-        menuItems.push(retry, markDone);
+        if (runnable) {
+          menuItems.push(retry);
+        }
+        menuItems.push(markDone);
       } else {
-        inlineButtons.push(
-          {
+        if (runnable) {
+          inlineButtons.push({
             ...retry,
             className:
               "slds-button slds-button_neutral hardis-btn-tinted-blue da-button",
-          },
-          {
-            ...markDone,
-            className: "slds-button slds-button_neutral da-button",
-          },
-        );
-      }
-      const myPrNumber = this.currentBranchPullRequest?.number;
-      if (myPrNumber && myPrNumber !== row.prNumber) {
-        menuItems.push({
-          label: this.i18n.deploymentActionMoveToMyPr,
-          name: "move_action_to_my_pr",
-          iconName: "utility:move",
+          });
+        }
+        inlineButtons.push({
+          ...markDone,
+          className: "slds-button slds-button_neutral da-button",
         });
       }
+      // Moving needs a Pull Request of your own to move it to: said in the
+      // menu rather than hidden, so nobody wonders where the option went
+      const myPrNumber = this.currentBranchPullRequest?.number;
+      if (myPrNumber !== row.prNumber) {
+        const hasMyPr = !!myPrNumber;
+        menuItems.push({
+          label: hasMyPr
+            ? this.i18n.deploymentActionMoveToMyPr
+            : this.i18n.deploymentActionMoveToMyPrNoPr,
+          name: "move_action_to_my_pr",
+          iconName: "utility:move",
+          disabled: !hasMyPr,
+        });
+      }
+    } else if (
+      this.modalActionsAggregated &&
+      runnable &&
+      this.modalActionStatuses &&
+      ["none", "skipped"].includes(status) &&
+      row.prNumber > 0
+    ) {
+      // Never run in the org of the branch, or skipped there: run it now,
+      // sfdx-hardis asks for a confirmation first
+      menuItems.push({
+        ...retry,
+        label: this.t("deploymentActionRunInOrg", {
+          orgBranch: this.actionStatusOrgBranch,
+        }),
+        iconName: "utility:play",
+      });
     }
     // A manual action waiting in this org: Mark as done, as ticking its checkbox
     // in the Pull Request comment does, naming who did it
@@ -3359,11 +3433,31 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         iconName: "utility:delete",
       });
     }
+    // Mark as done running in the background: its button spins until the
+    // statuses come back
+    const busyKey = this._markDoneKey(row.prNumber, actionId);
+    if (this.markingDoneKeys.includes(busyKey)) {
+      const busyButton = {
+        ...markDone,
+        label: this.i18n.deploymentActionMarkingDone,
+        className: "slds-button slds-button_neutral da-button",
+        busy: true,
+      };
+      const index = inlineButtons.findIndex((b) => b.name === markDone.name);
+      if (index >= 0) {
+        inlineButtons[index] = busyButton;
+      } else {
+        inlineButtons.unshift(busyButton);
+      }
+    }
+    const loading = !this.modalActionStatuses && this.actionStatusesLoading;
     return {
       statusCode: status,
-      showStatus: !!this.modalActionStatuses,
-      statusLabel: display.label,
-      statusPillClass: "hardis-pill " + display.pillClass,
+      showStatus: !!this.modalActionStatuses || loading,
+      statusLabel: loading ? this.i18n.loadingLabel : display.label,
+      statusPillClass: loading
+        ? "hardis-pill hardis-status-unknown da-pill-loading"
+        : "hardis-pill " + display.pillClass,
       statusDetail: [
         this._actionStatusDetail(status, entry, groupRows),
         devEntry ? this._devOrgStatusDetail(devEntry) : "",
