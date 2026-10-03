@@ -14,6 +14,7 @@
   "actionStoppedByPr": "#{{pr}} のアクションにより停止",
   "actionSummaryDone": "{{count}} 件完了",
   "actionSummaryFailed": "{{count}} 件失敗",
+  "actionSummaryFailedAllowed": "{{count}} 件失敗 (許可済み)",
   "actionSummaryMoved": "{{count}} 件移動済み",
   "actionSummaryStopped": "{{count}} 件停止",
   "actionSummaryWaiting": "{{count}} 件待機中",

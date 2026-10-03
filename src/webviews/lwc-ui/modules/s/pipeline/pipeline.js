@@ -3156,13 +3156,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return groups.sort((a, b) => a.rank - b.rank || b.prNumber - a.prNumber);
   }
 
-  // 0: something failed or was stopped, 1: waiting for someone, 2: the rest
+  // 0: something failed or was stopped, 1: waiting for someone, 2: the rest.
+  // A failure allowed by the action (warning) blocked nothing: like sfdx-hardis,
+  // which keeps the Pull Request comment green for it, it does not count as one
   _actionGroupRank(rows) {
-    if (
-      rows.some((row) =>
-        ["failed", "warning", "not-run"].includes(row.statusCode),
-      )
-    ) {
+    if (rows.some((row) => ["failed", "not-run"].includes(row.statusCode))) {
       return 0;
     }
     if (rows.some((row) => row.statusCode === "manual")) {
@@ -3179,9 +3177,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     const categories = [
       {
         key: "failed",
-        codes: ["failed", "warning"],
+        codes: ["failed"],
         labelKey: "actionSummaryFailed",
         pill: "hardis-status-failed",
+      },
+      {
+        key: "failedAllowed",
+        codes: ["warning"],
+        labelKey: "actionSummaryFailedAllowed",
+        pill: "hardis-status-unknown",
       },
       {
         key: "stopped",
@@ -3320,6 +3324,16 @@ export default class Pipeline extends SharedMixin(LightningElement) {
           iconName: "utility:move",
         });
       }
+    }
+    // A manual action waiting in this org: Mark as done, as ticking its checkbox
+    // in the Pull Request comment does, naming who did it
+    if (status === "manual" && row.prNumber > 0) {
+      inlineButtons.push({
+        label: this.i18n.deploymentActionMarkDone,
+        name: "mark_action_done",
+        iconName: "utility:check",
+        className: "slds-button slds-button_neutral da-button",
+      });
     }
     // Your own Pull Request: try the action in your org (again, after a failed
     // try), or delete it. No try for an action sfdx-hardis skips in a developer

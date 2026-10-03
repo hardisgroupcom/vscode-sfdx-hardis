@@ -14,6 +14,7 @@
   "actionStoppedByPr": "Arrêtée par une action de #{{pr}}",
   "actionSummaryDone": "Terminées : {{count}}",
   "actionSummaryFailed": "Échecs : {{count}}",
+  "actionSummaryFailedAllowed": "Échecs autorisés : {{count}}",
   "actionSummaryMoved": "Déplacées : {{count}}",
   "actionSummaryStopped": "Arrêtées : {{count}}",
   "actionSummaryWaiting": "En attente : {{count}}",

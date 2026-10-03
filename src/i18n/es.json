@@ -14,6 +14,7 @@
   "actionStoppedByPr": "Detenida por una acción de #{{pr}}",
   "actionSummaryDone": "Listas: {{count}}",
   "actionSummaryFailed": "Fallidas: {{count}}",
+  "actionSummaryFailedAllowed": "Fallidas (permitido): {{count}}",
   "actionSummaryMoved": "Movidas: {{count}}",
   "actionSummaryStopped": "Detenidas: {{count}}",
   "actionSummaryWaiting": "En espera: {{count}}",

@@ -14,6 +14,7 @@
   "actionStoppedByPr": "Interrompida por uma ação de #{{pr}}",
   "actionSummaryDone": "Concluídas: {{count}}",
   "actionSummaryFailed": "Falharam: {{count}}",
+  "actionSummaryFailedAllowed": "Falharam (permitido): {{count}}",
   "actionSummaryMoved": "Movidas: {{count}}",
   "actionSummaryStopped": "Interrompidas: {{count}}",
   "actionSummaryWaiting": "Aguardando: {{count}}",

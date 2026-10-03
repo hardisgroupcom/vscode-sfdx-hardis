@@ -14,6 +14,7 @@
   "actionStoppedByPr": "Gestopt door een actie van #{{pr}}",
   "actionSummaryDone": "{{count}} gereed",
   "actionSummaryFailed": "{{count}} mislukt",
+  "actionSummaryFailedAllowed": "{{count}} mislukt (toegestaan)",
   "actionSummaryMoved": "{{count}} verplaatst",
   "actionSummaryStopped": "{{count}} gestopt",
   "actionSummaryWaiting": "{{count}} wachtend",

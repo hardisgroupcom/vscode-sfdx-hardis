@@ -14,6 +14,7 @@
   "actionStoppedByPr": "Stopped by an action of #{{pr}}",
   "actionSummaryDone": "{{count}} done",
   "actionSummaryFailed": "{{count}} failed",
+  "actionSummaryFailedAllowed": "{{count}} failed (allowed)",
   "actionSummaryMoved": "{{count}} moved",
   "actionSummaryStopped": "{{count}} stopped",
   "actionSummaryWaiting": "{{count}} waiting",

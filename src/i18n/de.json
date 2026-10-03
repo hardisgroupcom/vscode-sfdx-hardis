@@ -14,6 +14,7 @@
   "actionStoppedByPr": "Durch eine Aktion von #{{pr}} gestoppt",
   "actionSummaryDone": "{{count}} fertig",
   "actionSummaryFailed": "{{count}} fehlgeschlagen",
+  "actionSummaryFailedAllowed": "{{count}} fehlgeschlagen (erlaubt)",
   "actionSummaryMoved": "{{count}} verschoben",
   "actionSummaryStopped": "{{count}} gestoppt",
   "actionSummaryWaiting": "{{count}} wartend",
