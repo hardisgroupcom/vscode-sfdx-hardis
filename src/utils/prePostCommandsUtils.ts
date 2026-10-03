@@ -74,6 +74,8 @@ export interface PrePostCommand {
   allowFailure?: boolean;
   runOnlyOnceByOrg?: boolean;
   customUsername?: string;
+  // Pull Request a failed action was moved from, to fix its definition (set by sfdx-hardis)
+  movedFrom?: number;
   // If command comes from a PR, we attach PR info
   pullRequest?: PullRequest;
   result?: ActionResult;

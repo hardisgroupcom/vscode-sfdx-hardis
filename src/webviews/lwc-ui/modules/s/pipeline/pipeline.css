@@ -393,3 +393,287 @@
     opacity: 0.4;
 }
 
+/* Deployment Actions tab: one group per Pull Request, one row per action.
+   Colors come from theme tokens only, so both VS Code themes read right. */
+.da-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.da-promo-head {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.da-seg {
+  display: inline-flex;
+  justify-self: start;
+  border: 1px solid var(--slds-g-color-neutral-base-80);
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+.da-seg-button {
+  font: inherit;
+  font-size: 0.8125rem;
+  border: none;
+  background: transparent;
+  color: var(--vscode-descriptionForeground, inherit);
+  padding: 0.3rem 0.8rem;
+  cursor: pointer;
+}
+
+.da-seg-button + .da-seg-button {
+  border-left: 1px solid var(--slds-g-color-neutral-base-80);
+}
+
+.da-seg-button.da-seg-on {
+  background: var(--slds-g-color-palette-blue-90);
+  color: var(--slds-g-color-palette-blue-30);
+  font-weight: 600;
+}
+
+.da-seg-button:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder, currentColor);
+  outline-offset: -2px;
+}
+
+.da-promo-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--slds-g-color-neutral-base-80);
+  border-radius: 0.375rem;
+  background: var(--slds-g-color-neutral-base-95);
+  font-size: 0.8125rem;
+}
+
+.da-promo-todo {
+  margin-left: auto;
+  font-weight: 600;
+}
+
+.da-group-excluded .da-row {
+  opacity: 0.55;
+}
+
+.da-groups {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.da-group {
+  border: 1px solid var(--slds-g-color-neutral-base-80);
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+.da-group-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--slds-g-color-neutral-base-95);
+  border-bottom: 1px solid var(--slds-g-color-neutral-base-80);
+}
+
+.da-group-pr {
+  font-weight: bold;
+  min-width: 0;
+}
+
+.da-group-author {
+  color: var(--vscode-descriptionForeground, inherit);
+  font-size: 0.8125rem;
+}
+
+.da-group-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-left: auto;
+}
+
+.da-row {
+  display: grid;
+  /* Fixed status and button tracks, so the pills of every row line up in one column */
+  grid-template-columns: 1.75rem minmax(0, 1fr) 14rem 16.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.da-row-wrap + .da-row-wrap {
+  border-top: 1px solid var(--slds-g-color-neutral-base-80);
+}
+
+.da-status-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  max-width: 100%;
+}
+
+.da-status-toggle:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder, currentColor);
+  outline-offset: 2px;
+  border-radius: 999px;
+}
+
+.da-details {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0 0.75rem 0.5rem 3.25rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--slds-g-color-neutral-base-80);
+  background: var(--slds-g-color-neutral-base-95);
+  border-radius: 0.25rem;
+}
+
+.da-detail-line {
+  display: grid;
+  grid-template-columns: 9rem 12rem 6rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.da-detail-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.da-detail-date,
+.da-detail-note {
+  color: var(--vscode-descriptionForeground, inherit);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.da-detail-line .hardis-pill {
+  white-space: normal;
+  justify-self: start;
+}
+
+.da-order {
+  color: var(--vscode-descriptionForeground, inherit);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.da-main {
+  min-width: 0;
+}
+
+.da-label {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  color: var(--vscode-textLink-foreground, inherit);
+  cursor: pointer;
+}
+
+.da-label:hover {
+  text-decoration: underline;
+}
+
+.da-label:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder, currentColor);
+  outline-offset: 2px;
+}
+
+.da-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.25rem;
+}
+
+.da-detail {
+  color: var(--vscode-descriptionForeground, inherit);
+  font-size: 0.8125rem;
+}
+
+.da-status {
+  display: flex;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+/* A long status (or a long translation) wraps inside its pill instead of
+   running past its background */
+.da-status .hardis-pill {
+  white-space: normal;
+  line-height: 1.3;
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+/* Statuses still loading: grey pill with a pulsing dot */
+.da-pill-loading .hardis-pill-dot {
+  animation: hardis-dot-pulse 1.2s ease-in-out infinite;
+}
+
+.da-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.da-button-spinner {
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: da-spin 0.8s linear infinite;
+}
+
+@keyframes da-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes hardis-dot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.da-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.375rem;
+}
+
+.da-button {
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .da-row {
+    grid-template-columns: 1.75rem minmax(0, 1fr);
+  }
+
+  .da-status,
+  .da-buttons {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+}

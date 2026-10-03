@@ -19,7 +19,12 @@ import {
 import { getCurrentGitBranch } from "../utils/pipeline/sfdxHardisConfig";
 import { handleDeploymentActionPickerMessage } from "../utils/pipeline/deploymentActionPickers";
 import { listCustomFunctions } from "../utils/customFunctionsUtils";
-import { execCommandWithProgress, getWorkspaceRoot } from "../utils";
+import {
+  execCommandWithProgress,
+  execSfdxJson,
+  getWorkspaceRoot,
+} from "../utils";
+import { collectProviderCredentialEnvVars } from "../utils/providerCredentials";
 import { t } from "../i18n/i18n";
 import path from "path";
 import * as fs from "fs";
@@ -461,6 +466,31 @@ export function registerShowPipeline(commands: Commands) {
         // action editor, which the Pipeline Settings panel also opens
         else if (await handleDeploymentActionPickerMessage(panel, type, data)) {
           // Message handled by the shared deployment action pickers
+        }
+        // Mark as done: recorded by sfdx-hardis in the background, no command panel for it
+        else if (type === "markDeploymentActionDone") {
+          const ok = await markDeploymentActionDone(data);
+          panel.sendMessage({
+            type: "deploymentActionMarkDoneResult",
+            data: { key: data?.key, ok },
+          });
+        }
+        // Status of the deployment actions in each org branch, read by sfdx-hardis from the
+        // "Deployment Actions" Pull Request comments
+        else if (type === "loadDeploymentActionBackpromotes") {
+          const prNumber = Number(data?.prNumber);
+          panel.sendMessage({
+            type: "returnDeploymentActionBackpromotes",
+            data: {
+              prNumber,
+              rows: await loadDeploymentActionBackpromotes(prNumber),
+            },
+          });
+        } else if (type === "loadDeploymentActionStatuses") {
+          panel.sendMessage({
+            type: "returnDeploymentActionStatuses",
+            data: await loadDeploymentActionStatuses(data),
+          });
         }
         // Get PR info for modal
         else if (type === "getPrInfoForModal") {
@@ -1296,3 +1326,161 @@ type PipelineInfo = {
   enableDeploymentApexTestClasses: boolean;
   availableApexTestClasses: string[];
 };
+
+/**
+ * Run sf hardis:project:action:list with these flags and the git provider credentials the command
+ * runner also passes. Returns its JSON result, or null when the CLI cannot answer.
+ */
+async function runActionListJson(
+  flags: string,
+  purpose: string,
+): Promise<any | null> {
+  let env: Record<string, string> = {};
+  try {
+    env = await collectProviderCredentialEnvVars();
+  } catch (e: any) {
+    Logger.log(
+      `[vscode-sfdx-hardis] ${purpose}: provider credentials not collected: ${e?.message || e}`,
+    );
+  }
+  try {
+    const result = await execSfdxJson(
+      `sf hardis:project:action:list --with-status ${flags}`,
+      {
+        fail: false,
+        output: false,
+        debug: false,
+        reuseRecentResult: false,
+        env,
+      },
+    );
+    if (result?.status === 0 && result?.result) {
+      return result.result;
+    }
+    Logger.log(
+      `[vscode-sfdx-hardis] ${purpose} not available: ${result?.errorMessage || result?.message || "unknown error"}`,
+    );
+  } catch (e: any) {
+    Logger.log(
+      `[vscode-sfdx-hardis] ${purpose} not available: ${e?.message || e}`,
+    );
+  }
+  return null;
+}
+
+/**
+ * Status of the deployment actions of some Pull Requests in each org branch, read by sfdx-hardis
+ * from the "Deployment Actions" Pull Request comments. In "Next promotion" mode, the same call also
+ * returns the forecast of the promotion (forecastBranch, fromBranch): one CLI process for both.
+ * Null statuses when the CLI cannot provide them (older version, no token): the panel then hides
+ * the status column. The request id goes back so the panel can drop a late answer.
+ */
+async function loadDeploymentActionStatuses(data: any): Promise<{
+  statuses: Record<string, any[]> | null;
+  forecast?: any;
+  requestId: number;
+}> {
+  const requestId = Number(data?.requestId) || 0;
+  // Pull Request numbers, and "draft" for the actions file of a branch without Pull Request
+  const numbers = (Array.isArray(data?.prNumbers) ? data.prNumbers : []).filter(
+    (prNumber: any) =>
+      prNumber === "draft" || (Number.isInteger(prNumber) && prNumber > 0),
+  );
+  if (numbers.length === 0) {
+    return { statuses: {}, requestId };
+  }
+  const forecastBranch = String(data?.forecastBranch || "");
+  const fromBranch = String(data?.fromBranch || "");
+  const withForecast =
+    /^[\w./-]+$/.test(forecastBranch) && /^[\w./-]+$/.test(fromBranch);
+  const result = await runActionListJson(
+    `--pr-ids ${numbers.join(",")}` +
+      (withForecast
+        ? ` --forecast ${forecastBranch} --from-branch ${fromBranch}`
+        : ""),
+    "Deployment action statuses",
+  );
+  // gitProvider false: no git provider credentials, so the Pull Request comments were not read.
+  // Hide the column rather than show every action as "Not run yet"
+  if (!result || result.gitProvider === false || !result.statuses) {
+    return {
+      statuses: null,
+      ...(withForecast ? { forecast: null } : {}),
+      requestId,
+    };
+  }
+  return {
+    statuses: result.statuses,
+    ...(withForecast ? { forecast: result.forecast || null } : {}),
+    requestId,
+  };
+}
+
+/**
+ * The rows of the Backpromotes comment of one Pull Request: the deployment actions run in each
+ * developer org, read by sfdx-hardis when a status is expanded in the Deployment Actions tab.
+ */
+async function loadDeploymentActionBackpromotes(
+  prNumber: number,
+): Promise<any[]> {
+  if (!Number.isInteger(prNumber) || prNumber < 1) {
+    return [];
+  }
+  const result = await runActionListJson(
+    `--with-backpromotes --pr-ids ${prNumber}`,
+    "Deployment action backpromotes",
+  );
+  const rows = result?.backpromotes?.[String(prNumber)];
+  return Array.isArray(rows) ? rows : [];
+}
+
+/**
+ * Record a failed or stopped deployment action as done by hand, in the background: the value of
+ * every flag comes from the panel, so nothing is asked, and the user only needs the outcome.
+ */
+async function markDeploymentActionDone(data: any): Promise<boolean> {
+  const prNumber = Number(data?.prNumber);
+  // Passed to a command line: refused below unless it only holds plain characters
+  const actionId = String(data?.actionId || "");
+  const orgBranch = String(data?.orgBranch || "");
+  const label = String(data?.label || actionId);
+  if (
+    !Number.isInteger(prNumber) ||
+    prNumber < 1 ||
+    !/^[\w .:@/+-]+$/.test(actionId) ||
+    !/^[\w./-]+$/.test(orgBranch)
+  ) {
+    return false;
+  }
+  let env: Record<string, string> = {};
+  try {
+    env = await collectProviderCredentialEnvVars();
+  } catch (e: any) {
+    Logger.log(
+      `[vscode-sfdx-hardis] Mark as done: provider credentials not collected: ${e?.message || e}`,
+    );
+  }
+  // No progress notification and no success message: the button of the panel
+  // spins, then the status of the action turns to Done
+  const result = await execSfdxJson(
+    `sf hardis:project:action:set-status --agent --pr ${prNumber} --action-id "${actionId}" --org-branch ${orgBranch} --status success`,
+    {
+      fail: false,
+      output: false,
+      debug: false,
+      reuseRecentResult: false,
+      env,
+    } as any,
+  );
+  if (result?.status === 0) {
+    return true;
+  } else {
+    vscode.window.showErrorMessage(
+      t("deploymentActionMarkDoneError", {
+        label,
+        message: result?.errorMessage || result?.message || "unknown error",
+      }),
+    );
+  }
+  return false;
+}

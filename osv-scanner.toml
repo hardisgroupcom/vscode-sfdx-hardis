@@ -1,4 +1,9 @@
 [[IgnoredVulns]]
+id = "GHSA-vfj7-8cjw-p6xm"
+ignoreUntil = 2026-12-31
+reason = "Added 2026-10-03: no fixed braces release exists (every version through 3.0.3, the latest, is affected). Stack exhaustion DoS when braces expands an attacker-supplied deeply nested pattern. braces is only reached through ts-loader > micromatch at build time, expanding the glob patterns of our own webpack config; it is not bundled in the extension and never sees user or remote input. Re-evaluate when braces ships a fix."
+
+[[IgnoredVulns]]
 id = "GHSA-8988-4f7v-96qf"
 ignoreUntil = 2026-12-31
 reason = "Re-evaluated 2026-09-19: still no patched 1.x core and applicationinsights still pins it. Affects @opentelemetry/core only via the 1.x tree pinned inside @vscode/extension-telemetry > applicationinsights (sdk-trace-base/resources all pin core 1.30.1, no patched 1.x release exists - only 2.8.0). The 2.x copies are already resolved to 2.8.0. CVE-2026-54285 is unbounded memory allocation while PARSING an inbound W3C Baggage header; this extension only EMITS outbound telemetry to Azure and never parses attacker-controlled baggage headers, so the path is not reachable. Re-evaluate when applicationinsights ships an OTel 2.x line or a patched 1.x core."

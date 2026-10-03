@@ -94,6 +94,8 @@ suite("Datatable colored pills contract", () => {
 
   test("pipeline ticket and deployment action rows compute their pill fields", () => {
     const pipeline = readModuleFile("pipeline", "pipeline.js");
+    // The Deployment Actions rows are bound in the template, grouped by Pull Request
+    const pipelineHtml = readModuleFile("pipeline", "pipeline.html");
     // Fields referenced by the ticket / action / author columns
     for (const field of [
       "statusPillClass",
@@ -102,10 +104,10 @@ suite("Datatable colored pills contract", () => {
       "authorInitials",
       "authorAvatarClass",
     ]) {
-      assert.match(
-        pipeline,
-        new RegExp(`fieldName:\\s*"${field}"`),
-        `a pipeline column should bind the ${field} row field`,
+      assert.ok(
+        pipeline.includes(`fieldName: "${field}"`) ||
+          pipelineHtml.includes(`{row.${field}}`),
+        `a pipeline column or row should bind the ${field} row field`,
       );
       assert.match(
         pipeline,

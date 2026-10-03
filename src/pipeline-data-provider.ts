@@ -25,6 +25,9 @@ export interface OrgNode {
   // True when the branch has no merge target of its own (top branch, e.g.
   // main/prod). Such branches show go-lives instead of pending-promotion PRs.
   isTopBranch?: boolean;
+  // Branches this one is promoted to, first one first (the "Next promotion" of the
+  // Deployment Actions tab)
+  mergeTargets?: string[];
 }
 
 export interface OrgLink {
@@ -109,6 +112,7 @@ export class PipelineDataProvider {
         nodeName: `${this.sanitizeNodeName(org.branchName)}Org`,
         level: org.level,
         isTopBranch: (org.mergeTargets || []).length === 0,
+        mergeTargets: org.mergeTargets || [],
         pullRequestsInBranchSinceLastMerge:
           org.pullRequestsInBranchSinceLastMerge || [],
       }));

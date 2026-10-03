@@ -70,6 +70,11 @@ async function main() {
   const promotionVariant =
     docScreenshots &&
     process.env.SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION === "true";
+  // A post-deployment action failed after a merge, and its fix Pull Request is
+  // open: only a universe bringing its own overlay has that state to show
+  const actionRecoveryVariant =
+    docScreenshots &&
+    process.env.SFDX_HARDIS_DOC_SCREENSHOTS_ACTION_RECOVERY === "true";
 
   // Real-CLI performance gate: same Extension Development Host and dummy
   // project, but the REAL `sf` CLI stays on the PATH (no shim) and only the
@@ -338,6 +343,61 @@ async function main() {
     );
   }
 
+  // The action recovery variant: the merged Pull Request whose actions failed,
+  // its fix Pull Request, their actions files in the workspace, and the
+  // statuses the mocked CLI answers for them
+  let actionRecoveryOverlayFile = "";
+  if (actionRecoveryVariant && universeDir) {
+    actionRecoveryOverlayFile = path.join(
+      universeDir,
+      "git-provider-mock-action-recovery.json",
+    );
+    if (!fs.existsSync(actionRecoveryOverlayFile)) {
+      throw new Error(
+        `The action recovery variant needs ${actionRecoveryOverlayFile}`,
+      );
+    }
+    const overlay = JSON.parse(
+      fs.readFileSync(actionRecoveryOverlayFile, "utf8"),
+    );
+    for (const [file, content] of Object.entries<string>(
+      overlay.actionFiles || {},
+    )) {
+      const target = path.join(workspaceDir, file);
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.writeFileSync(target, content, "utf8");
+    }
+    execSync("git add -A && git commit -m action-recovery --no-gpg-sign", {
+      cwd: workspaceDir,
+      stdio: "pipe",
+    });
+    // After the commit, so the branches carry the actions files too
+    for (const branch of overlay.branches || []) {
+      git(`branch -f ${branch}`);
+    }
+    const fixture = JSON.parse(fs.readFileSync(gitProviderFixtureFile, "utf8"));
+    fixture.openPullRequests = [
+      ...(overlay.addOpenPullRequests || []),
+      ...(fixture.openPullRequests || []),
+    ];
+    fixture.mergedPullRequestsByBranch =
+      fixture.mergedPullRequestsByBranch || {};
+    for (const [branch, prs] of Object.entries<any[]>(
+      overlay.addMergedPullRequestsByBranch || {},
+    )) {
+      fixture.mergedPullRequestsByBranch[branch] = [
+        ...prs,
+        ...(fixture.mergedPullRequestsByBranch[branch] || []),
+      ];
+    }
+    gitProviderFixtureFile = path.join(workDir, "git-provider-mock.json");
+    fs.writeFileSync(
+      gitProviderFixtureFile,
+      JSON.stringify(fixture, null, 2),
+      "utf8",
+    );
+  }
+
   // 3. Deterministic extension settings for the test workspace
   if (!labDriver) {
     fs.mkdirSync(path.join(workspaceDir, ".vscode"), { recursive: true });
@@ -557,6 +617,11 @@ async function main() {
               SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION: promotionVariant
                 ? "true"
                 : "",
+              SFDX_HARDIS_DOC_SCREENSHOTS_ACTION_RECOVERY: actionRecoveryVariant
+                ? "true"
+                : "",
+              // Statuses and command scenarios of the action recovery variant
+              SF_MOCK_ACTION_RECOVERY_FILE: actionRecoveryOverlayFile,
               SF_MOCK_DEPS_STATE: process.env.SF_MOCK_DEPS_STATE || "ok",
               SF_MOCK_VERSIONS_FILE: process.env.SF_MOCK_VERSIONS_FILE || "",
               // Screenshots must not depend on what npm answers today: the
