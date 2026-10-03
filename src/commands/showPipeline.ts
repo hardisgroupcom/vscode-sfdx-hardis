@@ -1402,6 +1402,14 @@ async function loadDeploymentActionStatuses(
         env,
       },
     );
+    // gitProvider false: no git provider credentials, so the Pull Request comments were not
+    // read. Hide the column rather than show every action as "Not run yet"
+    if (result?.status === 0 && result?.result?.gitProvider === false) {
+      Logger.log(
+        "[vscode-sfdx-hardis] Deployment action statuses hidden: no git provider credentials to read the Pull Request comments",
+      );
+      return { statuses: null };
+    }
     if (result?.status === 0 && result?.result?.statuses) {
       return { statuses: result.result.statuses };
     }
