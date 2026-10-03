@@ -3378,6 +3378,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
           label: this.i18n.forecastWaiting,
           pillClass: "hardis-status-pending",
         };
+      case "after-merge":
+        return {
+          label: this.i18n.forecastAfterMerge,
+          pillClass: "hardis-status-info",
+        };
       case "done":
         return {
           label: this.t("forecastDone", { branch: target }),
@@ -3461,7 +3466,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
     if (
       rows.some((row) =>
-        ["runs-at-validation", "runs-at-deployment"].includes(row.statusCode),
+        ["runs-at-validation", "runs-at-deployment", "after-merge"].includes(
+          row.statusCode,
+        ),
       )
     ) {
       return 1;
@@ -3506,6 +3513,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         key: "deployment",
         codes: ["runs-at-deployment"],
         labelKey: "forecastSummaryDeployment",
+        pill: "hardis-status-info",
+      },
+      {
+        key: "after-merge",
+        codes: ["after-merge"],
+        labelKey: "forecastSummaryAfterMerge",
         pill: "hardis-status-info",
       },
       {
