@@ -20,6 +20,9 @@ import {
 } from "../providerCredentials";
 import { mapGitHubMergeable } from "./mergeStatus";
 
+type WorkflowRun =
+  Endpoints["GET /repos/{owner}/{repo}/actions/runs"]["response"]["data"]["workflow_runs"][0];
+
 export class GitProviderGitHub extends GitProvider {
   // A Pull Request updated before the oldest commit of a window cannot belong to it. Widened by a
   // margin: branches live long and clocks drift.
@@ -791,10 +794,13 @@ export class GitProviderGitHub extends GitProvider {
         caller: "fetchLatestJobsForPullRequest",
         event: "pull_request",
       });
-      const runs = runsResp.data && runsResp.data.workflow_runs;
+      const runs = runsResp.data?.workflow_runs || [];
 
-      // If there are multiple attempts for the same run, pick the latest attempt for each name
-      const latestAttempts = this.filterLatestRunByName(runs);
+      // If there are multiple attempts for the same run, pick the latest attempt for each name.
+      // Every check of the Pull Request counts, as on its GitHub page, apart from skipped ones
+      const latestAttempts = this.leaveOutSkippedRuns(
+        this.filterLatestRunByName(runs),
+      );
 
       // Put any job containing "simulate" at the beginning of the list
       latestAttempts.sort((a, b) => {
@@ -853,19 +859,23 @@ export class GitProviderGitHub extends GitProvider {
         owner,
         repo,
         head_sha: latestCommitSha,
+        // Only empties the pull_requests array of each run, to keep the answer small: the runs a
+        // Pull Request started are still listed, and pickDeploymentRuns leaves them out
         exclude_pull_requests: true,
-        per_page: 10,
+        // Newest first, and the checks of a Pull Request opened after the push are newer than the
+        // deployment run: a short page could leave it out
+        per_page: 50,
       });
       await this.logApiCall("actions.listWorkflowRunsForRepo", {
         caller: "getJobsForBranchLatestCommit",
         exclude_pull_requests: true,
       });
-      const runs =
-        runsResp.data && runsResp.data.workflow_runs
-          ? runsResp.data.workflow_runs
-          : [];
+      const deploymentRuns = this.pickDeploymentRuns(
+        runsResp.data?.workflow_runs || [],
+        branchName,
+      );
 
-      if (runs.length === 0) {
+      if (deploymentRuns.length === 0) {
         // Fallback: commit statuses (Jenkins, CircleCI, etc.)
         const statusesResp =
           await this.gitHubClient.repos.listCommitStatusesForRef({
@@ -887,26 +897,7 @@ export class GitProviderGitHub extends GitProvider {
         };
       }
 
-      // If there are multiple attempts for the same run, pick the latest attempt for each name
-      const latestAttempts = this.filterLatestRunByName(runs);
-
-      // Put any job containing "deploy" at the beginning of the list
-      latestAttempts.sort((a, b) => {
-        const aIsDeploy =
-          a.name?.toLowerCase().includes("deploy") &&
-          !a.name?.toLowerCase().includes("simulate")
-            ? 1
-            : 0;
-        const bIsDeploy =
-          b.name?.toLowerCase().includes("deploy") &&
-          !b.name?.toLowerCase().includes("simulate")
-            ? 1
-            : 0;
-        return bIsDeploy - aIsDeploy;
-      });
-
-      // pick the most recent commit-triggered run
-      const converted: Job[] = this.mapWorkflowRunsToJobs(latestAttempts);
+      const converted: Job[] = this.mapWorkflowRunsToJobs(deploymentRuns);
       return { jobs: converted, jobsStatus: this.computeJobsStatus(converted) };
     } catch (e) {
       Logger.log(`Error fetching jobs for branch ${branchName}: ${String(e)}`);
@@ -914,27 +905,106 @@ export class GitProviderGitHub extends GitProvider {
     }
   }
 
-  private mapWorkflowRunsToJobs(latestAttempts: any[]): Job[] {
-    return latestAttempts.map(
-      (
-        j: Endpoints["GET /repos/{owner}/{repo}/actions/runs"]["response"]["data"]["workflow_runs"][0],
-      ) => ({
-        name: j.name!,
-        status: this.convertJobStatusToJobStatus(
-          j.status || j.conclusion || "",
-        ),
-        webUrl: j.html_url,
-        updatedAt: j.updated_at,
-        raw: j,
-      }),
+  /**
+   * The runs whose result the deployment arrow of a major branch shows, out of every run GitHub
+   * lists for the latest commit of the branch.
+   *
+   * That list also holds runs that are not the deployment of the branch: the checks of a Pull
+   * Request open from it toward the next branch (they run on the same commit), MegaLinter, and the
+   * runs of another branch whose latest commit is the same. Counting them drew a deployment that
+   * worked red as soon as one of them failed. So only the runs the branch started itself are kept,
+   * the latest of each workflow, and among them the deployment workflows: a name with "deploy" but
+   * not "simulate", like Process Deployment (sfdx-hardis). When no workflow is named that way, all
+   * of them are kept, as GitLab, Azure and Bitbucket show the whole pipeline of the branch.
+   */
+  private pickDeploymentRuns(
+    runs: WorkflowRun[],
+    branchName: string,
+  ): WorkflowRun[] {
+    const branchRuns = runs.filter(
+      (run) =>
+        !(run.event || "").startsWith("pull_request") &&
+        // A missing value is kept: Gitea serves the same API and may leave it out
+        (!run.head_branch || run.head_branch === branchName),
+    );
+    const latestRuns = this.filterLatestRunByName(branchRuns);
+    const deploymentRuns = latestRuns.filter((run) => {
+      const name = (run.name || "").toLowerCase();
+      return name.includes("deploy") && !name.includes("simulate");
+    });
+    // Once the deployment runs are chosen, so that a skipped deployment never hands the arrow to
+    // another workflow
+    return this.leaveOutSkippedRuns(
+      deploymentRuns.length > 0 ? deploymentRuns : latestRuns,
     );
   }
 
-  private filterLatestRunByName(runs: any[]) {
-    const latestAttemptsMap: Map<
-      string,
-      Endpoints["GET /repos/{owner}/{repo}/actions/runs"]["response"]["data"]["workflow_runs"][0]
-    > = new Map();
+  /**
+   * A skipped or neutral run says nothing about the commit, and GitHub does not count it as a
+   * failure on the Pull Request page either. It is left out, unless nothing else ran: then the chip
+   * says unknown rather than green.
+   */
+  private leaveOutSkippedRuns(runs: WorkflowRun[]): WorkflowRun[] {
+    const counted = runs.filter(
+      (run) =>
+        !["skipped", "neutral"].includes((run.conclusion || "").toLowerCase()),
+    );
+    return counted.length > 0 ? counted : runs;
+  }
+
+  private mapWorkflowRunsToJobs(runs: WorkflowRun[]): Job[] {
+    return runs.map((run) => ({
+      name: run.name!,
+      status: this.convertWorkflowRunToJobStatus(run),
+      webUrl: run.html_url,
+      updatedAt: run.updated_at,
+      raw: run,
+    }));
+  }
+
+  /**
+   * GitHub fills `status` on every run, and "completed" only says that the run is over: whether it
+   * passed is in `conclusion`. Reading `status || conclusion` drew every finished run green, the
+   * failed and cancelled ones included (vscode-sfdx-hardis#529).
+   */
+  private convertWorkflowRunToJobStatus(run: WorkflowRun): JobStatus {
+    switch ((run.status || "").toLowerCase()) {
+      case "in_progress":
+        return "running";
+      case "queued":
+      case "pending":
+      case "waiting":
+      case "requested":
+      case "action_required":
+        return "pending";
+      default:
+        // "completed", or no status at all: how the run ended is in its conclusion
+        return this.convertWorkflowConclusionToJobStatus(run.conclusion);
+    }
+  }
+
+  private convertWorkflowConclusionToJobStatus(
+    conclusion: string | null | undefined,
+  ): JobStatus {
+    switch ((conclusion || "").toLowerCase()) {
+      case "success":
+        return "success";
+      case "failure":
+      case "cancelled":
+      case "timed_out":
+      case "startup_failure":
+        return "failed";
+      case "action_required":
+        // Waits for someone to approve the run
+        return "pending";
+      default:
+        // neutral, skipped, stale, or not finished yet: neither green nor red
+        return "unknown";
+    }
+  }
+
+  private filterLatestRunByName(runs: WorkflowRun[]): WorkflowRun[] {
+    const latestAttemptsMap: Map<string, WorkflowRun> = new Map();
     for (const run of runs) {
       const existing = latestAttemptsMap.get(run.name!);
       if (
@@ -946,25 +1016,6 @@ export class GitProviderGitHub extends GitProvider {
     }
     const latestAttempts = Array.from(latestAttemptsMap.values());
     return latestAttempts;
-  }
-
-  private convertJobStatusToJobStatus(status: string): JobStatus {
-    switch (status.toLowerCase()) {
-      case "success":
-      case "completed":
-        return "success";
-      case "failure":
-      case "failed":
-      case "cancelled":
-        return "failed";
-      case "in_progress":
-        return "running";
-      case "queued":
-      case "pending":
-        return "pending";
-      default:
-        return "unknown";
-    }
   }
 
   // Map GitHub commit statuses (Jenkins, CircleCI, etc.) to Job[]
