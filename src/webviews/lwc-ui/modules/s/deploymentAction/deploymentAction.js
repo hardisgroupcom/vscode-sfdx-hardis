@@ -1039,6 +1039,16 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     return !!this.action?.pullRequest;
   }
 
+  // Set by sf hardis:project:action:update --move-to-pr when a failed action is
+  // moved to a fix Pull Request: shown, never edited here
+  get hasMovedFrom() {
+    return !!this.displayedAction?.movedFrom;
+  }
+
+  get movedFromLabel() {
+    return `#${this.displayedAction?.movedFrom}`;
+  }
+
   handleEdit() {
     this._startEditingAction();
     // Dispatch event to parent
