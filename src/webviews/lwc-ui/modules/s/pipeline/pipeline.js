@@ -3310,16 +3310,23 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       }
     }
     // Your own Pull Request: try the action in your org (again, after a failed
-    // try), or delete it
+    // try), or delete it. No try for an action sfdx-hardis skips in a developer
+    // org: a validation-only one, or a change of the deployment package
+    const runsInDevOrg =
+      row.typeCode !== "remove-packagexml-items" &&
+      (row.typeCode === "run-batch" ||
+        fullActionContext(row) !== "check-deployment-only");
     if (!this.modalActionsAggregated) {
-      const lastTryFailed = ["failed", "warning"].includes(devEntry?.status);
-      inlineButtons.push({
-        label: lastTryFailed
-          ? this.i18n.deploymentActionRerunInMyOrg
-          : this.i18n.deploymentActionRunInMyOrg,
-        name: "run_action_in_my_org",
-        className: "slds-button slds-button_neutral da-button",
-      });
+      if (runsInDevOrg) {
+        const lastTryFailed = ["failed", "warning"].includes(devEntry?.status);
+        inlineButtons.push({
+          label: lastTryFailed
+            ? this.i18n.deploymentActionRerunInMyOrg
+            : this.i18n.deploymentActionRunInMyOrg,
+          name: "run_action_in_my_org",
+          className: "slds-button slds-button_neutral da-button",
+        });
+      }
       menuItems.push({
         label: this.i18n.deleteLabel,
         name: "delete_action",
@@ -4034,4 +4041,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   _getActionTypeIconName(typeCode) {
     return getActionTypeIconName(typeCode);
   }
+}
+
+// Context of a deployment action as stored in its file, "all" when not set
+function fullActionContext(row) {
+  return row?._fullAction?.context || "all";
 }
