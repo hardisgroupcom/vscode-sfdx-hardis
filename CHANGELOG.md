@@ -6,6 +6,8 @@
   - The Deployment Actions tab groups the actions by Pull Request, in the order they run, with the status of each action in the org of the branch
   - A failed action, or one stopped by a failure, can be retried, marked as done, or moved to your Pull Request to fix it
   - The action editor shows the Pull Request an action was moved from
+  - In the window of your Pull Request, each action has a Run in my org button (Rerun after a failed try) to test it in your developer org before the merge
+  - Mark as done records the action in the background
 - Deployment actions: a new **Run Batch** action runs an Apex batch class once, before or after the deployment, and can wait for it to succeed.
 - The README links the [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io/) course at its new address.
 

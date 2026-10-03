@@ -3040,9 +3040,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
 
     if (
-      ["retry_action", "mark_action_done", "move_action_to_my_pr"].includes(
-        actionName,
-      )
+      [
+        "retry_action",
+        "mark_action_done",
+        "move_action_to_my_pr",
+        "run_action_in_my_org",
+      ].includes(actionName)
     ) {
       this.handleRecoverDeploymentAction(actionName, row);
     }
@@ -3052,6 +3055,19 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // the command runner, then refreshes the pipeline (and so the statuses)
   handleRecoverDeploymentAction(actionName, row) {
     const fullAction = row?._fullAction;
+    // One action of the Pull Request of this window, tried in the default org of
+    // the user, which sfdx-hardis refuses to touch when it is a major org (--dev-org)
+    if (actionName === "run_action_in_my_org" && fullAction?.id) {
+      const prArg = row.prNumber > 0 ? String(row.prNumber) : "draft";
+      const runId = String(fullAction.id).replace(/"/g, "");
+      window.sendMessageToVSCode({
+        type: "runCommand",
+        data: {
+          command: `sf hardis:project:action:run --pr ${prArg} --action-id "${runId}" --dev-org`,
+        },
+      });
+      return;
+    }
     const prNumber = parseInt(row?.prNumber, 10);
     const orgBranch = this.actionStatusOrgBranch;
     if (!fullAction?.id || !prNumber || !orgBranch) {
@@ -3062,7 +3078,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (actionName === "retry_action") {
       command = `sf hardis:project:action:run --pr ${prNumber} --action-id "${actionId}" --org-branch ${orgBranch}`;
     } else if (actionName === "mark_action_done") {
-      command = `sf hardis:project:action:set-status --pr ${prNumber} --action-id "${actionId}" --org-branch ${orgBranch} --status success`;
+      // Nothing to answer: recorded in the background, the statuses refresh when it is done
+      window.sendMessageToVSCode({
+        type: "markDeploymentActionDone",
+        data: { prNumber, actionId, orgBranch, label: row.label },
+      });
+      return;
     } else if (actionName === "move_action_to_my_pr") {
       const myPrNumber = this.currentBranchPullRequest?.number;
       const target = myPrNumber === -1 ? "draft" : String(myPrNumber);
@@ -3202,14 +3223,17 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   _requestActionStatuses() {
     this.modalActionStatuses = null;
+    // A draft (no Pull Request yet, number -1) only has the results of the
+    // actions tried in a developer org, kept in a local file
     const prNumbers = [
       ...new Set(
         this.modalActions
           .map((row) => parseInt(row.prNumber, 10))
-          .filter((prNumber) => prNumber > 0),
+          .map((prNumber) => (prNumber === -1 ? "draft" : prNumber))
+          .filter((prNumber) => prNumber === "draft" || prNumber > 0),
       ),
     ];
-    if (prNumbers.length === 0 || !this.actionStatusOrgBranch) {
+    if (prNumbers.length === 0) {
       return;
     }
     window.sendMessageToVSCode({
@@ -3221,10 +3245,20 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // Status pill of an action in the org branch, and the row actions it allows
   _actionStatusFields(row, groupRows = []) {
     const actionId = row._fullAction?.id;
-    const entry = (this.modalActionStatuses?.[String(row.prNumber)] || []).find(
+    const statusKey = row.prNumber === -1 ? "draft" : String(row.prNumber);
+    const prEntries = this.modalActionStatuses?.[statusKey] || [];
+    const entry = prEntries.find(
       (e) =>
         e.actionId === actionId && e.orgBranch === this.actionStatusOrgBranch,
     );
+    // In the window of one Pull Request, the result of the last try in the
+    // developer org of the user, recorded under the branch of the Pull Request
+    const devBranch = this.modalActionsAggregated
+      ? ""
+      : (this.modalPullRequests[0] || {}).sourceBranch || "";
+    const devEntry = devBranch
+      ? prEntries.find((e) => e.actionId === actionId && e.orgBranch === devBranch)
+      : null;
     const status = entry ? entry.status : "none";
     const display = this._actionStatusDisplay(status, entry);
     const menuItems = [
@@ -3275,8 +3309,17 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         });
       }
     }
-    // Deleting is for the actions of your own Pull Request, as before
+    // Your own Pull Request: try the action in your org (again, after a failed
+    // try), or delete it
     if (!this.modalActionsAggregated) {
+      const lastTryFailed = ["failed", "warning"].includes(devEntry?.status);
+      inlineButtons.push({
+        label: lastTryFailed
+          ? this.i18n.deploymentActionRerunInMyOrg
+          : this.i18n.deploymentActionRunInMyOrg,
+        name: "run_action_in_my_org",
+        className: "slds-button slds-button_neutral da-button",
+      });
       menuItems.push({
         label: this.i18n.deleteLabel,
         name: "delete_action",
@@ -3288,10 +3331,24 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       showStatus: !!this.modalActionStatuses,
       statusLabel: display.label,
       statusPillClass: "hardis-pill " + display.pillClass,
-      statusDetail: this._actionStatusDetail(status, entry, groupRows),
+      statusDetail: [
+        this._actionStatusDetail(status, entry, groupRows),
+        devEntry ? this._devOrgStatusDetail(devEntry) : "",
+      ]
+        .filter(Boolean)
+        .join(" · "),
       inlineButtons,
       menuItems,
     };
+  }
+
+  // "In your org: Done (2026-10-03)": the last try in the developer org
+  _devOrgStatusDetail(devEntry) {
+    const display = this._actionStatusDisplay(devEntry.status, devEntry);
+    return this.t("actionStatusInMyOrg", {
+      status: display.label,
+      date: (devEntry.date || "").substring(0, 10),
+    });
   }
 
   // One line under the label saying why the action is in this state, when the

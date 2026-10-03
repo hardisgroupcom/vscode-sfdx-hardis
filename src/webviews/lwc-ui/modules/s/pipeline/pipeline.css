@@ -395,6 +395,12 @@
 
 /* Deployment Actions tab: one group per Pull Request, one row per action.
    Colors come from theme tokens only, so both VS Code themes read right. */
+.da-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .da-groups {
   display: grid;
   gap: 0.75rem;
