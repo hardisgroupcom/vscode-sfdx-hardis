@@ -308,9 +308,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (this.modalActionStatuses) {
       columns.push({
         key: "status",
-        label: this.t("actionStatusColumn", {
-          orgBranch: this.actionStatusOrgBranch,
-        }),
+        // Short header: the modal title already names the branch, and a long
+        // one widens the column at the expense of the action label
+        label: this.i18n.statusLabel,
         fieldName: "statusLabel",
         type: "statusPill",
         typeAttributes: {
@@ -319,13 +319,14 @@ export default class Pipeline extends SharedMixin(LightningElement) {
           url: { fieldName: "statusUrl" },
         },
         wrapText: false,
-        initialWidth: 190,
+        initialWidth: 180,
       });
       columns.push({
         key: "rowActions",
-        label: this.i18n.actionsLabel,
+        label: "",
         type: "action",
         fieldName: "rowActions",
+        initialWidth: 60,
         typeAttributes: {
           rowActions: { fieldName: "rowActions" },
         },
@@ -337,7 +338,13 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // the modal of a Pull Request between two major branches
     if (this.modalActionsAggregated) {
       columns.push(this._authorColumn());
-      columns.push(this._pullRequestColumn());
+      // The status columns take room: a fixed width keeps the link on one or
+      // two lines instead of a letter-wide column
+      columns.push(
+        this.modalActionStatuses
+          ? { ...this._pullRequestColumn(), initialWidth: 220 }
+          : this._pullRequestColumn(),
+      );
     } else {
       columns.push({
         key: "delete",

@@ -1,7 +1,6 @@
 {
   "actionLabelField": "Libellé",
   "actionLabelHelp": "Libellé de l'action (que fait-elle ?)",
-  "actionStatusColumn": "Statut dans {{orgBranch}}",
   "actionStatusDone": "Terminé",
   "actionStatusFailed": "Échec",
   "actionStatusFailedAllowed": "Échec (autorisé)",

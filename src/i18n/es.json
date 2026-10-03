@@ -1,7 +1,6 @@
 {
   "actionLabelField": "Etiqueta",
   "actionLabelHelp": "Etiqueta de la acción (¿qué hace?)",
-  "actionStatusColumn": "Estado en {{orgBranch}}",
   "actionStatusDone": "Listo",
   "actionStatusFailed": "Fallido",
   "actionStatusFailedAllowed": "Fallido (permitido)",

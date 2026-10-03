@@ -414,6 +414,25 @@ const PROMOTION_TICKED_ROWS = (
   .split(";")
   .map((pair) => parsePoint(pair, 512, 422));
 const PROMOTION_MODAL_CLOSE = { x: 1843, y: 78 };
+/**
+ * Action recovery variant of the run (SFDX_HARDIS_DOC_SCREENSHOTS_ACTION_RECOVERY):
+ * a Pull Request merged into integration whose first post-deployment action
+ * failed and stopped the two others, and the open fix Pull Request moving one of
+ * them. Training Lab 3.3 part 3. The row menu of the failed action and the label
+ * of the moved action are clicked at points the universe names, as "x,y".
+ */
+const ACTION_RECOVERY_VARIANT =
+  process.env.SFDX_HARDIS_DOC_SCREENSHOTS_ACTION_RECOVERY === "true";
+const ACTION_RECOVERY_MENU = parsePoint(
+  process.env.SFDX_HARDIS_DOC_SCREENSHOTS_ACTION_MENU || "",
+  0,
+  0,
+);
+const ACTION_RECOVERY_MOVED_LABEL = parsePoint(
+  process.env.SFDX_HARDIS_DOC_SCREENSHOTS_MOVED_ACTION || "",
+  0,
+  0,
+);
 const PIPELINE_ACTIONS_DEEP_LINK = { focus: "deploymentActions" };
 /**
  * The commits the selection prompt of hardis:project:promotion:create is
@@ -1038,6 +1057,90 @@ suite("Documentation screenshots", function () {
     await click(958, 227); // "Deployment Actions" tab of the modal
     await sleep(1500);
     await captureStable("pipeline-branch-modal-actions");
+  });
+
+  // A post-deployment action failed after a merge (training Lab 3.3 part 3):
+  // the Deployment Actions tab with the status of each action and the menu of
+  // a failed one, Retry and Mark as done as their commands run, and the editor
+  // of an action moved to a fix Pull Request. Only in the action recovery
+  // variant of the run.
+  test("action recovery", async function () {
+    if (!ACTION_RECOVERY_VARIANT || !shouldTake("action-recovery")) {
+      this.skip();
+    }
+    checkoutWorkspaceBranch("integration");
+    await shootPanel(panelManager, {
+      name: "action-recovery-pipeline",
+      command: "vscode-sfdx-hardis.showPipeline",
+      lwcId: "s-pipeline",
+      ready: pipelineFullyLoaded,
+      settleMs: 9000,
+      force: true,
+    });
+    await sleep(1000);
+    await click(BRANCH_NODE.x, BRANCH_NODE.y);
+    await sleep(2500);
+    await click(958, 227); // "Deployment Actions" tab of the modal
+    // The statuses come from the mocked CLI after the tab is filled
+    await sleep(6000);
+    await cleanChrome();
+    await captureStable("pipeline-branch-modal-actions-failed");
+    if (ACTION_RECOVERY_MENU.x > 0) {
+      await click(ACTION_RECOVERY_MENU.x, ACTION_RECOVERY_MENU.y);
+      await sleep(1200);
+      await captureStable("pipeline-branch-modal-actions-failed-menu");
+    }
+
+    // Retry, as the row menu runs it
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await sleep(400);
+    const asked = trackAskedPrompts();
+    const runPanelId = await runCommandAndWaitForPanel(
+      panelManager,
+      "sf hardis:project:action:run --pr 71 --action-id 7d1e4b90-3c2a-4f5e-8a6b-062000000001 --org-branch integration",
+    );
+    const runPanel = panelManager.getPanel(runPanelId);
+    await waitFor(() => asked("value"), 30000, "next actions prompt");
+    await sleep(1500);
+    runPanel.simulateWebviewMessage({ type: "submit", data: { value: "one" } });
+    await sleep(3500);
+    await cleanChrome();
+    capture("action-run-prompts");
+
+    // Mark as done, as the row menu runs it
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await sleep(400);
+    await runCommandAndWaitForPanel(
+      panelManager,
+      "sf hardis:project:action:set-status --pr 71 --action-id 7d1e4b90-3c2a-4f5e-8a6b-062000000003 --org-branch integration --status success",
+    );
+    await sleep(3500);
+    await cleanChrome();
+    capture("action-set-status");
+
+    // The fix Pull Request: its Deployment Actions tab, then the editor of the
+    // moved action, which says where it comes from
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await sleep(400);
+    checkoutWorkspaceBranch("training/mate-us-062-crew-leads-fix");
+    try {
+      await shootPanel(panelManager, {
+        name: "pipeline-pr-actions-moved",
+        command: "vscode-sfdx-hardis.showPipeline",
+        lwcId: "s-pipeline",
+        ready: pipelineFullyLoaded,
+        settleMs: 9000,
+        force: true,
+        commandArgs: PIPELINE_ACTIONS_DEEP_LINK,
+      });
+      if (ACTION_RECOVERY_MOVED_LABEL.x > 0) {
+        await click(ACTION_RECOVERY_MOVED_LABEL.x, ACTION_RECOVERY_MOVED_LABEL.y);
+        await sleep(1500);
+        await captureStable("pipeline-edit-action-moved");
+      }
+    } finally {
+      checkoutWorkspaceBranch("integration");
+    }
   });
 
   // Promotion branches (Beta), for

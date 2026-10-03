@@ -1,7 +1,6 @@
 {
   "actionLabelField": "Rótulo",
   "actionLabelHelp": "Rótulo da ação (o que ela faz?)",
-  "actionStatusColumn": "Status em {{orgBranch}}",
   "actionStatusDone": "Concluído",
   "actionStatusFailed": "Falhou",
   "actionStatusFailedAllowed": "Falhou (permitido)",

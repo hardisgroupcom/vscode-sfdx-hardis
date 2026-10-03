@@ -602,6 +602,22 @@ async function main() {
     return 0;
   }
 
+  // Status of the deployment actions per org branch, for the Deployment Actions
+  // tab: the action recovery variant serves its statuses, any other run answers
+  // none, so the status column stays hidden and the base images do not move
+  if (
+    first === "hardis:project:action:list" &&
+    DOCS_PROFILE &&
+    args.includes("--with-status")
+  ) {
+    const recovery = readActionRecoveryOverlay();
+    outputJsonIfRequested(
+      { status: 0, result: { statuses: recovery ? recovery.actionStatuses : null } },
+      "",
+    );
+    return 0;
+  }
+
   // Monitoring catalog: answered from a snapshot of the real
   // `sf hardis:config:monitoring-defaults --json` payload, so the Org
   // Monitoring and Monitoring Configuration panels show their full catalog
@@ -1566,7 +1582,90 @@ function deltaPackageXml() {
   return lines.join("\n");
 }
 
+/**
+ * Overlay of the action recovery variant (SFDX_HARDIS_DOC_SCREENSHOTS_ACTION_RECOVERY),
+ * or null outside of it.
+ */
+function readActionRecoveryOverlay() {
+  const file = process.env.SF_MOCK_ACTION_RECOVERY_FILE;
+  if (!file) {
+    return null;
+  }
+  try {
+    return JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
 const DOCS_SCENARIOS = {
+  // Retry of a failed post-deployment action, as sfdx-hardis runs it: the action
+  // succeeds, the command asks about the actions its failure stopped, and the
+  // next one fails
+  "hardis:project:action:run": async (send, askPrompt, sleep) => {
+    const log = (logType, message, extra) =>
+      send({ event: "commandLogLine", logType, message, ...(extra || {}) });
+    const recovery = (readActionRecoveryOverlay() || {}).scenario || {
+      prNumber: 1042,
+      orgBranch: "integration",
+      username: "deploy.user@mycompany.com.integ",
+      gitUser: "Jane Doe",
+      retryActionLabel: "Assign the sales managers to the Key Accounts group",
+      nextActionLabel: "Recalculate the account scores once",
+      nextActionError: "Apex class AccountScoreBach not found in the org",
+    };
+    const subCommand = async (command, ms, success = true) => {
+      send({ event: "commandSubCommandStart", data: { command, cwd: "." } });
+      await sleep(ms);
+      send({ event: "commandSubCommandEnd", data: { command, success } });
+    };
+    log("action", `Org branch ${recovery.orgBranch}, user ${recovery.username}`);
+    log("action", `Running action ${recovery.retryActionLabel} of Pull Request #${recovery.prNumber} in ${recovery.orgBranch}...`);
+    await subCommand("sf apex run --file scripts/apex/crew-leads-add-delivery-managers.apex", 900);
+    log("success", `[DeploymentActions] Action ${recovery.retryActionLabel} succeeded`);
+    const message = "2 action(s) were stopped by this failure. What do you want to do?";
+    log("action", message, { isQuestion: true });
+    await askPrompt({
+      name: "value",
+      type: "select",
+      message,
+      description: message,
+      choices: [
+        { title: "Run the next action only", value: "one" },
+        { title: "Run all the next actions", value: "all" },
+        { title: "Stop here", value: "none" },
+      ],
+    });
+    log("log", "Run the next action only");
+    log("action", `Running action ${recovery.nextActionLabel} of Pull Request #${recovery.prNumber} in ${recovery.orgBranch}...`);
+    await sleep(600);
+    log("error", `[DeploymentActions] Action ${recovery.nextActionLabel} is not valid: ${recovery.nextActionError}`);
+    log("action", `Actions run in ${recovery.orgBranch}`);
+    log(
+      "table",
+      JSON.stringify([
+        { PR: `#${recovery.prNumber}`, Action: recovery.retryActionLabel, Status: "success" },
+        { PR: `#${recovery.prNumber}`, Action: recovery.nextActionLabel, Status: "failed" },
+      ]),
+    );
+    log("error", `Action ${recovery.nextActionLabel} failed: ${recovery.nextActionError}`);
+  },
+  // Mark as done of an action performed by hand
+  "hardis:project:action:set-status": async (send, askPrompt, sleep) => {
+    const log = (logType, message, extra) =>
+      send({ event: "commandLogLine", logType, message, ...(extra || {}) });
+    const recovery = (readActionRecoveryOverlay() || {}).scenario || {
+      prNumber: 1042,
+      orgBranch: "integration",
+      username: "deploy.user@mycompany.com.integ",
+      gitUser: "Jane Doe",
+      closeActionLabel: "Add the deployment user to the Key Accounts group",
+    };
+    log("action", `Recording the action of Pull Request #${recovery.prNumber} as done in ${recovery.orgBranch}...`);
+    await sleep(700);
+    log("success", `Action ${recovery.closeActionLabel} recorded as done in ${recovery.orgBranch}.`);
+    log("action", `Not run in CI, then closed by hand by ${recovery.gitUser} (${recovery.username}) on 2026-10-03 14:05 UTC.`);
+  },
   "hardis:work:new": async (send, askPrompt, sleep) => {
     const log = (logType, message, extra) =>
       send({ event: "commandLogLine", logType, message, ...(extra || {}) });

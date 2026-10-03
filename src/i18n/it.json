@@ -1,7 +1,6 @@
 {
   "actionLabelField": "Etichetta",
   "actionLabelHelp": "Etichetta dell'azione (cosa fa?)",
-  "actionStatusColumn": "Stato in {{orgBranch}}",
   "actionStatusDone": "Fatto",
   "actionStatusFailed": "Non riuscita",
   "actionStatusFailedAllowed": "Non riuscita (consentito)",

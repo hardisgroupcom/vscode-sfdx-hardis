@@ -1,7 +1,6 @@
 {
   "actionLabelField": "Label",
   "actionLabelHelp": "Label van de actie (wat doet het?)",
-  "actionStatusColumn": "Status in {{orgBranch}}",
   "actionStatusDone": "Gereed",
   "actionStatusFailed": "Mislukt",
   "actionStatusFailedAllowed": "Mislukt (toegestaan)",

@@ -1,7 +1,6 @@
 {
   "actionLabelField": "ラベル",
   "actionLabelHelp": "アクションのラベル（何をするか）",
-  "actionStatusColumn": "{{orgBranch}} でのステータス",
   "actionStatusDone": "完了",
   "actionStatusFailed": "失敗",
   "actionStatusFailedAllowed": "失敗（許可済み）",

@@ -1,7 +1,6 @@
 {
   "actionLabelField": "Label",
   "actionLabelHelp": "Label of the action (what does it do ?)",
-  "actionStatusColumn": "Status in {{orgBranch}}",
   "actionStatusDone": "Done",
   "actionStatusFailed": "Failed",
   "actionStatusFailedAllowed": "Failed (allowed)",
