@@ -13,6 +13,12 @@ import {
 } from "s/deploymentActionUtils";
 import { getTicketStatusPillClass } from "s/pillUtils";
 
+// Characters an action id or a branch name may hold to be passed to a command line
+const SAFE_ACTION_ID = /^[\w .:@/+-]+$/;
+const SAFE_BRANCH_NAME = /^[\w./-]+$/;
+// Org branch under which sfdx-hardis records the actions tried in a developer org
+const DEV_SANDBOXES_BRANCH = "dev-sandboxes";
+
 export default class Pipeline extends SharedMixin(LightningElement) {
   @track prButtonInfo;
   enableDeploymentApexTestClasses = false;
@@ -3055,11 +3061,16 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // the command runner, then refreshes the pipeline (and so the statuses)
   handleRecoverDeploymentAction(actionName, row) {
     const fullAction = row?._fullAction;
+    // The id goes into a shell command line: anything but plain characters is refused
+    const safeId = String(fullAction?.id || "");
+    if (!SAFE_ACTION_ID.test(safeId)) {
+      return;
+    }
     // One action of the Pull Request of this window, tried in the default org of
     // the user, which sfdx-hardis refuses to touch when it is a major org (--dev-org)
-    if (actionName === "run_action_in_my_org" && fullAction?.id) {
+    if (actionName === "run_action_in_my_org") {
       const prArg = row.prNumber > 0 ? String(row.prNumber) : "draft";
-      const runId = String(fullAction.id).replace(/"/g, "");
+      const runId = safeId;
       window.sendMessageToVSCode({
         type: "runCommand",
         data: {
@@ -3070,10 +3081,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
     const prNumber = parseInt(row?.prNumber, 10);
     const orgBranch = this.actionStatusOrgBranch;
-    if (!fullAction?.id || !prNumber || !orgBranch) {
+    if (!prNumber || !SAFE_BRANCH_NAME.test(orgBranch || "")) {
       return;
     }
-    const actionId = String(fullAction.id).replace(/"/g, "");
+    const actionId = safeId;
     let command = "";
     if (actionName === "retry_action") {
       command = `sf hardis:project:action:run --pr ${prNumber} --action-id "${actionId}" --org-branch ${orgBranch}`;
@@ -3252,10 +3263,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         e.actionId === actionId && e.orgBranch === this.actionStatusOrgBranch,
     );
     // In the window of one Pull Request, the result of the last try in the
-    // developer org of the user, recorded under the branch of the Pull Request
-    const devBranch = this.modalActionsAggregated
-      ? ""
-      : (this.modalPullRequests[0] || {}).sourceBranch || "";
+    // developer org of the user, recorded by sfdx-hardis under one name shared
+    // by every developer org
+    const devBranch = this.modalActionsAggregated ? "" : DEV_SANDBOXES_BRANCH;
     const devEntry = devBranch
       ? prEntries.find(
           (e) => e.actionId === actionId && e.orgBranch === devBranch,

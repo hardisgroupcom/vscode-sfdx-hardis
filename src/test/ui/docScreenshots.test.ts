@@ -1061,7 +1061,8 @@ suite("Documentation screenshots", function () {
 
   // A post-deployment action failed after a merge (training Lab 3.3 part 3):
   // the Deployment Actions tab with the status of each action and the menu of
-  // a failed one, Retry and Mark as done as their commands run, and the editor
+  // a failed one, Retry as its command runs (Mark as done runs in the
+  // background, with no panel to capture), and the editor
   // of an action moved to a fix Pull Request. Only in the action recovery
   // variant of the run.
   test("action recovery", async function () {
@@ -1106,17 +1107,6 @@ suite("Documentation screenshots", function () {
     await sleep(3500);
     await cleanChrome();
     capture("action-run-prompts");
-
-    // Mark as done, as the row menu runs it
-    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
-    await sleep(400);
-    await runCommandAndWaitForPanel(
-      panelManager,
-      "sf hardis:project:action:set-status --pr 71 --action-id 7d1e4b90-3c2a-4f5e-8a6b-062000000003 --org-branch integration --status success",
-    );
-    await sleep(3500);
-    await cleanChrome();
-    capture("action-set-status");
 
     // The fix Pull Request: its Deployment Actions tab, then the editor of the
     // moved action, which says where it comes from

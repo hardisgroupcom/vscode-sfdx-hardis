@@ -1372,13 +1372,14 @@ async function loadDeploymentActionStatuses(
  */
 async function markDeploymentActionDone(data: any): Promise<void> {
   const prNumber = Number(data?.prNumber);
-  const actionId = String(data?.actionId || "").replace(/["\\]/g, "");
+  // Passed to a command line: refused below unless it only holds plain characters
+  const actionId = String(data?.actionId || "");
   const orgBranch = String(data?.orgBranch || "");
   const label = String(data?.label || actionId);
   if (
     !Number.isInteger(prNumber) ||
     prNumber < 1 ||
-    !actionId ||
+    !/^[\w .:@/+-]+$/.test(actionId) ||
     !/^[\w./-]+$/.test(orgBranch)
   ) {
     return;
