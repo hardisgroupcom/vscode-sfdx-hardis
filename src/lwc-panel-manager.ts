@@ -40,9 +40,15 @@ export class LwcPanelManager {
    * Create or get an existing LWC panel for the specified component
    * @param lwcId The LWC component identifier
    * @param initData Optional initialization data
+   * @param options reveal: false leaves an existing panel where it is, without
+   * bringing it to the front of its group nor taking the focus (default: true)
    * @returns The LWC panel instance
    */
-  public getOrCreatePanel(lwcId: string, initData?: any): LwcUiPanel {
+  public getOrCreatePanel(
+    lwcId: string,
+    initData?: any,
+    options?: { reveal?: boolean },
+  ): LwcUiPanel {
     // Clear any existing dispose timer for this panel
     this.clearDisposeTimer(lwcId);
 
@@ -53,10 +59,12 @@ export class LwcPanelManager {
       existingPanel.clearExistingOnMessageListeners();
 
       // Panel exists, reveal it and update with new data if provided
-      const column = vscode.window.activeTextEditor
-        ? vscode.window.activeTextEditor.viewColumn
-        : undefined;
-      existingPanel.reveal(column);
+      if (options?.reveal !== false) {
+        const column = vscode.window.activeTextEditor
+          ? vscode.window.activeTextEditor.viewColumn
+          : undefined;
+        existingPanel.reveal(column);
+      }
 
       if (initData) {
         existingPanel.sendInitializationData(initData);

@@ -6,7 +6,7 @@ import { HardisPluginsProvider } from "./hardis-plugins-provider";
 import { LocalWebSocketServer } from "./hardis-websocket-server";
 import { execCommand, openFolderInExplorer, resetCache } from "./utils";
 import type TelemetryReporter from "@vscode/extension-telemetry";
-import { CommandRunner } from "./command-runner";
+import { CommandRunner, ExecuteCommandOptions } from "./command-runner";
 import { runSalesforceCliMcpServer } from "./utils/mcpUtils";
 import { SetupHelper } from "./utils/setupUtils";
 import { registerShowWelcome } from "./commands/showWelcome";
@@ -181,9 +181,13 @@ export class Commands {
     // Execute SFDX Hardis command
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.execute-command",
-      (sfdxHardisCommand: string, envVars?: Record<string, string>) => {
+      (
+        sfdxHardisCommand: string,
+        envVars?: Record<string, string>,
+        options?: ExecuteCommandOptions,
+      ) => {
         // Use CommandRunner for all terminal and LWC panel logic
-        this.commandRunner.executeCommand(sfdxHardisCommand, envVars);
+        this.commandRunner.executeCommand(sfdxHardisCommand, envVars, options);
       },
     );
     this.disposables.push(disposable);

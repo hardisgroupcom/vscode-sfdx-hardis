@@ -193,7 +193,12 @@ export class LocalWebSocketServer {
           panelManager.rekeyPanel(pendingPanel.lwcId, lwcId);
         }
       }
-      const panel = panelManager.getOrCreatePanel(lwcId, data.context);
+      // A tab opened at click time stays where it is: revealing it again would
+      // move it to the group of the active text editor, and take the focus
+      // from what the user went on with while the CLI was booting
+      const panel = panelManager.getOrCreatePanel(lwcId, data.context, {
+        reveal: !pendingPanel,
+      });
       panel.commandStatus = "running";
       this.clients[data.context.id].panel = panel;
       this.clients[data.context.id].lwcId = lwcId;

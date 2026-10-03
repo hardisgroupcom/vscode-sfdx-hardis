@@ -8,6 +8,7 @@ import {
 import { Logger } from "../logger";
 import { getAllTranslations, getCurrentLocale, t } from "../i18n/i18n";
 import { DOCSITE_URL, PANEL_DOC_URLS } from "../constants";
+import type { ExecuteCommandOptions } from "../command-runner";
 
 type MessageListener = (messageType: string, data: any) => void;
 type ImagePathMap = Record<string, string[]>;
@@ -30,6 +31,14 @@ export class LwcUiPanel {
    */
   public commandStatus:
     "pending" | "running" | "completed" | "error" | "aborted" | null = null;
+
+  /**
+   * Provisional context id of the background run a command-execution panel
+   * displays (passed to the CLI as SFDX_HARDIS_COMMAND_CONTEXT_ID). Run again
+   * replays a command in the same panel: the wiring of a previous run checks
+   * this id and leaves the panel alone once another run owns it.
+   */
+  public commandRunId: string | null = null;
 
   /**
    * True once the CLI process behind a pending command-execution panel has
@@ -570,11 +579,17 @@ export class LwcUiPanel {
   private async handleRunCommand(data: {
     command: string;
     envVars?: Record<string, string>;
+    reusePanel?: boolean;
   }): Promise<void> {
+    // Run again replays the command in this panel. The id is read here, never
+    // from the message, so a webview can only ask to reuse its own panel.
+    const options: ExecuteCommandOptions | undefined =
+      data.reusePanel === true ? { reusePanelLwcId: this.lwcId } : undefined;
     vscode.commands.executeCommand(
       "vscode-sfdx-hardis.execute-command",
       data.command,
       data.envVars,
+      options,
     );
   }
 

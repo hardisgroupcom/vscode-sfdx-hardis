@@ -10,6 +10,9 @@
   - Mark as done records the action in the background
 - Deployment actions: a new **Run Batch** action runs an Apex batch class once, before or after the deployment, and can wait for it to succeed.
 - Metadata Retriever: recent changes no longer list one row per file of a Lightning Web Component, which made a retrieve of every row fail. When the Salesforce CLI does not know a metadata type (ex: GenOpAgentConfig), the error names the type and the rows to untick.
+- Command execution tab
+  - **Run again** replays the command in the same tab, instead of opening a new one ([sfdx-hardis#2272](https://github.com/hardisgroupcom/sfdx-hardis/issues/2272))
+  - A command tab no longer jumps to another editor group, or takes the focus, when its command starts running
 - The README links the [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io/) course at its new address.
 
 ## [8.9.2] 2026-10-02
