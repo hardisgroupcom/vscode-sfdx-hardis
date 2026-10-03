@@ -3197,8 +3197,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     const org = (this.pipelineData?.orgs || []).find(
       (o) => o.name === this.modalBranchName,
     );
-    const targets = Array.isArray(org?.mergeTargets) ? org.mergeTargets : [];
-    return targets[0] || "";
+    if (Array.isArray(org?.mergeTargets)) {
+      return org.mergeTargets[0] || "";
+    }
+    // Pipeline data computed before mergeTargets was sent: the merge links of
+    // the diagram say the same
+    const link = (this.pipelineData?.links || []).find(
+      (l) => l.source === this.modalBranchName && l.type === "gitMerge",
+    );
+    return link?.target || "";
   }
 
   // Shown in a branch window that has a merge target, once the statuses are known
