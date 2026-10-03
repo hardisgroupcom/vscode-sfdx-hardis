@@ -1134,7 +1134,10 @@ suite("Documentation screenshots", function () {
         commandArgs: PIPELINE_ACTIONS_DEEP_LINK,
       });
       if (ACTION_RECOVERY_MOVED_LABEL.x > 0) {
-        await click(ACTION_RECOVERY_MOVED_LABEL.x, ACTION_RECOVERY_MOVED_LABEL.y);
+        await click(
+          ACTION_RECOVERY_MOVED_LABEL.x,
+          ACTION_RECOVERY_MOVED_LABEL.y,
+        );
         await sleep(1500);
         await captureStable("pipeline-edit-action-moved");
       }

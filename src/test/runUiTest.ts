@@ -380,7 +380,8 @@ async function main() {
       ...(overlay.addOpenPullRequests || []),
       ...(fixture.openPullRequests || []),
     ];
-    fixture.mergedPullRequestsByBranch = fixture.mergedPullRequestsByBranch || {};
+    fixture.mergedPullRequestsByBranch =
+      fixture.mergedPullRequestsByBranch || {};
     for (const [branch, prs] of Object.entries<any[]>(
       overlay.addMergedPullRequestsByBranch || {},
     )) {

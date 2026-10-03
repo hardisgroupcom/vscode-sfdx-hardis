@@ -3151,11 +3151,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     let command = "";
     if (actionName === "retry_action") {
       command = `sf hardis:project:action:run --pr ${prNumber} --action-id "${actionId}" --org-branch ${orgBranch}`;
-    }
-    else if (actionName === "mark_action_done") {
+    } else if (actionName === "mark_action_done") {
       command = `sf hardis:project:action:set-status --pr ${prNumber} --action-id "${actionId}" --org-branch ${orgBranch} --status success`;
-    }
-    else if (actionName === "move_action_to_my_pr") {
+    } else if (actionName === "move_action_to_my_pr") {
       const myPrNumber = this.currentBranchPullRequest?.number;
       const target = myPrNumber === -1 ? "draft" : String(myPrNumber);
       command = `sf hardis:project:action:update --scope pr --pr-id ${prNumber} --when ${fullAction.when || "post-deploy"} --action-id "${actionId}" --move-to-pr ${target}`;
@@ -3208,7 +3206,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   _actionStatusFields(row) {
     const actionId = row._fullAction?.id;
     const entry = (this.modalActionStatuses?.[String(row.prNumber)] || []).find(
-      (e) => e.actionId === actionId && e.orgBranch === this.actionStatusOrgBranch,
+      (e) =>
+        e.actionId === actionId && e.orgBranch === this.actionStatusOrgBranch,
     );
     const status = entry ? entry.status : "none";
     const display = this._actionStatusDisplay(status, entry);
@@ -3250,24 +3249,45 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   _actionStatusDisplay(status, entry) {
     switch (status) {
       case "success":
-        return { label: this.i18n.actionStatusDone, pillClass: "hardis-status-success" };
+        return {
+          label: this.i18n.actionStatusDone,
+          pillClass: "hardis-status-success",
+        };
       case "failed":
-        return { label: this.i18n.actionStatusFailed, pillClass: "hardis-status-failed" };
+        return {
+          label: this.i18n.actionStatusFailed,
+          pillClass: "hardis-status-failed",
+        };
       case "warning":
-        return { label: this.i18n.actionStatusFailedAllowed, pillClass: "hardis-status-failed" };
+        return {
+          label: this.i18n.actionStatusFailedAllowed,
+          pillClass: "hardis-status-failed",
+        };
       case "not-run":
-        return { label: this.i18n.actionStatusNotRun, pillClass: "hardis-status-pending" };
+        return {
+          label: this.i18n.actionStatusNotRun,
+          pillClass: "hardis-status-pending",
+        };
       case "manual":
-        return { label: this.i18n.actionStatusManual, pillClass: "hardis-status-pending" };
+        return {
+          label: this.i18n.actionStatusManual,
+          pillClass: "hardis-status-pending",
+        };
       case "moved":
         return {
           label: this.t("actionStatusMoved", { pr: entry?.movedTo || "?" }),
           pillClass: "hardis-status-unknown",
         };
       case "skipped":
-        return { label: this.i18n.actionStatusSkipped, pillClass: "hardis-status-unknown" };
+        return {
+          label: this.i18n.actionStatusSkipped,
+          pillClass: "hardis-status-unknown",
+        };
       default:
-        return { label: this.i18n.actionStatusNotRunYet, pillClass: "hardis-status-unknown" };
+        return {
+          label: this.i18n.actionStatusNotRunYet,
+          pillClass: "hardis-status-unknown",
+        };
     }
   }
 

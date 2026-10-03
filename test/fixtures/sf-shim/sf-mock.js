@@ -612,7 +612,10 @@ async function main() {
   ) {
     const recovery = readActionRecoveryOverlay();
     outputJsonIfRequested(
-      { status: 0, result: { statuses: recovery ? recovery.actionStatuses : null } },
+      {
+        status: 0,
+        result: { statuses: recovery ? recovery.actionStatuses : null },
+      },
       "",
     );
     return 0;
@@ -1619,11 +1622,24 @@ const DOCS_SCENARIOS = {
       await sleep(ms);
       send({ event: "commandSubCommandEnd", data: { command, success } });
     };
-    log("action", `Org branch ${recovery.orgBranch}, user ${recovery.username}`);
-    log("action", `Running action ${recovery.retryActionLabel} of Pull Request #${recovery.prNumber} in ${recovery.orgBranch}...`);
-    await subCommand("sf apex run --file scripts/apex/crew-leads-add-delivery-managers.apex", 900);
-    log("success", `[DeploymentActions] Action ${recovery.retryActionLabel} succeeded`);
-    const message = "2 action(s) were stopped by this failure. What do you want to do?";
+    log(
+      "action",
+      `Org branch ${recovery.orgBranch}, user ${recovery.username}`,
+    );
+    log(
+      "action",
+      `Running action ${recovery.retryActionLabel} of Pull Request #${recovery.prNumber} in ${recovery.orgBranch}...`,
+    );
+    await subCommand(
+      "sf apex run --file scripts/apex/crew-leads-add-delivery-managers.apex",
+      900,
+    );
+    log(
+      "success",
+      `[DeploymentActions] Action ${recovery.retryActionLabel} succeeded`,
+    );
+    const message =
+      "2 action(s) were stopped by this failure. What do you want to do?";
     log("action", message, { isQuestion: true });
     await askPrompt({
       name: "value",
@@ -1637,18 +1653,35 @@ const DOCS_SCENARIOS = {
       ],
     });
     log("log", "Run the next action only");
-    log("action", `Running action ${recovery.nextActionLabel} of Pull Request #${recovery.prNumber} in ${recovery.orgBranch}...`);
+    log(
+      "action",
+      `Running action ${recovery.nextActionLabel} of Pull Request #${recovery.prNumber} in ${recovery.orgBranch}...`,
+    );
     await sleep(600);
-    log("error", `[DeploymentActions] Action ${recovery.nextActionLabel} is not valid: ${recovery.nextActionError}`);
+    log(
+      "error",
+      `[DeploymentActions] Action ${recovery.nextActionLabel} is not valid: ${recovery.nextActionError}`,
+    );
     log("action", `Actions run in ${recovery.orgBranch}`);
     log(
       "table",
       JSON.stringify([
-        { PR: `#${recovery.prNumber}`, Action: recovery.retryActionLabel, Status: "success" },
-        { PR: `#${recovery.prNumber}`, Action: recovery.nextActionLabel, Status: "failed" },
+        {
+          PR: `#${recovery.prNumber}`,
+          Action: recovery.retryActionLabel,
+          Status: "success",
+        },
+        {
+          PR: `#${recovery.prNumber}`,
+          Action: recovery.nextActionLabel,
+          Status: "failed",
+        },
       ]),
     );
-    log("error", `Action ${recovery.nextActionLabel} failed: ${recovery.nextActionError}`);
+    log(
+      "error",
+      `Action ${recovery.nextActionLabel} failed: ${recovery.nextActionError}`,
+    );
   },
   // Mark as done of an action performed by hand
   "hardis:project:action:set-status": async (send, askPrompt, sleep) => {
@@ -1661,10 +1694,19 @@ const DOCS_SCENARIOS = {
       gitUser: "Jane Doe",
       closeActionLabel: "Add the deployment user to the Key Accounts group",
     };
-    log("action", `Recording the action of Pull Request #${recovery.prNumber} as done in ${recovery.orgBranch}...`);
+    log(
+      "action",
+      `Recording the action of Pull Request #${recovery.prNumber} as done in ${recovery.orgBranch}...`,
+    );
     await sleep(700);
-    log("success", `Action ${recovery.closeActionLabel} recorded as done in ${recovery.orgBranch}.`);
-    log("action", `Not run in CI, then closed by hand by ${recovery.gitUser} (${recovery.username}) on 2026-10-03 14:05 UTC.`);
+    log(
+      "success",
+      `Action ${recovery.closeActionLabel} recorded as done in ${recovery.orgBranch}.`,
+    );
+    log(
+      "action",
+      `Not run in CI, then closed by hand by ${recovery.gitUser} (${recovery.username}) on 2026-10-03 14:05 UTC.`,
+    );
   },
   "hardis:work:new": async (send, askPrompt, sleep) => {
     const log = (logType, message, extra) =>

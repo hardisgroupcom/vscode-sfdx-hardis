@@ -19,7 +19,11 @@ import {
 import { getCurrentGitBranch } from "../utils/pipeline/sfdxHardisConfig";
 import { handleDeploymentActionPickerMessage } from "../utils/pipeline/deploymentActionPickers";
 import { listCustomFunctions } from "../utils/customFunctionsUtils";
-import { execCommandWithProgress, execSfdxJson, getWorkspaceRoot } from "../utils";
+import {
+  execCommandWithProgress,
+  execSfdxJson,
+  getWorkspaceRoot,
+} from "../utils";
 import { collectProviderCredentialEnvVars } from "../utils/providerCredentials";
 import { t } from "../i18n/i18n";
 import path from "path";
@@ -1324,8 +1328,7 @@ async function loadDeploymentActionStatuses(
   let env: Record<string, string> = {};
   try {
     env = await collectProviderCredentialEnvVars();
-  }
-  catch (e: any) {
+  } catch (e: any) {
     Logger.log(
       `[vscode-sfdx-hardis] Deployment action statuses: provider credentials not collected: ${e?.message || e}`,
     );
@@ -1333,7 +1336,13 @@ async function loadDeploymentActionStatuses(
   try {
     const result = await execSfdxJson(
       `sf hardis:project:action:list --with-status --pr-ids ${numbers.join(",")}`,
-      { fail: false, output: false, debug: false, reuseRecentResult: false, env },
+      {
+        fail: false,
+        output: false,
+        debug: false,
+        reuseRecentResult: false,
+        env,
+      },
     );
     if (result?.status === 0 && result?.result?.statuses) {
       return { statuses: result.result.statuses };
@@ -1341,8 +1350,7 @@ async function loadDeploymentActionStatuses(
     Logger.log(
       `[vscode-sfdx-hardis] Deployment action statuses not available: ${result?.errorMessage || result?.message || "unknown error"}`,
     );
-  }
-  catch (e: any) {
+  } catch (e: any) {
     Logger.log(
       `[vscode-sfdx-hardis] Deployment action statuses not available: ${e?.message || e}`,
     );
