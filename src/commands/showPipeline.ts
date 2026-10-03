@@ -477,12 +477,7 @@ export function registerShowPipeline(commands: Commands) {
         }
         // Status of the deployment actions in each org branch, read by sfdx-hardis from the
         // "Deployment Actions" Pull Request comments
-        else if (type === "loadDeploymentActionForecast") {
-          panel.sendMessage({
-            type: "returnDeploymentActionForecast",
-            data: await loadDeploymentActionForecast(data),
-          });
-        } else if (type === "loadDeploymentActionBackpromotes") {
+        else if (type === "loadDeploymentActionBackpromotes") {
           const prNumber = Number(data?.prNumber);
           panel.sendMessage({
             type: "returnDeploymentActionBackpromotes",
@@ -494,7 +489,7 @@ export function registerShowPipeline(commands: Commands) {
         } else if (type === "loadDeploymentActionStatuses") {
           panel.sendMessage({
             type: "returnDeploymentActionStatuses",
-            data: await loadDeploymentActionStatuses(data?.prNumbers || []),
+            data: await loadDeploymentActionStatuses(data),
           });
         }
         // Get PR info for modal
@@ -1333,41 +1328,24 @@ type PipelineInfo = {
 };
 
 /**
- * Status of the deployment actions of some Pull Requests in each org branch. sfdx-hardis reads it
- * from the "Deployment Actions" Pull Request comments, with the git provider token the command
- * runner also passes. Returns null statuses when the CLI cannot provide them (older version, no
- * token): the panel then hides the status column.
+ * Run sf hardis:project:action:list with these flags and the git provider credentials the command
+ * runner also passes. Returns its JSON result, or null when the CLI cannot answer.
  */
-/**
- * What the next promotion (fromBranch to targetBranch) will do with the deployment actions of these
- * Pull Requests, computed by sfdx-hardis for the "Next promotion" mode of the Deployment Actions tab.
- */
-async function loadDeploymentActionForecast(
-  data: any,
-): Promise<{ forecast: any | null }> {
-  const numbers = (Array.isArray(data?.prNumbers) ? data.prNumbers : []).filter(
-    (prNumber: any) => Number.isInteger(prNumber) && prNumber > 0,
-  );
-  const targetBranch = String(data?.targetBranch || "");
-  const fromBranch = String(data?.fromBranch || "");
-  if (
-    numbers.length === 0 ||
-    !/^[\w./-]+$/.test(targetBranch) ||
-    !/^[\w./-]+$/.test(fromBranch)
-  ) {
-    return { forecast: null };
-  }
+async function runActionListJson(
+  flags: string,
+  purpose: string,
+): Promise<any | null> {
   let env: Record<string, string> = {};
   try {
     env = await collectProviderCredentialEnvVars();
   } catch (e: any) {
     Logger.log(
-      `[vscode-sfdx-hardis] Deployment action forecast: provider credentials not collected: ${e?.message || e}`,
+      `[vscode-sfdx-hardis] ${purpose}: provider credentials not collected: ${e?.message || e}`,
     );
   }
   try {
     const result = await execSfdxJson(
-      `sf hardis:project:action:list --with-status --pr-ids ${numbers.join(",")} --forecast ${targetBranch} --from-branch ${fromBranch}`,
+      `sf hardis:project:action:list --with-status ${flags}`,
       {
         fail: false,
         output: false,
@@ -1376,13 +1354,66 @@ async function loadDeploymentActionForecast(
         env,
       },
     );
-    return { forecast: result?.result?.forecast || null };
+    if (result?.status === 0 && result?.result) {
+      return result.result;
+    }
+    Logger.log(
+      `[vscode-sfdx-hardis] ${purpose} not available: ${result?.errorMessage || result?.message || "unknown error"}`,
+    );
   } catch (e: any) {
     Logger.log(
-      `[vscode-sfdx-hardis] Deployment action forecast not available: ${e?.message || e}`,
+      `[vscode-sfdx-hardis] ${purpose} not available: ${e?.message || e}`,
     );
-    return { forecast: null };
   }
+  return null;
+}
+
+/**
+ * Status of the deployment actions of some Pull Requests in each org branch, read by sfdx-hardis
+ * from the "Deployment Actions" Pull Request comments. In "Next promotion" mode, the same call also
+ * returns the forecast of the promotion (forecastBranch, fromBranch): one CLI process for both.
+ * Null statuses when the CLI cannot provide them (older version, no token): the panel then hides
+ * the status column. The request id goes back so the panel can drop a late answer.
+ */
+async function loadDeploymentActionStatuses(data: any): Promise<{
+  statuses: Record<string, any[]> | null;
+  forecast?: any;
+  requestId: number;
+}> {
+  const requestId = Number(data?.requestId) || 0;
+  // Pull Request numbers, and "draft" for the actions file of a branch without Pull Request
+  const numbers = (Array.isArray(data?.prNumbers) ? data.prNumbers : []).filter(
+    (prNumber: any) =>
+      prNumber === "draft" || (Number.isInteger(prNumber) && prNumber > 0),
+  );
+  if (numbers.length === 0) {
+    return { statuses: {}, requestId };
+  }
+  const forecastBranch = String(data?.forecastBranch || "");
+  const fromBranch = String(data?.fromBranch || "");
+  const withForecast =
+    /^[\w./-]+$/.test(forecastBranch) && /^[\w./-]+$/.test(fromBranch);
+  const result = await runActionListJson(
+    `--pr-ids ${numbers.join(",")}` +
+      (withForecast
+        ? ` --forecast ${forecastBranch} --from-branch ${fromBranch}`
+        : ""),
+    "Deployment action statuses",
+  );
+  // gitProvider false: no git provider credentials, so the Pull Request comments were not read.
+  // Hide the column rather than show every action as "Not run yet"
+  if (!result || result.gitProvider === false || !result.statuses) {
+    return {
+      statuses: null,
+      ...(withForecast ? { forecast: null } : {}),
+      requestId,
+    };
+  }
+  return {
+    statuses: result.statuses,
+    ...(withForecast ? { forecast: result.forecast || null } : {}),
+    requestId,
+  };
 }
 
 /**
@@ -1395,85 +1426,12 @@ async function loadDeploymentActionBackpromotes(
   if (!Number.isInteger(prNumber) || prNumber < 1) {
     return [];
   }
-  let env: Record<string, string> = {};
-  try {
-    env = await collectProviderCredentialEnvVars();
-  } catch (e: any) {
-    Logger.log(
-      `[vscode-sfdx-hardis] Deployment action backpromotes: provider credentials not collected: ${e?.message || e}`,
-    );
-  }
-  try {
-    const result = await execSfdxJson(
-      `sf hardis:project:action:list --with-status --with-backpromotes --pr-ids ${prNumber}`,
-      {
-        fail: false,
-        output: false,
-        debug: false,
-        reuseRecentResult: false,
-        env,
-      },
-    );
-    const rows = result?.result?.backpromotes?.[String(prNumber)];
-    return Array.isArray(rows) ? rows : [];
-  } catch (e: any) {
-    Logger.log(
-      `[vscode-sfdx-hardis] Deployment action backpromotes not available: ${e?.message || e}`,
-    );
-    return [];
-  }
-}
-
-async function loadDeploymentActionStatuses(
-  prNumbers: (number | string)[],
-): Promise<{ statuses: Record<string, any[]> | null }> {
-  // Pull Request numbers, and "draft" for the actions file of a branch without Pull Request
-  const numbers = (Array.isArray(prNumbers) ? prNumbers : []).filter(
-    (prNumber: any) =>
-      prNumber === "draft" || (Number.isInteger(prNumber) && prNumber > 0),
+  const result = await runActionListJson(
+    `--with-backpromotes --pr-ids ${prNumber}`,
+    "Deployment action backpromotes",
   );
-  if (numbers.length === 0) {
-    return { statuses: {} };
-  }
-  let env: Record<string, string> = {};
-  try {
-    env = await collectProviderCredentialEnvVars();
-  } catch (e: any) {
-    Logger.log(
-      `[vscode-sfdx-hardis] Deployment action statuses: provider credentials not collected: ${e?.message || e}`,
-    );
-  }
-  try {
-    const result = await execSfdxJson(
-      `sf hardis:project:action:list --with-status --pr-ids ${numbers.join(",")}`,
-      {
-        fail: false,
-        output: false,
-        debug: false,
-        reuseRecentResult: false,
-        env,
-      },
-    );
-    // gitProvider false: no git provider credentials, so the Pull Request comments were not
-    // read. Hide the column rather than show every action as "Not run yet"
-    if (result?.status === 0 && result?.result?.gitProvider === false) {
-      Logger.log(
-        "[vscode-sfdx-hardis] Deployment action statuses hidden: no git provider credentials to read the Pull Request comments",
-      );
-      return { statuses: null };
-    }
-    if (result?.status === 0 && result?.result?.statuses) {
-      return { statuses: result.result.statuses };
-    }
-    Logger.log(
-      `[vscode-sfdx-hardis] Deployment action statuses not available: ${result?.errorMessage || result?.message || "unknown error"}`,
-    );
-  } catch (e: any) {
-    Logger.log(
-      `[vscode-sfdx-hardis] Deployment action statuses not available: ${e?.message || e}`,
-    );
-  }
-  return { statuses: null };
+  const rows = result?.backpromotes?.[String(prNumber)];
+  return Array.isArray(rows) ? rows : [];
 }
 
 /**

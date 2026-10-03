@@ -365,6 +365,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // (null while loading, or when the installed CLI cannot provide it)
   modalActionStatuses = null;
   actionStatusesLoading = false;
+  // Id of the last statuses request: a late answer to an older one (another window) is ignored
+  actionStatusRequestId = 0;
   // Mark as done running in the background, then waiting for the new statuses
   markingDoneKeys = [];
   // Rows whose status details are shown, and the Backpromotes rows by Pull Request
@@ -1845,9 +1847,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       case "returnDeploymentActionBackpromotes":
         this.handleReturnDeploymentActionBackpromotes(data);
         break;
-      case "returnDeploymentActionForecast":
-        this.handleReturnDeploymentActionForecast(data);
-        break;
       case "returnSchedulableClasses":
         this.handleReturnSchedulableClasses(data);
         break;
@@ -2562,12 +2561,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
     // Aggregate all deployment actions from all PRs
     this.modalActions = this._aggregateActionsFromPRs(pullRequests);
-    this._requestActionStatuses();
     this.actionForecast = null;
     this.actionForecastLoading = false;
-    if (this.promotionMode && this.promotionTargetBranch) {
-      this._requestActionForecast();
-    }
+    this._requestActionStatuses();
 
     // Per-line breakdown for Apex tests (read-only in branch mode)
     const rows = [];
@@ -3151,7 +3147,14 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   handleReturnDeploymentActionStatuses(data) {
+    if (data?.requestId && data.requestId !== this.actionStatusRequestId) {
+      return;
+    }
     this.actionStatusesLoading = false;
+    if (data && "forecast" in data) {
+      this.actionForecast = data.forecast || null;
+      this.actionForecastLoading = false;
+    }
     // The actions marked as done are now in the statuses: their buttons stop spinning
     this.markingDoneKeys = this.markingDoneKeys.filter(
       (key) => !this.markDoneRefreshingKeys.includes(key),
@@ -3173,10 +3176,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (data.ok) {
       // Keep spinning until the new statuses show the action as done
       this.markDoneRefreshingKeys = [...this.markDoneRefreshingKeys, key];
+      // In "Next promotion" mode, the forecast comes back in the same answer
       this._requestActionStatuses({ refresh: true });
-      if (this.promotionMode) {
-        this._requestActionForecast({ refresh: true });
-      }
     } else {
       this.markingDoneKeys = this.markingDoneKeys.filter((k) => k !== key);
     }
@@ -3245,7 +3246,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   handlePromotionModeOn() {
     this.promotionMode = true;
     if (!this.actionForecast && !this.actionForecastLoading) {
-      this._requestActionForecast();
+      this._requestActionStatuses({ refresh: true });
     }
   }
 
@@ -3283,36 +3284,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return this.t("forecastToDoCount", { count });
   }
 
-  _requestActionForecast({ refresh = false } = {}) {
-    const prNumbers = [
-      ...new Set(
-        this.modalActions
-          .map((row) => parseInt(row.prNumber, 10))
-          .filter((prNumber) => prNumber > 0),
-      ),
-    ];
-    if (prNumbers.length === 0 || !this.promotionTargetBranch) {
-      return;
-    }
-    if (!refresh) {
-      this.actionForecast = null;
-      this.actionForecastLoading = true;
-    }
-    window.sendMessageToVSCode({
-      type: "loadDeploymentActionForecast",
-      data: {
-        prNumbers,
-        targetBranch: this.promotionTargetBranch,
-        fromBranch: this.modalBranchName,
-      },
-    });
-  }
-
-  handleReturnDeploymentActionForecast(data) {
-    this.actionForecastLoading = false;
-    this.actionForecast = data?.forecast || null;
-  }
-
   // One pill per action: what the promotion will do with it in the target branch
   _actionForecastFields(row) {
     const target = this.promotionTargetBranch;
@@ -3335,7 +3306,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         showStatus: true,
         statusLabel: loading
           ? this.i18n.loadingLabel
-          : this.i18n.actionStatusNotRun,
+          : this.i18n.actionStatusNotRunYet,
         statusPillClass: loading
           ? "hardis-pill hardis-status-unknown da-pill-loading"
           : "hardis-pill hardis-status-unknown",
@@ -3389,12 +3360,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       statusDetail: this._forecastReason(forecast, target),
       inlineButtons,
       menuItems,
-      expanded: this.expandedActionRowIds.includes(row.id),
-      statusDetailLines:
-        this.expandedActionRowIds.includes(row.id) && this.modalActionStatuses
-          ? this._actionStatusDetailLines(row)
-          : [],
-      statusToggleTitle: this.i18n.deploymentActionStatusToggle,
+      ...this._statusExpansionFields(row),
     };
   }
 
@@ -3548,21 +3514,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         pill: "hardis-status-unknown",
       },
     ];
-    return categories
-      .map((category) => ({
-        category,
-        count: rows.filter((row) => category.codes.includes(row.statusCode))
-          .length,
-      }))
-      .filter((item) => item.count > 0)
-      .map((item) => ({
-        key: item.category.key,
-        label: this.t(item.category.labelKey, {
-          count: item.count,
-          branch: target,
-        }),
-        pillClass: "hardis-pill " + item.category.pill,
-      }));
+    return this._summaryPills(rows, categories, { branch: target });
   }
 
   // Mark as done in one org branch, in the background: the button spins until
@@ -3813,19 +3765,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         pill: "hardis-status-success",
       },
     ];
-    return categories
-      .map((category) => ({
-        key: category.key,
-        count: rows.filter((row) => category.codes.includes(row.statusCode))
-          .length,
-        category,
-      }))
-      .filter((item) => item.count > 0)
-      .map((item) => ({
-        key: item.key,
-        label: this.t(item.category.labelKey, { count: item.count }),
-        pillClass: "hardis-pill " + item.category.pill,
-      }));
+    return this._summaryPills(rows, categories, {});
   }
 
   // The org branch the status column describes: the major branch of the
@@ -3858,9 +3798,20 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       return;
     }
     this.actionStatusesLoading = !refresh;
+    this.actionStatusRequestId += 1;
+    // In "Next promotion" mode the same sfdx-hardis call also returns the forecast
+    const withForecast = this.promotionMode && !!this.promotionTargetBranch;
+    if (withForecast && !this.actionForecast) {
+      this.actionForecastLoading = true;
+    }
     window.sendMessageToVSCode({
       type: "loadDeploymentActionStatuses",
-      data: { prNumbers },
+      data: {
+        prNumbers,
+        requestId: this.actionStatusRequestId,
+        forecastBranch: withForecast ? this.promotionTargetBranch : "",
+        fromBranch: withForecast ? this.modalBranchName : "",
+      },
     });
   }
 
@@ -4051,13 +4002,40 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         .join(" · "),
       inlineButtons,
       menuItems,
-      expanded: this.expandedActionRowIds.includes(row.id),
+      ...this._statusExpansionFields(row),
+    };
+  }
+
+  // Expansion of the status pill, shared by the status and the forecast of a row
+  _statusExpansionFields(row) {
+    const expanded = this.expandedActionRowIds.includes(row.id);
+    return {
+      expanded,
       statusDetailLines:
-        this.expandedActionRowIds.includes(row.id) && this.modalActionStatuses
+        expanded && this.modalActionStatuses
           ? this._actionStatusDetailLines(row)
           : [],
       statusToggleTitle: this.i18n.deploymentActionStatusToggle,
     };
+  }
+
+  // Summary pills of a group: one per category holding at least one row
+  _summaryPills(rows, categories, labelVars) {
+    return categories
+      .map((category) => ({
+        category,
+        count: rows.filter((row) => category.codes.includes(row.statusCode))
+          .length,
+      }))
+      .filter((item) => item.count > 0)
+      .map((item) => ({
+        key: item.category.key,
+        label: this.t(item.category.labelKey, {
+          ...labelVars,
+          count: item.count,
+        }),
+        pillClass: "hardis-pill " + item.category.pill,
+      }));
   }
 
   // "In your org: Done (2026-10-03)": the last try in the developer org
