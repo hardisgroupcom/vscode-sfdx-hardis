@@ -76,12 +76,17 @@ suite("Run again UI tests", function () {
 
     const invocations = invocationsOf(commandId);
     assert.strictEqual(invocations.length, 2, "the command must run twice");
-    const firstExit = mockEntriesOf(commandId).find(
-      (entry) =>
-        entry.event === "wsClosed" &&
-        entry.contextId === invocations[0].contextId,
+    // The second run is usually over before the first process exits
+    const firstExit = await waitFor(
+      () =>
+        mockEntriesOf(commandId).find(
+          (entry) =>
+            entry.event === "wsClosed" &&
+            entry.contextId === invocations[0].contextId,
+        ),
+      15000,
+      "the process of the first run to exit",
     );
-    assert.ok(firstExit, "the process of the first run must have exited");
     assert.ok(
       invocations[1].time < firstExit.time,
       "the second run must start while the first process is still exiting, instead of being refused as a duplicate",
