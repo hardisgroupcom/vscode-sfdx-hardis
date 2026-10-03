@@ -8,6 +8,7 @@ import {
 } from "./utils/trainingPanelCommands";
 import * as vscode from "vscode";
 import { LwcPanelManager } from "./lwc-panel-manager";
+import type { LwcUiPanel } from "./webviews/lwc-ui-panel";
 import { t } from "./i18n/i18n";
 import {
   isAllCustomCommandsLoaded,
@@ -92,6 +93,17 @@ export const INTERNAL_MAINTENANCE_COMMAND_PATTERNS: RegExp[] = [
   /^(python3?|py3?)\s+-m\s+pip\s+install\s+zensical\b/,
 ];
 
+/** Options of the vscode-sfdx-hardis.execute-command VS Code command */
+export interface ExecuteCommandOptions {
+  /**
+   * Run again: id of the command-execution panel to replay the command in.
+   * Background mode only. The request is dropped when no panel has this id
+   * anymore: the panel was closed, or a first click already gave it to a
+   * new run.
+   */
+  reusePanelLwcId?: string;
+}
+
 /**
  * CommandRunner handles all logic related to terminal management and command execution.
  * It is designed to be used by the Commands class.
@@ -105,11 +117,18 @@ export class CommandRunner {
   private debugNodeJs = false;
   private customCommandsLoadingPromise?: Thenable<void>;
   /**
-   * Map of active commands: key is command string, value is { type: 'background'|'terminal', process?: ChildProcess, sentToTerminal?: boolean }
+   * Map of active commands: key is command string, value is { type: 'background'|'terminal', process?: ChildProcess, sentToTerminal?: boolean, runId?: string }
+   * runId is the provisional context id of a background run displayed in a
+   * command-execution panel (see LwcUiPanel.commandRunId).
    */
   private activeCommands: Map<
     string,
-    { type: "background" | "terminal"; process?: any; sentToTerminal?: boolean }
+    {
+      type: "background" | "terminal";
+      process?: any;
+      sentToTerminal?: boolean;
+      runId?: string;
+    }
   > = new Map();
 
   constructor(commandsInstance: any) {
@@ -213,6 +232,7 @@ export class CommandRunner {
   async executeCommand(
     sfdxHardisCommand: string,
     extraEnv?: Record<string, string>,
+    options?: ExecuteCommandOptions,
   ) {
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     this.debugNodeJs = config.get("debugSfdxHardisCommands") ?? false;
@@ -262,7 +282,7 @@ export class CommandRunner {
     if (isHardisCommand || isSfStandard || isNpmInstallSf) {
       if (isBackgroundMode) {
         await this.waitForWebSocketServerReady();
-        this.executeCommandBackground(sfdxHardisCommand, extraEnv);
+        this.executeCommandBackground(sfdxHardisCommand, extraEnv, options);
       } else {
         this.executeCommandTerminal(sfdxHardisCommand, extraEnv);
       }
@@ -276,7 +296,7 @@ export class CommandRunner {
     if (!isAllCustomCommandsLoaded()) {
       void this.ensureCustomCommandsLoadedWithMessage()
         .then(() => {
-          this.executeCommand(sfdxHardisCommand, extraEnv);
+          this.executeCommand(sfdxHardisCommand, extraEnv, options);
         })
         .catch((error) => {
           const errorMessage =
@@ -336,6 +356,7 @@ export class CommandRunner {
           isBackgroundMode,
           sfdxHardisCommand,
           extraEnv,
+          options,
         );
         return;
       }
@@ -360,6 +381,7 @@ export class CommandRunner {
               isBackgroundMode,
               sfdxHardisCommand,
               extraEnv,
+              options,
             );
           } else if (selection === t("alwaysAllow")) {
             // One entry for the whole Training menu, the exact line for anything
@@ -389,6 +411,7 @@ export class CommandRunner {
               isBackgroundMode,
               sfdxHardisCommand,
               extraEnv,
+              options,
             );
           }
         });
@@ -406,6 +429,7 @@ export class CommandRunner {
     isBackgroundMode: boolean,
     command: string,
     extraEnv?: Record<string, string>,
+    options?: ExecuteCommandOptions,
   ) {
     if (isBackgroundMode) {
       // Before the decision, not after: a training command is allowed in the
@@ -413,7 +437,7 @@ export class CommandRunner {
       // activation it is still binding its port.
       await this.waitForWebSocketServerReady();
       if (this.isCommandAllowedInBackground(command)) {
-        this.executeCommandBackground(command, extraEnv);
+        this.executeCommandBackground(command, extraEnv, options);
         return;
       }
     }
@@ -487,11 +511,15 @@ export class CommandRunner {
 
   /**
    * Preprocess, validate, and send telemetry for a command. Returns the processed command or null if invalid.
+   * finishedRunId is the run id of the panel Run again replays the command in:
+   * that run already ended, and its process, which may still be exiting, is
+   * not a duplicate.
    */
   preprocessAndValidateCommand(
     command: string,
     type: "background" | "terminal" = "background",
     process?: any,
+    finishedRunId?: string,
   ): string | null {
     // Block dangerous or invalid commands. A training lesson is the one command
     // shape that is not an sf command and may still run here: it carries no
@@ -562,6 +590,7 @@ export class CommandRunner {
     const existing = this.activeCommands.get(cmd);
     if (
       existing &&
+      !(finishedRunId && existing.runId === finishedRunId) &&
       !cmd.includes("hardis:project:configure:auth") &&
       this.allowNextDuplicateCommand === false
     ) {
@@ -613,12 +642,26 @@ export class CommandRunner {
   executeCommandBackground(
     sfdxHardisCommand: string,
     extraEnv?: Record<string, string>,
+    options?: ExecuteCommandOptions,
   ) {
+    // Run again replays the command in the panel it was clicked in
+    let panelToReuse: LwcUiPanel | null = null;
+    if (options?.reusePanelLwcId) {
+      panelToReuse = this.findPanelToReuse(options.reusePanelLwcId);
+      if (!panelToReuse || this.isRunInProgress(panelToReuse)) {
+        Logger.log(
+          `Run again of ${extractCommandId(sfdxHardisCommand) || "a command"} dropped: its panel was closed, or already runs it again`,
+        );
+        return;
+      }
+    }
     // Preprocess, validate, and send telemetry, and register as active
     let preprocessedCommand: string | null = null;
     preprocessedCommand = this.preprocessAndValidateCommand(
       sfdxHardisCommand,
       "background",
+      undefined,
+      panelToReuse?.commandRunId || undefined,
     );
     if (!preprocessedCommand) {
       return;
@@ -686,12 +729,15 @@ export class CommandRunner {
     // during the whole Salesforce CLI boot. The provisional context id is
     // passed to the CLI (SFDX_HARDIS_COMMAND_CONTEXT_ID) so the panel is
     // adopted when the CLI connects to the WebSocket server.
+    // Run again replays any command in the panel it was clicked in.
     let pendingPanelLwcId: string | null = null;
+    let pendingContextId: string | null = null;
     let pendingPanelAdopted = false;
     let pendingCommandName: string | null = null;
     if (
       config.get("userInput") === "ui-lwc" &&
-      (preprocessedCommand.trimStart().startsWith("sf hardis") ||
+      (panelToReuse ||
+        preprocessedCommand.trimStart().startsWith("sf hardis") ||
         trainingWebSocketHostPort)
     ) {
       try {
@@ -701,9 +747,9 @@ export class CommandRunner {
           ? trainingCommandLabel(preprocessedCommand)
           : commandId || preprocessedCommand;
         pendingPanelLwcId = `s-command-execution-${provisionalContextId}`;
+        pendingContextId = provisionalContextId;
         spawnOptions.env.SFDX_HARDIS_COMMAND_CONTEXT_ID = provisionalContextId;
-        const panelManager = LwcPanelManager.getInstance();
-        const panel = panelManager.getOrCreatePanel(pendingPanelLwcId, {
+        const panelInitData = {
           id: provisionalContextId,
           command: pendingCommandName,
           commandLine: sfdxHardisCommand.trim(),
@@ -715,8 +761,19 @@ export class CommandRunner {
           // The CLI has not connected yet: the panel renders a "Starting"
           // status until the websocket initializeCommand message arrives
           pending: true,
-        });
+        };
+        const panel = panelToReuse
+          ? this.reuseCommandPanel(
+              panelToReuse,
+              pendingPanelLwcId,
+              panelInitData,
+            )
+          : LwcPanelManager.getInstance().getOrCreatePanel(
+              pendingPanelLwcId,
+              panelInitData,
+            );
         panel.commandStatus = "pending";
+        panel.commandRunId = provisionalContextId;
         panel.updateTitle(
           t("commandTitleStarting", { commandName: pendingCommandName }),
         );
@@ -743,6 +800,13 @@ export class CommandRunner {
         // CLI connects and adopts it - the cancel wiring must survive that
         const unsubscribePanelDisposed = panel.onMessage(
           (messageType: string) => {
+            // Run again started another run in this panel: this wiring is
+            // over. It must neither cancel the new run, nor kill a process id
+            // the system may have given to another program since.
+            if (panel.commandRunId !== provisionalContextId) {
+              unsubscribePanelDisposed();
+              return;
+            }
             if (messageType !== "panelDisposed") {
               return;
             }
@@ -824,6 +888,7 @@ export class CommandRunner {
     this.activeCommands.set(preprocessedCommand, {
       type: "background",
       process: childProcess,
+      runId: pendingContextId || undefined,
     });
     // Create or show a VS Code output channel for background command output
     if (!this.outputChannel) {
@@ -1011,6 +1076,9 @@ export class CommandRunner {
               .trim(),
             exitCode: code,
             stderrLines: stderrLines,
+            // A panel matches its own run with it, so the end of a previous
+            // run never fails the run Run again started in the same panel
+            contextId: pendingContextId || undefined,
           },
         });
       }, 3000);
@@ -1247,5 +1315,64 @@ export class CommandRunner {
     newTerminal.show(false);
     this.terminalStack.push(newTerminal);
     this.commandsInstance.terminalStack = this.terminalStack;
+  }
+
+  /**
+   * The command-execution panel a Run again click asked to reuse, or null when
+   * no panel has this id anymore (closed, or already given to a new run).
+   */
+  private findPanelToReuse(lwcId: string): LwcUiPanel | null {
+    if (!lwcId.startsWith("s-command-execution-")) {
+      return null;
+    }
+    try {
+      return LwcPanelManager.getInstance().getPanel(lwcId);
+    } catch {
+      // Panel manager not initialized
+      return null;
+    }
+  }
+
+  /**
+   * Whether a command-execution panel still hosts a run in progress: started
+   * or running, with the process of that run still alive. A run with a final
+   * status is over even while its process exits, and a run whose process is
+   * gone is over even when its CLI crashed without reporting its end. When the
+   * panel does not know the process of its run (panel opened by the CLI
+   * itself), the status decides.
+   */
+  private isRunInProgress(panel: LwcUiPanel): boolean {
+    if (
+      panel.commandStatus !== "pending" &&
+      panel.commandStatus !== "running"
+    ) {
+      return false;
+    }
+    if (!panel.commandRunId) {
+      return true;
+    }
+    return [...this.activeCommands.values()].some(
+      (active) => active.runId === panel.commandRunId,
+    );
+  }
+
+  /**
+   * Hands a finished command-execution panel over to the run Run again starts
+   * in it. Re-keyed to the new provisional id, the panel is adopted by the
+   * WebSocket server like a panel opened at click time. It drops the listeners
+   * registered for the previous run and goes back to its "Starting" state. It
+   * keeps its place and the focus: it is not revealed.
+   */
+  private reuseCommandPanel(
+    panel: LwcUiPanel,
+    lwcId: string,
+    initData: any,
+  ): LwcUiPanel {
+    LwcPanelManager.getInstance().rekeyPanel(panel.getLwcId(), lwcId);
+    panel.clearExistingOnMessageListeners();
+    // The new CLI has not connected yet: its "Running" flip must happen again
+    panel.cliConnected = false;
+    panel.sendInitializationData(initData);
+    return panel;
   }
 }

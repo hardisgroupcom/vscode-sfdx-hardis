@@ -1214,16 +1214,24 @@ async function runHardisCommand(commandId) {
       logInvocation({ event: "promptAsked", promptName: prompt.name });
       return responsePromise;
     };
+    // Commands containing "mock-fail" end in error, with exit code 1.
+    // Commands containing "slow-exit" keep their process alive for a while
+    // after reporting their end, like a CLI that still flushes its logs: the
+    // window during which Run again must not be refused as a duplicate.
+    const fails = commandId.includes("mock-fail");
     const finish = () => {
-      send({ event: "closeClient", status: "success" });
-      setTimeout(() => {
-        clearTimeout(safetyTimeout);
-        try {
-          ws.close();
-        } catch {}
-        logInvocation({ event: "wsClosed" });
-        resolve(0);
-      }, 300);
+      send({ event: "closeClient", status: fails ? "error" : "success" });
+      setTimeout(
+        () => {
+          clearTimeout(safetyTimeout);
+          try {
+            ws.close();
+          } catch {}
+          logInvocation({ event: "wsClosed" });
+          resolve(fails ? 1 : 0);
+        },
+        commandId.includes("slow-exit") ? 3000 : 300,
+      );
     };
 
     ws.on("open", async () => {

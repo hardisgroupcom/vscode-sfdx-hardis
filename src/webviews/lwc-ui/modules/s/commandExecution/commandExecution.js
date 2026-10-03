@@ -60,6 +60,9 @@ const BIG_TEXT_PREVIEW_LINES = 6;
 // A progress reporting exactly 100 steps is a percentage, not a step counter:
 // it is displayed as "42% complete" instead of "42 of 100 steps"
 const PERCENT_TOTAL_STEPS = 100;
+// Run again stays disabled this long when the extension does not start the new
+// run in this panel (refused as a duplicate, authorization cancelled, terminal mode)
+const RUN_AGAIN_RELEASE_MS = 5000;
 
 export default class CommandExecution extends SharedMixin(LightningElement) {
   // Track user-toggled expanded state for sections in simple mode
@@ -102,6 +105,9 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
   @track modalContent = null; // Complete content (JSON or text) displayed in the modal
   @track modalLanguage = "plaintext";
   @track autocloseCommands = [];
+  // Set by a click on Run again, until the extension restarts this panel
+  @track runAgainRequested = false;
+  runAgainReleaseTimer = null;
 
   // Detect a content too big to be displayed inline, and keep only its beginning in the log line
   applyBigContentDetection(logLine) {
@@ -290,12 +296,19 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
 
   handleRunAgain() {
     const command = this.runAgainCommand;
-    if (!this.isCompleted || !command) {
+    if (!this.isCompleted || !command || this.runAgainRequested) {
       return;
     }
+    // The extension replays the command in this panel, and initializes it
+    // again for the new run: until then a second click must not send it twice
+    this.runAgainRequested = true;
+    clearTimeout(this.runAgainReleaseTimer);
+    this.runAgainReleaseTimer = setTimeout(() => {
+      this.runAgainRequested = false;
+    }, RUN_AGAIN_RELEASE_MS);
     window.sendMessageToVSCode({
       type: "runCommand",
-      data: { command },
+      data: { command, reusePanel: true },
     });
   }
 
@@ -359,6 +372,7 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
       this.removeEventListener("promptsubmit", this.embeddedPromptListener);
       this.removeEventListener("promptexit", this.embeddedPromptListener);
     }
+    clearTimeout(this.runAgainReleaseTimer);
   }
 
   @api
@@ -782,6 +796,11 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
   initializeCommand(data) {
     this.readyMessageSent = false;
     let context = data.context ? data.context : data;
+    // Run again replays a command in this same panel: a context with another
+    // id is another run, and nothing of the previous run may leak into it
+    if (this.isNewRun(context)) {
+      this.resetRunState();
+    }
     this.commandContext = context;
 
     // Pending panels open before the CLI has connected: show a "Starting"
@@ -841,6 +860,38 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
       }),
       timestamp: this.startTime,
     });
+  }
+
+  // A context carries the id of its run. The two initializations sent when the
+  // CLI connects carry the same id, so a label or a log file received between
+  // them is kept.
+  isNewRun(context) {
+    if (!context || context.id === undefined || context.id === null) {
+      return false;
+    }
+    return (
+      !this.commandContext ||
+      String(context.id) !== String(this.commandContext.id)
+    );
+  }
+
+  // Clears what initializeCommand keeps between two initializations of the
+  // same run, when the panel starts another run
+  resetRunState() {
+    this.commandLabel = null;
+    this.commandLogFile = null;
+    this.targetOrgUsername = null;
+    this.promptRenderError = null;
+    this.showEmbeddedPrompt = false;
+    this.embeddedPromptData = null;
+    this.latestQuestionId = null;
+    this.lastQueryLogId = null;
+    this.queryLogIds = {};
+    this.tableLogs = {};
+    this.userSectionExpandState = {};
+    this.modalContent = null;
+    this.runAgainRequested = false;
+    clearTimeout(this.runAgainReleaseTimer);
   }
 
   @api
@@ -2810,11 +2861,13 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
   }
 
   handleBackgroundCommandEnded(data) {
-    if (
-      data?.exitCode > 0 &&
-      !this.isCompleted &&
-      data.commandShort === this.commandContext?.command
-    ) {
+    // A run started by the extension names its context id, which is the one to
+    // match: Run again replays the same command in the same panel, and the end
+    // of the previous run must not fail the new one
+    const isThisRun = data?.contextId
+      ? String(data.contextId) === String(this.commandContext?.id)
+      : data?.commandShort === this.commandContext?.command;
+    if (data?.exitCode > 0 && !this.isCompleted && isThisRun) {
       // If the background command ended with an error, and this command is still running, mark it as failed
       const stderrLinesStr = data?.stderrLines
         ? data.stderrLines.join("\n")
