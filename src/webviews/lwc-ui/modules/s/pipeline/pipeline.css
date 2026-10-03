@@ -448,8 +448,58 @@
   padding: 0.5rem 0.75rem;
 }
 
-.da-row + .da-row {
+.da-row-wrap + .da-row-wrap {
   border-top: 1px solid var(--slds-g-color-neutral-base-80);
+}
+
+.da-status-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  max-width: 100%;
+}
+
+.da-status-toggle:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder, currentColor);
+  outline-offset: 2px;
+  border-radius: 999px;
+}
+
+.da-details {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0 0.75rem 0.5rem 3.25rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--slds-g-color-neutral-base-80);
+  background: var(--slds-g-color-neutral-base-95);
+  border-radius: 0.25rem;
+}
+
+.da-detail-line {
+  display: grid;
+  grid-template-columns: 9rem 12rem 6rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.da-detail-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.da-detail-date,
+.da-detail-note {
+  color: var(--vscode-descriptionForeground, inherit);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.da-detail-line .hardis-pill {
+  white-space: normal;
+  justify-self: start;
 }
 
 .da-order {

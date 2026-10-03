@@ -367,6 +367,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   actionStatusesLoading = false;
   // Mark as done running in the background, then waiting for the new statuses
   markingDoneKeys = [];
+  // Rows whose status details are shown, and the Backpromotes rows by Pull Request
+  expandedActionRowIds = [];
+  actionBackpromotes = {};
+  actionBackpromotesLoading = [];
   markDoneRefreshingKeys = [];
   // Tab to activate the next time the single PR modal opens (consumed on open).
   _nextModalTab = null;
@@ -1833,6 +1837,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       case "deploymentActionMarkDoneResult":
         this.handleDeploymentActionMarkDoneResult(data);
         break;
+      case "returnDeploymentActionBackpromotes":
+        this.handleReturnDeploymentActionBackpromotes(data);
+        break;
       case "returnSchedulableClasses":
         this.handleReturnSchedulableClasses(data);
         break;
@@ -3059,6 +3066,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         "move_action_to_my_pr",
         "run_action_in_my_org",
         "run_action_in_other_org",
+        "mark_action_done_other_org",
       ].includes(actionName)
     ) {
       this.handleRecoverDeploymentAction(actionName, row);
@@ -3109,18 +3117,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (actionName === "retry_action") {
       command = `sf hardis:project:action:run --pr ${prNumber} --action-id "${actionId}" --org-branch ${orgBranch}`;
     } else if (actionName === "mark_action_done") {
-      // Nothing to answer: recorded in the background, the button spins until
-      // the statuses show it done
-      const key = this._markDoneKey(prNumber, fullAction.id);
-      if (this.markingDoneKeys.includes(key)) {
-        return;
-      }
-      this.markingDoneKeys = [...this.markingDoneKeys, key];
-      window.sendMessageToVSCode({
-        type: "markDeploymentActionDone",
-        data: { prNumber, actionId, orgBranch, label: row.label, key },
-      });
+      this._markActionDone(row, orgBranch);
       return;
+    } else if (actionName === "mark_action_done_other_org") {
+      // sfdx-hardis asks where: a major branch where it is not done yet, or a
+      // developer org authenticated on this computer
+      command = `sf hardis:project:action:set-status --pr ${prNumber} --action-id "${actionId}" --select-org`;
     } else if (actionName === "move_action_to_my_pr") {
       const myPrNumber = this.currentBranchPullRequest?.number;
       const target = myPrNumber === -1 ? "draft" : String(myPrNumber);
@@ -3160,8 +3162,148 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
   }
 
-  _markDoneKey(prNumber, actionId) {
-    return `${prNumber}|${actionId}|${this.actionStatusOrgBranch}`;
+  _markDoneKey(prNumber, actionId, orgBranch = this.actionStatusOrgBranch) {
+    return `${prNumber}|${actionId}|${orgBranch}`;
+  }
+
+  // Mark as done in one org branch, in the background: the button spins until
+  // the statuses show it done
+  _markActionDone(row, orgBranch) {
+    const actionId = String(row?._fullAction?.id || "");
+    const prNumber = parseInt(row?.prNumber, 10);
+    if (
+      !SAFE_ACTION_ID.test(actionId) ||
+      !SAFE_BRANCH_NAME.test(orgBranch || "") ||
+      !(prNumber > 0)
+    ) {
+      return;
+    }
+    const key = this._markDoneKey(prNumber, actionId, orgBranch);
+    if (this.markingDoneKeys.includes(key)) {
+      return;
+    }
+    this.markingDoneKeys = [...this.markingDoneKeys, key];
+    window.sendMessageToVSCode({
+      type: "markDeploymentActionDone",
+      data: { prNumber, actionId, orgBranch, label: row.label, key },
+    });
+  }
+
+  // Click on the status pill: show or hide the status of the action in every
+  // org of the pipeline, and in the developer orgs (Backpromotes comment)
+  handleActionStatusToggle(event) {
+    const rowId = event.currentTarget.dataset.rowId;
+    if (this.expandedActionRowIds.includes(rowId)) {
+      this.expandedActionRowIds = this.expandedActionRowIds.filter(
+        (id) => id !== rowId,
+      );
+      return;
+    }
+    this.expandedActionRowIds = [...this.expandedActionRowIds, rowId];
+    const row = this.modalActions.find((a) => a.id === rowId);
+    const prNumber = parseInt(row?.prNumber, 10);
+    if (
+      prNumber > 0 &&
+      !this.actionBackpromotes[String(prNumber)] &&
+      !this.actionBackpromotesLoading.includes(prNumber)
+    ) {
+      this.actionBackpromotesLoading = [
+        ...this.actionBackpromotesLoading,
+        prNumber,
+      ];
+      window.sendMessageToVSCode({
+        type: "loadDeploymentActionBackpromotes",
+        data: { prNumber },
+      });
+    }
+  }
+
+  handleReturnDeploymentActionBackpromotes(data) {
+    const prNumber = parseInt(data?.prNumber, 10);
+    this.actionBackpromotesLoading = this.actionBackpromotesLoading.filter(
+      (n) => n !== prNumber,
+    );
+    this.actionBackpromotes = {
+      ...this.actionBackpromotes,
+      [String(prNumber)]: Array.isArray(data?.rows) ? data.rows : [],
+    };
+  }
+
+  // Mark as done button of one major branch line of the expanded status
+  handleActionDetailMarkDone(event) {
+    const row = this.modalActions.find(
+      (a) => a.id === event.currentTarget.dataset.rowId,
+    );
+    this._markActionDone(row, event.currentTarget.dataset.branch);
+  }
+
+  // The status of an action in every major branch, then in every developer org
+  // a backpromote or a try ran it in
+  _actionStatusDetailLines(row) {
+    const actionId = row._fullAction?.id;
+    const statusKey = row.prNumber === -1 ? "draft" : String(row.prNumber);
+    const prEntries = this.modalActionStatuses?.[statusKey] || [];
+    const lines = [];
+    for (const branch of this.majorBranchNames) {
+      const entry = prEntries.find(
+        (e) => e.actionId === actionId && e.orgBranch === branch,
+      );
+      const status = entry ? entry.status : "none";
+      const display = this._actionStatusDisplay(status, entry);
+      const busy = this.markingDoneKeys.includes(
+        this._markDoneKey(row.prNumber, actionId, branch),
+      );
+      lines.push({
+        key: `branch-${branch}`,
+        name: branch,
+        statusLabel: display.label,
+        pillClass: "hardis-pill " + display.pillClass,
+        date: (entry?.date || "").substring(0, 10),
+        jobUrl: entry?.jobUrl || "",
+        jobLabel: entry?.jobId || "",
+        note: entry?.note || "",
+        canMarkDone: row.prNumber > 0 && !["success", "moved"].includes(status),
+        markLabel: busy
+          ? this.i18n.deploymentActionMarkingDone
+          : this.i18n.deploymentActionMarkDone,
+        busy,
+      });
+    }
+    if (row.prNumber > 0) {
+      const prKey = String(row.prNumber);
+      if (this.actionBackpromotesLoading.includes(row.prNumber)) {
+        lines.push({
+          key: "sandboxes-loading",
+          name: this.i18n.deploymentActionDevOrgs,
+          statusLabel: this.i18n.loadingLabel,
+          pillClass: "hardis-pill hardis-status-unknown da-pill-loading",
+          isSandbox: true,
+        });
+      }
+      for (const bp of (this.actionBackpromotes[prKey] || []).filter(
+        (r) => r.actionId === actionId,
+      )) {
+        const status =
+          bp.status === "pending"
+            ? "manual"
+            : bp.status === "failed"
+              ? "failed"
+              : "success";
+        const display = this._actionStatusDisplay(status, null);
+        lines.push({
+          key: `sandbox-${bp.sandboxName}-${bp.orgId}`,
+          name: bp.sandboxName,
+          statusLabel: display.label,
+          pillClass: "hardis-pill " + display.pillClass,
+          date: (bp.date || "").substring(0, 10),
+          note: bp.user
+            ? this.t("deploymentActionDoneBy", { user: bp.user })
+            : "",
+          isSandbox: true,
+        });
+      }
+    }
+    return lines;
   }
 
   // The actions of the modal, one group per Pull Request. Groups with a problem
@@ -3356,7 +3498,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       iconName: "utility:refresh",
     };
     const markDone = {
-      label: this.i18n.deploymentActionMarkDone,
+      label: this.t("deploymentActionMarkDoneIn", {
+        orgBranch: this.actionStatusOrgBranch,
+      }),
       name: "mark_action_done",
       iconName: "utility:check",
     };
@@ -3416,10 +3560,17 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // in the Pull Request comment does, naming who did it
     if (status === "manual" && row.prNumber > 0) {
       inlineButtons.push({
-        label: this.i18n.deploymentActionMarkDone,
-        name: "mark_action_done",
-        iconName: "utility:check",
+        ...markDone,
         className: "slds-button slds-button_neutral da-button",
+      });
+    }
+    // Done by hand in another org: a major branch before or after this one, or
+    // a developer org
+    if (row.prNumber > 0) {
+      menuItems.push({
+        label: this.i18n.deploymentActionMarkDoneOtherOrg,
+        name: "mark_action_done_other_org",
+        iconName: "utility:check",
       });
     }
     // Any runnable action can be run in any authenticated org
@@ -3460,7 +3611,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (this.markingDoneKeys.includes(busyKey)) {
       const busyButton = {
         ...markDone,
-        label: this.i18n.deploymentActionMarkingDone,
+        label: this.t("deploymentActionMarkingDoneIn", {
+          orgBranch: this.actionStatusOrgBranch,
+        }),
         className: "slds-button slds-button_neutral da-button",
         busy: true,
       };
@@ -3487,6 +3640,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         .join(" · "),
       inlineButtons,
       menuItems,
+      expanded: this.expandedActionRowIds.includes(row.id),
+      statusDetailLines:
+        this.expandedActionRowIds.includes(row.id) && this.modalActionStatuses
+          ? this._actionStatusDetailLines(row)
+          : [],
+      statusToggleTitle: this.i18n.deploymentActionStatusToggle,
     };
   }
 

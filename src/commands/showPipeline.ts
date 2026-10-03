@@ -477,7 +477,16 @@ export function registerShowPipeline(commands: Commands) {
         }
         // Status of the deployment actions in each org branch, read by sfdx-hardis from the
         // "Deployment Actions" Pull Request comments
-        else if (type === "loadDeploymentActionStatuses") {
+        else if (type === "loadDeploymentActionBackpromotes") {
+          const prNumber = Number(data?.prNumber);
+          panel.sendMessage({
+            type: "returnDeploymentActionBackpromotes",
+            data: {
+              prNumber,
+              rows: await loadDeploymentActionBackpromotes(prNumber),
+            },
+          });
+        } else if (type === "loadDeploymentActionStatuses") {
           panel.sendMessage({
             type: "returnDeploymentActionStatuses",
             data: await loadDeploymentActionStatuses(data?.prNumbers || []),
@@ -1324,6 +1333,45 @@ type PipelineInfo = {
  * runner also passes. Returns null statuses when the CLI cannot provide them (older version, no
  * token): the panel then hides the status column.
  */
+/**
+ * The rows of the Backpromotes comment of one Pull Request: the deployment actions run in each
+ * developer org, read by sfdx-hardis when a status is expanded in the Deployment Actions tab.
+ */
+async function loadDeploymentActionBackpromotes(
+  prNumber: number,
+): Promise<any[]> {
+  if (!Number.isInteger(prNumber) || prNumber < 1) {
+    return [];
+  }
+  let env: Record<string, string> = {};
+  try {
+    env = await collectProviderCredentialEnvVars();
+  } catch (e: any) {
+    Logger.log(
+      `[vscode-sfdx-hardis] Deployment action backpromotes: provider credentials not collected: ${e?.message || e}`,
+    );
+  }
+  try {
+    const result = await execSfdxJson(
+      `sf hardis:project:action:list --with-status --with-backpromotes --pr-ids ${prNumber}`,
+      {
+        fail: false,
+        output: false,
+        debug: false,
+        reuseRecentResult: false,
+        env,
+      },
+    );
+    const rows = result?.result?.backpromotes?.[String(prNumber)];
+    return Array.isArray(rows) ? rows : [];
+  } catch (e: any) {
+    Logger.log(
+      `[vscode-sfdx-hardis] Deployment action backpromotes not available: ${e?.message || e}`,
+    );
+    return [];
+  }
+}
+
 async function loadDeploymentActionStatuses(
   prNumbers: (number | string)[],
 ): Promise<{ statuses: Record<string, any[]> | null }> {

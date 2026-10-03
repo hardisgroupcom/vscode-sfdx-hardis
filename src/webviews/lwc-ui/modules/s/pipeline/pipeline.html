@@ -457,43 +457,65 @@
                                                 </header>
                                             </template>
                                             <template for:each={group.rows} for:item="row">
-                                                <div key={row.id} class="da-row">
-                                                    <span class="da-order">{row.order}</span>
-                                                    <div class="da-main">
-                                                        <button class="da-label" data-row-id={row.id} onclick={handleActionLabelClick} title={i18n.deploymentActionViewDetails}>{row.label}</button>
-                                                        <div class="da-meta">
-                                                            <span class={row.typePillClass}>
-                                                                <lightning-icon class="hardis-pill-icon" icon-name={row.typeIconName} size="xx-small"></lightning-icon>
-                                                                <span class="hardis-pill-label">{row.type}</span>
-                                                            </span>
-                                                            <span class={row.whenPillClass}><span class="hardis-pill-dot"></span>{row.when}</span>
-                                                            <template if:true={row.statusDetail}>
-                                                                <span class="da-detail">{row.statusDetail}</span>
+                                                <div key={row.id} class="da-row-wrap">
+                                                    <div class="da-row">
+                                                        <span class="da-order">{row.order}</span>
+                                                        <div class="da-main">
+                                                            <button class="da-label" data-row-id={row.id} onclick={handleActionLabelClick} title={i18n.deploymentActionViewDetails}>{row.label}</button>
+                                                            <div class="da-meta">
+                                                                <span class={row.typePillClass}>
+                                                                    <lightning-icon class="hardis-pill-icon" icon-name={row.typeIconName} size="xx-small"></lightning-icon>
+                                                                    <span class="hardis-pill-label">{row.type}</span>
+                                                                </span>
+                                                                <span class={row.whenPillClass}><span class="hardis-pill-dot"></span>{row.when}</span>
+                                                                <template if:true={row.statusDetail}>
+                                                                    <span class="da-detail">{row.statusDetail}</span>
+                                                                </template>
+                                                            </div>
+                                                        </div>
+                                                        <div class="da-status">
+                                                            <template if:true={row.showStatus}>
+                                                                <button class="da-status-toggle" data-row-id={row.id} onclick={handleActionStatusToggle} title={row.statusToggleTitle} aria-expanded={row.expanded}><span class={row.statusPillClass}><span class="hardis-pill-dot"></span>{row.statusLabel}</span></button>
                                                             </template>
                                                         </div>
-                                                    </div>
-                                                    <div class="da-status">
-                                                        <template if:true={row.showStatus}>
-                                                            <span class={row.statusPillClass}><span class="hardis-pill-dot"></span>{row.statusLabel}</span>
-                                                        </template>
-                                                    </div>
-                                                    <div class="da-buttons">
-                                                        <template for:each={row.inlineButtons} for:item="button">
-                                                            <button key={button.name} class={button.className} data-row-id={row.id} data-action-name={button.name} onclick={handleActionInlineButton} disabled={button.busy}><template if:true={button.busy}><span class="da-button-spinner" aria-hidden="true"></span></template>{button.label}</button>
-                                                        </template>
-                                                        <lightning-button-menu
-                                                            icon-size="small"
-                                                            menu-alignment="auto"
-                                                            alternative-text={i18n.moreOptions}
-                                                            title={i18n.moreOptions}
-                                                            data-row-id={row.id}
-                                                            onselect={handleActionMenuSelect}
-                                                        >
-                                                            <template for:each={row.menuItems} for:item="item">
-                                                                <lightning-menu-item key={item.name} value={item.name} label={item.label} prefix-icon-name={item.iconName} disabled={item.disabled}></lightning-menu-item>
+                                                        <div class="da-buttons">
+                                                            <template for:each={row.inlineButtons} for:item="button">
+                                                                <button key={button.name} class={button.className} data-row-id={row.id} data-action-name={button.name} onclick={handleActionInlineButton} disabled={button.busy}><template if:true={button.busy}><span class="da-button-spinner" aria-hidden="true"></span></template>{button.label}</button>
                                                             </template>
-                                                        </lightning-button-menu>
+                                                            <lightning-button-menu
+                                                                icon-size="small"
+                                                                menu-alignment="auto"
+                                                                alternative-text={i18n.moreOptions}
+                                                                title={i18n.moreOptions}
+                                                                data-row-id={row.id}
+                                                                onselect={handleActionMenuSelect}
+                                                            >
+                                                                <template for:each={row.menuItems} for:item="item">
+                                                                    <lightning-menu-item key={item.name} value={item.name} label={item.label} prefix-icon-name={item.iconName} disabled={item.disabled}></lightning-menu-item>
+                                                                </template>
+                                                            </lightning-button-menu>
+                                                        </div>
                                                     </div>
+                                                    <!-- Status of the action in every org of the pipeline, and in the developer orgs -->
+                                                    <template if:true={row.expanded}>
+                                                        <div class="da-details">
+                                                            <template for:each={row.statusDetailLines} for:item="line">
+                                                                <div key={line.key} class="da-detail-line">
+                                                                    <span class="da-detail-name">{line.name}</span>
+                                                                    <span class={line.pillClass}><span class="hardis-pill-dot"></span>{line.statusLabel}</span>
+                                                                    <span class="da-detail-date">{line.date}</span>
+                                                                    <span class="da-detail-note">
+                                                                        <template if:true={line.jobUrl}><a href={line.jobUrl} target="_blank" rel="noopener noreferrer">{line.jobLabel}</a> </template>{line.note}
+                                                                    </span>
+                                                                    <span class="da-detail-action">
+                                                                        <template if:true={line.canMarkDone}>
+                                                                            <button class="slds-button slds-button_neutral da-button" data-row-id={row.id} data-branch={line.name} onclick={handleActionDetailMarkDone} disabled={line.busy}><template if:true={line.busy}><span class="da-button-spinner" aria-hidden="true"></span></template>{line.markLabel}</button>
+                                                                        </template>
+                                                                    </span>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                    </template>
                                                 </div>
                                             </template>
                                         </section>
