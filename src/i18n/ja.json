@@ -1243,6 +1243,7 @@
   "failedToRetrieveMetadataDueToConflicts": "ソースの競合によりメタデータの取得に失敗しました。",
   "failedToRetrieveMetadataType": "{{singleName}} の取得に失敗しました: {{errorMsg}}",
   "failedToRetrieveNFiles": "{{count}} 個のファイル取得に失敗しました",
+  "failedToRetrieveUnknownMetadataType": "Salesforce CLI はメタデータ型 {{metadataType}} を認識しないため、取得できません。{{metadataType}} の {{count}} 行のチェックを外してから、もう一度取得してください。",
   "failedToRunVsCodeCommand": "VS Code コマンドの実行に失敗しました: {{command}}",
   "failedToStartCommand": "コマンドの開始に失敗しました: {{msg}}",
   "failedToUpdateConfigKey": "設定の更新に失敗しました: {{configKey}}",

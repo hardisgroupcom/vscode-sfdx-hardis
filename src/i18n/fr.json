@@ -1243,6 +1243,7 @@
   "failedToRetrieveMetadataDueToConflicts": "Échec de la récupération des métadonnées en raison de conflits de sources.",
   "failedToRetrieveMetadataType": "Échec de la récupération de {{singleName}} : {{errorMsg}}",
   "failedToRetrieveNFiles": "Échec de la récupération de {{count}} fichier(s)",
+  "failedToRetrieveUnknownMetadataType": "Salesforce CLI ne connaît pas le type de métadonnées {{metadataType}} et ne peut donc pas le récupérer. Décochez les {{count}} ligne(s) {{metadataType}}, puis relancez la récupération.",
   "failedToRunVsCodeCommand": "Impossible d'exécuter la commande VS Code : {{command}}",
   "failedToStartCommand": "Impossible de démarrer la commande : {{msg}}",
   "failedToUpdateConfigKey": "Échec de la mise à jour de la configuration : {{configKey}}",

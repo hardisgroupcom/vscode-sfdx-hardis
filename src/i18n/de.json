@@ -1243,6 +1243,7 @@
   "failedToRetrieveMetadataDueToConflicts": "Metadaten konnten aufgrund von Quellkonflikten nicht abgerufen werden.",
   "failedToRetrieveMetadataType": "{{singleName}} konnte nicht abgerufen werden: {{errorMsg}}",
   "failedToRetrieveNFiles": "{{count}} Datei(en) konnten nicht abgerufen werden",
+  "failedToRetrieveUnknownMetadataType": "Salesforce CLI kennt den Metadatentyp {{metadataType}} nicht und kann ihn daher nicht abrufen. Entfernen Sie das Häkchen bei den {{count}} Zeile(n) {{metadataType}} und rufen Sie erneut ab.",
   "failedToRunVsCodeCommand": "VS Code-Befehl konnte nicht ausgeführt werden: {{command}}",
   "failedToStartCommand": "Befehl konnte nicht gestartet werden: {{msg}}",
   "failedToUpdateConfigKey": "Konfiguration konnte nicht aktualisiert werden: {{configKey}}",

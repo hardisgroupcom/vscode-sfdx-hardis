@@ -1243,6 +1243,7 @@
   "failedToRetrieveMetadataDueToConflicts": "Failed to retrieve metadata due to source conflicts.",
   "failedToRetrieveMetadataType": "Failed to retrieve {{singleName}}: {{errorMsg}}",
   "failedToRetrieveNFiles": "Failed to retrieve {{count}} file(s)",
+  "failedToRetrieveUnknownMetadataType": "Salesforce CLI does not know the metadata type {{metadataType}}, so it cannot retrieve it. Untick the {{count}} {{metadataType}} row(s), then retrieve again.",
   "failedToRunVsCodeCommand": "Failed to run VS Code command: {{command}}",
   "failedToStartCommand": "Failed to start command: {{msg}}",
   "failedToUpdateConfigKey": "Failed to update configuration: {{configKey}}",
