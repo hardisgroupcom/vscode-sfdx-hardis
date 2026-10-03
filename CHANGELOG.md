@@ -3,7 +3,7 @@
 ## Unreleased
 
 - Deployment actions: recover an action that failed after a merge, without running the deployment again
-  - The Deployment Actions tab shows the status of each action in the org of the branch
+  - The Deployment Actions tab groups the actions by Pull Request, in the order they run, with the status of each action in the org of the branch
   - A failed action, or one stopped by a failure, can be retried, marked as done, or moved to your Pull Request to fix it
   - The action editor shows the Pull Request an action was moved from
 - Deployment actions: a new **Run Batch** action runs an Apex batch class once, before or after the deployment, and can wait for it to succeed.

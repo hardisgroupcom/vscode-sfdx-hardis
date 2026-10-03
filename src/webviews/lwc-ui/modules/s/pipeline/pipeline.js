@@ -255,115 +255,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   modalTicketColumns = [];
 
-  // Compute actions columns to dynamically set Pull Request label
-  get computedModalActionsColumns() {
-    const columns = [
-      // Action type as a colored pill (hue + icon per type), so a long list of
-      // actions can be scanned by category instead of by reading each label
-      {
-        key: "type",
-        label: this.i18n.typeLabel,
-        fieldName: "type",
-        type: "typePill",
-        typeAttributes: {
-          label: { fieldName: "type" },
-          pillClass: { fieldName: "typePillClass" },
-          iconName: { fieldName: "typeIconName" },
-          tooltip: { fieldName: "type" },
-        },
-        wrapText: false,
-        initialWidth: 170,
-      },
-      {
-        key: "label",
-        label: this.i18n.actionLabelField,
-        fieldName: "label",
-        type: "button",
-        typeAttributes: {
-          label: { fieldName: "label" },
-          name: "view_action",
-          variant: "base",
-        },
-        wrapText: true,
-      },
-      // Pre-Deploy / Post-Deploy pill: the rows are sorted by this value, so
-      // the color makes the two blocks obvious at a glance
-      {
-        key: "when",
-        label: this.i18n.actionWhenField,
-        fieldName: "when",
-        type: "typePill",
-        typeAttributes: {
-          label: { fieldName: "when" },
-          pillClass: { fieldName: "whenPillClass" },
-          tooltip: { fieldName: "when" },
-        },
-        wrapText: false,
-        initialWidth: 130,
-      },
-    ];
-
-    // Status of each action in the org of the branch, and the ways to recover
-    // a failed one: only once sfdx-hardis returned the statuses
-    if (this.modalActionStatuses) {
-      columns.push({
-        key: "status",
-        // Short header: the modal title already names the branch, and a long
-        // one widens the column at the expense of the action label
-        label: this.i18n.statusLabel,
-        fieldName: "statusLabel",
-        type: "statusPill",
-        typeAttributes: {
-          label: { fieldName: "statusLabel" },
-          pillClass: { fieldName: "statusPillClass" },
-          url: { fieldName: "statusUrl" },
-        },
-        wrapText: false,
-        initialWidth: 180,
-      });
-      columns.push({
-        key: "rowActions",
-        label: "",
-        type: "action",
-        fieldName: "rowActions",
-        initialWidth: 60,
-        typeAttributes: {
-          rowActions: { fieldName: "rowActions" },
-        },
-      });
-    }
-
-    // Only show the pull request author and column when the actions of
-    // several pull requests are aggregated in the same table: branch mode, or
-    // the modal of a Pull Request between two major branches
-    if (this.modalActionsAggregated) {
-      columns.push(this._authorColumn());
-      // The status columns take room: a fixed width keeps the link on one or
-      // two lines instead of a letter-wide column
-      columns.push(
-        this.modalActionStatuses
-          ? { ...this._pullRequestColumn(), initialWidth: 220 }
-          : this._pullRequestColumn(),
-      );
-    } else {
-      columns.push({
-        key: "delete",
-        label: this.i18n.deleteLabel,
-        type: "button-icon",
-        initialWidth: 70,
-        typeAttributes: {
-          name: "delete_action",
-          iconName: "utility:delete",
-          title: this.i18n.deleteLabel,
-          alternativeText: this.i18n.deleteLabel,
-          variant: "bare",
-        },
-      });
-    }
-
-    return columns;
-  }
-
   // Compute ticket columns based on authentication state
   get computedModalTicketColumns() {
     const columns = [
@@ -3103,16 +2994,35 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.showPRModal = true;
   }
 
-  handleActionRowClick(event) {
-    const action = event.detail.action;
-    const row = event.detail.row;
+  // Click on the label of an action: its details
+  handleActionLabelClick(event) {
+    this._onActionRowAction("view_action", event.currentTarget.dataset.rowId);
+  }
 
-    if (!action || !row) {
+  // Retry / Mark as done buttons shown on a failed action
+  handleActionInlineButton(event) {
+    this._onActionRowAction(
+      event.currentTarget.dataset.actionName,
+      event.currentTarget.dataset.rowId,
+    );
+  }
+
+  // Menu at the end of an action row
+  handleActionMenuSelect(event) {
+    this._onActionRowAction(
+      event.detail.value,
+      event.currentTarget.dataset.rowId,
+    );
+  }
+
+  _onActionRowAction(actionName, rowId) {
+    const row = this.modalActions.find((a) => a.id === rowId);
+    if (!actionName || !row) {
       return;
     }
 
     // Handle the view_action button click
-    if (action.name === "view_action") {
+    if (actionName === "view_action") {
       // Find the full action object
       const actionRow = this.modalActions.find((a) => a.id === row.id);
       if (!actionRow || !actionRow._fullAction) {
@@ -3125,16 +3035,16 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       this.showDeploymentActionModal = true;
     }
 
-    if (action.name === "delete_action") {
+    if (actionName === "delete_action") {
       this.handleDeleteDeploymentAction(row);
     }
 
     if (
       ["retry_action", "mark_action_done", "move_action_to_my_pr"].includes(
-        action.name,
+        actionName,
       )
     ) {
-      this.handleRecoverDeploymentAction(action.name, row);
+      this.handleRecoverDeploymentAction(actionName, row);
     }
   }
 
@@ -3169,10 +3079,86 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       return;
     }
     this.modalActionStatuses = data.statuses;
-    this.modalActions = this.modalActions.map((row) => ({
-      ...row,
-      ...this._actionStatusFields(row),
-    }));
+  }
+
+  // The actions of the modal, one group per Pull Request. Groups with a problem
+  // come first, then the ones waiting for someone, then the rest. Inside a group
+  // the actions keep the order they run in: pre-deploy, then post-deploy, each
+  // in the order of the Pull Request file.
+  get modalActionGroups() {
+    const byPr = new Map();
+    for (const row of this.modalActions) {
+      if (!byPr.has(row.prNumber)) {
+        byPr.set(row.prNumber, []);
+      }
+      byPr.get(row.prNumber).push(row);
+    }
+    const whenRank = { "pre-deploy": 0, "post-deploy": 1 };
+    const groups = [];
+    for (const [prNumber, prRows] of byPr.entries()) {
+      const sortedRows = [...prRows].sort(
+        (a, b) =>
+          (whenRank[a.whenCode] ?? 2) - (whenRank[b.whenCode] ?? 2) ||
+          (a.orderIndex ?? 0) - (b.orderIndex ?? 0),
+      );
+      const rows = sortedRows.map((row, index) => ({
+        ...row,
+        order: index + 1,
+        ...this._actionStatusFields(row, sortedRows),
+      }));
+      const first = rows[0];
+      groups.push({
+        key: `pr-${prNumber}`,
+        prNumber,
+        showHeader: this.modalActionsAggregated,
+        prLabel: `#${prNumber} ${first.prTitle}`.trim(),
+        prWebUrl: first.prWebUrl,
+        authorLabel: first.authorLabel,
+        authorInitials: first.authorInitials,
+        authorAvatarClass: first.authorAvatarClass || "hardis-avatar",
+        summary: this._actionGroupSummary(rows),
+        rank: this._actionGroupRank(rows),
+        rows,
+      });
+    }
+    return groups.sort((a, b) => a.rank - b.rank || b.prNumber - a.prNumber);
+  }
+
+  // 0: something failed or was stopped, 1: waiting for someone, 2: the rest
+  _actionGroupRank(rows) {
+    if (rows.some((row) => ["failed", "warning", "not-run"].includes(row.statusCode))) {
+      return 0;
+    }
+    if (rows.some((row) => row.statusCode === "manual")) {
+      return 1;
+    }
+    return 2;
+  }
+
+  // "1 failed · 2 stopped": what the group holds, once the statuses are known
+  _actionGroupSummary(rows) {
+    if (!this.modalActionStatuses) {
+      return [];
+    }
+    const categories = [
+      { key: "failed", codes: ["failed", "warning"], labelKey: "actionSummaryFailed", pill: "hardis-status-failed" },
+      { key: "stopped", codes: ["not-run"], labelKey: "actionSummaryStopped", pill: "hardis-status-pending" },
+      { key: "waiting", codes: ["manual"], labelKey: "actionSummaryWaiting", pill: "hardis-status-pending" },
+      { key: "moved", codes: ["moved"], labelKey: "actionSummaryMoved", pill: "hardis-status-unknown" },
+      { key: "done", codes: ["success"], labelKey: "actionSummaryDone", pill: "hardis-status-success" },
+    ];
+    return categories
+      .map((category) => ({
+        key: category.key,
+        count: rows.filter((row) => category.codes.includes(row.statusCode)).length,
+        category,
+      }))
+      .filter((item) => item.count > 0)
+      .map((item) => ({
+        key: item.key,
+        label: this.t(item.category.labelKey, { count: item.count }),
+        pillClass: "hardis-pill " + item.category.pill,
+      }));
   }
 
   // The org branch the status column describes: the major branch of the
@@ -3203,7 +3189,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   // Status pill of an action in the org branch, and the row actions it allows
-  _actionStatusFields(row) {
+  _actionStatusFields(row, groupRows = []) {
     const actionId = row._fullAction?.id;
     const entry = (this.modalActionStatuses?.[String(row.prNumber)] || []).find(
       (e) =>
@@ -3211,39 +3197,70 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     );
     const status = entry ? entry.status : "none";
     const display = this._actionStatusDisplay(status, entry);
-    const rowActions = [
-      { label: this.i18n.deploymentActionViewDetails, name: "view_action" },
+    const menuItems = [
+      { label: this.i18n.deploymentActionViewDetails, name: "view_action", iconName: "utility:preview" },
     ];
+    const inlineButtons = [];
     const recoverable =
       ["failed", "warning", "not-run"].includes(status) &&
       row.whenCode === "post-deploy";
     if (recoverable) {
-      rowActions.push({
-        label: this.i18n.deploymentActionRetry,
-        name: "retry_action",
-        iconName: "utility:refresh",
-      });
-      rowActions.push({
-        label: this.i18n.deploymentActionMarkDone,
-        name: "mark_action_done",
-        iconName: "utility:check",
-      });
+      const retry = { label: this.i18n.deploymentActionRetry, name: "retry_action", iconName: "utility:refresh" };
+      const markDone = { label: this.i18n.deploymentActionMarkDone, name: "mark_action_done", iconName: "utility:check" };
+      // The failure itself gets visible buttons; the actions it stopped keep
+      // them in the menu, since retrying the failure first usually runs them
+      if (status === "not-run") {
+        menuItems.push(retry, markDone);
+      }
+      else {
+        inlineButtons.push(
+          { ...retry, className: "slds-button slds-button_neutral hardis-btn-tinted-blue da-button" },
+          { ...markDone, className: "slds-button slds-button_neutral da-button" },
+        );
+      }
       const myPrNumber = this.currentBranchPullRequest?.number;
       if (myPrNumber && myPrNumber !== row.prNumber) {
-        rowActions.push({
+        menuItems.push({
           label: this.i18n.deploymentActionMoveToMyPr,
           name: "move_action_to_my_pr",
           iconName: "utility:move",
         });
       }
     }
+    // Deleting is for the actions of your own Pull Request, as before
+    if (!this.modalActionsAggregated) {
+      menuItems.push({ label: this.i18n.deleteLabel, name: "delete_action", iconName: "utility:delete" });
+    }
     return {
       statusCode: status,
+      showStatus: !!this.modalActionStatuses,
       statusLabel: display.label,
       statusPillClass: "hardis-pill " + display.pillClass,
-      statusUrl: entry?.jobUrl || "",
-      rowActions,
+      statusDetail: this._actionStatusDetail(status, entry, groupRows),
+      inlineButtons,
+      menuItems,
     };
+  }
+
+  // One line under the label saying why the action is in this state, when the
+  // state alone does not: which action stopped it, where it was moved, or the
+  // note of a run made outside a deployment job
+  _actionStatusDetail(status, entry, groupRows) {
+    if (!entry) {
+      return "";
+    }
+    if (status === "not-run" && entry.blockedBy) {
+      const blocker = groupRows.findIndex(
+        (other) => other._fullAction?.id === entry.blockedBy.actionId,
+      );
+      return blocker >= 0
+        ? this.t("actionStoppedByOrder", { order: blocker + 1 })
+        : this.t("actionStoppedByPr", { pr: entry.blockedBy.pr });
+    }
+    if (status === "moved") {
+      return "";
+    }
+    return entry.note || "";
   }
 
   _actionStatusDisplay(status, entry) {
@@ -3844,7 +3861,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
     for (const pr of prs) {
       if (pr.deploymentActions && Array.isArray(pr.deploymentActions)) {
-        for (const action of pr.deploymentActions) {
+        for (const [orderIndex, action] of pr.deploymentActions.entries()) {
           if (action) {
             const when = action.when;
             const whenLabel = this._getActionWhenLabel(when);
@@ -3874,6 +3891,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
               prLabel: `#${pr.number} - ${pr.title || ""}`,
               prWebUrl: pr.webUrl || "",
               prNumber: pr.number || 0,
+              prTitle: pr.title || "",
+              orderIndex,
               _fullAction: fullAction,
             });
           }
