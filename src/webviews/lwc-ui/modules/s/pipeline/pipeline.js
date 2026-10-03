@@ -3058,6 +3058,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         "mark_action_done",
         "move_action_to_my_pr",
         "run_action_in_my_org",
+        "run_action_in_other_org",
       ].includes(actionName)
     ) {
       this.handleRecoverDeploymentAction(actionName, row);
@@ -3075,6 +3076,18 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
     // One action of the Pull Request of this window, tried in the default org of
     // the user, which sfdx-hardis refuses to touch when it is a major org (--dev-org)
+    // Any org authenticated on this computer, major or developer: sfdx-hardis
+    // lists them (major orgs first) and records the outcome where it belongs
+    if (actionName === "run_action_in_other_org") {
+      const prArg = row.prNumber > 0 ? String(row.prNumber) : "draft";
+      window.sendMessageToVSCode({
+        type: "runCommand",
+        data: {
+          command: `sf hardis:project:action:run --pr ${prArg} --action-id "${safeId}" --select-org`,
+        },
+      });
+      return;
+    }
     if (actionName === "run_action_in_my_org") {
       const prArg = row.prNumber > 0 ? String(row.prNumber) : "draft";
       const runId = safeId;
@@ -3407,6 +3420,14 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         name: "mark_action_done",
         iconName: "utility:check",
         className: "slds-button slds-button_neutral da-button",
+      });
+    }
+    // Any runnable action can be run in any authenticated org
+    if (runnable && (row.prNumber > 0 || row.prNumber === -1)) {
+      menuItems.push({
+        label: this.i18n.deploymentActionRunInOtherOrg,
+        name: "run_action_in_other_org",
+        iconName: "utility:world",
       });
     }
     // Your own Pull Request: try the action in your org (again, after a failed

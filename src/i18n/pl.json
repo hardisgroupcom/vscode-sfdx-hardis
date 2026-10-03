@@ -694,6 +694,7 @@
   "deploymentActionRetry": "Ponów",
   "deploymentActionRunInMyOrg": "Uruchom w mojej org",
   "deploymentActionRunInOrg": "Uruchom w {{orgBranch}}",
+  "deploymentActionRunInOtherOrg": "Uruchom w innej org...",
   "deploymentActionSaved": "Akcja wdrożenia zapisana dla {{prLabel}} #{{prNumber}}. Pamiętaj, żeby zcommitować i pushować {{updatedFile}}",
   "deploymentActionSavedDraft": "Akcja wdrożenia zapisana w pliku roboczym dla przyszłego {{prLabel}}. Zostanie powiązana z {{prLabel}} po jego utworzeniu.",
   "deploymentActionViewDetails": "Zobacz szczegóły",

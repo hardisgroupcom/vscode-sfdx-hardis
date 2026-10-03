@@ -694,6 +694,7 @@
   "deploymentActionRetry": "Reintentar",
   "deploymentActionRunInMyOrg": "Ejecutar en mi org",
   "deploymentActionRunInOrg": "Ejecutar en {{orgBranch}}",
+  "deploymentActionRunInOtherOrg": "Ejecutar en otra org...",
   "deploymentActionSaved": "Acción de despliegue guardada para {{prLabel}} #{{prNumber}}. No olvide hacer commit y push de {{updatedFile}}",
   "deploymentActionSavedDraft": "Acción de despliegue guardada en el archivo borrador para la futura {{prLabel}}. Se vinculará a la {{prLabel}} una vez creada.",
   "deploymentActionViewDetails": "Ver detalles",

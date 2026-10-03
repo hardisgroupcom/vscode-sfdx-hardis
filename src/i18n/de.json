@@ -694,6 +694,7 @@
   "deploymentActionRetry": "Erneut versuchen",
   "deploymentActionRunInMyOrg": "In meiner Org ausführen",
   "deploymentActionRunInOrg": "In {{orgBranch}} ausführen",
+  "deploymentActionRunInOtherOrg": "In einer anderen Org ausführen...",
   "deploymentActionSaved": "Bereitstellungsaktion für {{prLabel}} #{{prNumber}} gespeichert. Vergessen Sie nicht, {{updatedFile}} zu committen und zu pushen",
   "deploymentActionSavedDraft": "Bereitstellungsaktion im Entwurf für den zukünftigen {{prLabel}} gespeichert. Sie wird mit dem {{prLabel}} verknüpft, sobald dieser erstellt wird.",
   "deploymentActionViewDetails": "Details anzeigen",

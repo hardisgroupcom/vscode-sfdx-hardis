@@ -694,6 +694,7 @@
   "deploymentActionRetry": "Opnieuw proberen",
   "deploymentActionRunInMyOrg": "Uitvoeren in mijn org",
   "deploymentActionRunInOrg": "Uitvoeren in {{orgBranch}}",
+  "deploymentActionRunInOtherOrg": "Uitvoeren in een andere org...",
   "deploymentActionSaved": "Implementatieactie opgeslagen voor {{prLabel}} #{{prNumber}}. Vergeet niet om {{updatedFile}} te committen en te pushen",
   "deploymentActionSavedDraft": "Implementatieactie opgeslagen in conceptbestand voor de toekomstige {{prLabel}}. Ze wordt gekoppeld aan de {{prLabel}} zodra deze is aangemaakt.",
   "deploymentActionViewDetails": "Details bekijken",

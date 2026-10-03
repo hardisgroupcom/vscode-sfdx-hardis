@@ -694,6 +694,7 @@
   "deploymentActionRetry": "再試行",
   "deploymentActionRunInMyOrg": "自分の org で実行",
   "deploymentActionRunInOrg": "{{orgBranch}} で実行",
+  "deploymentActionRunInOtherOrg": "別の org で実行...",
   "deploymentActionSaved": "{{prLabel}} #{{prNumber}} のデプロイアクションを保存しました。{{updatedFile}} を commit して push するのを忘れないでください",
   "deploymentActionSavedDraft": "将来の {{prLabel}} 用のドラフトファイルにデプロイアクションを保存しました。作成されると {{prLabel}} に関連付けられます。",
   "deploymentActionViewDetails": "詳細を表示",
