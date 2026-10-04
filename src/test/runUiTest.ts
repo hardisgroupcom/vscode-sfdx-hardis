@@ -4,7 +4,7 @@ import * as fs from "fs";
 import * as os from "os";
 import { execSync } from "child_process";
 
-import { runTests } from "@vscode/test-electron";
+import { downloadAndUnzipVSCode, runTests } from "@vscode/test-electron";
 import * as yaml from "js-yaml";
 
 /**
@@ -519,22 +519,45 @@ async function main() {
   }
 
   // Documentation screenshots drive the window through the Chrome DevTools Protocol (see
-  // src/test/ui/cdpWindow.ts): clicks and captures go to the page, never to the desktop, so the
-  // machine stays usable during a run and the window can be covered
+  // src/test/ui/cdpWindow.ts): clicks and captures go to the page, never to the desktop
   // cspell:ignore backgrounding
 
   const cdpPort = docScreenshots ? await findFreePort() : 0;
 
+  // The window itself is another matter: started the usual way, it opens in front of whoever is
+  // working on the machine and takes the focus, at every run. On Windows it is created on a
+  // desktop of its own instead (scripts/hidden-desktop): it is never drawn on the desktop in
+  // use, and the page still renders. SFDX_HARDIS_UI_VISIBLE=true brings the window back, to
+  // watch a run. Not in CI, which has no interactive desktop to protect, and not for the lab
+  // driver, which opens browser windows somebody has to see.
+  const hiddenDesktop =
+    process.platform === "win32" &&
+    !process.env.CI &&
+    !labDriver &&
+    process.env.SFDX_HARDIS_UI_VISIBLE !== "true";
+  let vscodeExecutablePath: string | undefined;
+  if (hiddenDesktop) {
+    process.env.SFDX_HARDIS_UI_CODE_EXE = await downloadAndUnzipVSCode();
+    vscodeExecutablePath = path.join(
+      extensionDevelopmentPath,
+      "scripts",
+      "hidden-desktop",
+      "code-on-hidden-desktop.cmd",
+    );
+  }
+
   try {
     await runTests({
+      ...(vscodeExecutablePath ? { vscodeExecutablePath } : {}),
       extensionDevelopmentPath,
       extensionTestsPath,
       launchArgs: [
         workspaceDir,
-        ...(cdpPort
+        ...(cdpPort ? [`--remote-debugging-port=${cdpPort}`] : []),
+        ...(cdpPort || hiddenDesktop
           ? [
-              `--remote-debugging-port=${cdpPort}`,
-              // A window that is covered or in the background must keep rendering
+              // A window that is covered, in the background or on another desktop must keep
+              // rendering and running its timers
               "--disable-renderer-backgrounding",
               "--disable-background-timer-throttling",
               "--disable-backgrounding-occluded-windows",

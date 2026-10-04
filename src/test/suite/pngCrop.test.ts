@@ -1,4 +1,6 @@
 import * as assert from "assert";
+import * as fs from "fs";
+import * as path from "path";
 import * as zlib from "zlib";
 import { cropPng, decodePng, encodePng } from "../ui/pngCrop";
 import { readSourceFile } from "./lwcSourceUtils";
@@ -160,6 +162,56 @@ suite("PNG crop of the UI harness captures", () => {
     assert.match(
       readSourceFile("test/runUiTest.ts"),
       /--remote-debugging-port=/,
+    );
+  });
+
+  test("on Windows the window of a run is created on a desktop of its own", () => {
+    // Driving the page without the real pointer is not enough: started the usual way, the
+    // window still opens in front of whoever works on the machine and takes the focus
+    const runner = readSourceFile("test/runUiTest.ts");
+    assert.match(
+      runner,
+      /const hiddenDesktop =\s*process\.platform === "win32" &&\s*!process\.env\.CI &&\s*!labDriver &&\s*process\.env\.SFDX_HARDIS_UI_VISIBLE !== "true";/,
+    );
+    assert.match(
+      runner,
+      /process\.env\.SFDX_HARDIS_UI_CODE_EXE = await downloadAndUnzipVSCode\(\);/,
+    );
+    assert.match(
+      runner,
+      /\.\.\.\(vscodeExecutablePath \? \{ vscodeExecutablePath \} : \{\}\)/,
+    );
+    // A window nobody sees must keep rendering, for the UI tests as for the captures
+    assert.match(
+      runner,
+      /\.\.\.\(cdpPort \|\| hiddenDesktop\s*\? \[[\s\S]*?"--disable-backgrounding-occluded-windows"/,
+    );
+    const root = path.resolve(__dirname, "../../../scripts/hidden-desktop");
+    const wrapper = fs.readFileSync(
+      path.join(root, "code-on-hidden-desktop.cmd"),
+      "utf8",
+    );
+    assert.match(
+      wrapper,
+      /run-on-hidden-desktop\.ps1" "%SFDX_HARDIS_UI_CODE_EXE%" %\*/,
+    );
+    const launcher = fs.readFileSync(
+      path.join(root, "run-on-hidden-desktop.ps1"),
+      "utf8",
+    );
+    assert.match(launcher, /CreateDesktopW\(desktopName,/);
+    assert.match(
+      launcher,
+      /startup\.lpDesktop = "WinSta0\\\\" \+ desktopName;/,
+    );
+    // It fails rather than showing the window on the desktop in use, and touches no window
+    assert.match(
+      launcher,
+      /throw new Win32Exception\(\s*Marshal\.GetLastWin32Error\(\),\s*"CreateDesktop failed"\s*\)/,
+    );
+    assert.doesNotMatch(
+      launcher,
+      /SetForegroundWindow|bShowWindow(|SendKeys|SwitchDesktop|SetCursorPos/,
     );
   });
 });

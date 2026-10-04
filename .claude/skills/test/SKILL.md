@@ -42,10 +42,13 @@ yarn dev && yarn compile
 SFDX_HARDIS_DOC_SCREENSHOTS_DIR=C:/tmp/my-shots yarn screenshots pipeline-pr-view
 ```
 
-- **It never takes the desktop.** VS Code is driven through the Chrome DevTools Protocol
-  (`src/test/ui/cdpWindow.ts`): no real mouse, no keys, no foreground window. Start it in the
-  background at any time, without asking the user for their screen. Never add a step that moves
-  the real pointer, sends keys to a window or looks a window up by its title.
+- **On Windows it shows no window; elsewhere it does.** VS Code is driven through the Chrome
+  DevTools Protocol (`src/test/ui/cdpWindow.ts`): no real mouse, no keys. On Windows, outside CI,
+  `runUiTest.ts` also starts it on a desktop of its own (`scripts/hidden-desktop`), so no window
+  is drawn on the user's desktop and nothing takes the focus: `yarn screenshots` and
+  `yarn test:ui` can run in the background there. On macOS and Linux a window opens in front of
+  the user at every run: ask first. Never add a step that moves the real pointer, sends keys to a
+  window or looks a window up by its title.
 - Pass an **absolute** output folder and the **gate** names you need
   (`grep -n "shouldTake(" src/test/ui/docScreenshots.test.ts`).
 - Prefer a **deep link** to a click: `{ focus: "pullRequest", prNumber: 128, tab: "validation" }`

@@ -195,13 +195,19 @@ SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION=true \
 python scripts/build-doc-images.py
 ```
 
-The harness never takes the desktop. VS Code is started with a remote debugging port and
-driven through the Chrome DevTools Protocol (`src/test/ui/cdpWindow.ts`): clicks and wheel
-events are sent to the page, captures are rendered by the page at a fixed size (1920x1020 at a
-pixel ratio of 1.25, title bar cropped out), whatever the real window and display. So:
+The harness never uses the real pointer or keyboard. VS Code is started with a remote debugging
+port and driven through the Chrome DevTools Protocol (`src/test/ui/cdpWindow.ts`): clicks and
+wheel events are sent to the page, captures are rendered by the page at a fixed size (1920x1020
+at a pixel ratio of 1.25, title bar cropped out), whatever the real window and display.
 
-- the machine stays usable during a run, and the window can be covered or in the background.
-  Do not minimize it: a minimized window stops painting;
+On Windows, outside CI, the window does not show at all: `src/test/runUiTest.ts` starts VS Code
+on a Windows desktop of its own, through `scripts/hidden-desktop`. A session holds several
+desktops and shows one, so that window is never drawn on yours and never takes the focus, for
+`yarn screenshots` and `yarn test:ui` alike. Set `SFDX_HARDIS_UI_VISIBLE=true` to watch a run.
+On macOS and Linux the window opens on your desktop at every run. So:
+
+- on Windows the machine stays usable during a run. Elsewhere the window can be covered once it
+  is open, but do not minimize it: a minimized window stops painting;
 - nothing moves the real pointer or steals the focus, and no window is looked up by its title;
 - the coordinates of `click(x, y)` are pixels of a capture, as they always were. Open the
   capture to read them;
