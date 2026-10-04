@@ -172,7 +172,11 @@ export async function completePullRequestsWithActions(
     );
   }
 
-  for (const { pr, branch, merged } of elsewhere) {
+  const readFromBranch = async ({
+    pr,
+    branch,
+    merged,
+  }: (typeof elsewhere)[number]) => {
     const files = listings.get(branch);
     const fileName = prActionsFileName(pr.number as number);
     if (!files) {
@@ -181,7 +185,7 @@ export async function completePullRequestsWithActions(
       if (!merged) {
         pr.deploymentActionsSource = "unreadable";
       }
-      continue;
+      return;
     }
     if (!files.has(fileName)) {
       // Open: its branch has no actions, and is still the place to add some
@@ -189,7 +193,7 @@ export async function completePullRequestsWithActions(
         pr.deploymentActionsSource = "branch";
         pr.deploymentActionsBranch = branch;
       }
-      continue;
+      return;
     }
     const content = await readFileAtRef(
       originRef(branch),
@@ -198,7 +202,7 @@ export async function completePullRequestsWithActions(
     );
     if (content === null) {
       pr.deploymentActionsSource = "unreadable";
-      continue;
+      return;
     }
     pr.deploymentActionsSource = "branch";
     pr.deploymentActionsBranch = branch;
@@ -211,6 +215,11 @@ export async function completePullRequestsWithActions(
         `Error while parsing ${fileName} of ${branch}: ${(e as Error).message}`,
       );
     }
+  };
+  for (let i = 0; i < elsewhere.length; i += BRANCH_READ_BATCH_SIZE) {
+    await Promise.all(
+      elsewhere.slice(i, i + BRANCH_READ_BATCH_SIZE).map(readFromBranch),
+    );
   }
   return pullRequests;
 }

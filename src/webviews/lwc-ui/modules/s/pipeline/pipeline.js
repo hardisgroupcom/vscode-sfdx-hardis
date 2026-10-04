@@ -3841,7 +3841,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     const busy = this.markingDoneKeys.includes(
       this._markDoneKey(row.prNumber, actionId, target),
     );
-    if (forecast.forecast === "waiting" || busy) {
+    if (row.outOfCheckout) {
+      // Recording it ahead needs its definition, which the checked out branch does not hold
+    } else if (forecast.forecast === "waiting" || busy) {
       inlineButtons.push({
         ...markDone,
         label: busy
@@ -3859,7 +3861,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     ) {
       menuItems.push(markDone);
     }
-    if (row.prNumber > 0) {
+    if (row.prNumber > 0 && !row.outOfCheckout) {
       menuItems.push({
         label: this.i18n.deploymentActionMarkDoneOtherOrg,
         name: "mark_action_done_other_org",
@@ -4556,6 +4558,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // What sfdx-hardis can run outside a deployment: not a manual action, not a
     // change of the deployment package, not a validation-only action
     const runnable =
+      !row.outOfCheckout &&
       row.typeCode !== "manual" &&
       row.typeCode !== "remove-packagexml-items" &&
       (row.typeCode === "run-batch" ||
@@ -4597,7 +4600,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       // Moving needs a Pull Request of your own to move it to: said in the
       // menu rather than hidden, so nobody wonders where the option went
       const myPrNumber = this.currentBranchPullRequest?.number;
-      if (myPrNumber !== row.prNumber) {
+      if (myPrNumber !== row.prNumber && !row.outOfCheckout) {
         const hasMyPr = !!myPrNumber;
         menuItems.push({
           label: hasMyPr
@@ -4636,7 +4639,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // Done by hand in another org: a major branch before or after this one, or
     // a developer org. Not for actions read from another branch: sfdx-hardis
     // would not find them in the checked out one
-    if (row.prNumber > 0 && !this.modalActionsFromBranch) {
+    if (row.prNumber > 0 && !row.outOfCheckout) {
       menuItems.push({
         label: this.i18n.deploymentActionMarkDoneOtherOrg,
         name: "mark_action_done_other_org",
@@ -4644,11 +4647,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       });
     }
     // Any runnable action can be run in any authenticated org
-    if (
-      runnable &&
-      !this.modalActionsFromBranch &&
-      (row.prNumber > 0 || row.prNumber === -1)
-    ) {
+    if (runnable && (row.prNumber > 0 || row.prNumber === -1)) {
       menuItems.push({
         label: this.i18n.deploymentActionRunInOtherOrg,
         name: "run_action_in_other_org",
@@ -5422,6 +5421,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
               prNumber: pr.number || 0,
               prTitle: pr.title || "",
               orderIndex,
+              // Read from another branch than the checked out one: sfdx-hardis, which reads
+              // the file of the checkout, can neither run it, move it nor record it ahead
+              outOfCheckout: ["branch", "unreadable"].includes(
+                pr.deploymentActionsSource,
+              ),
               _fullAction: fullAction,
             });
           }

@@ -1043,8 +1043,22 @@ suite("Pull Request view", () => {
         /if:true=\{canEditApexTestsOfPr\}>\s*<lightning-button[\s\S]*?onclick=\{handleEditApexTests\}/,
       );
       assert.match(js, /if \(!this\.modalActionsReadOnly\) \{/);
-      assert.match(js, /row\.prNumber > 0 && !this\.modalActionsFromBranch/);
-      assert.match(js, /runnable &&\s*!this\.modalActionsFromBranch &&/);
+      // In any window, a row read from another branch offers nothing that goes through
+      // sfdx-hardis with its definition: run, retry, move, record ahead or in another org
+      assert.match(
+        js,
+        /outOfCheckout: \["branch", "unreadable"\]\.includes\(\s*pr\.deploymentActionsSource,?\s*\)/,
+      );
+      assert.match(js, /const runnable =\s*!row\.outOfCheckout &&/);
+      assert.match(js, /myPrNumber !== row\.prNumber && !row\.outOfCheckout/);
+      assert.strictEqual(
+        (js.match(/row\.prNumber > 0 && !row\.outOfCheckout/g) || []).length,
+        2,
+      );
+      assert.match(
+        js,
+        /if \(row\.outOfCheckout\) \{[\s\S]{0,160}\} else if \(forecast\.forecast === "waiting" \|\| busy\)/,
+      );
     });
 
     test("the description is shown without the links to the sfdx-hardis comments", () => {

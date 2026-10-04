@@ -26,7 +26,13 @@ export async function fetchBranch(
   try {
     await simpleGit(root ?? getWorkspaceRoot(), {
       timeout: { block: timeoutMs },
-    }).raw(["fetch", "origin", branch]);
+      // An explicit refspec: a clone limited to one branch would otherwise fetch without
+      // writing the remote-tracking ref, and a branch name is never read as an option
+    }).raw([
+      "fetch",
+      "origin",
+      `+refs/heads/${branch}:refs/remotes/origin/${branch}`,
+    ]);
     return true;
   } catch (e: any) {
     Logger.log(
@@ -76,7 +82,9 @@ export async function readFileAtRef(
   try {
     return await simpleGit(root ?? getWorkspaceRoot()).raw([
       "show",
-      `${ref}:${filePath}`,
+      // Relative to the workspace folder, as the listing is: the project may sit in a
+      // subfolder of the repository
+      `${ref}:./${filePath}`,
     ]);
   } catch (e: any) {
     Logger.log(

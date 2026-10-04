@@ -220,6 +220,57 @@ suite("Actions of a Pull Request whose branch is not checked out", () => {
     assert.strictEqual((await load(open(), true)).deploymentActions?.length, 3);
   });
 
+  test("a clone limited to one branch reads the other one once fetched", async () => {
+    const single = path.join(tmp, "single");
+    git(
+      tmp,
+      "clone",
+      "-q",
+      "--single-branch",
+      "--branch",
+      "integration",
+      path.join(tmp, "origin.git"),
+      "single",
+    );
+    const read = async (fetch: boolean) =>
+      (
+        await completePullRequestsWithActions(
+          [pullRequest({ number: 505, sourceBranch: "feature/story" })],
+          { workspaceRoot: single, currentBranch: "integration", fetch },
+        )
+      )[0];
+    assert.strictEqual(
+      (await read(false)).deploymentActionsSource,
+      "unreadable",
+    );
+    const fetched = await read(true);
+    assert.strictEqual(fetched.deploymentActionsSource, "branch");
+    assert.strictEqual(fetched.deploymentActions?.length, 2);
+  });
+
+  test("a project in a subfolder of the repository reads its own actions file", async () => {
+    git(work, "checkout", "-q", "-b", "feature/sub");
+    commitActions(work, 900, actionsFile(["Root"]), "root actions");
+    commitActions(
+      path.join(work, "sub"),
+      900,
+      actionsFile(["Project"]),
+      "project actions",
+    );
+    git(work, "push", "-q", "-u", "origin", "feature/sub");
+    git(work, "checkout", "-q", "integration");
+    const project = path.join(work, "sub");
+    fs.mkdirSync(project, { recursive: true });
+    const [pr] = await completePullRequestsWithActions(
+      [pullRequest({ number: 900, sourceBranch: "feature/sub" })],
+      { workspaceRoot: project, currentBranch: "integration" },
+    );
+    assert.deepStrictEqual(
+      (pr.deploymentActions || []).map((action) => action.label),
+      ["Project"],
+    );
+  });
+
   test("a list reads each branch once", async () => {
     const prs = [505, 801, 802, 803].map((number) =>
       pullRequest({ number, state: "merged", targetBranch: "uat" }),
