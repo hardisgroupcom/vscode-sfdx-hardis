@@ -309,7 +309,7 @@
             </div>
             <div class="bp-rows">
               <template for:each={actionRows} for:item="row">
-                <div key={row.id} class={row.rowClass}>
+                <div key={row.key} class={row.rowClass}>
                   <button type="button" class={row.checkClass} role="checkbox" aria-checked={row.ariaChecked} data-id={row.id} onclick={handleToggleAction} disabled={row.disabled}>
                     <lightning-icon icon-name="utility:check" size="xx-small"></lightning-icon>
                   </button>

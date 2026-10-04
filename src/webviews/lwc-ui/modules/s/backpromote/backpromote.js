@@ -1231,6 +1231,17 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     return this.plan.actions.map((action) => {
       const alreadyRun = !!action.alreadyRunOn && action.runOnlyOnceByOrg;
       const runnable = action.runnable && !alreadyRun;
+      const ticked = runnable && selected.has(action.id);
+      // The action of another Pull Request this one runs once with: same type, phase, user and parameters
+      const identical = action.identicalTo || null;
+      let identicalSource = "";
+      if (identical) {
+        identicalSource =
+          identical.pullRequest > 0
+            ? `#${identical.pullRequest}`
+            : identical.label;
+      }
+      const outcome = this._actionOutcome(result, action);
       let stateLabel = null;
       let stateClass = UNKNOWN_PILL;
       if (alreadyRun) {
@@ -1242,24 +1253,34 @@ export default class Backpromote extends SharedMixin(LightningElement) {
         stateLabel = this.t("backpromoteActionNotRunnable", {
           username: action.customUsername || "",
         });
-      } else if (result && result.actions.failed.includes(action.id)) {
+      } else if (outcome === "failed") {
         stateLabel = this.t("backpromoteActionFailed");
         stateClass = FAILED_PILL;
-      } else if (result && result.actions.run.includes(action.id)) {
+      } else if (outcome === "identical" && identical) {
+        stateLabel = this.t("backpromoteActionDoneByIdentical", {
+          source: identicalSource,
+        });
+        stateClass = SUCCESS_PILL;
+      } else if (outcome === "run") {
         stateLabel = this.t("backpromoteActionRan");
         stateClass = SUCCESS_PILL;
-      } else if (result && result.actions.pending.includes(action.id)) {
+      } else if (outcome === "pending") {
         stateLabel = this.t("backpromoteActionToDoByHand");
         stateClass = PENDING_PILL;
       } else if (action.manual) {
         stateLabel = this.t("backpromoteManualStep");
         stateClass = PENDING_PILL;
+      } else if (!result && ticked && identical && selected.has(identical.id)) {
+        stateLabel = this.t("backpromoteActionRunsWithIdentical", {
+          source: identicalSource,
+        });
+        stateClass = INFO_PILL;
       }
       // A manual step can be recorded as done at any time: before a run, after a refresh
       const showConfirm = action.manual && action.runnable && !alreadyRun;
-      const ticked = runnable && selected.has(action.id);
       return {
         id: action.id,
+        key: action.key || action.id,
         label: action.label,
         rowClass:
           "bp-item-row bp-action-row" +
@@ -1288,6 +1309,31 @@ export default class Backpromote extends SharedMixin(LightningElement) {
           this.confirmingActions.includes(action.id) || this.pickersDisabled,
       };
     });
+  }
+
+  // What happened to this very action in the last run: by its key when sfdx-hardis gives it, as two
+  // Pull Requests can reuse one action id
+  _actionOutcome(result, action) {
+    if (!result) {
+      return null;
+    }
+    const byKey = result.actions.byKey || {};
+    if (action.key && byKey[action.key]) {
+      return byKey[action.key];
+    }
+    if (result.actions.failed.includes(action.id)) {
+      return "failed";
+    }
+    if ((result.actions.identical || []).includes(action.id)) {
+      return "identical";
+    }
+    if (result.actions.run.includes(action.id)) {
+      return "run";
+    }
+    if (result.actions.pending.includes(action.id)) {
+      return "pending";
+    }
+    return null;
   }
 
   handleToggleAction(event) {
