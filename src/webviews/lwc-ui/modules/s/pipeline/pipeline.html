@@ -454,7 +454,7 @@
                                                 <div class="da-totals">
                                                     <span class="da-totals-label">{i18n.actionSummaryTotal}</span>
                                                     <template for:each={modalActionTotals} for:item="pill">
-                                                        <span key={pill.key} class={pill.pillClass}><span class="hardis-pill-dot"></span>{pill.label}</span>
+                                                        <button type="button" key={pill.key} class="da-status-toggle" data-key={pill.key} aria-pressed={pill.pressed} title={pill.toggleTitle} onclick={handleActionTotalToggle}><span class={pill.pillClass}><span class="hardis-pill-dot"></span>{pill.label}</span></button>
                                                     </template>
                                                 </div>
                                             </template>
@@ -474,6 +474,9 @@
                                             </div>
                                         </template>
                                     </div>
+                                </template>
+                                <template if:true={everyActionHidden}>
+                                    <div class="hardis-note slds-m-bottom_small">{i18n.everyActionHiddenByTotal}</div>
                                 </template>
                                 <!-- One group per Pull Request: its header says who and what once, its
                                      rows are the actions in the order they run -->

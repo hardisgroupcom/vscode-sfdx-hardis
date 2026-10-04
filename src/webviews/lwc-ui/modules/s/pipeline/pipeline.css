@@ -432,6 +432,14 @@
   font-size: 0.8125rem;
 }
 
+/* A Total pill switched off: grey whatever its status, and struck through, so
+   it differs from the pills that are grey when on. The compound selector wins
+   over the text-decoration of the kit's pill */
+.da-totals .hardis-pill.da-pill-off {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+
 .da-seg {
   display: inline-flex;
   border: 1px solid var(--slds-g-color-neutral-base-80);
