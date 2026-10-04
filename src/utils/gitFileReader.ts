@@ -26,7 +26,7 @@ export async function fetchBranch(
   try {
     await simpleGit(root ?? getWorkspaceRoot(), {
       timeout: { block: timeoutMs },
-      // An explicit refspec: a clone limited to one branch would otherwise fetch without
+      // The ref is named in full: a clone limited to one branch would otherwise fetch without
       // writing the remote-tracking ref, and a branch name is never read as an option
     }).raw([
       "fetch",

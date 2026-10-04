@@ -1,3 +1,4 @@
+// cspell:ignore gpgsign
 import * as assert from "assert";
 import { execFileSync } from "child_process";
 import * as fs from "fs";
@@ -74,7 +75,7 @@ suite("Actions of a Pull Request whose branch is not checked out", () => {
     )[0];
 
   setup(() => {
-    tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sfdx-hardis-practions-"));
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sfdx-hardis-pr-actions-"));
     const origin = path.join(tmp, "origin.git");
     work = path.join(tmp, "work");
     other = path.join(tmp, "other");
