@@ -137,9 +137,7 @@ export default class PullRequestHeader extends SharedMixin(LightningElement) {
   handleOpenCarrier(event) {
     const prNumber = parseInt(event.currentTarget.dataset.prNumber, 10);
     if (prNumber > 0) {
-      this.dispatchEvent(
-        new CustomEvent("open", { detail: { prNumber } }),
-      );
+      this.dispatchEvent(new CustomEvent("open", { detail: { prNumber } }));
     }
   }
 

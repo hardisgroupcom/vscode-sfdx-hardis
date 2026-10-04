@@ -243,9 +243,12 @@ export function buildPullRequestJourney({
   let validationState = "unknown";
   if (!merged && lookupState(pr) === "open") {
     validationState =
-      { success: "success", failed: "failed", running: "running", pending: "pending" }[
-        String(pr.jobsStatus || "")
-      ] || "unknown";
+      {
+        success: "success",
+        failed: "failed",
+        running: "running",
+        pending: "pending",
+      }[String(pr.jobsStatus || "")] || "unknown";
   }
   if (validationState === "unknown" && validationRun) {
     validationState =

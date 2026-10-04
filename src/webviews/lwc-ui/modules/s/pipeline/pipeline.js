@@ -2981,7 +2981,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
    * - pr: the Pull Request when the panel already holds it, else prNumber and it is read first
    * - keepStack: opened from a window that must be there again on the way back
    */
-  openPullRequestView({ pr = null, prNumber = null, tab = null, keepStack = false }) {
+  openPullRequestView({
+    pr = null,
+    prNumber = null,
+    tab = null,
+    keepStack = false,
+  }) {
     const number = pr?.number ?? prNumber;
     if (!pr && !(number > 0)) {
       return;
@@ -3242,7 +3247,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   get showNotOwnPrNote() {
-    return this.isSinglePRMode && !this.modalIsMajorPr && !this.isOwnPullRequest;
+    return (
+      this.isSinglePRMode && !this.modalIsMajorPr && !this.isOwnPullRequest
+    );
   }
 
   // Shown while the test classes of such a Pull Request are being edited, never while reading

@@ -91,7 +91,10 @@ export default class PullRequestLookup extends SharedMixin(LightningElement) {
   }
 
   get remoteMatches() {
-    return excludeKnownPullRequests(this.remotePullRequests, this.loadedMatches);
+    return excludeKnownPullRequests(
+      this.remotePullRequests,
+      this.loadedMatches,
+    );
   }
 
   // One flat list, so the arrow keys walk through both layers
@@ -142,7 +145,9 @@ export default class PullRequestLookup extends SharedMixin(LightningElement) {
   }
 
   get searchingLabel() {
-    return this.t("prLookupSearchingProvider", { platform: this.platformLabel });
+    return this.t("prLookupSearchingProvider", {
+      platform: this.platformLabel,
+    });
   }
 
   get showLoadedOnly() {

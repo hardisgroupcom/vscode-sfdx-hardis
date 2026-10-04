@@ -48,7 +48,8 @@ export default class TicketList extends SharedMixin(LightningElement) {
       const total = totals.get(label) || {
         key: label,
         label,
-        pillClass: ticket.statusPillClass || "hardis-pill hardis-status-unknown",
+        pillClass:
+          ticket.statusPillClass || "hardis-pill hardis-status-unknown",
         count: 0,
       };
       total.count += 1;
@@ -127,9 +128,7 @@ export default class TicketList extends SharedMixin(LightningElement) {
   handleOpenPullRequest(event) {
     const prNumber = parseInt(event.currentTarget.dataset.prNumber, 10);
     if (prNumber > 0) {
-      this.dispatchEvent(
-        new CustomEvent("open", { detail: { prNumber } }),
-      );
+      this.dispatchEvent(new CustomEvent("open", { detail: { prNumber } }));
     }
   }
 }

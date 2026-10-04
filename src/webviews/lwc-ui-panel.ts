@@ -30,12 +30,7 @@ export class LwcUiPanel {
    * panel title to know whether a command is still running.
    */
   public commandStatus:
-    | "pending"
-    | "running"
-    | "completed"
-    | "error"
-    | "aborted"
-    | null = null;
+    "pending" | "running" | "completed" | "error" | "aborted" | null = null;
 
   /**
    * Provisional context id of the background run a command-execution panel
@@ -895,12 +890,10 @@ export class LwcUiPanel {
     }
     try {
       // Heavy module: loaded on demand, not with every panel
-      const gitProviderModule = await import(
-        "../utils/gitProviders/gitProvider"
-      );
-      const { parsePullRequestNumberFromUrl } = await import(
-        "../utils/pullRequestUrlUtils"
-      );
+      const gitProviderModule =
+        await import("../utils/gitProviders/gitProvider");
+      const { parsePullRequestNumberFromUrl } =
+        await import("../utils/pullRequestUrlUtils");
       const gitProvider = await gitProviderModule.GitProvider.getInstance();
       const prNumber = gitProvider?.isActive
         ? parsePullRequestNumberFromUrl(url, gitProvider.repoInfo?.webUrl)
