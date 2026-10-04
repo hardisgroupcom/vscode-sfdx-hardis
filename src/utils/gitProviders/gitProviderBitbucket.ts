@@ -7,6 +7,7 @@ import {
   GoLive,
   ProviderDescription,
   PullRequest,
+  PullRequestSearchResult,
   Job,
   JobStatus,
 } from "./types";
@@ -295,6 +296,59 @@ export class GitProviderBitbucket extends GitProvider {
       Logger.log(`Error fetching PR #${number}: ${String(err)}`);
       return null;
     }
+  }
+
+  // Bitbucket never returns more than 50 Pull Requests per page
+  private static readonly SEARCH_MAX_PAGE_SIZE = 50;
+
+  /**
+   * Bitbucket filters on its side: "~" is its case-insensitive "contains". One page is read, the
+   * most recently updated first. Declined and superseded Pull Requests are left out by the query.
+   */
+  async searchPullRequests(
+    query: string,
+    options?: { limit?: number },
+  ): Promise<PullRequestSearchResult | null> {
+    if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
+      return null;
+    }
+    const limit = this.searchLimit(options);
+    const text = String(query || "").trim();
+    if (!text) {
+      return { pullRequests: [], truncated: false };
+    }
+    try {
+      const q = this.buildSearchFilter(text);
+      const response = await this.bitbucketClient.pullrequests.list({
+        workspace: this.workspace,
+        repo_slug: this.repoSlug,
+        q,
+        sort: "-updated_on",
+        pagelen: Math.min(limit, GitProviderBitbucket.SEARCH_MAX_PAGE_SIZE),
+      } as any);
+      await this.logApiCall("pullrequests.list", {
+        caller: "searchPullRequests",
+        limit,
+      });
+      const values = response?.data?.values || [];
+      return this.buildSearchResult(
+        await this.convertAndCollectJobsList(values, { withJobs: false }),
+        limit,
+      );
+    } catch (err) {
+      Logger.log(`Error searching Bitbucket Pull Requests: ${String(err)}`);
+      return { pullRequests: [], truncated: false };
+    }
+  }
+
+  /**
+   * The Bitbucket filter of a text typed by the user. The text sits inside a quoted string of the
+   * filter language: its backslashes and double quotes are escaped so it cannot close the string
+   * and add conditions of its own.
+   */
+  private buildSearchFilter(text: string): string {
+    const escaped = text.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    return `(title ~ "${escaped}" OR description ~ "${escaped}") AND (state = "OPEN" OR state = "MERGED")`;
   }
 
   async getActivePullRequestFromBranch(

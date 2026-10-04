@@ -1,0 +1,67 @@
+<template>
+    <template if:false={hasTickets}>
+        <div class="slds-align_absolute-center slds-p-around_medium">
+            <p class="slds-text-color_weak">{i18n.noTicketsFoundInPrs}</p>
+        </div>
+    </template>
+    <template if:true={hasTickets}>
+        <template if:true={hasStatusTotals}>
+            <div class="ticket-totals">
+                <template for:each={statusTotals} for:item="pill">
+                    <button type="button" key={pill.key} class="ticket-toggle" data-key={pill.key} aria-pressed={pill.pressed} onclick={handleToggleStatus}>
+                        <span class={pill.pillClass}><span class="hardis-pill-dot"></span>{pill.text}</span>
+                    </button>
+                </template>
+            </div>
+        </template>
+        <template if:true={everyTicketHidden}>
+            <div class="slds-align_absolute-center slds-p-around_medium">
+                <p class="slds-text-color_weak">{i18n.ticketsAllFiltered}</p>
+            </div>
+        </template>
+        <template if:false={everyTicketHidden}>
+            <div class="hardis-list">
+                <template for:each={rows} for:item="row">
+                    <div key={row.key} class="hardis-list-row">
+                        <div class="hardis-list-main">
+                            <div class="hardis-list-title">
+                                <template if:true={row.url}>
+                                    <button class="hardis-pr-ref" data-url={row.url} onclick={handleOpenTicket}>{row.id}</button>
+                                </template>
+                                <template if:false={row.url}>
+                                    <span>{row.id}</span>
+                                </template>
+                                <template if:true={row.subject}>
+                                    <span class="ticket-subject">{row.subject}</span>
+                                </template>
+                                <template if:true={row.notFound}>
+                                    <span class="ticket-missing">{row.notFoundLabel}</span>
+                                </template>
+                            </div>
+                            <template if:true={row.pullRequests.length}>
+                                <div class="hardis-list-meta">
+                                    <template for:each={row.pullRequests} for:item="pr">
+                                        <button key={pr.key} class="hardis-pr-ref" title={pr.title} data-pr-number={pr.number} onclick={handleOpenPullRequest}>{pr.label}</button>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="hardis-list-status">
+                            <template if:true={row.hasStatus}>
+                                <span class={row.statusPillClass}><span class="hardis-pill-dot"></span>{row.statusLabel}</span>
+                            </template>
+                        </div>
+                        <div class="hardis-list-actions">
+                            <template if:true={row.hasAuthor}>
+                                <span class="hardis-cell-flex">
+                                    <span class={row.authorAvatarClass}>{row.authorInitials}</span>
+                                    <span class="hardis-avatar-name">{row.authorLabel}</span>
+                                </span>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </template>
+    </template>
+</template>

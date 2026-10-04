@@ -6,6 +6,7 @@ import type {
   ProviderDescription,
   ProviderName,
   PullRequest,
+  PullRequestSearchResult,
   Job,
   RepoInfo,
   JobStatus,
@@ -428,6 +429,27 @@ export class GitProvider {
   }
 
   /**
+   * Searches the open and merged Pull Requests of the repository on a text typed by the user,
+   * matched against the title and the description (and the source branch where the provider
+   * allows it), whatever the case. Closed, declined and abandoned Pull Requests are left out.
+   *
+   * The results are light: no jobs, no tickets, no deployment actions. At most `options.limit`
+   * of them (20 by default).
+   *
+   * Returns null when the provider cannot search at all. An API error is not that: it is logged
+   * and answered with an empty result, never thrown.
+   */
+  async searchPullRequests(
+    _query: string,
+    _options?: { limit?: number },
+  ): Promise<PullRequestSearchResult | null> {
+    Logger.log(
+      `searchPullRequests not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
+    );
+    return null;
+  }
+
+  /**
    * Lists the "go lives" (merges/promotions into a top branch such as main/prod),
    * most recent first. Lightweight: no PR contents are loaded — use
    * listPullRequestsInGoLive to fetch the PRs of a selected go live. Powers the
@@ -519,6 +541,74 @@ export class GitProvider {
       childBranchesNames,
       goLives[0].id,
     );
+  }
+
+  // How many Pull Requests a search returns when the caller does not say
+  protected static readonly SEARCH_DEFAULT_LIMIT = 20;
+
+  /** The number of results a Pull Request search may return: `options.limit`, 20 without it. */
+  protected searchLimit(options?: { limit?: number }): number {
+    const limit = Math.floor(Number(options?.limit));
+    if (!Number.isFinite(limit) || limit < 1) {
+      return GitProvider.SEARCH_DEFAULT_LIMIT;
+    }
+    return limit;
+  }
+
+  /**
+   * True when every word of the query is found in the title, the description or the source
+   * branch of a Pull Request, whatever the case. Used by the providers that filter in the
+   * extension, and by the others to state the rule once.
+   */
+  protected pullRequestMatchesSearch(
+    query: string,
+    pullRequest: {
+      title?: string | null;
+      description?: string | null;
+      sourceBranch?: string | null;
+    },
+  ): boolean {
+    const words = String(query || "")
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(Boolean);
+    if (words.length === 0) {
+      return false;
+    }
+    const searchedText = [
+      pullRequest.title,
+      pullRequest.description,
+      pullRequest.sourceBranch,
+    ]
+      .filter(Boolean)
+      .join("\n")
+      .toLowerCase();
+    return words.every((word) => searchedText.includes(word));
+  }
+
+  /**
+   * The answer of a Pull Request search: open and merged ones only, at most `limit`, without
+   * their jobs. `jobs` and `jobsStatus` are reset so a result never looks like it was checked.
+   */
+  protected buildSearchResult(
+    pullRequests: PullRequest[],
+    limit: number,
+    truncated: boolean = false,
+  ): PullRequestSearchResult {
+    return {
+      pullRequests: pullRequests
+        .filter(
+          (pullRequest) =>
+            pullRequest.state === "open" || pullRequest.state === "merged",
+        )
+        .slice(0, limit)
+        .map((pullRequest) => ({
+          ...pullRequest,
+          jobs: [],
+          jobsStatus: "unknown" as const,
+        })),
+      truncated,
+    };
   }
 
   /**

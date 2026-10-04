@@ -704,3 +704,45 @@
     justify-content: flex-start;
   }
 }
+
+/* --- Pull Request modal: more room for its content ---------------------------
+   The container fills the panel, the header is one compact line (breadcrumb above the
+   title when the window was opened from another one), and the body takes all the height
+   that is left instead of stopping 180px short of it. */
+.slds-modal__container {
+    width: 98% !important;
+    max-width: 98vw !important;
+    height: 97vh !important;
+    max-height: 97vh !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+}
+
+.slds-modal__header {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+}
+
+.slds-modal__content {
+    max-height: none !important;
+    min-height: 0 !important;
+}
+
+.modal-breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem;
+    font-size: 0.8125rem;
+    margin-bottom: 0.125rem;
+}
+
+.modal-crumb {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.modal-crumb-sep {
+    color: var(--vscode-descriptionForeground, inherit);
+}

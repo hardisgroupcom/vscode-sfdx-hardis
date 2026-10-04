@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- DevOps Pipeline: a **Pull Requests explorer** finds any Pull Request and shows everything about it without leaving VS Code
+  - The search button of the toolbar looks up a Pull Request by number, title, branch, author or ticket, among the ones of the pipeline and on your git provider
+  - A Pull Request opens the same way from the explorer, the diagram, the Open Pull Requests tab and any place that names it, with a way back to the window you came from
+  - Its window shows where it stands in the pipeline, and a new **Workflows** tab lists its validation and deployment results
+  - The Tickets tab shows statuses as pills that filter the list
+  - A warning says so when you edit the deployment actions or test classes of a Pull Request that is not the one of your branch
+  - The window uses the whole panel
+  - Pull Request links of the Backpromote panel and of command results open the Pull Request in the DevOps Pipeline
 - Deployment actions: recover an action that failed after a merge, without running the deployment again
   - The Deployment Actions tab groups the actions by Pull Request, in the order they run, with the status of each action in the org of the branch
   - A failed action, or one stopped by a failure, can be retried, marked as done, or moved to your Pull Request to fix it

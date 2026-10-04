@@ -721,7 +721,8 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     event.stopPropagation();
     const url = event.currentTarget.dataset.url;
     if (url) {
-      window.sendMessageToVSCode({ type: "openExternal", data: { url } });
+      // The Pull Request view of the DevOps Pipeline when it can show it, the git provider otherwise
+      window.sendMessageToVSCode({ type: "openPullRequest", data: { url } });
     }
   }
 

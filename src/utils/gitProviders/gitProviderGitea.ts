@@ -1,5 +1,10 @@
 import { Octokit } from "@octokit/rest";
-import { CreateTokenOption, ProviderDescription } from "./types";
+import {
+  CreateTokenOption,
+  ProviderDescription,
+  PullRequest,
+  PullRequestSearchResult,
+} from "./types";
 import { GitProviderGitHub } from "./gitProviderGitHub";
 import { SecretsManager } from "../secretsManager";
 import { Logger } from "../../logger";
@@ -108,6 +113,69 @@ export class GitProviderGitea extends GitProviderGitHub {
         docUrl: "https://docs.gitea.com/development/api-usage",
         onlyIfPipelineConfigured: true,
       });
+    }
+  }
+
+  // The issues search does not return the branches: each result is read again, so there are few
+  private static readonly SEARCH_MAX_RESULTS = 10;
+  private static readonly SEARCH_PAGE_SIZE = 50;
+
+  /**
+   * Gitea has no GraphQL API. Its issues search takes a text and can be narrowed to Pull
+   * Requests, but answers issues: the branches come from one more call per result, which is why
+   * a search never returns more than 10 Pull Requests here.
+   */
+  async searchPullRequests(
+    query: string,
+    options?: { limit?: number },
+  ): Promise<PullRequestSearchResult | null> {
+    if (!this.gitHubClient || !this.repoInfo) {
+      return null;
+    }
+    const limit = Math.min(
+      this.searchLimit(options),
+      GitProviderGitea.SEARCH_MAX_RESULTS,
+    );
+    const text = String(query || "").trim();
+    if (!text) {
+      return { pullRequests: [], truncated: false };
+    }
+    try {
+      const { data: issues } = await this.gitHubClient.request(
+        "GET /repos/{owner}/{repo}/issues",
+        {
+          owner: this.repoInfo.owner,
+          repo: this.repoInfo.repo,
+          type: "pulls",
+          state: "all",
+          q: text,
+          limit: GitProviderGitea.SEARCH_PAGE_SIZE,
+        } as any,
+      );
+      await this.logApiCall("GET /repos/{owner}/{repo}/issues", {
+        caller: "searchPullRequests",
+        type: "pulls",
+        state: "all",
+      });
+      const numbers: number[] = (Array.isArray(issues) ? issues : [])
+        .filter(
+          (issue: any) =>
+            issue?.state === "open" || issue?.pull_request?.merged === true,
+        )
+        .map((issue: any) => Number(issue.number))
+        .filter((number: number) => Number.isInteger(number))
+        .slice(0, limit);
+      const pullRequests: PullRequest[] = [];
+      for (const number of numbers) {
+        const pullRequest = await this.getPullRequestByNumber(number);
+        if (pullRequest) {
+          pullRequests.push(pullRequest);
+        }
+      }
+      return this.buildSearchResult(pullRequests, limit);
+    } catch (err) {
+      Logger.log(`Error searching Gitea Pull Requests: ${String(err)}`);
+      return { pullRequests: [], truncated: false };
     }
   }
 }

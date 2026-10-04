@@ -203,13 +203,10 @@ export function registerShowPipeline(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showPipeline",
     async (deepLink?: any) => {
-      // Optional deep-link request, sent by the CLI at the end of hardis:work:save.
-      // Only the deployment actions focus is supported, and the payload is rebuilt
-      // here so nothing else from the WebSocket message reaches the webview.
-      const pipelineDeepLink =
-        deepLink && deepLink.focus === "deploymentActions"
-          ? { focus: "deploymentActions" }
-          : null;
+      // Optional deep-link request: the deployment actions of the current branch (sent by the
+      // CLI at the end of hardis:work:save), or one Pull Request (a Pull Request link of another
+      // panel). The payload is rebuilt here so nothing else from the message reaches the webview.
+      const pipelineDeepLink = buildPipelineDeepLink(deepLink);
       if (pipelineDeepLink) {
         Logger.log(
           `[vscode-sfdx-hardis] pipeline deep link requested for branch ${deepLink.sourceBranch || "(current)"}`,
@@ -507,8 +504,36 @@ export function registerShowPipeline(commands: Commands) {
             return;
           }
           try {
+            // A Pull Request known by its number only (lookup, reference, deep link) is read first
+            let requestedPr: PullRequest | null = data?.pullRequest
+              ? { ...data.pullRequest }
+              : null;
+            const requestedNumber = Number(data?.prNumber);
+            if (
+              !requestedPr &&
+              Number.isInteger(requestedNumber) &&
+              requestedNumber > 0
+            ) {
+              requestedPr =
+                await gitProvider.getPullRequestByNumber(requestedNumber);
+            }
+            if (!requestedPr) {
+              vscode.window.showWarningMessage(
+                t("prViewNotFound", {
+                  prLabel:
+                    pipelineProperties?.prButtonInfo?.pullRequestLabel ||
+                    "Pull Request",
+                  number: String(data?.prNumber ?? ""),
+                }),
+              );
+              panel.sendMessage({
+                type: "returnGetPrInfoForModal",
+                data: null,
+              });
+              return;
+            }
             // Get full PR details with tickets and deployment actions
-            let prList = [{ ...data.pullRequest }];
+            let prList: any[] = [requestedPr];
             prList =
               await gitProvider.completePullRequestsWithPrePostCommands(prList);
             prList = await gitProvider.completePullRequestsWithTickets(prList, {
@@ -622,6 +647,11 @@ export function registerShowPipeline(commands: Commands) {
                 }
               }
             }
+            // The deployment actions and test classes shown come from the local checkout, and an
+            // edit is written in it: the view says which branch that is, and whether it is behind
+            if (prDetails) {
+              (prDetails as any).checkout = await getCheckoutInfo();
+            }
             panel.sendMessage({
               type: "returnGetPrInfoForModal",
               data: prDetails || null,
@@ -639,6 +669,14 @@ export function registerShowPipeline(commands: Commands) {
               data: null,
             });
           }
+        }
+        // Pull Requests explorer: text search on the git provider, after the Pull Requests the
+        // panel already holds have been filtered in the webview
+        else if (type === "searchPullRequests") {
+          panel.sendMessage({
+            type: "returnSearchPullRequests",
+            data: await searchPullRequestsForLookup(data),
+          });
         }
         // Lazy-load the list of go-lives for a top branch (selector content only)
         else if (type === "loadGoLives") {
@@ -1331,6 +1369,118 @@ type PipelineInfo = {
  * Run sf hardis:project:action:list with these flags and the git provider credentials the command
  * runner also passes. Returns its JSON result, or null when the CLI cannot answer.
  */
+const PULL_REQUEST_VIEW_TABS = ["tickets", "actions", "apexTests", "workflows"];
+
+/**
+ * The deep link the webview is allowed to receive, rebuilt from what the caller sent.
+ */
+function buildPipelineDeepLink(
+  deepLink: any,
+): { focus: string; prNumber?: number; tab?: string } | null {
+  if (deepLink && deepLink.focus === "deploymentActions") {
+    return { focus: "deploymentActions" };
+  }
+  const prNumber = Number(deepLink?.prNumber);
+  if (
+    deepLink &&
+    deepLink.focus === "pullRequest" &&
+    Number.isInteger(prNumber) &&
+    prNumber > 0
+  ) {
+    return {
+      focus: "pullRequest",
+      prNumber,
+      ...(PULL_REQUEST_VIEW_TABS.includes(deepLink.tab)
+        ? { tab: deepLink.tab }
+        : {}),
+    };
+  }
+  return null;
+}
+
+/**
+ * The branch checked out in the workspace, and whether origin holds commits it does not have.
+ * Never fails: without git information the view simply shows no warning about it.
+ */
+async function getCheckoutInfo(): Promise<{
+  branch: string;
+  behindOrigin: boolean;
+}> {
+  try {
+    const git = simpleGit(getWorkspaceRoot());
+    const branch = (await git.revparse(["--abbrev-ref", "HEAD"])).trim();
+    if (!branch || branch === "HEAD") {
+      return { branch: "", behindOrigin: false };
+    }
+    // No fetch here: opening a Pull Request must stay instant. The remote-tracking ref is what
+    // the last fetch of the panel (or of the user) left.
+    const counts = (
+      await git.raw([
+        "rev-list",
+        "--left-right",
+        "--count",
+        `HEAD...origin/${branch}`,
+      ])
+    )
+      .trim()
+      .split(/\s+/);
+    const behind = Number.parseInt(counts[1] || "0", 10);
+    return { branch, behindOrigin: Number.isFinite(behind) && behind > 0 };
+  } catch (e: any) {
+    Logger.log(
+      `[vscode-sfdx-hardis] checkout status not available: ${e?.message || e}`,
+    );
+    return { branch: "", behindOrigin: false };
+  }
+}
+
+/**
+ * Text search of Pull Requests on the git provider, for the lookup of the Pull Requests explorer.
+ * supported false: the provider cannot search, the lookup then only lists what the panel holds.
+ * The request id goes back so the lookup can drop a late answer.
+ */
+async function searchPullRequestsForLookup(data: any): Promise<{
+  requestId: number;
+  supported: boolean;
+  truncated: boolean;
+  pullRequests: PullRequest[];
+}> {
+  const requestId = Number(data?.requestId) || 0;
+  const query = String(data?.query || "")
+    .trim()
+    .slice(0, 200);
+  const empty = {
+    requestId,
+    supported: true,
+    truncated: false,
+    pullRequests: [],
+  };
+  if (query.length < 3) {
+    return empty;
+  }
+  try {
+    const gitProvider = await GitProvider.getInstance();
+    if (!gitProvider) {
+      return { ...empty, supported: false };
+    }
+    const result = await gitProvider.searchPullRequests(query, { limit: 20 });
+    if (!result) {
+      return { ...empty, supported: false };
+    }
+    return {
+      requestId,
+      supported: true,
+      truncated: result.truncated === true,
+      pullRequests: result.pullRequests || [],
+    };
+  } catch (e: any) {
+    Logger.log(
+      `[vscode-sfdx-hardis] Pull Request search failed: ${e?.message || e}`,
+    );
+    return empty;
+  }
+}
+
 async function runActionListJson(
   flags: string,
   purpose: string,
@@ -1378,6 +1528,7 @@ async function runActionListJson(
 async function loadDeploymentActionStatuses(data: any): Promise<{
   statuses: Record<string, any[]> | null;
   forecast?: any;
+  workflows?: Record<string, any[]> | null;
   requestId: number;
 }> {
   const requestId = Number(data?.requestId) || 0;
@@ -1386,6 +1537,17 @@ async function loadDeploymentActionStatuses(data: any): Promise<{
     (prNumber: any) =>
       prNumber === "draft" || (Number.isInteger(prNumber) && prNumber > 0),
   );
+  // Pull Request view: the validation and deployment runs of the Pull Request and of the ones
+  // that carried it, read by the same sfdx-hardis process as the statuses
+  const workflowNumbers: number[] = (
+    Array.isArray(data?.workflowPrNumbers) ? data.workflowPrNumbers : []
+  ).filter((prNumber: any) => Number.isInteger(prNumber) && prNumber > 0);
+  const withWorkflows = workflowNumbers.length > 0;
+  for (const prNumber of workflowNumbers) {
+    if (!numbers.includes(prNumber)) {
+      numbers.push(prNumber);
+    }
+  }
   if (numbers.length === 0) {
     return { statuses: {}, requestId };
   }
@@ -1395,6 +1557,7 @@ async function loadDeploymentActionStatuses(data: any): Promise<{
     /^[\w./-]+$/.test(forecastBranch) && /^[\w./-]+$/.test(fromBranch);
   const result = await runActionListJson(
     `--pr-ids ${numbers.join(",")}` +
+      (withWorkflows ? " --with-workflows" : "") +
       (withForecast
         ? ` --forecast ${forecastBranch} --from-branch ${fromBranch}`
         : ""),
@@ -1406,12 +1569,15 @@ async function loadDeploymentActionStatuses(data: any): Promise<{
     return {
       statuses: null,
       ...(withForecast ? { forecast: null } : {}),
+      ...(withWorkflows ? { workflows: null } : {}),
       requestId,
     };
   }
   return {
     statuses: result.statuses,
     ...(withForecast ? { forecast: result.forecast || null } : {}),
+    // null with a CLI older than --with-workflows: the panel then hides its Workflows tab
+    ...(withWorkflows ? { workflows: result.workflows || null } : {}),
     requestId,
   };
 }

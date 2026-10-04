@@ -9,6 +9,7 @@ import {
   GoLive,
   ProviderDescription,
   PullRequest,
+  PullRequestSearchResult,
   Job,
   JobStatus,
 } from "./types";
@@ -317,6 +318,55 @@ export class GitProviderGitlab extends GitProvider {
     } catch (err) {
       Logger.log(`Error fetching MR !${number}: ${String(err)}`);
       return null;
+    }
+  }
+
+  /**
+   * GitLab searches the title and the description of the merge requests on its side. The request
+   * carries no state: the API takes a single one, and both the opened and the merged ones are
+   * wanted, so the closed and locked ones are dropped here.
+   */
+  async searchPullRequests(
+    query: string,
+    options?: { limit?: number },
+  ): Promise<PullRequestSearchResult | null> {
+    if (!this.gitlabClient || !this.gitlabProjectId) {
+      return null;
+    }
+    const limit = this.searchLimit(options);
+    const text = String(query || "").trim();
+    if (!text) {
+      return { pullRequests: [], truncated: false };
+    }
+    try {
+      const mergeRequests = await this.gitlabClient.MergeRequests.all({
+        projectId: this.gitlabProjectId,
+        search: text,
+        // Not in the gitbeaker types, sent to the API as it is
+        in: "title,description",
+        orderBy: "updated_at",
+        sort: "desc",
+        // Twice the limit, because the closed ones are only dropped once they are received
+        perPage: Math.min(limit * 2, 100),
+        // gitbeaker walks every page unless it is told not to
+        maxPages: 1,
+      } as any);
+      await this.logApiCall("MergeRequests.all", {
+        caller: "searchPullRequests",
+        in: "title,description",
+        limit,
+      });
+      const kept: any[] = (mergeRequests || []).filter(
+        (mergeRequest: any) =>
+          mergeRequest?.state === "opened" || mergeRequest?.state === "merged",
+      );
+      return this.buildSearchResult(
+        await this.convertAndCollectJobsList(kept, { withJobs: false }),
+        limit,
+      );
+    } catch (err) {
+      Logger.log(`Error searching GitLab Merge Requests: ${String(err)}`);
+      return { pullRequests: [], truncated: false };
     }
   }
 

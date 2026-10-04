@@ -12,6 +12,11 @@ import {
   getActionWhenPillClass,
 } from "s/deploymentActionUtils";
 import { getTicketStatusPillClass } from "s/pillUtils";
+import {
+  applyModalState,
+  buildPullRequestJourney,
+  captureModalState,
+} from "s/pullRequestUtils";
 
 // Characters an action id or a branch name may hold to be passed to a command line
 const SAFE_ACTION_ID = /^[\w .:@/+-]+$/;
@@ -83,9 +88,13 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     {
       key: "number",
       label: "#",
-      fieldName: "webUrl",
-      type: "url",
-      typeAttributes: { label: { fieldName: "number" }, target: "_blank" },
+      fieldName: "numberLabel",
+      type: "button",
+      typeAttributes: {
+        label: { fieldName: "numberLabel" },
+        name: "view_pr",
+        variant: "base",
+      },
       initialWidth: 80,
       wrapText: true,
     },
@@ -206,19 +215,43 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       {
         key: "number",
         label: "#",
-        fieldName: "number",
-        type: "text",
-        initialWidth: 60,
+        fieldName: "numberLabel",
+        type: "button",
+        typeAttributes: {
+          label: { fieldName: "numberLabel" },
+          name: "view_pr",
+          variant: "base",
+        },
+        initialWidth: 80,
         wrapText: true,
       },
+      // Number and title open the Pull Request in the panel, the last column is the way out
       {
         key: "title",
         label: this.i18n.titleLabel,
-        fieldName: "webUrl",
-        type: "url",
-        typeAttributes: { label: { fieldName: "title" }, target: "_blank" },
+        fieldName: "title",
+        type: "button",
+        typeAttributes: {
+          label: { fieldName: "title" },
+          name: "view_pr",
+          variant: "base",
+        },
         initialWidth: 300,
         wrapText: true,
+      },
+      // The one way out to the git provider. Not last: the last column is the only one that
+      // may be left without a width
+      {
+        key: "external",
+        label: "",
+        fieldName: "webUrl",
+        type: "url",
+        typeAttributes: {
+          label: { fieldName: "externalLabel" },
+          target: "_blank",
+        },
+        initialWidth: 100,
+        wrapText: false,
       },
       ...statusColumn,
       ...mergeConflictColumn,
@@ -332,9 +365,13 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return {
       key: "pullRequest",
       label: this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel,
-      fieldName: "prWebUrl",
-      type: "url",
-      typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
+      fieldName: "prLabel",
+      type: "button",
+      typeAttributes: {
+        label: { fieldName: "prLabel" },
+        name: "view_pr",
+        variant: "base",
+      },
       wrapText: true,
     };
   }
@@ -348,6 +385,21 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   warnings = [];
   showOnlyMajor = false;
   showPRModal = false;
+  // Pull Requests explorer: the modal opened by the search button, with a lookup on top
+  explorerMode = false;
+  // A Pull Request is being read for the modal that is already open
+  prViewLoading = false;
+  // Windows left to open a Pull Request, most recent last: { label, state }. Back restores one
+  // without reading anything again, so the stories ticked for a promotion are still ticked
+  @track _modalStack = [];
+  _stackPushedForRequest = false;
+  // Validation and deployment runs of the Pull Request shown, read by sfdx-hardis from its
+  // comments (null until they are known)
+  modalWorkflows = null;
+  // True when the installed sfdx-hardis cannot return the runs: the Workflows tab is hidden
+  workflowsUnavailable = false;
+  // Branch checked out in the workspace, where the actions of the Pull Request are read and written
+  modalCheckout = null;
   modalMode = "branch"; // "branch" or "singlePR"
   // Show the job status column in the PR modal only for a single PR or a "+N
   // more" group (not for a major branch's pending-promotion / go-live PRs).
@@ -821,6 +873,14 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
     const deepLink = this._pendingDeepLink;
     this._pendingDeepLink = null;
+    // A Pull Request link of another panel
+    if (deepLink.focus === "pullRequest" && deepLink.prNumber > 0) {
+      this.openPullRequestView({
+        prNumber: deepLink.prNumber,
+        tab: deepLink.tab || null,
+      });
+      return;
+    }
     if (
       deepLink.focus !== "deploymentActions" ||
       !this.currentBranchPullRequest
@@ -966,6 +1026,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         unknown: this.t("jobStatusUnknown"),
       };
       copy.jobsStatusLabel = labelMap[normalized] || labelMap.unknown;
+      copy.numberLabel = pr.number > 0 ? `#${pr.number}` : "";
+      copy.externalLabel = this.repoPlatformLabel || "Git";
       copy.statusPillClass = `hardis-pill hardis-status-${normalized}`;
       // URL for the clickable job status: prefer the CI job URL, fall back to
       // the pull request page (mirrors the diagram link behavior).
@@ -1658,6 +1720,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         if (mermaidSvg) {
           this._applyMermaidZoom(mermaidSvg);
           this._decorateMermaidNodes(mermaidSvg);
+          this._bindPullRequestPills(mermaidSvg);
           mermaidSvg.addEventListener("click", (event) => {
             if (this._suppressNextMermaidClick) {
               this._suppressNextMermaidClick = false;
@@ -1845,6 +1908,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         break;
       case "returnDeploymentActionStatuses":
         this.handleReturnDeploymentActionStatuses(data);
+        break;
+      case "returnSearchPullRequests":
+        this.handleReturnSearchPullRequests(data);
         break;
       case "deploymentActionMarkDoneResult":
         this.handleDeploymentActionMarkDoneResult(data);
@@ -2349,21 +2415,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         this._sanitizeBranchName(pullRequest.sourceBranch) === branchName,
     );
     if (pr) {
-      // Open the branch modal with a single PR so the "Pull Requests" tab shows
-      // it (with the job status column), consistent with the group node modal.
-      this._resetPromotionModalState();
-      this.modalMode = "branch";
-      this.modalBranchName = pr.sourceBranch || branchName;
-      this.showJobStatusColumn = true;
-      this.isFeaturePrModal = true;
-      this.modalIsTopBranch = false;
-      this.modalGoLives = [];
-      this.selectedGoLiveId = "";
-      this.modalGoLivePrsLoading = false;
-      this.isLoadingReleaseDetails = false;
-      this._populateModalFromPrs([pr]);
-      this.modalActiveTabValue = "prs";
-      this.showPRModal = true;
+      // The same Pull Request view as everywhere else, with its tickets, actions and runs
+      this.openPullRequestView({ pr });
       return;
     }
     // Fallback: show the (possibly empty) branch modal.
@@ -2410,6 +2463,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // feature-branch or group modal must never inherit the source list or the ticked stories of the
   // branch window that was open before it
   _resetPromotionModalState() {
+    this._modalStack = [];
+    this._stackPushedForRequest = false;
+    this.explorerMode = false;
     this.modalSourcePullRequests = [];
     this.modalSelectedPrIds = [];
     this.modalSelectedPrNumbers = [];
@@ -2588,6 +2644,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
           id: `apexTests-${pr.number || pr.id || "pr"}-${apexTestClass}`,
           prLabel: `#${pr.number || ""} - ${pr.title || ""}`,
           prWebUrl: pr.webUrl || "",
+          prNumber: pr.number,
           apexTestClass: apexTestClass,
         });
       }
@@ -2913,27 +2970,350 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
   }
 
+  // ---- Pull Request view: one entry point, a way back, the explorer ----
+
+  // Toolbar button: the modal with a lookup on top, and nothing below until a Pull Request is picked
+  handleOpenExplorer() {
+    this._resetPromotionModalState();
+    applyModalState(this, null);
+    this.modalMode = "singlePR";
+    this.explorerMode = true;
+    this.prViewLoading = false;
+    this.showPRModal = true;
+    // The lookup only exists once the modal is rendered
+    // eslint-disable-next-line @lwc/lwc/no-async-operation
+    setTimeout(() => {
+      const lookup = this.template.querySelector("s-pull-request-lookup");
+      if (lookup) {
+        lookup.focusInput();
+      }
+    }, 0);
+  }
+
+  /**
+   * Every way to open one Pull Request goes through here: the My Pull Request card, the Open Pull
+   * Requests tab, a feature branch of the diagram, the explorer, and any reference to a Pull
+   * Request inside a window.
+   * - pr: the Pull Request when the panel already holds it, else prNumber and it is read first
+   * - keepStack: opened from a window that must be there again on the way back
+   */
+  openPullRequestView({ pr = null, prNumber = null, tab = null, keepStack = false }) {
+    const number = pr?.number ?? prNumber;
+    if (!pr && !(number > 0)) {
+      return;
+    }
+    const current = this.modalPullRequests[0];
+    if (
+      this.showPRModal &&
+      this.modalMode === "singlePR" &&
+      current &&
+      current.number === number &&
+      number > 0
+    ) {
+      return;
+    }
+    this._stackPushedForRequest = false;
+    if (this.showPRModal && keepStack && this.modalPullRequests.length > 0) {
+      this._modalStack = [
+        ...this._modalStack,
+        { label: this.modalCrumbLabel, state: captureModalState(this) },
+      ];
+      this._stackPushedForRequest = true;
+    } else if (!keepStack) {
+      this._modalStack = [];
+    }
+    if (tab) {
+      this._nextModalTab = tab;
+    }
+    this.prViewLoading = this.showPRModal;
+    window.sendMessageToVSCode({
+      type: "getPrInfoForModal",
+      data: pr
+        ? { pullRequest: JSON.parse(JSON.stringify(pr)) }
+        : { prNumber: number },
+    });
+  }
+
+  // Name of the window currently shown, as the breadcrumb will call it once it is left
+  get modalCrumbLabel() {
+    if (this.modalMode === "singlePR") {
+      const pr = this.modalPullRequests[0];
+      return pr && pr.number > 0 ? `#${pr.number}` : this.modalTitle;
+    }
+    return `${this.modalTitlePrefix} ${this.modalBranchName} (${this.modalPrCount})`;
+  }
+
+  get modalHasBack() {
+    return this._modalStack.length > 0;
+  }
+
+  get modalBreadcrumb() {
+    return this._modalStack.map((entry, index) => ({
+      key: `crumb-${index}`,
+      index,
+      label: entry.label,
+      title: this.t("prViewBackTo", { label: entry.label }),
+    }));
+  }
+
+  // Back to a window of the breadcrumb, as it was left: nothing is read again
+  handleModalBack(event) {
+    const index = parseInt(event.currentTarget.dataset.index, 10);
+    const entry = this._modalStack[index];
+    if (!entry) {
+      return;
+    }
+    this._modalStack = this._modalStack.slice(0, index);
+    this._stackPushedForRequest = false;
+    this.prViewLoading = false;
+    applyModalState(this, entry.state);
+    // An answer on its way belongs to the window that was just left
+    this.actionStatusRequestId += 1;
+    if (this.actionStatusesLoading) {
+      this._requestActionStatuses();
+    }
+  }
+
+  get showExplorerLookup() {
+    return this.explorerMode && !this.modalHasBack;
+  }
+
+  // Explorer just opened: no Pull Request picked yet
+  get showExplorerEmpty() {
+    return (
+      this.explorerMode &&
+      this.modalPullRequests.length === 0 &&
+      !this.prViewLoading
+    );
+  }
+
+  get showModalTabs() {
+    return !this.showExplorerEmpty && !this.prViewLoading;
+  }
+
+  // Everything the panel already holds: the open Pull Requests and the windows of the branches
+  get lookupLoadedPullRequests() {
+    const all = [...(this.openPullRequests || [])];
+    for (const prs of this.branchPullRequestsMap.values()) {
+      all.push(...(prs || []));
+    }
+    return all;
+  }
+
+  handleLookupSearch(event) {
+    window.sendMessageToVSCode({
+      type: "searchPullRequests",
+      data: {
+        query: event.detail.query,
+        requestId: event.detail.requestId,
+      },
+    });
+  }
+
+  handleReturnSearchPullRequests(data) {
+    const lookup = this.template.querySelector("s-pull-request-lookup");
+    if (lookup && data) {
+      lookup.setRemoteResults(data.requestId, data);
+    }
+  }
+
+  handleLookupSelect(event) {
+    this.openPullRequestView({
+      pr: event.detail.pullRequest,
+      prNumber: event.detail.prNumber,
+    });
+  }
+
+  // A reference to a Pull Request inside a window (ticket, workflow run, journey step)
+  handleOpenPullRequestRef(event) {
+    this.openPullRequestView({
+      prNumber: event.detail.prNumber,
+      keepStack: true,
+    });
+  }
+
+  // Number or title of a row of the Pull Requests tab of a window
+  handleModalPrRowAction(event) {
+    const row = event.detail.row;
+    if (event.detail.action?.name !== "view_pr" || !row) {
+      return;
+    }
+    if (row.number > 0 && row.title !== undefined) {
+      this.openPullRequestView({ pr: row, keepStack: true });
+    } else if (row.prNumber > 0) {
+      this.openPullRequestView({ prNumber: row.prNumber, keepStack: true });
+    }
+  }
+
+  // Header of a group of the Deployment Actions tab
+  handleActionGroupPrClick(event) {
+    event.preventDefault();
+    const prNumber = parseInt(event.currentTarget.dataset.prNumber, 10);
+    if (prNumber > 0) {
+      this.openPullRequestView({ prNumber, keepStack: true });
+    }
+  }
+
+  // The Pull Request pills of the diagram open the Pull Request in the panel. Ctrl or Cmd click
+  // keeps opening it on the git provider.
+  _bindPullRequestPills(mermaidSvg) {
+    const byUrl = new Map();
+    for (const pr of this.lookupLoadedPullRequests) {
+      if (pr && pr.webUrl && pr.number > 0) {
+        byUrl.set(pr.webUrl, pr);
+      }
+    }
+    for (const link of mermaidSvg.querySelectorAll("a[href]")) {
+      const pr = byUrl.get(link.getAttribute("href"));
+      if (!pr) {
+        continue;
+      }
+      link.addEventListener("click", (event) => {
+        if (event.ctrlKey || event.metaKey) {
+          return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        this.openPullRequestView({ pr });
+      });
+    }
+  }
+
+  // The Pull Request of the checked out branch, or the draft of a branch without one: the only
+  // ones whose actions file belongs to the branch it is written in
+  get isOwnPullRequest() {
+    const pr = this.modalPullRequests[0];
+    if (!pr) {
+      return false;
+    }
+    return (
+      pr.number === -1 || pr.number === this.currentBranchPullRequest?.number
+    );
+  }
+
+  get showNotOwnPrNote() {
+    return this.isSinglePRMode && !this.modalIsMajorPr && !this.isOwnPullRequest;
+  }
+
+  get notOwnPrNote() {
+    const branch = this.modalCheckout?.branch || "";
+    return branch
+      ? this.t("prViewNotYourBranch", { prLabel: this.prLabel, branch })
+      : this.t("prViewNotYourBranchNoName", { prLabel: this.prLabel });
+  }
+
+  // On a story already deployed, a changed action does not run again where it is done
+  get alreadyDoneNote() {
+    const pr = this.modalPullRequests[0];
+    if (!this.showNotOwnPrNote || !pr || pr.state !== "merged") {
+      return "";
+    }
+    const entries = this.modalActionStatuses?.[String(pr.number)] || [];
+    const orgs = [
+      ...new Set(
+        entries
+          .filter((entry) => entry.status === "success")
+          .map((entry) => entry.orgBranch)
+          .filter(
+            (orgBranch) => orgBranch && orgBranch !== DEV_SANDBOXES_BRANCH,
+          ),
+      ),
+    ];
+    return orgs.length > 0
+      ? this.t("prViewAlreadyDoneIn", { orgs: orgs.join(", ") })
+      : "";
+  }
+
+  get showCheckoutBehindNote() {
+    return this.isSinglePRMode && this.modalCheckout?.behindOrigin === true;
+  }
+
+  get checkoutBehindNote() {
+    return this.t("prViewCheckoutBehind", {
+      branch: this.modalCheckout?.branch || "",
+    });
+  }
+
+  get singlePullRequest() {
+    return this.isSinglePRMode ? this.modalPullRequests[0] : null;
+  }
+
+  get singlePullRequestNumber() {
+    return this.singlePullRequest?.number;
+  }
+
+  // Where the Pull Request stands in the pipeline, from what the panel already knows
+  get modalJourney() {
+    const pr = this.singlePullRequest;
+    if (!pr) {
+      return [];
+    }
+    const windows = {};
+    for (const [branch, prs] of this.branchPullRequestsMap) {
+      windows[branch] = (prs || [])
+        .filter((item) => item.promotedAway !== true)
+        .map((item) => item.number);
+    }
+    return buildPullRequestJourney({
+      pr,
+      orgs: this.pipelineData?.orgs || [],
+      windows,
+      statuses: this.modalActionStatuses?.[String(pr.number)] || [],
+      workflows: this.modalWorkflows || [],
+    });
+  }
+
+  // The Pull Request itself, then the ones that carried it to the next branches
+  get workflowPrNumbers() {
+    const pr = this.singlePullRequest;
+    if (!pr || !(pr.number > 0)) {
+      return [];
+    }
+    const numbers = [pr.number];
+    for (const via of pr.alreadyDeployedVia || []) {
+      numbers.push(via.number);
+    }
+    if (pr.carriedByPullRequest?.number) {
+      numbers.push(pr.carriedByPullRequest.number);
+    }
+    return [...new Set(numbers.filter((number) => number > 0))];
+  }
+
+  get showWorkflowsTab() {
+    return (
+      this.isSinglePRMode &&
+      this.workflowPrNumbers.length > 0 &&
+      !this.workflowsUnavailable
+    );
+  }
+
+  get workflowsLoading() {
+    return this.modalWorkflows === null;
+  }
+
+  get modalWorkflowRuns() {
+    return this.modalWorkflows || [];
+  }
+
+  get modalWorkflowsTabLabel() {
+    return this.t("workflowsTab", { count: this.modalWorkflowRuns.length });
+  }
+
+  get showTicketPullRequests() {
+    return this.modalMode !== "singlePR";
+  }
+
+  get ticketingToolLabel() {
+    return this.ticketProviderName || "";
+  }
+
   handleClosePRModal() {
     this.showPRModal = false;
     this._resetPromotionModalState();
-    this.modalMode = "branch";
-    this.modalBranchName = "";
-    this.showJobStatusColumn = false;
-    this.isFeaturePrModal = false;
-    this.modalPullRequests = [];
-    this.modalTickets = [];
-    this.modalActions = [];
-    this.deploymentApexTestClasses = [];
-    this._deploymentApexTestClassesOriginal = [];
-    this.apexTestsMode = "view";
-    this.apexTestsByLineRows = [];
-    // Reset go-lives selector state
-    this.modalIsTopBranch = false;
-    this.modalGoLives = [];
-    this.modalGoLivesLoading = false;
-    this.modalGoLivePrsLoading = false;
-    this.isLoadingReleaseDetails = false;
-    this.selectedGoLiveId = "";
+    // Every field of the modal goes back to its default: see MODAL_STATE_DEFAULTS
+    applyModalState(this, null);
+    this.explorerMode = false;
+    this.prViewLoading = false;
     this._goLivesRequestId = null;
     this._goLivePrsRequestId = null;
   }
@@ -2946,7 +3326,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       // Find the full PR object
       const pr = this.openPullRequests.find((p) => p.id === row.id);
       if (pr) {
-        this.showSinglePRModal(pr);
+        this.openPullRequestView({ pr });
       }
     }
   }
@@ -2969,23 +3349,27 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   showSinglePRModal(pr) {
-    // Call VsCode backend to get PR info with tickets and actions
-    window.sendMessageToVSCode({
-      type: "getPrInfoForModal",
-      data: {
-        pullRequest: JSON.parse(JSON.stringify(pr)),
-      },
-    });
+    this.openPullRequestView({ pr });
   }
 
   handleReturnGetPrInfoForModal(pr) {
+    this.prViewLoading = false;
     if (!pr) {
       // The backend request failed (no git provider / error): the modal will not
       // open, so drop the tab a deep link may have requested instead of letting
       // it leak into the next successful modal open.
       this._nextModalTab = null;
+      // The window that was left for this Pull Request is still the one on screen
+      if (this._stackPushedForRequest) {
+        this._modalStack = this._modalStack.slice(0, -1);
+        this._stackPushedForRequest = false;
+      }
       return;
     }
+    this._stackPushedForRequest = false;
+    // Nothing of the window shown before (branch window, another Pull Request) must remain
+    applyModalState(this, null);
+    this.modalCheckout = pr.checkout || null;
     this.modalMode = "singlePR";
     this.modalBranchName = pr.sourceBranch || "";
     this.showJobStatusColumn = true;
@@ -3159,6 +3543,28 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
   }
 
+  // The runs of the Pull Request shown, in the order of workflowPrNumbers, each one naming the
+  // Pull Request whose comment reported it
+  _applyWorkflows(data) {
+    if (this.workflowPrNumbers.length === 0) {
+      return;
+    }
+    if (!data || !data.workflows) {
+      // No git provider token, or a sfdx-hardis older than --with-workflows
+      this.workflowsUnavailable = true;
+      this.modalWorkflows = [];
+      return;
+    }
+    this.workflowsUnavailable = false;
+    const runs = [];
+    for (const prNumber of this.workflowPrNumbers) {
+      for (const run of data.workflows[String(prNumber)] || []) {
+        runs.push({ ...run, prNumber });
+      }
+    }
+    this.modalWorkflows = runs;
+  }
+
   handleReturnDeploymentActionStatuses(data) {
     if (data?.requestId && data.requestId !== this.actionStatusRequestId) {
       return;
@@ -3173,6 +3579,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       (key) => !this.markDoneRefreshingKeys.includes(key),
     );
     this.markDoneRefreshingKeys = [];
+    this._applyWorkflows(data);
     if (!data || !data.statuses) {
       this.modalActionStatuses = null;
       return;
@@ -3996,7 +4403,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
           .filter((prNumber) => prNumber === "draft" || prNumber > 0),
       ),
     ];
-    if (prNumbers.length === 0) {
+    // One Pull Request: the same sfdx-hardis call also reads its validation and deployment runs
+    const workflowPrNumbers = this.workflowPrNumbers;
+    if (prNumbers.length === 0 && workflowPrNumbers.length === 0) {
       this.actionStatusesLoading = false;
       return;
     }
@@ -4011,6 +4420,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       type: "loadDeploymentActionStatuses",
       data: {
         prNumbers,
+        workflowPrNumbers,
         requestId: this.actionStatusRequestId,
         forecastBranch: withForecast ? this.promotionTargetBranch : "",
         fromBranch: withForecast ? this.modalBranchName : "",
@@ -4154,7 +4564,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       (row.typeCode === "run-batch" ||
         fullActionContext(row) !== "check-deployment-only");
     if (!this.modalActionsAggregated) {
-      if (runsInDevOrg) {
+      if (runsInDevOrg && this.isOwnPullRequest) {
         const lastTryFailed = ["failed", "warning"].includes(devEntry?.status);
         inlineButtons.push({
           label: lastTryFailed
@@ -4580,6 +4990,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         url: ticketData.url,
         prLabel: prLabel,
         prWebUrl: prWebUrl,
+        prs: ticketData.prs,
       });
     }
 
@@ -4603,6 +5014,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         return pr.title || this.i18n.pullRequestLabel;
       }
       return `#${pr.number} - ${pr.title || this.i18n.pullRequestLabel}`;
+    }
+    if (this.explorerMode && this.modalPullRequests.length === 0) {
+      return this.i18n.pullRequestsExplorer;
     }
     const prLabel =
       this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel;

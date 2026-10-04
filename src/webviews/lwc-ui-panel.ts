@@ -449,6 +449,9 @@ export class LwcUiPanel {
         case "openExternal":
           await this.handleOpenExternal(data.url || data);
           break;
+        case "openPullRequest":
+          await this.handleOpenPullRequest(data?.url);
+          break;
         case "openPanelDoc":
           // The user guide of this panel, or the extension overview for a
           // panel that has none yet
@@ -880,6 +883,40 @@ export class LwcUiPanel {
    * Handle external URL open request from webview
    * @param url URL to open in external browser
    */
+  /**
+   * A link to a Pull Request shown in a panel: opened in the Pull Request view of the DevOps
+   * Pipeline when it is a Pull Request of this repository and the git provider is connected,
+   * in the browser otherwise.
+   */
+  private async handleOpenPullRequest(url: string): Promise<void> {
+    if (typeof url !== "string" || url === "") {
+      return;
+    }
+    try {
+      // Heavy module: loaded on demand, not with every panel
+      const gitProviderModule =
+        await import("../utils/gitProviders/gitProvider");
+      const { parsePullRequestNumberFromUrl } =
+        await import("../utils/pullRequestUrlUtils");
+      const gitProvider = await gitProviderModule.GitProvider.getInstance();
+      const prNumber = gitProvider?.isActive
+        ? parsePullRequestNumberFromUrl(url, gitProvider.repoInfo?.webUrl)
+        : null;
+      if (prNumber) {
+        await vscode.commands.executeCommand(
+          "vscode-sfdx-hardis.showPipeline",
+          { focus: "pullRequest", prNumber },
+        );
+        return;
+      }
+    } catch (error: any) {
+      Logger.log(
+        `[vscode-sfdx-hardis] Pull Request not opened in the panel: ${error?.message || error}`,
+      );
+    }
+    await this.handleOpenExternal(url);
+  }
+
   private async handleOpenExternal(url: string): Promise<void> {
     try {
       const uri = vscode.Uri.parse(url);
@@ -1160,6 +1197,8 @@ export class LwcUiPanel {
     const needsMermaid = this.lwcId === "s-pipeline";
     const mermaidScripts = needsMermaid
       ? `<script src="${webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "out", "webviews", "mermaid.min.js"))}"></script>
+        <script src="${webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "out", "webviews", "marked.umd.js"))}"></script>
+        <script src="${webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "out", "webviews", "purify.min.js"))}"></script>
         <script>
             mermaid.initialize({
               startOnLoad: false,
