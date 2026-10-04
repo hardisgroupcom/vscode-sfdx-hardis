@@ -8,6 +8,14 @@ import { getWorkspaceRoot, listSfdxProjectPackageDirectories } from "../utils";
 import { CacheManager } from "./cache-manager";
 import { PullRequest } from "./gitProviders/types";
 import { GLOB_IGNORE_PATTERNS, normalizeGlobBase } from "./projectUtils";
+import {
+  fetchBranch,
+  listFilesAtRef,
+  originRef,
+  readFileAtRef,
+} from "./gitFileReader";
+import { isMergedPullRequest } from "./pipeline/promotionBranchUtils";
+import { getCurrentGitBranch } from "./pipeline/sfdxHardisConfig";
 
 /** Action types implemented by sfdx-hardis itself. A project custom function id is also valid. */
 export type BuiltInActionType =
@@ -87,70 +95,204 @@ export type ActionResult = {
   skippedReason?: string;
 };
 
+/** Folder of the actions files, as git names it */
+export const PR_ACTIONS_FOLDER = "scripts/actions";
+
+/** Actions file of a Pull Request, -1 being the draft of a branch that has none yet */
+export function prActionsFileName(prNumber: number): string {
+  return prNumber === -1
+    ? ".sfdx-hardis.draft.yml"
+    : `.sfdx-hardis.${prNumber}.yml`;
+}
+
+/**
+ * Deployment actions and test classes of Pull Requests. The file of the checked out branch is
+ * used when it is there, and it is the only one that can be edited. When it is missing, the file
+ * is read with git, without any checkout, from the branch that holds it: the source branch of a
+ * Pull Request not merged yet, the target branch of a merged one.
+ * `fetch` brings these branches up to date first: for one Pull Request, never for a list.
+ */
+export async function completePullRequestsWithActions(
+  pullRequests: PullRequest[],
+  options: {
+    fetch?: boolean;
+    // Injectable for unit tests, which cannot rely on a real VS Code workspace
+    workspaceRoot?: string;
+    currentBranch?: string | null;
+  } = {},
+): Promise<PullRequest[]> {
+  const root = options.workspaceRoot ?? getWorkspaceRoot();
+  const elsewhere: { pr: PullRequest; branch: string; merged: boolean }[] = [];
+  let currentBranch = options.currentBranch;
+  for (const pr of pullRequests) {
+    pr.deploymentActionsSource = "workingTree";
+    delete pr.deploymentActionsBranch;
+    pr.deploymentActions = await listPrePostCommandsForPullRequest(pr, root);
+    pr.deploymentApexTestClasses =
+      await getDeploymentApexTestClassesForPullRequest(pr, root);
+    if (
+      !pr.number ||
+      pr.number === -1 ||
+      fs.existsSync(getPrConfigFilePath(pr.number, root))
+    ) {
+      continue;
+    }
+    const merged = isMergedPullRequest(pr);
+    const branch = (merged ? pr.targetBranch : pr.sourceBranch) || "";
+    if (!branch) {
+      continue;
+    }
+    if (currentBranch === undefined) {
+      currentBranch = await getCurrentGitBranch();
+    }
+    // The checked out branch is the one that would hold the file: there is none yet
+    if (branch !== currentBranch) {
+      elsewhere.push({ pr, branch, merged });
+    }
+  }
+  if (elsewhere.length === 0) {
+    return pullRequests;
+  }
+
+  // One listing per branch, a few branches at a time: a window of merged Pull Requests reads its
+  // target branch once, whatever their number
+  const listings = new Map<string, Set<string> | null>();
+  const branches = Array.from(new Set(elsewhere.map((entry) => entry.branch)));
+  for (let i = 0; i < branches.length; i += BRANCH_READ_BATCH_SIZE) {
+    await Promise.all(
+      branches.slice(i, i + BRANCH_READ_BATCH_SIZE).map(async (branch) => {
+        if (options.fetch) {
+          await fetchBranch(branch, undefined, root);
+        }
+        listings.set(
+          branch,
+          await listFilesAtRef(originRef(branch), PR_ACTIONS_FOLDER, root),
+        );
+      }),
+    );
+  }
+
+  const readFromBranch = async ({
+    pr,
+    branch,
+    merged,
+  }: (typeof elsewhere)[number]) => {
+    const files = listings.get(branch);
+    const fileName = prActionsFileName(pr.number as number);
+    if (!files) {
+      // A merged Pull Request whose target is not known here has nothing more to say than
+      // before. One still open whose branch is missing (a fork) cannot be read.
+      if (!merged) {
+        pr.deploymentActionsSource = "unreadable";
+      }
+      return;
+    }
+    if (!files.has(fileName)) {
+      // Open: its branch has no actions, and is still the place to add some
+      if (!merged) {
+        pr.deploymentActionsSource = "branch";
+        pr.deploymentActionsBranch = branch;
+      }
+      return;
+    }
+    const content = await readFileAtRef(
+      originRef(branch),
+      `${PR_ACTIONS_FOLDER}/${fileName}`,
+      root,
+    );
+    if (content === null) {
+      pr.deploymentActionsSource = "unreadable";
+      return;
+    }
+    pr.deploymentActionsSource = "branch";
+    pr.deploymentActionsBranch = branch;
+    try {
+      const parsed = parsePrActionsFile(content, pr);
+      pr.deploymentActions = parsed.commands;
+      pr.deploymentApexTestClasses = parsed.testClasses;
+    } catch (e) {
+      console.error(
+        `Error while parsing ${fileName} of ${branch}: ${(e as Error).message}`,
+      );
+    }
+  };
+  for (let i = 0; i < elsewhere.length; i += BRANCH_READ_BATCH_SIZE) {
+    await Promise.all(
+      elsewhere.slice(i, i + BRANCH_READ_BATCH_SIZE).map(readFromBranch),
+    );
+  }
+  return pullRequests;
+}
+
 export async function listPrePostCommandsForPullRequest(
   pr: PullRequest | undefined,
   // Injectable for unit tests, which cannot rely on a real VS Code workspace
   workspaceRootOverride?: string,
 ): Promise<PrePostCommand[]> {
-  const commands: PrePostCommand[] = [];
   if (!pr || !pr.number) {
-    return commands;
+    return [];
   }
   // Check if there is a .sfdx-hardis.PULL_REQUEST_ID.yml file in the PR
-  const workspaceRoot = workspaceRootOverride ?? getWorkspaceRoot();
-  const fileName =
-    pr.number === -1
-      ? ".sfdx-hardis.draft.yml"
-      : `.sfdx-hardis.${pr.number}.yml`;
-  const prConfigFileName = path.join(
-    workspaceRoot,
-    "scripts",
-    "actions",
-    fileName,
+  const prConfigFileName = getPrConfigFilePath(
+    pr.number,
+    workspaceRootOverride,
   );
   if (!fs.existsSync(prConfigFileName)) {
-    return commands;
+    return [];
   }
   try {
     const prConfig = await fs.promises.readFile(prConfigFileName, "utf8");
-    const prConfigParsed = yaml.load(prConfig) as any;
-    if (prConfigParsed) {
-      // Extract commandsPreDeploy
-      if (
-        prConfigParsed.commandsPreDeploy &&
-        Array.isArray(prConfigParsed.commandsPreDeploy)
-      ) {
-        const preDeployCommands =
-          prConfigParsed.commandsPreDeploy as PrePostCommand[];
-        for (const cmd of preDeployCommands) {
-          handleDefaultAttributes(cmd);
-          cmd.pullRequest = removePrCircularReferences(pr);
-          cmd.when = "pre-deploy";
-          commands.push(cmd);
-        }
-      }
-      // Extract commandsPostDeploy
-      if (
-        prConfigParsed.commandsPostDeploy &&
-        Array.isArray(prConfigParsed.commandsPostDeploy)
-      ) {
-        const postDeployCommands =
-          prConfigParsed.commandsPostDeploy as PrePostCommand[];
-        for (const cmd of postDeployCommands) {
-          handleDefaultAttributes(cmd);
-          cmd.pullRequest = removePrCircularReferences(pr);
-          cmd.when = "post-deploy";
-          commands.push(cmd);
-        }
-      }
-    }
+    return parsePrActionsFile(prConfig, pr).commands;
   } catch (e) {
     console.error(
       `Error while parsing ${prConfigFileName} file: ${(e as Error).message}`,
     );
   }
+  return [];
+}
 
-  return commands;
+const BRANCH_READ_BATCH_SIZE = 8;
+
+/** Actions and test classes declared by the content of an actions file */
+function parsePrActionsFile(
+  content: string,
+  pr: PullRequest,
+): { commands: PrePostCommand[]; testClasses: string[] } {
+  const commands: PrePostCommand[] = [];
+  const prConfigParsed = yaml.load(content) as any;
+  if (!prConfigParsed) {
+    return { commands, testClasses: [] };
+  }
+  const lists: [string, "pre-deploy" | "post-deploy"][] = [
+    ["commandsPreDeploy", "pre-deploy"],
+    ["commandsPostDeploy", "post-deploy"],
+  ];
+  for (const [key, when] of lists) {
+    if (!Array.isArray(prConfigParsed[key])) {
+      continue;
+    }
+    for (const cmd of prConfigParsed[key] as PrePostCommand[]) {
+      handleDefaultAttributes(cmd);
+      cmd.pullRequest = removePrCircularReferences(pr);
+      cmd.when = when;
+      commands.push(cmd);
+    }
+  }
+  return {
+    commands,
+    testClasses: normalizeTestClassNames(
+      prConfigParsed.deploymentApexTestClasses,
+    ),
+  };
+}
+
+function normalizeTestClassNames(raw: unknown): string[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  return raw
+    .map((v: any) => String(v || "").trim())
+    .filter((v: string) => v.length > 0);
 }
 
 function handleDefaultAttributes(cmd: PrePostCommand): void {
@@ -178,9 +320,12 @@ function getPrConfigFilePath(
   workspaceRootOverride?: string,
 ): string {
   const workspaceRoot = workspaceRootOverride ?? getWorkspaceRoot();
-  const fileName =
-    prNumber === -1 ? ".sfdx-hardis.draft.yml" : `.sfdx-hardis.${prNumber}.yml`;
-  return path.join(workspaceRoot, "scripts", "actions", fileName);
+  return path.join(
+    workspaceRoot,
+    "scripts",
+    "actions",
+    prActionsFileName(prNumber),
+  );
 }
 
 // Helper function to load PR config file
@@ -325,20 +470,19 @@ export async function savePrePostCommand(
 
 export async function getDeploymentApexTestClassesForPullRequest(
   pr: PullRequest | undefined,
+  // Injectable for unit tests, which cannot rely on a real VS Code workspace
+  workspaceRootOverride?: string,
 ): Promise<string[]> {
   if (!pr || !pr.number) {
     return [];
   }
 
-  const prConfigFileName = getPrConfigFilePath(pr.number);
+  const prConfigFileName = getPrConfigFilePath(
+    pr.number,
+    workspaceRootOverride,
+  );
   const prConfigParsed = await loadPrConfig(prConfigFileName);
-  const raw = prConfigParsed?.deploymentApexTestClasses;
-  if (!Array.isArray(raw)) {
-    return [];
-  }
-  return raw
-    .map((v: any) => String(v || "").trim())
-    .filter((v: string) => v.length > 0);
+  return normalizeTestClassNames(prConfigParsed?.deploymentApexTestClasses);
 }
 
 export async function saveDeploymentApexTestClasses(

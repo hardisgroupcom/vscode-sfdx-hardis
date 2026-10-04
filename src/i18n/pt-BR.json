@@ -2009,6 +2009,8 @@
   "prStateClosed": "Fechada",
   "prStateMerged": "Merged",
   "prStateOpen": "Aberta",
+  "prViewActionsFromBranch": "Lido de {{branch}}. Faça checkout dessa branch para fazer alterações.",
+  "prViewActionsUnreadable": "As ações de deploy e as classes de teste desta {{prLabel}} não podem ser lidas daqui: a branch dela não está neste repositório.",
   "prViewAlreadyDoneIn": "Já feito em {{orgs}}: uma ação alterada não é executada novamente lá.",
   "prViewBackTo": "Voltar para {{label}}",
   "prViewBreadcrumb": "Janelas abertas antes desta",

@@ -23,10 +23,7 @@ import { repositoryKeyFromRemoteUrl } from "../pullRequestDescriptionCache";
 import { SecretsManager } from "../secretsManager";
 import { TicketProvider } from "../ticketProviders/ticketProvider";
 import { Ticket } from "../ticketProviders/types";
-import {
-  getDeploymentApexTestClassesForPullRequest,
-  listPrePostCommandsForPullRequest,
-} from "../prePostCommandsUtils";
+import { completePullRequestsWithActions } from "../prePostCommandsUtils";
 import path from "path";
 import * as fs from "fs";
 
@@ -770,14 +767,9 @@ export class GitProvider {
 
   async completePullRequestsWithPrePostCommands(
     pullRequests: PullRequest[],
+    options: { fetch?: boolean } = {},
   ): Promise<PullRequest[]> {
-    for (const pr of pullRequests) {
-      const prePostCommands = await listPrePostCommandsForPullRequest(pr);
-      pr.deploymentActions = prePostCommands;
-      pr.deploymentApexTestClasses =
-        await getDeploymentApexTestClassesForPullRequest(pr);
-    }
-    return pullRequests;
+    return completePullRequestsWithActions(pullRequests, options);
   }
 
   /**

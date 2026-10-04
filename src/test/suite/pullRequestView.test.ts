@@ -978,6 +978,89 @@ suite("Pull Request view", () => {
       );
     });
 
+    test("actions read from another branch cannot be changed from the window", () => {
+      const view = (source: string | undefined, extra: any = {}) => {
+        const instance = new Function(
+          `return {
+            ${extractMember(js, "get modalActionsFromBranch()")},
+            ${extractMember(js, "get modalActionsReadOnly()")},
+            ${extractMember(js, "get showAddActionButton()")},
+            ${extractMember(js, "get canEditApexTestsOfPr()")},
+            ${extractMember(js, "get actionsFromBranchNote()")}
+          };`,
+        )();
+        return Object.assign(instance, {
+          modalMode: "singlePR",
+          modalIsMajorPr: false,
+          modalActionsAggregated: false,
+          prLabel: "Pull Request",
+          modalPullRequests: [
+            {
+              number: 505,
+              deploymentActionsSource: source,
+              deploymentActionsBranch: "feature/story",
+            },
+          ],
+          t: (key: string, vars: any) =>
+            `${key}:${vars.branch || vars.prLabel}`,
+          ...extra,
+        });
+      };
+      // The file of the checked out branch, or a Pull Request loaded before this field existed
+      for (const source of ["workingTree", undefined]) {
+        assert.strictEqual(view(source).modalActionsFromBranch, false);
+        assert.strictEqual(view(source).showAddActionButton, true);
+        assert.strictEqual(view(source).canEditApexTestsOfPr, true);
+        assert.strictEqual(view(source).modalActionsReadOnly, false);
+      }
+      const fromBranch = view("branch");
+      assert.strictEqual(fromBranch.showAddActionButton, false);
+      assert.strictEqual(fromBranch.canEditApexTestsOfPr, false);
+      assert.strictEqual(fromBranch.modalActionsReadOnly, true);
+      assert.strictEqual(
+        fromBranch.actionsFromBranchNote,
+        "prViewActionsFromBranch:feature/story",
+      );
+      assert.strictEqual(
+        view("unreadable").actionsFromBranchNote,
+        "prViewActionsUnreadable:Pull Request",
+      );
+      assert.strictEqual(view("unreadable").showAddActionButton, false);
+      // A branch window is not concerned: its rows were already read-only
+      assert.strictEqual(
+        view("branch", { modalMode: "branch" }).modalActionsFromBranch,
+        false,
+      );
+      // The note is on both tabs, the action dialog opens read-only, and no row offers to
+      // delete, or to run through sfdx-hardis an action the checked out branch does not hold
+      assert.strictEqual(
+        (html.match(/if:true=\{modalActionsFromBranch\}/g) || []).length,
+        2,
+      );
+      assert.match(html, /read-only=\{modalActionsReadOnly\}/);
+      assert.match(
+        html,
+        /if:true=\{canEditApexTestsOfPr\}>\s*<lightning-button[\s\S]*?onclick=\{handleEditApexTests\}/,
+      );
+      assert.match(js, /if \(!this\.modalActionsReadOnly\) \{/);
+      // In any window, a row read from another branch offers nothing that goes through
+      // sfdx-hardis with its definition: run, retry, move, record ahead or in another org
+      assert.match(
+        js,
+        /outOfCheckout: \["branch", "unreadable"\]\.includes\(\s*pr\.deploymentActionsSource,?\s*\)/,
+      );
+      assert.match(js, /const runnable =\s*!row\.outOfCheckout &&/);
+      assert.match(js, /myPrNumber !== row\.prNumber && !row\.outOfCheckout/);
+      assert.strictEqual(
+        (js.match(/row\.prNumber > 0 && !row\.outOfCheckout/g) || []).length,
+        2,
+      );
+      assert.match(
+        js,
+        /if \(row\.outOfCheckout\) \{[\s\S]{0,160}\} else if \(forecast\.forecast === "waiting" \|\| busy\)/,
+      );
+    });
+
     test("the description is shown without the links to the sfdx-hardis comments", () => {
       const view = new Function(
         `return { ${extractMember(js, "get singlePullRequestDescription()")} };`,

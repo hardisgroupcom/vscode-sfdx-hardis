@@ -143,6 +143,13 @@ export type PullRequest = {
 
   deploymentActions?: PrePostCommand[]; // pre/post deployment commands associated with the PR
 
+  // Where the actions and test classes were read: the checked out branch ("workingTree", the only
+  // one that can be edited), another branch read with git ("branch"), or nowhere because the
+  // branch of the Pull Request is not in the local repository ("unreadable")
+  deploymentActionsSource?: "workingTree" | "branch" | "unreadable";
+  // The branch they were read from, when it is not the checked out one
+  deploymentActionsBranch?: string;
+
   // Optional list of Apex Test Classes to run during deployments (stored in scripts/actions/.sfdx-hardis.<PR>.yml)
   deploymentApexTestClasses?: string[];
 

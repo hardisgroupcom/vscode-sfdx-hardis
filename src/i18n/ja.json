@@ -2009,6 +2009,8 @@
   "prStateClosed": "クローズ",
   "prStateMerged": "マージ済み",
   "prStateOpen": "オープン",
+  "prViewActionsFromBranch": "{{branch}} から読み込みました。変更するには、その branch をチェックアウトしてください。",
+  "prViewActionsUnreadable": "この {{prLabel}} のデプロイアクションとテストクラスはここからは読み込めません。その branch がこのリポジトリにありません。",
   "prViewAlreadyDoneIn": "{{orgs}} では実行済みです。変更されたアクションはそこでは再実行されません。",
   "prViewBackTo": "{{label}} に戻る",
   "prViewBreadcrumb": "これより前に開いたウィンドウ",

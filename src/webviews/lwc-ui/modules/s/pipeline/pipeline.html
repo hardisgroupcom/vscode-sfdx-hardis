@@ -511,6 +511,9 @@
                                     ></lightning-button>
                                 </div>
                             </template>
+                            <template if:true={modalActionsFromBranch}>
+                                <div class="hardis-note slds-m-bottom_small">{actionsFromBranchNote}</div>
+                            </template>
                             <template if:true={showMajorPrActionsHint}>
                                 <div class="hardis-note slds-m-bottom_small">{majorPrActionsHint}</div>
                             </template>
@@ -653,17 +656,22 @@
                                             <p>{notOwnPrNote}</p>
                                         </div>
                                     </template>
+                                    <template if:true={modalActionsFromBranch}>
+                                        <div class="hardis-note slds-m-bottom_small">{actionsFromBranchNote}</div>
+                                    </template>
                                     <template if:true={canEditApexTestsInModal}>
                                         <template if:true={isApexTestsViewMode}>
                                             <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_small">
                                                 <div class="slds-text-body_small">
                                                     {apexTestsConfiguredForPrMsg}
                                                 </div>
-                                                <lightning-button
-                                                    variant="neutral"
-                                                    label={i18n.edit}
-                                                    onclick={handleEditApexTests}
-                                                ></lightning-button>
+                                                <template if:true={canEditApexTestsOfPr}>
+                                                    <lightning-button
+                                                        variant="neutral"
+                                                        label={i18n.edit}
+                                                        onclick={handleEditApexTests}
+                                                    ></lightning-button>
+                                                </template>
                                             </div>
 
                                             <template if:true={hasSelectedApexTests}>
@@ -804,7 +812,7 @@
         <s-deployment-action
             action={currentDeploymentAction}
             is-edit-mode={isDeploymentActionEditMode}
-            read-only={modalActionsAggregated}
+            read-only={modalActionsReadOnly}
             apex-scripts={projectApexScripts}
             custom-functions={customFunctions}
             sfdmu-workspaces={projectSfdmuWorkspaces}

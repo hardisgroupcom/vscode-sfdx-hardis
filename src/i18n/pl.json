@@ -2009,6 +2009,8 @@
   "prStateClosed": "Zamknięty",
   "prStateMerged": "Zmergowany",
   "prStateOpen": "Otwarty",
+  "prViewActionsFromBranch": "Odczytano z {{branch}}. Aby wprowadzić zmiany, należy przełączyć się na tę branch.",
+  "prViewActionsUnreadable": "Akcji wdrożenia i klas testowych tego {{prLabel}} nie można odczytać z tego miejsca: jego branch nie ma w tym repozytorium.",
   "prViewAlreadyDoneIn": "Już wykonano w {{orgs}}: zmieniona akcja nie zostanie tam uruchomiona ponownie.",
   "prViewBackTo": "Wróć do {{label}}",
   "prViewBreadcrumb": "Okna otwarte przed tym oknem",
