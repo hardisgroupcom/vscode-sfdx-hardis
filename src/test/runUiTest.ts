@@ -1,9 +1,10 @@
+import * as net from "net";
 import * as path from "path";
 import * as fs from "fs";
 import * as os from "os";
 import { execSync } from "child_process";
 
-import { runTests } from "@vscode/test-electron";
+import { downloadAndUnzipVSCode, runTests } from "@vscode/test-electron";
 import * as yaml from "js-yaml";
 
 /**
@@ -517,12 +518,52 @@ async function main() {
     );
   }
 
+  // Documentation screenshots drive the window through the Chrome DevTools Protocol (see
+  // src/test/ui/cdpWindow.ts): clicks and captures go to the page, never to the desktop
+  // cspell:ignore backgrounding
+
+  const cdpPort = docScreenshots ? await findFreePort() : 0;
+
+  // The window itself is another matter: started the usual way, it opens in front of whoever is
+  // working on the machine and takes the focus, at every run. On Windows it is created on a
+  // desktop of its own instead (scripts/hidden-desktop): it is never drawn on the desktop in
+  // use, and the page still renders. SFDX_HARDIS_UI_VISIBLE=true brings the window back, to
+  // watch a run. Not in CI, which has no interactive desktop to protect, and not for the lab
+  // driver, which opens browser windows somebody has to see.
+  const hiddenDesktop =
+    process.platform === "win32" &&
+    !process.env.CI &&
+    !labDriver &&
+    process.env.SFDX_HARDIS_UI_VISIBLE !== "true";
+  let vscodeExecutablePath: string | undefined;
+  if (hiddenDesktop) {
+    process.env.SFDX_HARDIS_UI_CODE_EXE = await downloadAndUnzipVSCode();
+    vscodeExecutablePath = path.join(
+      extensionDevelopmentPath,
+      "scripts",
+      "hidden-desktop",
+      "code-on-hidden-desktop.cmd",
+    );
+  }
+
   try {
     await runTests({
+      ...(vscodeExecutablePath ? { vscodeExecutablePath } : {}),
       extensionDevelopmentPath,
       extensionTestsPath,
       launchArgs: [
         workspaceDir,
+        ...(cdpPort ? [`--remote-debugging-port=${cdpPort}`] : []),
+        ...(cdpPort || hiddenDesktop
+          ? [
+              // A window that is covered, in the background or on another desktop must keep
+              // rendering and running its timers
+              "--disable-renderer-backgrounding",
+              "--disable-background-timer-throttling",
+              "--disable-backgrounding-occluded-windows",
+              "--disable-features=CalculateNativeWinOcclusion",
+            ]
+          : []),
         // Documentation screenshots need the Salesforce Extension Pack to look
         // installed (Setup panel), so they load a dedicated extensions folder
         // holding a stub of it instead of disabling extensions altogether.
@@ -541,6 +582,7 @@ async function main() {
         `--user-data-dir=${userDataDir}`,
       ],
       extensionTestsEnv: {
+        ...(cdpPort ? { SFDX_HARDIS_UI_CDP_PORT: String(cdpPort) } : {}),
         // The lab driver, like the perf gate, keeps the actual `sf` on the
         // PATH: it walks the course against real orgs, so a mock would prove
         // nothing. The CI markers go the same way, for the same reason.
@@ -648,3 +690,17 @@ async function main() {
 }
 
 main();
+
+/** A TCP port nothing listens on, for the debugging port of the VS Code window. */
+function findFreePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.unref();
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      const port = typeof address === "object" && address ? address.port : 0;
+      server.close(() => resolve(port));
+    });
+  });
+}

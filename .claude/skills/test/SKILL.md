@@ -31,6 +31,35 @@ Tests require a VS Code instance (uses `@vscode/test-electron`). On Linux CI, te
 
 **`yarn test:ui` build order is not optional**: `yarn dev` produces the webview bundle and assets, `yarn compile` produces `out/extension.js` and `out/test`. Running `test:ui` after only one of them tests a stale build.
 
+### Seeing what a panel really renders (LWC included)
+
+The webview DOM is not reachable from the extension host, so `yarn test:ui` only proves the
+extension side of a panel. To check the rendering itself, use the screenshot harness and read the
+image:
+
+```bash
+yarn dev && yarn compile
+SFDX_HARDIS_DOC_SCREENSHOTS_DIR=C:/tmp/my-shots yarn screenshots pipeline-pr-view
+```
+
+- **On Windows it shows no window; elsewhere it does.** VS Code is driven through the Chrome
+  DevTools Protocol (`src/test/ui/cdpWindow.ts`): no real mouse, no keys. On Windows, outside CI,
+  `runUiTest.ts` also starts it on a desktop of its own (`scripts/hidden-desktop`), so no window
+  is drawn on the user's desktop and nothing takes the focus: `yarn screenshots` and
+  `yarn test:ui` can run in the background there. On macOS and Linux a window opens in front of
+  the user at every run: ask first. Never add a step that moves the real pointer, sends keys to a
+  window or looks a window up by its title.
+- Pass an **absolute** output folder and the **gate** names you need
+  (`grep -n "shouldTake(" src/test/ui/docScreenshots.test.ts`).
+- Prefer a **deep link** to a click: `{ focus: "pullRequest", prNumber: 128, tab: "validation" }`
+  or `{ focus: "explorer" }` open a state of the DevOps Pipeline with no coordinate. Add one when
+  a state has none, rather than a new `click(x, y)`.
+- `click(x, y)` takes the pixels of a capture (1920x982). A layout change moves them: open the
+  capture, read the new position, and check the next capture shows what the click was for.
+- A regular UI test can serve the same fixtures as the screenshots: set
+  `SFDX_HARDIS_MOCK_GIT_PROVIDER_FILE` and `SFDX_HARDIS_MOCK_TICKET_PROVIDER_FILE` in
+  `process.env`, then reset the providers (`src/test/ui/pullRequestView.test.ts`).
+
 ### Quick build verification
 Even without running the full test suite, verify changes compile and lint cleanly:
 ```bash

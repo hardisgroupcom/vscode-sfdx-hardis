@@ -1,0 +1,59 @@
+<template>
+    <div class="lookup">
+        <div class="slds-form-element__control slds-input-has-icon slds-input-has-icon_left">
+            <lightning-icon class="slds-input__icon slds-input__icon_left" icon-name="utility:search" size="x-small"></lightning-icon>
+            <input
+                type="text"
+                class="slds-input"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded={showDropdown}
+                aria-label={i18n.pullRequestsExplorer}
+                autocomplete="off"
+                spellcheck="false"
+                placeholder={placeholder}
+                value={query}
+                oninput={handleInput}
+                onfocus={handleFocus}
+                onblur={handleBlur}
+                onkeydown={handleKeyDown}
+            />
+        </div>
+        <template if:true={showDropdown}>
+            <div class="lookup-dropdown" role="listbox">
+                <template for:each={options} for:item="option">
+                    <div
+                        key={option.key}
+                        class={option.rowClass}
+                        role="option"
+                        aria-selected={option.selected}
+                        data-index={option.index}
+                        onmousedown={handleOptionMouseDown}
+                        onclick={handleOptionClick}
+                    >
+                        <span class="lookup-number">{option.numberLabel}</span>
+                        <span class="lookup-title">{option.title}</span>
+                        <template if:true={option.branch}>
+                            <span class="hardis-branch-chip">{option.branch}</span>
+                        </template>
+                        <template if:true={option.stateLabel}>
+                            <span class={option.pillClass}><span class="hardis-pill-dot"></span>{option.stateLabel}</span>
+                        </template>
+                    </div>
+                </template>
+                <template if:true={remoteLoading}>
+                    <div class="lookup-info">{searchingLabel}</div>
+                </template>
+                <template if:true={showNoResult}>
+                    <div class="lookup-info">{i18n.prLookupNoResult}</div>
+                </template>
+                <template if:true={showLoadedOnly}>
+                    <div class="lookup-info">{loadedOnlyLabel}</div>
+                </template>
+                <template if:true={remoteTruncated}>
+                    <div class="lookup-info">{truncatedLabel}</div>
+                </template>
+            </div>
+        </template>
+    </div>
+</template>

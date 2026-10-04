@@ -12,6 +12,7 @@ getConfig(layer) returns:
 
 import { getText } from "../httpUtils";
 import * as c from "../ansiColors";
+import * as vscode from "vscode";
 import { cosmiconfig } from "cosmiconfig";
 import * as fs from "fs";
 import * as yaml from "js-yaml";
@@ -131,6 +132,23 @@ export const setConfig = async (
  */
 const LAST_GOOD_CONFIGS: Map<string, any> = new Map();
 
+/**
+ * What was last said about each set of files that cannot be read. The configuration is read many
+ * times a minute: the error is shown once, and again when it changes or after the file was fixed
+ * and broke again.
+ */
+const REPORTED_UNREADABLE_CONFIGS: Map<string, string> = new Map();
+
+// A configuration that cannot be read silently turns off whatever it enables (promotion
+// branches, test classes per Pull Request...): the user is told, with the file and the reason
+function reportUnreadableConfig(cacheKey: string, message: string): void {
+  if (REPORTED_UNREADABLE_CONFIGS.get(cacheKey) === message) {
+    return;
+  }
+  REPORTED_UNREADABLE_CONFIGS.set(cacheKey, message);
+  void vscode.window.showErrorMessage(message);
+}
+
 /** Configuration files holding git conflict markers, among the ones that were searched */
 function conflictedConfigFiles(searchPlaces: string[]): string[] {
   const workspaceRoot = getWorkspaceRoot();
@@ -165,6 +183,7 @@ async function loadFromConfigFile(searchPlaces: string[]): Promise<any> {
     // A shallow copy: getConfig merges the layers into the object it gets back, and what is
     // memorized here must not collect the keys of the layers above it
     LAST_GOOD_CONFIGS.set(cacheKey, Object.assign({}, config));
+    REPORTED_UNREADABLE_CONFIGS.delete(cacheKey);
     return config;
   } catch (e: any) {
     const conflictedFiles = conflictedConfigFiles(searchPlaces);
@@ -173,9 +192,17 @@ async function loadFromConfigFile(searchPlaces: string[]): Promise<any> {
         ? t("configFileConflictMarkers", { file: conflictedFiles.join(", ") })
         : e?.message || String(e);
     if (LAST_GOOD_CONFIGS.has(cacheKey)) {
-      Logger.log(t("configFileUnreadableUsingPrevious", { message: detail }));
+      const usingPrevious = t("configFileUnreadableUsingPrevious", {
+        message: detail,
+      });
+      Logger.log(usingPrevious);
+      reportUnreadableConfig(cacheKey, usingPrevious);
       return Object.assign({}, LAST_GOOD_CONFIGS.get(cacheKey));
     }
+    reportUnreadableConfig(
+      cacheKey,
+      t("configFileUnreadable", { message: detail }),
+    );
     throw new Error(
       "[sfdx-hardis] Unable to read configuration file.\n" + detail,
       { cause: e },

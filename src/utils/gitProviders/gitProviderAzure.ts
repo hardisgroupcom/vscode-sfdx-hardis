@@ -5,6 +5,7 @@ import {
   GoLive,
   ProviderDescription,
   PullRequest,
+  PullRequestSearchResult,
   Job,
   JobStatus,
 } from "./types";
@@ -311,6 +312,100 @@ export class GitProviderAzure extends GitProvider {
       Logger.log(`Error fetching PR ${number}: ${String(err)}`);
       return null;
     }
+  }
+
+  // Azure DevOps has no text search of Pull Requests: the most recent ones are listed, then
+  // filtered here. 3 pages of 100 keep a keystroke cheap on a repository with a long history.
+  private static readonly SEARCH_PAGE_SIZE = 100;
+  private static readonly SEARCH_MAX_PAGES = 3;
+  // The listed Pull Requests are kept this long, so that the next keystrokes do not page again
+  private static readonly SEARCH_LIST_MAX_AGE_MS = 60 * 1000;
+  private searchListCache?: {
+    fetchedAt: number;
+    pullRequests: Promise<GitPullRequest[]>;
+  };
+
+  /**
+   * Filters the most recent Pull Requests of the repository on their title, description and
+   * source branch. `truncated` says the repository has more Pull Requests than the pages read,
+   * so an older one can be missing from the answer.
+   *
+   * The list API cuts descriptions at 400 characters. They are not read again one by one: a
+   * search that misses a word far down a description is cheaper than one call per Pull Request.
+   */
+  async searchPullRequests(
+    query: string,
+    options?: { limit?: number },
+  ): Promise<PullRequestSearchResult | null> {
+    if (!this.repoInfo || !this.gitApi) {
+      return null;
+    }
+    const limit = this.searchLimit(options);
+    const text = String(query || "").trim();
+    if (!text) {
+      return { pullRequests: [], truncated: false };
+    }
+    try {
+      const listed = await this.listPullRequestsForSearch();
+      const truncated =
+        listed.length >=
+        GitProviderAzure.SEARCH_PAGE_SIZE * GitProviderAzure.SEARCH_MAX_PAGES;
+      const matching = listed
+        .filter(
+          (rawPr) =>
+            rawPr.status === PullRequestStatus.Active ||
+            rawPr.status === PullRequestStatus.Completed,
+        )
+        .filter((rawPr) =>
+          this.pullRequestMatchesSearch(text, {
+            title: rawPr.title,
+            description: rawPr.description,
+            sourceBranch: (rawPr.sourceRefName || "").replace(
+              /^refs\/heads\//,
+              "",
+            ),
+          }),
+        )
+        .map((rawPr) => {
+          const pullRequest = this.convertToPullRequest(rawPr, "");
+          // A completed Pull Request is a merged one: Azure DevOps closes without merging by
+          // abandoning, and those are already left out
+          if (rawPr.status === PullRequestStatus.Completed) {
+            pullRequest.state = "merged";
+          }
+          return pullRequest;
+        });
+      return this.buildSearchResult(matching, limit, truncated);
+    } catch (err) {
+      // Nothing is kept from a failed listing: the next keystroke asks again
+      this.searchListCache = undefined;
+      Logger.log(`Error searching Azure DevOps Pull Requests: ${String(err)}`);
+      return { pullRequests: [], truncated: false };
+    }
+  }
+
+  /**
+   * The Pull Requests a search filters, whatever their status, most recent first. The promise is
+   * kept rather than its result, so that two keystrokes in a row share one listing.
+   */
+  private listPullRequestsForSearch(): Promise<GitPullRequest[]> {
+    const cached = this.searchListCache;
+    if (
+      cached &&
+      Date.now() - cached.fetchedAt < GitProviderAzure.SEARCH_LIST_MAX_AGE_MS
+    ) {
+      return cached.pullRequests;
+    }
+    const pullRequests = this.listPullRequestsPaged(
+      { status: PullRequestStatus.All },
+      "searchPullRequests",
+      {
+        pageSize: GitProviderAzure.SEARCH_PAGE_SIZE,
+        maxPages: GitProviderAzure.SEARCH_MAX_PAGES,
+      },
+    );
+    this.searchListCache = { fetchedAt: Date.now(), pullRequests };
+    return pullRequests;
   }
 
   async getActivePullRequestFromBranch(
@@ -853,39 +948,46 @@ export class GitProviderAzure extends GitProvider {
   // clocks drift, so the time bound is widened before it is used
   private static readonly PR_WINDOW_MARGIN_DAYS = 7;
 
-  /** Walk the pages of a Pull Request listing, up to the explicit cap. */
+  /**
+   * Walk the pages of a Pull Request listing, up to the explicit cap. A caller that needs a
+   * tighter walk than a branch window (the text search) passes its own bounds.
+   */
   private async listPullRequestsPaged(
     searchCriteria: any,
     caller: string,
+    bounds: { pageSize: number; maxPages: number } = {
+      pageSize: GitProviderAzure.PR_PAGE_SIZE,
+      maxPages: GitProviderAzure.PR_MAX_PAGES,
+    },
   ): Promise<GitPullRequest[]> {
     if (!this.gitApi || !this.repoInfo) {
       return [];
     }
     const all: GitPullRequest[] = [];
-    for (let page = 0; page < GitProviderAzure.PR_MAX_PAGES; page++) {
-      const skip = page * GitProviderAzure.PR_PAGE_SIZE;
+    for (let page = 0; page < bounds.maxPages; page++) {
+      const skip = page * bounds.pageSize;
       const prs = await this.gitApi.getPullRequests(
         this.repoInfo.repo,
         searchCriteria,
         this.repoInfo.owner,
         undefined, // maxCommentLength
         skip,
-        GitProviderAzure.PR_PAGE_SIZE,
+        bounds.pageSize,
       );
       await this.logApiCall("gitApi.getPullRequests", {
         caller,
         skip,
-        top: GitProviderAzure.PR_PAGE_SIZE,
+        top: bounds.pageSize,
         received: prs?.length || 0,
       });
       all.push(...(prs || []));
       // A short page is the last one
-      if (!prs || prs.length < GitProviderAzure.PR_PAGE_SIZE) {
+      if (!prs || prs.length < bounds.pageSize) {
         return all;
       }
     }
     Logger.log(
-      `[${caller}] stopped after ${GitProviderAzure.PR_MAX_PAGES} pages (${all.length} Pull Requests): the window may be incomplete`,
+      `[${caller}] stopped after ${bounds.maxPages} pages (${all.length} Pull Requests): the window may be incomplete`,
     );
     return all;
   }

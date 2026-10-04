@@ -2463,3 +2463,296 @@ lightning-helptext::part(icon) {
   margin-right: 0.2rem;
   white-space: nowrap;
 }
+/* --- List kit (rows of one thing + its state + its actions) -------------------
+   <div class="hardis-list">
+     <div class="hardis-list-row">
+       <div class="hardis-list-main">
+         <div class="hardis-list-title">Label</div>
+         <div class="hardis-list-meta">chips, pills, one line of context</div>
+       </div>
+       <div class="hardis-list-status">pill</div>
+       <div class="hardis-list-actions">buttons</div>
+     </div>
+   </div>
+   The row language of the Deployment Actions tab, for the lists of the Pull Request view
+   (tickets, test classes, workflow runs). */
+.hardis-list {
+  border: 1px solid var(--slds-g-color-neutral-base-80);
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+.hardis-list-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+}
+.hardis-list-item + .hardis-list-item,
+.hardis-list-row + .hardis-list-row {
+  border-top: 1px solid var(--slds-g-color-neutral-base-80);
+}
+.hardis-list-main {
+  min-width: 0;
+}
+.hardis-list-title {
+  overflow-wrap: anywhere;
+}
+.hardis-list-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.25rem;
+  color: var(--vscode-descriptionForeground, inherit);
+  font-size: 0.8125rem;
+}
+.hardis-list-status,
+.hardis-list-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+}
+.hardis-list-actions {
+  justify-content: flex-end;
+}
+.hardis-list-detail {
+  padding: 0.75rem;
+  border-top: 1px solid var(--slds-g-color-neutral-base-80);
+  background: var(--slds-g-color-neutral-base-95);
+}
+@media (max-width: 720px) {
+  .hardis-list-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hardis-list-actions {
+    justify-content: flex-start;
+  }
+}
+
+/* A reference to a Pull Request that opens it in the panel */
+.slds-scope[data-theme] .hardis-pr-ref {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  color: var(--vscode-textLink-foreground, inherit);
+  cursor: pointer;
+}
+.slds-scope[data-theme] .hardis-pr-ref:hover {
+  text-decoration: underline;
+}
+.slds-scope[data-theme] .hardis-pr-ref:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder, currentColor);
+  outline-offset: 2px;
+}
+
+/* --- Pull Request journey (validation, then one step per major branch) --- */
+.hardis-path {
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+/* One chevron per step: the notch of each one fits the point of the one before, with a thin gap
+   between them. A step is filled once reached, pale while it is still ahead. */
+.hardis-path-step {
+  /* Never narrower than its text: the name of a branch always shows in full, and a path too
+     long for the window goes on a second row */
+  flex: 1 0 auto;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0 1.125rem 0 1.5rem;
+  margin-right: -0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1;
+  white-space: nowrap;
+  background: var(--slds-g-color-neutral-base-90);
+  color: var(--slds-g-color-neutral-base-30);
+  clip-path: polygon(
+    0 0,
+    calc(100% - 0.75rem) 0,
+    100% 50%,
+    calc(100% - 0.75rem) 100%,
+    0 100%,
+    0.75rem 50%
+  );
+}
+.hardis-path-step:first-child {
+  padding-left: 0.875rem;
+  border-radius: 1rem 0 0 1rem;
+  clip-path: polygon(
+    0 0,
+    calc(100% - 0.75rem) 0,
+    100% 50%,
+    calc(100% - 0.75rem) 100%,
+    0 100%
+  );
+}
+.hardis-path-step:last-child {
+  margin-right: 0;
+  padding-right: 0.875rem;
+  border-radius: 0 1rem 1rem 0;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 0.75rem 50%);
+}
+.hardis-path-done {
+  background: var(--slds-g-color-palette-green-50);
+  color: #ffffff;
+}
+.hardis-path-failed {
+  background: var(--slds-g-color-palette-red-50);
+  color: #ffffff;
+}
+.hardis-path-running {
+  background: var(--slds-g-color-palette-blue-50);
+  color: #ffffff;
+}
+.hardis-path-pending {
+  background: var(--slds-g-color-palette-orange-90);
+  color: var(--slds-g-color-palette-orange-30);
+}
+.hardis-path-mark {
+  font-weight: 700;
+  flex: none;
+}
+.hardis-path-dot {
+  flex: none;
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+.hardis-path-running .hardis-path-dot,
+.hardis-path-dot-loading {
+  animation: hardis-path-pulse 1.4s ease-in-out infinite;
+}
+@keyframes hardis-path-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hardis-path-running .hardis-path-dot,
+  .hardis-path-dot-loading {
+    animation: none;
+  }
+}
+.hardis-path-name {
+  font-weight: 700;
+  flex: none;
+}
+.hardis-path-branch {
+  font-family: ui-monospace, "Cascadia Code", Consolas, Menlo, monospace;
+  font-size: 0.75rem;
+}
+.hardis-path-ref {
+  flex: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.hardis-path-ref:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
+}
+
+/* --- Rendered markdown (sanitized comment of a Pull Request) --- */
+.hardis-markdown {
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.hardis-markdown h1,
+.hardis-markdown h2,
+.hardis-markdown h3,
+.hardis-markdown h4 {
+  font-size: 1rem;
+  font-weight: bold;
+  margin: 0.75rem 0 0.375rem;
+}
+.hardis-markdown p,
+.hardis-markdown ul,
+.hardis-markdown ol,
+.hardis-markdown pre,
+.hardis-markdown table,
+.hardis-markdown details {
+  margin: 0 0 0.625rem;
+}
+.hardis-markdown ul,
+.hardis-markdown ol {
+  padding-left: 1.5rem;
+  list-style: revert;
+}
+.hardis-markdown a {
+  color: var(--vscode-textLink-foreground, inherit);
+}
+.hardis-markdown img {
+  max-width: 100%;
+  height: auto;
+}
+.hardis-markdown code,
+.hardis-markdown pre {
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 0.8125rem;
+  background: var(--slds-g-color-neutral-base-90);
+  /* VS Code gives code, and quoted blocks below, the colors of its own theme in every webview.
+     The panel has a theme of its own: under a dark VS Code and a light panel they came out
+     light on light, or dark on dark. Both are stated here. */
+  color: var(--slds-g-color-neutral-base-15);
+  border-radius: 0.25rem;
+}
+.hardis-markdown code {
+  padding: 0.0625rem 0.25rem;
+}
+.hardis-markdown pre {
+  padding: 0.5rem 0.625rem;
+  overflow-x: auto;
+}
+.hardis-markdown pre code {
+  padding: 0;
+  background: transparent;
+}
+.hardis-markdown table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+.hardis-markdown th,
+.hardis-markdown td {
+  border: 1px solid var(--slds-g-color-neutral-base-80);
+  padding: 0.25rem 0.5rem;
+  text-align: left;
+  vertical-align: top;
+}
+.hardis-markdown summary {
+  cursor: pointer;
+}
+.hardis-markdown blockquote {
+  margin: 0 0 0.625rem;
+  padding: 0.375rem 0.75rem;
+  border-left: 3px solid var(--slds-g-color-neutral-base-80);
+  background: var(--slds-g-color-neutral-base-95);
+  color: var(--slds-g-color-neutral-base-15);
+}
+.hardis-markdown blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+/* A table cell that opens something (the number and the title of a Pull Request) is a button of
+   the base variant. A button centers its label and keeps the line height of a control: a title
+   that wraps then reads as centered lines far apart, unlike the link it replaced. */
+.slds-scope[data-theme] lightning-primitive-cell-button .slds-button {
+  justify-content: flex-start;
+  text-align: left;
+  line-height: 1.4;
+  white-space: normal;
+}

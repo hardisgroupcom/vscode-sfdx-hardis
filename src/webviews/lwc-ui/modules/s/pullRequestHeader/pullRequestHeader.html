@@ -1,0 +1,57 @@
+<template>
+    <template if:true={hasPullRequest}>
+        <div class="pr-head">
+            <div class="pr-head-facts">
+                <span class={statePillClass}><span class="hardis-pill-dot"></span>{stateLabel}</span>
+                <template if:true={hasMergeConflicts}>
+                    <span class="hardis-pill hardis-status-failed"><span class="hardis-pill-dot"></span>{i18n.legendMergeConflicts}</span>
+                </template>
+                <template if:true={authorLabel}>
+                    <span class="hardis-cell-flex">
+                        <span class={authorAvatarClass}>{authorInitials}</span>
+                        <span class="hardis-avatar-name">{authorLabel}</span>
+                    </span>
+                </template>
+                <template if:true={pr.sourceBranch}>
+                    <span class="hardis-branch-chip" title={pr.sourceBranch}>{pr.sourceBranch}</span>
+                </template>
+                <template if:true={pr.targetBranch}>
+                    <lightning-icon icon-name="utility:forward" size="xx-small" alternative-text={i18n.targetLabel}></lightning-icon>
+                    <span class="hardis-branch-chip" title={pr.targetBranch}>{pr.targetBranch}</span>
+                </template>
+                <template if:true={dateLabel}>
+                    <span class="pr-head-date">{dateLabel}</span>
+                </template>
+                <template if:true={webUrl}>
+                    <lightning-button
+                        class="pr-head-out"
+                        variant="neutral"
+                        icon-name="utility:new_window"
+                        label={openOnPlatformLabel}
+                        onclick={handleOpenExternal}
+                    ></lightning-button>
+                </template>
+            </div>
+            <template if:true={hasJourney}>
+                <!-- Steps that follow each other, drawn as the SLDS path: the chevrons carry the order -->
+                <ol class="hardis-path">
+                    <template for:each={steps} for:item="step">
+                        <li key={step.key} class={step.stepClass} title={step.title}>
+                            <template if:true={step.mark}>
+                                <span class="hardis-path-mark" aria-hidden="true">{step.mark}</span>
+                            </template>
+                            <template if:true={step.dot}>
+                                <span class={step.dotClass} aria-hidden="true"></span>
+                            </template>
+                            <span class={step.labelClass}>{step.label}</span>
+                            <span class="slds-assistive-text">{step.stateLabel}</span>
+                            <template if:true={step.carriedBy}>
+                                <button class="hardis-path-ref" data-pr-number={step.carriedBy} onclick={handleOpenCarrier}>{step.carriedByLabel}</button>
+                            </template>
+                        </li>
+                    </template>
+                </ol>
+            </template>
+        </div>
+    </template>
+</template>

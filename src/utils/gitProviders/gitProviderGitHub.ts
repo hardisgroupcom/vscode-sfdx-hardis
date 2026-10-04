@@ -7,6 +7,7 @@ import {
   GoLive,
   ProviderDescription,
   PullRequest,
+  PullRequestSearchResult,
   Job,
   JobStatus,
 } from "./types";
@@ -374,6 +375,105 @@ export class GitProviderGitHub extends GitProvider {
       Logger.log(`Error fetching PR #${number}: ${String(err)}`);
       return null;
     }
+  }
+
+  /**
+   * One GraphQL search for the whole lookup: the REST search returns issues, without the
+   * branches, and would need one more call per result.
+   *
+   * GitHub matches whole words of the title and the body, not parts of them, and does not search
+   * branch names. Closed Pull Requests that were not merged cannot be excluded in the query (there
+   * is no "open or merged" qualifier), so they are asked for and dropped here.
+   *
+   * Only for GitHub itself: Gitea reuses this class over a REST-only API and has its own search.
+   */
+  async searchPullRequests(
+    query: string,
+    options?: { limit?: number },
+  ): Promise<PullRequestSearchResult | null> {
+    if (
+      !this.gitHubClient ||
+      !this.repoInfo ||
+      this.repoInfo.providerName !== "github"
+    ) {
+      return null;
+    }
+    const limit = this.searchLimit(options);
+    const searchQuery = this.buildSearchQuery(query);
+    if (!searchQuery) {
+      return { pullRequests: [], truncated: false };
+    }
+    try {
+      const response: any = await this.gitHubClient.graphql(
+        `query searchPullRequests($q: String!, $count: Int!) {
+          search(type: ISSUE, query: $q, first: $count) {
+            nodes {
+              ... on PullRequest {
+                number title state merged mergedAt createdAt updatedAt url body
+                headRefName baseRefName
+                author { login }
+              }
+            }
+          }
+        }`,
+        {
+          q: searchQuery,
+          // Twice the limit, because the closed ones are only dropped once they are received
+          count: Math.min(limit * 2, GitProviderGitHub.PR_PAGE_SIZE),
+        },
+      );
+      await this.logApiCall("graphql search", {
+        caller: "searchPullRequests",
+        limit,
+      });
+      const nodes: any[] = response?.search?.nodes || [];
+      const pullRequests = nodes
+        // An empty node is a result that is not a Pull Request
+        .filter((node) => node?.number && node?.headRefName)
+        .filter((node) => node.state === "OPEN" || node.merged === true)
+        .map((node) => this.convertToPullRequest(this.searchNodeToRest(node)));
+      return this.buildSearchResult(pullRequests, limit);
+    } catch (err) {
+      Logger.log(`Error searching GitHub Pull Requests: ${String(err)}`);
+      return { pullRequests: [], truncated: false };
+    }
+  }
+
+  /**
+   * The GitHub search string of a text typed by the user, or an empty string when there is
+   * nothing to search. Each word goes between double quotes, so that a word shaped like a
+   * qualifier ("repo:other/repository", "is:closed") is searched as text and cannot widen the
+   * search to another repository.
+   */
+  private buildSearchQuery(query: string): string {
+    const words = String(query || "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((word) => `"${word.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`);
+    if (words.length === 0) {
+      return "";
+    }
+    return `repo:${this.repoInfo!.owner}/${this.repoInfo!.repo} is:pr ${words.join(" ")} in:title,body`;
+  }
+
+  // A Pull Request node of the GraphQL search, in the shape the REST API gives it
+  private searchNodeToRest(node: any): any {
+    return {
+      // The search does not return the REST id, the number is unique in the repository
+      id: node.number,
+      number: node.number,
+      title: node.title,
+      body: node.body,
+      state: node.state === "OPEN" ? "open" : "closed",
+      merged_at: node.merged === true ? node.mergedAt : null,
+      created_at: node.createdAt,
+      updated_at: node.updatedAt,
+      html_url: node.url,
+      user: { login: node.author?.login },
+      head: { ref: node.headRefName },
+      base: { ref: node.baseRefName },
+    };
   }
 
   async listPullRequestsInBranchSinceLastMerge(

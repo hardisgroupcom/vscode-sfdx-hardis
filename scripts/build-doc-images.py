@@ -135,19 +135,19 @@ BOX_CROPS = {
     # Requests of the branch, with the Release Notes buttons)
     "screenshot-branch-pull-requests.jpg": (
         "pipeline-branch-modal",
-        (470, 60, 1866, 810),
+        (470, 60, 1866, 915),
     ),
     # Deployment Actions tab of the "My Pull Request" modal of the feature
     # pull request #128 (one zoom level out, opened through the
     # hardis:work:save deep link), listing the actions of its fixture file
     "screenshot-pr-deployment-actions-list.jpg": (
         "pipeline-pr-actions-list",
-        (401, 87, 1863, 832),
+        (401, 40, 1863, 922),
     ),
     # Branch modal of the pipeline, on its Deployment Actions tab
     "screenshot-deployment-actions.jpg": (
         "pipeline-branch-modal-actions",
-        (470, 60, 1866, 810),
+        (470, 60, 1866, 915),
     ),
     # "Edit Deployment Action" editor, opened from the PR modal (captured two
     # zoom levels out, like pipeline-workflow-cards)
@@ -212,11 +212,11 @@ BOX_CROPS = {
     # Pull Request on its Deployment Actions tab
     "promotion-branch-modal.png": (
         "promotion/promotion-branch-modal",
-        (470, 60, 1866, 810),
+        (470, 60, 1866, 915),
     ),
     "promotion-pr-modal.png": (
         "promotion/promotion-pr-modal",
-        (470, 60, 1866, 810),
+        (470, 60, 1866, 915),
     ),
 }
 
@@ -237,7 +237,13 @@ GUIDE_SHOTS = {
     "pipeline-settings-menu.png": ("pipeline-settings-menu", True),
     "pipeline-packages-menu.png": ("pipeline-packages-menu", True),
     "pipeline-workflow-cards.png": ("pipeline-workflow-cards", (315, 625, 1905, 835)),
-    "pipeline-pr-actions-list.png": ("pipeline-pr-actions-list", (400, 40, 1865, 825)),
+    "pipeline-pr-actions-list.png": ("pipeline-pr-actions-list", (400, 40, 1865, 922)),
+    # Pull Requests explorer and the window of one Pull Request (sfdx-hardis#2273), opened by
+    # deep links: the lookup, the description, a comment tab and a merged Pull Request
+    "pipeline-pr-explorer.png": ("pipeline-pr-explorer", True),
+    "pipeline-pr-view-general.png": ("pipeline-pr-view-general", True),
+    "pipeline-pr-view-validation.png": ("pipeline-pr-view-validation", True),
+    "pipeline-pr-view-merged.png": ("pipeline-pr-view-merged", True),
     "pipeline-branch-modal-actions.png": ("pipeline-branch-modal-actions", True),
     "org-monitoring.png": ("org-monitoring", True),
     "org-monitoring-packages-menu.png": ("org-monitoring-packages-menu", True),

@@ -7,6 +7,7 @@ import type {
   JobStatus,
   ProviderDescription,
   PullRequest,
+  PullRequestSearchResult,
 } from "./types";
 
 /**
@@ -104,6 +105,34 @@ export class GitProviderMock extends GitProvider {
     return byTarget[targetBranchName] || [];
   }
 
+  /** Searches every Pull Request the fixture knows, whichever list it sits in. */
+  // A Pull Request of the fixture by its number, as the Pull Request view asks for one it does
+  // not hold yet
+  async getPullRequestByNumber(number: number): Promise<PullRequest | null> {
+    return (
+      this.listFixturePullRequests().find(
+        (pullRequest) => pullRequest.number === number,
+      ) || null
+    );
+  }
+
+  async searchPullRequests(
+    query: string,
+    options?: { limit?: number },
+  ): Promise<PullRequestSearchResult | null> {
+    const byNumber = new Map<string, PullRequest>();
+    for (const pullRequest of this.listFixturePullRequests()) {
+      const key = String(pullRequest?.number ?? pullRequest?.id);
+      if (pullRequest && !byNumber.has(key)) {
+        byNumber.set(key, pullRequest);
+      }
+    }
+    const matching = Array.from(byNumber.values()).filter((pullRequest) =>
+      this.pullRequestMatchesSearch(query, pullRequest),
+    );
+    return this.buildSearchResult(matching, this.searchLimit(options));
+  }
+
   async getJobsForBranchLatestCommit(
     branchName: string,
   ): Promise<{ jobs: Job[]; jobsStatus: JobStatus } | null> {
@@ -137,5 +166,20 @@ export class GitProviderMock extends GitProvider {
   ): string | null {
     const webUrl = this.repoInfo?.webUrl || "";
     return `${webUrl}/compare/${targetBranch}...${sourceBranch}`;
+  }
+
+  // Every Pull Request of the fixture: the open ones first, then the merged ones of each list
+  private listFixturePullRequests(): PullRequest[] {
+    const lists: PullRequest[][] = [
+      this.fixture.openPullRequests || [],
+      ...Object.values<PullRequest[]>(
+        this.fixture.mergedPullRequestsByBranch || {},
+      ),
+      ...Object.values<PullRequest[]>(
+        this.fixture.mergedPullRequestsIntoBranch || {},
+      ),
+      ...Object.values<PullRequest[]>(this.fixture.pullRequestsByGoLive || {}),
+    ];
+    return lists.flatMap((list) => (Array.isArray(list) ? list : []));
   }
 }

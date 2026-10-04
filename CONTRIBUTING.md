@@ -176,8 +176,7 @@ yarn dev && yarn compile && yarn test:ui
 ### Regenerating the documentation screenshots
 
 Every screenshot of the extension used by the documentation is produced by the
-same harness, so the images of a redesign can be refreshed in one command
-(Windows only, as the capture goes through PowerShell):
+same harness, so the images of a redesign can be refreshed in one command:
 
 ```bash
 yarn dev && yarn compile   # in this order: the UI tests need both builds
@@ -195,6 +194,26 @@ SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION=true \
 # Copy them into the documentation of the sibling sfdx-hardis repository
 python scripts/build-doc-images.py
 ```
+
+The harness never uses the real pointer or keyboard. VS Code is started with a remote debugging
+port and driven through the Chrome DevTools Protocol (`src/test/ui/cdpWindow.ts`): clicks and
+wheel events are sent to the page, captures are rendered by the page at a fixed size (1920x1020
+at a pixel ratio of 1.25, title bar cropped out), whatever the real window and display.
+
+On Windows, outside CI, the window does not show at all: `src/test/runUiTest.ts` starts VS Code
+on a Windows desktop of its own, through `scripts/hidden-desktop`. A session holds several
+desktops and shows one, so that window is never drawn on yours and never takes the focus, for
+`yarn screenshots` and `yarn test:ui` alike. Set `SFDX_HARDIS_UI_VISIBLE=true` to watch a run.
+On macOS and Linux the window opens on your desktop at every run. So:
+
+- on Windows the machine stays usable during a run. Elsewhere the window can be covered once it
+  is open, but do not minimize it: a minimized window stops painting;
+- nothing moves the real pointer or steals the focus, and no window is looked up by its title;
+- the coordinates of `click(x, y)` are pixels of a capture, as they always were. Open the
+  capture to read them;
+- to check what a panel really renders (LWC included) without clicking, add a deep link or a
+  gate to `src/test/ui/docScreenshots.test.ts`, run `yarn screenshots <gate>` with
+  `SFDX_HARDIS_DOC_SCREENSHOTS_DIR` set to an absolute folder, and look at the PNG.
 
 Screenshots are always taken in **light theme** and in **English**, on the
 `test/fixtures/doc-screenshots-project` sample project served by the mocked
