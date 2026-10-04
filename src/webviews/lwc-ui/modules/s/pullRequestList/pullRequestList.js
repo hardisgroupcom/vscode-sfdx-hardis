@@ -13,7 +13,7 @@ import { filterPullRequestList, safeWebUrl } from "s/pullRequestUtils";
  * `pullRequests` are the rows built by s/pipeline (_mapPrsWithIcons), each with `selectable`
  * when it can be ticked for the next promotion.
  *
- * Events: open { prNumber }, select { numbers }, togglevehicles { shown }
+ * Events: open { prNumber }, select { numbers }, vehicles { shown }
  */
 export default class PullRequestList extends SharedMixin(LightningElement) {
   // Checkboxes feeding the next promotion
@@ -153,7 +153,7 @@ export default class PullRequestList extends SharedMixin(LightningElement) {
   }
 
   // The rows shown that can be ticked: what the checkbox above the list acts on
-  get _tickable() {
+  get _selectableShown() {
     return this.selectable
       ? this.filtered.filter((pr) => pr.selectable === true)
       : [];
@@ -164,14 +164,14 @@ export default class PullRequestList extends SharedMixin(LightningElement) {
   }
 
   get nothingToTick() {
-    return this._tickable.length === 0;
+    return this._selectableShown.length === 0;
   }
 
   get allTicked() {
-    const tickable = this._tickable;
+    const selectable = this._selectableShown;
     return (
-      tickable.length > 0 &&
-      tickable.every((pr) => this._selectedNumbers.includes(pr.number))
+      selectable.length > 0 &&
+      selectable.every((pr) => this._selectedNumbers.includes(pr.number))
     );
   }
 
@@ -181,7 +181,7 @@ export default class PullRequestList extends SharedMixin(LightningElement) {
 
   handleToggleVehicles() {
     this.dispatchEvent(
-      new CustomEvent("togglevehicles", {
+      new CustomEvent("vehicles", {
         detail: { shown: !this.vehiclesShown },
       }),
     );
@@ -198,7 +198,7 @@ export default class PullRequestList extends SharedMixin(LightningElement) {
 
   // Ticks, or unticks, the rows shown: what the filter hides keeps its state
   handleSelectAll(event) {
-    const shown = this._tickable.map((pr) => pr.number);
+    const shown = this._selectableShown.map((pr) => pr.number);
     const others = this._selectedNumbers.filter((n) => !shown.includes(n));
     this._select(event.target.checked ? [...others, ...shown] : others);
   }

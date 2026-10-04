@@ -5,7 +5,7 @@ import * as zlib from "zlib";
 import { cropPng, decodePng, encodePng } from "../ui/pngCrop";
 import { readSourceFile } from "./lwcSourceUtils";
 
-// cspell:ignore IHDR IDAT IEND idat
+// cspell:ignore IHDR IDAT IEND idat backgrounding
 
 /**
  * The captures of the UI harness come from the page of the VS Code window, through the Chrome

@@ -291,7 +291,7 @@ suite("promotionBranchUtils", () => {
         "CustomEvent",
         `return {
           ${extractMember(list, "get rows()")},
-          ${extractMember(list, "get _tickable()")},
+          ${extractMember(list, "get _selectableShown()")},
           ${extractMember(list, "get allTicked()")},
           ${extractMember(list, "handleSelectAll(event)")},
           ${extractMember(list, "handleSelectRow(event)")},
@@ -375,7 +375,7 @@ suite("promotionBranchUtils", () => {
     assert.strictEqual(view.modalVehicleCount, 0);
     assert.match(
       html,
-      /<s-pull-request-list[\s\S]*?pull-requests=\{modalPrListRows\}[\s\S]*?selectable=\{modalPrsSelectable\}[\s\S]*?vehicle-count=\{modalVehicleCount\}[\s\S]*?ontogglevehicles=\{handleToggleModalPromotionPrs\}/,
+      /<s-pull-request-list[\s\S]*?pull-requests=\{modalPrListRows\}[\s\S]*?selectable=\{modalPrsSelectable\}[\s\S]*?vehicle-count=\{modalVehicleCount\}[\s\S]*?onvehicles=\{handleToggleModalPromotionPrs\}/,
     );
     // The switch of the title bar is gone
     assert.doesNotMatch(html, /i18n\.showPromotionPrs\}/);
