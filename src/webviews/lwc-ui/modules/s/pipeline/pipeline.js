@@ -371,6 +371,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   markingDoneKeys = [];
   // Rows whose status details are shown, and the Backpromotes rows by Pull Request
   expandedActionRowIds = [];
+  // Total pills switched off, one list per mode of the switch: the Status mode
+  // and the Next promotion mode do not count the same things. A window always
+  // opens with every pill on
+  hiddenActionStatusKeys = [];
+  hiddenActionForecastKeys = [];
   // "Next promotion" mode of the Deployment Actions tab: what the promotion to the
   // merge target of the branch will do with each action, computed by sfdx-hardis
   promotionMode = false;
@@ -2561,6 +2566,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
     // Aggregate all deployment actions from all PRs
     this.modalActions = this._aggregateActionsFromPRs(pullRequests);
+    this._resetActionFilters();
     this.actionForecast = null;
     this.actionForecastLoading = false;
     this._requestActionStatuses();
@@ -2608,6 +2614,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.deploymentApexTestClasses = [];
     this._deploymentApexTestClassesOriginal = [];
     this.apexTestsMode = "view";
+  }
+
+  // A window always opens with every Total pill on
+  _resetActionFilters() {
+    this.hiddenActionStatusKeys = [];
+    this.hiddenActionForecastKeys = [];
   }
 
   // --- Go-lives selector (top branches) ---
@@ -3000,6 +3012,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.modalActions = this.modalIsMajorPr
       ? this._aggregateActionsFromPRs(pr.aggregatedPullRequests || [])
       : this._aggregateActionsFromPRs([pr]);
+    this._resetActionFilters();
     this._requestActionStatuses();
 
     // Set Apex tests list for this single PR
@@ -3284,13 +3297,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     });
   }
 
-  get promotionToDoLabel() {
-    const count = Object.values(this.actionForecast?.actions || {})
-      .flat()
-      .filter((a) => a.forecast === "waiting").length;
-    return this.t("forecastToDoCount", { count });
-  }
-
   // One pill per action: what the promotion will do with it in the target branch
   _actionForecastFields(row) {
     const target = this.promotionTargetBranch;
@@ -3497,6 +3503,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return 2;
   }
 
+  // What the promotion does with the actions of a group, or of the whole window
   _forecastGroupSummary(rows) {
     if (!this.actionForecast) {
       return [];
@@ -3510,8 +3517,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         },
       ];
     }
-    const target = this.promotionTargetBranch;
-    const categories = [
+    return this._summaryPills(rows, this._forecastCategories(), {
+      branch: this.promotionTargetBranch,
+    });
+  }
+
+  // The pills of the Next promotion mode, in the order they show: the headers
+  // and the Total row count the same things
+  _forecastCategories() {
+    return [
       {
         key: "waiting",
         codes: ["waiting"],
@@ -3561,7 +3575,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         pill: "hardis-status-unknown",
       },
     ];
-    return this._summaryPills(rows, categories, { branch: target });
   }
 
   // Mark as done in one org branch, in the background: the button spins until
@@ -3704,11 +3717,130 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return lines;
   }
 
+  // The head of the actions: the Status / Next promotion switch, and the totals
+  get showActionsHead() {
+    return this.showPromotionToggle || this.modalActionTotals.length > 0;
+  }
+
+  // The pills of every Pull Request of the window added up, in the mode shown,
+  // each one a switch hiding or showing the actions it counts. The Status mode
+  // also counts the actions no header pill counts (not run yet, skipped), so
+  // that every action can be hidden. A Pull Request the open promotion leaves
+  // out is not counted. Shown from two Pull Requests with pills: with a single
+  // one, its header already says the same
+  get modalActionTotals() {
+    const categories = this._totalCategories();
+    if (!categories) {
+      return [];
+    }
+    const codes = new Set(categories.flatMap((category) => category.codes));
+    const counted = this._actionGroups().filter((group) =>
+      group.rows.some((row) => codes.has(row.statusCode)),
+    );
+    if (counted.length < 2) {
+      return [];
+    }
+    const labelVars = this.isPromotionModeShown
+      ? { branch: this.promotionTargetBranch }
+      : {};
+    const hidden = this._hiddenActionKeys;
+    return this._summaryPills(
+      counted.flatMap((group) => group.rows),
+      categories,
+      labelVars,
+    ).map((pill) => {
+      const off = hidden.includes(pill.key);
+      return {
+        ...pill,
+        pillClass: off
+          ? "hardis-pill hardis-status-unknown da-pill-off"
+          : pill.pillClass,
+        pressed: String(!off),
+        toggleTitle: off
+          ? this.i18n.clickToShowTheseActions
+          : this.i18n.clickToHideTheseActions,
+      };
+    });
+  }
+
+  // Every action hidden by the Total pills: say so rather than show an empty tab
+  get everyActionHidden() {
+    return this.modalActions.length > 0 && this.modalActionGroups.length === 0;
+  }
+
+  // The groups the tab lists: every Pull Request, minus the actions the Total
+  // pills hide, and minus a Pull Request whose actions are all hidden. The
+  // headers and the numbers of the rows still count every action
+  get modalActionGroups() {
+    const groups = this._actionGroups();
+    const hiddenCodes = this._hiddenActionCodes();
+    if (hiddenCodes.size === 0) {
+      return groups;
+    }
+    return groups
+      .map((group) => ({
+        ...group,
+        rows: group.rows.filter((row) => !hiddenCodes.has(row.statusCode)),
+      }))
+      .filter((group) => group.rows.length > 0);
+  }
+
+  // Click on a Total pill: hide the actions it counts, or show them again
+  handleActionTotalToggle(event) {
+    const key = event.currentTarget.dataset.key;
+    const categories = this._totalCategories() || [];
+    if (!categories.some((category) => category.key === key)) {
+      return;
+    }
+    const hidden = this._hiddenActionKeys;
+    const next = hidden.includes(key)
+      ? hidden.filter((hiddenKey) => hiddenKey !== key)
+      : [...hidden, key];
+    if (this.isPromotionModeShown) {
+      this.hiddenActionForecastKeys = next;
+    } else {
+      this.hiddenActionStatusKeys = next;
+    }
+  }
+
+  // The pills of the Total row in the mode shown: none until the statuses (or
+  // the forecast) are known, nor in the window of a Pull Request of your own
+  _totalCategories() {
+    if (!this.modalActionsAggregated) {
+      return null;
+    }
+    if (this.isPromotionModeShown) {
+      return this.actionForecast ? this._forecastCategories() : null;
+    }
+    return this.modalActionStatuses ? this._statusCategories(true) : null;
+  }
+
+  get _hiddenActionKeys() {
+    return this.isPromotionModeShown
+      ? this.hiddenActionForecastKeys
+      : this.hiddenActionStatusKeys;
+  }
+
+  // The statuses the Total pills hide, only while the Total row shows: a window
+  // without it lists every action
+  _hiddenActionCodes() {
+    const hidden = this._hiddenActionKeys;
+    if (hidden.length === 0 || this.modalActionTotals.length === 0) {
+      return new Set();
+    }
+    return new Set(
+      this._totalCategories()
+        .filter((category) => hidden.includes(category.key))
+        .flatMap((category) => category.codes),
+    );
+  }
+
   // The actions of the modal, one group per Pull Request. Groups with a problem
   // come first, then the ones waiting for someone, then the rest. Inside a group
   // the actions keep the order they run in: pre-deploy, then post-deploy, each
-  // in the order of the Pull Request file.
-  get modalActionGroups() {
+  // in the order of the Pull Request file. Every action, whatever the Total
+  // pills hide: the headers and the totals count them all
+  _actionGroups() {
     const byPr = new Map();
     for (const row of this.modalActions) {
       if (!byPr.has(row.prNumber)) {
@@ -3769,11 +3901,19 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return 2;
   }
 
-  // "1 failed · 2 stopped": what the group holds, once the statuses are known
+  // "1 failed · 2 stopped": what a group, or the whole window, holds once the
+  // statuses are known
   _actionGroupSummary(rows) {
     if (!this.modalActionStatuses) {
       return [];
     }
+    return this._summaryPills(rows, this._statusCategories(false), {});
+  }
+
+  // The pills of the Status mode, in the order they show. The Total row also
+  // counts the actions no header pill counts, so that every action can be hidden
+  // from there: no status yet, or a pending one, both read "Not run yet"
+  _statusCategories(total) {
     const categories = [
       {
         key: "failed",
@@ -3812,7 +3952,23 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         pill: "hardis-status-success",
       },
     ];
-    return this._summaryPills(rows, categories, {});
+    if (total) {
+      categories.push(
+        {
+          key: "notRunYet",
+          codes: ["none", "pending"],
+          labelKey: "actionSummaryNotRunYet",
+          pill: "hardis-status-unknown",
+        },
+        {
+          key: "skipped",
+          codes: ["skipped"],
+          labelKey: "actionSummarySkipped",
+          pill: "hardis-status-unknown",
+        },
+      );
+    }
+    return categories;
   }
 
   // The org branch the status column describes: the major branch of the

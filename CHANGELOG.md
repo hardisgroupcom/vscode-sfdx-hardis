@@ -10,6 +10,7 @@
   - Mark as done records the action in the background
 - Deployment actions: a new **Run Batch** action runs an Apex batch class once, before or after the deployment, and can wait for it to succeed.
 - Deployment actions: when several Pull Requests carry the same action, it runs once per deployment, and the Next promotion view of the Deployment Actions tab and the Backpromote panel show which actions run with another one ([sfdx-hardis#2271](https://github.com/hardisgroupcom/sfdx-hardis/issues/2271)).
+- Deployment actions: when the Deployment Actions tab lists several Pull Requests, **Total** pills add up their actions for the status in the branch or the next promotion, and a click on one hides or shows those actions ([sfdx-hardis#2274](https://github.com/hardisgroupcom/sfdx-hardis/issues/2274)).
 - Metadata Retriever: recent changes no longer list one row per file of a Lightning Web Component, which made a retrieve of every row fail. When the Salesforce CLI does not know a metadata type (ex: GenOpAgentConfig), the error names the type and the rows to untick.
 - Command execution tab
   - **Run again** replays the command in the same tab, instead of opening a new one ([sfdx-hardis#2272](https://github.com/hardisgroupcom/sfdx-hardis/issues/2272))

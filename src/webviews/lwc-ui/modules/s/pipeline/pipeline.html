@@ -439,13 +439,25 @@
                                 <div class="hardis-note slds-m-bottom_small">{majorPrActionsHint}</div>
                             </template>
                             <template if:true={modalActions.length}>
-                                <!-- One group per Pull Request: its header says who and what once, its
-                                     rows are the actions in the order they run -->
-                                <template if:true={showPromotionToggle}>
-                                    <div class="da-promo-head">
-                                        <div class="da-seg" role="group">
-                                            <button class={promotionToggleCurrentClass} aria-pressed={promotionModeOffPressed} onclick={handlePromotionModeOff}>{promotionToggleCurrentLabel}</button>
-                                            <button class={promotionToggleNextClass} aria-pressed={promotionModeOnPressed} onclick={handlePromotionModeOn}>{promotionToggleNextLabel}</button>
+                                <!-- The switch between the status in the branch and the next promotion,
+                                     and the pills of every Pull Request added up -->
+                                <template if:true={showActionsHead}>
+                                    <div class="da-actions-head">
+                                        <div class="da-head-line">
+                                            <template if:true={showPromotionToggle}>
+                                                <div class="da-seg" role="group">
+                                                    <button class={promotionToggleCurrentClass} aria-pressed={promotionModeOffPressed} onclick={handlePromotionModeOff}>{promotionToggleCurrentLabel}</button>
+                                                    <button class={promotionToggleNextClass} aria-pressed={promotionModeOnPressed} onclick={handlePromotionModeOn}>{promotionToggleNextLabel}</button>
+                                                </div>
+                                            </template>
+                                            <template if:true={modalActionTotals.length}>
+                                                <div class="da-totals">
+                                                    <span class="da-totals-label">{i18n.actionSummaryTotal}</span>
+                                                    <template for:each={modalActionTotals} for:item="pill">
+                                                        <button type="button" key={pill.key} class="da-status-toggle" data-key={pill.key} aria-pressed={pill.pressed} title={pill.toggleTitle} onclick={handleActionTotalToggle}><span class={pill.pillClass}><span class="hardis-pill-dot"></span>{pill.label}</span></button>
+                                                    </template>
+                                                </div>
+                                            </template>
                                         </div>
                                         <template if:true={isPromotionModeShown}>
                                             <div class="da-promo-bar">
@@ -459,11 +471,15 @@
                                                 <template if:false={promotionPullRequest}>
                                                     <span>{promotionNoPrLabel}</span>
                                                 </template>
-                                                <span class="da-promo-todo">{promotionToDoLabel}</span>
                                             </div>
                                         </template>
                                     </div>
                                 </template>
+                                <template if:true={everyActionHidden}>
+                                    <div class="hardis-note slds-m-bottom_small">{i18n.everyActionHiddenByTotal}</div>
+                                </template>
+                                <!-- One group per Pull Request: its header says who and what once, its
+                                     rows are the actions in the order they run -->
                                 <div class="da-groups">
                                     <template for:each={modalActionGroups} for:item="group">
                                         <section key={group.key} class={group.groupClass}>
