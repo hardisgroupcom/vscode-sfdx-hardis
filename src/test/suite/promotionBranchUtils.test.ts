@@ -251,51 +251,134 @@ suite("promotionBranchUtils", () => {
     );
   });
 
-  test("the branch window table survives the promotion checkbox column", () => {
-    const js = readModuleFile("pipeline", "pipeline.js");
-    const view = new Function(
-      `return {
-        ${extractMember(js, "get modalPrColumns()")},
-        ${extractMember(js, "get modalHasPromotionColumn()")},
-        ${extractMember(js, "get modalHasMergeConflictColumn()")},
-        ${extractMember(js, "_authorColumn()")}
-      };`,
-    )();
-    view.modalPullRequests = [{ number: 1 }];
-    view.showJobStatusColumn = false;
-    view.i18n = new Proxy({}, { get: (_target, key) => String(key) });
-    const columns = view.modalPrColumns;
-    // The checkbox column takes its width from the others. Only the last column may be left
-    // without one: any other column with no width collapses to nothing once the checkboxes
-    // are shown, which is how the author column became an unreadable sliver
-    const flexible = columns
-      .filter((column: any) => !column.initialWidth)
-      .map((column: any) => column.key);
-    assert.deepStrictEqual(flexible, [columns[columns.length - 1].key]);
-    // With promotion labels, the promotion column comes last, and every column keeps a width:
-    // the table scrolls rather than squeezing a column
-    view.modalPullRequests = [
+  test("the list of the branch window only ticks what can go in the next promotion", () => {
+    const pipeline = readModuleFile("pipeline", "pipeline.js");
+    const list = readModuleFile("pullRequestList", "pullRequestList.js");
+    // s/pipeline marks each row, and takes back only the numbers it marked
+    const window = Object.assign(
+      new Function(
+        `return {
+          ${extractMember(pipeline, "get modalPrListRows()")},
+          ${extractMember(pipeline, "handleModalPrSelect(event)")}
+        };`,
+      )(),
       {
-        number: 1,
-        promotionLabel: "Already deployed via promotion/uat/preprod",
+        modalPullRequests: [
+          { id: "a", number: 124 },
+          { id: "b", number: 125, isVehicle: true },
+          { id: "c", number: 122 },
+        ],
+        ["_isSelectableForPromotion"]: (pr: any) => pr.isVehicle !== true,
       },
-    ];
-    const withPromotion = view.modalPrColumns;
-    assert.strictEqual(
-      withPromotion[withPromotion.length - 1].key,
-      "promotion",
+    );
+    const rows = window.modalPrListRows;
+    assert.deepStrictEqual(
+      rows.map((row: any) => row.selectable),
+      [true, false, true],
+    );
+    // The same rows at each render, or every row would be drawn again
+    assert.strictEqual(window.modalPrListRows, rows);
+    window.handleModalPrSelect({ detail: { numbers: [124, 125] } });
+    assert.deepStrictEqual(window.modalSelectedPrNumbers, [124]);
+    assert.deepStrictEqual(window.modalSelectedPrIds, ["a"]);
+
+    // s/pullRequestList: a checkbox on the rows that can be ticked only, and the checkbox above
+    // the list acts on what the filter shows
+    const sent: number[][] = [];
+    const view = Object.assign(
+      new Function(
+        "safeWebUrl",
+        "CustomEvent",
+        `return {
+          ${extractMember(list, "get rows()")},
+          ${extractMember(list, "get _tickable()")},
+          ${extractMember(list, "get allTicked()")},
+          ${extractMember(list, "handleSelectAll(event)")},
+          ${extractMember(list, "handleSelectRow(event)")},
+          ${extractMember(list, "_select(numbers)")}
+        };`,
+      )(
+        (value: string) => value || "",
+        function (this: any, _name: string, init: any) {
+          this.detail = init.detail;
+        },
+      ),
+      {
+        selectable: true,
+        showStatus: false,
+        filtered: rows,
+        ["_selectedNumbers"]: [] as number[],
+        t: (key: string) => key,
+        dispatchEvent: (event: any) => sent.push(event.detail.numbers),
+      },
     );
     assert.deepStrictEqual(
-      withPromotion
-        .filter((column: any) => !column.initialWidth)
-        .map((column: any) => column.key),
-      [],
+      view.rows.map((row: any) => [row.showCheckbox, row.showCheckboxGap]),
+      [
+        [true, false],
+        [false, true],
+        [true, false],
+      ],
     );
-    const author = columns.find((column: any) => column.key === "author");
-    assert.ok(
-      author && author.initialWidth >= 150,
-      "the author column needs room for the avatar and the name",
+    view.handleSelectAll({ target: { checked: true } });
+    assert.deepStrictEqual(sent.pop(), [124, 122]);
+    assert.strictEqual(view.allTicked, true);
+    // The filter now shows #122 only: unticking what is shown keeps #124 ticked
+    view.filtered = [rows[2]];
+    view.handleSelectAll({ target: { checked: false } });
+    assert.deepStrictEqual(sent.pop(), [124]);
+    view.handleSelectRow({
+      target: { checked: true, dataset: { prNumber: "122" } },
+    });
+    assert.deepStrictEqual(sent.pop(), [124, 122]);
+    // Without the promotion button, no checkbox at all
+    view.selectable = false;
+    assert.deepStrictEqual(
+      view.rows.map((row: any) => row.showCheckbox || row.showCheckboxGap),
+      [false],
     );
+  });
+
+  test("merges and promotions are a filter of the list, with their count", () => {
+    const pipeline = readModuleFile("pipeline", "pipeline.js");
+    const html = readModuleFile("pipeline", "pipeline.html");
+    const view = Object.assign(
+      new Function(
+        `return {
+          ${extractMember(pipeline, "get modalVehicleCount()")},
+          ${extractMember(pipeline, "handleToggleModalPromotionPrs(event)")}
+        };`,
+      )(),
+      {
+        modalMode: "branch",
+        modalBranchName: "uat",
+        modalSourcePullRequests: [
+          { number: 1 },
+          { number: 2, vehicle: true },
+          { number: 3, vehicle: true, promotedAway: true },
+        ],
+        modalSelectedPrNumbers: [1],
+        ["_isPromotionOrMajorPr"]: (pr: any) => pr.vehicle === true,
+        ["_filterModalPullRequests"]: (prs: any[]) => prs,
+        ["_populateModalFromPrs"]: () => undefined,
+      },
+    );
+    // A vehicle a promotion took away is not in this window: it is not counted
+    assert.strictEqual(view.modalVehicleCount, 1);
+    view.handleToggleModalPromotionPrs({ detail: { shown: true } });
+    assert.strictEqual(view.modalShowPromotionPrs, true);
+    assert.deepStrictEqual(view.modalSelectedPrNumbers, []);
+    view.handleToggleModalPromotionPrs({ detail: { shown: false } });
+    assert.strictEqual(view.modalShowPromotionPrs, false);
+    // One Pull Request of a window is not a branch window: no chip
+    view.modalMode = "singlePR";
+    assert.strictEqual(view.modalVehicleCount, 0);
+    assert.match(
+      html,
+      /<s-pull-request-list[\s\S]*?pull-requests=\{modalPrListRows\}[\s\S]*?selectable=\{modalPrsSelectable\}[\s\S]*?vehicle-count=\{modalVehicleCount\}[\s\S]*?ontogglevehicles=\{handleToggleModalPromotionPrs\}/,
+    );
+    // The switch of the title bar is gone
+    assert.doesNotMatch(html, /i18n\.showPromotionPrs\}/);
   });
 
   test("the modal footer lays its actions out as a wrapping row", () => {

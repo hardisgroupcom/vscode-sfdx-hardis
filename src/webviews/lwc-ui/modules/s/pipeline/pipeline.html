@@ -377,19 +377,6 @@
                             {modalTitle}
                         </template>
                     </h2>
-                    <template if:true={modalHasPromotionPrs}>
-                        <div class="toggle-wrapper" style="position: absolute; right: 1rem; top: 0.3rem;">
-                            <lightning-input
-                                type="toggle"
-                                label={i18n.showPromotionPrs}
-                                title={i18n.showPromotionPrsHelp}
-                                checked={modalShowPromotionPrs}
-                                onchange={handleToggleModalPromotionPrs}
-                                message-toggle-active=""
-                                message-toggle-inactive=""
-                            ></lightning-input>
-                        </div>
-                    </template>
                 </header>
                 <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
                     <!-- Pull Requests explorer: the lookup, then the Pull Request it found -->
@@ -478,31 +465,28 @@
                         <!-- A promotion, or a merge between two major branches: the Pull Requests it carries -->
                         <template if:true={showCarriedPrTab}>
                             <lightning-tab onactive={handleModalTabActive} label={modalCarriedPrsTabLabel} value="carried" icon-name="utility:topic2" icon-assistive-text={modalCarriedPrsTabLabel}>
-                                <s-hardis-datatable
-                                    key-field="id"
-                                    data={modalCarriedPullRequests}
-                                    columns={modalPrColumns}
-                                    hide-checkbox-column
-                                    onrowaction={handleModalPrRowAction}
-                                    column-widths-mode="auto"
-                                ></s-hardis-datatable>
+                                <s-pull-request-list
+                                    pull-requests={modalCarriedPullRequests}
+                                    pr-label={prLabel}
+                                    onopen={handleOpenPullRequestRef}
+                                ></s-pull-request-list>
                             </lightning-tab>
                         </template>
                         <template if:true={showPRTab}>
                             <lightning-tab onactive={handleModalTabActive} label={modalPrsTabLabel} value="prs" icon-name="utility:topic2" icon-assistive-text={modalPrsTabLabel}>
-                            <template if:false={modalHideCheckboxColumn}>
-                                <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_x-small">{promotionSelectionHint}</p>
-                            </template>
-                            <s-hardis-datatable
-                                key-field="id"
-                                data={modalPullRequests}
-                                columns={modalPrColumns}
-                                hide-checkbox-column={modalHideCheckboxColumn}
-                                selected-rows={modalSelectedPrIds}
-                                onrowselection={handleModalRowSelection}
-                                onrowaction={handleModalPrRowAction}
-                                column-widths-mode="auto"
-                            ></s-hardis-datatable>
+                            <s-pull-request-list
+                                pull-requests={modalPrListRows}
+                                pr-label={prLabel}
+                                selectable={modalPrsSelectable}
+                                selected-numbers={modalSelectedPrNumbers}
+                                select-help={promotionSelectionHint}
+                                show-status={showJobStatusColumn}
+                                vehicle-count={modalVehicleCount}
+                                vehicles-shown={modalShowPromotionPrs}
+                                onopen={handleOpenPullRequestRef}
+                                onselect={handleModalPrSelect}
+                                ontogglevehicles={handleToggleModalPromotionPrs}
+                            ></s-pull-request-list>
                         </lightning-tab>
                         </template>
                         <template if:false={isFeaturePrModal}>

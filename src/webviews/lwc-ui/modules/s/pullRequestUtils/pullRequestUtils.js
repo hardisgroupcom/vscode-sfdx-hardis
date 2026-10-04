@@ -111,6 +111,40 @@ export function lookupState(pr) {
 }
 
 /**
+ * The Pull Requests of a list that match every word typed, in the order they came: number, title,
+ * author, source branch, the id of a related ticket, or the Pull Request that carried the story
+ * (its number or its branch), so that typing "#125" lists what #125 brought.
+ */
+export function filterPullRequestList(pullRequests, query) {
+  const list = Array.isArray(pullRequests) ? pullRequests : [];
+  const words = String(query || "")
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (words.length === 0) {
+    return list;
+  }
+  return list.filter((pr) => {
+    if (!pr) {
+      return false;
+    }
+    const carrier = pr.carriedByPullRequest;
+    const haystack = [
+      pr.number > 0 ? `#${pr.number}` : "",
+      pr.title,
+      pr.authorLabel,
+      pr.sourceBranch,
+      ...(pr.relatedTickets || []).map((ticket) => ticket?.id),
+      carrier ? `#${carrier.number}` : "",
+      carrier ? carrier.sourceBranch : "",
+    ]
+      .map((value) => String(value || "").toLowerCase())
+      .join("\n");
+    return words.every((word) => haystack.includes(word));
+  });
+}
+
+/**
  * The Pull Requests already in memory that match what was typed: number, title, branches, author
  * or the id of a related ticket. A Pull Request listed in several windows comes out once, open
  * ones first, then the most recent numbers.

@@ -25,6 +25,7 @@ const EXPORTED = [
   "applyModalState",
   "lookupState",
   "filterLoadedPullRequests",
+  "filterPullRequestList",
   "excludeKnownPullRequests",
   "typedPullRequestNumber",
   "journeyBranchPath",
@@ -526,7 +527,7 @@ suite("Pull Request view", () => {
             i18n: { pullRequestLabel: "Pull Request" },
             t: (key: string, vars: Record<string, any>) =>
               `${key}:${vars.prLabel}:${vars.count}`,
-            _mapPrsWithIcons: (prs: any[]) =>
+            ["_mapPrsWithIcons"]: (prs: any[]) =>
               prs.map((pr) => ({ ...pr, numberLabel: `#${pr.number}` })),
           },
           state,
@@ -560,11 +561,118 @@ suite("Pull Request view", () => {
       // Second tab, right after General, and each row opens its Pull Request in the panel
       assert.match(
         html,
-        /value="general"[\s\S]*?<template if:true=\{showCarriedPrTab\}>\s*<lightning-tab[^>]*value="carried"[\s\S]*?data=\{modalCarriedPullRequests\}[\s\S]*?onrowaction=\{handleModalPrRowAction\}[\s\S]*?<template if:true=\{showPRTab\}>/,
+        /value="general"[\s\S]*?<template if:true=\{showCarriedPrTab\}>\s*<lightning-tab[^>]*value="carried"[\s\S]*?<s-pull-request-list\s+pull-requests=\{modalCarriedPullRequests\}[\s\S]*?onopen=\{handleOpenPullRequestRef\}[\s\S]*?<template if:true=\{showPRTab\}>/,
       );
       assert.match(
         readSourceFile("commands/showPipeline.ts"),
         /PULL_REQUEST_VIEW_TABS = \[\s*"general",\s*"carried",/,
+      );
+    });
+
+    test("the filter of a list matches every word typed, the carrier included", () => {
+      const list = [
+        {
+          number: 124,
+          title: "Opportunity stage notifications",
+          authorLabel: "Sam Dubois",
+          sourceBranch: "feature/CRM-1049-opportunity",
+          relatedTickets: [{ id: "CRM-1049" }],
+          carriedByPullRequest: {
+            number: 125,
+            sourceBranch: "promotion/integration/uat/2026-08-20-0930",
+          },
+        },
+        {
+          number: 129,
+          title: "Fix invoice rounding",
+          authorLabel: "Nadia Ferreira",
+          sourceBranch: "fix/CRM-1101-invoice-rounding",
+          relatedTickets: [{ id: "CRM-1101" }],
+        },
+        { number: 12, title: "Lead scoring", authorLabel: "Sam Dubois" },
+      ];
+      const numbers = (query: string) =>
+        utils.filterPullRequestList(list, query).map((pr: any) => pr.number);
+      // Nothing typed: the list itself, not a copy that would redraw the rows
+      assert.strictEqual(utils.filterPullRequestList(list, "  "), list);
+      assert.deepStrictEqual(numbers("#129"), [129]);
+      assert.deepStrictEqual(numbers("invoice"), [129]);
+      assert.deepStrictEqual(numbers("crm-1049"), [124]);
+      assert.deepStrictEqual(numbers("sam"), [124, 12]);
+      // What #125 brought, by its number or by its branch
+      assert.deepStrictEqual(numbers("#125"), [124]);
+      assert.deepStrictEqual(numbers("promotion/integration"), [124]);
+      // Every word has to match
+      assert.deepStrictEqual(numbers("sam lead"), [12]);
+      assert.deepStrictEqual(numbers("sam invoice"), []);
+      assert.deepStrictEqual(utils.filterPullRequestList(null, "x"), []);
+    });
+
+    test("a story names the Pull Request that carried it, by its number", () => {
+      const listJs = readModuleFile("pullRequestList", "pullRequestList.js");
+      const rows = Object.assign(
+        new Function(
+          "safeWebUrl",
+          `return { ${extractMember(listJs, "get rows()")} };`,
+        )((value: string) => value || ""),
+        {
+          selectable: false,
+          showStatus: false,
+          ["_selectedNumbers"]: [],
+          t: (key: string, vars: Record<string, string>) =>
+            `${key}:${vars.branch || vars.number}`,
+          filtered: [
+            {
+              number: 124,
+              relatedTickets: [{ id: "CRM-1049", url: "https://t/CRM-1049" }],
+              carriedByPullRequest: {
+                number: 125,
+                sourceBranch: "promotion/integration/uat/2026-08-20-0930",
+              },
+              promotionLabel: "Carried by promotion/integration/uat/...",
+            },
+            { number: 125, promotionLabel: "Promotion of 4 Pull Request(s)" },
+            { number: 129 },
+          ],
+        },
+      ).rows;
+      // The number is short where the branch is not, and it opens that Pull Request
+      assert.strictEqual(rows[0].carriedNumber, 125);
+      assert.strictEqual(rows[0].carriedLabel, "prCarriedByPromotion:#125");
+      assert.strictEqual(
+        rows[0].carriedTitle,
+        "promotion/integration/uat/2026-08-20-0930",
+      );
+      assert.strictEqual(rows[0].promotionLabel, "");
+      assert.deepStrictEqual(
+        rows[0].tickets.map((ticket: any) => ticket.id),
+        ["CRM-1049"],
+      );
+      // A promotion keeps its own pill, a story merged straight into the branch has none
+      assert.strictEqual(rows[1].carriedNumber, 0);
+      assert.strictEqual(
+        rows[1].promotionLabel,
+        "Promotion of 4 Pull Request(s)",
+      );
+      assert.strictEqual(rows[2].carriedNumber, 0);
+      assert.strictEqual(rows[2].promotionLabel, "");
+      const listHtml = readModuleFile(
+        "pullRequestList",
+        "pullRequestList.html",
+      );
+      assert.match(
+        listHtml,
+        /<template if:true=\{row\.carriedNumber\}>\s*<button[^>]*data-pr-number=\{row\.carriedNumber\}[^>]*onclick=\{handleOpen\}/,
+      );
+      assertKeysTranslated(
+        new Set([
+          "prListFilterPlaceholder",
+          "prListNoMatch",
+          "prListSelectAll",
+          "prListSelectRow",
+          "prListShownCount",
+          "prListVehiclesFilter",
+        ]),
       );
     });
 

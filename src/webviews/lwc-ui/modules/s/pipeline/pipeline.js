@@ -154,150 +154,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     },
   ];
 
-  // Columns for modal PR display (with merge date). The job status column is
-  // included only for single PR / "+N more" group modals (showJobStatusColumn).
-  get modalPrColumns() {
-    const statusColumn = this.showJobStatusColumn
-      ? [
-          {
-            key: "status",
-            label: this.i18n.statusLabel,
-            fieldName: "jobsStatusLabel",
-            type: "statusPill",
-            typeAttributes: {
-              label: { fieldName: "jobsStatusLabel" },
-              pillClass: { fieldName: "statusPillClass" },
-              url: { fieldName: "jobsStatusUrl" },
-            },
-            wrapText: false,
-            initialWidth: 120,
-          },
-        ]
-      : [];
-    const mergeConflictColumn = this.modalHasMergeConflictColumn
-      ? [
-          {
-            key: "mergeStatus",
-            label: this.i18n.legendMergeConflicts,
-            fieldName: "mergeConflictLabel",
-            type: "typePill",
-            typeAttributes: {
-              label: { fieldName: "mergeConflictLabel" },
-              pillClass: { fieldName: "mergeConflictPillClass" },
-              tooltip: { fieldName: "mergeConflictTooltip" },
-              iconName: { fieldName: "mergeConflictIcon" },
-              url: { fieldName: "mergeConflictUrl" },
-            },
-            wrapText: false,
-            initialWidth: 180,
-          },
-        ]
-      : [];
-    const promotionColumn = this.modalHasPromotionColumn
-      ? [
-          {
-            key: "promotion",
-            label: this.i18n.promotionLabel,
-            fieldName: "promotionLabel",
-            type: "statusPill",
-            typeAttributes: {
-              label: { fieldName: "promotionLabel" },
-              pillClass: { fieldName: "promotionPillClass" },
-              url: { fieldName: "promotionUrl" },
-            },
-            wrapText: false,
-            // A width even as the last column: the table is wider than the modal and scrolls,
-            // a flexible last column would get what is left, next to nothing
-            initialWidth: 260,
-          },
-        ]
-      : [];
-    /* jscpd:ignore-start */
-    return [
-      {
-        key: "number",
-        label: "#",
-        fieldName: "numberLabel",
-        type: "button",
-        typeAttributes: {
-          label: { fieldName: "numberLabel" },
-          name: "view_pr",
-          variant: "base",
-        },
-        initialWidth: 80,
-        wrapText: true,
-      },
-      // Number and title open the Pull Request in the panel, whose header links to the git provider
-      {
-        key: "title",
-        label: this.i18n.titleLabel,
-        fieldName: "title",
-        type: "button",
-        typeAttributes: {
-          label: { fieldName: "title" },
-          name: "view_pr",
-          variant: "base",
-        },
-        initialWidth: 300,
-        wrapText: true,
-      },
-      /* jscpd:ignore-end */
-      ...statusColumn,
-      ...mergeConflictColumn,
-      // The shared author column, which states a width. This table used to hold a copy of it
-      // without one, and it was then the only column left to absorb what the promotion
-      // checkbox column takes: it collapsed to the avatar circle, hiding both the author name
-      // and the column header
-      this._authorColumn(),
-      {
-        key: "mergeDate",
-        label: this.i18n.mergedLabel,
-        fieldName: "mergeDateFormatted",
-        type: "text",
-        wrapText: false,
-        initialWidth: 130,
-        cellAttributes: { class: "hardis-date-cell" },
-      },
-      {
-        key: "source",
-        label: this.i18n.sourceLabel,
-        fieldName: "sourceBranch",
-        type: "branchChip",
-        wrapText: false,
-        initialWidth: 200,
-      },
-      {
-        key: "target",
-        label: this.i18n.targetLabel,
-        fieldName: "targetBranch",
-        type: "branchChip",
-        wrapText: false,
-        // Only the last column is left without a width: when the promotion column follows, the
-        // target column takes one, or it is squeezed to a single letter
-        ...(promotionColumn.length > 0 ? { initialWidth: 150 } : {}),
-      },
-      // Last: it only says how a story travels, the columns before it say what it is
-      ...promotionColumn,
-    ];
-  }
-
-  // Datatable column definition for an author, displayed with the same
-  // initials avatar as in the Pull Requests tab.
-  _authorColumn() {
-    return {
-      key: "author",
-      label: this.i18n.authorLabel,
-      fieldName: "authorLabel",
-      type: "avatarText",
-      wrapText: false,
-      initialWidth: 170,
-      typeAttributes: {
-        initials: { fieldName: "authorInitials" },
-        avatarClass: { fieldName: "authorAvatarClass" },
-      },
-    };
-  }
-
   // Datatable column definition for the pull request link (branch mode only).
   _pullRequestColumn() {
     return {
@@ -1047,19 +903,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
       return copy;
     });
-  }
-
-  // The promotion column only appears when at least one row has something to say,
-  // so projects without promotion branches keep the same table
-  get modalHasPromotionColumn() {
-    return (this.modalPullRequests || []).some((pr) => pr.promotionLabel);
-  }
-
-  // Same rule for the merge conflicts column: a list where everything merges cleanly, or
-  // where the provider has no verdict to give (Bitbucket, a Pull Request opened seconds
-  // ago, a merged one), keeps exactly the table it had
-  get modalHasMergeConflictColumn() {
-    return (this.modalPullRequests || []).some((pr) => pr.mergeConflictLabel);
   }
 
   _formatCompactDate(value) {
@@ -2524,18 +2367,18 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     );
   }
 
-  // The toggle only shows when the current view holds something to reveal
-  get modalHasPromotionPrs() {
+  // How many merges and promotions the window holds: the chip of the list says it, and hides at 0
+  get modalVehicleCount() {
     if (this.modalMode !== "branch" || !this.modalBranchName) {
-      return false;
+      return 0;
     }
-    return (this.modalSourcePullRequests || []).some((pr) =>
-      this._isPromotionOrMajorPr(pr),
-    );
+    return (this.modalSourcePullRequests || []).filter(
+      (pr) => pr.promotedAway !== true && this._isPromotionOrMajorPr(pr),
+    ).length;
   }
 
   handleToggleModalPromotionPrs(event) {
-    this.modalShowPromotionPrs = event.target.checked;
+    this.modalShowPromotionPrs = event.detail?.shown === true;
     this.modalSelectedPrIds = [];
     this.modalSelectedPrNumbers = [];
     this._populateModalFromPrs(
@@ -2573,9 +2416,29 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return this.t("promotionSelectionHint");
   }
 
-  handleModalRowSelection(event) {
-    const rows = (event.detail && event.detail.selectedRows) || [];
-    const eligible = rows.filter((row) => this._isSelectableForPromotion(row));
+  get modalPrsSelectable() {
+    return !this.modalHideCheckboxColumn;
+  }
+
+  // The rows of the Pull Requests tab, each one saying whether it can be ticked
+  get modalPrListRows() {
+    // Built once per list: a new array at each render would redraw every row
+    if (this._prListSource !== this.modalPullRequests) {
+      this._prListSource = this.modalPullRequests;
+      this._prListRows = (this.modalPullRequests || []).map((pr) => ({
+        ...pr,
+        selectable: this._isSelectableForPromotion(pr),
+      }));
+    }
+    return this._prListRows;
+  }
+
+  handleModalPrSelect(event) {
+    const numbers = (event.detail && event.detail.numbers) || [];
+    const eligible = (this.modalPullRequests || []).filter(
+      (row) =>
+        numbers.includes(row.number) && this._isSelectableForPromotion(row),
+    );
     this.modalSelectedPrIds = eligible.map((row) => row.id);
     this.modalSelectedPrNumbers = eligible.map((row) => row.number);
   }

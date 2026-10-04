@@ -376,10 +376,10 @@ const PROMOTION_BRANCH =
  * `promotionRows`, as "x,y;x,y".
  */
 const PROMOTION_TICKED_ROWS = (
-  universeSetting("promotionRows") || "525,400;525,478"
+  universeSetting("promotionRows") || "531,433;531,593"
 )
   .split(";")
-  .map((pair) => parsePoint(pair, 525, 400));
+  .map((pair) => parsePoint(pair, 531, 433));
 const PROMOTION_MODAL_CLOSE = { x: 1843, y: 78 };
 /**
  * Action recovery variant of the run (SFDX_HARDIS_DOC_SCREENSHOTS_ACTION_RECOVERY):
