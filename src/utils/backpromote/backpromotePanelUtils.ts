@@ -112,6 +112,8 @@ export interface BackpromoteDeletion {
 
 export interface BackpromoteAction {
   id: string;
+  // <Pull Request>:<pre|post>:<id>, unique in the plan: two Pull Requests can reuse one action id
+  key: string;
   label: string;
   type: string;
   phase: "pre" | "post";
@@ -122,6 +124,15 @@ export interface BackpromoteAction {
   customUsername: string | null;
   runnable: boolean;
   runOnlyOnceByOrg: boolean;
+  // The action of the plan this one runs once with (same type, phase, user and parameters)
+  identicalTo: BackpromoteActionRef | null;
+}
+
+export interface BackpromoteActionRef {
+  key: string;
+  id: string;
+  pullRequest: number;
+  label: string;
 }
 
 export interface BackpromoteComparison {
@@ -158,6 +169,10 @@ export interface BackpromoteRunResult {
     skipped: string[];
     failed: string[];
     pending: string[];
+    // The skipped actions an identical action of the same run did
+    identical: string[];
+    // The outcome of each action by its plan key (run, skipped, failed, pending, identical)
+    byKey: Record<string, string>;
   };
   conflictPending: string[];
   commentedPullRequests: number[];
@@ -328,6 +343,35 @@ export interface BackpromoteSelectionPayload {
 
 function asArray<T = any>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
+}
+
+function normalizeActionRef(value: any): BackpromoteActionRef | null {
+  if (!value || typeof value !== "object" || typeof value.id !== "string") {
+    return null;
+  }
+  const pullRequest = Number.isInteger(value.pullRequest)
+    ? value.pullRequest
+    : 0;
+  return {
+    key:
+      typeof value.key === "string" && value.key !== ""
+        ? value.key
+        : `${pullRequest}:${value.id}`,
+    id: value.id,
+    pullRequest,
+    label: String(value.label || value.id),
+  };
+}
+
+function asStringRecord(value: unknown): Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).filter(
+      ([key, entry]) => key !== "" && typeof entry === "string",
+    ),
+  ) as Record<string, string>;
 }
 
 function asStringArray(value: unknown): string[] {
@@ -620,21 +664,31 @@ export function normalizeBackpromotePlan(raw: any): BackpromotePlan | null {
       .map(entry),
     actions: asArray(raw.actions)
       .filter((action: any) => typeof action?.id === "string")
-      .map((action: any) => ({
-        id: action.id,
-        label: String(action.label || action.id),
-        type: String(action.type || ""),
-        phase: action.phase === "pre" ? "pre" : "post",
-        context: String(action.context || "all"),
-        pullRequest: Number.isInteger(action.pullRequest)
+      .map((action: any) => {
+        const pullRequest = Number.isInteger(action.pullRequest)
           ? action.pullRequest
-          : 0,
-        alreadyRunOn: asStringOrNull(action.alreadyRunOn),
-        manual: action.manual === true || action.type === "manual",
-        customUsername: asStringOrNull(action.customUsername),
-        runnable: action.runnable !== false,
-        runOnlyOnceByOrg: action.runOnlyOnceByOrg !== false,
-      })),
+          : 0;
+        const phase: "pre" | "post" = action.phase === "pre" ? "pre" : "post";
+        return {
+          id: action.id,
+          // An older sfdx-hardis sends no key: its plan never holds an id twice
+          key:
+            typeof action.key === "string" && action.key !== ""
+              ? action.key
+              : `${pullRequest}:${phase}:${action.id}`,
+          label: String(action.label || action.id),
+          type: String(action.type || ""),
+          phase,
+          context: String(action.context || "all"),
+          pullRequest,
+          alreadyRunOn: asStringOrNull(action.alreadyRunOn),
+          manual: action.manual === true || action.type === "manual",
+          customUsername: asStringOrNull(action.customUsername),
+          runnable: action.runnable !== false,
+          runOnlyOnceByOrg: action.runOnlyOnceByOrg !== false,
+          identicalTo: normalizeActionRef(action.identicalTo),
+        };
+      }),
     comparison: asArray(raw.comparison)
       .filter(
         (comparison: any) =>
@@ -690,6 +744,8 @@ export function normalizeBackpromotePlan(raw: any): BackpromotePlan | null {
               skipped: asStringArray(raw.result.actions?.skipped),
               failed: asStringArray(raw.result.actions?.failed),
               pending: asStringArray(raw.result.actions?.pending),
+              identical: asStringArray(raw.result.actions?.identical),
+              byKey: asStringRecord(raw.result.actions?.byKey),
             },
             conflictPending: asStringArray(raw.result.conflictPending),
             commentedPullRequests: asNumberArray(

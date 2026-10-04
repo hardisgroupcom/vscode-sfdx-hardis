@@ -3360,7 +3360,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       });
     }
     return {
-      statusCode: forecast.forecast,
+      // An action run once with an identical one of another Pull Request is counted apart
+      statusCode: forecast.identicalTo ? "identical" : forecast.forecast,
       showStatus: true,
       statusLabel: display.label,
       statusPillClass: "hardis-pill " + display.pillClass,
@@ -3372,6 +3373,18 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   _forecastDisplay(forecast, target) {
+    // The same job runs it once, with the identical action of another Pull Request
+    if (forecast.identicalTo) {
+      return {
+        label: this.t(
+          forecast.forecast === "runs-at-validation"
+            ? "forecastRunsAtValidationWithIdentical"
+            : "forecastRunsAtDeploymentWithIdentical",
+          { pr: forecast.identicalTo.pr },
+        ),
+        pillClass: "hardis-status-info",
+      };
+    }
     switch (forecast.forecast) {
       case "waiting":
         return {
@@ -3451,6 +3464,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         return this.i18n.forecastReasonStopped;
       case "not-carried":
         return this.t("forecastReasonNotCarried", { pr: promotionPr });
+      case "identical-action":
+        return this.t("forecastReasonIdenticalAction", {
+          label: forecast.identicalTo?.actionLabel || "",
+          pr: forecast.identicalTo?.pr || "?",
+        });
       default:
         return "";
     }
@@ -3466,9 +3484,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
     if (
       rows.some((row) =>
-        ["runs-at-validation", "runs-at-deployment", "after-merge"].includes(
-          row.statusCode,
-        ),
+        [
+          "runs-at-validation",
+          "runs-at-deployment",
+          "after-merge",
+          "identical",
+        ].includes(row.statusCode),
       )
     ) {
       return 1;
@@ -3513,6 +3534,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         key: "deployment",
         codes: ["runs-at-deployment"],
         labelKey: "forecastSummaryDeployment",
+        pill: "hardis-status-info",
+      },
+      {
+        key: "identical",
+        codes: ["identical"],
+        labelKey: "forecastSummaryIdentical",
         pill: "hardis-status-info",
       },
       {
