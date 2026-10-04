@@ -1983,6 +1983,7 @@
   "prAlreadyDeployedViaPromotion": "Już wdrożony przez {{branch}}",
   "prCarriedByPromotion": "Przenoszony przez {{branch}}",
   "prClickToManageActions": "#{{num}} - {{title}}. Kliknij, aby zobaczyć powiązane tickety i zarządzać akcjami przed/po wdrożeniu.",
+  "prCodeQualityTab": "Jakość kodu",
   "prExplorerEmptyDesc": "Wpisanie numeru, tytułu, branch, autora lub ticketu otwiera Pull Request wraz z jego opisem, ticketami, akcjami wdrożenia, klasami testowymi oraz wynikami walidacji i wdrożenia.",
   "prGeneralTab": "Ogólne",
   "prIsPromotion": "Promocja {{count}} Pull Requestów",

@@ -1983,6 +1983,7 @@
   "prAlreadyDeployedViaPromotion": "Al geïmplementeerd via {{branch}}",
   "prCarriedByPromotion": "Meegenomen door {{branch}}",
   "prClickToManageActions": "#{{num}} - {{title}}. Klik om gerelateerde tickets te bekijken en pre-post implementatieacties te beheren.",
+  "prCodeQualityTab": "Codekwaliteit",
   "prExplorerEmptyDesc": "Typ een nummer, een titel, een branch, een auteur of een ticket om een Pull Request te openen met zijn beschrijving, tickets, implementatieacties, testklassen en validatie- en implementatieresultaten.",
   "prGeneralTab": "Algemeen",
   "prIsPromotion": "Promotion van {{count}} Pull Request(s)",

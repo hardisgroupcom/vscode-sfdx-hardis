@@ -1983,6 +1983,7 @@
   "prAlreadyDeployedViaPromotion": "Ya desplegada mediante {{branch}}",
   "prCarriedByPromotion": "Transportada por {{branch}}",
   "prClickToManageActions": "#{{num}} - {{title}}. Haga clic para ver los tickets relacionados y gestionar las acciones de despliegue.",
+  "prCodeQualityTab": "Calidad del código",
   "prExplorerEmptyDesc": "Escriba un número, un título, una branch, un autor o un ticket para abrir una Pull Request con su descripción, tickets, acciones de despliegue, clases de test y resultados de validación y despliegue.",
   "prGeneralTab": "General",
   "prIsPromotion": "Promoción de {{count}} Pull Request(s)",

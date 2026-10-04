@@ -1983,6 +1983,7 @@
   "prAlreadyDeployedViaPromotion": "{{branch}} 経由でデプロイ済み",
   "prCarriedByPromotion": "{{branch}} により運ばれる",
   "prClickToManageActions": "#{{num}} - {{title}}。クリックすると関連チケットを表示し、デプロイ前後のアクションを管理できます。",
+  "prCodeQualityTab": "コード品質",
   "prExplorerEmptyDesc": "番号、タイトル、branch、作成者、またはチケットを入力すると、Pull Request を説明、チケット、デプロイアクション、テストクラス、検証結果、デプロイ結果と共に開けます。",
   "prGeneralTab": "全般",
   "prIsPromotion": "{{count}} 件の Pull Request のプロモーション",

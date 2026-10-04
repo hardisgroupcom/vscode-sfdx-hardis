@@ -737,7 +737,7 @@
                                     </template>
                                 </lightning-tab>
                             </template>
-                            <!-- Validation, Deployment and MegaLinter tabs: the comments posted on the Pull Request itself -->
+                            <!-- Validation, Code Quality (MegaLinter) and Deployment tabs: the comments posted on the Pull Request itself -->
                             <template if:true={showWorkflowsTab}>
                                 <lightning-tab label={i18n.journeyValidation} value="validation" icon-name="utility:search" icon-assistive-text={i18n.journeyValidation}>
                                     <s-workflow-runs
@@ -746,18 +746,18 @@
                                         empty-label={noValidationLabel}
                                     ></s-workflow-runs>
                                 </lightning-tab>
+                                <lightning-tab label={i18n.prCodeQualityTab} value="megalinter" icon-name="utility:shield" icon-assistive-text={i18n.prCodeQualityTab}>
+                                    <s-workflow-runs
+                                        runs={modalMegaLinterRuns}
+                                        loading={workflowsLoading}
+                                        empty-label={noMegaLinterLabel}
+                                    ></s-workflow-runs>
+                                </lightning-tab>
                                 <lightning-tab label={i18n.workflowDeploymentNoBranch} value="deployment" icon-name="utility:upload" icon-assistive-text={i18n.workflowDeploymentNoBranch}>
                                     <s-workflow-runs
                                         runs={modalDeploymentRuns}
                                         loading={workflowsLoading}
                                         empty-label={noDeploymentLabel}
-                                    ></s-workflow-runs>
-                                </lightning-tab>
-                                <lightning-tab label="MegaLinter" value="megalinter" icon-name="utility:shield" icon-assistive-text="MegaLinter">
-                                    <s-workflow-runs
-                                        runs={modalMegaLinterRuns}
-                                        loading={workflowsLoading}
-                                        empty-label={noMegaLinterLabel}
                                     ></s-workflow-runs>
                                 </lightning-tab>
                             </template>
