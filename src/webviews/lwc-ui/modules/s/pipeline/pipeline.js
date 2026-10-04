@@ -3376,9 +3376,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // The same job runs it once, with the identical action of another Pull Request
     if (forecast.identicalTo) {
       return {
-        label: this.t("forecastRunsWithIdentical", {
-          pr: forecast.identicalTo.pr,
-        }),
+        label: this.t(
+          forecast.forecast === "runs-at-validation"
+            ? "forecastRunsAtValidationWithIdentical"
+            : "forecastRunsAtDeploymentWithIdentical",
+          { pr: forecast.identicalTo.pr },
+        ),
         pillClass: "hardis-status-info",
       };
     }
@@ -3481,9 +3484,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
     if (
       rows.some((row) =>
-        ["runs-at-validation", "runs-at-deployment", "after-merge"].includes(
-          row.statusCode,
-        ),
+        [
+          "runs-at-validation",
+          "runs-at-deployment",
+          "after-merge",
+          "identical",
+        ].includes(row.statusCode),
       )
     ) {
       return 1;

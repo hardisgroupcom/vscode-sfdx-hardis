@@ -171,6 +171,8 @@ export interface BackpromoteRunResult {
     pending: string[];
     // The skipped actions an identical action of the same run did
     identical: string[];
+    // The outcome of each action by its plan key (run, skipped, failed, pending, identical)
+    byKey: Record<string, string>;
   };
   conflictPending: string[];
   commentedPullRequests: number[];
@@ -359,6 +361,17 @@ function normalizeActionRef(value: any): BackpromoteActionRef | null {
     pullRequest,
     label: String(value.label || value.id),
   };
+}
+
+function asStringRecord(value: unknown): Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).filter(
+      ([key, entry]) => key !== "" && typeof entry === "string",
+    ),
+  ) as Record<string, string>;
 }
 
 function asStringArray(value: unknown): string[] {
@@ -655,16 +668,17 @@ export function normalizeBackpromotePlan(raw: any): BackpromotePlan | null {
         const pullRequest = Number.isInteger(action.pullRequest)
           ? action.pullRequest
           : 0;
+        const phase: "pre" | "post" = action.phase === "pre" ? "pre" : "post";
         return {
           id: action.id,
           // An older sfdx-hardis sends no key: its plan never holds an id twice
           key:
             typeof action.key === "string" && action.key !== ""
               ? action.key
-              : `${pullRequest}:${action.id}`,
+              : `${pullRequest}:${phase}:${action.id}`,
           label: String(action.label || action.id),
           type: String(action.type || ""),
-          phase: action.phase === "pre" ? "pre" : "post",
+          phase,
           context: String(action.context || "all"),
           pullRequest,
           alreadyRunOn: asStringOrNull(action.alreadyRunOn),
@@ -731,6 +745,7 @@ export function normalizeBackpromotePlan(raw: any): BackpromotePlan | null {
               failed: asStringArray(raw.result.actions?.failed),
               pending: asStringArray(raw.result.actions?.pending),
               identical: asStringArray(raw.result.actions?.identical),
+              byKey: asStringRecord(raw.result.actions?.byKey),
             },
             conflictPending: asStringArray(raw.result.conflictPending),
             commentedPullRequests: asNumberArray(
