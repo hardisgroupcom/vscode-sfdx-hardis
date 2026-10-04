@@ -347,8 +347,15 @@ export class GitProviderBitbucket extends GitProvider {
    * and add conditions of its own.
    */
   private buildSearchFilter(text: string): string {
-    const escaped = text.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-    return `(title ~ "${escaped}" OR description ~ "${escaped}") AND (state = "OPEN" OR state = "MERGED")`;
+    // Every word must be found, in the title or in the description, as on the other providers
+    const words = text
+      .split(/\s+/)
+      .filter((word) => word !== "")
+      .map((word) => word.replace(/\\/g, "\\\\").replace(/"/g, '\\"'));
+    const wordFilters = words.map(
+      (word) => `(title ~ "${word}" OR description ~ "${word}")`,
+    );
+    return `${wordFilters.join(" AND ")} AND (state = "OPEN" OR state = "MERGED")`;
   }
 
   async getActivePullRequestFromBranch(

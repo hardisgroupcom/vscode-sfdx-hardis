@@ -344,10 +344,29 @@ suite("Pull Request search", () => {
 
       await provider.searchPullRequests('x" OR state = "DECLINED\\');
 
-      const escaped = 'x\\" OR state = \\"DECLINED\\\\';
+      // Each typed word stays inside its own quoted string: none of them can close it and add
+      // a condition of its own, and the state filter of the search is the only one
+      const words = ['x\\"', "OR", "state", "=", '\\"DECLINED\\\\'];
       assert.strictEqual(
         calls[0].q,
-        `(title ~ "${escaped}" OR description ~ "${escaped}") AND (state = "OPEN" OR state = "MERGED")`,
+        words
+          .map((word) => `(title ~ "${word}" OR description ~ "${word}")`)
+          .join(" AND ") + ' AND (state = "OPEN" OR state = "MERGED")',
+      );
+    });
+
+    test("every word must be found, in any order", async () => {
+      const calls: any[] = [];
+      const provider = buildProvider(async (params) => {
+        calls.push(params);
+        return { data: { values: [] } };
+      });
+
+      await provider.searchPullRequests("login  fix");
+
+      assert.strictEqual(
+        calls[0].q,
+        '(title ~ "login" OR description ~ "login") AND (title ~ "fix" OR description ~ "fix") AND (state = "OPEN" OR state = "MERGED")',
       );
     });
 

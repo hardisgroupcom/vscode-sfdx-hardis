@@ -209,7 +209,7 @@ export function registerShowPipeline(commands: Commands) {
       const pipelineDeepLink = buildPipelineDeepLink(deepLink);
       if (pipelineDeepLink) {
         Logger.log(
-          `[vscode-sfdx-hardis] pipeline deep link requested for branch ${deepLink.sourceBranch || "(current)"}`,
+          `[vscode-sfdx-hardis] pipeline deep link requested: ${pipelineDeepLink.focus} ${pipelineDeepLink.prNumber ? "#" + pipelineDeepLink.prNumber : deepLink.sourceBranch || "(current branch)"}`,
         );
       }
 
@@ -499,7 +499,7 @@ export function registerShowPipeline(commands: Commands) {
             // modal that will never open.
             panel.sendMessage({
               type: "returnGetPrInfoForModal",
-              data: null,
+              data: { notFound: true, requestId: Number(data?.requestId) || 0 },
             });
             return;
           }
@@ -528,7 +528,7 @@ export function registerShowPipeline(commands: Commands) {
               );
               panel.sendMessage({
                 type: "returnGetPrInfoForModal",
-                data: null,
+                data: { notFound: true, requestId: Number(data?.requestId) || 0 },
               });
               return;
             }
@@ -651,10 +651,15 @@ export function registerShowPipeline(commands: Commands) {
             // edit is written in it: the view says which branch that is, and whether it is behind
             if (prDetails) {
               (prDetails as any).checkout = await getCheckoutInfo();
+              // The id of the request goes back, so the panel can drop a late answer
+              (prDetails as any).requestId = Number(data?.requestId) || 0;
             }
             panel.sendMessage({
               type: "returnGetPrInfoForModal",
-              data: prDetails || null,
+              data: prDetails || {
+                notFound: true,
+                requestId: Number(data?.requestId) || 0,
+              },
             });
           } catch (e) {
             const prLabel =
@@ -666,7 +671,7 @@ export function registerShowPipeline(commands: Commands) {
             );
             panel.sendMessage({
               type: "returnGetPrInfoForModal",
-              data: null,
+              data: { notFound: true, requestId: Number(data?.requestId) || 0 },
             });
           }
         }
@@ -1555,14 +1560,24 @@ async function loadDeploymentActionStatuses(data: any): Promise<{
   const fromBranch = String(data?.fromBranch || "");
   const withForecast =
     /^[\w./-]+$/.test(forecastBranch) && /^[\w./-]+$/.test(fromBranch);
-  const result = await runActionListJson(
+  const flags = (workflows: boolean) =>
     `--pr-ids ${numbers.join(",")}` +
-      (withWorkflows ? " --with-workflows" : "") +
-      (withForecast
-        ? ` --forecast ${forecastBranch} --from-branch ${fromBranch}`
-        : ""),
+    (workflows ? " --with-workflows" : "") +
+    (withForecast
+      ? ` --forecast ${forecastBranch} --from-branch ${fromBranch}`
+      : "");
+  let result = await runActionListJson(
+    flags(withWorkflows),
     "Deployment action statuses",
   );
+  // A sfdx-hardis older than --with-workflows refuses the flag and answers nothing at all: the
+  // statuses are asked again without it, so the Deployment Actions tab keeps its status column
+  if (!result && withWorkflows) {
+    result = await runActionListJson(
+      flags(false),
+      "Deployment action statuses (without workflows)",
+    );
+  }
   // gitProvider false: no git provider credentials, so the Pull Request comments were not read.
   // Hide the column rather than show every action as "Not run yet"
   if (!result || result.gitProvider === false || !result.statuses) {

@@ -393,6 +393,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // without reading anything again, so the stories ticked for a promotion are still ticked
   @track _modalStack = [];
   _stackPushedForRequest = false;
+  // Id of the last Pull Request asked to the extension: the answer to an older one is dropped,
+  // and so is any answer once the window was closed or left through the breadcrumb
+  _prViewRequestId = 0;
+  // The request replaces the windows of the breadcrumb once its Pull Request is there
+  _clearStackOnAnswer = false;
   // Validation and deployment runs of the Pull Request shown, read by sfdx-hardis from its
   // comments (null until they are known)
   modalWorkflows = null;
@@ -1912,6 +1917,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       case "returnSearchPullRequests":
         this.handleReturnSearchPullRequests(data);
         break;
+      case "openPullRequestView":
+        // A Pull Request link of another panel, while this panel is already loaded
+        if (data?.prNumber > 0) {
+          this.openPullRequestView({
+            prNumber: data.prNumber,
+            tab: data.tab || null,
+          });
+        }
+        break;
       case "deploymentActionMarkDoneResult":
         this.handleDeploymentActionMarkDoneResult(data);
         break;
@@ -3010,7 +3024,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       current.number === number &&
       number > 0
     ) {
+      // Already on screen: only the tab asked for changes
+      if (tab) {
+        this.modalActiveTabValue = tab;
+      }
       return;
+    }
+    // A request still on its way is replaced: the window it had put aside is not put aside twice
+    if (this._stackPushedForRequest) {
+      this._modalStack = this._modalStack.slice(0, -1);
     }
     this._stackPushedForRequest = false;
     if (this.showPRModal && keepStack && this.modalPullRequests.length > 0) {
@@ -3019,18 +3041,23 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         { label: this.modalCrumbLabel, state: captureModalState(this) },
       ];
       this._stackPushedForRequest = true;
-    } else if (!keepStack) {
-      this._modalStack = [];
     }
+    // The breadcrumb is only emptied once the Pull Request is there: a number that does not
+    // exist leaves the window on screen with its way back
+    this._clearStackOnAnswer = !keepStack;
     if (tab) {
       this._nextModalTab = tab;
     }
     this.prViewLoading = this.showPRModal;
+    this._prViewRequestId += 1;
     window.sendMessageToVSCode({
       type: "getPrInfoForModal",
-      data: pr
-        ? { pullRequest: JSON.parse(JSON.stringify(pr)) }
-        : { prNumber: number },
+      data: {
+        requestId: this._prViewRequestId,
+        ...(pr
+          ? { pullRequest: JSON.parse(JSON.stringify(pr)) }
+          : { prNumber: number }),
+      },
     });
   }
 
@@ -3065,6 +3092,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
     this._modalStack = this._modalStack.slice(0, index);
     this._stackPushedForRequest = false;
+    this._clearStackOnAnswer = false;
+    // A Pull Request still being read must not replace the window the user came back to
+    this._prViewRequestId += 1;
     this.prViewLoading = false;
     applyModalState(this, entry.state);
     // An answer on its way belongs to the window that was just left
@@ -3314,6 +3344,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     applyModalState(this, null);
     this.explorerMode = false;
     this.prViewLoading = false;
+    // A Pull Request still being read must not open the window again
+    this._prViewRequestId += 1;
+    this._clearStackOnAnswer = false;
     this._goLivesRequestId = null;
     this._goLivePrsRequestId = null;
   }
@@ -3353,6 +3386,14 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   handleReturnGetPrInfoForModal(pr) {
+    // The answer to a request that was replaced, or whose window was closed or left
+    if (pr?.requestId && pr.requestId !== this._prViewRequestId) {
+      return;
+    }
+    // The extension answers { notFound } when it has no Pull Request to show
+    if (pr?.notFound === true) {
+      pr = null;
+    }
     this.prViewLoading = false;
     if (!pr) {
       // The backend request failed (no git provider / error): the modal will not
@@ -3367,6 +3408,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       return;
     }
     this._stackPushedForRequest = false;
+    if (this._clearStackOnAnswer) {
+      this._modalStack = [];
+      this._clearStackOnAnswer = false;
+    }
     // Nothing of the window shown before (branch window, another Pull Request) must remain
     applyModalState(this, null);
     this.modalCheckout = pr.checkout || null;

@@ -165,13 +165,13 @@ export class GitProviderGitea extends GitProviderGitHub {
         .map((issue: any) => Number(issue.number))
         .filter((number: number) => Number.isInteger(number))
         .slice(0, limit);
-      const pullRequests: PullRequest[] = [];
-      for (const number of numbers) {
-        const pullRequest = await this.getPullRequestByNumber(number);
-        if (pullRequest) {
-          pullRequests.push(pullRequest);
-        }
-      }
+      // At most 10 reads, done together: the lookup waits for them
+      const found = await Promise.all(
+        numbers.map((number) => this.getPullRequestByNumber(number)),
+      );
+      const pullRequests: PullRequest[] = found.filter(
+        (pullRequest): pullRequest is PullRequest => !!pullRequest,
+      );
       return this.buildSearchResult(pullRequests, limit);
     } catch (err) {
       Logger.log(`Error searching Gitea Pull Requests: ${String(err)}`);

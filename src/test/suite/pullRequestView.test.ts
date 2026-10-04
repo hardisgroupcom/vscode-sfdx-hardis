@@ -27,7 +27,7 @@ const EXPORTED = [
   "journeyBranchPath",
   "buildPullRequestJourney",
   "journeyPillClass",
-  "safeHttpsUrl",
+  "safeWebUrl",
 ];
 
 function loadPullRequestUtils(): any {
@@ -228,6 +228,19 @@ suite("Pull Request view", () => {
       ]);
     });
 
+    test("the validation step is the one of the Pull Request, not of its carrier", () => {
+      const steps = utils.buildPullRequestJourney({
+        pr: pullRequest({ state: "merged" }),
+        orgs: ORGS,
+        windows: {},
+        workflows: [
+          { kind: "validation", status: "valid", prNumber: 128 },
+          { kind: "validation", status: "invalid", prNumber: 140 },
+        ],
+      });
+      assert.strictEqual(steps[0].state, "success");
+    });
+
     test("names the promotion that carried a story to a branch", () => {
       const steps = utils.buildPullRequestJourney({
         pr: pullRequest({
@@ -307,12 +320,17 @@ suite("Pull Request view", () => {
   suite("links", () => {
     test("only follows a plain https address", () => {
       assert.strictEqual(
-        utils.safeHttpsUrl("https://ci.example.com/jobs/12"),
+        utils.safeWebUrl("https://ci.example.com/jobs/12"),
         "https://ci.example.com/jobs/12",
       );
-      assert.strictEqual(utils.safeHttpsUrl("javascript:alert(1)"), "");
-      assert.strictEqual(utils.safeHttpsUrl("http://ci.example.com"), "");
-      assert.strictEqual(utils.safeHttpsUrl('https://x.com/"onclick='), "");
+      assert.strictEqual(utils.safeWebUrl("javascript:alert(1)"), "");
+      // A self-hosted provider is not always served over https
+      assert.strictEqual(
+        utils.safeWebUrl("http://git.intranet/acme/sf/pull/1"),
+        "http://git.intranet/acme/sf/pull/1",
+      );
+      assert.strictEqual(utils.safeWebUrl("data:text/html,x"), "");
+      assert.strictEqual(utils.safeWebUrl('https://x.com/"onclick='), "");
     });
 
     test("recognises a Pull Request of the repository on every provider", () => {
@@ -375,7 +393,7 @@ suite("Pull Request view", () => {
     test("the comment of a run is rendered through the sanitizer only", () => {
       const view = readModuleFile("markdownView", "markdownView.js");
       assert.match(view, /purify\.sanitize\(/);
-      assert.match(view, /ALLOWED_URI_REGEXP: \/\^https:/);
+      assert.match(view, /ALLOWED_URI_REGEXP: \/\^https\?:/);
       assert.ok(
         !/innerHTML = (?!html)/.test(view),
         "markdownView must only write sanitized HTML",

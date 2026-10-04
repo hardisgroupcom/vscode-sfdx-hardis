@@ -903,6 +903,18 @@ export class LwcUiPanel {
         ? parsePullRequestNumberFromUrl(url, gitProvider.repoInfo?.webUrl)
         : null;
       if (prNumber) {
+        // A DevOps Pipeline panel already open only has to show the Pull Request: running its
+        // command again would reload the whole pipeline first
+        const panelManagerModule = await import("../lwc-panel-manager");
+        const pipelinePanel = panelManagerModule.LwcPanelManager.getInstance().getPanel("s-pipeline");
+        if (pipelinePanel && !pipelinePanel.isDisposed()) {
+          pipelinePanel.reveal();
+          pipelinePanel.sendMessage({
+            type: "openPullRequestView",
+            data: { prNumber },
+          });
+          return;
+        }
         await vscode.commands.executeCommand(
           "vscode-sfdx-hardis.showPipeline",
           { focus: "pullRequest", prNumber },

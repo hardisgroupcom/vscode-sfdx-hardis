@@ -221,7 +221,11 @@ export function buildPullRequestJourney({
   // validation comment recorded
   const validationRun = [...runs]
     .reverse()
-    .find((run) => run.kind === "validation");
+    .find(
+      (run) =>
+        run.kind === "validation" &&
+        (run.prNumber === undefined || run.prNumber === pr.number),
+    );
   let validationState = "unknown";
   if (!merged && lookupState(pr) === "open") {
     validationState =
@@ -328,10 +332,11 @@ export function journeyPillClass(state) {
 }
 
 /**
- * A link is only followed when it is a plain https address: the URLs of a run come from a Pull
- * Request comment, which anyone allowed to comment can write.
+ * A link is only followed when it is a plain web address: the URLs of a run come from a Pull
+ * Request comment, which anyone allowed to comment can write. http is accepted next to https
+ * because a self-hosted git provider or ticketing tool is not always served over https.
  */
-export function safeHttpsUrl(value) {
+export function safeWebUrl(value) {
   const text = String(value || "").trim();
-  return /^https:\/\/[^\s"'<>]+$/i.test(text) ? text : "";
+  return /^https?:\/\/[^\s"'<>]+$/i.test(text) ? text : "";
 }

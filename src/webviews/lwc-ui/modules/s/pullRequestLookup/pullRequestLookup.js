@@ -199,8 +199,12 @@ export default class PullRequestLookup extends SharedMixin(LightningElement) {
       this.activeIndex = Math.max(this.activeIndex - 1, 0);
     } else if (event.key === "Enter") {
       event.preventDefault();
+      // The highlighted option, else the exact number typed, else the only option there is
+      const typed = typedPullRequestNumber(this.query);
       const option =
-        options[this.activeIndex] || (options.length === 1 ? options[0] : null);
+        options[this.activeIndex] ||
+        (typed ? options.find((item) => item.prNumber === typed) : null) ||
+        (options.length === 1 ? options[0] : null);
       if (option) {
         this._select(option);
       }

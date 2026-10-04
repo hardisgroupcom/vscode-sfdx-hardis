@@ -1,6 +1,6 @@
 import { LightningElement, api } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
-import { journeyPillClass, lookupState, safeHttpsUrl } from "s/pullRequestUtils";
+import { journeyPillClass, lookupState, safeWebUrl } from "s/pullRequestUtils";
 
 /**
  * Header of the Pull Request view: what the Pull Request is (state, author, branches), then its
@@ -81,7 +81,7 @@ export default class PullRequestHeader extends SharedMixin(LightningElement) {
   }
 
   get webUrl() {
-    return safeHttpsUrl(this.pr.webUrl);
+    return safeWebUrl(this.pr.webUrl);
   }
 
   get openOnPlatformLabel() {

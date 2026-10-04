@@ -1,6 +1,6 @@
 import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
-import { journeyPillClass, safeHttpsUrl } from "s/pullRequestUtils";
+import { journeyPillClass, safeWebUrl } from "s/pullRequestUtils";
 
 /**
  * Workflows tab of the Pull Request view: the validation and deployment runs sfdx-hardis reported
@@ -63,8 +63,8 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
         context: context.join(" · "),
         statusLabel: this._statusLabel(run.status),
         pillClass: journeyPillClass(run.status),
-        jobUrl: safeHttpsUrl(run.jobUrl),
-        commentUrl: safeHttpsUrl(run.commentUrl),
+        jobUrl: safeWebUrl(run.jobUrl),
+        commentUrl: safeWebUrl(run.commentUrl),
         hasBody: !!run.body,
         body: run.body || "",
         expanded,
@@ -86,7 +86,7 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
   }
 
   handleOpenUrl(event) {
-    const url = safeHttpsUrl(event.currentTarget.dataset.url);
+    const url = safeWebUrl(event.currentTarget.dataset.url);
     if (url) {
       window.sendMessageToVSCode({ type: "openExternal", data: { url } });
     }

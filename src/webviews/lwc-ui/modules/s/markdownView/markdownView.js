@@ -44,7 +44,7 @@ const ALLOWED_ATTR = ["href", "src", "alt", "title", "align", "open"];
  *
  * The text comes from a Pull Request comment, which anyone allowed to comment can write: it is
  * never trusted. marked turns it into HTML, DOMPurify keeps a short list of tags and attributes,
- * links and images are limited to https, and a click on a link is handed to VS Code instead of
+ * links and images are limited to web addresses, and a click on a link is handed to VS Code instead of
  * navigating the webview. Without the two libraries (a panel that does not load them), the text
  * is shown as it is.
  */
@@ -87,7 +87,7 @@ export default class MarkdownView extends SharedMixin(LightningElement) {
     }
     event.preventDefault();
     const url = link.getAttribute("href") || "";
-    if (/^https:\/\//i.test(url)) {
+    if (/^https?:\/\//i.test(url)) {
       window.sendMessageToVSCode({ type: "openExternal", data: { url } });
     }
   }
@@ -103,7 +103,7 @@ export default class MarkdownView extends SharedMixin(LightningElement) {
       return purify.sanitize(rawHtml, {
         ALLOWED_TAGS,
         ALLOWED_ATTR,
-        ALLOWED_URI_REGEXP: /^https:\/\//i,
+        ALLOWED_URI_REGEXP: /^https?:\/\//i,
         ALLOW_DATA_ATTR: false,
       });
     } catch (e) {

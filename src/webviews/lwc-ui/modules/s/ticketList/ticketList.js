@@ -1,6 +1,6 @@
 import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
-import { safeHttpsUrl } from "s/pullRequestUtils";
+import { safeWebUrl } from "s/pullRequestUtils";
 
 /**
  * Tickets tab of the Pull Request modal: one row per ticket, its status as a pill, who it is
@@ -81,7 +81,7 @@ export default class TicketList extends SharedMixin(LightningElement) {
         return {
           key: ticket.id,
           id: ticket.id,
-          url: safeHttpsUrl(ticket.url),
+          url: safeWebUrl(ticket.url),
           subject: ticket.subject || "",
           notFound: !found,
           notFoundLabel: this.t("ticketNotFoundInTool", {
@@ -122,7 +122,7 @@ export default class TicketList extends SharedMixin(LightningElement) {
   }
 
   handleOpenTicket(event) {
-    const url = safeHttpsUrl(event.currentTarget.dataset.url);
+    const url = safeWebUrl(event.currentTarget.dataset.url);
     if (url) {
       window.sendMessageToVSCode({ type: "openExternal", data: { url } });
     }
