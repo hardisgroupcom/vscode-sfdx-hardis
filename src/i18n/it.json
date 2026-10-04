@@ -460,6 +460,7 @@
   "componentLabel": "Etichetta",
   "componentsUseItem": "{{count}} componente/i usano {{name}} in {{org}}",
   "configFileConflictMarkers": "{{file}} contiene marcatori di conflitto git e non può essere analizzato. Risolvi i conflitti in questo file.",
+  "configFileUnreadable": "Impossibile leggere la configurazione di sfdx-hardis: {{message}}",
   "configFileUnreadableUsingPrevious": "Impossibile leggere la configurazione sfdx-hardis: {{message}} - viene usata la configurazione letta in precedenza durante questo comando.",
   "configKeyUpdated": "Configurazione VS Code '{{configKey}}' aggiornata",
   "configKeyUpdatedAdded": " (aggiunto: {{elements}})",

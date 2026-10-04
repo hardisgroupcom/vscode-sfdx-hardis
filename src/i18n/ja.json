@@ -460,6 +460,7 @@
   "componentLabel": "ラベル",
   "componentsUseItem": "{{org}} で {{count}} 個のコンポーネントが {{name}} を使用しています",
   "configFileConflictMarkers": "{{file}} に git のコンフリクトマーカーが含まれているため、解析できません。このファイルのコンフリクトを解決してください。",
+  "configFileUnreadable": "sfdx-hardis の設定を読み込めません: {{message}}",
   "configFileUnreadableUsingPrevious": "sfdx-hardis の設定を読み込めません: {{message}} - このコマンドの実行中に読み込み済みの設定を使用します。",
   "configKeyUpdated": "VsCode 設定 '{{configKey}}' を更新しました",
   "configKeyUpdatedAdded": "（追加: {{elements}}）",

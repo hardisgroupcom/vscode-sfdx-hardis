@@ -460,6 +460,7 @@
   "componentLabel": "Label",
   "componentsUseItem": "{{count}} component(en) gebruiken {{name}} in {{org}}",
   "configFileConflictMarkers": "{{file}} bevat git-conflictmarkeringen en kan niet worden gelezen. Los de conflicten in dit bestand op.",
+  "configFileUnreadable": "De sfdx-hardis-configuratie kan niet worden gelezen: {{message}}",
   "configFileUnreadableUsingPrevious": "Kan de sfdx-hardis-configuratie niet lezen: {{message}} - de eerder tijdens deze opdracht gelezen configuratie wordt gebruikt.",
   "configKeyUpdated": "VsCode-configuratie '{{configKey}}' bijgewerkt",
   "configKeyUpdatedAdded": " (toegevoegd: {{elements}})",

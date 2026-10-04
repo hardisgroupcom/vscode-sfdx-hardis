@@ -3631,6 +3631,16 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (!key) {
       return;
     }
+    if (data.ok && data.statuses && !this.isPromotionModeShown) {
+      // The command answered with the statuses of the Pull Request after its write: shown as
+      // they are, without asking for them again
+      this.modalActionStatuses = {
+        ...(this.modalActionStatuses || {}),
+        ...data.statuses,
+      };
+      this.markingDoneKeys = this.markingDoneKeys.filter((k) => k !== key);
+      return;
+    }
     if (data.ok) {
       // Keep spinning until the new statuses show the action as done
       this.markDoneRefreshingKeys = [...this.markDoneRefreshingKeys, key];

@@ -475,10 +475,10 @@ export function registerShowPipeline(commands: Commands) {
         }
         // Mark as done: recorded by sfdx-hardis in the background, no command panel for it
         else if (type === "markDeploymentActionDone") {
-          const ok = await markDeploymentActionDone(data);
+          const outcome = await markDeploymentActionDone(data);
           panel.sendMessage({
             type: "deploymentActionMarkDoneResult",
-            data: { key: data?.key, ok },
+            data: { key: data?.key, ...outcome },
           });
         }
         // Status of the deployment actions in each org branch, read by sfdx-hardis from the
@@ -1765,7 +1765,9 @@ async function loadDeploymentActionBackpromotes(
  * Record a failed or stopped deployment action as done by hand, in the background: the value of
  * every flag comes from the panel, so nothing is asked, and the user only needs the outcome.
  */
-async function markDeploymentActionDone(data: any): Promise<boolean> {
+async function markDeploymentActionDone(
+  data: any,
+): Promise<{ ok: boolean; statuses?: Record<string, any[]> }> {
   const prNumber = Number(data?.prNumber);
   // Passed to a command line: refused below unless it only holds plain characters
   const actionId = String(data?.actionId || "");
@@ -1777,7 +1779,7 @@ async function markDeploymentActionDone(data: any): Promise<boolean> {
     !/^[\w .:@/+-]+$/.test(actionId) ||
     !/^[\w./-]+$/.test(orgBranch)
   ) {
-    return false;
+    return { ok: false };
   }
   let env: Record<string, string> = {};
   try {
@@ -1800,7 +1802,13 @@ async function markDeploymentActionDone(data: any): Promise<boolean> {
     } as any,
   );
   if (result?.status === 0) {
-    return true;
+    // sfdx-hardis answers with the statuses of the Pull Request after its write: the panel shows
+    // them as they are. Reading them back with action:list costs a second start of the CLI, as
+    // long as the write itself. An older sfdx-hardis answers without them, and the panel asks.
+    const statuses = result?.result?.statuses;
+    return statuses && typeof statuses === "object"
+      ? { ok: true, statuses }
+      : { ok: true };
   } else {
     vscode.window.showErrorMessage(
       t("deploymentActionMarkDoneError", {
@@ -1809,5 +1817,5 @@ async function markDeploymentActionDone(data: any): Promise<boolean> {
       }),
     );
   }
-  return false;
+  return { ok: false };
 }

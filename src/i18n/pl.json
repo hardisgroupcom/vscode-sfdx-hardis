@@ -460,6 +460,7 @@
   "componentLabel": "Etykieta",
   "componentsUseItem": "{{count}} komponent(ów) używa {{name}} w {{org}}",
   "configFileConflictMarkers": "Plik {{file}} zawiera znaczniki konfliktu git i nie może zostać odczytany. Należy rozwiązać konflikty w tym pliku.",
+  "configFileUnreadable": "Nie można odczytać konfiguracji sfdx-hardis: {{message}}",
   "configFileUnreadableUsingPrevious": "Nie można odczytać konfiguracji sfdx-hardis: {{message}} - używana jest konfiguracja odczytana wcześniej podczas tego polecenia.",
   "configKeyUpdated": "Konfiguracja VsCode '{{configKey}}' zaktualizowana",
   "configKeyUpdatedAdded": " (dodano: {{elements}})",

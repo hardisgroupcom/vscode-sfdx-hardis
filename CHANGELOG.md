@@ -13,6 +13,8 @@
   - A warning says so when you edit the deployment actions or test classes of a Pull Request that is not the one of your branch
   - Pull Request links of the Backpromote panel and of command results open the Pull Request in the DevOps Pipeline
 - DevOps Pipeline: the diagram loads faster on projects with many Pull Requests and tickets
+- Deployment actions: **Mark as done** shows its result about twice as fast
+- An error message says when the project configuration cannot be read, for instance when a merge left git conflict markers in `config/.sfdx-hardis.yml`
 - Deployment actions: recover an action that failed after a merge, without running the deployment again
   - The Deployment Actions tab groups the actions by Pull Request, in the order they run, with the status of each action in the org of the branch
   - A failed action, or one stopped by a failure, can be retried, marked as done, or moved to your Pull Request to fix it
