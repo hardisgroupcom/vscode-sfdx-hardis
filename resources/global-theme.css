@@ -2645,3 +2645,13 @@ lightning-helptext::part(icon) {
   padding-left: 0.75rem;
   border-left: 3px solid var(--slds-g-color-neutral-base-80);
 }
+
+/* A table cell that opens something (the number and the title of a Pull Request) is a button of
+   the base variant. A button centers its label and keeps the line height of a control: a title
+   that wraps then reads as centered lines far apart, unlike the link it replaced. */
+.slds-scope[data-theme] lightning-primitive-cell-button .slds-button {
+  justify-content: flex-start;
+  text-align: left;
+  line-height: 1.4;
+  white-space: normal;
+}
