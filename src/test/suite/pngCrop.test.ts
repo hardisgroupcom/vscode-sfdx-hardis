@@ -211,7 +211,7 @@ suite("PNG crop of the UI harness captures", () => {
     );
     assert.doesNotMatch(
       launcher,
-      /SetForegroundWindow|bShowWindow(|SendKeys|SwitchDesktop|SetCursorPos/,
+      /SetForegroundWindow|\bShowWindow\(|SendKeys|SwitchDesktop|SetCursorPos/,
     );
   });
 });
