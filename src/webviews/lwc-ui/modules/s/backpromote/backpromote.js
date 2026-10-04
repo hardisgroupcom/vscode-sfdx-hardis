@@ -1231,6 +1231,16 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     return this.plan.actions.map((action) => {
       const alreadyRun = !!action.alreadyRunOn && action.runOnlyOnceByOrg;
       const runnable = action.runnable && !alreadyRun;
+      const ticked = runnable && selected.has(action.id);
+      // The action of another Pull Request this one runs once with: same type, phase, user and parameters
+      const identical = action.identicalTo || null;
+      let identicalSource = "";
+      if (identical) {
+        identicalSource =
+          identical.pullRequest > 0
+            ? `#${identical.pullRequest}`
+            : identical.label;
+      }
       let stateLabel = null;
       let stateClass = UNKNOWN_PILL;
       if (alreadyRun) {
@@ -1245,6 +1255,15 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       } else if (result && result.actions.failed.includes(action.id)) {
         stateLabel = this.t("backpromoteActionFailed");
         stateClass = FAILED_PILL;
+      } else if (
+        result &&
+        identical &&
+        (result.actions.identical || []).includes(action.id)
+      ) {
+        stateLabel = this.t("backpromoteActionDoneByIdentical", {
+          source: identicalSource,
+        });
+        stateClass = SUCCESS_PILL;
       } else if (result && result.actions.run.includes(action.id)) {
         stateLabel = this.t("backpromoteActionRan");
         stateClass = SUCCESS_PILL;
@@ -1254,12 +1273,17 @@ export default class Backpromote extends SharedMixin(LightningElement) {
       } else if (action.manual) {
         stateLabel = this.t("backpromoteManualStep");
         stateClass = PENDING_PILL;
+      } else if (!result && ticked && identical && selected.has(identical.id)) {
+        stateLabel = this.t("backpromoteActionRunsWithIdentical", {
+          source: identicalSource,
+        });
+        stateClass = INFO_PILL;
       }
       // A manual step can be recorded as done at any time: before a run, after a refresh
       const showConfirm = action.manual && action.runnable && !alreadyRun;
-      const ticked = runnable && selected.has(action.id);
       return {
         id: action.id,
+        key: action.key || action.id,
         label: action.label,
         rowClass:
           "bp-item-row bp-action-row" +
