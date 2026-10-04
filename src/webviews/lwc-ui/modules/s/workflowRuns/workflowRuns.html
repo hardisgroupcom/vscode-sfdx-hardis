@@ -6,21 +6,16 @@
     </template>
     <template if:true={showEmpty}>
         <div class="slds-align_absolute-center slds-p-around_medium">
-            <p class="slds-text-color_weak">{i18n.workflowNoRuns}</p>
+            <p class="slds-text-color_weak">{emptyLabel}</p>
         </div>
     </template>
     <template if:true={hasRuns}>
-        <div class="hardis-list">
+        <div class="runs">
             <template for:each={rows} for:item="row">
-                <div key={row.key} class="hardis-list-item">
+                <div key={row.key} class="hardis-list">
                     <div class="hardis-list-row">
                         <div class="hardis-list-main">
-                            <div class="hardis-list-title">
-                                {row.label}
-                                <template if:true={row.carried}>
-                                    &nbsp;<button class="hardis-pr-ref" data-pr-number={row.prNumber} onclick={handleOpenPullRequest}>{row.carriedLabel}</button>
-                                </template>
-                            </div>
+                            <div class="hardis-list-title">{row.label}</div>
                             <template if:true={row.context}>
                                 <div class="hardis-list-meta">{row.context}</div>
                             </template>
@@ -35,12 +30,9 @@
                             <template if:true={row.commentUrl}>
                                 <button class="slds-button slds-button_neutral" data-url={row.commentUrl} onclick={handleOpenUrl}>{i18n.workflowOpenComment}</button>
                             </template>
-                            <template if:true={row.hasBody}>
-                                <button class="slds-button slds-button_neutral" data-key={row.key} aria-expanded={row.expanded} onclick={handleToggle}>{row.toggleLabel}</button>
-                            </template>
                         </div>
                     </div>
-                    <template if:true={row.expanded}>
+                    <template if:true={row.hasBody}>
                         <div class="hardis-list-detail">
                             <s-markdown-view markdown={row.body}></s-markdown-view>
                         </div>

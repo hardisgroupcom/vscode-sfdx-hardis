@@ -3085,7 +3085,20 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   // Back to a window of the breadcrumb, as it was left: nothing is read again
   handleModalBack(event) {
-    const index = parseInt(event.currentTarget.dataset.index, 10);
+    this._goBackTo(parseInt(event.currentTarget.dataset.index, 10));
+  }
+
+  // Previous button: the window shown just before this one
+  handleModalPrevious() {
+    this._goBackTo(this._modalStack.length - 1);
+  }
+
+  get previousTitle() {
+    const entry = this._modalStack[this._modalStack.length - 1];
+    return entry ? this.t("prViewBackTo", { label: entry.label }) : "";
+  }
+
+  _goBackTo(index) {
     const entry = this._modalStack[index];
     if (!entry) {
       return;
@@ -3105,7 +3118,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   get showExplorerLookup() {
-    return this.explorerMode && !this.modalHasBack;
+    return this.explorerMode;
   }
 
   // Explorer just opened: no Pull Request picked yet
@@ -3293,20 +3306,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     });
   }
 
-  // The Pull Request itself, then the ones that carried it to the next branches
+  // The Validation, Deployment and MegaLinter tabs show the comments of the Pull Request itself,
+  // never the ones of a Pull Request that carried it to another branch
   get workflowPrNumbers() {
     const pr = this.singlePullRequest;
-    if (!pr || !(pr.number > 0)) {
-      return [];
-    }
-    const numbers = [pr.number];
-    for (const via of pr.alreadyDeployedVia || []) {
-      numbers.push(via.number);
-    }
-    if (pr.carriedByPullRequest?.number) {
-      numbers.push(pr.carriedByPullRequest.number);
-    }
-    return [...new Set(numbers.filter((number) => number > 0))];
+    return pr && pr.number > 0 ? [pr.number] : [];
   }
 
   get showWorkflowsTab() {
@@ -3321,12 +3325,41 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return this.modalWorkflows === null;
   }
 
-  get modalWorkflowRuns() {
-    return this.modalWorkflows || [];
+  _workflowRunsOfKind(kind) {
+    return (this.modalWorkflows || []).filter((run) => run.kind === kind);
   }
 
-  get modalWorkflowsTabLabel() {
-    return this.t("workflowsTab", { count: this.modalWorkflowRuns.length });
+  get modalValidationRuns() {
+    return this._workflowRunsOfKind("validation");
+  }
+
+  get modalDeploymentRuns() {
+    return this._workflowRunsOfKind("deployment");
+  }
+
+  get modalMegaLinterRuns() {
+    return this._workflowRunsOfKind("megalinter");
+  }
+
+  get noValidationLabel() {
+    return this.t("workflowNoValidation", { prLabel: this.prLabel });
+  }
+
+  get noDeploymentLabel() {
+    return this.t("workflowNoDeployment", { prLabel: this.prLabel });
+  }
+
+  get noMegaLinterLabel() {
+    return this.t("workflowNoMegaLinter", { prLabel: this.prLabel });
+  }
+
+  // General tab: the description of the Pull Request, as written on the git provider
+  get singlePullRequestDescription() {
+    return String(this.singlePullRequest?.description || "").trim();
+  }
+
+  get noDescriptionLabel() {
+    return this.t("prNoDescription", { prLabel: this.prLabel });
   }
 
   get showTicketPullRequests() {
@@ -3338,6 +3371,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   handleClosePRModal() {
+    // Opened from another window (a list of Pull Requests, another Pull Request): closing it
+    // brings that window back, as the Previous button does
+    if (this._modalStack.length > 0) {
+      this._goBackTo(this._modalStack.length - 1);
+      return;
+    }
     this.showPRModal = false;
     this._resetPromotionModalState();
     // Every field of the modal goes back to its default: see MODAL_STATE_DEFAULTS
@@ -3459,7 +3498,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.apexTestsByLineRows = [];
 
     // Open on the tab requested by a deep link, on the Pull Requests tab otherwise
-    this.modalActiveTabValue = this._nextModalTab || "prs";
+    this.modalActiveTabValue = this._nextModalTab || "general";
     this._nextModalTab = null;
 
     this.showPRModal = true;
@@ -5208,32 +5247,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       return pr.number !== -1;
     }
     return false;
-  }
-
-  get singlePRViewButtonLabel() {
-    if (this.modalPullRequests.length === 1) {
-      const pr = this.modalPullRequests[0];
-      const platform = this.repoPlatformLabel || "Git";
-      return this.t("viewPrOnPlatform", {
-        num: pr.number,
-        title: pr.title || "",
-        platform,
-      });
-    }
-    return this.i18n.viewPullRequest;
-  }
-
-  handleOpenSinglePRUrl(event) {
-    event.preventDefault();
-    if (this.modalPullRequests.length === 1) {
-      const pr = this.modalPullRequests[0];
-      if (pr.webUrl) {
-        window.sendMessageToVSCode({
-          type: "openExternal",
-          data: { url: pr.webUrl },
-        });
-      }
-    }
   }
 
   get showAddActionButton() {

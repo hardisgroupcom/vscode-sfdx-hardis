@@ -344,6 +344,15 @@
                         <span class="slds-assistive-text">{i18n.close}</span>
                     </button>
                     <template if:true={modalHasBack}>
+                        <div class="modal-previous">
+                            <lightning-button
+                                variant="neutral"
+                                icon-name="utility:back"
+                                label={i18n.prViewPrevious}
+                                title={previousTitle}
+                                onclick={handleModalPrevious}
+                            ></lightning-button>
+                        </div>
                         <nav class="modal-breadcrumb" aria-label={i18n.prViewBreadcrumb}>
                             <template for:each={modalBreadcrumb} for:item="crumb">
                                 <span key={crumb.key} class="modal-crumb">
@@ -452,6 +461,19 @@
                     </template>
                     <template if:false={isLoadingReleaseDetails}>
                     <lightning-tabset active-tab-value={modalActiveTabValue}>
+                        <!-- General tab: the description of one Pull Request -->
+                        <template if:true={isSinglePRMode}>
+                            <lightning-tab label={i18n.prGeneralTab} value="general" icon-name="utility:info" icon-assistive-text={i18n.prGeneralTab}>
+                                <template if:true={singlePullRequestDescription}>
+                                    <s-markdown-view markdown={singlePullRequestDescription}></s-markdown-view>
+                                </template>
+                                <template if:false={singlePullRequestDescription}>
+                                    <div class="slds-align_absolute-center slds-p-around_medium">
+                                        <p class="slds-text-color_weak">{noDescriptionLabel}</p>
+                                    </div>
+                                </template>
+                            </lightning-tab>
+                        </template>
                         <template if:true={showPRTab}>
                             <lightning-tab label={modalPrsTabLabel} value="prs" icon-name="utility:topic2" icon-assistive-text={modalPrsTabLabel}>
                             <template if:false={modalHideCheckboxColumn}>
@@ -715,14 +737,27 @@
                                     </template>
                                 </lightning-tab>
                             </template>
-                            <!-- Workflows tab: the validation and deployment runs of one Pull Request -->
+                            <!-- Validation, Deployment and MegaLinter tabs: the comments posted on the Pull Request itself -->
                             <template if:true={showWorkflowsTab}>
-                                <lightning-tab label={modalWorkflowsTabLabel} value="workflows" icon-name="utility:flow" icon-assistive-text={modalWorkflowsTabLabel}>
+                                <lightning-tab label={i18n.journeyValidation} value="validation" icon-name="utility:search" icon-assistive-text={i18n.journeyValidation}>
                                     <s-workflow-runs
-                                        runs={modalWorkflowRuns}
+                                        runs={modalValidationRuns}
                                         loading={workflowsLoading}
-                                        pull-request-number={singlePullRequestNumber}
-                                        onopenpullrequest={handleOpenPullRequestRef}
+                                        empty-label={noValidationLabel}
+                                    ></s-workflow-runs>
+                                </lightning-tab>
+                                <lightning-tab label={i18n.workflowDeploymentNoBranch} value="deployment" icon-name="utility:upload" icon-assistive-text={i18n.workflowDeploymentNoBranch}>
+                                    <s-workflow-runs
+                                        runs={modalDeploymentRuns}
+                                        loading={workflowsLoading}
+                                        empty-label={noDeploymentLabel}
+                                    ></s-workflow-runs>
+                                </lightning-tab>
+                                <lightning-tab label="MegaLinter" value="megalinter" icon-name="utility:shield" icon-assistive-text="MegaLinter">
+                                    <s-workflow-runs
+                                        runs={modalMegaLinterRuns}
+                                        loading={workflowsLoading}
+                                        empty-label={noMegaLinterLabel}
                                     ></s-workflow-runs>
                                 </lightning-tab>
                             </template>
@@ -732,14 +767,7 @@
                 </div>
                 <footer class="slds-modal__footer hardis-modal-footer">
                     <div class="hardis-modal-footer-actions">
-                        <template if:true={isSinglePRMode}>
-                            <lightning-button class="hardis-btn-tinted-blue"
-                                variant="neutral"
-                                label={singlePRViewButtonLabel}
-                                icon-name="utility:new_window"
-                                onclick={handleOpenSinglePRUrl}
-                            ></lightning-button>
-                        </template>
+                        <!-- One Pull Request: the way out to the git provider is the Open on button of its header -->
                         <template if:false={isSinglePRMode}>
                             <template if:true={showCreatePromotionButton}>
                                 <lightning-button

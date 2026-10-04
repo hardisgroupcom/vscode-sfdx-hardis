@@ -709,13 +709,12 @@
    The container fills the panel, the header is one compact line (breadcrumb above the
    title when the window was opened from another one), and the body takes all the height
    that is left instead of stopping 180px short of it. */
+/* The top padding of SLDS stays: the close button sits in it, above the header */
 .slds-modal__container {
-    width: 98% !important;
-    max-width: 98vw !important;
-    height: 97vh !important;
-    max-height: 97vh !important;
-    padding-top: 0.5rem !important;
-    padding-bottom: 0.5rem !important;
+    width: 94% !important;
+    max-width: 94vw !important;
+    height: 92vh !important;
+    max-height: 92vh !important;
 }
 
 .slds-modal__header {
@@ -726,6 +725,17 @@
 .slds-modal__content {
     max-height: none !important;
     min-height: 0 !important;
+}
+
+/* Previous: back to the window shown before, on the left of the title */
+.slds-modal__header {
+    position: relative;
+}
+
+.modal-previous {
+    position: absolute;
+    left: 1rem;
+    top: 0.5rem;
 }
 
 .modal-breadcrumb {

@@ -390,6 +390,40 @@ suite("Pull Request view", () => {
       );
     });
 
+    test("one Pull Request opens on its description, then its comments by kind", () => {
+      assert.match(html, /<lightning-tab label=\{i18n\.prGeneralTab\} value="general"/);
+      for (const tab of ["validation", "deployment", "megalinter"]) {
+        assert.match(html, new RegExp(`<lightning-tab [^>]*value="${tab}"`));
+      }
+      assert.ok(!html.includes('value="workflows"'), "no Workflows tab");
+      assert.match(js, /this\._nextModalTab \|\| "general"/);
+      // Only the comments of the Pull Request itself, never those of one that carried it
+      assert.match(js, /return pr && pr\.number > 0 \? \[pr\.number\] : \[\];/);
+    });
+
+    test("the comments are shown as they are, without a button to unfold them", () => {
+      const runs = readModuleFile("workflowRuns", "workflowRuns.html");
+      assert.match(runs, /<s-markdown-view markdown=\{row\.body\}>/);
+      assert.ok(!/handleToggle|aria-expanded/.test(runs));
+    });
+
+    test("Previous and Close both bring back the window the Pull Request was opened from", () => {
+      assert.match(html, /label=\{i18n\.prViewPrevious\}[\s\S]*?onclick=\{handleModalPrevious\}/);
+      const close = js.slice(
+        js.indexOf("  handleClosePRModal() {"),
+        js.indexOf("this.showPRModal = false;", js.indexOf("  handleClosePRModal() {")),
+      );
+      assert.match(close, /this\._modalStack\.length > 0[\s\S]*this\._goBackTo\(/);
+    });
+
+    test("the only way out to the git provider is the button of the header", () => {
+      assert.ok(!html.includes("singlePRViewButtonLabel"));
+      assert.match(
+        readModuleFile("pullRequestHeader", "pullRequestHeader.html"),
+        /label=\{openOnPlatformLabel\}/,
+      );
+    });
+
     test("the comment of a run is rendered through the sanitizer only", () => {
       const view = readModuleFile("markdownView", "markdownView.js");
       assert.match(view, /purify\.sanitize\(/);

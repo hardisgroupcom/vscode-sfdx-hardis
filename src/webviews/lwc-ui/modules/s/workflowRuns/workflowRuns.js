@@ -1,19 +1,19 @@
-import { LightningElement, api, track } from "lwc";
+import { LightningElement, api } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
 import { journeyPillClass, safeWebUrl } from "s/pullRequestUtils";
 
 /**
- * Workflows tab of the Pull Request view: the validation and deployment runs sfdx-hardis reported
- * in the comments of the Pull Request, one row per run, with the comment itself on demand.
+ * Validation, Deployment and MegaLinter tabs of the Pull Request view: the comments posted on
+ * the Pull Request by sfdx-hardis and by MegaLinter, shown as they are, each one under a line
+ * giving its outcome, its date and the links to the job and to the comment itself.
  *
- * `runs` is the `workflows` list returned by `sf hardis:project:action:list --with-workflows`,
- * each run completed by the caller with `prNumber` (the Pull Request whose comment reported it).
+ * `runs` are the runs of one kind, from the `workflows` list returned by
+ * `sf hardis:project:action:list --with-workflows`.
  */
 export default class WorkflowRuns extends SharedMixin(LightningElement) {
   @api loading = false;
-  // Number of the Pull Request shown: a run reported on another one names it
-  @api pullRequestNumber;
-  @track expandedKeys = [];
+  // Text shown when the Pull Request has no comment of this kind
+  @api emptyLabel = "";
   _runs = [];
 
   @api
@@ -34,8 +34,6 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
 
   get rows() {
     return this._runs.map((run, index) => {
-      const key = `run-${index}`;
-      const expanded = this.expandedKeys.includes(key);
       const branch = run.targetBranch || "";
       const context = [];
       if (run.date) {
@@ -52,13 +50,8 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
       if (run.quickDeploy === true) {
         context.push(this.i18n.workflowQuickDeploy);
       }
-      if (run.coverageText) {
-        context.push(run.coverageText);
-      }
-      const carried =
-        run.prNumber > 0 && run.prNumber !== this.pullRequestNumber;
       return {
-        key,
+        key: `run-${index}`,
         label: this._label(run.kind, branch),
         context: context.join(" · "),
         statusLabel: this._statusLabel(run.status),
@@ -67,22 +60,8 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
         commentUrl: safeWebUrl(run.commentUrl),
         hasBody: !!run.body,
         body: run.body || "",
-        expanded,
-        toggleLabel: expanded
-          ? this.i18n.workflowHideComment
-          : this.i18n.workflowShowComment,
-        carried,
-        carriedLabel: carried ? `#${run.prNumber}` : "",
-        prNumber: run.prNumber,
       };
     });
-  }
-
-  handleToggle(event) {
-    const key = event.currentTarget.dataset.key;
-    this.expandedKeys = this.expandedKeys.includes(key)
-      ? this.expandedKeys.filter((k) => k !== key)
-      : [...this.expandedKeys, key];
   }
 
   handleOpenUrl(event) {
@@ -92,16 +71,10 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
     }
   }
 
-  handleOpenPullRequest(event) {
-    const prNumber = parseInt(event.currentTarget.dataset.prNumber, 10);
-    if (prNumber > 0) {
-      this.dispatchEvent(
-        new CustomEvent("openpullrequest", { detail: { prNumber } }),
-      );
-    }
-  }
-
   _label(kind, branch) {
+    if (kind === "megalinter") {
+      return "MegaLinter";
+    }
     if (kind === "validation") {
       return branch
         ? this.t("workflowValidation", { branch })

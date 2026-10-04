@@ -1374,7 +1374,15 @@ type PipelineInfo = {
  * Run sf hardis:project:action:list with these flags and the git provider credentials the command
  * runner also passes. Returns its JSON result, or null when the CLI cannot answer.
  */
-const PULL_REQUEST_VIEW_TABS = ["tickets", "actions", "apexTests", "workflows"];
+const PULL_REQUEST_VIEW_TABS = [
+  "general",
+  "tickets",
+  "actions",
+  "apexTests",
+  "validation",
+  "deployment",
+  "megalinter",
+];
 
 /**
  * The deep link the webview is allowed to receive, rebuilt from what the caller sent.
