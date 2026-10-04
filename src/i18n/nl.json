@@ -2009,6 +2009,8 @@
   "prStateClosed": "Gesloten",
   "prStateMerged": "Merged",
   "prStateOpen": "Open",
+  "prViewActionsFromBranch": "Gelezen uit {{branch}}. Check die branch uit om wijzigingen te maken.",
+  "prViewActionsUnreadable": "De implementatieacties en testklassen van deze {{prLabel}} kunnen hier niet worden gelezen: de branch staat niet in deze repository.",
   "prViewAlreadyDoneIn": "Al uitgevoerd in {{orgs}}: een gewijzigde actie wordt daar niet opnieuw uitgevoerd.",
   "prViewBackTo": "Terug naar {{label}}",
   "prViewBreadcrumb": "Vensters die vóór dit venster zijn geopend",

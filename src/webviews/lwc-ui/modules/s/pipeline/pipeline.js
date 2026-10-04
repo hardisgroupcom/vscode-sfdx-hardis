@@ -3107,8 +3107,39 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   get showNotOwnPrNote() {
     return (
-      this.isSinglePRMode && !this.modalIsMajorPr && !this.isOwnPullRequest
+      this.isSinglePRMode &&
+      !this.modalIsMajorPr &&
+      !this.isOwnPullRequest &&
+      !this.modalActionsFromBranch
     );
+  }
+
+  // The actions file of the Pull Request is not in the checked out branch: its actions and test
+  // classes were read from the branch that holds it, and can only be changed from there
+  get modalActionsFromBranch() {
+    const pr = this.modalPullRequests[0];
+    return (
+      this.modalMode === "singlePR" &&
+      !this.modalIsMajorPr &&
+      ["branch", "unreadable"].includes(pr?.deploymentActionsSource)
+    );
+  }
+
+  get modalActionsReadOnly() {
+    return this.modalActionsAggregated || this.modalActionsFromBranch;
+  }
+
+  get canEditApexTestsOfPr() {
+    return !this.modalActionsFromBranch;
+  }
+
+  get actionsFromBranchNote() {
+    const pr = this.modalPullRequests[0];
+    return pr?.deploymentActionsSource === "unreadable"
+      ? this.t("prViewActionsUnreadable", { prLabel: this.prLabel })
+      : this.t("prViewActionsFromBranch", {
+          branch: pr?.deploymentActionsBranch || "",
+        });
   }
 
   // Shown while the test classes of such a Pull Request are being edited, never while reading
@@ -4603,8 +4634,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       });
     }
     // Done by hand in another org: a major branch before or after this one, or
-    // a developer org
-    if (row.prNumber > 0) {
+    // a developer org. Not for actions read from another branch: sfdx-hardis
+    // would not find them in the checked out one
+    if (row.prNumber > 0 && !this.modalActionsFromBranch) {
       menuItems.push({
         label: this.i18n.deploymentActionMarkDoneOtherOrg,
         name: "mark_action_done_other_org",
@@ -4612,7 +4644,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       });
     }
     // Any runnable action can be run in any authenticated org
-    if (runnable && (row.prNumber > 0 || row.prNumber === -1)) {
+    if (
+      runnable &&
+      !this.modalActionsFromBranch &&
+      (row.prNumber > 0 || row.prNumber === -1)
+    ) {
       menuItems.push({
         label: this.i18n.deploymentActionRunInOtherOrg,
         name: "run_action_in_other_org",
@@ -4626,7 +4662,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       row.typeCode !== "remove-packagexml-items" &&
       (row.typeCode === "run-batch" ||
         fullActionContext(row) !== "check-deployment-only");
-    if (!this.modalActionsAggregated) {
+    if (!this.modalActionsReadOnly) {
       if (runsInDevOrg && this.isOwnPullRequest) {
         const lastTryFailed = ["failed", "warning"].includes(devEntry?.status);
         inlineButtons.push({
@@ -5259,7 +5295,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   get showAddActionButton() {
-    return this.modalMode === "singlePR" && !this.modalIsMajorPr;
+    return (
+      this.modalMode === "singlePR" &&
+      !this.modalIsMajorPr &&
+      !this.modalActionsFromBranch
+    );
   }
 
   // Actions of several Pull Requests listed in one table (branch mode, or a

@@ -558,9 +558,13 @@ export function registerShowPipeline(commands: Commands) {
               return;
             }
             // Get full PR details with tickets and deployment actions
+            // Its branch is fetched when its actions file is not in the checked out one, so the
+            // window of one Pull Request shows what its branch holds now
             let prList: any[] = [requestedPr];
-            prList =
-              await gitProvider.completePullRequestsWithPrePostCommands(prList);
+            prList = await gitProvider.completePullRequestsWithPrePostCommands(
+              prList,
+              { fetch: true },
+            );
             prList = await gitProvider.completePullRequestsWithTickets(prList, {
               fetchDetails: true,
             });
