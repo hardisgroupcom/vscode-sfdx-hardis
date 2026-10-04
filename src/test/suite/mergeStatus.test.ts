@@ -137,46 +137,54 @@ suite("Merge conflicts on the DevOps Pipeline diagram", () => {
   // The branch window of the DevOps Pipeline lists the Pull Requests in a table. The component
   // cannot be instantiated in the extension test host, so the two members that decide whether
   // the merge conflicts column is there are lifted out of the source and run for real.
-  suite("branch window table", () => {
-    function modalColumnKeys(rows: any[]): string[] {
-      const js = readModuleFile("pipeline", "pipeline.js");
+  suite("branch window list", () => {
+    // The rows of s/pullRequestList, run for real on the rows s/pipeline hands it
+    function listRows(pullRequests: any[]): any[] {
+      const js = readModuleFile("pullRequestList", "pullRequestList.js");
       const view = new Function(
-        `return {
-          ${extractMember(js, "get modalPrColumns()")},
-          ${extractMember(js, "get modalHasPromotionColumn()")},
-          ${extractMember(js, "get modalHasMergeConflictColumn()")},
-          ${extractMember(js, "_authorColumn()")}
-        };`,
-      )();
-      view.modalPullRequests = rows;
-      view.showJobStatusColumn = true;
-      // The i18n proxy of the component answers every key: here the key is the label
-      view.i18n = new Proxy({}, { get: (_target, key) => String(key) });
-      return view.modalPrColumns.map((column: any) => column.key);
+        "safeWebUrl",
+        `return { ${extractMember(js, "get rows()")} };`,
+      )((value: string) => value || "");
+      return Object.assign(view, {
+        filtered: pullRequests,
+        selectable: false,
+        showStatus: true,
+        selectedNumbers: [],
+        ["_selectedNumbers"]: [],
+        t: (key: string) => key,
+      }).rows;
     }
 
-    test("a conflicting Pull Request adds the merge conflicts column", () => {
-      const keys = modalColumnKeys([
+    test("a conflicting Pull Request shows the merge conflicts pill on its row", () => {
+      const rows = listRows([
         { number: 1, mergeConflictLabel: "" },
-        { number: 2, mergeConflictLabel: "Merge conflicts" },
+        {
+          number: 2,
+          mergeConflictLabel: "Merge conflicts",
+          mergeConflictPillClass: "hardis-pill hardis-status-failed",
+          mergeConflictTooltip: "No longer merges",
+        },
       ]);
-      assert.ok(
-        keys.includes("mergeStatus"),
-        `the merge conflicts column is missing from ${keys.join(", ")}`,
-      );
-      // Right after the job status, where the reader is already looking for a state
-      assert.strictEqual(
-        keys.indexOf("mergeStatus"),
-        keys.indexOf("status") + 1,
+      assert.strictEqual(rows[0].hasConflicts, false);
+      assert.strictEqual(rows[1].hasConflicts, true);
+      assert.strictEqual(rows[1].conflictLabel, "Merge conflicts");
+      assert.strictEqual(rows[1].conflictTooltip, "No longer merges");
+      // Next to the job status, where the reader is already looking for a state
+      assert.match(
+        readModuleFile("pullRequestList", "pullRequestList.html"),
+        /class="hardis-list-status">\s*<template if:true=\{row\.hasConflicts\}>[\s\S]*?<template if:true=\{row\.hasStatus\}>/,
       );
     });
 
-    test("a list where nothing conflicts keeps the table it had", () => {
-      const keys = modalColumnKeys([
+    test("a list where nothing conflicts shows no pill", () => {
+      const rows = listRows([
         { number: 1, mergeConflictLabel: "" },
         { number: 2 },
       ]);
-      assert.ok(!keys.includes("mergeStatus"));
+      assert.deepStrictEqual(
+        rows.map((row: any) => row.hasConflicts),
+        [false, false],
+      );
     });
 
     test("the row pill is built from the provider verdict alone", () => {

@@ -205,6 +205,29 @@ suite("Deployment action totals", () => {
     );
   });
 
+  test("the promotion bar says it is loading until the forecast is back", () => {
+    const bar = (state: Record<string, any>): string =>
+      Object.assign(
+        new Function(
+          `return { ${extractMember(js, "get promotionNoPrLabel()")} };`,
+        )(),
+        {
+          i18n: { loadingLabel: "Loading..." },
+          t: (key: string, vars: Record<string, string>) =>
+            `${key}:${vars.source}>${vars.target}`,
+          modalBranchName: "uat",
+          promotionTargetBranch: "preprod",
+        },
+        state,
+      ).promotionNoPrLabel;
+    // Nobody knows yet whether a promotion is open: saying there is none is a guess
+    assert.strictEqual(bar({ actionForecastLoading: true }), "Loading...");
+    assert.strictEqual(
+      bar({ actionForecastLoading: false }),
+      "forecastNoPromotionPr:uat>preprod",
+    );
+  });
+
   test("no totals in the window of a Pull Request of your own", () => {
     const view = withGroups(totalsView({ modalActionsAggregated: false }), {
       12: ["failed"],

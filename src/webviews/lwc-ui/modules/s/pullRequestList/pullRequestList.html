@@ -1,0 +1,96 @@
+<template>
+    <template if:true={showHead}>
+        <div class="prl-head">
+            <input
+                type="search"
+                class="slds-input prl-filter"
+                placeholder={filterPlaceholder}
+                aria-label={filterPlaceholder}
+                value={filterText}
+                oninput={handleFilter}
+            />
+            <template if:true={showVehiclesChip}>
+                <button type="button" class={vehiclesChipClass} aria-pressed={vehiclesPressed} title={i18n.showPromotionPrsHelp} onclick={handleToggleVehicles}>{vehiclesChipLabel}</button>
+            </template>
+        </div>
+        <div class="prl-sub">
+            <template if:true={showSelectAll}>
+                <label class="prl-all" title={selectHelp}>
+                    <input type="checkbox" checked={allTicked} disabled={nothingToTick} onchange={handleSelectAll} />
+                    <span>{i18n.prListSelectAll}</span>
+                </label>
+            </template>
+            <span class="prl-count">{shownLabel}</span>
+        </div>
+    </template>
+    <template if:true={nothingMatches}>
+        <div class="slds-align_absolute-center slds-p-around_medium">
+            <p class="slds-text-color_weak">{noMatchLabel}</p>
+        </div>
+    </template>
+    <template if:true={hasRows}>
+        <div class="hardis-list">
+            <template for:each={rows} for:item="row">
+                <div key={row.key} class={row.rowClass}>
+                    <div class="hardis-list-main prl-main">
+                        <template if:true={row.showCheckbox}>
+                            <input type="checkbox" class="prl-check" checked={row.checked} data-pr-number={row.number} aria-label={row.selectLabel} onchange={handleSelectRow} />
+                        </template>
+                        <template if:true={row.showCheckboxGap}>
+                            <span class="prl-check"></span>
+                        </template>
+                        <div class="prl-text">
+                            <div class="hardis-list-title prl-title">
+                                <button class="hardis-pr-ref prl-number" data-pr-number={row.number} onclick={handleOpen}>{row.numberLabel}</button>
+                                <button class="hardis-pr-ref" data-pr-number={row.number} onclick={handleOpen}>{row.title}</button>
+                                <template for:each={row.tickets} for:item="ticket">
+                                    <template if:true={ticket.url}>
+                                        <button key={ticket.key} class="hardis-branch-chip prl-ticket" title={ticket.title} data-url={ticket.url} onclick={handleOpenUrl}>{ticket.id}</button>
+                                    </template>
+                                    <template if:false={ticket.url}>
+                                        <span key={ticket.key} class="hardis-branch-chip" title={ticket.title}>{ticket.id}</span>
+                                    </template>
+                                </template>
+                            </div>
+                            <div class="hardis-list-meta">
+                                <template if:true={row.hasAuthor}>
+                                    <span class="hardis-cell-flex">
+                                        <span class={row.authorAvatarClass}>{row.authorInitials}</span>
+                                        <span class="hardis-avatar-name">{row.authorLabel}</span>
+                                    </span>
+                                </template>
+                                <template if:true={row.date}>
+                                    <span class="prl-date">{row.date}</span>
+                                </template>
+                                <template if:true={row.sourceBranch}>
+                                    <span class="hardis-branch-chip prl-branch" title={row.sourceBranch}>{row.sourceBranch}</span>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hardis-list-status">
+                        <template if:true={row.hasConflicts}>
+                            <span class={row.conflictPillClass} title={row.conflictTooltip}><span class="hardis-pill-dot"></span>{row.conflictLabel}</span>
+                        </template>
+                        <template if:true={row.hasStatus}>
+                            <template if:true={row.statusUrl}>
+                                <button class="prl-pill-button" data-url={row.statusUrl} onclick={handleOpenUrl}><span class={row.statusPillClass}><span class="hardis-pill-dot"></span>{row.statusLabel}</span></button>
+                            </template>
+                            <template if:false={row.statusUrl}>
+                                <span class={row.statusPillClass}><span class="hardis-pill-dot"></span>{row.statusLabel}</span>
+                            </template>
+                        </template>
+                    </div>
+                    <div class="hardis-list-actions">
+                        <template if:true={row.carriedNumber}>
+                            <button class="prl-pill-button" title={row.carriedTitle} data-pr-number={row.carriedNumber} onclick={handleOpen}><span class="hardis-pill hardis-status-pending"><span class="hardis-pill-dot"></span>{row.carriedLabel}</span></button>
+                        </template>
+                        <template if:true={row.promotionLabel}>
+                            <span class={row.promotionPillClass}><span class="hardis-pill-dot"></span>{row.promotionLabel}</span>
+                        </template>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </template>
+</template>

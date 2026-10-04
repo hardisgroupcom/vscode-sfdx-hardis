@@ -8,6 +8,8 @@ import { Commands } from "../commands";
 import { showPackageXmlPanel } from "./packageXml";
 import { PullRequest } from "../utils/gitProviders/types";
 import { TicketProvider } from "../utils/ticketProviders/ticketProvider";
+import { Ticket } from "../utils/ticketProviders/types";
+import { mapWithConcurrencySettled } from "../utils/concurrency";
 import {
   deletePrePostCommand,
   listProjectApexScripts,
@@ -18,7 +20,10 @@ import {
 } from "../utils/prePostCommandsUtils";
 import { getCurrentGitBranch } from "../utils/pipeline/sfdxHardisConfig";
 import { handleDeploymentActionPickerMessage } from "../utils/pipeline/deploymentActionPickers";
-import { listCustomFunctions } from "../utils/customFunctionsUtils";
+import {
+  getCachedCustomFunctions,
+  refreshCustomFunctionsCache,
+} from "../utils/customFunctionsUtils";
 import {
   execCommandWithProgress,
   execSfdxJson,
@@ -203,16 +208,13 @@ export function registerShowPipeline(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showPipeline",
     async (deepLink?: any) => {
-      // Optional deep-link request, sent by the CLI at the end of hardis:work:save.
-      // Only the deployment actions focus is supported, and the payload is rebuilt
-      // here so nothing else from the WebSocket message reaches the webview.
-      const pipelineDeepLink =
-        deepLink && deepLink.focus === "deploymentActions"
-          ? { focus: "deploymentActions" }
-          : null;
+      // Optional deep-link request: the deployment actions of the current branch (sent by the
+      // CLI at the end of hardis:work:save), or one Pull Request (a Pull Request link of another
+      // panel). The payload is rebuilt here so nothing else from the message reaches the webview.
+      const pipelineDeepLink = buildPipelineDeepLink(deepLink);
       if (pipelineDeepLink) {
         Logger.log(
-          `[vscode-sfdx-hardis] pipeline deep link requested for branch ${deepLink.sourceBranch || "(current)"}`,
+          `[vscode-sfdx-hardis] pipeline deep link requested: ${pipelineDeepLink.focus} ${pipelineDeepLink.prNumber ? "#" + pipelineDeepLink.prNumber : deepLink.sourceBranch || "(current branch)"}`,
         );
       }
 
@@ -375,6 +377,7 @@ export function registerShowPipeline(commands: Commands) {
         // Refresh (Refresh button) — full single-step reload (mermaid with jobs
         // & PRs), keeps top bar visible; no intermediate PR-less render.
         if (type === "refreshPipeline") {
+          ticketDetailsCache.clear();
           await loadPipelineFull();
         }
         // Update panel title
@@ -423,6 +426,7 @@ export function registerShowPipeline(commands: Commands) {
                   updatedFile,
                 });
           showCommitReminder(data.prNumber, msg);
+          warnAboutOtherPullRequest(data);
         }
         // Delete Deployment Action
         else if (type === "deleteDeploymentAction") {
@@ -437,6 +441,7 @@ export function registerShowPipeline(commands: Commands) {
           if (updatedFile) {
             Logger.log(`Updated file after deletion: ${updatedFile}`);
           }
+          warnAboutOtherPullRequest(data);
         }
         // Save Deployment Apex Test Classes
         else if (type === "saveDeploymentApexTestClasses") {
@@ -461,6 +466,7 @@ export function registerShowPipeline(commands: Commands) {
                   updatedFile,
                 });
           showCommitReminder(data.prNumber, msg);
+          warnAboutOtherPullRequest(data);
         }
         // Lazy-load the schedulable classes, batchable classes and communities of the deployment
         // action editor, which the Pipeline Settings panel also opens
@@ -469,10 +475,10 @@ export function registerShowPipeline(commands: Commands) {
         }
         // Mark as done: recorded by sfdx-hardis in the background, no command panel for it
         else if (type === "markDeploymentActionDone") {
-          const ok = await markDeploymentActionDone(data);
+          const outcome = await markDeploymentActionDone(data);
           panel.sendMessage({
             type: "deploymentActionMarkDoneResult",
-            data: { key: data?.key, ok },
+            data: { key: data?.key, ...outcome },
           });
         }
         // Status of the deployment actions in each org branch, read by sfdx-hardis from the
@@ -502,13 +508,57 @@ export function registerShowPipeline(commands: Commands) {
             // modal that will never open.
             panel.sendMessage({
               type: "returnGetPrInfoForModal",
-              data: null,
+              data: { notFound: true, requestId: Number(data?.requestId) || 0 },
             });
             return;
           }
           try {
+            // A Pull Request known by its number only (lookup, reference, deep link) is read first
+            let requestedPr: PullRequest | null = data?.pullRequest
+              ? { ...data.pullRequest }
+              : null;
+            const requestedNumber = Number(data?.prNumber);
+            if (
+              !requestedPr &&
+              Number.isInteger(requestedNumber) &&
+              requestedNumber > 0
+            ) {
+              // The Pull Request the pipeline already loaded carries the jobs of its last commit,
+              // which a read by number does not collect
+              const loaded: PullRequest[] = [
+                ...(((pipelineProperties as any)?.openPullRequests ||
+                  []) as PullRequest[]),
+                ...(pipelineProperties?.pipelineData?.orgs || []).flatMap(
+                  (org: any) => org.pullRequestsInBranchSinceLastMerge || [],
+                ),
+              ];
+              const known = loaded.find(
+                (pullRequest) => pullRequest.number === requestedNumber,
+              );
+              requestedPr = known
+                ? { ...known }
+                : await gitProvider.getPullRequestByNumber(requestedNumber);
+            }
+            if (!requestedPr) {
+              vscode.window.showWarningMessage(
+                t("prViewNotFound", {
+                  prLabel:
+                    pipelineProperties?.prButtonInfo?.pullRequestLabel ||
+                    "Pull Request",
+                  number: String(data?.prNumber ?? ""),
+                }),
+              );
+              panel.sendMessage({
+                type: "returnGetPrInfoForModal",
+                data: {
+                  notFound: true,
+                  requestId: Number(data?.requestId) || 0,
+                },
+              });
+              return;
+            }
             // Get full PR details with tickets and deployment actions
-            let prList = [{ ...data.pullRequest }];
+            let prList: any[] = [requestedPr];
             prList =
               await gitProvider.completePullRequestsWithPrePostCommands(prList);
             prList = await gitProvider.completePullRequestsWithTickets(prList, {
@@ -525,8 +575,13 @@ export function registerShowPipeline(commands: Commands) {
             ).find((org: any) => org?.name === prDetails?.sourceBranch);
             if (prDetails && sourceMajorOrg) {
               prDetails.isMajorToMajor = true;
+              // Only an open one will carry what waits in its source branch. Once merged or
+              // closed, the stories merged in that branch since then are not its own: listing
+              // them would offer to run their actions as if this Pull Request had brought them
               prDetails.aggregatedPullRequests =
-                sourceMajorOrg.pullRequestsInBranchSinceLastMerge || [];
+                prDetails.state === "open" || !prDetails.state
+                  ? sourceMajorOrg.pullRequestsInBranchSinceLastMerge || []
+                  : [];
             }
             // A promotion Pull Request (promotion/ branch declaring the stories it
             // carries) is read-only like a major-to-major one: it lists the actions,
@@ -534,11 +589,18 @@ export function registerShowPipeline(commands: Commands) {
             // up in the windows already loaded, the others are fetched by number.
             const promotionConfig: PromotionBranchConfig | undefined =
               pipelineProperties?.pipelineData?.promotionBranches;
+            // What tells a promotion here is what it says of itself: its branch name and the
+            // stories its description declares. The setting of the project is not asked: it is
+            // read from the files of the branch checked out, and a promotion left with conflict
+            // markers in config/.sfdx-hardis.yml makes that file unreadable, which showed the
+            // promotion as an ordinary Pull Request carrying nothing.
             if (
               prDetails &&
               !prDetails.isMajorToMajor &&
-              promotionConfig &&
-              isPromotionPullRequest(prDetails, promotionConfig)
+              isPromotionPullRequest(prDetails, {
+                allowedSteps: promotionConfig?.allowedSteps || [],
+                enabled: true,
+              })
             ) {
               const declared =
                 parsePromotionPullRequestIds(prDetails.description) || [];
@@ -622,9 +684,19 @@ export function registerShowPipeline(commands: Commands) {
                 }
               }
             }
+            // The deployment actions and test classes shown come from the local checkout, and an
+            // edit is written in it: the view says which branch that is, and whether it is behind
+            if (prDetails) {
+              (prDetails as any).checkout = await getCheckoutInfo();
+              // The id of the request goes back, so the panel can drop a late answer
+              (prDetails as any).requestId = Number(data?.requestId) || 0;
+            }
             panel.sendMessage({
               type: "returnGetPrInfoForModal",
-              data: prDetails || null,
+              data: prDetails || {
+                notFound: true,
+                requestId: Number(data?.requestId) || 0,
+              },
             });
           } catch (e) {
             const prLabel =
@@ -636,9 +708,24 @@ export function registerShowPipeline(commands: Commands) {
             );
             panel.sendMessage({
               type: "returnGetPrInfoForModal",
-              data: null,
+              data: { notFound: true, requestId: Number(data?.requestId) || 0 },
             });
           }
+        }
+        // Subject, status and assignee of the tickets of the window on screen
+        else if (type === "loadTicketDetails") {
+          panel.sendMessage({
+            type: "returnTicketDetails",
+            data: await loadTicketDetailsForPanel(data),
+          });
+        }
+        // Pull Requests explorer: text search on the git provider, after the Pull Requests the
+        // panel already holds have been filtered in the webview
+        else if (type === "searchPullRequests") {
+          panel.sendMessage({
+            type: "returnSearchPullRequests",
+            data: await searchPullRequestsForLookup(data),
+          });
         }
         // Lazy-load the list of go-lives for a top branch (selector content only)
         else if (type === "loadGoLives") {
@@ -1243,10 +1330,19 @@ export function registerShowPipeline(commands: Commands) {
       perfStep("listProjectDataWorkspaces");
       // Custom functions are deployment action types, so the action editor needs the catalog.
       // Same rule as the lists above: full pass only, the mermaid render never uses it.
-      const customFunctions = browseGitProvider
-        ? await listCustomFunctions()
-        : [];
-      perfStep("listCustomFunctions");
+      // Listing them costs a whole sfdx-hardis start (several seconds): the load never waits for
+      // it. The catalog already read for the current configuration is used at once, else it is
+      // read in the background and sent to the panel when it is there.
+      const cachedCustomFunctions = getCachedCustomFunctions();
+      const customFunctions = cachedCustomFunctions ?? [];
+      if (browseGitProvider && cachedCustomFunctions === null) {
+        void refreshCustomFunctionsCache().then((functions) => {
+          LwcPanelManager.getInstance()
+            .getPanel("s-pipeline")
+            ?.sendMessage({ type: "customFunctionsLoaded", data: functions });
+        });
+      }
+      perfStep("customFunctions (cache)");
 
       // Read enableDeploymentApexTestClasses from config/.sfdx-hardis.yml
       const projectHardisConfig = await readSfdxHardisConfig();
@@ -1328,12 +1424,223 @@ type PipelineInfo = {
 };
 
 /**
+ * A change was written for a Pull Request that is not the one of the checked out branch: the
+ * panel sends the sentence that says where it went, shown once the file is written. Nothing is
+ * said while the Pull Request is only read.
+ */
+function warnAboutOtherPullRequest(data: any): void {
+  const warning = typeof data?.warning === "string" ? data.warning.trim() : "";
+  if (warning !== "") {
+    vscode.window.showWarningMessage(warning.slice(0, 600));
+  }
+}
+
+// True once the installed sfdx-hardis refused --with-workflows: not asked again this session
+let workflowsFlagRefused = false;
+
+// Ticket details already read in this session, by ticket id: a window opened again, or a
+// ticket shared by several branches, costs nothing
+const TICKET_DETAILS_TTL_MS = 2 * 60 * 1000;
+const ticketDetailsCache = new Map<string, { ticket: Ticket; at: number }>();
+
+/**
+ * Subject, status and assignee of some tickets, read from the ticketing tool in the batches of
+ * its provider. Asked by the panel when a window shows its tickets, so the diagram never waits
+ * for them. The request id goes back so the panel can drop a late answer.
+ */
+async function loadTicketDetailsForPanel(data: any): Promise<{
+  requestId: number;
+  tickets: Ticket[];
+}> {
+  const requestId = Number(data?.requestId) || 0;
+  const requested: Ticket[] = (Array.isArray(data?.tickets) ? data.tickets : [])
+    .filter((ticket: any) => ticket && typeof ticket.id === "string")
+    .slice(0, 500);
+  try {
+    const ticketProvider = await TicketProvider.getInstance({
+      reset: false,
+      authenticate: false,
+    });
+    if (!ticketProvider?.isAuthenticated || requested.length === 0) {
+      return { requestId, tickets: [] };
+    }
+    const now = Date.now();
+    const detailed = await mapWithConcurrencySettled(
+      requested,
+      async (ticket) => {
+        const cached = ticketDetailsCache.get(ticket.id);
+        if (cached && now - cached.at < TICKET_DETAILS_TTL_MS) {
+          return cached.ticket;
+        }
+        const result =
+          (await ticketProvider.completeTicketDetails({ ...ticket })) ?? ticket;
+        // A ticket that came back without details (ticketing error, throttling, a provider
+        // that has none) is not remembered: it is asked again next time
+        if (result.subject) {
+          ticketDetailsCache.set(ticket.id, { ticket: result, at: Date.now() });
+        }
+        return result;
+      },
+      ticketProvider.batchSizes,
+      (err: any, ticket) =>
+        Logger.log(
+          `completeTicketDetails failed for ticket=${ticket.id}: ${err?.message || err}`,
+        ),
+    );
+    return {
+      requestId,
+      tickets: detailed.filter((ticket): ticket is Ticket => !!ticket),
+    };
+  } catch (e: any) {
+    Logger.log(
+      `[vscode-sfdx-hardis] ticket details not loaded: ${e?.message || e}`,
+    );
+    return { requestId, tickets: [] };
+  }
+}
+
+const PULL_REQUEST_VIEW_TABS = [
+  "general",
+  "carried",
+  "tickets",
+  "actions",
+  "apexTests",
+  "validation",
+  "deployment",
+  "megalinter",
+];
+
+/**
+ * The deep link the webview is allowed to receive, rebuilt from what the caller sent.
+ */
+function buildPipelineDeepLink(
+  deepLink: any,
+): { focus: string; prNumber?: number; tab?: string } | null {
+  if (deepLink && deepLink.focus === "deploymentActions") {
+    return { focus: "deploymentActions" };
+  }
+  if (deepLink && deepLink.focus === "explorer") {
+    return { focus: "explorer" };
+  }
+  const prNumber = Number(deepLink?.prNumber);
+  if (
+    deepLink &&
+    deepLink.focus === "pullRequest" &&
+    Number.isInteger(prNumber) &&
+    prNumber > 0
+  ) {
+    return {
+      focus: "pullRequest",
+      prNumber,
+      ...(PULL_REQUEST_VIEW_TABS.includes(deepLink.tab)
+        ? { tab: deepLink.tab }
+        : {}),
+    };
+  }
+  return null;
+}
+
+/**
+ * The branch checked out in the workspace, and whether origin holds commits it does not have.
+ * Never fails: without git information the view simply shows no warning about it.
+ */
+async function getCheckoutInfo(): Promise<{
+  branch: string;
+  behindOrigin: boolean;
+}> {
+  try {
+    const git = simpleGit(getWorkspaceRoot());
+    const branch = (await git.revparse(["--abbrev-ref", "HEAD"])).trim();
+    if (!branch || branch === "HEAD") {
+      return { branch: "", behindOrigin: false };
+    }
+    // No fetch here: opening a Pull Request must stay instant. The remote-tracking ref is what
+    // the last fetch of the panel (or of the user) left.
+    const counts = (
+      await git.raw([
+        "rev-list",
+        "--left-right",
+        "--count",
+        `HEAD...origin/${branch}`,
+      ])
+    )
+      .trim()
+      .split(/\s+/);
+    const behind = Number.parseInt(counts[1] || "0", 10);
+    return { branch, behindOrigin: Number.isFinite(behind) && behind > 0 };
+  } catch (e: any) {
+    Logger.log(
+      `[vscode-sfdx-hardis] checkout status not available: ${e?.message || e}`,
+    );
+    return { branch: "", behindOrigin: false };
+  }
+}
+
+/**
+ * Text search of Pull Requests on the git provider, for the lookup of the Pull Requests explorer.
+ * supported false: the provider cannot search, the lookup then only lists what the panel holds.
+ * The request id goes back so the lookup can drop a late answer.
+ */
+async function searchPullRequestsForLookup(data: any): Promise<{
+  requestId: number;
+  supported: boolean;
+  truncated: boolean;
+  pullRequests: PullRequest[];
+}> {
+  const requestId = Number(data?.requestId) || 0;
+  const query = String(data?.query || "")
+    .trim()
+    .slice(0, 200);
+  const empty = {
+    requestId,
+    supported: true,
+    truncated: false,
+    pullRequests: [],
+  };
+  if (query.length < 3) {
+    return empty;
+  }
+  try {
+    const gitProvider = await GitProvider.getInstance();
+    if (!gitProvider) {
+      return { ...empty, supported: false };
+    }
+    const result = await gitProvider.searchPullRequests(query, { limit: 20 });
+    if (!result) {
+      return { ...empty, supported: false };
+    }
+    return {
+      requestId,
+      supported: true,
+      truncated: result.truncated === true,
+      pullRequests: result.pullRequests || [],
+    };
+  } catch (e: any) {
+    Logger.log(
+      `[vscode-sfdx-hardis] Pull Request search failed: ${e?.message || e}`,
+    );
+    return empty;
+  }
+}
+
+/**
+ * True when sfdx-hardis refused a command line because it does not know one of its flags
+ * (oclif: "Nonexistent flag: --with-workflows").
+ */
+export function isUnknownFlagError(message: string): boolean {
+  return /nonexistent flags?\b|unknown flag|unexpected argument/i.test(
+    String(message || ""),
+  );
+}
+
+/**
  * Run sf hardis:project:action:list with these flags and the git provider credentials the command
  * runner also passes. Returns its JSON result, or null when the CLI cannot answer.
  */
 async function runActionListJson(
   flags: string,
   purpose: string,
+  onError?: (message: string) => void,
 ): Promise<any | null> {
   let env: Record<string, string> = {};
   try {
@@ -1357,10 +1664,13 @@ async function runActionListJson(
     if (result?.status === 0 && result?.result) {
       return result.result;
     }
-    Logger.log(
-      `[vscode-sfdx-hardis] ${purpose} not available: ${result?.errorMessage || result?.message || "unknown error"}`,
+    const message = String(
+      result?.errorMessage || result?.message || "unknown error",
     );
+    onError?.(message);
+    Logger.log(`[vscode-sfdx-hardis] ${purpose} not available: ${message}`);
   } catch (e: any) {
+    onError?.(String(e?.message || e));
     Logger.log(
       `[vscode-sfdx-hardis] ${purpose} not available: ${e?.message || e}`,
     );
@@ -1378,6 +1688,7 @@ async function runActionListJson(
 async function loadDeploymentActionStatuses(data: any): Promise<{
   statuses: Record<string, any[]> | null;
   forecast?: any;
+  workflows?: Record<string, any[]> | null;
   requestId: number;
 }> {
   const requestId = Number(data?.requestId) || 0;
@@ -1386,6 +1697,16 @@ async function loadDeploymentActionStatuses(data: any): Promise<{
     (prNumber: any) =>
       prNumber === "draft" || (Number.isInteger(prNumber) && prNumber > 0),
   );
+  // Pull Request view: the validation, deployment and MegaLinter comments of the Pull Request
+  // shown, read by the same sfdx-hardis process as the statuses, for that Pull Request only
+  const workflowNumbers: number[] = (
+    Array.isArray(data?.workflowPrNumbers) ? data.workflowPrNumbers : []
+  ).filter((prNumber: any) => Number.isInteger(prNumber) && prNumber > 0);
+  const withWorkflows = workflowNumbers.length > 0;
+  // --with-status needs at least one Pull Request: a Pull Request without action still has runs
+  if (numbers.length === 0) {
+    numbers.push(...workflowNumbers);
+  }
   if (numbers.length === 0) {
     return { statuses: {}, requestId };
   }
@@ -1393,25 +1714,52 @@ async function loadDeploymentActionStatuses(data: any): Promise<{
   const fromBranch = String(data?.fromBranch || "");
   const withForecast =
     /^[\w./-]+$/.test(forecastBranch) && /^[\w./-]+$/.test(fromBranch);
-  const result = await runActionListJson(
+  const flags = (workflows: boolean) =>
     `--pr-ids ${numbers.join(",")}` +
-      (withForecast
-        ? ` --forecast ${forecastBranch} --from-branch ${fromBranch}`
-        : ""),
+    (workflows
+      ? ` --with-workflows --workflow-pr-ids ${workflowNumbers.join(",")}`
+      : "") +
+    (withForecast
+      ? ` --forecast ${forecastBranch} --from-branch ${fromBranch}`
+      : "");
+  let firstError = "";
+  let result = await runActionListJson(
+    flags(withWorkflows && !workflowsFlagRefused),
     "Deployment action statuses",
+    (message) => {
+      firstError = message;
+    },
   );
+  // A sfdx-hardis older than --with-workflows refuses the flag and answers nothing at all: the
+  // statuses are asked again without it, so the Deployment Actions tab keeps its status column.
+  // Remembered for the session, so the next Pull Request does not pay two CLI starts: but only
+  // when the CLI said it does not know the flag. A throttled provider or a network error also
+  // fails the first call, and giving the flag up for those would hide the Validation, Code
+  // Quality and Deployment tabs until VS Code is reloaded.
+  if (!result && withWorkflows && !workflowsFlagRefused) {
+    result = await runActionListJson(
+      flags(false),
+      "Deployment action statuses (without workflows)",
+    );
+    if (result && isUnknownFlagError(firstError)) {
+      workflowsFlagRefused = true;
+    }
+  }
   // gitProvider false: no git provider credentials, so the Pull Request comments were not read.
   // Hide the column rather than show every action as "Not run yet"
   if (!result || result.gitProvider === false || !result.statuses) {
     return {
       statuses: null,
       ...(withForecast ? { forecast: null } : {}),
+      ...(withWorkflows ? { workflows: result?.workflows || null } : {}),
       requestId,
     };
   }
   return {
     statuses: result.statuses,
     ...(withForecast ? { forecast: result.forecast || null } : {}),
+    // null with a CLI older than --with-workflows: the panel then hides its Workflows tab
+    ...(withWorkflows ? { workflows: result.workflows || null } : {}),
     requestId,
   };
 }
@@ -1438,7 +1786,9 @@ async function loadDeploymentActionBackpromotes(
  * Record a failed or stopped deployment action as done by hand, in the background: the value of
  * every flag comes from the panel, so nothing is asked, and the user only needs the outcome.
  */
-async function markDeploymentActionDone(data: any): Promise<boolean> {
+async function markDeploymentActionDone(
+  data: any,
+): Promise<{ ok: boolean; statuses?: Record<string, any[]> }> {
   const prNumber = Number(data?.prNumber);
   // Passed to a command line: refused below unless it only holds plain characters
   const actionId = String(data?.actionId || "");
@@ -1450,7 +1800,7 @@ async function markDeploymentActionDone(data: any): Promise<boolean> {
     !/^[\w .:@/+-]+$/.test(actionId) ||
     !/^[\w./-]+$/.test(orgBranch)
   ) {
-    return false;
+    return { ok: false };
   }
   let env: Record<string, string> = {};
   try {
@@ -1473,7 +1823,13 @@ async function markDeploymentActionDone(data: any): Promise<boolean> {
     } as any,
   );
   if (result?.status === 0) {
-    return true;
+    // sfdx-hardis answers with the statuses of the Pull Request after its write: the panel shows
+    // them as they are. Reading them back with action:list costs a second start of the CLI, as
+    // long as the write itself. An older sfdx-hardis answers without them, and the panel asks.
+    const statuses = result?.result?.statuses;
+    return statuses && typeof statuses === "object"
+      ? { ok: true, statuses }
+      : { ok: true };
   } else {
     vscode.window.showErrorMessage(
       t("deploymentActionMarkDoneError", {
@@ -1482,5 +1838,5 @@ async function markDeploymentActionDone(data: any): Promise<boolean> {
       }),
     );
   }
-  return false;
+  return { ok: false };
 }

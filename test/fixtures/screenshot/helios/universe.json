@@ -8,7 +8,7 @@
   "branchNode": "1063,539",
   "promotionBranch": "promotion/uat/preprod/2026-09-24-0930",
   "promotionNode": "1073,389",
-  "promotionRows": "512,374;512,472;512,522",
+  "promotionRows": "531,353;531,513;531,593",
   "promotionConflictFile": "force-app/main/default/layouts/Panel_Batch__c-Panel Batch Layout.layout-meta.xml",
   "promotionCreateCommand": "sf hardis:project:promotion:create --source-branch uat --target-branch preprod --pull-requests 62,63,65",
   "packageXmlFilter": "Crew_Warning",

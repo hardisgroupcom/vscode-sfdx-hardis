@@ -107,9 +107,12 @@ export async function listMajorOrgs(
           // Sort PRs by mergeDate date desc
           prs = sortPullRequestsByMergeDateDesc(prs);
           org.pullRequestsInBranchSinceLastMerge = prs;
-          // Complete with tickets
+          // Tickets: only their ids, read from the title, the description and the branch name.
+          // Their subject, status and assignee cost one call to the ticketing tool per ticket,
+          // for every Pull Request of every branch: the panel asks for them when a window shows
+          // its Tickets tab (loadTicketDetails), never to draw the diagram
           await gitProvider.completePullRequestsWithTickets(prs, {
-            fetchDetails: true,
+            fetchDetails: false,
           });
           await gitProvider.completePullRequestsWithPrePostCommands(prs);
         }),
@@ -307,7 +310,7 @@ async function completeMajorOrgsWithPromotionBranches(
     );
     if (added.length > 0) {
       await gitProvider.completePullRequestsWithTickets(added, {
-        fetchDetails: true,
+        fetchDetails: false,
       });
       await gitProvider.completePullRequestsWithPrePostCommands(added);
       for (const story of added) {

@@ -216,6 +216,22 @@ const lwcWebviewConfig = {
           to: path.resolve(__dirname, "out/webviews"),
           noErrorOnMissing: true,
         },
+        // Markdown renderer and sanitizer of the Pull Request view (comments posted by sfdx-hardis),
+        // loaded by the pipeline panel only, like mermaid
+        {
+          from: path.resolve(
+            __dirname,
+            "node_modules/marked/lib/marked.umd.js",
+          ),
+          to: path.resolve(__dirname, "out/webviews"),
+        },
+        {
+          from: path.resolve(
+            __dirname,
+            "node_modules/dompurify/dist/purify.min.js",
+          ),
+          to: path.resolve(__dirname, "out/webviews"),
+        },
         {
           from: path.resolve(__dirname, "resources/webviews"),
           to: path.resolve(__dirname, "out/resources/webviews"),

@@ -2732,6 +2732,13 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
         });
         break;
       case "actionUrl":
+        // A link to a Pull Request of this repository opens its view in the DevOps Pipeline,
+        // any other address opens in the browser
+        window.sendMessageToVSCode({
+          type: "openPullRequest",
+          data: { url: reportFile.file },
+        });
+        break;
       case "docUrl":
         // Open external URL
         window.sendMessageToVSCode({

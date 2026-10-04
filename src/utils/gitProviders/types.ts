@@ -175,6 +175,13 @@ export type PullRequest = {
   mergeStatus?: PullRequestMergeStatus;
 };
 
+// Result of a text search of Pull Requests on the git provider
+export type PullRequestSearchResult = {
+  pullRequests: PullRequest[];
+  // True when the provider could only search part of the repository (Azure DevOps paging bound)
+  truncated: boolean;
+};
+
 /**
  * Compute aggregated jobs status from a list of jobs. Preference order:
  *  - if any job.status === 'running' => 'running'

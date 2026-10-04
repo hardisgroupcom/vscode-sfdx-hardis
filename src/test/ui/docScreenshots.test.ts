@@ -1,4 +1,5 @@
-import { execFileSync, execSync, spawn, spawnSync } from "child_process";
+import { CdpWindow } from "./cdpWindow";
+import { execFileSync, execSync, spawnSync } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
@@ -28,9 +29,9 @@ import { CacheManager } from "../../utils/cache-manager";
  *   SFDX_HARDIS_DOC_SCREENSHOTS_ONLY comma separated list of shot names to take
  *   SF_MOCK_DEPS_STATE               "ok" | "missing" (Setup panel state)
  *
- * Only Windows can capture the screen here (the capture goes through
- * test/fixtures/screenshot/capture-window.ps1); on other platforms the suite
- * still opens every panel, which keeps it useful as a smoke test.
+ * Captures and clicks go through the Chrome DevTools Protocol
+ * (src/test/ui/cdpWindow.ts): nothing touches the desktop, the real pointer or
+ * the focus, and the window can be covered. It has only been run on Windows.
  */
 
 const ENABLED = process.env.SFDX_HARDIS_DOC_SCREENSHOTS === "true";
@@ -41,12 +42,6 @@ const ONLY = (process.env.SFDX_HARDIS_DOC_SCREENSHOTS_ONLY || "")
   .split(",")
   .map((name) => name.trim())
   .filter((name) => name.length > 0);
-const WINDOW_TITLE =
-  process.env.SFDX_HARDIS_DOC_SCREENSHOTS_TITLE || "MyCompany-CRM";
-const SCRIPT_DIR = path.resolve(__dirname, "../../../test/fixtures/screenshot");
-const CAPTURE_SCRIPT = path.join(SCRIPT_DIR, "capture-window.ps1");
-const CLICK_SCRIPT = path.join(SCRIPT_DIR, "click-window.ps1");
-const RECORD_SCRIPT = path.join(SCRIPT_DIR, "record-window.ps1");
 
 async function sleep(ms: number): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, ms));
@@ -100,50 +95,36 @@ const TITLE_BAR_HEIGHT = 38;
 // (must match SIDE_BAR_WIDTH in scripts/build-doc-images.py)
 const SIDE_BAR_WIDTH = 435;
 
-function capture(
+// The window of the run, driven through its debugging port (src/test/ui/cdpWindow.ts): no real
+// mouse, no foreground window, the same pixels on every machine
+let cdpWindow: CdpWindow | null = null;
+function windowDriver(): CdpWindow | null {
+  if (!cdpWindow) {
+    const port = CdpWindow.portFromEnv();
+    cdpWindow = port ? new CdpWindow(port) : null;
+  }
+  return cdpWindow;
+}
+
+async function capture(
   name: string,
   options: { crop?: { top?: number; bottom?: number } } = {},
-): void {
-  if (process.platform !== "win32") {
-    console.log(`      [shot] ${name}: skipped (capture is Windows only)`);
+): Promise<void> {
+  const driver = windowDriver();
+  if (!driver) {
+    console.log(`      [shot] ${name}: skipped (no debugging port)`);
     return;
   }
-  fs.mkdirSync(OUT_DIR, { recursive: true });
   const file = path.join(OUT_DIR, `${name}.png`);
-  const args = [
-    "-NoProfile",
-    "-ExecutionPolicy",
-    "Bypass",
-    "-File",
-    CAPTURE_SCRIPT,
-    "-OutFile",
-    file,
-    // Matches the Extension Development Host only: any other VS Code window
-    // open on the machine must not be captured. The title follows the fixture
-    // universe (SF_MOCK_UNIVERSE), so a training run matches its own window.
-    "-TitleMatch",
-    WINDOW_TITLE,
-    "-Maximize",
-  ];
-  args.push("-CropTop", String(options.crop?.top ?? TITLE_BAR_HEIGHT));
-  if (options.crop?.bottom) {
-    args.push("-CropBottom", String(options.crop.bottom));
-  }
   try {
-    const out = execFileSync("powershell", args, {
-      stdio: "pipe",
-      // Generous: while the extension host is busy the window reports an empty
-      // title and the script waits for it to come back rather than losing the
-      // screenshot. The Metadata Retriever blocks the host for tens of seconds
-      // when it opens.
-      timeout: 150000,
+    const size = await driver.capture(file, {
+      top: options.crop?.top ?? TITLE_BAR_HEIGHT,
+      bottom: options.crop?.bottom,
     });
-    console.log(`      [shot] ${out.toString().trim()}`);
+    console.log(`      [shot] ${file} ${size.width}x${size.height}`);
     recordGate(name);
   } catch (error: any) {
-    console.log(
-      `      [shot] ${name}: FAILED ${error?.stderr?.toString() || error?.message}`,
-    );
+    console.log(`      [shot] ${name}: FAILED ${error?.message || error}`);
   }
 }
 
@@ -164,8 +145,8 @@ async function captureStable(
   const file = path.join(OUT_DIR, `${name}.png`);
   let previous: Buffer | null = null;
   for (let attempt = 0; attempt < attempts; attempt++) {
-    capture(name);
-    if (process.platform !== "win32" || !fs.existsSync(file)) {
+    await capture(name);
+    if (!fs.existsSync(file)) {
       return;
     }
     const current = fs.readFileSync(file);
@@ -188,32 +169,18 @@ async function click(
   y: number,
   options: { scroll?: number } = {},
 ): Promise<void> {
-  if (process.platform !== "win32") {
+  const driver = windowDriver();
+  if (!driver) {
     return;
   }
-  const args = [
-    "-NoProfile",
-    "-ExecutionPolicy",
-    "Bypass",
-    "-File",
-    CLICK_SCRIPT,
-    "-TitleMatch",
-    WINDOW_TITLE,
-    "-X",
-    String(x),
-    "-Y",
-    String(y),
-    "-CropTop",
-    String(TITLE_BAR_HEIGHT),
-  ];
-  if (options.scroll) {
-    args.push("-Scroll", String(options.scroll));
-  }
   try {
-    execFileSync("powershell", args, { stdio: "pipe", timeout: 20000 });
+    await driver.click(x, y, {
+      scroll: options.scroll,
+      cropTop: TITLE_BAR_HEIGHT,
+    });
   } catch (error: any) {
     console.log(
-      `      [shot] click(${x},${y}) FAILED ${error?.stderr?.toString() || error?.message}`,
+      `      [shot] click(${x},${y}) FAILED ${error?.message || error}`,
     );
   }
   await sleep(900);
@@ -409,10 +376,10 @@ const PROMOTION_BRANCH =
  * `promotionRows`, as "x,y;x,y".
  */
 const PROMOTION_TICKED_ROWS = (
-  universeSetting("promotionRows") || "512,422;512,500"
+  universeSetting("promotionRows") || "531,433;531,593"
 )
   .split(";")
-  .map((pair) => parsePoint(pair, 512, 422));
+  .map((pair) => parsePoint(pair, 531, 433));
 const PROMOTION_MODAL_CLOSE = { x: 1843, y: 78 };
 /**
  * Action recovery variant of the run (SFDX_HARDIS_DOC_SCREENSHOTS_ACTION_RECOVERY):
@@ -524,7 +491,8 @@ async function record(
   scenario: () => Promise<void>,
   fps = 5,
 ): Promise<void> {
-  if (process.platform !== "win32") {
+  const driver = windowDriver();
+  if (!driver) {
     await scenario();
     return;
   }
@@ -533,47 +501,44 @@ async function record(
   // stale trailing frames that would end up in the assembled GIF
   fs.rmSync(outDir, { recursive: true, force: true });
   fs.mkdirSync(outDir, { recursive: true });
-  const recorder = spawn(
-    "powershell",
-    [
-      "-NoProfile",
-      "-ExecutionPolicy",
-      "Bypass",
-      "-File",
-      RECORD_SCRIPT,
-      "-TitleMatch",
-      WINDOW_TITLE,
-      "-OutDir",
-      outDir,
-      "-Seconds",
-      String(seconds),
-      "-Fps",
-      String(fps),
-      "-CropTop",
-      String(TITLE_BAR_HEIGHT),
-      // The documentation GIFs show the panel only: the activity bar and the
-      // side bar are cropped out (they carry nothing relevant to the scenario)
-      "-CropLeft",
-      String(SIDE_BAR_WIDTH),
-    ],
-    { stdio: ["ignore", "pipe", "pipe"], detached: false },
-  );
   // The assembler (scripts/build-doc-images.py) needs the frame rate to time
   // the GIF frames: recordings may use a higher rate than the default
   fs.writeFileSync(
     path.join(outDir, "recording.json"),
     JSON.stringify({ fps }, null, 2),
   );
+  // The frames are taken from here while the scenario drives the UI: a frame is asked every
+  // 1/fps second, one at a time (a capture slower than the interval delays the next one
+  // instead of piling up). The documentation GIFs show the panel only: the activity bar and
+  // the side bar are cropped out.
+  const frameCount = Math.round(seconds * fps);
+  const intervalMs = 1000 / fps;
   let recorderOutput = "";
-  recorder.stdout?.on("data", (chunk) => (recorderOutput += chunk.toString()));
-  recorder.stderr?.on("data", (chunk) => (recorderOutput += chunk.toString()));
-  const finished = new Promise<void>((resolve) => recorder.on("exit", resolve));
+  const recording = (async () => {
+    const startedAt = Date.now();
+    for (let frame = 1; frame <= frameCount; frame++) {
+      const due = startedAt + (frame - 1) * intervalMs;
+      const wait = due - Date.now();
+      if (wait > 0) {
+        await sleep(wait);
+      }
+      try {
+        await driver.capture(
+          path.join(outDir, `frame-${String(frame).padStart(4, "0")}.png`),
+          { top: TITLE_BAR_HEIGHT, left: SIDE_BAR_WIDTH },
+        );
+      } catch (error: any) {
+        recorderOutput = `(frame ${frame}: ${error?.message || error})`;
+      }
+    }
+  })();
+  const finished = recording;
   // Toasts (extension activation warnings, upgrade prompts) can pop up in the
   // middle of a scenario: keep dismissing them while recording
   const toastCleaner = setInterval(() => {
     void vscode.commands.executeCommand("notifications.clearAll");
   }, 1200);
-  await sleep(1200); // let the recorder attach before the first action
+  await sleep(1200); // let the recorder take its first frames before the first action
   try {
     await scenario();
     await finished;
@@ -857,7 +822,7 @@ suite("Documentation screenshots", function () {
       settleMs: 9000,
       force: true,
     });
-    await click(1648, 104); // gear menu of the header
+    await click(1580, 104); // gear menu of the header
     await sleep(2500);
     await captureStable("pipeline-settings-menu");
     // A click elsewhere does not close a lightning menu: the panel is opened again
@@ -869,7 +834,7 @@ suite("Documentation screenshots", function () {
       settleMs: 9000,
       force: true,
     });
-    await click(1700, 104); // "Deployment packages" menu
+    await click(1632, 104); // "Deployment packages" menu
     await sleep(2500);
     await captureStable("pipeline-packages-menu");
     await shootPanel(panelManager, {
@@ -993,10 +958,10 @@ suite("Documentation screenshots", function () {
       await sleep(2500);
       await cleanChrome();
       await captureStable("pipeline-pr-modal");
-      await click(543, 156); // "Deployment Actions" tab of the PR modal
+      await click(660, 245); // "Deployment Actions" tab of the PR modal
       await sleep(1200);
       await captureStable("pipeline-pr-actions-empty");
-      await click(425, 205); // "Add New Action"
+      await click(420, 290); // "Add New Action"
       await sleep(1500);
       await captureStable("pipeline-edit-action");
       // Close the editor and the PR modal before the branch-modal shots
@@ -1059,6 +1024,74 @@ suite("Documentation screenshots", function () {
     await captureStable("pipeline-branch-modal-actions");
   });
 
+  // Pull Request view and Pull Requests explorer (sfdx-hardis#2273): opened by deep links,
+  // so no coordinate is involved. One capture per tab that shows a comment or the description.
+  test("pipeline: pull request view and explorer", async function () {
+    if (!shouldTake("pipeline-pr-view")) {
+      this.skip();
+    }
+    checkoutWorkspaceBranch(FEATURE_BRANCH);
+    try {
+      for (const tab of ["general", "tickets", "validation", "megalinter"]) {
+        await shootPanel(panelManager, {
+          name: `pipeline-pr-view-${tab}`,
+          command: "vscode-sfdx-hardis.showPipeline",
+          lwcId: "s-pipeline",
+          ready: pipelineFullyLoaded,
+          settleMs: 9000,
+          force: true,
+          commandArgs: { focus: "pullRequest", prNumber: 128, tab },
+        });
+      }
+      // A merged story opened by its number: journey through the major branches
+      await shootPanel(panelManager, {
+        name: "pipeline-pr-view-merged",
+        command: "vscode-sfdx-hardis.showPipeline",
+        lwcId: "s-pipeline",
+        ready: pipelineFullyLoaded,
+        settleMs: 9000,
+        force: true,
+        commandArgs: { focus: "pullRequest", prNumber: 118 },
+      });
+      // A vehicle: the open Pull Request from integration to uat, on the list of what it carries
+      await shootPanel(panelManager, {
+        name: "pipeline-pr-view-carried",
+        command: "vscode-sfdx-hardis.showPipeline",
+        lwcId: "s-pipeline",
+        ready: pipelineFullyLoaded,
+        settleMs: 9000,
+        force: true,
+        commandArgs: { focus: "pullRequest", prNumber: 125, tab: "carried" },
+      });
+      // Its description, with the quoted warning a promotion carries when conflicts are left
+      await shootPanel(panelManager, {
+        name: "pipeline-pr-view-quote",
+        command: "vscode-sfdx-hardis.showPipeline",
+        lwcId: "s-pipeline",
+        ready: pipelineFullyLoaded,
+        settleMs: 9000,
+        force: true,
+        commandArgs: { focus: "pullRequest", prNumber: 125 },
+      });
+      await shootPanel(panelManager, {
+        name: "pipeline-pr-explorer",
+        command: "vscode-sfdx-hardis.showPipeline",
+        lwcId: "s-pipeline",
+        ready: pipelineFullyLoaded,
+        settleMs: 6000,
+        force: true,
+        commandArgs: { focus: "explorer" },
+      });
+      // The results of a search, under the field: the list a reader picks a Pull Request from
+      await click(1160, 200); // search field of the explorer
+      await windowDriver()?.type("12");
+      await sleep(2500);
+      await captureStable("pipeline-pr-explorer-search");
+    } finally {
+      checkoutWorkspaceBranch("integration");
+    }
+  });
+
   // A post-deployment action failed after a merge (training Lab 3.3 part 3):
   // the Deployment Actions tab with the status of each action and the menu of
   // a failed one, Retry as its command runs (Mark as done runs in the
@@ -1106,7 +1139,7 @@ suite("Documentation screenshots", function () {
     runPanel.simulateWebviewMessage({ type: "submit", data: { value: "one" } });
     await sleep(3500);
     await cleanChrome();
-    capture("action-run-prompts");
+    await capture("action-run-prompts");
 
     // The fix Pull Request: its Deployment Actions tab, then the editor of the
     // moved action, which says where it comes from
@@ -1222,7 +1255,7 @@ suite("Documentation screenshots", function () {
     await waitFor(() => asked("pullRequests"), 30000, "selection prompt");
     await sleep(1500);
     await cleanChrome();
-    capture("promotion-create-select");
+    await capture("promotion-create-select");
     panel.simulateWebviewMessage({
       type: "submit",
       data: { pullRequests: promotionSelectedCommits() },
@@ -1231,7 +1264,7 @@ suite("Documentation screenshots", function () {
     await waitFor(() => asked("conflict"), 30000, "conflict prompt");
     await sleep(1500);
     await cleanChrome();
-    capture("promotion-create-conflict");
+    await capture("promotion-create-conflict");
     panel.simulateWebviewMessage({
       type: "submit",
       data: { conflict: "commit-with-markers-all" },
@@ -1371,10 +1404,16 @@ suite("Documentation screenshots", function () {
       );
       return index === -1 ? shot.row : index;
     };
-    const FIRST_ROW_CENTER_Y = 270;
-    const ROW_STEP = 36;
+    // Label of the first action, and the height of a row, two zoom levels out. The window
+    // shows the first nine rows: the last ones are reached by scrolling the list to its end,
+    // where the last row sits at LAST_ROW_SCROLLED_Y
+    const FIRST_ROW_CENTER_Y = 328;
+    const ROW_STEP = 53.8;
+    const VISIBLE_ROWS = 9;
+    const LAST_ROW_INDEX = 10;
+    const LAST_ROW_SCROLLED_Y = 805;
     // Clicking the action label opens its editor
-    const EDIT_BUTTON_X = 610;
+    const EDIT_BUTTON_X = 520;
     // The actions belong to the feature pull request of the fixture branch
     checkoutWorkspaceBranch(FEATURE_BRANCH);
     // Zoomed out two levels, like the other modal shots: the editors of every
@@ -1407,7 +1446,20 @@ suite("Documentation screenshots", function () {
           force: true,
           commandArgs: PIPELINE_ACTIONS_DEEP_LINK,
         });
-        await click(EDIT_BUTTON_X, FIRST_ROW_CENTER_Y + rowOf(shot) * ROW_STEP);
+        const row = rowOf(shot);
+        if (row < VISIBLE_ROWS) {
+          await click(
+            EDIT_BUTTON_X,
+            Math.round(FIRST_ROW_CENTER_Y + row * ROW_STEP),
+          );
+        } else {
+          await click(1100, 600, { scroll: -30 });
+          await sleep(800);
+          await click(
+            EDIT_BUTTON_X,
+            Math.round(LAST_ROW_SCROLLED_Y - (LAST_ROW_INDEX - row) * ROW_STEP),
+          );
+        }
         await sleep(1800);
         // Switch the read-only details view to the editable form: the published
         // screenshots must show the values inside editable fields
@@ -1543,7 +1595,7 @@ suite("Documentation screenshots", function () {
       await vscode.commands.executeCommand(
         "workbench.action.closeAuxiliaryBar",
       );
-      capture("backpromote-loading");
+      await capture("backpromote-loading");
       await loading;
       delete process.env.SF_MOCK_BACKPROMOTE_STEP_DELAY_MS;
       const panel = await openWithSandbox();
@@ -1565,7 +1617,7 @@ suite("Documentation screenshots", function () {
         data: { selection: initData.selection, revision: 900 },
       });
       await sleep(3500);
-      capture("backpromote-preparing");
+      await capture("backpromote-preparing");
       delete process.env.SF_MOCK_BOOT_DELAY_MS;
       // Not every fixture universe has an item that differs on both sides, and
       // when none does, Merge all has nothing to prepare. That is not a reason
@@ -1627,7 +1679,7 @@ suite("Documentation screenshots", function () {
       await vscode.commands.executeCommand(
         "workbench.action.closeAuxiliaryBar",
       );
-      capture("backpromote-running");
+      await capture("backpromote-running");
       await waitFor(
         () => failPanel.getInitializationData()?.runError,
         40000,
@@ -2464,7 +2516,7 @@ suite("Documentation screenshots", function () {
     await waitFor(() => asked("setDefault"), 30000, "first prompt");
     await sleep(1500);
     await cleanChrome();
-    capture("command-runner-question");
+    await capture("command-runner-question");
     panel.simulateWebviewMessage({
       type: "submit",
       data: { setDefault: "yes" },
@@ -2474,7 +2526,7 @@ suite("Documentation screenshots", function () {
     await waitFor(() => asked("customSettings"), 30000, "multiselect prompt");
     await sleep(1500);
     await cleanChrome();
-    capture("command-runner-multiselect");
+    await capture("command-runner-multiselect");
     panel.simulateWebviewMessage({
       type: "submit",
       data: { customSettings: ["APITalenDev__c", "Languages__c"] },
@@ -2492,7 +2544,7 @@ suite("Documentation screenshots", function () {
     );
     await sleep(1500);
     await cleanChrome();
-    capture("command-runner-completed");
+    await capture("command-runner-completed");
   });
 
   // CI authentication of a major branch (DevOps Pipeline gear menu >
@@ -2520,7 +2572,7 @@ suite("Documentation screenshots", function () {
     await waitFor(() => asked("branchName"), 30000, "branch prompt");
     await sleep(1500);
     await cleanChrome();
-    capture("configure-auth-branch");
+    await capture("configure-auth-branch");
     panel.simulateWebviewMessage({
       type: "submit",
       data: { branchName: "integration" },
@@ -2535,7 +2587,7 @@ suite("Documentation screenshots", function () {
     await waitFor(() => asked("variablesSet"), 30000, "variables prompt");
     await sleep(1800);
     await cleanChrome();
-    capture("configure-auth-variables");
+    await capture("configure-auth-variables");
     panel.simulateWebviewMessage({
       type: "submit",
       data: { variablesSet: true },
@@ -2551,7 +2603,7 @@ suite("Documentation screenshots", function () {
     );
     await sleep(1500);
     await cleanChrome();
-    capture("configure-auth-completed");
+    await capture("configure-auth-completed");
   });
 
   // The two commands a contributor runs every day, captured at the question
@@ -2582,7 +2634,7 @@ suite("Documentation screenshots", function () {
     if (asked("targetBranch")) {
       await sleep(1500);
       await cleanChrome();
-      capture("work-new-target-branch");
+      await capture("work-new-target-branch");
       panel.simulateWebviewMessage({
         type: "submit",
         data: { targetBranch: "integration" },
@@ -2593,7 +2645,7 @@ suite("Documentation screenshots", function () {
     await waitFor(() => asked("storyType"), 30000, "story type prompt");
     await sleep(1500);
     await cleanChrome();
-    capture("work-new-story-type");
+    await capture("work-new-story-type");
     panel.simulateWebviewMessage({
       type: "submit",
       data: { storyType: "feature" },
@@ -2603,7 +2655,7 @@ suite("Documentation screenshots", function () {
     await waitFor(() => asked("storyName"), 30000, "story name prompt");
     await sleep(1500);
     await cleanChrome();
-    capture("work-new-story-name");
+    await capture("work-new-story-name");
     panel.simulateWebviewMessage({
       type: "submit",
       // The name has to be one the project's branch pattern accepts, because
@@ -2615,7 +2667,7 @@ suite("Documentation screenshots", function () {
     await waitFor(() => asked("orgType"), 30000, "org type prompt");
     await sleep(1500);
     await cleanChrome();
-    capture("work-new-org-type");
+    await capture("work-new-org-type");
     panel.simulateWebviewMessage({
       type: "submit",
       data: { orgType: "sandbox" },
@@ -2630,7 +2682,7 @@ suite("Documentation screenshots", function () {
     );
     await sleep(1500);
     await cleanChrome();
-    capture("work-new-org");
+    await capture("work-new-org");
     if (asked("scratchOrg")) {
       panel.simulateWebviewMessage({
         type: "submit",
@@ -2654,7 +2706,7 @@ suite("Documentation screenshots", function () {
     );
     await sleep(1500);
     await cleanChrome();
-    capture("work-new-completed");
+    await capture("work-new-completed");
   });
 
   test("command runner (save and publish)", async function () {
@@ -2674,7 +2726,7 @@ suite("Documentation screenshots", function () {
     await waitFor(() => asked("commitReady"), 30000, "commit ready prompt");
     await sleep(1500);
     await cleanChrome();
-    capture("work-save-commit-ready");
+    await capture("work-save-commit-ready");
     panel.simulateWebviewMessage({
       type: "submit",
       data: { commitReady: "commitReady" },
@@ -2685,7 +2737,7 @@ suite("Documentation screenshots", function () {
     await waitFor(() => asked("pushCommits"), 60000, "push prompt");
     await sleep(1800);
     await cleanChrome();
-    capture("work-save-package-xml");
+    await capture("work-save-package-xml");
     panel.simulateWebviewMessage({
       type: "submit",
       data: { pushCommits: "yes" },
@@ -2698,7 +2750,7 @@ suite("Documentation screenshots", function () {
     );
     await sleep(1500);
     await cleanChrome();
-    capture("work-save-completed");
+    await capture("work-save-completed");
   });
 
   // The contribution cards of the DevOps Pipeline: New User Story, Save /
@@ -2723,7 +2775,7 @@ suite("Documentation screenshots", function () {
     // page, and a posted wheel never reaches the webview's scroller. Hiding the
     // feature branches is what actually shrinks the diagram, and it is a real
     // control a reader can find, right in the header.
-    await click(1580, 109); // "Show feature branches" toggle
+    await click(1515, 104); // "Show feature branches" toggle
     await sleep(2500);
     // Two levels out on top of that, so the whole row of cards fits rather than
     // being cut off at the bottom edge
@@ -2739,7 +2791,7 @@ suite("Documentation screenshots", function () {
     await vscode.commands.executeCommand("workbench.action.zoomIn");
     await vscode.commands.executeCommand("workbench.action.zoomIn");
     await sleep(1200);
-    await click(1580, 109); // put the toggle back for the captures that follow
+    await click(1515, 104); // put the toggle back for the captures that follow
     await sleep(1500);
   });
 
@@ -2775,7 +2827,7 @@ suite("Documentation screenshots", function () {
     // capture() is what maximizes the window, and click() coordinates are
     // relative to the captured image: clicking before the first capture of a
     // filtered run aims at a window that is still its default size.
-    capture("pipeline-config-branch-edit");
+    await capture("pipeline-config-branch-edit");
     await sleep(600);
     await click(1848, 104);
     await sleep(3000);
@@ -2797,7 +2849,7 @@ suite("Documentation screenshots", function () {
       "User Stories",
     );
     await sleep(4500);
-    capture("pipeline-config-user-stories");
+    await capture("pipeline-config-user-stories");
     await sleep(600);
     // Edit, same place as on the branch panel above
     await click(1848, 104);
@@ -2869,7 +2921,7 @@ suite("Documentation screenshots", function () {
     await waitFor(() => asked("selectUsers"), 30000, "users multiselect");
     await sleep(1500);
     await cleanChrome();
-    capture("user-activateinvalid-multiselect");
+    await capture("user-activateinvalid-multiselect");
     panel.simulateWebviewMessage({
       type: "submit",
       data: {
@@ -2892,7 +2944,7 @@ suite("Documentation screenshots", function () {
     );
     await sleep(1500);
     await cleanChrome();
-    capture("user-activateinvalid-completed");
+    await capture("user-activateinvalid-completed");
   });
 
   // Full package installation journey, recorded for
@@ -3351,7 +3403,7 @@ suite("Documentation screenshots", function () {
     await click(130, 362); // STATUS header
     await parkPointer();
     await cleanChrome();
-    capture("sidebar-commands-collapsed");
+    await capture("sidebar-commands-collapsed");
 
     // Expand, capture and collapse again each section holding a documented menu
     // entry. The section is found by its id and expanded through the tree view,
@@ -3384,7 +3436,7 @@ suite("Documentation screenshots", function () {
       await sleep(900);
       await parkPointer();
       await cleanChrome();
-      capture(`sidebar-commands-${section.name}`);
+      await capture(`sidebar-commands-${section.name}`);
       // Collapsing is not exposed, so the tree is rebuilt instead: refreshing
       // the provider returns every section to its declared collapsed state.
       await vscode.commands.executeCommand(

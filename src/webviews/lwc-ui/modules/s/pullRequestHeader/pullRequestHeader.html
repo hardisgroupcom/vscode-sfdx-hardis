@@ -1,0 +1,55 @@
+<template>
+    <template if:true={hasPullRequest}>
+        <div class="pr-head">
+            <div class="pr-head-facts">
+                <span class={statePillClass}><span class="hardis-pill-dot"></span>{stateLabel}</span>
+                <template if:true={hasMergeConflicts}>
+                    <span class="hardis-pill hardis-status-failed"><span class="hardis-pill-dot"></span>{i18n.legendMergeConflicts}</span>
+                </template>
+                <template if:true={authorLabel}>
+                    <span class="hardis-cell-flex">
+                        <span class={authorAvatarClass}>{authorInitials}</span>
+                        <span class="hardis-avatar-name">{authorLabel}</span>
+                    </span>
+                </template>
+                <template if:true={pr.sourceBranch}>
+                    <span class="hardis-branch-chip" title={pr.sourceBranch}>{pr.sourceBranch}</span>
+                </template>
+                <template if:true={pr.targetBranch}>
+                    <lightning-icon icon-name="utility:forward" size="xx-small" alternative-text={i18n.targetLabel}></lightning-icon>
+                    <span class="hardis-branch-chip" title={pr.targetBranch}>{pr.targetBranch}</span>
+                </template>
+                <template if:true={dateLabel}>
+                    <span class="pr-head-date">{dateLabel}</span>
+                </template>
+                <template if:true={webUrl}>
+                    <lightning-button
+                        class="pr-head-out"
+                        variant="neutral"
+                        icon-name="utility:new_window"
+                        label={openOnPlatformLabel}
+                        onclick={handleOpenExternal}
+                    ></lightning-button>
+                </template>
+            </div>
+            <template if:true={hasJourney}>
+                <div class="hardis-journey">
+                    <template for:each={steps} for:item="step">
+                        <div key={step.key} class="hardis-journey-step">
+                            <template if:true={step.isBranch}>
+                                <span class="hardis-branch-chip" title={step.label}>{step.label}</span>
+                            </template>
+                            <template if:false={step.isBranch}>
+                                <span class="hardis-journey-label">{step.label}</span>
+                            </template>
+                            <span class={step.pillClass}><span class="hardis-pill-dot"></span>{step.stateLabel}</span>
+                            <template if:true={step.carriedBy}>
+                                <button class="hardis-pr-ref" data-pr-number={step.carriedBy} onclick={handleOpenCarrier}>{step.carriedByLabel}</button>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </div>
+    </template>
+</template>

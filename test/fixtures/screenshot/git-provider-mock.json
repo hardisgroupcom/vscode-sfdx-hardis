@@ -174,7 +174,7 @@
       "id": 125,
       "number": 125,
       "title": "Promotion: integration to uat",
-      "description": "Promotes the user stories validated in integration to the UAT org.",
+      "description": "Promotes the user stories validated in integration to the UAT org.\n\n> ⚠️ **Conflicts to solve before merging.** 1 User Story was committed with git conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`): solve them on the branch, commit and push.",
       "sourceBranch": "integration",
       "targetBranch": "uat",
       "author": {

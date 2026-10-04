@@ -704,3 +704,58 @@
     justify-content: flex-start;
   }
 }
+
+/* --- Pull Request modal: more room for its content ---------------------------
+   The container fills the panel, the header is one compact line (breadcrumb above the
+   title when the window was opened from another one), and the body takes all the height
+   that is left instead of stopping 180px short of it. */
+/* The top padding of SLDS stays: the close button sits in it, above the header. The bottom one
+   is only empty space under the footer, so it is reduced and the window goes down to the
+   bottom of the panel */
+.slds-modal__container {
+    width: 94% !important;
+    max-width: 94vw !important;
+    height: 98vh !important;
+    max-height: 98vh !important;
+    padding-bottom: 1rem !important;
+}
+
+.slds-modal__header {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+}
+
+.slds-modal__content {
+    max-height: none !important;
+    min-height: 0 !important;
+}
+
+/* Previous: back to the window shown before, on the left of the title */
+.slds-modal__header {
+    position: relative;
+}
+
+.modal-previous {
+    position: absolute;
+    left: 1rem;
+    top: 0.5rem;
+}
+
+.modal-breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem;
+    font-size: 0.8125rem;
+    margin-bottom: 0.125rem;
+}
+
+.modal-crumb {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.modal-crumb-sep {
+    color: var(--vscode-descriptionForeground, inherit);
+}

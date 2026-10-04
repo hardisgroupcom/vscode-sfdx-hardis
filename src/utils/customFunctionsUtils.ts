@@ -1,4 +1,6 @@
 import * as vscode from "vscode";
+import * as fs from "fs";
+import * as path from "path";
 import { execSfdxJson } from "../utils";
 import { Logger } from "../logger";
 import { t } from "../i18n/i18n";
@@ -60,6 +62,63 @@ export interface CustomFunctionDefinition {
   outputs?: CustomFunctionOutput[];
   // Only present when the list was requested with runtime checking
   runtimeAvailable?: boolean;
+}
+
+// Catalog read during this session, with the state of config/.sfdx-hardis.yml it was read for
+const CATALOG_TTL_MS = 30 * 60 * 1000;
+let catalogCache: {
+  signature: string;
+  at: number;
+  functions: CustomFunctionDefinition[];
+} | null = null;
+let catalogRefresh: Promise<CustomFunctionDefinition[]> | null = null;
+
+// The catalog is declared in config/.sfdx-hardis.yml: while that file does not change, the
+// answer of the CLI does not either
+function configSignature(): string {
+  try {
+    const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || "";
+    const stat = fs.statSync(path.join(root, "config", ".sfdx-hardis.yml"));
+    return `${root}:${stat.mtimeMs}:${stat.size}`;
+  } catch {
+    return "no-config";
+  }
+}
+
+/**
+ * The catalog of custom functions when it is already known for the current configuration file,
+ * else null. Never starts the CLI: listing the functions costs a whole sfdx-hardis start, which
+ * the DevOps Pipeline must not wait for to show its Pull Requests.
+ */
+export function getCachedCustomFunctions(): CustomFunctionDefinition[] | null {
+  if (
+    catalogCache &&
+    catalogCache.signature === configSignature() &&
+    Date.now() - catalogCache.at < CATALOG_TTL_MS
+  ) {
+    return catalogCache.functions;
+  }
+  return null;
+}
+
+/**
+ * Read the catalog with the CLI and remember it. Calls made while one is running share it.
+ */
+export function refreshCustomFunctionsCache(): Promise<
+  CustomFunctionDefinition[]
+> {
+  if (!catalogRefresh) {
+    const signature = configSignature();
+    catalogRefresh = listCustomFunctions()
+      .then((functions) => {
+        catalogCache = { signature, at: Date.now(), functions };
+        return functions;
+      })
+      .finally(() => {
+        catalogRefresh = null;
+      });
+  }
+  return catalogRefresh;
 }
 
 /**

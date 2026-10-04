@@ -30,6 +30,17 @@ export async function waitFor<T>(
   }
 }
 
+/** Records the messages the extension sends to the webview of a panel. */
+export function recordSentMessages(panel: any): any[] {
+  const sent: any[] = [];
+  const original = panel.sendMessage.bind(panel);
+  panel.sendMessage = (message: any) => {
+    sent.push(message);
+    original(message);
+  };
+  return sent;
+}
+
 /**
  * Activates the extension and returns its test API.
  */
