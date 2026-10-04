@@ -34,6 +34,7 @@ const EXPORTED = [
   "journeyBranchPath",
   "buildPullRequestJourney",
   "journeyPillClass",
+  "journeyPathStep",
   "safeWebUrl",
   "isTrustedCommentImage",
 ];
@@ -898,6 +899,43 @@ suite("Pull Request view", () => {
       assert.match(
         view,
         /isTrustedCommentImage\(node\.getAttribute\("src"\)\)\s*\)\s*\{\s*return;\s*\}\s*const alt =/,
+      );
+    });
+
+    test("the journey is a path: filled once reached, pale while ahead", () => {
+      const look = (state: string) => utils.journeyPathStep(state).look;
+      assert.deepStrictEqual(["success", "deployed", "merged"].map(look), [
+        "done",
+        "done",
+        "done",
+      ]);
+      assert.strictEqual(look("failed"), "failed");
+      assert.strictEqual(look("running"), "running");
+      assert.strictEqual(look("pending"), "pending");
+      // Not started, or not known: still ahead, never a guess
+      assert.deepStrictEqual(["waiting", "unknown", "anything"].map(look), [
+        "ahead",
+        "ahead",
+        "ahead",
+      ]);
+      assert.strictEqual(
+        utils.journeyPathStep("deployed").stepClass,
+        "hardis-path-step hardis-path-done",
+      );
+      // A sign for what ended, a dot for what is going on, nothing for what has not started
+      assert.strictEqual(utils.journeyPathStep("deployed").mark, "\u2713");
+      assert.strictEqual(utils.journeyPathStep("failed").mark, "\u2715");
+      assert.strictEqual(utils.journeyPathStep("running").dot, true);
+      assert.strictEqual(utils.journeyPathStep("waiting").dot, false);
+      assert.strictEqual(utils.journeyPathStep("waiting").mark, "");
+      const header = readModuleFile(
+        "pullRequestHeader",
+        "pullRequestHeader.html",
+      );
+      // An ordered list, and the Pull Request that carried a step still opens from it
+      assert.match(
+        header,
+        /<ol class="hardis-path">[\s\S]*?<li key=\{step\.key\} class=\{step\.stepClass\} title=\{step\.title\}>[\s\S]*?data-pr-number=\{step\.carriedBy\} onclick=\{handleOpenCarrier\}/,
       );
     });
 

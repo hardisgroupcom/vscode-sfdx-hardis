@@ -2550,28 +2550,123 @@ lightning-helptext::part(icon) {
 }
 
 /* --- Pull Request journey (validation, then one step per major branch) --- */
-.hardis-journey {
+.hardis-path {
   display: flex;
   flex-wrap: wrap;
-  border: 1px solid var(--slds-g-color-neutral-base-80);
-  border-radius: 0.375rem;
-  overflow: hidden;
+  row-gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
-.hardis-journey-step {
-  flex: 1 1 8rem;
+/* One chevron per step: the notch of each one fits the point of the one before, with a thin gap
+   between them. A step is filled once reached, pale while it is still ahead. */
+.hardis-path-step {
+  flex: 1 1 9rem;
   min-width: 0;
+  height: 2rem;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.25rem;
-  padding: 0.5rem 0.75rem;
-  border-right: 1px solid var(--slds-g-color-neutral-base-80);
-  margin-right: -1px;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0 1.125rem 0 1.5rem;
+  margin-right: -0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1;
+  white-space: nowrap;
+  background: var(--slds-g-color-neutral-base-90);
+  color: var(--slds-g-color-neutral-base-30);
+  clip-path: polygon(
+    0 0,
+    calc(100% - 0.75rem) 0,
+    100% 50%,
+    calc(100% - 0.75rem) 100%,
+    0 100%,
+    0.75rem 50%
+  );
 }
-.hardis-journey-label {
-  color: var(--vscode-descriptionForeground, inherit);
+.hardis-path-step:first-child {
+  padding-left: 0.875rem;
+  border-radius: 1rem 0 0 1rem;
+  clip-path: polygon(
+    0 0,
+    calc(100% - 0.75rem) 0,
+    100% 50%,
+    calc(100% - 0.75rem) 100%,
+    0 100%
+  );
+}
+.hardis-path-step:last-child {
+  margin-right: 0;
+  padding-right: 0.875rem;
+  border-radius: 0 1rem 1rem 0;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 0.75rem 50%);
+}
+.hardis-path-done {
+  background: var(--slds-g-color-palette-green-50);
+  color: #ffffff;
+}
+.hardis-path-failed {
+  background: var(--slds-g-color-palette-red-50);
+  color: #ffffff;
+}
+.hardis-path-running {
+  background: var(--slds-g-color-palette-blue-50);
+  color: #ffffff;
+}
+.hardis-path-pending {
+  background: var(--slds-g-color-palette-orange-90);
+  color: var(--slds-g-color-palette-orange-30);
+}
+.hardis-path-mark {
+  font-weight: 700;
+  flex: none;
+}
+.hardis-path-dot {
+  flex: none;
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+.hardis-path-running .hardis-path-dot {
+  animation: hardis-path-pulse 1.4s ease-in-out infinite;
+}
+@keyframes hardis-path-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hardis-path-running .hardis-path-dot {
+    animation: none;
+  }
+}
+.hardis-path-name {
+  font-weight: 700;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hardis-path-branch {
+  font-family: ui-monospace, "Cascadia Code", Consolas, Menlo, monospace;
   font-size: 0.75rem;
-  overflow-wrap: anywhere;
+}
+.hardis-path-state {
+  flex: none;
+  opacity: 0.9;
+}
+.hardis-path-ref {
+  flex: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.hardis-path-ref:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
 }
 
 /* --- Rendered markdown (sanitized comment of a Pull Request) --- */

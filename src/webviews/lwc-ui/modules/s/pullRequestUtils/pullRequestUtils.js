@@ -411,6 +411,29 @@ export function journeyPillClass(state) {
 }
 
 /**
+ * How a step of the journey is drawn in the path: reached (filled green), failed (filled red),
+ * running (filled blue), pending, or still ahead. `mark` is the sign shown before its name.
+ */
+export function journeyPathStep(state) {
+  const look =
+    {
+      success: "done",
+      deployed: "done",
+      merged: "done",
+      failed: "failed",
+      running: "running",
+      pending: "pending",
+    }[state] || "ahead";
+  return {
+    look,
+    stepClass: `hardis-path-step hardis-path-${look}`,
+    mark: { done: "\u2713", failed: "\u2715" }[look] || "",
+    // A dot for what is going on, nothing for what has not started
+    dot: look === "running" || look === "pending",
+  };
+}
+
+/**
  * A link is only followed when it is a plain web address: the URLs of a run come from a Pull
  * Request comment, which anyone allowed to comment can write. http is accepted next to https
  * because a self-hosted git provider or ticketing tool is not always served over https.

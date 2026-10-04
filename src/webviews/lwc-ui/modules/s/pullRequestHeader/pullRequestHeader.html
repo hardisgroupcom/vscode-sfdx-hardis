@@ -33,22 +33,24 @@
                 </template>
             </div>
             <template if:true={hasJourney}>
-                <div class="hardis-journey">
+                <!-- Steps that follow each other, drawn as the SLDS path: the chevrons carry the order -->
+                <ol class="hardis-path">
                     <template for:each={steps} for:item="step">
-                        <div key={step.key} class="hardis-journey-step">
-                            <template if:true={step.isBranch}>
-                                <span class="hardis-branch-chip" title={step.label}>{step.label}</span>
+                        <li key={step.key} class={step.stepClass} title={step.title}>
+                            <template if:true={step.mark}>
+                                <span class="hardis-path-mark" aria-hidden="true">{step.mark}</span>
                             </template>
-                            <template if:false={step.isBranch}>
-                                <span class="hardis-journey-label">{step.label}</span>
+                            <template if:true={step.dot}>
+                                <span class="hardis-path-dot" aria-hidden="true"></span>
                             </template>
-                            <span class={step.pillClass}><span class="hardis-pill-dot"></span>{step.stateLabel}</span>
+                            <span class={step.labelClass}>{step.label}</span>
+                            <span class="hardis-path-state">{step.stateLabel}</span>
                             <template if:true={step.carriedBy}>
-                                <button class="hardis-pr-ref" data-pr-number={step.carriedBy} onclick={handleOpenCarrier}>{step.carriedByLabel}</button>
+                                <button class="hardis-path-ref" data-pr-number={step.carriedBy} onclick={handleOpenCarrier}>{step.carriedByLabel}</button>
                             </template>
-                        </div>
+                        </li>
                     </template>
-                </div>
+                </ol>
             </template>
         </div>
     </template>

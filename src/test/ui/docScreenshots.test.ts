@@ -1051,7 +1051,7 @@ suite("Documentation screenshots", function () {
         ready: pipelineFullyLoaded,
         settleMs: 9000,
         force: true,
-        commandArgs: { focus: "pullRequest", prNumber: 118 },
+        commandArgs: { focus: "pullRequest", prNumber: 124 },
       });
       // A vehicle: the open Pull Request from integration to uat, on the list of what it carries
       await shootPanel(panelManager, {

@@ -1,6 +1,6 @@
 import { LightningElement, api } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
-import { journeyPillClass, lookupState, safeWebUrl } from "s/pullRequestUtils";
+import { journeyPathStep, lookupState, safeWebUrl } from "s/pullRequestUtils";
 
 /**
  * Header of the Pull Request view: what the Pull Request is (state, author, branches), then its
@@ -111,12 +111,21 @@ export default class PullRequestHeader extends SharedMixin(LightningElement) {
         // "Not in the pipeline windows" is about a branch, not about a validation
         stateLabel = this.i18n.jobStatusUnknown;
       }
+      const label = isValidation ? this.i18n.journeyValidation : step.branch;
+      const path = journeyPathStep(waitingForResults ? "pending" : step.state);
       return {
         key: step.key,
-        label: isValidation ? this.i18n.journeyValidation : step.branch,
-        isBranch: step.kind === "branch",
+        label,
+        labelClass:
+          step.kind === "branch"
+            ? "hardis-path-name hardis-path-branch"
+            : "hardis-path-name",
         stateLabel,
-        pillClass: journeyPillClass(step.state),
+        // The whole step when its text is cut: a path gives each one the same room
+        title: `${label}: ${stateLabel}`,
+        stepClass: path.stepClass,
+        mark: path.mark,
+        dot: path.dot,
         carriedBy: step.carriedBy,
         carriedByLabel: step.carriedBy
           ? this.t("journeyCarriedBy", { number: step.carriedBy })
