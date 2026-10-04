@@ -510,6 +510,64 @@ suite("Pull Request view", () => {
       );
     });
 
+    test("a vehicle Pull Request lists what it carries in a second tab", () => {
+      // A promotion, or a merge between two major branches
+      const view = (state: Record<string, any>): any =>
+        Object.assign(
+          new Function(
+            `return {
+              ${extractMember(js, "get showCarriedPrTab()")},
+              ${extractMember(js, "get modalCarriedPullRequests()")},
+              ${extractMember(js, "get modalCarriedPrsTabLabel()")}
+            };`,
+          )(),
+          {
+            isSinglePRMode: true,
+            i18n: { pullRequestLabel: "Pull Request" },
+            t: (key: string, vars: Record<string, any>) =>
+              `${key}:${vars.prLabel}:${vars.count}`,
+            _mapPrsWithIcons: (prs: any[]) =>
+              prs.map((pr) => ({ ...pr, numberLabel: `#${pr.number}` })),
+          },
+          state,
+        );
+      const carried = [{ number: 454 }, { number: 491 }];
+      const vehicle = view({
+        modalIsMajorPr: true,
+        modalPullRequests: [{ number: 501, aggregatedPullRequests: carried }],
+      });
+      assert.strictEqual(vehicle.showCarriedPrTab, true);
+      assert.deepStrictEqual(
+        vehicle.modalCarriedPullRequests.map((pr: any) => pr.numberLabel),
+        ["#454", "#491"],
+      );
+      assert.strictEqual(
+        vehicle.modalCarriedPrsTabLabel,
+        "prModalPrsTab:Pull Request:2",
+      );
+      // The same rows at each render, or the table would be drawn again every time
+      assert.strictEqual(
+        vehicle.modalCarriedPullRequests,
+        vehicle.modalCarriedPullRequests,
+      );
+      // A story carries nothing: no tab
+      const story = view({
+        modalIsMajorPr: false,
+        modalPullRequests: [{ number: 454 }],
+      });
+      assert.strictEqual(story.showCarriedPrTab, false);
+      assert.deepStrictEqual(story.modalCarriedPullRequests, []);
+      // Second tab, right after General, and each row opens its Pull Request in the panel
+      assert.match(
+        html,
+        /value="general"[\s\S]*?<template if:true=\{showCarriedPrTab\}>\s*<lightning-tab[^>]*value="carried"[\s\S]*?data=\{modalCarriedPullRequests\}[\s\S]*?onrowaction=\{handleModalPrRowAction\}[\s\S]*?<template if:true=\{showPRTab\}>/,
+      );
+      assert.match(
+        readSourceFile("commands/showPipeline.ts"),
+        /PULL_REQUEST_VIEW_TABS = \[\s*"general",\s*"carried",/,
+      );
+    });
+
     test("a step waiting for the results says so, and nothing is warned about while reading", () => {
       assert.match(
         html,

@@ -1494,6 +1494,7 @@ async function loadTicketDetailsForPanel(data: any): Promise<{
 
 const PULL_REQUEST_VIEW_TABS = [
   "general",
+  "carried",
   "tickets",
   "actions",
   "apexTests",

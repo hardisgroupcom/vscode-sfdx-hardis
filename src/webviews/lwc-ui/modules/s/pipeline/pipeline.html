@@ -475,6 +475,19 @@
                                 </template>
                             </lightning-tab>
                         </template>
+                        <!-- A promotion, or a merge between two major branches: the Pull Requests it carries -->
+                        <template if:true={showCarriedPrTab}>
+                            <lightning-tab onactive={handleModalTabActive} label={modalCarriedPrsTabLabel} value="carried" icon-name="utility:topic2" icon-assistive-text={modalCarriedPrsTabLabel}>
+                                <s-hardis-datatable
+                                    key-field="id"
+                                    data={modalCarriedPullRequests}
+                                    columns={modalPrColumns}
+                                    hide-checkbox-column
+                                    onrowaction={handleModalPrRowAction}
+                                    column-widths-mode="auto"
+                                ></s-hardis-datatable>
+                            </lightning-tab>
+                        </template>
                         <template if:true={showPRTab}>
                             <lightning-tab onactive={handleModalTabActive} label={modalPrsTabLabel} value="prs" icon-name="utility:topic2" icon-assistive-text={modalPrsTabLabel}>
                             <template if:false={modalHideCheckboxColumn}>

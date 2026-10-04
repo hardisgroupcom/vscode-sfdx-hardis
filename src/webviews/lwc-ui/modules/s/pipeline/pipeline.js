@@ -3873,6 +3873,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   get promotionNoPrLabel() {
+    // Until the forecast is back, nobody knows whether a promotion is open
+    if (this.actionForecastLoading) {
+      return this.i18n.loadingLabel;
+    }
     return this.t("forecastNoPromotionPr", {
       source: this.modalBranchName,
       target: this.promotionTargetBranch,
@@ -5246,6 +5250,34 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   get showPRTab() {
     return this.modalMode !== "singlePR";
+  }
+
+  // A vehicle Pull Request (a promotion, or a merge between two major branches) lists the
+  // Pull Requests it carries, each one opening in the panel like any row of a branch window
+  get showCarriedPrTab() {
+    return this.isSinglePRMode && this.modalIsMajorPr;
+  }
+
+  get modalCarriedPullRequests() {
+    if (!this.showCarriedPrTab) {
+      return [];
+    }
+    const carried = this.modalPullRequests[0].aggregatedPullRequests || [];
+    // Mapped once per Pull Request shown: a new array at each render would redraw the table
+    if (this._carriedPrsSource !== carried) {
+      this._carriedPrsSource = carried;
+      this._carriedPrsMapped = this._mapPrsWithIcons(carried);
+    }
+    return this._carriedPrsMapped;
+  }
+
+  get modalCarriedPrsTabLabel() {
+    const prLabel =
+      this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel;
+    return this.t("prModalPrsTab", {
+      prLabel,
+      count: this.modalCarriedPullRequests.length,
+    });
   }
 
   get hasBranchPullRequests() {

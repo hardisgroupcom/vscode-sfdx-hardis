@@ -1053,6 +1053,16 @@ suite("Documentation screenshots", function () {
         force: true,
         commandArgs: { focus: "pullRequest", prNumber: 118 },
       });
+      // A vehicle: the open Pull Request from integration to uat, on the list of what it carries
+      await shootPanel(panelManager, {
+        name: "pipeline-pr-view-carried",
+        command: "vscode-sfdx-hardis.showPipeline",
+        lwcId: "s-pipeline",
+        ready: pipelineFullyLoaded,
+        settleMs: 9000,
+        force: true,
+        commandArgs: { focus: "pullRequest", prNumber: 125, tab: "carried" },
+      });
       await shootPanel(panelManager, {
         name: "pipeline-pr-explorer",
         command: "vscode-sfdx-hardis.showPipeline",
