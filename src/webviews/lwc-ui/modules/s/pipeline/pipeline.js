@@ -3284,13 +3284,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     });
   }
 
-  get promotionToDoLabel() {
-    const count = Object.values(this.actionForecast?.actions || {})
-      .flat()
-      .filter((a) => a.forecast === "waiting").length;
-    return this.t("forecastToDoCount", { count });
-  }
-
   // One pill per action: what the promotion will do with it in the target branch
   _actionForecastFields(row) {
     const target = this.promotionTargetBranch;
@@ -3497,6 +3490,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return 2;
   }
 
+  // What the promotion does with the actions of a group, or of the whole window
   _forecastGroupSummary(rows) {
     if (!this.actionForecast) {
       return [];
@@ -3704,6 +3698,33 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return lines;
   }
 
+  // The head of the actions: the Status / Next promotion switch, and the totals
+  get showActionsHead() {
+    return this.showPromotionToggle || this.modalActionTotals.length > 0;
+  }
+
+  // The pills of every Pull Request of the window added up, in the mode shown.
+  // A Pull Request the open promotion leaves out is not counted: the totals say
+  // what the promotion carries. Shown from two Pull Requests with pills: with a
+  // single one, its header already says the same
+  get modalActionTotals() {
+    if (!this.modalActionsAggregated) {
+      return [];
+    }
+    const counted = this.modalActionGroups.filter(
+      (group) =>
+        group.summary.length > 0 &&
+        !group.rows.every((row) => row.statusCode === "not-in-promotion"),
+    );
+    if (counted.length < 2) {
+      return [];
+    }
+    const rows = counted.flatMap((group) => group.rows);
+    return this.isPromotionModeShown
+      ? this._forecastGroupSummary(rows)
+      : this._actionGroupSummary(rows);
+  }
+
   // The actions of the modal, one group per Pull Request. Groups with a problem
   // come first, then the ones waiting for someone, then the rest. Inside a group
   // the actions keep the order they run in: pre-deploy, then post-deploy, each
@@ -3769,7 +3790,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return 2;
   }
 
-  // "1 failed · 2 stopped": what the group holds, once the statuses are known
+  // "1 failed · 2 stopped": what a group, or the whole window, holds once the
+  // statuses are known
   _actionGroupSummary(rows) {
     if (!this.modalActionStatuses) {
       return [];

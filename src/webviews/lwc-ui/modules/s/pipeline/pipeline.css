@@ -401,15 +401,39 @@
   gap: 0.5rem;
 }
 
-.da-promo-head {
+.da-actions-head {
   display: grid;
   gap: 0.5rem;
   margin-bottom: 0.75rem;
 }
 
+/* The switch on the left, the totals on the right: on a narrow panel the
+   totals wrap under the switch */
+.da-head-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+/* The right margin is the padding of a group header plus its border, so the
+   totals line up with the pills of the headers below */
+.da-totals {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+  margin-left: auto;
+  margin-right: calc(0.75rem + 1px);
+}
+
+.da-totals-label {
+  color: var(--vscode-descriptionForeground, inherit);
+  font-size: 0.8125rem;
+}
+
 .da-seg {
   display: inline-flex;
-  justify-self: start;
   border: 1px solid var(--slds-g-color-neutral-base-80);
   border-radius: 0.375rem;
   overflow: hidden;
@@ -450,11 +474,6 @@
   border-radius: 0.375rem;
   background: var(--slds-g-color-neutral-base-95);
   font-size: 0.8125rem;
-}
-
-.da-promo-todo {
-  margin-left: auto;
-  font-weight: 600;
 }
 
 .da-group-excluded .da-row {
