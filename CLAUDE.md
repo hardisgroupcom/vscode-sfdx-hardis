@@ -38,7 +38,15 @@ It is never part of an ordinary `yarn test:ui` run, because it changes real orgs
 
 `yarn screenshots` drives the same harness in "documentation screenshot" mode: it opens every LWC panel over `test/fixtures/doc-screenshots-project` in light theme and English, captures full-window PNGs (and animated GIF recordings) into `doc-screenshots/`, then `python scripts/build-doc-images.py` crops, annotates and copies them into the sibling `sfdx-hardis/docs/assets/images` folder. See CONTRIBUTING.md.
 
-**Screenshots and UI tests show no window on Windows, and do show one elsewhere.** Two things make that true, and both are needed. The harness drives VS Code through the Chrome DevTools Protocol (`src/test/ui/cdpWindow.ts`, debugging port set by `src/test/runUiTest.ts`): clicks go to the page, captures are rendered by the page at a fixed size, so the real pointer and keyboard are never used. And on Windows, outside CI, `runUiTest.ts` starts VS Code on a desktop of its own (`scripts/hidden-desktop`): its window is never drawn on the desktop in use and never takes the focus. There, `yarn screenshots` and `yarn test:ui` can run in the background while the user works. On macOS and Linux the window still opens in front of the user at every run: ask before starting one. `SFDX_HARDIS_UI_VISIBLE=true` brings the window back on Windows, to watch a run. Never say a run is invisible because the pointer does not move: check that no harness process has a window on the desktop. Never add a step that moves the real pointer, sends keys to a window, brings a window to the foreground or looks one up by its title. To see what an LWC panel really renders, add a deep link or a gate to `src/test/ui/docScreenshots.test.ts`, run `yarn screenshots <gate>` with `SFDX_HARDIS_DOC_SCREENSHOTS_DIR` set to an absolute folder, then read the PNG.
+**Screenshots and UI tests show no window on Windows, and do show one elsewhere.** Two things make that true, and both are needed.
+The harness drives VS Code through the Chrome DevTools Protocol (`src/test/ui/cdpWindow.ts`, debugging port set by `src/test/runUiTest.ts`): clicks go to the page, captures are rendered by the page at a fixed size, so the real pointer and keyboard are never used.
+And on Windows, outside CI, `runUiTest.ts` starts VS Code on a desktop of its own (`scripts/hidden-desktop`): its window is never drawn on the desktop in use and never takes the focus.
+There, `yarn screenshots` and `yarn test:ui` can run in the background while the user works.
+On macOS and Linux the window still opens in front of the user at every run: ask before starting one.
+`SFDX_HARDIS_UI_VISIBLE=true` brings the window back on Windows, to watch a run.
+Never say a run is invisible because the pointer does not move: check that no harness process has a window on the desktop.
+Never add a step that moves the real pointer, sends keys to a window, brings a window to the foreground or looks one up by its title.
+To see what an LWC panel really renders, add a deep link or a gate to `src/test/ui/docScreenshots.test.ts`, run `yarn screenshots <gate>` with `SFDX_HARDIS_DOC_SCREENSHOTS_DIR` set to an absolute folder, then read the PNG.
 
 ### Prebuild steps (run automatically before `yarn build`)
 - `yarn sync:schema` - Syncs JSON schema from remote

@@ -474,6 +474,7 @@
                         </template>
                         <template if:true={showPRTab}>
                             <lightning-tab onactive={handleModalTabActive} label={modalPrsTabLabel} value="prs" icon-name="utility:topic2" icon-assistive-text={modalPrsTabLabel}>
+                            <!-- cspell:ignore onvehicles -->
                             <s-pull-request-list
                                 pull-requests={modalPrListRows}
                                 pr-label={prLabel}
