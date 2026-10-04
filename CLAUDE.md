@@ -23,7 +23,7 @@ yarn compile              # TypeScript compilation (tsc, used for tests)
 yarn test                 # Run unit/extension tests (requires prior compile: yarn pretest)
 yarn test:ui              # Run UI integration tests (real VS Code + mocked sf CLI)
 yarn test:ui:labs         # Walk the training course labs (real VS Code + REAL sf CLI + real orgs)
-yarn screenshots          # Regenerate the documentation screenshots (Windows)
+yarn screenshots          # Regenerate the documentation screenshots (never takes the desktop)
 yarn vsix                 # Package as .vsix for distribution
 ```
 
@@ -37,6 +37,8 @@ It is never part of an ordinary `yarn test:ui` run, because it changes real orgs
 `SFDX_HARDIS_LAB_ONLY=1.3` runs one lab, `=1` a whole level. See `src/test/ui/labDriver.ts`.
 
 `yarn screenshots` drives the same harness in "documentation screenshot" mode: it opens every LWC panel over `test/fixtures/doc-screenshots-project` in light theme and English, captures full-window PNGs (and animated GIF recordings) into `doc-screenshots/`, then `python scripts/build-doc-images.py` crops, annotates and copies them into the sibling `sfdx-hardis/docs/assets/images` folder. See CONTRIBUTING.md.
+
+**Screenshots and UI checks never take the desktop.** The harness drives VS Code through the Chrome DevTools Protocol (`src/test/ui/cdpWindow.ts`, debugging port set by `src/test/runUiTest.ts`): clicks go to the page, captures are rendered by the page at a fixed size. The user keeps their mouse, keyboard and screen during a run, so `yarn screenshots` can be started at any time without asking, in the background. Never add a step that moves the real pointer, sends keys to a window, brings a window to the foreground or looks one up by its title. To see what an LWC panel really renders, add a deep link or a gate to `src/test/ui/docScreenshots.test.ts`, run `yarn screenshots <gate>` with `SFDX_HARDIS_DOC_SCREENSHOTS_DIR` set to an absolute folder, then read the PNG.
 
 ### Prebuild steps (run automatically before `yarn build`)
 - `yarn sync:schema` - Syncs JSON schema from remote

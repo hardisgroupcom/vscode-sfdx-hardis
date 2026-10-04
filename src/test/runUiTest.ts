@@ -1,3 +1,4 @@
+import * as net from "net";
 import * as path from "path";
 import * as fs from "fs";
 import * as os from "os";
@@ -517,12 +518,29 @@ async function main() {
     );
   }
 
+  // Documentation screenshots drive the window through the Chrome DevTools Protocol (see
+  // src/test/ui/cdpWindow.ts): clicks and captures go to the page, never to the desktop, so the
+  // machine stays usable during a run and the window can be covered
+  // cspell:ignore backgrounding
+
+  const cdpPort = docScreenshots ? await findFreePort() : 0;
+
   try {
     await runTests({
       extensionDevelopmentPath,
       extensionTestsPath,
       launchArgs: [
         workspaceDir,
+        ...(cdpPort
+          ? [
+              `--remote-debugging-port=${cdpPort}`,
+              // A window that is covered or in the background must keep rendering
+              "--disable-renderer-backgrounding",
+              "--disable-background-timer-throttling",
+              "--disable-backgrounding-occluded-windows",
+              "--disable-features=CalculateNativeWinOcclusion",
+            ]
+          : []),
         // Documentation screenshots need the Salesforce Extension Pack to look
         // installed (Setup panel), so they load a dedicated extensions folder
         // holding a stub of it instead of disabling extensions altogether.
@@ -541,6 +559,7 @@ async function main() {
         `--user-data-dir=${userDataDir}`,
       ],
       extensionTestsEnv: {
+        ...(cdpPort ? { SFDX_HARDIS_UI_CDP_PORT: String(cdpPort) } : {}),
         // The lab driver, like the perf gate, keeps the actual `sf` on the
         // PATH: it walks the course against real orgs, so a mock would prove
         // nothing. The CI markers go the same way, for the same reason.
@@ -648,3 +667,17 @@ async function main() {
 }
 
 main();
+
+/** A TCP port nothing listens on, for the debugging port of the VS Code window. */
+function findFreePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.unref();
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      const port = typeof address === "object" && address ? address.port : 0;
+      server.close(() => resolve(port));
+    });
+  });
+}

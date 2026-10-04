@@ -681,7 +681,11 @@ async function main() {
     let workflows;
     if (args.includes("--with-workflows")) {
       workflows = {};
-      const prIds = (args[args.indexOf("--pr-ids") + 1] || "").split(",");
+      // --workflow-pr-ids names the Pull Requests whose comments are read, --pr-ids otherwise
+      const idsFlag = args.includes("--workflow-pr-ids")
+        ? "--workflow-pr-ids"
+        : "--pr-ids";
+      const prIds = (args[args.indexOf(idsFlag) + 1] || "").split(",");
       for (const prId of prIds.filter((id) => /^\d+$/.test(id))) {
         workflows[prId] = mockWorkflowRuns(prId);
       }

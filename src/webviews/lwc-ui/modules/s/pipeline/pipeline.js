@@ -227,7 +227,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         initialWidth: 80,
         wrapText: true,
       },
-      // Number and title open the Pull Request in the panel, the last column is the way out
+      // Number and title open the Pull Request in the panel, whose header links to the git provider
       {
         key: "title",
         label: this.i18n.titleLabel,
@@ -242,20 +242,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         wrapText: true,
       },
       /* jscpd:ignore-end */
-      // The one way out to the git provider. Not last: the last column is the only one that
-      // may be left without a width
-      {
-        key: "external",
-        label: "",
-        fieldName: "webUrl",
-        type: "url",
-        typeAttributes: {
-          label: { fieldName: "externalLabel" },
-          target: "_blank",
-        },
-        initialWidth: 100,
-        wrapText: false,
-      },
       ...statusColumn,
       ...mergeConflictColumn,
       // The shared author column, which states a width. This table used to hold a copy of it
@@ -994,7 +980,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       };
       copy.jobsStatusLabel = labelMap[normalized] || labelMap.unknown;
       copy.numberLabel = pr.number > 0 ? `#${pr.number}` : "";
-      copy.externalLabel = this.repoPlatformLabel || "Git";
       copy.statusPillClass = `hardis-pill hardis-status-${normalized}`;
       // URL for the clickable job status: prefer the CI job URL, fall back to
       // the pull request page (mirrors the diagram link behavior).
