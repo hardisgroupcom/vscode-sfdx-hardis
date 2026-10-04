@@ -1072,6 +1072,11 @@ suite("Documentation screenshots", function () {
         force: true,
         commandArgs: { focus: "explorer" },
       });
+      // The results of a search, under the field: the list a reader picks a Pull Request from
+      await click(1160, 200); // search field of the explorer
+      await windowDriver()?.type("12");
+      await sleep(2500);
+      await captureStable("pipeline-pr-explorer-search");
     } finally {
       checkoutWorkspaceBranch("integration");
     }

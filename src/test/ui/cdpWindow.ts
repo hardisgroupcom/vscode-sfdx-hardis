@@ -172,6 +172,15 @@ export class CdpWindow {
     }
   }
 
+  /**
+   * Type text into whatever has the focus in the window, as the page receives it from an input
+   * method: no key of the real keyboard is involved.
+   */
+  async type(text: string): Promise<void> {
+    await this.connect();
+    await this.send("Input.insertText", { text });
+  }
+
   /** Zoom factor of the window (VS Code zoom in / zoom out), 1 when not zoomed. */
   private async zoomFactor(): Promise<number> {
     const result = await this.send("Runtime.evaluate", {

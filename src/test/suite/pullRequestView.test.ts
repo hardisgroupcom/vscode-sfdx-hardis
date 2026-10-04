@@ -676,6 +676,30 @@ suite("Pull Request view", () => {
       );
     });
 
+    test("the lists of the view take their colors from the panel, not from the VS Code theme", () => {
+      // The panel has a theme of its own: under a dark VS Code and a light panel, a background
+      // read from the VS Code theme left the titles of the search results dark on dark
+      for (const [folder, file] of [
+        ["pullRequestLookup", "pullRequestLookup.css"],
+        ["pullRequestList", "pullRequestList.css"],
+      ]) {
+        const css = readModuleFile(folder, file);
+        assert.doesNotMatch(
+          css,
+          /(background|color):[^;]*var\(--vscode-(?!focusBorder)/,
+          `${file} paints with a color of the VS Code theme`,
+        );
+      }
+      const lookup = readModuleFile(
+        "pullRequestLookup",
+        "pullRequestLookup.css",
+      );
+      const dropdown = lookup.slice(lookup.indexOf(".lookup-dropdown {"));
+      const rule = dropdown.slice(0, dropdown.indexOf("\n}"));
+      assert.match(rule, /background: light-dark\(/);
+      assert.match(rule, /\n\s*color: var\(--slds-g-color-neutral-base-15\);/);
+    });
+
     test("a step waiting for the results says so, and nothing is warned about while reading", () => {
       assert.match(
         html,
