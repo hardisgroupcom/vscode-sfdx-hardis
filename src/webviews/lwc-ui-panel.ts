@@ -30,7 +30,12 @@ export class LwcUiPanel {
    * panel title to know whether a command is still running.
    */
   public commandStatus:
-    "pending" | "running" | "completed" | "error" | "aborted" | null = null;
+    | "pending"
+    | "running"
+    | "completed"
+    | "error"
+    | "aborted"
+    | null = null;
 
   /**
    * Provisional context id of the background run a command-execution panel
@@ -880,10 +885,6 @@ export class LwcUiPanel {
   }
 
   /**
-   * Handle external URL open request from webview
-   * @param url URL to open in external browser
-   */
-  /**
    * A link to a Pull Request shown in a panel: opened in the Pull Request view of the DevOps
    * Pipeline when it is a Pull Request of this repository and the git provider is connected,
    * in the browser otherwise.
@@ -894,10 +895,12 @@ export class LwcUiPanel {
     }
     try {
       // Heavy module: loaded on demand, not with every panel
-      const gitProviderModule =
-        await import("../utils/gitProviders/gitProvider");
-      const { parsePullRequestNumberFromUrl } =
-        await import("../utils/pullRequestUrlUtils");
+      const gitProviderModule = await import(
+        "../utils/gitProviders/gitProvider"
+      );
+      const { parsePullRequestNumberFromUrl } = await import(
+        "../utils/pullRequestUrlUtils"
+      );
       const gitProvider = await gitProviderModule.GitProvider.getInstance();
       const prNumber = gitProvider?.isActive
         ? parsePullRequestNumberFromUrl(url, gitProvider.repoInfo?.webUrl)
@@ -906,7 +909,10 @@ export class LwcUiPanel {
         // A DevOps Pipeline panel already open only has to show the Pull Request: running its
         // command again would reload the whole pipeline first
         const panelManagerModule = await import("../lwc-panel-manager");
-        const pipelinePanel = panelManagerModule.LwcPanelManager.getInstance().getPanel("s-pipeline");
+        const pipelinePanel =
+          panelManagerModule.LwcPanelManager.getInstance().getPanel(
+            "s-pipeline",
+          );
         if (pipelinePanel && !pipelinePanel.isDisposed()) {
           pipelinePanel.reveal();
           pipelinePanel.sendMessage({
@@ -929,6 +935,10 @@ export class LwcUiPanel {
     await this.handleOpenExternal(url);
   }
 
+  /**
+   * Handle external URL open request from webview
+   * @param url URL to open in external browser
+   */
   private async handleOpenExternal(url: string): Promise<void> {
     try {
       const uri = vscode.Uri.parse(url);

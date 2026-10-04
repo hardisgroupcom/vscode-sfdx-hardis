@@ -761,15 +761,15 @@ export class GitProviderGitlab extends GitProvider {
     }
   }
 
-  /**
-   * Get all commits in the branch since the last merge (or all commits if no previous merge)
-   */
   // Pages of commits asked together: enough to cut the wait, few enough not to be throttled
   private static readonly COMMIT_PAGES_AT_ONCE = 4;
   // 20,000 commits: far beyond any real window, only there so a provider that never returns a
   // short page cannot make this loop forever
   private static readonly COMMIT_MAX_PAGES = 200;
 
+  /**
+   * Get all commits in the branch since the last merge (or all commits if no previous merge)
+   */
   private async getCommitsSinceLastMerge(
     branchName: string,
     lastMerge:
@@ -799,8 +799,15 @@ export class GitProviderGitlab extends GitProvider {
       // independent, so they are read a few at a time, until one comes back incomplete.
       const perPage = options.perPage;
       const commits: any[] = [];
-      let nextPage = 1;
-      let lastPageReached = false;
+      // Most windows fit in one page: it is asked alone, and the waves only start after a
+      // full one
+      const firstPage = await this.gitlabClient!.Commits.all(
+        this.gitlabProjectId!,
+        { ...options, page: 1, maxPages: 1 },
+      );
+      commits.push(...(Array.isArray(firstPage) ? firstPage : []));
+      let nextPage = 2;
+      let lastPageReached = commits.length < perPage;
       while (
         !lastPageReached &&
         nextPage <= GitProviderGitlab.COMMIT_MAX_PAGES

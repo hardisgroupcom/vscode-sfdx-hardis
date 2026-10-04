@@ -106,6 +106,16 @@ export class GitProviderMock extends GitProvider {
   }
 
   /** Searches every Pull Request the fixture knows, whichever list it sits in. */
+  // A Pull Request of the fixture by its number, as the Pull Request view asks for one it does
+  // not hold yet
+  async getPullRequestByNumber(number: number): Promise<PullRequest | null> {
+    return (
+      this.listFixturePullRequests().find(
+        (pullRequest) => pullRequest.number === number,
+      ) || null
+    );
+  }
+
   async searchPullRequests(
     query: string,
     options?: { limit?: number },

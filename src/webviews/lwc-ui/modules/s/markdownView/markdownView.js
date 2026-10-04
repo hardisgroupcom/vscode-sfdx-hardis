@@ -20,7 +20,6 @@ const ALLOWED_TAGS = [
   "h6",
   "hr",
   "i",
-  "img",
   "li",
   "ol",
   "p",
@@ -37,14 +36,32 @@ const ALLOWED_TAGS = [
   "tr",
   "ul",
 ];
-const ALLOWED_ATTR = ["href", "src", "alt", "title", "align", "open"];
+const ALLOWED_ATTR = ["href", "alt", "title", "align", "open"];
+
+// An image is replaced by its alternative text: the text comes from anyone allowed to comment,
+// and loading an image from the address they chose would tell them who opened the tab, and when
+let imageHookInstalled = false;
+function installImageHook(purify) {
+  if (imageHookInstalled) {
+    return;
+  }
+  imageHookInstalled = true;
+  purify.addHook("uponSanitizeElement", (node, data) => {
+    if (data.tagName !== "img" || !node.parentNode) {
+      return;
+    }
+    const alt = node.getAttribute ? node.getAttribute("alt") || "" : "";
+    node.parentNode.replaceChild(node.ownerDocument.createTextNode(alt), node);
+  });
+}
 
 /**
  * Markdown rendered as sanitized HTML.
  *
  * The text comes from a Pull Request comment, which anyone allowed to comment can write: it is
  * never trusted. marked turns it into HTML, DOMPurify keeps a short list of tags and attributes,
- * links and images are limited to web addresses, and a click on a link is handed to VS Code instead of
+ * links are limited to web addresses, images are replaced by their alternative text so nothing
+ * is loaded from an address the author chose, and a click on a link is handed to VS Code instead of
  * navigating the webview. Without the two libraries (a panel that does not load them), the text
  * is shown as it is.
  */
@@ -99,6 +116,7 @@ export default class MarkdownView extends SharedMixin(LightningElement) {
       return null;
     }
     try {
+      installImageHook(purify);
       const rawHtml = marked.parse(markdown, { gfm: true, async: false });
       return purify.sanitize(rawHtml, {
         ALLOWED_TAGS,

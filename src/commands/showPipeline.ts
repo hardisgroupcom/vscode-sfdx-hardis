@@ -20,7 +20,10 @@ import {
 } from "../utils/prePostCommandsUtils";
 import { getCurrentGitBranch } from "../utils/pipeline/sfdxHardisConfig";
 import { handleDeploymentActionPickerMessage } from "../utils/pipeline/deploymentActionPickers";
-import { listCustomFunctions } from "../utils/customFunctionsUtils";
+import {
+  getCachedCustomFunctions,
+  refreshCustomFunctionsCache,
+} from "../utils/customFunctionsUtils";
 import {
   execCommandWithProgress,
   execSfdxJson,
@@ -374,6 +377,7 @@ export function registerShowPipeline(commands: Commands) {
         // Refresh (Refresh button) — full single-step reload (mermaid with jobs
         // & PRs), keeps top bar visible; no intermediate PR-less render.
         if (type === "refreshPipeline") {
+          ticketDetailsCache.clear();
           await loadPipelineFull();
         }
         // Update panel title
@@ -519,8 +523,21 @@ export function registerShowPipeline(commands: Commands) {
               Number.isInteger(requestedNumber) &&
               requestedNumber > 0
             ) {
-              requestedPr =
-                await gitProvider.getPullRequestByNumber(requestedNumber);
+              // The Pull Request the pipeline already loaded carries the jobs of its last commit,
+              // which a read by number does not collect
+              const loaded: PullRequest[] = [
+                ...(((pipelineProperties as any)?.openPullRequests ||
+                  []) as PullRequest[]),
+                ...(pipelineProperties?.pipelineData?.orgs || []).flatMap(
+                  (org: any) => org.pullRequestsInBranchSinceLastMerge || [],
+                ),
+              ];
+              const known = loaded.find(
+                (pullRequest) => pullRequest.number === requestedNumber,
+              );
+              requestedPr = known
+                ? { ...known }
+                : await gitProvider.getPullRequestByNumber(requestedNumber);
             }
             if (!requestedPr) {
               vscode.window.showWarningMessage(
@@ -558,8 +575,13 @@ export function registerShowPipeline(commands: Commands) {
             ).find((org: any) => org?.name === prDetails?.sourceBranch);
             if (prDetails && sourceMajorOrg) {
               prDetails.isMajorToMajor = true;
+              // Only an open one will carry what waits in its source branch. Once merged or
+              // closed, the stories merged in that branch since then are not its own: listing
+              // them would offer to run their actions as if this Pull Request had brought them
               prDetails.aggregatedPullRequests =
-                sourceMajorOrg.pullRequestsInBranchSinceLastMerge || [];
+                prDetails.state === "open" || !prDetails.state
+                  ? sourceMajorOrg.pullRequestsInBranchSinceLastMerge || []
+                  : [];
             }
             // A promotion Pull Request (promotion/ branch declaring the stories it
             // carries) is read-only like a major-to-major one: it lists the actions,
@@ -1301,10 +1323,19 @@ export function registerShowPipeline(commands: Commands) {
       perfStep("listProjectDataWorkspaces");
       // Custom functions are deployment action types, so the action editor needs the catalog.
       // Same rule as the lists above: full pass only, the mermaid render never uses it.
-      const customFunctions = browseGitProvider
-        ? await listCustomFunctions()
-        : [];
-      perfStep("listCustomFunctions");
+      // Listing them costs a whole sfdx-hardis start (several seconds): the load never waits for
+      // it. The catalog already read for the current configuration is used at once, else it is
+      // read in the background and sent to the panel when it is there.
+      const cachedCustomFunctions = getCachedCustomFunctions();
+      const customFunctions = cachedCustomFunctions ?? [];
+      if (browseGitProvider && cachedCustomFunctions === null) {
+        void refreshCustomFunctionsCache().then((functions) => {
+          LwcPanelManager.getInstance()
+            .getPanel("s-pipeline")
+            ?.sendMessage({ type: "customFunctionsLoaded", data: functions });
+        });
+      }
+      perfStep("customFunctions (cache)");
 
       // Read enableDeploymentApexTestClasses from config/.sfdx-hardis.yml
       const projectHardisConfig = await readSfdxHardisConfig();
@@ -1386,10 +1417,6 @@ type PipelineInfo = {
 };
 
 /**
- * Run sf hardis:project:action:list with these flags and the git provider credentials the command
- * runner also passes. Returns its JSON result, or null when the CLI cannot answer.
- */
-/**
  * A change was written for a Pull Request that is not the one of the checked out branch: the
  * panel sends the sentence that says where it went, shown once the file is written. Nothing is
  * said while the Pull Request is only read.
@@ -1401,9 +1428,12 @@ function warnAboutOtherPullRequest(data: any): void {
   }
 }
 
+// True once the installed sfdx-hardis refused --with-workflows: not asked again this session
+let workflowsFlagRefused = false;
+
 // Ticket details already read in this session, by ticket id: a window opened again, or a
 // ticket shared by several branches, costs nothing
-const TICKET_DETAILS_TTL_MS = 10 * 60 * 1000;
+const TICKET_DETAILS_TTL_MS = 2 * 60 * 1000;
 const ticketDetailsCache = new Map<string, { ticket: Ticket; at: number }>();
 
 /**
@@ -1437,7 +1467,11 @@ async function loadTicketDetailsForPanel(data: any): Promise<{
         }
         const result =
           (await ticketProvider.completeTicketDetails({ ...ticket })) ?? ticket;
-        ticketDetailsCache.set(ticket.id, { ticket: result, at: Date.now() });
+        // A ticket that came back without details (ticketing error, throttling, a provider
+        // that has none) is not remembered: it is asked again next time
+        if (result.subject) {
+          ticketDetailsCache.set(ticket.id, { ticket: result, at: Date.now() });
+        }
         return result;
       },
       ticketProvider.batchSizes,
@@ -1476,6 +1510,9 @@ function buildPipelineDeepLink(
 ): { focus: string; prNumber?: number; tab?: string } | null {
   if (deepLink && deepLink.focus === "deploymentActions") {
     return { focus: "deploymentActions" };
+  }
+  if (deepLink && deepLink.focus === "explorer") {
+    return { focus: "explorer" };
   }
   const prNumber = Number(deepLink?.prNumber);
   if (
@@ -1578,6 +1615,10 @@ async function searchPullRequestsForLookup(data: any): Promise<{
   }
 }
 
+/**
+ * Run sf hardis:project:action:list with these flags and the git provider credentials the command
+ * runner also passes. Returns its JSON result, or null when the CLI cannot answer.
+ */
 async function runActionListJson(
   flags: string,
   purpose: string,
@@ -1634,16 +1675,15 @@ async function loadDeploymentActionStatuses(data: any): Promise<{
     (prNumber: any) =>
       prNumber === "draft" || (Number.isInteger(prNumber) && prNumber > 0),
   );
-  // Pull Request view: the validation and deployment runs of the Pull Request and of the ones
-  // that carried it, read by the same sfdx-hardis process as the statuses
+  // Pull Request view: the validation, deployment and MegaLinter comments of the Pull Request
+  // shown, read by the same sfdx-hardis process as the statuses, for that Pull Request only
   const workflowNumbers: number[] = (
     Array.isArray(data?.workflowPrNumbers) ? data.workflowPrNumbers : []
   ).filter((prNumber: any) => Number.isInteger(prNumber) && prNumber > 0);
   const withWorkflows = workflowNumbers.length > 0;
-  for (const prNumber of workflowNumbers) {
-    if (!numbers.includes(prNumber)) {
-      numbers.push(prNumber);
-    }
+  // --with-status needs at least one Pull Request: a Pull Request without action still has runs
+  if (numbers.length === 0) {
+    numbers.push(...workflowNumbers);
   }
   if (numbers.length === 0) {
     return { statuses: {}, requestId };
@@ -1654,21 +1694,27 @@ async function loadDeploymentActionStatuses(data: any): Promise<{
     /^[\w./-]+$/.test(forecastBranch) && /^[\w./-]+$/.test(fromBranch);
   const flags = (workflows: boolean) =>
     `--pr-ids ${numbers.join(",")}` +
-    (workflows ? " --with-workflows" : "") +
+    (workflows
+      ? ` --with-workflows --workflow-pr-ids ${workflowNumbers.join(",")}`
+      : "") +
     (withForecast
       ? ` --forecast ${forecastBranch} --from-branch ${fromBranch}`
       : "");
   let result = await runActionListJson(
-    flags(withWorkflows),
+    flags(withWorkflows && !workflowsFlagRefused),
     "Deployment action statuses",
   );
   // A sfdx-hardis older than --with-workflows refuses the flag and answers nothing at all: the
-  // statuses are asked again without it, so the Deployment Actions tab keeps its status column
-  if (!result && withWorkflows) {
+  // statuses are asked again without it, so the Deployment Actions tab keeps its status column.
+  // Remembered for the session, so the next Pull Request does not pay two CLI starts.
+  if (!result && withWorkflows && !workflowsFlagRefused) {
     result = await runActionListJson(
       flags(false),
       "Deployment action statuses (without workflows)",
     );
+    if (result) {
+      workflowsFlagRefused = true;
+    }
   }
   // gitProvider false: no git provider credentials, so the Pull Request comments were not read.
   // Hide the column rather than show every action as "Not run yet"
@@ -1676,7 +1722,7 @@ async function loadDeploymentActionStatuses(data: any): Promise<{
     return {
       statuses: null,
       ...(withForecast ? { forecast: null } : {}),
-      ...(withWorkflows ? { workflows: null } : {}),
+      ...(withWorkflows ? { workflows: result?.workflows || null } : {}),
       requestId,
     };
   }

@@ -16,6 +16,7 @@ import {
   applyModalState,
   buildPullRequestJourney,
   captureModalState,
+  resetModalLoadingFlags,
 } from "s/pullRequestUtils";
 
 // Characters an action id or a branch name may hold to be passed to a command line
@@ -290,57 +291,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       // Last: it only says how a story travels, the columns before it say what it is
       ...promotionColumn,
     ];
-  }
-
-  modalTicketColumns = [];
-
-  // Compute ticket columns based on authentication state
-  get computedModalTicketColumns() {
-    const columns = [
-      {
-        key: "id",
-        label: "ID",
-        fieldName: "url",
-        type: "url",
-        typeAttributes: { label: { fieldName: "id" }, target: "_blank" },
-        wrapText: true,
-      },
-    ];
-
-    // Only show subject, status, and author if ticketing provider is authenticated
-    if (this.ticketAuthenticated) {
-      columns.push(
-        {
-          key: "subject",
-          label: this.i18n.subjectLabel,
-          fieldName: "subject",
-          type: "text",
-          wrapText: true,
-        },
-        // Ticket status as a colored pill: green when done, blue while in
-        // progress, red when blocked/rejected (see s/pillUtils)
-        {
-          key: "status",
-          label: this.i18n.statusLabel,
-          fieldName: "statusLabel",
-          type: "statusPill",
-          typeAttributes: {
-            label: { fieldName: "statusLabel" },
-            pillClass: { fieldName: "statusPillClass" },
-          },
-          wrapText: false,
-          initialWidth: 140,
-        },
-        this._authorColumn(),
-      );
-    }
-
-    // Only show PR column in branch mode (not in singlePR mode)
-    if (this.modalMode !== "singlePR") {
-      columns.push(this._pullRequestColumn());
-    }
-
-    return columns;
   }
 
   // Datatable column definition for an author, displayed with the same
@@ -883,6 +833,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
     const deepLink = this._pendingDeepLink;
     this._pendingDeepLink = null;
+    if (deepLink.focus === "explorer") {
+      this.handleOpenExplorer();
+      return;
+    }
     // A Pull Request link of another panel
     if (deepLink.focus === "pullRequest" && deepLink.prNumber > 0) {
       this.openPullRequestView({
@@ -1925,6 +1879,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         break;
       case "returnTicketDetails":
         this.handleReturnTicketDetails(data);
+        break;
+      case "customFunctionsLoaded":
+        // The catalog of custom functions, read in the background after the pipeline
+        this.customFunctions = Array.isArray(data) ? data : [];
         break;
       case "openPullRequestView":
         // A Pull Request link of another panel, while this panel is already loaded
@@ -3034,9 +2992,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       current.number === number &&
       number > 0
     ) {
-      // Already on screen: only the tab asked for changes
-      if (tab) {
-        this.modalActiveTabValue = tab;
+      // Already on screen: only the tab asked for changes, whether it came with this call or
+      // was set aside by a deep link
+      const wantedTab = tab || this._nextModalTab;
+      this._nextModalTab = null;
+      if (wantedTab) {
+        this._showModalTab(wantedTab);
       }
       return;
     }
@@ -3120,11 +3081,40 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this._prViewRequestId += 1;
     this.prViewLoading = false;
     applyModalState(this, entry.state);
-    // An answer on its way belongs to the window that was just left
+    // Answers on their way belong to the window that was just left: none is waited for, and
+    // what the restored window still misses is asked again
+    resetModalLoadingFlags(this);
     this.actionStatusRequestId += 1;
-    if (this.actionStatusesLoading) {
+    if (
+      this.modalActions.length > 0 &&
+      (this.modalActionStatuses === null ||
+        (this.promotionMode && !this.actionForecast))
+    ) {
       this._requestActionStatuses();
     }
+    if (this.modalIsTopBranch && this.modalGoLives.length === 0) {
+      this._loadGoLives(this.modalBranchName);
+    }
+    this._requestTicketDetails(this.modalPullRequests);
+    this._showModalTab(entry.state.modalActiveTabValue);
+  }
+
+  // The tab the user is on, recorded so a window comes back on it
+  handleModalTabActive(event) {
+    const value = event.target?.value;
+    if (value) {
+      this.modalActiveTabValue = value;
+    }
+  }
+
+  // lightning-tabset only follows a change of its active tab once its tabs are rendered: the
+  // value is cleared, then set again after the render
+  _showModalTab(value) {
+    this.modalActiveTabValue = "";
+    // eslint-disable-next-line @lwc/lwc/no-async-operation
+    setTimeout(() => {
+      this.modalActiveTabValue = value || "";
+    }, 0);
   }
 
   get showExplorerLookup() {
@@ -3227,6 +3217,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         }
         event.preventDefault();
         event.stopPropagation();
+        // The diagram was dragged by this pill: the click that ends the drag opens nothing
+        if (this._suppressNextMermaidClick) {
+          this._suppressNextMermaidClick = false;
+          return;
+        }
         this.openPullRequestView({ pr });
       });
     }
@@ -3444,9 +3439,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         if (!ticket || !requested.has(ticket.id)) {
           continue;
         }
-        Object.assign(ticket, detailsById.get(ticket.id) || {}, {
-          detailsLoaded: true,
-        });
+        const details = detailsById.get(ticket.id);
+        // A ticket that came back without details is asked again next time
+        if (details && details.subject) {
+          Object.assign(ticket, details, { detailsLoaded: true });
+        }
       }
     }
     this.modalTickets = this._aggregateTicketsFromPRs(this._ticketSourcePrs);
@@ -3460,10 +3457,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return this.modalMode !== "singlePR";
   }
 
-  get ticketingToolLabel() {
-    return this.ticketProviderName || "";
-  }
-
   handleClosePRModal() {
     // Opened from another window (a list of Pull Requests, another Pull Request): closing it
     // brings that window back, as the Previous button does
@@ -3475,6 +3468,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this._resetPromotionModalState();
     // Every field of the modal goes back to its default: see MODAL_STATE_DEFAULTS
     applyModalState(this, null);
+    resetModalLoadingFlags(this);
     this.explorerMode = false;
     this.prViewLoading = false;
     // A Pull Request still being read must not open the window again
@@ -3734,13 +3728,21 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       this.modalWorkflows = [];
       return;
     }
-    this.workflowsUnavailable = false;
     const runs = [];
     for (const prNumber of this.workflowPrNumbers) {
-      for (const run of data.workflows[String(prNumber)] || []) {
+      const prRuns = data.workflows[String(prNumber)];
+      // No entry: the comments of the Pull Request could not be read (no token, provider
+      // error). The tabs are hidden rather than saying nothing was posted
+      if (!Array.isArray(prRuns)) {
+        this.workflowsUnavailable = true;
+        this.modalWorkflows = [];
+        return;
+      }
+      for (const run of prRuns) {
         runs.push({ ...run, prNumber });
       }
     }
+    this.workflowsUnavailable = false;
     this.modalWorkflows = runs;
   }
 

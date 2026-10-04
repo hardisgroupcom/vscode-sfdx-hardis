@@ -39,9 +39,6 @@
                                 <template if:true={row.subject}>
                                     <span class="ticket-subject">{row.subject}</span>
                                 </template>
-                                <template if:true={row.notFound}>
-                                    <span class="ticket-missing">{row.notFoundLabel}</span>
-                                </template>
                             </div>
                             <template if:true={row.pullRequests.length}>
                                 <div class="hardis-list-meta">

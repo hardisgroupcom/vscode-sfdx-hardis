@@ -16,6 +16,10 @@
  * State of the Pull Request modal of s/pipeline. Captured when a Pull Request is opened from
  * another window, restored on the way back, and reset on close: one list for the three, so a new
  * modal field cannot be forgotten in one of them. The value is what close resets the field to.
+ *
+ * The flags that say something is being loaded are not in the list: an answer on its way when
+ * the window was left is dropped, so a restored window never waits for it. They are reset by
+ * resetModalLoadingFlags, and the component asks again for what is missing.
  */
 export const MODAL_STATE_DEFAULTS = {
   modalMode: "branch",
@@ -31,21 +35,16 @@ export const MODAL_STATE_DEFAULTS = {
   modalActions: [],
   modalActiveTabValue: "prs",
   modalActionStatuses: null,
-  actionStatusesLoading: false,
   expandedActionRowIds: [],
   hiddenActionStatusKeys: [],
   hiddenActionForecastKeys: [],
   promotionMode: false,
   actionForecast: null,
-  actionForecastLoading: false,
   modalIsMajorPr: false,
   modalIsPromotionPr: false,
   modalPromotionUnresolved: [],
   modalIsTopBranch: false,
   modalGoLives: [],
-  modalGoLivesLoading: false,
-  modalGoLivePrsLoading: false,
-  isLoadingReleaseDetails: false,
   selectedGoLiveId: "",
   deploymentApexTestClasses: [],
   _deploymentApexTestClassesOriginal: [],
@@ -54,8 +53,22 @@ export const MODAL_STATE_DEFAULTS = {
   modalWorkflows: null,
   modalCheckout: null,
   workflowsUnavailable: false,
-  ticketDetailsLoading: false,
 };
+
+export const MODAL_LOADING_FLAGS = [
+  "actionStatusesLoading",
+  "actionForecastLoading",
+  "modalGoLivesLoading",
+  "modalGoLivePrsLoading",
+  "isLoadingReleaseDetails",
+  "ticketDetailsLoading",
+];
+
+export function resetModalLoadingFlags(component) {
+  for (const flag of MODAL_LOADING_FLAGS) {
+    component[flag] = false;
+  }
+}
 
 /**
  * A copy of the modal state of a component, for the navigation stack. Arrays are copied so a
@@ -245,10 +258,13 @@ export function buildPullRequestJourney({
     kind: "validation",
     branch: pr.targetBranch || "",
     state: validationState,
-    jobUrl: validationRun?.jobUrl || "",
     carriedBy: null,
   });
 
+  // A Pull Request closed without being merged will never reach a branch
+  if (lookupState(pr) === "closed") {
+    return steps;
+  }
   const path = journeyBranchPath(orgs, pr.targetBranch);
   if (path.length === 0) {
     return steps;
@@ -299,15 +315,11 @@ export function buildPullRequestJourney({
       !via && pr.carriedByPullRequest && index === reached && index > 0
         ? pr.carriedByPullRequest
         : via;
-    const stepRun = [...runs]
-      .reverse()
-      .find((r) => r.kind === "deployment" && r.targetBranch === branch);
     steps.push({
       key: `branch-${branch}`,
       kind: "branch",
       branch,
       state,
-      jobUrl: stepRun?.jobUrl || "",
       carriedBy: carrier?.number > 0 ? carrier.number : null,
     });
   });

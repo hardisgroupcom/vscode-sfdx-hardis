@@ -34,9 +34,3 @@
 .ticket-subject {
   margin-left: 0.5rem;
 }
-
-.ticket-missing {
-  margin-left: 0.5rem;
-  color: var(--vscode-descriptionForeground, inherit);
-  font-style: italic;
-}

@@ -405,6 +405,71 @@ function logInvocation(extra) {
   }
 }
 
+// What `hardis:project:action:list --with-workflows` returns for one Pull Request: the runs read
+// from its sfdx-hardis comments and from the MegaLinter one
+function mockWorkflowRuns(prId) {
+  const pullRequestUrl = `https://github.com/mycompany/salesforce-crm/pull/${prId}`;
+  const base = {
+    quickDeploy: false,
+    testLevel: "",
+    errorCount: null,
+    failedTestsCount: null,
+    coverageText: "",
+    legacy: false,
+  };
+  return [
+    {
+      ...base,
+      kind: "validation",
+      status: "valid",
+      targetBranch: "integration",
+      jobUrl: "https://github.com/mycompany/salesforce-crm/actions/runs/1128",
+      commentUrl: `${pullRequestUrl}#issuecomment-1`,
+      date: "2026-08-20T08:41:00.000Z",
+      testLevel: "RunSpecifiedTests",
+      errorCount: 0,
+      failedTestsCount: 0,
+      body: [
+        "## 🔍 Validation Results (deployment simulation)",
+        "",
+        "✅ Deployment check success",
+        "",
+        "No error has been found during the deployment",
+        "",
+        "✅ Your code coverage is ok 😊 **91%**, while target is **75%**",
+        "",
+        "<details><summary>🧪 Apex test classes</summary>",
+        "",
+        "  - AccountHierarchyServiceTest",
+        "  - AccountSegmentBatchTest",
+        "",
+        "</details>",
+        "",
+        "| Component | Type | Change |",
+        "| --- | --- | --- |",
+        "| Account_Hierarchy_Sync | Flow | Created |",
+        "| AccountHierarchyService | ApexClass | Updated |",
+      ].join("\n"),
+    },
+    {
+      ...base,
+      kind: "megalinter",
+      status: "valid",
+      commentUrl: `${pullRequestUrl}#issuecomment-2`,
+      date: "2026-08-20T08:39:00.000Z",
+      body: [
+        "## ⚠️ [MegaLinter](https://megalinter.io/9.0.1) analysis: Success with warnings",
+        "",
+        "| Descriptor | Linter | Files | Fixed | Errors | Warnings | Elapsed time |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
+        "| ⚠️ COPYPASTE | [jscpd](https://megalinter.io/9.0.1/descriptors/copypaste_jscpd) | yes | | 3 | no | 1.93s |",
+        "| ✅ REPOSITORY | [gitleaks](https://megalinter.io/9.0.1/descriptors/repository_gitleaks) | yes | | no | no | 1.19s |",
+        "| ✅ SALESFORCE | [sfdx-scanner-apex](https://megalinter.io/9.0.1/descriptors/salesforce_sfdx_scanner_apex) | 12 | | 0 | 2 | 41.2s |",
+      ].join("\n"),
+    },
+  ];
+}
+
 function outputJsonIfRequested(jsonValue, plainText) {
   if (args.includes("--json")) {
     console.log(JSON.stringify(jsonValue));
@@ -611,10 +676,23 @@ async function main() {
     args.includes("--with-status")
   ) {
     const recovery = readActionRecoveryOverlay();
+    // --with-workflows: the validation, MegaLinter and deployment comments of each Pull Request
+    // asked for, so the Pull Request view has its three tabs filled
+    let workflows;
+    if (args.includes("--with-workflows")) {
+      workflows = {};
+      const prIds = (args[args.indexOf("--pr-ids") + 1] || "").split(",");
+      for (const prId of prIds.filter((id) => /^\d+$/.test(id))) {
+        workflows[prId] = mockWorkflowRuns(prId);
+      }
+    }
     outputJsonIfRequested(
       {
         status: 0,
-        result: { statuses: recovery ? recovery.actionStatuses : null },
+        result: {
+          statuses: recovery ? recovery.actionStatuses : null,
+          ...(workflows ? { workflows } : {}),
+        },
       },
       "",
     );

@@ -19,6 +19,8 @@ import { parsePullRequestNumberFromUrl } from "../../utils/pullRequestUrlUtils";
 
 const EXPORTED = [
   "MODAL_STATE_DEFAULTS",
+  "MODAL_LOADING_FLAGS",
+  "resetModalLoadingFlags",
   "captureModalState",
   "applyModalState",
   "lookupState",
@@ -256,6 +258,18 @@ suite("Pull Request view", () => {
       assert.strictEqual(preprod.carriedBy, 140);
     });
 
+    test("a Pull Request closed without being merged goes to no branch", () => {
+      const steps = utils.buildPullRequestJourney({
+        pr: pullRequest({ state: "closed" }),
+        orgs: ORGS,
+        windows: {},
+      });
+      assert.deepStrictEqual(
+        steps.map((step: any) => step.kind),
+        ["validation"],
+      );
+    });
+
     test("every state has a pill of the status palette", () => {
       for (const state of [
         "waiting",
@@ -304,6 +318,27 @@ suite("Pull Request view", () => {
       first.modalTickets.push("x");
       assert.deepStrictEqual(second.modalTickets, []);
       assert.deepStrictEqual(utils.MODAL_STATE_DEFAULTS.modalTickets, []);
+    });
+
+    test("a restored window never waits for an answer that was dropped", () => {
+      const component: any = {};
+      utils.applyModalState(component, null);
+      component.ticketDetailsLoading = true;
+      component.actionStatusesLoading = true;
+      const snapshot = utils.captureModalState(component);
+      for (const flag of utils.MODAL_LOADING_FLAGS) {
+        assert.ok(
+          !(flag in snapshot),
+          flag + " must not be part of a saved window",
+        );
+      }
+      utils.resetModalLoadingFlags(component);
+      assert.strictEqual(component.ticketDetailsLoading, false);
+      assert.strictEqual(component.actionStatusesLoading, false);
+      const js = readModuleFile("pipeline", "pipeline.js");
+      for (const flag of utils.MODAL_LOADING_FLAGS) {
+        assert.match(js, new RegExp("^  (@track )?" + flag + " = ", "m"));
+      }
     });
 
     test("every field of the list is a field of the component", () => {
@@ -411,7 +446,7 @@ suite("Pull Request view", () => {
     test("one Pull Request opens on its description, then its comments by kind", () => {
       assert.match(
         html,
-        /<lightning-tab label=\{i18n\.prGeneralTab\} value="general"/,
+        /<lightning-tab [^>]*label=\{i18n\.prGeneralTab\} value="general"/,
       );
       for (const tab of ["validation", "deployment", "megalinter"]) {
         assert.match(html, new RegExp(`<lightning-tab [^>]*value="${tab}"`));

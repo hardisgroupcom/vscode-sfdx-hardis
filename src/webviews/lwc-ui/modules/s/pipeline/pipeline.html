@@ -464,7 +464,7 @@
                     <lightning-tabset active-tab-value={modalActiveTabValue}>
                         <!-- General tab: the description of one Pull Request -->
                         <template if:true={isSinglePRMode}>
-                            <lightning-tab label={i18n.prGeneralTab} value="general" icon-name="utility:info" icon-assistive-text={i18n.prGeneralTab}>
+                            <lightning-tab onactive={handleModalTabActive} label={i18n.prGeneralTab} value="general" icon-name="utility:info" icon-assistive-text={i18n.prGeneralTab}>
                                 <template if:true={singlePullRequestDescription}>
                                     <s-markdown-view markdown={singlePullRequestDescription}></s-markdown-view>
                                 </template>
@@ -476,7 +476,7 @@
                             </lightning-tab>
                         </template>
                         <template if:true={showPRTab}>
-                            <lightning-tab label={modalPrsTabLabel} value="prs" icon-name="utility:topic2" icon-assistive-text={modalPrsTabLabel}>
+                            <lightning-tab onactive={handleModalTabActive} label={modalPrsTabLabel} value="prs" icon-name="utility:topic2" icon-assistive-text={modalPrsTabLabel}>
                             <template if:false={modalHideCheckboxColumn}>
                                 <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_x-small">{promotionSelectionHint}</p>
                             </template>
@@ -493,17 +493,16 @@
                         </lightning-tab>
                         </template>
                         <template if:false={isFeaturePrModal}>
-                        <lightning-tab label={modalTicketsTabLabel} value="tickets" icon-name="utility:link" icon-assistive-text={modalTicketsTabLabel}>
+                        <lightning-tab onactive={handleModalTabActive} label={modalTicketsTabLabel} value="tickets" icon-name="utility:link" icon-assistive-text={modalTicketsTabLabel}>
                             <s-ticket-list
                                 tickets={modalTickets}
                                 details-available={ticketAuthenticated}
                                 loading={ticketDetailsLoading}
                                 show-pull-requests={showTicketPullRequests}
-                                ticketing-tool-label={ticketingToolLabel}
                                 onopenpullrequest={handleOpenPullRequestRef}
                             ></s-ticket-list>
                         </lightning-tab>
-                        <lightning-tab label={modalActionsTabLabel} value="actions" icon-name="utility:task" icon-assistive-text={modalActionsTabLabel}>
+                        <lightning-tab onactive={handleModalTabActive} label={modalActionsTabLabel} value="actions" icon-name="utility:task" icon-assistive-text={modalActionsTabLabel}>
                             <template if:true={showAddActionButton}>
                                 <div class="slds-m-bottom_small da-toolbar">
                                     <lightning-button class="hardis-btn-tinted-blue"
@@ -649,7 +648,7 @@
                         </template>
                             <!-- Apex Tests Tab (only when enabled in .sfdx-hardis.yml) -->
                             <template if:true={showApexTestsTab}>
-                                <lightning-tab label={modalApexTestsTabLabel} value="apexTests" icon-name="utility:bug" icon-assistive-text={modalApexTestsTabLabel}>
+                                <lightning-tab onactive={handleModalTabActive} label={modalApexTestsTabLabel} value="apexTests" icon-name="utility:bug" icon-assistive-text={modalApexTestsTabLabel}>
                                     <template if:true={showNotOwnPrEditNote}>
                                         <div class="hardis-note warning slds-m-bottom_small">
                                             <lightning-icon icon-name="utility:warning" size="x-small"></lightning-icon>
@@ -730,21 +729,21 @@
                             </template>
                             <!-- Validation, Code Quality (MegaLinter) and Deployment tabs: the comments posted on the Pull Request itself -->
                             <template if:true={showWorkflowsTab}>
-                                <lightning-tab label={i18n.journeyValidation} value="validation" icon-name="utility:search" icon-assistive-text={i18n.journeyValidation}>
+                                <lightning-tab onactive={handleModalTabActive} label={i18n.journeyValidation} value="validation" icon-name="utility:search" icon-assistive-text={i18n.journeyValidation}>
                                     <s-workflow-runs
                                         runs={modalValidationRuns}
                                         loading={workflowsLoading}
                                         empty-label={noValidationLabel}
                                     ></s-workflow-runs>
                                 </lightning-tab>
-                                <lightning-tab label={i18n.prCodeQualityTab} value="megalinter" icon-name="utility:shield" icon-assistive-text={i18n.prCodeQualityTab}>
+                                <lightning-tab onactive={handleModalTabActive} label={i18n.prCodeQualityTab} value="megalinter" icon-name="utility:shield" icon-assistive-text={i18n.prCodeQualityTab}>
                                     <s-workflow-runs
                                         runs={modalMegaLinterRuns}
                                         loading={workflowsLoading}
                                         empty-label={noMegaLinterLabel}
                                     ></s-workflow-runs>
                                 </lightning-tab>
-                                <lightning-tab label={i18n.workflowDeploymentNoBranch} value="deployment" icon-name="utility:upload" icon-assistive-text={i18n.workflowDeploymentNoBranch}>
+                                <lightning-tab onactive={handleModalTabActive} label={i18n.workflowDeploymentNoBranch} value="deployment" icon-name="utility:upload" icon-assistive-text={i18n.workflowDeploymentNoBranch}>
                                     <s-workflow-runs
                                         runs={modalDeploymentRuns}
                                         loading={workflowsLoading}
@@ -758,8 +757,8 @@
                 </div>
                 <footer class="slds-modal__footer hardis-modal-footer">
                     <div class="hardis-modal-footer-actions">
-                        <!-- One Pull Request: the way out to the git provider is the Open on button of its header -->
-                        <template if:false={isSinglePRMode}>
+                        <!-- Promotion and release notes buttons belong to a branch window. One Pull Request (or the explorer, or a draft) has none: its way out to the git provider is the Open on button of its header -->
+                        <template if:true={showBranchModalTitle}>
                             <template if:true={showCreatePromotionButton}>
                                 <lightning-button
                                     class="hardis-btn-tinted-green"
