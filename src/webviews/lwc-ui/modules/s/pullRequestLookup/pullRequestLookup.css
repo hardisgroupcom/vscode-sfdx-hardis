@@ -1,0 +1,60 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.lookup {
+  position: relative;
+}
+
+.lookup-dropdown {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  z-index: 10;
+  max-height: 22rem;
+  overflow-y: auto;
+  border: 1px solid var(--slds-g-color-neutral-base-80);
+  border-radius: 0.375rem;
+  background: var(--vscode-editorWidget-background, var(--slds-g-color-neutral-base-100));
+  box-shadow: var(--hardis-shadow-md);
+  text-align: left;
+}
+
+.lookup-option {
+  display: grid;
+  grid-template-columns: 4rem minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.375rem 0.75rem;
+  cursor: pointer;
+}
+
+.lookup-option + .lookup-option {
+  border-top: 1px solid var(--slds-g-color-neutral-base-90);
+}
+
+.lookup-option:hover,
+.lookup-option-active {
+  background: var(--vscode-list-hoverBackground, var(--slds-g-color-neutral-base-95));
+}
+
+.lookup-number {
+  color: var(--vscode-descriptionForeground, inherit);
+  font-variant-numeric: tabular-nums;
+}
+
+.lookup-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lookup-info {
+  padding: 0.375rem 0.75rem;
+  color: var(--vscode-descriptionForeground, inherit);
+  font-size: 0.8125rem;
+  border-top: 1px solid var(--slds-g-color-neutral-base-90);
+}

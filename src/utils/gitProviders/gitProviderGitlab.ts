@@ -9,6 +9,7 @@ import {
   GoLive,
   ProviderDescription,
   PullRequest,
+  PullRequestSearchResult,
   Job,
   JobStatus,
 } from "./types";
@@ -320,6 +321,55 @@ export class GitProviderGitlab extends GitProvider {
     }
   }
 
+  /**
+   * GitLab searches the title and the description of the merge requests on its side. The request
+   * carries no state: the API takes a single one, and both the opened and the merged ones are
+   * wanted, so the closed and locked ones are dropped here.
+   */
+  async searchPullRequests(
+    query: string,
+    options?: { limit?: number },
+  ): Promise<PullRequestSearchResult | null> {
+    if (!this.gitlabClient || !this.gitlabProjectId) {
+      return null;
+    }
+    const limit = this.searchLimit(options);
+    const text = String(query || "").trim();
+    if (!text) {
+      return { pullRequests: [], truncated: false };
+    }
+    try {
+      const mergeRequests = await this.gitlabClient.MergeRequests.all({
+        projectId: this.gitlabProjectId,
+        search: text,
+        // Not in the gitbeaker types, sent to the API as it is
+        in: "title,description",
+        orderBy: "updated_at",
+        sort: "desc",
+        // Twice the limit, because the closed ones are only dropped once they are received
+        perPage: Math.min(limit * 2, 100),
+        // gitbeaker walks every page unless it is told not to
+        maxPages: 1,
+      } as any);
+      await this.logApiCall("MergeRequests.all", {
+        caller: "searchPullRequests",
+        in: "title,description",
+        limit,
+      });
+      const kept: any[] = (mergeRequests || []).filter(
+        (mergeRequest: any) =>
+          mergeRequest?.state === "opened" || mergeRequest?.state === "merged",
+      );
+      return this.buildSearchResult(
+        await this.convertAndCollectJobsList(kept, { withJobs: false }),
+        limit,
+      );
+    } catch (err) {
+      Logger.log(`Error searching GitLab Merge Requests: ${String(err)}`);
+      return { pullRequests: [], truncated: false };
+    }
+  }
+
   async getActivePullRequestFromBranch(
     branchName: string,
   ): Promise<PullRequest | null> {
@@ -591,7 +641,8 @@ export class GitProviderGitlab extends GitProvider {
 
     const relevantMRs = allMergedMRs.filter((mr) => {
       const mergeCommitSha = (mr.mergeCommitSha || mr.merge_commit_sha) as
-        string | undefined;
+        | string
+        | undefined;
       if (mergeCommitSha && commitSHAs.has(mergeCommitSha)) {
         return true;
       }
@@ -710,6 +761,12 @@ export class GitProviderGitlab extends GitProvider {
     }
   }
 
+  // Pages of commits asked together: enough to cut the wait, few enough not to be throttled
+  private static readonly COMMIT_PAGES_AT_ONCE = 4;
+  // 20,000 commits: far beyond any real window, only there so a provider that never returns a
+  // short page cannot make this loop forever
+  private static readonly COMMIT_MAX_PAGES = 200;
+
   /**
    * Get all commits in the branch since the last merge (or all commits if no previous merge)
    */
@@ -736,16 +793,53 @@ export class GitProviderGitlab extends GitProvider {
         }
       }
 
-      const commits = await this.gitlabClient!.Commits.all(
+      // gitbeaker walks the pages one after the other, and a window can hold a thousand commits
+      // (a branch never merged as a whole into its target, as with promotion branches, has no
+      // "since"): ten round trips in a row before anything else can start. The pages are
+      // independent, so they are read a few at a time, until one comes back incomplete.
+      const perPage = options.perPage;
+      const commits: any[] = [];
+      // Most windows fit in one page: it is asked alone, and the waves only start after a
+      // full one
+      const firstPage = await this.gitlabClient!.Commits.all(
         this.gitlabProjectId!,
-        options,
+        { ...options, page: 1, maxPages: 1 },
       );
+      commits.push(...(Array.isArray(firstPage) ? firstPage : []));
+      let nextPage = 2;
+      let lastPageReached = commits.length < perPage;
+      while (
+        !lastPageReached &&
+        nextPage <= GitProviderGitlab.COMMIT_MAX_PAGES
+      ) {
+        const pageNumbers = Array.from(
+          { length: GitProviderGitlab.COMMIT_PAGES_AT_ONCE },
+          (_unused, index) => nextPage + index,
+        );
+        const pages = await Promise.all(
+          pageNumbers.map((page) =>
+            this.gitlabClient!.Commits.all(this.gitlabProjectId!, {
+              ...options,
+              page,
+              maxPages: 1,
+            }),
+          ),
+        );
+        for (const page of pages) {
+          const pageCommits = Array.isArray(page) ? page : [];
+          commits.push(...pageCommits);
+          if (pageCommits.length < perPage) {
+            lastPageReached = true;
+          }
+        }
+        nextPage += GitProviderGitlab.COMMIT_PAGES_AT_ONCE;
+      }
       await this.logApiCall("Commits.all", {
         caller: "getCommitsSinceLastMerge",
         ...options,
       });
 
-      return commits || [];
+      return commits;
     } catch (err) {
       Logger.log(
         `Error fetching commits for branch ${branchName}: ${String(err)}`,

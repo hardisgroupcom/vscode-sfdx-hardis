@@ -1,0 +1,9 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.runs {
+  display: grid;
+  gap: 0.75rem;
+}

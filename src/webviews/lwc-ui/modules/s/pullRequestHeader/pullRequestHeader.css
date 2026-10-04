@@ -1,0 +1,25 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.pr-head {
+  display: grid;
+  gap: 0.625rem;
+}
+
+.pr-head-facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem 0.625rem;
+}
+
+.pr-head-date {
+  color: var(--vscode-descriptionForeground, inherit);
+  font-size: 0.8125rem;
+}
+
+.pr-head-out {
+  margin-left: auto;
+}

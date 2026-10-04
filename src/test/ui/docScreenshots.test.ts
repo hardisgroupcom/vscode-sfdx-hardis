@@ -993,10 +993,10 @@ suite("Documentation screenshots", function () {
       await sleep(2500);
       await cleanChrome();
       await captureStable("pipeline-pr-modal");
-      await click(543, 156); // "Deployment Actions" tab of the PR modal
+      await click(660, 245); // "Deployment Actions" tab of the PR modal
       await sleep(1200);
       await captureStable("pipeline-pr-actions-empty");
-      await click(425, 205); // "Add New Action"
+      await click(420, 290); // "Add New Action"
       await sleep(1500);
       await captureStable("pipeline-edit-action");
       // Close the editor and the PR modal before the branch-modal shots
@@ -1057,6 +1057,49 @@ suite("Documentation screenshots", function () {
     await click(958, 227); // "Deployment Actions" tab of the modal
     await sleep(1500);
     await captureStable("pipeline-branch-modal-actions");
+  });
+
+  // Pull Request view and Pull Requests explorer (sfdx-hardis#2273): opened by deep links,
+  // so no coordinate is involved. One capture per tab that shows a comment or the description.
+  test("pipeline: pull request view and explorer", async function () {
+    if (!shouldTake("pipeline-pr-view")) {
+      this.skip();
+    }
+    checkoutWorkspaceBranch(FEATURE_BRANCH);
+    try {
+      for (const tab of ["general", "tickets", "validation", "megalinter"]) {
+        await shootPanel(panelManager, {
+          name: `pipeline-pr-view-${tab}`,
+          command: "vscode-sfdx-hardis.showPipeline",
+          lwcId: "s-pipeline",
+          ready: pipelineFullyLoaded,
+          settleMs: 9000,
+          force: true,
+          commandArgs: { focus: "pullRequest", prNumber: 128, tab },
+        });
+      }
+      // A merged story opened by its number: journey through the major branches
+      await shootPanel(panelManager, {
+        name: "pipeline-pr-view-merged",
+        command: "vscode-sfdx-hardis.showPipeline",
+        lwcId: "s-pipeline",
+        ready: pipelineFullyLoaded,
+        settleMs: 9000,
+        force: true,
+        commandArgs: { focus: "pullRequest", prNumber: 118 },
+      });
+      await shootPanel(panelManager, {
+        name: "pipeline-pr-explorer",
+        command: "vscode-sfdx-hardis.showPipeline",
+        lwcId: "s-pipeline",
+        ready: pipelineFullyLoaded,
+        settleMs: 6000,
+        force: true,
+        commandArgs: { focus: "explorer" },
+      });
+    } finally {
+      checkoutWorkspaceBranch("integration");
+    }
   });
 
   // A post-deployment action failed after a merge (training Lab 3.3 part 3):

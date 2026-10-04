@@ -30,7 +30,12 @@ export class LwcUiPanel {
    * panel title to know whether a command is still running.
    */
   public commandStatus:
-    "pending" | "running" | "completed" | "error" | "aborted" | null = null;
+    | "pending"
+    | "running"
+    | "completed"
+    | "error"
+    | "aborted"
+    | null = null;
 
   /**
    * Provisional context id of the background run a command-execution panel
@@ -448,6 +453,9 @@ export class LwcUiPanel {
           break;
         case "openExternal":
           await this.handleOpenExternal(data.url || data);
+          break;
+        case "openPullRequest":
+          await this.handleOpenPullRequest(data?.url);
           break;
         case "openPanelDoc":
           // The user guide of this panel, or the extension overview for a
@@ -877,6 +885,57 @@ export class LwcUiPanel {
   }
 
   /**
+   * A link to a Pull Request shown in a panel: opened in the Pull Request view of the DevOps
+   * Pipeline when it is a Pull Request of this repository and the git provider is connected,
+   * in the browser otherwise.
+   */
+  private async handleOpenPullRequest(url: string): Promise<void> {
+    if (typeof url !== "string" || url === "") {
+      return;
+    }
+    try {
+      // Heavy module: loaded on demand, not with every panel
+      const gitProviderModule = await import(
+        "../utils/gitProviders/gitProvider"
+      );
+      const { parsePullRequestNumberFromUrl } = await import(
+        "../utils/pullRequestUrlUtils"
+      );
+      const gitProvider = await gitProviderModule.GitProvider.getInstance();
+      const prNumber = gitProvider?.isActive
+        ? parsePullRequestNumberFromUrl(url, gitProvider.repoInfo?.webUrl)
+        : null;
+      if (prNumber) {
+        // A DevOps Pipeline panel already open only has to show the Pull Request: running its
+        // command again would reload the whole pipeline first
+        const panelManagerModule = await import("../lwc-panel-manager");
+        const pipelinePanel =
+          panelManagerModule.LwcPanelManager.getInstance().getPanel(
+            "s-pipeline",
+          );
+        if (pipelinePanel && !pipelinePanel.isDisposed()) {
+          pipelinePanel.reveal();
+          pipelinePanel.sendMessage({
+            type: "openPullRequestView",
+            data: { prNumber },
+          });
+          return;
+        }
+        await vscode.commands.executeCommand(
+          "vscode-sfdx-hardis.showPipeline",
+          { focus: "pullRequest", prNumber },
+        );
+        return;
+      }
+    } catch (error: any) {
+      Logger.log(
+        `[vscode-sfdx-hardis] Pull Request not opened in the panel: ${error?.message || error}`,
+      );
+    }
+    await this.handleOpenExternal(url);
+  }
+
+  /**
    * Handle external URL open request from webview
    * @param url URL to open in external browser
    */
@@ -1160,6 +1219,8 @@ export class LwcUiPanel {
     const needsMermaid = this.lwcId === "s-pipeline";
     const mermaidScripts = needsMermaid
       ? `<script src="${webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "out", "webviews", "mermaid.min.js"))}"></script>
+        <script src="${webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "out", "webviews", "marked.umd.js"))}"></script>
+        <script src="${webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "out", "webviews", "purify.min.js"))}"></script>
         <script>
             mermaid.initialize({
               startOnLoad: false,

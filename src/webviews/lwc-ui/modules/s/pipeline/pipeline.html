@@ -89,6 +89,13 @@
                             onclick={handleShowDestructiveChanges}
                         ></lightning-menu-item>
                     </lightning-button-menu>
+                    <template if:true={gitAuthenticated}>
+                        <lightning-button
+                            icon-name="utility:search"
+                            title={i18n.pullRequestsExplorer}
+                            onclick={handleOpenExplorer}
+                        ></lightning-button>
+                    </template>
                     <lightning-button
                         icon-name="utility:refresh"
                         title={i18n.refreshPipelineData}
@@ -336,9 +343,28 @@
                         <lightning-icon icon-name="utility:close" size="small" alternative-text={i18n.close}></lightning-icon>
                         <span class="slds-assistive-text">{i18n.close}</span>
                     </button>
+                    <template if:true={modalHasBack}>
+                        <div class="modal-previous">
+                            <lightning-button
+                                variant="neutral"
+                                icon-name="utility:back"
+                                label={i18n.prViewPrevious}
+                                title={previousTitle}
+                                onclick={handleModalPrevious}
+                            ></lightning-button>
+                        </div>
+                        <nav class="modal-breadcrumb" aria-label={i18n.prViewBreadcrumb}>
+                            <template for:each={modalBreadcrumb} for:item="crumb">
+                                <span key={crumb.key} class="modal-crumb">
+                                    <button class="hardis-pr-ref" data-index={crumb.index} title={crumb.title} onclick={handleModalBack}>{crumb.label}</button>
+                                    <span class="modal-crumb-sep">/</span>
+                                </span>
+                            </template>
+                        </nav>
+                    </template>
                     <h2 id="modal-heading-01" class="slds-modal__title slds-hyphenate">
                         <template if:true={isSinglePRMode}>
-                            <a href="#" onclick={handleOpenSinglePRUrl} style="color: inherit; text-decoration: underline;">{modalTitle}</a>
+                            {modalTitle}
                         </template>
                         <template if:true={showBranchModalTitle}>
                             <span class="modal-title-parts">
@@ -366,6 +392,51 @@
                     </template>
                 </header>
                 <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                    <!-- Pull Requests explorer: the lookup, then the Pull Request it found -->
+                    <template if:true={showExplorerLookup}>
+                        <div class="slds-m-bottom_small">
+                            <s-pull-request-lookup
+                                loaded-pull-requests={lookupLoadedPullRequests}
+                                platform-label={repoPlatformLabel}
+                                pr-label={prLabel}
+                                onsearch={handleLookupSearch}
+                                onselect={handleLookupSelect}
+                            ></s-pull-request-lookup>
+                        </div>
+                    </template>
+                    <template if:true={showExplorerEmpty}>
+                        <div class="hardis-empty">
+                            <div class="hardis-tile featured cyan">
+                                <lightning-icon icon-name="utility:search" size="medium"></lightning-icon>
+                            </div>
+                            <div class="hardis-empty-title">{i18n.pullRequestsExplorer}</div>
+                            <div class="hardis-empty-desc">{i18n.prExplorerEmptyDesc}</div>
+                        </div>
+                    </template>
+                    <template if:true={prViewLoading}>
+                        <div class="slds-is-relative slds-p-vertical_large slds-text-align_center">
+                            <lightning-spinner alternative-text={i18n.loadingLabel} size="medium"></lightning-spinner>
+                        </div>
+                    </template>
+                    <template if:true={showModalTabs}>
+                    <!-- One Pull Request: what it is, and where it stands in the pipeline -->
+                    <template if:true={isSinglePRMode}>
+                        <div class="slds-m-bottom_small">
+                            <s-pull-request-header
+                                pull-request={singlePullRequest}
+                                journey={modalJourney}
+                                loading={journeyLoading}
+                                platform-label={repoPlatformLabel}
+                                onopen={handleOpenPullRequestRef}
+                            ></s-pull-request-header>
+                        </div>
+                        <template if:true={showCheckoutBehindNote}>
+                            <div class="hardis-note warning slds-m-bottom_small">
+                                <lightning-icon icon-name="utility:warning" size="x-small"></lightning-icon>
+                                <p>{checkoutBehindNote}</p>
+                            </div>
+                        </template>
+                    </template>
                     <!-- Go-lives selector (top branches such as main/prod) -->
                     <template if:true={modalIsTopBranch}>
                         <div class="slds-m-bottom_small">
@@ -391,8 +462,21 @@
                     </template>
                     <template if:false={isLoadingReleaseDetails}>
                     <lightning-tabset active-tab-value={modalActiveTabValue}>
+                        <!-- General tab: the description of one Pull Request -->
+                        <template if:true={isSinglePRMode}>
+                            <lightning-tab onactive={handleModalTabActive} label={i18n.prGeneralTab} value="general" icon-name="utility:info" icon-assistive-text={i18n.prGeneralTab}>
+                                <template if:true={singlePullRequestDescription}>
+                                    <s-markdown-view markdown={singlePullRequestDescription}></s-markdown-view>
+                                </template>
+                                <template if:false={singlePullRequestDescription}>
+                                    <div class="slds-align_absolute-center slds-p-around_medium">
+                                        <p class="slds-text-color_weak">{noDescriptionLabel}</p>
+                                    </div>
+                                </template>
+                            </lightning-tab>
+                        </template>
                         <template if:true={showPRTab}>
-                            <lightning-tab label={modalPrsTabLabel} value="prs" icon-name="utility:topic2" icon-assistive-text={modalPrsTabLabel}>
+                            <lightning-tab onactive={handleModalTabActive} label={modalPrsTabLabel} value="prs" icon-name="utility:topic2" icon-assistive-text={modalPrsTabLabel}>
                             <template if:false={modalHideCheckboxColumn}>
                                 <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_x-small">{promotionSelectionHint}</p>
                             </template>
@@ -403,28 +487,22 @@
                                 hide-checkbox-column={modalHideCheckboxColumn}
                                 selected-rows={modalSelectedPrIds}
                                 onrowselection={handleModalRowSelection}
+                                onrowaction={handleModalPrRowAction}
                                 column-widths-mode="auto"
                             ></s-hardis-datatable>
                         </lightning-tab>
                         </template>
                         <template if:false={isFeaturePrModal}>
-                        <lightning-tab label={modalTicketsTabLabel} value="tickets" icon-name="utility:link" icon-assistive-text={modalTicketsTabLabel}>
-                            <template if:true={modalTickets.length}>
-                                <s-hardis-datatable
-                                    key-field="id"
-                                    data={modalTickets}
-                                    columns={computedModalTicketColumns}
-                                    hide-checkbox-column
-                                    column-widths-mode="auto"
-                                ></s-hardis-datatable>
-                            </template>
-                            <template if:false={modalTickets.length}>
-                                <div class="slds-align_absolute-center slds-p-around_medium">
-                                    <p class="slds-text-color_weak">{i18n.noTicketsFoundInPrs}</p>
-                                </div>
-                            </template>
+                        <lightning-tab onactive={handleModalTabActive} label={modalTicketsTabLabel} value="tickets" icon-name="utility:link" icon-assistive-text={modalTicketsTabLabel}>
+                            <s-ticket-list
+                                tickets={modalTickets}
+                                details-available={ticketAuthenticated}
+                                loading={ticketDetailsLoading}
+                                show-pull-requests={showTicketPullRequests}
+                                onopen={handleOpenPullRequestRef}
+                            ></s-ticket-list>
                         </lightning-tab>
-                        <lightning-tab label={modalActionsTabLabel} value="actions" icon-name="utility:task" icon-assistive-text={modalActionsTabLabel}>
+                        <lightning-tab onactive={handleModalTabActive} label={modalActionsTabLabel} value="actions" icon-name="utility:task" icon-assistive-text={modalActionsTabLabel}>
                             <template if:true={showAddActionButton}>
                                 <div class="slds-m-bottom_small da-toolbar">
                                     <lightning-button class="hardis-btn-tinted-blue"
@@ -486,7 +564,7 @@
                                             <template if:true={group.showHeader}>
                                                 <header class="da-group-head">
                                                     <span class={group.authorAvatarClass} title={group.authorLabel}>{group.authorInitials}</span>
-                                                    <a class="da-group-pr" href={group.prWebUrl} target="_blank" rel="noopener noreferrer">{group.prLabel}</a>
+                                                    <a class="da-group-pr" href={group.prWebUrl} data-pr-number={group.prNumber} onclick={handleActionGroupPrClick}>{group.prLabel}</a>
                                                     <span class="da-group-author">{group.authorLabel}</span>
                                                     <span class="da-group-summary">
                                                         <template for:each={group.summary} for:item="pill">
@@ -570,7 +648,13 @@
                         </template>
                             <!-- Apex Tests Tab (only when enabled in .sfdx-hardis.yml) -->
                             <template if:true={showApexTestsTab}>
-                                <lightning-tab label={modalApexTestsTabLabel} value="apexTests" icon-name="utility:bug" icon-assistive-text={modalApexTestsTabLabel}>
+                                <lightning-tab onactive={handleModalTabActive} label={modalApexTestsTabLabel} value="apexTests" icon-name="utility:bug" icon-assistive-text={modalApexTestsTabLabel}>
+                                    <template if:true={showNotOwnPrEditNote}>
+                                        <div class="hardis-note warning slds-m-bottom_small">
+                                            <lightning-icon icon-name="utility:warning" size="x-small"></lightning-icon>
+                                            <p>{notOwnPrNote}</p>
+                                        </div>
+                                    </template>
                                     <template if:true={canEditApexTestsInModal}>
                                         <template if:true={isApexTestsViewMode}>
                                             <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_small">
@@ -634,6 +718,7 @@
                                                 columns={apexTestsByLineColumns}
                                                 hide-checkbox-column
                                                 column-widths-mode="auto"
+                                                onrowaction={handleModalPrRowAction}
                                             ></s-hardis-datatable>
                                         </template>
                                         <template if:false={hasApexTestsByLineRows}>
@@ -642,20 +727,38 @@
                                     </template>
                                 </lightning-tab>
                             </template>
+                            <!-- Validation, Code Quality (MegaLinter) and Deployment tabs: the comments posted on the Pull Request itself -->
+                            <template if:true={showWorkflowsTab}>
+                                <lightning-tab onactive={handleModalTabActive} label={i18n.journeyValidation} value="validation" icon-name="utility:search" icon-assistive-text={i18n.journeyValidation}>
+                                    <s-workflow-runs
+                                        runs={modalValidationRuns}
+                                        loading={workflowsLoading}
+                                        empty-label={noValidationLabel}
+                                    ></s-workflow-runs>
+                                </lightning-tab>
+                                <lightning-tab onactive={handleModalTabActive} label={i18n.prCodeQualityTab} value="megalinter" icon-name="utility:shield" icon-assistive-text={i18n.prCodeQualityTab}>
+                                    <s-workflow-runs
+                                        runs={modalMegaLinterRuns}
+                                        loading={workflowsLoading}
+                                        empty-label={noMegaLinterLabel}
+                                    ></s-workflow-runs>
+                                </lightning-tab>
+                                <lightning-tab onactive={handleModalTabActive} label={i18n.workflowDeploymentNoBranch} value="deployment" icon-name="utility:upload" icon-assistive-text={i18n.workflowDeploymentNoBranch}>
+                                    <s-workflow-runs
+                                        runs={modalDeploymentRuns}
+                                        loading={workflowsLoading}
+                                        empty-label={noDeploymentLabel}
+                                    ></s-workflow-runs>
+                                </lightning-tab>
+                            </template>
                     </lightning-tabset>
+                    </template>
                     </template>
                 </div>
                 <footer class="slds-modal__footer hardis-modal-footer">
                     <div class="hardis-modal-footer-actions">
-                        <template if:true={isSinglePRMode}>
-                            <lightning-button class="hardis-btn-tinted-blue"
-                                variant="neutral"
-                                label={singlePRViewButtonLabel}
-                                icon-name="utility:new_window"
-                                onclick={handleOpenSinglePRUrl}
-                            ></lightning-button>
-                        </template>
-                        <template if:false={isSinglePRMode}>
+                        <!-- Promotion and release notes buttons belong to a branch window. One Pull Request (or the explorer, or a draft) has none: its way out to the git provider is the Open on button of its header -->
+                        <template if:true={showBranchModalTitle}>
                             <template if:true={showCreatePromotionButton}>
                                 <lightning-button
                                     class="hardis-btn-tinted-green"

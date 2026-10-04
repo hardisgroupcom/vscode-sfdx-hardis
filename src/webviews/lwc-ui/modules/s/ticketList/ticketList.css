@@ -1,0 +1,36 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.ticket-loading {
+  margin-bottom: 0.625rem;
+}
+
+.ticket-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-bottom: 0.625rem;
+}
+
+.ticket-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ticket-toggle:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder, currentColor);
+  outline-offset: 2px;
+}
+
+.ticket-pill-off {
+  opacity: 0.45;
+}
+
+.ticket-subject {
+  margin-left: 0.5rem;
+}
