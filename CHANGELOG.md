@@ -2,34 +2,29 @@
 
 ## Unreleased
 
-- DevOps Pipeline: a **Pull Requests explorer** finds any Pull Request and shows everything about it without leaving VS Code
-  - The search button of the toolbar looks up a Pull Request by number, title, branch, author or ticket, among the ones of the pipeline and on your git provider
-  - A Pull Request opens the same way from the explorer, the diagram, the Open Pull Requests tab and any place that names it, with a way back to the window you came from
-  - Its window shows where it stands in the pipeline, its description in a **General** tab, and the comments posted on it in **Validation**, **Code Quality** and **Deployment** tabs
+- DevOps Pipeline
+  - A **Pull Requests explorer** finds any Pull Request: the search button of the toolbar looks it up by number, title, branch, author or ticket, among the ones of the pipeline and on your git provider
+  - A Pull Request opens in the panel from the explorer, the diagram, the Open Pull Requests tab, the Backpromote panel and command results, and **Previous** and **Close** bring back the window you came from
+  - Its window shows its way through the pipeline as a path, its description in a **General** tab, and the comments posted on it in **Validation**, **Code Quality** and **Deployment** tabs, with the banners of sfdx-hardis and MegaLinter
   - A promotion, or a merge between two major branches, lists the Pull Requests it carries in a **Pull Requests** tab
   - The Pull Requests tab of a branch is a list you can filter by number, title, author, branch or ticket, where each story names the promotion that carried it
-  - **Previous** and **Close** bring back the window the Pull Request was opened from
-  - The banners of sfdx-hardis and MegaLinter show in the comments; any other image is replaced by its description
   - The Tickets tab shows statuses as pills that filter the list
   - A warning says so when you edit the deployment actions or test classes of a Pull Request that is not the one of your branch
-  - Pull Request links of the Backpromote panel and of command results open the Pull Request in the DevOps Pipeline
-- DevOps Pipeline: the diagram loads faster on projects with many Pull Requests and tickets
-- Deployment actions: **Mark as done** shows its result about twice as fast
-- An error message says when the project configuration cannot be read, for instance when a merge left git conflict markers in `config/.sfdx-hardis.yml`
-- Deployment actions: recover an action that failed after a merge, without running the deployment again
-  - The Deployment Actions tab groups the actions by Pull Request, in the order they run, with the status of each action in the org of the branch
-  - A failed action, or one stopped by a failure, can be retried, marked as done, or moved to your Pull Request to fix it
+  - The diagram loads faster on projects with many Pull Requests and tickets
+  - On GitHub, a failed or cancelled run is no longer shown green, and the deployment status of a branch no longer counts MegaLinter or the checks of its Pull Requests ([#529](https://github.com/hardisgroupcom/vscode-sfdx-hardis/issues/529))
+  - An error message says when the project configuration cannot be read, for instance when a merge left git conflict markers in `config/.sfdx-hardis.yml`
+- Deployment actions
+  - Recover an action that failed after a merge, without running the deployment again: the Deployment Actions tab groups the actions by Pull Request, in the order they run, with the status of each one in the org of the branch, and a failed or stopped action can be retried, marked as done, or moved to your Pull Request to fix it
   - The action editor shows the Pull Request an action was moved from
-  - In the window of your Pull Request, each action has a Run in my org button (Rerun after a failed try) to test it in your developer org before the merge
-  - Mark as done records the action in the background
-- Deployment actions: a new **Run Batch** action runs an Apex batch class once, before or after the deployment, and can wait for it to succeed.
-- Deployment actions: when several Pull Requests carry the same action, it runs once per deployment, and the Next promotion view of the Deployment Actions tab and the Backpromote panel show which actions run with another one ([sfdx-hardis#2271](https://github.com/hardisgroupcom/sfdx-hardis/issues/2271)).
-- Deployment actions: when the Deployment Actions tab lists several Pull Requests, **Total** pills add up their actions for the status in the branch or the next promotion, and a click on one hides or shows those actions ([sfdx-hardis#2274](https://github.com/hardisgroupcom/sfdx-hardis/issues/2274)).
-- Metadata Retriever: recent changes no longer list one row per file of a Lightning Web Component, which made a retrieve of every row fail. When the Salesforce CLI does not know a metadata type (ex: GenOpAgentConfig), the error names the type and the rows to untick.
+  - In the window of your Pull Request, each action has a **Run in my org** button (**Rerun** after a failed try) to test it in your developer org before the merge
+  - **Mark as done** records the action in the background, and shows its result about twice as fast
+  - A new **Run Batch** action runs an Apex batch class once, before or after the deployment, and can wait for it to succeed
+  - When several Pull Requests carry the same action, it runs once per deployment, and the Next promotion view and the Backpromote panel show which actions run with another one ([sfdx-hardis#2271](https://github.com/hardisgroupcom/sfdx-hardis/issues/2271))
+  - When the tab lists several Pull Requests, **Total** pills add up their actions for the status in the branch or the next promotion, and a click on one hides or shows those actions ([sfdx-hardis#2274](https://github.com/hardisgroupcom/sfdx-hardis/issues/2274))
 - Command execution tab
   - **Run again** replays the command in the same tab, instead of opening a new one ([sfdx-hardis#2272](https://github.com/hardisgroupcom/sfdx-hardis/issues/2272))
   - A command tab no longer jumps to another editor group, or takes the focus, when its command starts running
-- DevOps Pipeline on GitHub: a failed or cancelled run is no longer shown green, and the deployment status of a branch no longer counts MegaLinter or the checks of its Pull Requests ([#529](https://github.com/hardisgroupcom/vscode-sfdx-hardis/issues/529)).
+- Metadata Retriever: recent changes no longer list one row per file of a Lightning Web Component, which made a retrieve of every row fail. When the Salesforce CLI does not know a metadata type (ex: GenOpAgentConfig), the error names the type and the rows to untick.
 - The README links the [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io/) course at its new address.
 
 ## [8.9.2] 2026-10-02
