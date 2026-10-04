@@ -424,7 +424,7 @@ function mockWorkflowRuns(prId) {
       status: "valid",
       targetBranch: "integration",
       jobUrl: "https://github.com/mycompany/salesforce-crm/actions/runs/1128",
-      commentUrl: `${pullRequestUrl}#issuecomment-1`,
+      commentUrl: `${pullRequestUrl}#comment-1`,
       date: "2026-08-20T08:41:00.000Z",
       testLevel: "RunSpecifiedTests",
       errorCount: 0,
@@ -455,7 +455,7 @@ function mockWorkflowRuns(prId) {
       ...base,
       kind: "megalinter",
       status: "valid",
-      commentUrl: `${pullRequestUrl}#issuecomment-2`,
+      commentUrl: `${pullRequestUrl}#comment-2`,
       date: "2026-08-20T08:39:00.000Z",
       body: [
         "## ⚠️ [MegaLinter](https://megalinter.io/9.0.1) analysis: Success with warnings",

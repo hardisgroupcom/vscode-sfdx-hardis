@@ -1,5 +1,5 @@
 /*
-Recognise the web address of a Pull Request of the repository of the workspace.
+Recognize the web address of a Pull Request of the repository of the workspace.
 
 A link to a Pull Request shown in a panel (Backpromote, a command result) opens the Pull Request
 view of the DevOps Pipeline rather than the git provider, but only when the address is, for sure,

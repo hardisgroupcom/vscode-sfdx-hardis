@@ -138,7 +138,7 @@ suite("Pull Request view", () => {
       );
     });
 
-    test("recognises a typed number only", () => {
+    test("recognizes a typed number only", () => {
       assert.strictEqual(utils.typedPullRequestNumber(" #97 "), 97);
       assert.strictEqual(utils.typedPullRequestNumber("97"), 97);
       assert.strictEqual(utils.typedPullRequestNumber("crm-97"), null);
@@ -369,7 +369,7 @@ suite("Pull Request view", () => {
       assert.strictEqual(utils.safeWebUrl('https://x.com/"onclick='), "");
     });
 
-    test("recognises a Pull Request of the repository on every provider", () => {
+    test("recognizes a Pull Request of the repository on every provider", () => {
       const cases: Array<[string, string, number]> = [
         [
           "https://github.com/acme/sf",

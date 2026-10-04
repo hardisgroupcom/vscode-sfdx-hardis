@@ -8,7 +8,7 @@ import { journeyPillClass, lookupState, safeWebUrl } from "s/pullRequestUtils";
  *
  * `journey` is the list built by buildPullRequestJourney (s/pullRequestUtils).
  *
- * Event: openpullrequest { prNumber }, when a step names the Pull Request that carried the story.
+ * Event: open { prNumber }, when a step names the Pull Request that carried the story.
  */
 export default class PullRequestHeader extends SharedMixin(LightningElement) {
   @api pullRequest;
@@ -138,7 +138,7 @@ export default class PullRequestHeader extends SharedMixin(LightningElement) {
     const prNumber = parseInt(event.currentTarget.dataset.prNumber, 10);
     if (prNumber > 0) {
       this.dispatchEvent(
-        new CustomEvent("openpullrequest", { detail: { prNumber } }),
+        new CustomEvent("open", { detail: { prNumber } }),
       );
     }
   }

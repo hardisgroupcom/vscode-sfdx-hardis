@@ -427,7 +427,7 @@
                                 journey={modalJourney}
                                 loading={journeyLoading}
                                 platform-label={repoPlatformLabel}
-                                onopenpullrequest={handleOpenPullRequestRef}
+                                onopen={handleOpenPullRequestRef}
                             ></s-pull-request-header>
                         </div>
                         <template if:true={showCheckoutBehindNote}>
@@ -499,7 +499,7 @@
                                 details-available={ticketAuthenticated}
                                 loading={ticketDetailsLoading}
                                 show-pull-requests={showTicketPullRequests}
-                                onopenpullrequest={handleOpenPullRequestRef}
+                                onopen={handleOpenPullRequestRef}
                             ></s-ticket-list>
                         </lightning-tab>
                         <lightning-tab onactive={handleModalTabActive} label={modalActionsTabLabel} value="actions" icon-name="utility:task" icon-assistive-text={modalActionsTabLabel}>

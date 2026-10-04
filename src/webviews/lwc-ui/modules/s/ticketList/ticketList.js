@@ -9,7 +9,7 @@ import { safeWebUrl } from "s/pullRequestUtils";
  *
  * `tickets` are the rows built by s/pipeline (_aggregateTicketsFromPRs).
  *
- * Event: openpullrequest { prNumber }
+ * Event: open { prNumber }
  */
 export default class TicketList extends SharedMixin(LightningElement) {
   // False when the ticketing tool is not connected: only the ids are known
@@ -128,7 +128,7 @@ export default class TicketList extends SharedMixin(LightningElement) {
     const prNumber = parseInt(event.currentTarget.dataset.prNumber, 10);
     if (prNumber > 0) {
       this.dispatchEvent(
-        new CustomEvent("openpullrequest", { detail: { prNumber } }),
+        new CustomEvent("open", { detail: { prNumber } }),
       );
     }
   }

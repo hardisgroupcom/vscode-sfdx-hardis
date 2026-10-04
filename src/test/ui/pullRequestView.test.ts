@@ -1,7 +1,7 @@
 import * as assert from "assert";
 import * as path from "path";
 import * as vscode from "vscode";
-import { activateExtension, waitFor } from "./uiTestUtils";
+import { activateExtension, recordSentMessages, waitFor } from "./uiTestUtils";
 import { GitProvider } from "../../utils/gitProviders/gitProvider";
 import { TicketProvider } from "../../utils/ticketProviders/ticketProvider";
 
@@ -24,17 +24,6 @@ const FIXTURES = path.join(
   "fixtures",
   "screenshot",
 );
-
-/** Records the messages the extension sends to the webview of a panel. */
-function recordSentMessages(panel: any): any[] {
-  const sent: any[] = [];
-  const original = panel.sendMessage.bind(panel);
-  panel.sendMessage = (message: any) => {
-    sent.push(message);
-    original(message);
-  };
-  return sent;
-}
 
 suite("Pull Request view UI tests", function () {
   let panelManager: any;

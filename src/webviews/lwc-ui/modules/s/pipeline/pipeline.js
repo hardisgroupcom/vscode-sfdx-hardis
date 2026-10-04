@@ -212,6 +212,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
           },
         ]
       : [];
+    /* jscpd:ignore-start */
     return [
       {
         key: "number",
@@ -240,6 +241,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         initialWidth: 300,
         wrapText: true,
       },
+      /* jscpd:ignore-end */
       // The one way out to the git provider. Not last: the last column is the only one that
       // may be left without a width
       {

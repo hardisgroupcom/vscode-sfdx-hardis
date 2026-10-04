@@ -2,7 +2,12 @@ import * as assert from "assert";
 import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
-import { activateExtension, readMockLog, waitFor } from "./uiTestUtils";
+import {
+  activateExtension,
+  readMockLog,
+  recordSentMessages,
+  waitFor,
+} from "./uiTestUtils";
 
 /**
  * UI integration tests of the Backpromote panel, against the mocked sf CLI that
@@ -19,17 +24,6 @@ const INVOICE_CALCULATOR_FILE =
   "force-app/main/default/classes/InvoiceCalculator.cls";
 const CASE_LAYOUT_FILE =
   "force-app/main/default/layouts/Case-Case Layout.layout-meta.xml";
-
-/** Records the messages the extension sends to the webview of a panel. */
-function recordSentMessages(panel: any): any[] {
-  const sent: any[] = [];
-  const original = panel.sendMessage.bind(panel);
-  panel.sendMessage = (message: any) => {
-    sent.push(message);
-    original(message);
-  };
-  return sent;
-}
 
 function lastOfType(sent: any[], type: string): any {
   return [...sent].reverse().find((message) => message.type === type);
