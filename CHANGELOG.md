@@ -9,6 +9,7 @@
   - A promotion, or a merge between two major branches, lists the Pull Requests it carries in a **Pull Requests** tab
   - The Pull Requests tab of a branch is a list you can filter by number, title, author, branch or ticket, where each story names the promotion that carried it
   - **Previous** and **Close** bring back the window the Pull Request was opened from
+  - The banners of sfdx-hardis and MegaLinter show in the comments; any other image is replaced by its description
   - The Tickets tab shows statuses as pills that filter the list
   - A warning says so when you edit the deployment actions or test classes of a Pull Request that is not the one of your branch
   - Pull Request links of the Backpromote panel and of command results open the Pull Request in the DevOps Pipeline

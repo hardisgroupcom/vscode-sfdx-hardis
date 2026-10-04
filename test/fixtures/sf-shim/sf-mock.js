@@ -465,6 +465,12 @@ function mockWorkflowRuns(prId) {
         "| ⚠️ COPYPASTE | [jscpd](https://megalinter.io/9.0.1/descriptors/copypaste_jscpd) | yes | | 3 | no | 1.93s |",
         "| ✅ REPOSITORY | [gitleaks](https://megalinter.io/9.0.1/descriptors/repository_gitleaks) | yes | | no | no | 1.19s |",
         "| ✅ SALESFORCE | [sfdx-scanner-apex](https://megalinter.io/9.0.1/descriptors/salesforce_sfdx_scanner_apex) | 12 | | 0 | 2 | 41.2s |",
+        "",
+        // The banner MegaLinter ends its comments with, then an image of anybody else: the panel
+        // only loads the first one
+        "[![MegaLinter is graciously provided by OX Security](https://raw.githubusercontent.com/oxsecurity/megalinter/main/docs/assets/images/ox-banner.png)](https://www.ox.security/?ref=megalinter)",
+        "",
+        "![An image from somewhere else](https://example.com/tracker.png)",
       ].join("\n"),
     },
   ];

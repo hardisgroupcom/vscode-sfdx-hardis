@@ -35,6 +35,7 @@ const EXPORTED = [
   "buildPullRequestJourney",
   "journeyPillClass",
   "safeWebUrl",
+  "isTrustedCommentImage",
 ];
 
 function loadPullRequestUtils(): any {
@@ -856,6 +857,47 @@ suite("Pull Request view", () => {
         explorer.indexOf("this._prViewRequestId += 1;") > -1 &&
           explorer.indexOf("this._prViewRequestId += 1;") <
             explorer.indexOf("this.showPRModal = true;"),
+      );
+    });
+
+    test("only the banners of sfdx-hardis and MegaLinter are loaded as images", () => {
+      const root = "https://raw.githubusercontent.com/";
+      for (const url of [
+        root +
+          "hardisgroupcom/sfdx-hardis/refs/heads/main/docs/assets/images/cloudity-banner.png",
+        root +
+          "hardisgroupcom/sfdx-hardis/refs/heads/main/docs/assets/images/pr-banner-validation-success.png",
+        root + "oxsecurity/megalinter/main/docs/assets/images/ox-banner.png",
+        "https://github.com/oxsecurity/megalinter/raw/main/docs/assets/images/ox-banner.png",
+      ]) {
+        assert.strictEqual(utils.isTrustedCommentImage(url), true, url);
+      }
+      for (const url of [
+        // Another repository, another host, a look-alike, or a way out of the folder
+        root + "someone/else/main/docs/assets/images/pixel.png",
+        "https://example.com/hardisgroupcom/sfdx-hardis/main/docs/assets/images/a.png",
+        root + "hardisgroupcom/sfdx-hardis-fork/main/docs/assets/images/a.png",
+        root +
+          "hardisgroupcom/sfdx-hardis/main/docs/assets/images/../../../x.png",
+        root +
+          "hardisgroupcom/sfdx-hardis/main/docs/assets/images/a.png?who=me",
+        root + "hardisgroupcom/sfdx-hardis/main/docs/assets/images/a.svg",
+        "http://raw.githubusercontent.com/oxsecurity/megalinter/main/docs/assets/images/ox-banner.png",
+        "data:image/png;base64,AAAA",
+        "",
+        null,
+      ]) {
+        assert.strictEqual(
+          utils.isTrustedCommentImage(url),
+          false,
+          String(url),
+        );
+      }
+      const view = readModuleFile("markdownView", "markdownView.js");
+      // Kept only when trusted, replaced by its alternative text otherwise
+      assert.match(
+        view,
+        /isTrustedCommentImage\(node\.getAttribute\("src"\)\)\s*\)\s*\{\s*return;\s*\}\s*const alt =/,
       );
     });
 

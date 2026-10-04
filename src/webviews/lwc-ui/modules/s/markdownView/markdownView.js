@@ -1,5 +1,6 @@
 import { LightningElement, api } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
+import { isTrustedCommentImage } from "s/pullRequestUtils";
 
 // What a Pull Request comment written by sfdx-hardis uses: headings, lists, tables, code,
 // collapsible sections, images and links. Nothing that runs, loads or submits.
@@ -20,6 +21,7 @@ const ALLOWED_TAGS = [
   "h6",
   "hr",
   "i",
+  "img",
   "li",
   "ol",
   "p",
@@ -36,10 +38,11 @@ const ALLOWED_TAGS = [
   "tr",
   "ul",
 ];
-const ALLOWED_ATTR = ["href", "alt", "title", "align", "open"];
+const ALLOWED_ATTR = ["href", "alt", "title", "align", "open", "src", "width"];
 
 // An image is replaced by its alternative text: the text comes from anyone allowed to comment,
-// and loading an image from the address they chose would tell them who opened the tab, and when
+// and loading an image from the address they chose would tell them who opened the tab, and when.
+// The banners of sfdx-hardis and MegaLinter are kept: see isTrustedCommentImage.
 let imageHookInstalled = false;
 function installImageHook(purify) {
   if (imageHookInstalled) {
@@ -48,6 +51,9 @@ function installImageHook(purify) {
   imageHookInstalled = true;
   purify.addHook("uponSanitizeElement", (node, data) => {
     if (data.tagName !== "img" || !node.parentNode) {
+      return;
+    }
+    if (node.getAttribute && isTrustedCommentImage(node.getAttribute("src"))) {
       return;
     }
     const alt = node.getAttribute ? node.getAttribute("alt") || "" : "";

@@ -370,6 +370,29 @@ export function buildPullRequestJourney({
 }
 
 /**
+ * True for the images a rendered comment may load: the banners sfdx-hardis and MegaLinter put in
+ * their own comments, served by GitHub from their two repositories.
+ *
+ * Any other image stays replaced by its alternative text. A comment can be written by anyone
+ * allowed to comment, and an image at an address they chose would tell them who opened the tab,
+ * and when. Nobody commenting on a Pull Request chooses what these two repositories serve.
+ */
+export function isTrustedCommentImage(url) {
+  const address = String(url || "").trim();
+  if (address.includes("..") || /[?#\\\s]/.test(address)) {
+    return false;
+  }
+  return (
+    /^https:\/\/raw\.githubusercontent\.com\/(?:hardisgroupcom\/sfdx-hardis|oxsecurity\/megalinter)\/[\w.-]+(?:\/[\w.-]+)*\/docs\/assets\/images\/[\w.-]+(?:\/[\w.-]+)*\.(?:png|gif|jpe?g|webp)$/i.test(
+      address,
+    ) ||
+    /^https:\/\/github\.com\/(?:hardisgroupcom\/sfdx-hardis|oxsecurity\/megalinter)\/raw\/[\w.-]+(?:\/[\w.-]+)*\/docs\/assets\/images\/[\w.-]+(?:\/[\w.-]+)*\.(?:png|gif|jpe?g|webp)$/i.test(
+      address,
+    )
+  );
+}
+
+/**
  * The pill class of a journey step state or of a run status, from the fixed status palette.
  */
 export function journeyPillClass(state) {
