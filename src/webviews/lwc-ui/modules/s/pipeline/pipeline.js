@@ -2806,6 +2806,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   // Toolbar button: the modal with a lookup on top, and nothing below until a Pull Request is picked
   handleOpenExplorer() {
+    // A Pull Request still being read must not replace the explorer when its answer arrives
+    this._prViewRequestId += 1;
+    this._stackPushedForRequest = false;
+    this._clearStackOnAnswer = false;
     this._resetPromotionModalState();
     applyModalState(this, null);
     this.modalMode = "singlePR";
@@ -2940,10 +2944,17 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // what the restored window still misses is asked again
     resetModalLoadingFlags(this);
     this.actionStatusRequestId += 1;
+    // A Pull Request without any action still waits for the comments of its tabs: left before
+    // they arrived, it would wait for an answer that was dropped
+    const missesWorkflows =
+      this.modalMode === "singlePR" &&
+      this.modalWorkflows === null &&
+      this.workflowPrNumbers.length > 0;
     if (
-      this.modalActions.length > 0 &&
-      (this.modalActionStatuses === null ||
-        (this.promotionMode && !this.actionForecast))
+      missesWorkflows ||
+      (this.modalActions.length > 0 &&
+        (this.modalActionStatuses === null ||
+          (this.promotionMode && !this.actionForecast)))
     ) {
       this._requestActionStatuses();
     }

@@ -30,7 +30,12 @@ export class LwcUiPanel {
    * panel title to know whether a command is still running.
    */
   public commandStatus:
-    "pending" | "running" | "completed" | "error" | "aborted" | null = null;
+    | "pending"
+    | "running"
+    | "completed"
+    | "error"
+    | "aborted"
+    | null = null;
 
   /**
    * Provisional context id of the background run a command-execution panel
@@ -889,11 +894,18 @@ export class LwcUiPanel {
       return;
     }
     try {
-      // Heavy module: loaded on demand, not with every panel
-      const gitProviderModule =
-        await import("../utils/gitProviders/gitProvider");
-      const { parsePullRequestNumberFromUrl } =
+      const { looksLikePullRequestUrl, parsePullRequestNumberFromUrl } =
         await import("../utils/pullRequestUrlUtils");
+      // Most links of a command result are not a Pull Request: they open at once, without
+      // waiting for the git provider
+      if (!looksLikePullRequestUrl(url)) {
+        await this.handleOpenExternal(url);
+        return;
+      }
+      // Heavy module: loaded on demand, not with every panel
+      const gitProviderModule = await import(
+        "../utils/gitProviders/gitProvider"
+      );
       const gitProvider = await gitProviderModule.GitProvider.getInstance();
       const prNumber = gitProvider?.isActive
         ? parsePullRequestNumberFromUrl(url, gitProvider.repoInfo?.webUrl)

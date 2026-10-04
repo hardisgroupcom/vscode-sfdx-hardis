@@ -21,6 +21,19 @@ function normalizeRepositoryUrl(url: string): string {
 }
 
 /**
+ * True when a web address has the shape of a Pull Request, of whatever repository. A cheap test
+ * to run before loading the git provider: an org, a report or a compare page is none.
+ */
+export function looksLikePullRequestUrl(url: unknown): boolean {
+  return (
+    typeof url === "string" &&
+    /\/(?:-\/)?(?:pull|pulls|merge_requests|pullrequest|pull-requests)\/\d{1,9}(?:[/?#].*)?$/.test(
+      url.trim(),
+    )
+  );
+}
+
+/**
  * The number of the Pull Request a web address points to, or null when the address is not a Pull
  * Request of the repository whose web address is given.
  */

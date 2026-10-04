@@ -1624,12 +1624,23 @@ async function searchPullRequestsForLookup(data: any): Promise<{
 }
 
 /**
+ * True when sfdx-hardis refused a command line because it does not know one of its flags
+ * (oclif: "Nonexistent flag: --with-workflows").
+ */
+export function isUnknownFlagError(message: string): boolean {
+  return /nonexistent flags?\b|unknown flag|unexpected argument/i.test(
+    String(message || ""),
+  );
+}
+
+/**
  * Run sf hardis:project:action:list with these flags and the git provider credentials the command
  * runner also passes. Returns its JSON result, or null when the CLI cannot answer.
  */
 async function runActionListJson(
   flags: string,
   purpose: string,
+  onError?: (message: string) => void,
 ): Promise<any | null> {
   let env: Record<string, string> = {};
   try {
@@ -1653,10 +1664,13 @@ async function runActionListJson(
     if (result?.status === 0 && result?.result) {
       return result.result;
     }
-    Logger.log(
-      `[vscode-sfdx-hardis] ${purpose} not available: ${result?.errorMessage || result?.message || "unknown error"}`,
+    const message = String(
+      result?.errorMessage || result?.message || "unknown error",
     );
+    onError?.(message);
+    Logger.log(`[vscode-sfdx-hardis] ${purpose} not available: ${message}`);
   } catch (e: any) {
+    onError?.(String(e?.message || e));
     Logger.log(
       `[vscode-sfdx-hardis] ${purpose} not available: ${e?.message || e}`,
     );
@@ -1708,19 +1722,26 @@ async function loadDeploymentActionStatuses(data: any): Promise<{
     (withForecast
       ? ` --forecast ${forecastBranch} --from-branch ${fromBranch}`
       : "");
+  let firstError = "";
   let result = await runActionListJson(
     flags(withWorkflows && !workflowsFlagRefused),
     "Deployment action statuses",
+    (message) => {
+      firstError = message;
+    },
   );
   // A sfdx-hardis older than --with-workflows refuses the flag and answers nothing at all: the
   // statuses are asked again without it, so the Deployment Actions tab keeps its status column.
-  // Remembered for the session, so the next Pull Request does not pay two CLI starts.
+  // Remembered for the session, so the next Pull Request does not pay two CLI starts: but only
+  // when the CLI said it does not know the flag. A throttled provider or a network error also
+  // fails the first call, and giving the flag up for those would hide the Validation, Code
+  // Quality and Deployment tabs until VS Code is reloaded.
   if (!result && withWorkflows && !workflowsFlagRefused) {
     result = await runActionListJson(
       flags(false),
       "Deployment action statuses (without workflows)",
     );
-    if (result) {
+    if (result && isUnknownFlagError(firstError)) {
       workflowsFlagRefused = true;
     }
   }

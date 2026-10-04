@@ -5,7 +5,10 @@ import {
   readModuleFile,
   readSourceFile,
 } from "./lwcSourceUtils";
-import { parsePullRequestNumberFromUrl } from "../../utils/pullRequestUrlUtils";
+import {
+  looksLikePullRequestUrl,
+  parsePullRequestNumberFromUrl,
+} from "../../utils/pullRequestUrlUtils";
 
 /**
  * Tests of the Pull Request view of the DevOps Pipeline (sfdx-hardis#2273): the lookup of the
@@ -733,6 +736,127 @@ suite("Pull Request view", () => {
       const rule = dropdown.slice(0, dropdown.indexOf("\n}"));
       assert.match(rule, /background: light-dark\(/);
       assert.match(rule, /\n\s*color: var\(--slds-g-color-neutral-base-15\);/);
+    });
+
+    test("a link that is not a Pull Request opens without waiting for the git provider", () => {
+      for (const url of [
+        "https://github.com/acme/crm/pull/128",
+        "https://gitea.acme.com/acme/crm/pulls/128",
+        "https://gitlab.acme.com/acme/crm/-/merge_requests/128#note_4",
+        "https://dev.azure.com/acme/crm/_git/crm/pullrequest/128",
+        "https://bitbucket.org/acme/crm/pull-requests/128/diff",
+      ]) {
+        assert.strictEqual(looksLikePullRequestUrl(url), true, url);
+      }
+      for (const url of [
+        "https://acme.my.salesforce.com/lightning/setup/DeployStatus/home",
+        "https://github.com/acme/crm/compare/main...uat",
+        "https://github.com/acme/crm/pulls",
+        "",
+        null,
+      ]) {
+        assert.strictEqual(looksLikePullRequestUrl(url), false, String(url));
+      }
+      const panelSource = readSourceFile("webviews/lwc-ui-panel.ts");
+      const handler = panelSource.slice(
+        panelSource.indexOf("private async handleOpenPullRequest("),
+      );
+      // The shape is tested before the git provider module is loaded
+      assert.ok(
+        handler.indexOf("looksLikePullRequestUrl(url)") <
+          handler.indexOf("utils/gitProviders/gitProvider"),
+      );
+    });
+
+    test("the workflows flag is only given up when the CLI does not know it", () => {
+      const host = readSourceFile("commands/showPipeline.ts");
+      const isUnknownFlagError = new Function(
+        `return ${host
+          .slice(
+            host.indexOf("function isUnknownFlagError("),
+            host.indexOf("/**", host.indexOf("function isUnknownFlagError(")),
+          )
+          .replace("(message: string): boolean", "(message)")}`,
+      )();
+      assert.strictEqual(
+        isUnknownFlagError(
+          "Nonexistent flag: --with-workflows\nSee more help with --help",
+        ),
+        true,
+      );
+      // A provider that throttles, a network error, a timeout: the flag is asked again next time
+      for (const message of [
+        "429 Too Many Requests",
+        "getaddrinfo ENOTFOUND gitlab.acme.com",
+        "unknown error",
+        "",
+      ]) {
+        assert.strictEqual(isUnknownFlagError(message), false, message);
+      }
+      assert.match(
+        host,
+        /if \(result && isUnknownFlagError\(firstError\)\) \{\s*workflowsFlagRefused = true;/,
+      );
+    });
+
+    test("coming back to a Pull Request asks for the comments it was left without", () => {
+      const requests: number[] = [];
+      const back = (state: Record<string, any>) => {
+        const view = Object.assign(
+          new Function(
+            "applyModalState",
+            "resetModalLoadingFlags",
+            `return { ${extractMember(js, "_goBackTo(index)")} };`,
+          )(
+            (target: any, saved: any) => Object.assign(target, saved),
+            () => undefined,
+          ),
+          {
+            ["_modalStack"]: [{ state }],
+            ["_prViewRequestId"]: 1,
+            actionStatusRequestId: 1,
+            modalPullRequests: [],
+            ["_requestActionStatuses"]: () => requests.push(1),
+            ["_requestTicketDetails"]: () => undefined,
+            ["_showModalTab"]: () => undefined,
+            ["_loadGoLives"]: () => undefined,
+          },
+        );
+        view._goBackTo(0);
+      };
+      // Left before its comments arrived, and it carries no action
+      back({
+        modalMode: "singlePR",
+        modalActions: [],
+        modalWorkflows: null,
+        workflowPrNumbers: [128],
+      });
+      assert.strictEqual(requests.length, 1);
+      // Its comments were there: nothing to ask
+      back({
+        modalMode: "singlePR",
+        modalActions: [],
+        modalWorkflows: [],
+        workflowPrNumbers: [128],
+      });
+      assert.strictEqual(requests.length, 1);
+      // A branch window has no comment tab
+      back({
+        modalMode: "branch",
+        modalActions: [],
+        modalWorkflows: null,
+        workflowPrNumbers: [],
+      });
+      assert.strictEqual(requests.length, 1);
+    });
+
+    test("the explorer drops the Pull Request that was still being read", () => {
+      const explorer = extractMember(js, "handleOpenExplorer()");
+      assert.ok(
+        explorer.indexOf("this._prViewRequestId += 1;") > -1 &&
+          explorer.indexOf("this._prViewRequestId += 1;") <
+            explorer.indexOf("this.showPRModal = true;"),
+      );
     });
 
     test("a step waiting for the results says so, and nothing is warned about while reading", () => {
