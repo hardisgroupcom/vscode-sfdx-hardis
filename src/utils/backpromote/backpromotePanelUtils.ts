@@ -112,7 +112,7 @@ export interface BackpromoteDeletion {
 
 export interface BackpromoteAction {
   id: string;
-  // <Pull Request>:<id>, unique in the plan: two Pull Requests can reuse one action id
+  // <Pull Request>:<pre|post>:<id>, unique in the plan: two Pull Requests can reuse one action id
   key: string;
   label: string;
   type: string;
