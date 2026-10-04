@@ -238,7 +238,7 @@ export function journeyBranchPath(orgs, targetBranch) {
 
 /**
  * Where a Pull Request stands in the pipeline: the validation of the Pull Request, then one step
- * per major branch on its way to the top.
+ * per major branch on its way to the top. A vehicle Pull Request stops at its target branch.
  *
  * It only states what the data says. A merged Pull Request found in no loaded window may be live
  * for months or may belong to another pipeline: its later steps are "unknown", never a guess.
@@ -302,7 +302,13 @@ export function buildPullRequestJourney({
   if (lookupState(pr) === "closed") {
     return steps;
   }
-  const path = journeyBranchPath(orgs, pr.targetBranch);
+  // A vehicle (a promotion, a merge between two major branches) ends in the branch it is
+  // merged into. The stories it carries go further, in another vehicle: it never does.
+  const vehicle = pr.isPromotion === true || pr.isMajorToMajor === true;
+  const path = journeyBranchPath(orgs, pr.targetBranch).slice(
+    0,
+    vehicle ? 1 : undefined,
+  );
   if (path.length === 0) {
     return steps;
   }

@@ -197,6 +197,41 @@ suite("Pull Request view", () => {
       ]);
     });
 
+    test("a vehicle stops at the branch it is merged into", () => {
+      // A promotion from uat lands in preprod and never goes to main: the stories it carries
+      // do, in another vehicle
+      for (const flags of [{ isPromotion: true }, { isMajorToMajor: true }]) {
+        const steps = utils.buildPullRequestJourney({
+          pr: pullRequest({ state: "open", targetBranch: "preprod", ...flags }),
+          orgs: ORGS,
+          windows: {},
+        });
+        assert.deepStrictEqual(
+          steps.map((step: any) => step.branch),
+          ["preprod", "preprod"],
+        );
+        assert.deepStrictEqual(
+          steps.map((step: any) => step.kind),
+          ["validation", "branch"],
+        );
+      }
+      // A story with the same target goes on to the top
+      const story = utils.buildPullRequestJourney({
+        pr: pullRequest({ state: "open", targetBranch: "preprod" }),
+        orgs: ORGS,
+        windows: {},
+      });
+      assert.ok(story.length > 2);
+    });
+
+    test("a promotion is told by what it declares, whatever the project setting says", () => {
+      const host = readSourceFile("commands/showPipeline.ts");
+      assert.match(
+        host,
+        /isPromotionPullRequest\(prDetails, \{\s*allowedSteps: promotionConfig\?\.allowedSteps \|\| \[\],\s*enabled: true,\s*\}\)/,
+      );
+    });
+
     test("a merged story found in no window is not guessed beyond its target", () => {
       const steps = utils.buildPullRequestJourney({
         pr: pullRequest({ state: "merged" }),

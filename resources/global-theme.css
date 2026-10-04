@@ -2612,6 +2612,10 @@ lightning-helptext::part(icon) {
   font-family: var(--vscode-editor-font-family, monospace);
   font-size: 0.8125rem;
   background: var(--slds-g-color-neutral-base-90);
+  /* VS Code gives code, and quoted blocks below, the colors of its own theme in every webview.
+     The panel has a theme of its own: under a dark VS Code and a light panel they came out
+     light on light, or dark on dark. Both are stated here. */
+  color: var(--slds-g-color-neutral-base-15);
   border-radius: 0.25rem;
 }
 .hardis-markdown code {
@@ -2642,8 +2646,13 @@ lightning-helptext::part(icon) {
 }
 .hardis-markdown blockquote {
   margin: 0 0 0.625rem;
-  padding-left: 0.75rem;
+  padding: 0.375rem 0.75rem;
   border-left: 3px solid var(--slds-g-color-neutral-base-80);
+  background: var(--slds-g-color-neutral-base-95);
+  color: var(--slds-g-color-neutral-base-15);
+}
+.hardis-markdown blockquote > :last-child {
+  margin-bottom: 0;
 }
 
 /* A table cell that opens something (the number and the title of a Pull Request) is a button of

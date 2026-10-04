@@ -1063,6 +1063,16 @@ suite("Documentation screenshots", function () {
         force: true,
         commandArgs: { focus: "pullRequest", prNumber: 125, tab: "carried" },
       });
+      // Its description, with the quoted warning a promotion carries when conflicts are left
+      await shootPanel(panelManager, {
+        name: "pipeline-pr-view-quote",
+        command: "vscode-sfdx-hardis.showPipeline",
+        lwcId: "s-pipeline",
+        ready: pipelineFullyLoaded,
+        settleMs: 9000,
+        force: true,
+        commandArgs: { focus: "pullRequest", prNumber: 125 },
+      });
       await shootPanel(panelManager, {
         name: "pipeline-pr-explorer",
         command: "vscode-sfdx-hardis.showPipeline",

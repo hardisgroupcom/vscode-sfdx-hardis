@@ -589,11 +589,18 @@ export function registerShowPipeline(commands: Commands) {
             // up in the windows already loaded, the others are fetched by number.
             const promotionConfig: PromotionBranchConfig | undefined =
               pipelineProperties?.pipelineData?.promotionBranches;
+            // What tells a promotion here is what it says of itself: its branch name and the
+            // stories its description declares. The setting of the project is not asked: it is
+            // read from the files of the branch checked out, and a promotion left with conflict
+            // markers in config/.sfdx-hardis.yml makes that file unreadable, which showed the
+            // promotion as an ordinary Pull Request carrying nothing.
             if (
               prDetails &&
               !prDetails.isMajorToMajor &&
-              promotionConfig &&
-              isPromotionPullRequest(prDetails, promotionConfig)
+              isPromotionPullRequest(prDetails, {
+                allowedSteps: promotionConfig?.allowedSteps || [],
+                enabled: true,
+              })
             ) {
               const declared =
                 parsePromotionPullRequestIds(prDetails.description) || [];
