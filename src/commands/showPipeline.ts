@@ -8,6 +8,8 @@ import { Commands } from "../commands";
 import { showPackageXmlPanel } from "./packageXml";
 import { PullRequest } from "../utils/gitProviders/types";
 import { TicketProvider } from "../utils/ticketProviders/ticketProvider";
+import { Ticket } from "../utils/ticketProviders/types";
+import { mapWithConcurrencySettled } from "../utils/concurrency";
 import {
   deletePrePostCommand,
   listProjectApexScripts,
@@ -420,6 +422,7 @@ export function registerShowPipeline(commands: Commands) {
                   updatedFile,
                 });
           showCommitReminder(data.prNumber, msg);
+          warnAboutOtherPullRequest(data);
         }
         // Delete Deployment Action
         else if (type === "deleteDeploymentAction") {
@@ -434,6 +437,7 @@ export function registerShowPipeline(commands: Commands) {
           if (updatedFile) {
             Logger.log(`Updated file after deletion: ${updatedFile}`);
           }
+          warnAboutOtherPullRequest(data);
         }
         // Save Deployment Apex Test Classes
         else if (type === "saveDeploymentApexTestClasses") {
@@ -458,6 +462,7 @@ export function registerShowPipeline(commands: Commands) {
                   updatedFile,
                 });
           showCommitReminder(data.prNumber, msg);
+          warnAboutOtherPullRequest(data);
         }
         // Lazy-load the schedulable classes, batchable classes and communities of the deployment
         // action editor, which the Pipeline Settings panel also opens
@@ -528,7 +533,10 @@ export function registerShowPipeline(commands: Commands) {
               );
               panel.sendMessage({
                 type: "returnGetPrInfoForModal",
-                data: { notFound: true, requestId: Number(data?.requestId) || 0 },
+                data: {
+                  notFound: true,
+                  requestId: Number(data?.requestId) || 0,
+                },
               });
               return;
             }
@@ -674,6 +682,13 @@ export function registerShowPipeline(commands: Commands) {
               data: { notFound: true, requestId: Number(data?.requestId) || 0 },
             });
           }
+        }
+        // Subject, status and assignee of the tickets of the window on screen
+        else if (type === "loadTicketDetails") {
+          panel.sendMessage({
+            type: "returnTicketDetails",
+            data: await loadTicketDetailsForPanel(data),
+          });
         }
         // Pull Requests explorer: text search on the git provider, after the Pull Requests the
         // panel already holds have been filtered in the webview
@@ -1374,6 +1389,75 @@ type PipelineInfo = {
  * Run sf hardis:project:action:list with these flags and the git provider credentials the command
  * runner also passes. Returns its JSON result, or null when the CLI cannot answer.
  */
+/**
+ * A change was written for a Pull Request that is not the one of the checked out branch: the
+ * panel sends the sentence that says where it went, shown once the file is written. Nothing is
+ * said while the Pull Request is only read.
+ */
+function warnAboutOtherPullRequest(data: any): void {
+  const warning = typeof data?.warning === "string" ? data.warning.trim() : "";
+  if (warning !== "") {
+    vscode.window.showWarningMessage(warning.slice(0, 600));
+  }
+}
+
+// Ticket details already read in this session, by ticket id: a window opened again, or a
+// ticket shared by several branches, costs nothing
+const TICKET_DETAILS_TTL_MS = 10 * 60 * 1000;
+const ticketDetailsCache = new Map<string, { ticket: Ticket; at: number }>();
+
+/**
+ * Subject, status and assignee of some tickets, read from the ticketing tool in the batches of
+ * its provider. Asked by the panel when a window shows its tickets, so the diagram never waits
+ * for them. The request id goes back so the panel can drop a late answer.
+ */
+async function loadTicketDetailsForPanel(data: any): Promise<{
+  requestId: number;
+  tickets: Ticket[];
+}> {
+  const requestId = Number(data?.requestId) || 0;
+  const requested: Ticket[] = (Array.isArray(data?.tickets) ? data.tickets : [])
+    .filter((ticket: any) => ticket && typeof ticket.id === "string")
+    .slice(0, 500);
+  try {
+    const ticketProvider = await TicketProvider.getInstance({
+      reset: false,
+      authenticate: false,
+    });
+    if (!ticketProvider?.isAuthenticated || requested.length === 0) {
+      return { requestId, tickets: [] };
+    }
+    const now = Date.now();
+    const detailed = await mapWithConcurrencySettled(
+      requested,
+      async (ticket) => {
+        const cached = ticketDetailsCache.get(ticket.id);
+        if (cached && now - cached.at < TICKET_DETAILS_TTL_MS) {
+          return cached.ticket;
+        }
+        const result =
+          (await ticketProvider.completeTicketDetails({ ...ticket })) ?? ticket;
+        ticketDetailsCache.set(ticket.id, { ticket: result, at: Date.now() });
+        return result;
+      },
+      ticketProvider.batchSizes,
+      (err: any, ticket) =>
+        Logger.log(
+          `completeTicketDetails failed for ticket=${ticket.id}: ${err?.message || err}`,
+        ),
+    );
+    return {
+      requestId,
+      tickets: detailed.filter((ticket): ticket is Ticket => !!ticket),
+    };
+  } catch (e: any) {
+    Logger.log(
+      `[vscode-sfdx-hardis] ticket details not loaded: ${e?.message || e}`,
+    );
+    return { requestId, tickets: [] };
+  }
+}
+
 const PULL_REQUEST_VIEW_TABS = [
   "general",
   "tickets",

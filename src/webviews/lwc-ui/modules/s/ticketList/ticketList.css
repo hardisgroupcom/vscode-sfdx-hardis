@@ -3,6 +3,10 @@
   min-width: 0;
 }
 
+.ticket-loading {
+  margin-bottom: 0.625rem;
+}
+
 .ticket-totals {
   display: flex;
   flex-wrap: wrap;

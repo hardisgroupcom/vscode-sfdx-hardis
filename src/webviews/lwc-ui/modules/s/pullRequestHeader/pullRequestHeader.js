@@ -13,6 +13,9 @@ import { journeyPillClass, lookupState, safeWebUrl } from "s/pullRequestUtils";
 export default class PullRequestHeader extends SharedMixin(LightningElement) {
   @api pullRequest;
   @api platformLabel = "";
+  // The validation and deployment results are still being read: a step whose state depends on
+  // them says so, where it would otherwise claim it does not know
+  @api loading = false;
   _journey = [];
 
   @api
@@ -46,7 +49,9 @@ export default class PullRequestHeader extends SharedMixin(LightningElement) {
   }
 
   get hasMergeConflicts() {
-    return lookupState(this.pr) === "open" && this.pr.mergeStatus === "conflicts";
+    return (
+      lookupState(this.pr) === "open" && this.pr.mergeStatus === "conflicts"
+    );
   }
 
   get authorLabel() {
@@ -96,18 +101,28 @@ export default class PullRequestHeader extends SharedMixin(LightningElement) {
   }
 
   get steps() {
-    return this._journey.map((step) => ({
-      key: step.key,
-      label:
-        step.kind === "validation" ? this.i18n.journeyValidation : step.branch,
-      isBranch: step.kind === "branch",
-      stateLabel: this._stateLabel(step.state),
-      pillClass: journeyPillClass(step.state),
-      carriedBy: step.carriedBy,
-      carriedByLabel: step.carriedBy
-        ? this.t("journeyCarriedBy", { number: step.carriedBy })
-        : "",
-    }));
+    return this._journey.map((step) => {
+      const isValidation = step.kind === "validation";
+      const waitingForResults = this.loading && step.state === "unknown";
+      let stateLabel = this._stateLabel(step.state);
+      if (waitingForResults) {
+        stateLabel = this.i18n.loadingLabel;
+      } else if (isValidation && step.state === "unknown") {
+        // "Not in the pipeline windows" is about a branch, not about a validation
+        stateLabel = this.i18n.jobStatusUnknown;
+      }
+      return {
+        key: step.key,
+        label: isValidation ? this.i18n.journeyValidation : step.branch,
+        isBranch: step.kind === "branch",
+        stateLabel,
+        pillClass: journeyPillClass(step.state),
+        carriedBy: step.carriedBy,
+        carriedByLabel: step.carriedBy
+          ? this.t("journeyCarriedBy", { number: step.carriedBy })
+          : "",
+      };
+    });
   }
 
   handleOpenExternal() {

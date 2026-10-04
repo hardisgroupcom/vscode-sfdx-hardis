@@ -641,7 +641,8 @@ export class GitProviderGitlab extends GitProvider {
 
     const relevantMRs = allMergedMRs.filter((mr) => {
       const mergeCommitSha = (mr.mergeCommitSha || mr.merge_commit_sha) as
-        string | undefined;
+        | string
+        | undefined;
       if (mergeCommitSha && commitSHAs.has(mergeCommitSha)) {
         return true;
       }
@@ -763,6 +764,12 @@ export class GitProviderGitlab extends GitProvider {
   /**
    * Get all commits in the branch since the last merge (or all commits if no previous merge)
    */
+  // Pages of commits asked together: enough to cut the wait, few enough not to be throttled
+  private static readonly COMMIT_PAGES_AT_ONCE = 4;
+  // 20,000 commits: far beyond any real window, only there so a provider that never returns a
+  // short page cannot make this loop forever
+  private static readonly COMMIT_MAX_PAGES = 200;
+
   private async getCommitsSinceLastMerge(
     branchName: string,
     lastMerge:
@@ -786,16 +793,46 @@ export class GitProviderGitlab extends GitProvider {
         }
       }
 
-      const commits = await this.gitlabClient!.Commits.all(
-        this.gitlabProjectId!,
-        options,
-      );
+      // gitbeaker walks the pages one after the other, and a window can hold a thousand commits
+      // (a branch never merged as a whole into its target, as with promotion branches, has no
+      // "since"): ten round trips in a row before anything else can start. The pages are
+      // independent, so they are read a few at a time, until one comes back incomplete.
+      const perPage = options.perPage;
+      const commits: any[] = [];
+      let nextPage = 1;
+      let lastPageReached = false;
+      while (
+        !lastPageReached &&
+        nextPage <= GitProviderGitlab.COMMIT_MAX_PAGES
+      ) {
+        const pageNumbers = Array.from(
+          { length: GitProviderGitlab.COMMIT_PAGES_AT_ONCE },
+          (_unused, index) => nextPage + index,
+        );
+        const pages = await Promise.all(
+          pageNumbers.map((page) =>
+            this.gitlabClient!.Commits.all(this.gitlabProjectId!, {
+              ...options,
+              page,
+              maxPages: 1,
+            }),
+          ),
+        );
+        for (const page of pages) {
+          const pageCommits = Array.isArray(page) ? page : [];
+          commits.push(...pageCommits);
+          if (pageCommits.length < perPage) {
+            lastPageReached = true;
+          }
+        }
+        nextPage += GitProviderGitlab.COMMIT_PAGES_AT_ONCE;
+      }
       await this.logApiCall("Commits.all", {
         caller: "getCommitsSinceLastMerge",
         ...options,
       });
 
-      return commits || [];
+      return commits;
     } catch (err) {
       Logger.log(
         `Error fetching commits for branch ${branchName}: ${String(err)}`,

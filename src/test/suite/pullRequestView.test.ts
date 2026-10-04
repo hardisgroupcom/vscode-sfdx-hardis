@@ -1,6 +1,7 @@
 import * as assert from "assert";
 import {
   assertKeysTranslated,
+  extractMember,
   readModuleFile,
   readSourceFile,
 } from "./lwcSourceUtils";
@@ -335,7 +336,11 @@ suite("Pull Request view", () => {
 
     test("recognises a Pull Request of the repository on every provider", () => {
       const cases: Array<[string, string, number]> = [
-        ["https://github.com/acme/sf", "https://github.com/acme/sf/pull/128", 128],
+        [
+          "https://github.com/acme/sf",
+          "https://github.com/acme/sf/pull/128",
+          128,
+        ],
         [
           "https://gitlab.com/acme/sf",
           "https://gitlab.com/acme/sf/-/merge_requests/7#note_1",
@@ -351,10 +356,17 @@ suite("Pull Request view", () => {
           "https://bitbucket.org/acme/sf/pull-requests/9",
           9,
         ],
-        ["https://gitea.acme.com/acme/sf.git", "https://gitea.acme.com/acme/sf/pulls/3", 3],
+        [
+          "https://gitea.acme.com/acme/sf.git",
+          "https://gitea.acme.com/acme/sf/pulls/3",
+          3,
+        ],
       ];
       for (const [repository, url, expected] of cases) {
-        assert.strictEqual(parsePullRequestNumberFromUrl(url, repository), expected);
+        assert.strictEqual(
+          parsePullRequestNumberFromUrl(url, repository),
+          expected,
+        );
       }
     });
 
@@ -368,10 +380,16 @@ suite("Pull Request view", () => {
         "https://evil.example.com/?next=https://github.com/acme/sf/pull/128",
         "",
       ]) {
-        assert.strictEqual(parsePullRequestNumberFromUrl(url, repository), null);
+        assert.strictEqual(
+          parsePullRequestNumberFromUrl(url, repository),
+          null,
+        );
       }
       assert.strictEqual(
-        parsePullRequestNumberFromUrl("https://github.com/acme/sf/pull/1", null),
+        parsePullRequestNumberFromUrl(
+          "https://github.com/acme/sf/pull/1",
+          null,
+        ),
         null,
       );
     });
@@ -391,7 +409,10 @@ suite("Pull Request view", () => {
     });
 
     test("one Pull Request opens on its description, then its comments by kind", () => {
-      assert.match(html, /<lightning-tab label=\{i18n\.prGeneralTab\} value="general"/);
+      assert.match(
+        html,
+        /<lightning-tab label=\{i18n\.prGeneralTab\} value="general"/,
+      );
       for (const tab of ["validation", "deployment", "megalinter"]) {
         assert.match(html, new RegExp(`<lightning-tab [^>]*value="${tab}"`));
       }
@@ -408,12 +429,21 @@ suite("Pull Request view", () => {
     });
 
     test("Previous and Close both bring back the window the Pull Request was opened from", () => {
-      assert.match(html, /label=\{i18n\.prViewPrevious\}[\s\S]*?onclick=\{handleModalPrevious\}/);
+      assert.match(
+        html,
+        /label=\{i18n\.prViewPrevious\}[\s\S]*?onclick=\{handleModalPrevious\}/,
+      );
       const close = js.slice(
         js.indexOf("  handleClosePRModal() {"),
-        js.indexOf("this.showPRModal = false;", js.indexOf("  handleClosePRModal() {")),
+        js.indexOf(
+          "this.showPRModal = false;",
+          js.indexOf("  handleClosePRModal() {"),
+        ),
       );
-      assert.match(close, /this\._modalStack\.length > 0[\s\S]*this\._goBackTo\(/);
+      assert.match(
+        close,
+        /this\._modalStack\.length > 0[\s\S]*this\._goBackTo\(/,
+      );
     });
 
     test("the only way out to the git provider is the button of the header", () => {
@@ -422,6 +452,57 @@ suite("Pull Request view", () => {
         readModuleFile("pullRequestHeader", "pullRequestHeader.html"),
         /label=\{openOnPlatformLabel\}/,
       );
+    });
+
+    test("the diagram never waits for the details of the tickets", () => {
+      const orgConfig = readSourceFile("utils/orgConfigUtils.ts");
+      assert.ok(
+        !/completePullRequestsWithTickets\([^)]*\{\s*fetchDetails: true/.test(
+          orgConfig,
+        ),
+        "the branch windows must not read ticket details while the pipeline loads",
+      );
+      // A window asks for them when it is shown, and says it is waiting
+      assert.match(js, /_requestTicketDetails\(pullRequests\);/);
+      assert.match(js, /type: "loadTicketDetails"/);
+      assert.match(
+        html,
+        /<s-ticket-list[\s\S]*?loading=\{ticketDetailsLoading\}/,
+      );
+      assert.match(
+        readSourceFile("commands/showPipeline.ts"),
+        /type === "loadTicketDetails"/,
+      );
+    });
+
+    test("a step waiting for the results says so, and nothing is warned about while reading", () => {
+      assert.match(
+        html,
+        /<s-pull-request-header[\s\S]*?loading=\{journeyLoading\}/,
+      );
+      const header = readModuleFile(
+        "pullRequestHeader",
+        "pullRequestHeader.js",
+      );
+      assert.match(header, /this\.loading && step\.state === "unknown"/);
+      // The warning about someone else's Pull Request only shows while editing, or once saved
+      assert.ok(!html.includes("if:true={showNotOwnPrNote}"));
+      assert.match(html, /if:true=\{showNotOwnPrEditNote\}/);
+      assert.strictEqual(
+        (js.match(/warning: this\.notOwnPrWarning/g) || []).length,
+        3,
+      );
+    });
+
+    test("the description is shown without the links to the sfdx-hardis comments", () => {
+      const view = new Function(
+        `return { ${extractMember(js, "get singlePullRequestDescription()")} };`,
+      )();
+      view.singlePullRequest = {
+        description:
+          "<!-- sfdx-hardis nav-start -->\n[Validation](https://x) | [Deployment](https://y)\n<!-- sfdx-hardis nav-end -->\n\nMy story",
+      };
+      assert.strictEqual(view.singlePullRequestDescription, "My story");
     });
 
     test("the comment of a run is rendered through the sanitizer only", () => {
@@ -450,12 +531,15 @@ suite("Pull Request view", () => {
       const sources = [
         html,
         js,
-        ...["pullRequestLookup", "pullRequestHeader", "workflowRuns", "ticketList"].flatMap(
-          (module) => [
-            readModuleFile(module, `${module}.html`),
-            readModuleFile(module, `${module}.js`),
-          ],
-        ),
+        ...[
+          "pullRequestLookup",
+          "pullRequestHeader",
+          "workflowRuns",
+          "ticketList",
+        ].flatMap((module) => [
+          readModuleFile(module, `${module}.html`),
+          readModuleFile(module, `${module}.js`),
+        ]),
       ];
       for (const source of sources) {
         for (const match of source.matchAll(

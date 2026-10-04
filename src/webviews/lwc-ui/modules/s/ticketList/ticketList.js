@@ -17,6 +17,8 @@ export default class TicketList extends SharedMixin(LightningElement) {
   // Show the Pull Requests mentioning each ticket (a window of several Pull Requests)
   @api showPullRequests = false;
   @api ticketingToolLabel = "";
+  // The subjects, statuses and assignees are still being read from the ticketing tool
+  @api loading = false;
   @track hiddenStatuses = [];
   _tickets = [];
 
@@ -77,7 +79,9 @@ export default class TicketList extends SharedMixin(LightningElement) {
     return this._tickets
       .filter((ticket) => !this.hiddenStatuses.includes(ticket.statusLabel))
       .map((ticket) => {
-        const found = !this.detailsAvailable || !!ticket.subject;
+        // Not found is only said once the ticketing tool has answered
+        const found =
+          !this.detailsAvailable || this.loading || !!ticket.subject;
         return {
           key: ticket.id,
           id: ticket.id,

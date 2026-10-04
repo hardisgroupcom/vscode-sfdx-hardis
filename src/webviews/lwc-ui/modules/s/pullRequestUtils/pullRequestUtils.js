@@ -54,6 +54,7 @@ export const MODAL_STATE_DEFAULTS = {
   modalWorkflows: null,
   modalCheckout: null,
   workflowsUnavailable: false,
+  ticketDetailsLoading: false,
 };
 
 /**

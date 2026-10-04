@@ -5,6 +5,11 @@
         </div>
     </template>
     <template if:true={hasTickets}>
+        <template if:true={loading}>
+            <div class="ticket-loading">
+                <span class="hardis-pill hardis-status-unknown"><span class="hardis-pill-dot"></span>{i18n.loadingLabel}</span>
+            </div>
+        </template>
         <template if:true={hasStatusTotals}>
             <div class="ticket-totals">
                 <template for:each={statusTotals} for:item="pill">

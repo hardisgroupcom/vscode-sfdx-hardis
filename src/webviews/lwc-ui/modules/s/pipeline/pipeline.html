@@ -425,6 +425,7 @@
                             <s-pull-request-header
                                 pull-request={singlePullRequest}
                                 journey={modalJourney}
+                                loading={journeyLoading}
                                 platform-label={repoPlatformLabel}
                                 onopenpullrequest={handleOpenPullRequestRef}
                             ></s-pull-request-header>
@@ -496,23 +497,13 @@
                             <s-ticket-list
                                 tickets={modalTickets}
                                 details-available={ticketAuthenticated}
+                                loading={ticketDetailsLoading}
                                 show-pull-requests={showTicketPullRequests}
                                 ticketing-tool-label={ticketingToolLabel}
                                 onopenpullrequest={handleOpenPullRequestRef}
                             ></s-ticket-list>
                         </lightning-tab>
                         <lightning-tab label={modalActionsTabLabel} value="actions" icon-name="utility:task" icon-assistive-text={modalActionsTabLabel}>
-                            <template if:true={showNotOwnPrNote}>
-                                <div class="hardis-note warning slds-m-bottom_small">
-                                    <lightning-icon icon-name="utility:warning" size="x-small"></lightning-icon>
-                                    <div>
-                                        <p>{notOwnPrNote}</p>
-                                        <template if:true={alreadyDoneNote}>
-                                            <p>{alreadyDoneNote}</p>
-                                        </template>
-                                    </div>
-                                </div>
-                            </template>
                             <template if:true={showAddActionButton}>
                                 <div class="slds-m-bottom_small da-toolbar">
                                     <lightning-button class="hardis-btn-tinted-blue"
@@ -659,7 +650,7 @@
                             <!-- Apex Tests Tab (only when enabled in .sfdx-hardis.yml) -->
                             <template if:true={showApexTestsTab}>
                                 <lightning-tab label={modalApexTestsTabLabel} value="apexTests" icon-name="utility:bug" icon-assistive-text={modalApexTestsTabLabel}>
-                                    <template if:true={showNotOwnPrNote}>
+                                    <template if:true={showNotOwnPrEditNote}>
                                         <div class="hardis-note warning slds-m-bottom_small">
                                             <lightning-icon icon-name="utility:warning" size="x-small"></lightning-icon>
                                             <p>{notOwnPrNote}</p>

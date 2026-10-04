@@ -405,6 +405,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   workflowsUnavailable = false;
   // Branch checked out in the workspace, where the actions of the Pull Request are read and written
   modalCheckout = null;
+  // Subject, status and assignee of the tickets of the window are being read
+  ticketDetailsLoading = false;
+  _ticketDetailsRequestId = 0;
+  _ticketSourcePrs = [];
+  _ticketRequestedIds = [];
   modalMode = "branch"; // "branch" or "singlePR"
   // Show the job status column in the PR modal only for a single PR or a "+N
   // more" group (not for a major branch's pending-promotion / go-live PRs).
@@ -1006,6 +1011,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       data: {
         prNumber: pr.number,
         deploymentApexTestClasses: deploymentApexTestClasses,
+        warning: this.notOwnPrWarning,
       },
     });
   }
@@ -1917,6 +1923,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       case "returnSearchPullRequests":
         this.handleReturnSearchPullRequests(data);
         break;
+      case "returnTicketDetails":
+        this.handleReturnTicketDetails(data);
+        break;
       case "openPullRequestView":
         // A Pull Request link of another panel, while this panel is already loaded
         if (data?.prNumber > 0) {
@@ -2633,6 +2642,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.modalPullRequests = this._mapPrsWithIcons(pullRequests);
     // Aggregate all tickets from all PRs
     this.modalTickets = this._aggregateTicketsFromPRs(pullRequests);
+    this._requestTicketDetails(pullRequests);
 
     // Aggregate all deployment actions from all PRs
     this.modalActions = this._aggregateActionsFromPRs(pullRequests);
@@ -3238,6 +3248,19 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return this.isSinglePRMode && !this.modalIsMajorPr && !this.isOwnPullRequest;
   }
 
+  // Shown while the test classes of such a Pull Request are being edited, never while reading
+  get showNotOwnPrEditNote() {
+    return this.showNotOwnPrNote && this.isApexTestsEditMode;
+  }
+
+  // Sent with a change of such a Pull Request, so the extension warns once it is written
+  get notOwnPrWarning() {
+    if (!this.showNotOwnPrNote) {
+      return "";
+    }
+    return [this.notOwnPrNote, this.alreadyDoneNote].filter(Boolean).join(" ");
+  }
+
   get notOwnPrNote() {
     const branch = this.modalCheckout?.branch || "";
     return branch
@@ -3353,9 +3376,80 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return this.t("workflowNoMegaLinter", { prLabel: this.prLabel });
   }
 
-  // General tab: the description of the Pull Request, as written on the git provider
+  // General tab: the description of the Pull Request, as written on the git provider, without
+  // the line sfdx-hardis adds to jump to its comments: the tabs of this window replace it
   get singlePullRequestDescription() {
-    return String(this.singlePullRequest?.description || "").trim();
+    return String(this.singlePullRequest?.description || "")
+      .replace(
+        /<!-- sfdx-hardis nav-start -->[\s\S]*?<!-- sfdx-hardis nav-end -->/g,
+        "",
+      )
+      .trim();
+  }
+
+  // The outcome of the validation and of the deployments is still being read
+  get journeyLoading() {
+    return (
+      this.workflowPrNumbers.length > 0 &&
+      !this.workflowsUnavailable &&
+      this.modalWorkflows === null
+    );
+  }
+
+  // Subject, status and assignee of the tickets are read when a window shows them, not with the
+  // diagram: one call to the ticketing tool per ticket is too slow to wait for on every load
+  _requestTicketDetails(pullRequests) {
+    this._ticketSourcePrs = Array.isArray(pullRequests) ? pullRequests : [];
+    const pending = new Map();
+    for (const pr of this._ticketSourcePrs) {
+      for (const ticket of pr.relatedTickets || []) {
+        if (ticket?.id && ticket.detailsLoaded !== true && !ticket.subject) {
+          pending.set(ticket.id, ticket);
+        }
+      }
+    }
+    // An answer on its way belongs to the window shown before
+    this._ticketDetailsRequestId += 1;
+    this._ticketRequestedIds = [...pending.keys()];
+    if (!this.ticketAuthenticated || pending.size === 0) {
+      this.ticketDetailsLoading = false;
+      return;
+    }
+    this.ticketDetailsLoading = true;
+    window.sendMessageToVSCode({
+      type: "loadTicketDetails",
+      data: {
+        requestId: this._ticketDetailsRequestId,
+        tickets: JSON.parse(JSON.stringify([...pending.values()])),
+      },
+    });
+  }
+
+  handleReturnTicketDetails(data) {
+    if (!data || data.requestId !== this._ticketDetailsRequestId) {
+      return;
+    }
+    this.ticketDetailsLoading = false;
+    const detailsById = new Map(
+      (data.tickets || []).map((ticket) => [ticket.id, ticket]),
+    );
+    const requested = new Set(this._ticketRequestedIds);
+    // The same ticket object is listed by every window that names it: completed once, it is
+    // complete everywhere, and it is not asked again in this session
+    for (const pr of [
+      ...this._ticketSourcePrs,
+      ...this.lookupLoadedPullRequests,
+    ]) {
+      for (const ticket of pr.relatedTickets || []) {
+        if (!ticket || !requested.has(ticket.id)) {
+          continue;
+        }
+        Object.assign(ticket, detailsById.get(ticket.id) || {}, {
+          detailsLoaded: true,
+        });
+      }
+    }
+    this.modalTickets = this._aggregateTicketsFromPRs(this._ticketSourcePrs);
   }
 
   get noDescriptionLabel() {
@@ -3474,6 +3568,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
     // Aggregate tickets from this single PR
     this.modalTickets = this._aggregateTicketsFromPRs([pr]);
+    this._requestTicketDetails([pr]);
 
     // Deployment actions: the PR's own ones, or, for a Pull Request between
     // two major branches, the ones of the feature Pull Requests it carries
@@ -4842,6 +4937,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         prNumber,
         commandId,
         when,
+        warning: this.notOwnPrWarning,
       },
     });
   }
@@ -4955,6 +5051,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         originalCommand: originalAction
           ? JSON.parse(JSON.stringify(originalAction))
           : null,
+        warning: this.notOwnPrWarning,
       },
     });
 
