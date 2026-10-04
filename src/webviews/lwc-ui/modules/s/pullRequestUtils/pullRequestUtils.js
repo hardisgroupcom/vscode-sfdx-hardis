@@ -414,22 +414,28 @@ export function journeyPillClass(state) {
  * How a step of the journey is drawn in the path: reached (filled green), failed (filled red),
  * running (filled blue), pending, or still ahead. `mark` is the sign shown before its name.
  */
-export function journeyPathStep(state) {
-  const look =
-    {
-      success: "done",
-      deployed: "done",
-      merged: "done",
-      failed: "failed",
-      running: "running",
-      pending: "pending",
-    }[state] || "ahead";
+export function journeyPathStep(state, loading = false) {
+  // A step whose result is still being read is not known yet: grey, like what is ahead, with
+  // the dot of something going on
+  const look = loading
+    ? "ahead"
+    : {
+        success: "done",
+        deployed: "done",
+        merged: "done",
+        failed: "failed",
+        running: "running",
+        pending: "pending",
+      }[state] || "ahead";
   return {
     look,
     stepClass: `hardis-path-step hardis-path-${look}`,
     mark: { done: "\u2713", failed: "\u2715" }[look] || "",
     // A dot for what is going on, nothing for what has not started
-    dot: look === "running" || look === "pending",
+    dot: loading || look === "running" || look === "pending",
+    dotClass: loading
+      ? "hardis-path-dot hardis-path-dot-loading"
+      : "hardis-path-dot",
   };
 }
 

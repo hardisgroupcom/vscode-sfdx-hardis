@@ -112,7 +112,7 @@ export default class PullRequestHeader extends SharedMixin(LightningElement) {
         stateLabel = this.i18n.jobStatusUnknown;
       }
       const label = isValidation ? this.i18n.journeyValidation : step.branch;
-      const path = journeyPathStep(waitingForResults ? "pending" : step.state);
+      const path = journeyPathStep(step.state, waitingForResults);
       return {
         key: step.key,
         label,
@@ -121,11 +121,13 @@ export default class PullRequestHeader extends SharedMixin(LightningElement) {
             ? "hardis-path-name hardis-path-branch"
             : "hardis-path-name",
         stateLabel,
-        // The whole step when its text is cut: a path gives each one the same room
+        // The state is said by the color and the mark of the step: its words are in the
+        // tooltip, and read to a screen reader
         title: `${label}: ${stateLabel}`,
         stepClass: path.stepClass,
         mark: path.mark,
         dot: path.dot,
+        dotClass: path.dotClass,
         carriedBy: step.carriedBy,
         carriedByLabel: step.carriedBy
           ? this.t("journeyCarriedBy", { number: step.carriedBy })

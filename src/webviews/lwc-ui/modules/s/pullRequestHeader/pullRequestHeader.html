@@ -41,10 +41,10 @@
                                 <span class="hardis-path-mark" aria-hidden="true">{step.mark}</span>
                             </template>
                             <template if:true={step.dot}>
-                                <span class="hardis-path-dot" aria-hidden="true"></span>
+                                <span class={step.dotClass} aria-hidden="true"></span>
                             </template>
                             <span class={step.labelClass}>{step.label}</span>
-                            <span class="hardis-path-state">{step.stateLabel}</span>
+                            <span class="slds-assistive-text">{step.stateLabel}</span>
                             <template if:true={step.carriedBy}>
                                 <button class="hardis-path-ref" data-pr-number={step.carriedBy} onclick={handleOpenCarrier}>{step.carriedByLabel}</button>
                             </template>

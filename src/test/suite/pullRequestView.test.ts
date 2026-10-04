@@ -928,9 +928,29 @@ suite("Pull Request view", () => {
       assert.strictEqual(utils.journeyPathStep("running").dot, true);
       assert.strictEqual(utils.journeyPathStep("waiting").dot, false);
       assert.strictEqual(utils.journeyPathStep("waiting").mark, "");
+      // A result still being read is grey, whatever is known so far, with a dot that says so
+      const loading = utils.journeyPathStep("unknown", true);
+      assert.strictEqual(loading.look, "ahead");
+      assert.strictEqual(loading.dot, true);
+      assert.match(loading.dotClass, /hardis-path-dot-loading/);
+      assert.strictEqual(utils.journeyPathStep("pending", true).look, "ahead");
       const header = readModuleFile(
         "pullRequestHeader",
         "pullRequestHeader.html",
+      );
+      // The name of a step is never cut, and its state is not written next to it: the color
+      // and the mark say it, the tooltip and the screen reader text spell it out
+      assert.match(
+        header,
+        /<span class="slds-assistive-text">\{step\.stateLabel\}<\/span>/,
+      );
+      const theme = readSourceFile("../resources/global-theme.css");
+      const stepRule = theme.slice(theme.indexOf(".hardis-path-step {"));
+      assert.match(stepRule.slice(0, stepRule.indexOf("}")), /flex: 1 0 auto;/);
+      const nameRule = theme.slice(theme.indexOf(".hardis-path-name {"));
+      assert.doesNotMatch(
+        nameRule.slice(0, nameRule.indexOf("}")),
+        /ellipsis|overflow/,
       );
       // An ordered list, and the Pull Request that carried a step still opens from it
       assert.match(

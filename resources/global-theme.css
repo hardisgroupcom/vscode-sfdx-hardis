@@ -2561,8 +2561,9 @@ lightning-helptext::part(icon) {
 /* One chevron per step: the notch of each one fits the point of the one before, with a thin gap
    between them. A step is filled once reached, pale while it is still ahead. */
 .hardis-path-step {
-  flex: 1 1 9rem;
-  min-width: 0;
+  /* Never narrower than its text: the name of a branch always shows in full, and a path too
+     long for the window goes on a second row */
+  flex: 1 0 auto;
   height: 2rem;
   display: flex;
   align-items: center;
@@ -2627,7 +2628,8 @@ lightning-helptext::part(icon) {
   border-radius: 50%;
   background: currentColor;
 }
-.hardis-path-running .hardis-path-dot {
+.hardis-path-running .hardis-path-dot,
+.hardis-path-dot-loading {
   animation: hardis-path-pulse 1.4s ease-in-out infinite;
 }
 @keyframes hardis-path-pulse {
@@ -2636,23 +2638,18 @@ lightning-helptext::part(icon) {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hardis-path-running .hardis-path-dot {
+  .hardis-path-running .hardis-path-dot,
+  .hardis-path-dot-loading {
     animation: none;
   }
 }
 .hardis-path-name {
   font-weight: 700;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  flex: none;
 }
 .hardis-path-branch {
   font-family: ui-monospace, "Cascadia Code", Consolas, Menlo, monospace;
   font-size: 0.75rem;
-}
-.hardis-path-state {
-  flex: none;
-  opacity: 0.9;
 }
 .hardis-path-ref {
   flex: none;
