@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [8.10.0] 2026-10-04
+
 - DevOps Pipeline
   - A **Pull Requests explorer** finds any Pull Request: the search button of the toolbar looks it up by number, title, branch, author or ticket, among the ones of the pipeline and on your git provider
   - A Pull Request opens in the panel from the explorer, the diagram, the Open Pull Requests tab, the Backpromote panel and command results, and **Previous** and **Close** bring back the window you came from
