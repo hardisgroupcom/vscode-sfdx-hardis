@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { GitProvider } from "./gitProviders/gitProvider";
 import { CreateTokenOption } from "./gitProviders/types";
 import { TicketProvider } from "./ticketProviders/ticketProvider";
+import type { AhaProvider } from "./ticketProviders/ticketProviderAha";
 import { SecretsManager } from "./secretsManager";
 import { getConfig, isPipelineConfigured } from "./pipeline/sfdxHardisConfig";
 import { Logger } from "../logger";
@@ -162,6 +163,7 @@ export const SECRET_ENV_KEYS = new Set([
   "JIRA_TOKEN",
   "SERVICENOW_USERNAME",
   "SERVICENOW_PASSWORD",
+  "AHA_API_KEY",
 ]);
 
 // In-memory cache of collected credentials: they are re-read from secret
@@ -362,7 +364,7 @@ async function collectProviderCredentialEnvVarsNow(): Promise<
     );
   }
 
-  // --- Ticketing provider credentials (JIRA, ServiceNow) ---
+  // --- Ticketing provider credentials (JIRA, ServiceNow, Aha!) ---
   try {
     const ticketProvider = await TicketProvider.getInstance({
       reset: false,
@@ -383,6 +385,18 @@ async function collectProviderCredentialEnvVarsNow(): Promise<
         if (value) {
           env[key] = value;
         }
+      }
+    }
+    if (
+      ticketProvider?.isAuthenticated &&
+      ticketProvider.providerName === "AHA"
+    ) {
+      // The host is read by the CLI from ahaHost, like the extension does
+      const apiKey = await (
+        ticketProvider as AhaProvider
+      ).getApiKeyForCommands();
+      if (apiKey) {
+        env.AHA_API_KEY = apiKey;
       }
     }
     if (

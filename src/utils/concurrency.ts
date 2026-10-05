@@ -23,6 +23,7 @@ export type ProviderBatchProfileName =
   | "jiraCloud"
   | "jiraServer"
   | "serviceNow"
+  | "aha"
   | "default";
 
 /** The ladders of batch sizes, per provider, largest first */
@@ -48,6 +49,8 @@ export const PROVIDER_BATCH_PROFILES: Record<
   jiraServer: [40, 20, 10, 5, 1],
   // Bounded by the REST semaphores of the node (a few per node): more only queues
   serviceNow: [8, 4, 2, 1],
+  // 20 requests per second and 300 per minute, per account
+  aha: [10, 5, 2, 1],
   default: [20, 10, 5, 1],
 };
 

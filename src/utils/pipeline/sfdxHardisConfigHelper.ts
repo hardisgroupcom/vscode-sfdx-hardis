@@ -140,6 +140,8 @@ export class SfdxHardisConfigHelper {
     { name: "serviceNowTablePrefixes", scopes: ["global"] },
     { name: "serviceNowCommentField", scopes: ["global"] },
     { name: "serviceNowAddDeploymentTag", scopes: ["global"] },
+    { name: "ahaHost", scopes: ["global"] },
+    { name: "ahaTicketRegex", scopes: ["global"] },
     { name: "codingAgentAutoFix", scopes: ["global", "branch"] },
     { name: "codingAgent", scopes: ["global", "branch"] },
     { name: "codingAgentModel", scopes: ["global", "branch"] },
@@ -235,6 +237,8 @@ export class SfdxHardisConfigHelper {
         "serviceNowTablePrefixes",
         "serviceNowCommentField",
         "serviceNowAddDeploymentTag",
+        "ahaHost",
+        "ahaTicketRegex",
       ],
     },
     {
