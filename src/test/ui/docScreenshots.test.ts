@@ -1407,7 +1407,7 @@ suite("Documentation screenshots", function () {
     // Label of the first action, and the height of a row, two zoom levels out. The window
     // shows the first nine rows: the last ones are reached by scrolling the list to its end,
     // where the last row sits at LAST_ROW_SCROLLED_Y
-    const FIRST_ROW_CENTER_Y = 328;
+    const FIRST_ROW_CENTER_Y = 299;
     const ROW_STEP = 53.8;
     const VISIBLE_ROWS = 9;
     const LAST_ROW_INDEX = 10;
