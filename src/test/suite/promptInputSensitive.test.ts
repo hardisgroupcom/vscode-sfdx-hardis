@@ -1,5 +1,7 @@
 import * as assert from "assert";
-import { extractMember, readModuleFile } from "./lwcSourceUtils";
+import * as fs from "fs";
+import * as path from "path";
+import { REPO_ROOT, extractMember, readModuleFile } from "./lwcSourceUtils";
 
 /**
  * Contract tests for the secrets typed in s/promptInput.
@@ -49,6 +51,19 @@ suite("Prompt input: sensitive questions", () => {
     assert.ok(
       !/<lightning-input\s+type="text"/.test(template),
       "no text input may be hardcoded as readable",
+    );
+  });
+
+  // With vsCodeSfdxHardis.userInput set to "ui", a text question is asked in the input box of
+  // VS Code instead of the panel
+  test("the input box of VS Code masks a sensitive question too", () => {
+    const server = fs.readFileSync(
+      path.join(REPO_ROOT, "src", "hardis-websocket-server.ts"),
+      "utf8",
+    );
+    assert.ok(
+      server.includes("password: prompt.sensitive === true"),
+      "the text input box must be a password box for a sensitive question",
     );
   });
 });
