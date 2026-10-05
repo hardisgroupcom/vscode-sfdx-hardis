@@ -31,7 +31,8 @@ All of them live in the sibling repository, under
 `sfdx-hardis-pipeline-view.gif` is the image at the top of both READMEs and of the documentation home pages. It is scripted from end to end:
 
 - **The scenario** is the `recording: devops pipeline` test (gate `rec-pipeline`). It follows Pull Request #130 of `test/fixtures/screenshot/showcase`, which is added to copies of the base fixtures in three states: open, merged with its deployment running, deployed. No other capture sees it.
-- **Bubbles, pointer and cards** are drawn by `build-doc-images.py` from the timeline the test writes in `recording.json`: `caption()` puts a label next to the part of the panel it names, a frame around it, and dims the rest, each click moves the pointer, `cut()` hides a part of the run. The opening is laid over the first seconds of the pipeline, the closing card ends the GIF: their texts are in `showcase.json`. The bubbles of the GitHub stills are in their `timeline.json`, written by the capture script.
+- **Bubbles, pointer and cards** are drawn by `build-doc-images.py` from the timeline the test writes in `recording.json`: `caption()` puts a label next to the part of the panel it names, a frame around it, and dims the rest, each click moves the pointer, `cut()` hides a part of the run.
+  The opening is laid over the first seconds of the pipeline, the closing card ends the GIF: their texts are in `showcase.json`. The bubbles of the GitHub stills are in their `timeline.json`, written by the capture script.
 - **The GitHub pages** shown at the merge are real ones, taken once from a throwaway private repository and committed in `test/fixtures/screenshot/showcase/github`. `node scripts/capture-github-merge.js` takes them again: it needs `gh` and a Chrome started with `--remote-debugging-port=9222` and signed in to GitHub, and it opens then merges a new Pull Request at each run.
 
 To build this GIF alone:
