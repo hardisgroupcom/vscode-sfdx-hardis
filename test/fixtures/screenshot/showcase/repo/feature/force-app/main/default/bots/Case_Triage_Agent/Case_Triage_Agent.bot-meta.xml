@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Bot xmlns="http://soap.sforce.com/2006/04/metadata">
+    <agentType>EinsteinServiceAgent</agentType>
+    <botMlDomain>
+        <label>Case Triage Agent</label>
+        <name>Case_Triage_Agent</name>
+    </botMlDomain>
+    <botUser>case.triage.agent@mycompany.com</botUser>
+    <description>Reads a new case, finds its category and sends it to the right queue.</description>
+    <label>Case Triage Agent</label>
+    <logPrivateConversationData>false</logPrivateConversationData>
+    <type>ExternalCopilot</type>
+</Bot>

@@ -1,11 +1,13 @@
 import { CdpWindow } from "./cdpWindow";
 import { execFileSync, execSync, spawnSync } from "child_process";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 import * as vscode from "vscode";
 import {
   activateExtension,
   readMockLog,
+  resetProviders,
   runCommandAndWaitForPanel,
   waitFor,
 } from "./uiTestUtils";
@@ -173,6 +175,13 @@ async function click(
   if (!driver) {
     return;
   }
+  // A recording draws the pointer and the click at assembly time: its frames
+  // have the side bar cropped out
+  timelineEvent({
+    type: options.scroll ? "scroll" : "click",
+    x: x - SIDE_BAR_WIDTH,
+    y,
+  });
   try {
     await driver.click(x, y, {
       scroll: options.scroll,
@@ -401,6 +410,13 @@ const ACTION_RECOVERY_MOVED_LABEL = parsePoint(
   0,
 );
 const PIPELINE_ACTIONS_DEEP_LINK = { focus: "deploymentActions" };
+// Showcase recording of the DevOps Pipeline: the button closing the details of
+// a deployment action, and the row of Pull Request #130 in the integration window
+const SHOWCASE_ACTION_CLOSE = { x: 1606, y: 806 };
+const SHOWCASE_MERGED_ROW = { x: 712, y: 352 };
+// A Pull Request opened from a branch window has a line more in its header
+// (where it was opened from): everything under it sits lower
+const SHOWCASE_FROM_WINDOW_OFFSET = 27;
 /**
  * The commits the selection prompt of hardis:project:promotion:create is
  * answered with: the ones of the stories the scenario says the panel ticked,
@@ -480,16 +496,103 @@ const DEFAULT_CONFLICT_SAMPLE = [
 ].join("\n");
 
 /**
+ * What happens during the recording in progress, for the assembler
+ * (scripts/build-doc-images.py): the clicks, so it can draw a pointer, the
+ * captions, the ranges to cut out and the stills to insert in their place.
+ * Times are milliseconds since the first frame.
+ */
+interface RecordingTimeline {
+  outDir: string;
+  startedAt: number;
+  paused: boolean;
+  events: Array<Record<string, unknown>>;
+}
+let timeline: RecordingTimeline | null = null;
+
+function timelineEvent(event: Record<string, unknown>): void {
+  if (timeline && !timeline.paused) {
+    event.t = Date.now() - timeline.startedAt;
+    timeline.events.push(event);
+  }
+}
+
+/**
+ * Text shown in a bubble over the frames of a recording, until the next
+ * caption. `box` is the part of the capture it is about (x, y, width, height):
+ * a frame is drawn around it, and the bubble goes on the given side of it.
+ */
+function caption(
+  text: string,
+  box?: [number, number, number, number],
+  side: "above" | "below" | "left" | "right" = "below",
+  /** Where the bubble sits along that side: at its start, its middle or its end */
+  align: "start" | "center" | "end" = "center",
+): void {
+  timelineEvent({
+    type: "caption",
+    text,
+    ...(box
+      ? { box: [box[0] - SIDE_BAR_WIDTH, box[1], box[2], box[3]], side, align }
+      : {}),
+  });
+}
+
+/**
+ * Runs a part of a scenario that the recording must not show: a fixture that
+ * changes, a panel that loads again. Its frames are not taken, and the
+ * assembler joins what comes before with what comes after. `stillsDir` names
+ * a folder of stills (with their timeline.json) shown in its place.
+ */
+async function cut(
+  hidden: () => Promise<void>,
+  stillsDir?: string,
+): Promise<void> {
+  if (!timeline) {
+    await hidden();
+    return;
+  }
+  const event: Record<string, unknown> = { type: "cut" };
+  if (stillsDir) {
+    // Copied next to the frames: a recording folder is all the assembler reads
+    const folder = path.basename(stillsDir);
+    fs.cpSync(stillsDir, path.join(timeline.outDir, folder), {
+      recursive: true,
+    });
+    event.stills = folder;
+  }
+  timelineEvent(event);
+  const current = timeline;
+  current.paused = true;
+  try {
+    await hidden();
+  } finally {
+    current.paused = false;
+    event.until = Date.now() - current.startedAt;
+  }
+}
+
+/**
  * Records the window while `scenario` drives the UI, into
  * <OUT_DIR>/recordings/<name>/frame-NNNN.png. The animated GIFs of the
  * documentation are recorded by hand (see docs/animated-gifs.md); these frames
  * are only raw material for them.
+ *
+ * `seconds` is the length of the recording, or its longest length with
+ * `untilScenarioEnds`: the recording then stops with the scenario.
  */
 async function record(
   name: string,
   seconds: number,
   scenario: () => Promise<void>,
   fps = 5,
+  options: {
+    /** Keep the timeline of the scenario, for a GIF with captions and a pointer */
+    scripted?: boolean;
+    untilScenarioEnds?: boolean;
+    cards?: unknown;
+    /** Frames saved uncropped, for a recording that needs its full frame rate */
+    rawFrames?: boolean;
+  } = {},
 ): Promise<void> {
   const driver = windowDriver();
   if (!driver) {
@@ -503,10 +606,35 @@ async function record(
   fs.mkdirSync(outDir, { recursive: true });
   // The assembler (scripts/build-doc-images.py) needs the frame rate to time
   // the GIF frames: recordings may use a higher rate than the default
-  fs.writeFileSync(
-    path.join(outDir, "recording.json"),
-    JSON.stringify({ fps }, null, 2),
-  );
+  const recorded: RecordingTimeline = {
+    outDir,
+    startedAt: Date.now(),
+    paused: false,
+    events: [],
+  };
+  const writeMeta = (frames: Array<{ file: string; t: number }>) =>
+    fs.writeFileSync(
+      path.join(outDir, "recording.json"),
+      JSON.stringify(
+        {
+          fps,
+          ...(options.rawFrames
+            ? { crop: { left: SIDE_BAR_WIDTH, top: TITLE_BAR_HEIGHT } }
+            : {}),
+          ...(options.cards ? { cards: options.cards } : {}),
+          ...(recorded.events.length
+            ? { events: recorded.events, frames }
+            : {}),
+        },
+        null,
+        2,
+      ),
+    );
+  writeMeta([]);
+  let scenarioEnded = false;
+  const frameTimes: Array<{ file: string; t: number }> = [];
+  // The other recordings are assembled from their frames alone
+  timeline = options.scripted ? recorded : null;
   // The frames are taken from here while the scenario drives the UI: a frame is asked every
   // 1/fps second, one at a time (a capture slower than the interval delays the next one
   // instead of piling up). The documentation GIFs show the panel only: the activity bar and
@@ -515,18 +643,32 @@ async function record(
   const intervalMs = 1000 / fps;
   let recorderOutput = "";
   const recording = (async () => {
-    const startedAt = Date.now();
+    const startedAt = recorded.startedAt;
     for (let frame = 1; frame <= frameCount; frame++) {
       const due = startedAt + (frame - 1) * intervalMs;
       const wait = due - Date.now();
       if (wait > 0) {
         await sleep(wait);
       }
+      if (options.untilScenarioEnds && scenarioEnded) {
+        break;
+      }
+      // Nothing is taken of what a cut hides
+      if (recorded.paused) {
+        continue;
+      }
+      const file = `frame-${String(frame).padStart(4, "0")}.png`;
       try {
-        await driver.capture(
-          path.join(outDir, `frame-${String(frame).padStart(4, "0")}.png`),
-          { top: TITLE_BAR_HEIGHT, left: SIDE_BAR_WIDTH },
-        );
+        const takenAt = Date.now() - startedAt;
+        if (options.rawFrames) {
+          await driver.captureRaw(path.join(outDir, file));
+        } else {
+          await driver.capture(path.join(outDir, file), {
+            top: TITLE_BAR_HEIGHT,
+            left: SIDE_BAR_WIDTH,
+          });
+        }
+        frameTimes.push({ file, t: takenAt });
       } catch (error: any) {
         recorderOutput = `(frame ${frame}: ${error?.message || error})`;
       }
@@ -541,14 +683,31 @@ async function record(
   await sleep(1200); // let the recorder take its first frames before the first action
   try {
     await scenario();
+    scenarioEnded = true;
     await finished;
   } finally {
+    scenarioEnded = true;
+    timeline = null;
     clearInterval(toastCleaner);
   }
+  writeMeta(frameTimes);
   const frames = fs.readdirSync(outDir).filter((f) => f.endsWith(".png"));
   console.log(
     `      [rec] ${name}: ${frames.length} frames ${recorderOutput.trim()}`,
   );
+  // A busy machine takes its frames late. Under the rate asked for, an
+  // animation that repeats (the running edges of the pipeline) is seen
+  // standing still or going backward: such a recording is to take again.
+  const gaps = frameTimes
+    .map((frame, index) => frame.t - (frameTimes[index - 1]?.t ?? frame.t))
+    .filter((gap) => gap > 0 && gap < 2000)
+    .sort((x, y) => x - y);
+  const medianGap = gaps[Math.floor(gaps.length / 2)] || 0;
+  if (options.rawFrames && medianGap > intervalMs * 1.2) {
+    console.log(
+      `      [rec] ${name}: TOO SLOW, a frame every ${medianGap} ms instead of ${intervalMs}: take it again on a quieter machine`,
+    );
+  }
 }
 
 /**
@@ -640,6 +799,147 @@ function pipelineFullyLoaded(data: any): boolean {
     Array.isArray(data.openPullRequests) &&
     data.openPullRequests.length > 0
   );
+}
+
+/**
+ * Showcase recording of the DevOps Pipeline (sfdx-hardis-pipeline-view.gif): one
+ * Pull Request with deployment actions, followed from review to deployed. It is
+ * not part of the base fixtures, which every other capture relies on: it is
+ * added to copies of them, in the three states the recording goes through, and
+ * the providers are pointed at the copy of the moment.
+ */
+type ShowcaseState = "open" | "deploying" | "deployed";
+const SHOWCASE_DIR = path.join(
+  __dirname,
+  "..",
+  "..",
+  "..",
+  "test",
+  "fixtures",
+  "screenshot",
+  "showcase",
+);
+
+async function prepareShowcase(): Promise<{
+  cards: unknown;
+  stillsDir: string;
+  setState: (state: ShowcaseState) => Promise<void>;
+  restore: () => Promise<void>;
+}> {
+  const showcase = JSON.parse(
+    fs.readFileSync(path.join(SHOWCASE_DIR, "showcase.json"), "utf8"),
+  );
+  const envBefore = {
+    git: process.env.SFDX_HARDIS_MOCK_GIT_PROVIDER_FILE,
+    ticket: process.env.SFDX_HARDIS_MOCK_TICKET_PROVIDER_FILE,
+    showcase: process.env.SF_MOCK_SHOWCASE_FILE,
+  };
+  const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  if (!workspaceRoot || !envBefore.git || !envBefore.ticket) {
+    throw new Error("The showcase recording needs the screenshot fixtures");
+  }
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "sfh-showcase-"));
+  const pullRequest = showcase.pullRequest;
+  const prKey = String(pullRequest.number);
+
+  // The actions of the Pull Request, as its branch would hold them
+  const actionsFile = path.join(
+    workspaceRoot,
+    "scripts",
+    "actions",
+    `.sfdx-hardis.${pullRequest.number}.yml`,
+  );
+  fs.mkdirSync(path.dirname(actionsFile), { recursive: true });
+  fs.copyFileSync(
+    path.join(SHOWCASE_DIR, `.sfdx-hardis.${pullRequest.number}.yml`),
+    actionsFile,
+  );
+
+  const tickets = JSON.parse(fs.readFileSync(envBefore.ticket, "utf8"));
+  tickets.tickets[showcase.ticket.id] = showcase.ticket;
+  const ticketFile = path.join(tempDir, "ticket-provider-mock.json");
+  fs.writeFileSync(ticketFile, JSON.stringify(tickets, null, 2));
+
+  const gitFile = (state: ShowcaseState) =>
+    path.join(tempDir, `git-provider-mock-${state}.json`);
+  const stateFile = path.join(tempDir, "showcase-state.json");
+  const writeState = (state: ShowcaseState) => {
+    const fixture = JSON.parse(fs.readFileSync(envBefore.git!, "utf8"));
+    if (state === "open") {
+      fixture.openPullRequests = [pullRequest, ...fixture.openPullRequests];
+    } else {
+      const merged = { ...pullRequest };
+      delete merged.jobs;
+      fixture.mergedPullRequestsByBranch.integration = [
+        { ...merged, state: "merged", mergeDate: showcase.mergeDate },
+        ...(fixture.mergedPullRequestsByBranch.integration || []),
+      ];
+      fixture.branchJobs.integration =
+        showcase.deploymentJobs[state === "deploying" ? "running" : "success"];
+    }
+    fs.writeFileSync(gitFile(state), JSON.stringify(fixture, null, 2));
+    // What the mocked CLI answers for the Pull Request: its comments, and the
+    // status of its actions in integration once they ran there
+    const deployed = state === "deployed";
+    fs.writeFileSync(
+      stateFile,
+      JSON.stringify(
+        {
+          markedDoneNote: showcase.markedDoneNote,
+          workflows: {
+            [prKey]: [
+              showcase.workflows.validation,
+              showcase.workflows.megalinter,
+              ...(deployed ? [showcase.workflows.deployment] : []),
+            ],
+          },
+          actionStatuses: {
+            [prKey]: deployed
+              ? showcase.actionStatuses.map((entry: any) => ({
+                  orgBranch: "integration",
+                  date: showcase.workflows.deployment.date,
+                  jobUrl: showcase.workflows.deployment.jobUrl,
+                  movedTo: null,
+                  blockedBy: null,
+                  stoppedActions: [],
+                  ...entry,
+                }))
+              : [],
+          },
+        },
+        null,
+        2,
+      ),
+    );
+  };
+
+  return {
+    cards: showcase.cards,
+    stillsDir: path.join(SHOWCASE_DIR, "github"),
+    setState: async (state: ShowcaseState) => {
+      writeState(state);
+      process.env.SFDX_HARDIS_MOCK_GIT_PROVIDER_FILE = gitFile(state);
+      process.env.SFDX_HARDIS_MOCK_TICKET_PROVIDER_FILE = ticketFile;
+      process.env.SF_MOCK_SHOWCASE_FILE = stateFile;
+      await resetProviders();
+    },
+    restore: async () => {
+      for (const [key, value] of [
+        ["SFDX_HARDIS_MOCK_GIT_PROVIDER_FILE", envBefore.git],
+        ["SFDX_HARDIS_MOCK_TICKET_PROVIDER_FILE", envBefore.ticket],
+        ["SF_MOCK_SHOWCASE_FILE", envBefore.showcase],
+      ] as const) {
+        if (value === undefined) {
+          delete process.env[key];
+        } else {
+          process.env[key] = value;
+        }
+      }
+      fs.rmSync(actionsFile, { force: true });
+      fs.rmSync(tempDir, { recursive: true, force: true });
+      await resetProviders();
+    },
+  };
 }
 
 function trackAskedPrompts(): (promptName: string) => boolean {
@@ -3049,37 +3349,186 @@ suite("Documentation screenshots", function () {
     });
   });
 
+  // docs/assets/images/sfdx-hardis-pipeline-view.gif, the showcase of the
+  // documentation home pages: one Pull Request with pre-deployment and
+  // post-deployment actions, from the diagram to merged, deployed, and its last
+  // manual action marked as done. See prepareShowcase() for its fixtures, and
+  // scripts/capture-github-merge.js for the GitHub stills shown at the merge.
+  //
+  // Click points are pixels of a capture: after a change of the Pull Request
+  // view, look at the frames around each click before trusting a green run.
   test("recording: devops pipeline", async function () {
     if (!shouldTake("rec-pipeline")) {
       this.skip();
     }
-    await shootPanel(panelManager, {
-      name: "pipeline-for-recording",
-      force: true,
-      command: "vscode-sfdx-hardis.showPipeline",
-      lwcId: "s-pipeline",
-      ready: pipelineFullyLoaded,
-      settleMs: 5000,
-    });
-    // 10 fps: the running edges of the diagram move their dashes 45px/s over
-    // a 14px dash period; sampled at 5 fps the dashes would appear to flow
-    // backward in the GIF
-    await record(
-      "devops-pipeline",
-      16,
-      async () => {
-        await sleep(2000);
-        await click(910, 733); // "Open Pull Requests" tab
-        await sleep(3000);
-        await click(618, 733); // "Project Contribution Workflow" tab
-        await sleep(2500);
-        for (let i = 0; i < 3; i++) {
-          await click(1170, 600, { scroll: -2 });
-        }
-        await sleep(1500);
-      },
-      10,
-    );
+    const showcase = await prepareShowcase();
+    const openPipeline = () =>
+      shootPanel(panelManager, {
+        name: "pipeline-for-recording",
+        force: true,
+        command: "vscode-sfdx-hardis.showPipeline",
+        lwcId: "s-pipeline",
+        ready: pipelineFullyLoaded,
+        settleMs: 9000,
+      });
+    const TAB_Y = 312;
+    const TABS = {
+      tickets: 725,
+      actions: 910,
+      validation: 1105,
+      codeQuality: 1260,
+      deployment: 1420,
+    };
+    const CONTENT = { x: 1160, y: 620 }; // middle of a tab, to scroll it
+    try {
+      await showcase.setState("open");
+      await openPipeline();
+      // 10 fps: the running edges of the diagram move their dashes 45px/s over
+      // a 14px dash period; sampled at 5 fps the dashes would appear to flow
+      // backward in the GIF
+      await record(
+        "devops-pipeline",
+        300,
+        async () => {
+          // A click waits 0.9 s for the panel before going on: each pause below
+          // is what is added to it. A caption stays about three seconds, the
+          // time to read it and to look at what it frames. The first seconds
+          // are the opening, laid over the diagram and its running links
+          // (cards.intro of showcase.json).
+          await sleep(3800);
+          caption(
+            "Open any Pull Request from the pipeline",
+            [495, 422, 290, 72],
+          );
+          await sleep(3000);
+          caption(
+            "Where it stands in the pipeline",
+            [501, 228, 1334, 48],
+            "above",
+          );
+          await click(603, 457); // feature branch of Pull Request #130
+          await sleep(2300);
+          caption("Its tickets", [505, 350, 1326, 56]);
+          await click(TABS.tickets, TAB_Y);
+          await sleep(1700);
+          caption(
+            "Deployment actions: manual steps, CLI commands, Apex batches, community publishing...",
+            [505, 407, 1326, 386],
+          );
+          await click(TABS.actions, TAB_Y);
+          await sleep(4200);
+          caption(
+            "Manual steps come with their instructions",
+            [688, 403, 941, 250],
+          );
+          await click(672, 430); // "Activate Agentforce in Setup"
+          await sleep(3000);
+          caption("");
+          await click(SHOWCASE_ACTION_CLOSE.x, SHOWCASE_ACTION_CLOSE.y);
+          caption(
+            "Deployment simulated before the merge",
+            [505, 352, 1306, 76],
+            "below",
+            "end",
+          );
+          await click(TABS.validation, TAB_Y);
+          await sleep(2200);
+          caption("");
+          await click(CONTENT.x, CONTENT.y, { scroll: -4 });
+          caption(
+            "Every action is checked too",
+            [515, 380, 1250, 360],
+            "below",
+            "end",
+          );
+          await sleep(3000);
+          caption("");
+          // The tabs scroll with what they show: back to the top to reach them
+          await click(CONTENT.x, CONTENT.y, { scroll: 8 });
+          caption("Code quality checked by MegaLinter", [505, 352, 1326, 420]);
+          await click(TABS.codeQuality, TAB_Y);
+          await sleep(2400);
+
+          // Merged on GitHub: the stills take the place of the panel loading
+          // the merged Pull Request and its running deployment. They bring
+          // their own captions.
+          await cut(async () => {
+            await showcase.setState("deploying");
+            await openPipeline();
+          }, showcase.stillsDir);
+          const deployment: [number, number, number, number] = [
+            875, 428, 960, 80,
+          ];
+          caption("Deployed by your own CI/CD pipeline", deployment);
+          await sleep(4000);
+          await cut(async () => {
+            await showcase.setState("deployed");
+            await openPipeline();
+          });
+          caption("Deployment successful", deployment);
+          await sleep(2800);
+
+          caption(
+            "Every branch lists what it received",
+            [505, 330, 1326, 82],
+            "below",
+            "end",
+          );
+          await click(852, 403); // integration branch
+          await sleep(2300);
+          caption("");
+          await click(SHOWCASE_MERGED_ROW.x, SHOWCASE_MERGED_ROW.y);
+          await sleep(200);
+          const offset = SHOWCASE_FROM_WINDOW_OFFSET;
+          const tabY = TAB_Y + offset;
+          caption(
+            "What was deployed",
+            [505, 352 + offset, 1306, 76],
+            "below",
+            "end",
+          );
+          await click(TABS.deployment, tabY);
+          await sleep(2000);
+          caption("");
+          await click(CONTENT.x, CONTENT.y, { scroll: -4 });
+          caption("The result of every action", [515, 580, 1210, 160], "above");
+          await sleep(3000);
+          caption("");
+          await click(CONTENT.x, CONTENT.y, { scroll: 8 });
+          // Rows of the actions list: 77 pixels each, the first one at 407
+          const row = (index: number): number => 407 + offset + 77 * index;
+          caption(
+            "Automated actions ran with the deployment",
+            [505, row(1), 1306, 231],
+            "above",
+            "end",
+          );
+          await click(TABS.actions, tabY);
+          await sleep(2600);
+          const lastAction: [number, number, number, number] = [
+            505,
+            row(4),
+            1306,
+            78,
+          ];
+          caption("One manual step left: mark it as done", lastAction);
+          await sleep(3000);
+          await click(1658, 753 + offset); // "Mark as done in integration"
+          await sleep(1300);
+          caption("Done, and tracked for everyone", lastAction);
+          await sleep(3400);
+        },
+        10,
+        {
+          scripted: true,
+          untilScenarioEnds: true,
+          rawFrames: true,
+          cards: showcase.cards,
+        },
+      );
+    } finally {
+      await showcase.restore();
+    }
   });
 
   test("recording: metadata retriever", async function () {

@@ -8,6 +8,7 @@ dependencies tree, the activity bar icon) or with arrow annotations.
 
 Usage:
     python scripts/build-doc-images.py [--docs-images <path>] [--dry-run]
+    python scripts/build-doc-images.py --gif sfdx-hardis-pipeline-view.gif
 
 Default target: ../sfdx-hardis/docs/assets/images (the sibling repository that
 hosts every image of both documentations).
@@ -21,7 +22,7 @@ import os
 import sys
 
 try:
-    from PIL import Image, ImageDraw, ImageFont, ImageStat
+    from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageStat
 except ImportError:  # pragma: no cover
     sys.exit("Pillow is required: pip install pillow")
 
@@ -363,8 +364,13 @@ def crop_row(image, index, left=72, padding=14):
     return band.crop((0, 0, right, band.height))
 
 
-def font(size):
-    for name in ("segoeuib.ttf", "arialbd.ttf", "DejaVuSans-Bold.ttf"):
+def font(size, bold=True):
+    names = (
+        ("segoeuib.ttf", "arialbd.ttf", "DejaVuSans-Bold.ttf")
+        if bold
+        else ("segoeui.ttf", "arial.ttf", "DejaVuSans.ttf")
+    )
+    for name in names:
         try:
             return ImageFont.truetype(name, size)
         except OSError:
@@ -437,7 +443,488 @@ def build_dependencies_home_link(welcome, target, dry_run):
     save(image, target, dry_run)
 
 
-def build_gif(recording, target, dry_run):
+# --- Scripted recordings ------------------------------------------------------
+# A recording whose recording.json carries a timeline (record() of the harness,
+# with caption(), cut() and its clicks) is assembled from it: a bubble next to
+# what each caption is about, with a frame around it, a drawn pointer that goes
+# to each click, the hidden ranges cut out, stills shown in their place, an
+# opening laid over the first seconds and a card at the end.
+# Colors of the Cloudity banner
+CLOUDITY_BLUE = (0, 85, 255)
+CLOUDITY_NAVY = (0, 0, 60)
+CAPTION_GAP = 14
+# Shapes are drawn three times larger then reduced: Pillow does not smooth the
+# edge of a rounded rectangle or of a polygon by itself
+SMOOTH = 3
+CARD_HEADING = (3, 45, 96)
+CARD_TEXT = (51, 51, 51)
+CARD_ACCENT = (1, 118, 211)
+POINTER_TRAVEL_MS = 700
+POINTER_RIPPLE_MS = 450
+POINTER_SCALE = 2.1
+# The arrow of a mouse pointer, tip at (0, 0)
+POINTER_SHAPE = [
+    (0, 0),
+    (0, 16),
+    (4, 12.4),
+    (6.9, 19),
+    (9.4, 17.9),
+    (6.6, 11.5),
+    (11.6, 11.5),
+]
+SCRIPTED_STEP_MS = 100
+SCRIPTED_END_HOLD_MS = 2600
+OVERLAYS = {}
+
+
+def caption_font(size):
+    for name in ("seguisb.ttf", "segoeuib.ttf", "arialbd.ttf", "DejaVuSans-Bold.ttf"):
+        try:
+            return ImageFont.truetype(name, size)
+        except OSError:
+            continue
+    return ImageFont.load_default()
+
+
+def soft_shadow(size, box, radius, blur, alpha):
+    """A blurred dark shape, to lay under a label or a panel."""
+    layer = Image.new("RGBA", size, (0, 0, 0, 0))
+    ImageDraw.Draw(layer).rounded_rectangle(box, radius, fill=CLOUDITY_NAVY + (alpha,))
+    return layer.filter(ImageFilter.GaussianBlur(blur))
+
+
+def pointer_sprite():
+    """The pointer, smoothed, with the offset of its tip in the image."""
+    if "pointer" not in OVERLAYS:
+        margin = 8
+        scale = POINTER_SCALE * SMOOTH
+        size = (int(12 * scale) + 2 * margin * SMOOTH, int(20 * scale) + 2 * margin * SMOOTH)
+        shape = [(margin * SMOOTH + x * scale, margin * SMOOTH + y * scale) for x, y in POINTER_SHAPE]
+        shadow = Image.new("RGBA", size, (0, 0, 0, 0))
+        ImageDraw.Draw(shadow).polygon(
+            [(x + 2 * SMOOTH, y + 3 * SMOOTH) for x, y in shape], fill=(0, 0, 0, 110)
+        )
+        sprite = shadow.filter(ImageFilter.GaussianBlur(2 * SMOOTH))
+        draw = ImageDraw.Draw(sprite)
+        draw.polygon(shape, fill=WHITE + (255,))
+        draw.line(shape + [shape[0]], fill=CLOUDITY_NAVY + (255,), width=int(1.6 * SMOOTH), joint="curve")
+        OVERLAYS["pointer"] = (
+            sprite.resize((size[0] // SMOOTH, size[1] // SMOOTH), Image.LANCZOS),
+            margin,
+        )
+    return OVERLAYS["pointer"]
+
+
+def ripple_sprite(step):
+    """The ring of a click, at one of its eight sizes."""
+    key = ("ripple", step)
+    if key not in OVERLAYS:
+        progress = step / 8.0
+        radius = 12 + 26 * progress
+        half = 44
+        size = (2 * half * SMOOTH, 2 * half * SMOOTH)
+        sprite = Image.new("RGBA", size, (0, 0, 0, 0))
+        draw = ImageDraw.Draw(sprite)
+        center = half * SMOOTH
+        alpha = int(255 * (1 - 0.6 * progress))
+        for color, width, grow in ((WHITE, 7, 0), (CLOUDITY_BLUE, 4, 0)):
+            r = (radius + grow) * SMOOTH
+            draw.ellipse(
+                (center - r, center - r, center + r, center + r),
+                outline=color + (alpha,),
+                width=width * SMOOTH,
+            )
+        OVERLAYS[key] = (sprite.resize((2 * half, 2 * half), Image.LANCZOS), half)
+    return OVERLAYS[key]
+
+
+def draw_pointer(image, position, ripple):
+    """Draws the pointer at `position`, and the ring of a click when `ripple` (0..1) is set."""
+    x, y = int(round(position[0])), int(round(position[1]))
+    if ripple is not None:
+        ring, half = ripple_sprite(min(8, int(ripple * 8)))
+        image.paste(ring, (x - half, y - half), ring)
+    sprite, margin = pointer_sprite()
+    image.paste(sprite, (x - margin, y - margin), sprite)
+
+
+def caption_overlay(size, caption):
+    """The label of a caption, the frame around what it is about, and the rest dimmed.
+
+    `caption` holds its text, the box of the part of the frame it is about
+    (x, y, width, height), the side of the box the label goes on and where it
+    sits along that side. Without a
+    box, the label sits at the bottom of the frame and nothing is dimmed.
+    """
+    big_size = (size[0] * SMOOTH, size[1] * SMOOTH)
+    big = Image.new("RGBA", big_size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(big)
+    text = caption["text"]
+    label_font = caption_font(28 * SMOOTH)
+    text_box = draw.textbbox((0, 0), text, font=label_font)
+    width = text_box[2] - text_box[0] + 56 * SMOOTH
+    height = 58 * SMOOTH
+    box = caption.get("box")
+    side = caption.get("side", "below")
+    align = caption.get("align", "center")
+    gap = CAPTION_GAP * SMOOTH
+    if box:
+        left, top, box_width, box_height = [value * SMOOTH for value in box]
+        right, bottom = left + box_width, top + box_height
+        # Everything but the box is dimmed, so the eye goes to it
+        draw.rectangle((0, 0) + big_size, fill=CLOUDITY_NAVY + (58,))
+        draw.rounded_rectangle((left, top, right, bottom), 12 * SMOOTH, fill=(0, 0, 0, 0))
+        draw.rounded_rectangle(
+            (left - 2 * SMOOTH, top - 2 * SMOOTH, right + 2 * SMOOTH, bottom + 2 * SMOOTH),
+            14 * SMOOTH,
+            outline=WHITE + (255,),
+            width=6 * SMOOTH,
+        )
+        draw.rounded_rectangle(
+            (left, top, right, bottom), 12 * SMOOTH, outline=CLOUDITY_BLUE + (255,), width=4 * SMOOTH
+        )
+        center_x, center_y = (left + right) / 2, (top + bottom) / 2
+        # Along the side: at its start, its middle or its end
+        along_x = {"start": left, "end": right - width}.get(align, center_x - width / 2)
+        if side == "above":
+            x, y = along_x, top - gap - height
+        elif side == "right":
+            x, y = right + gap, center_y - height / 2
+        elif side == "left":
+            x, y = left - gap - width, center_y - height / 2
+        else:
+            x, y = along_x, bottom + gap
+    else:
+        x, y = (big_size[0] - width) / 2, big_size[1] - height - 64 * SMOOTH
+    edge = 16 * SMOOTH
+    x = min(max(x, edge), big_size[0] - width - edge)
+    y = min(max(y, edge), big_size[1] - height - edge)
+    pill = (x, y, x + width, y + height)
+    big.alpha_composite(
+        soft_shadow(
+            big_size,
+            (x, y + 7 * SMOOTH, x + width, y + height + 7 * SMOOTH),
+            height / 2,
+            9 * SMOOTH,
+            150,
+        )
+    )
+    draw = ImageDraw.Draw(big)
+    draw.rounded_rectangle(pill, height / 2, fill=CLOUDITY_BLUE + (255,), outline=WHITE + (255,), width=3 * SMOOTH)
+    draw.text(
+        (x + 28 * SMOOTH - text_box[0], y + (height - (text_box[3] + text_box[1])) / 2),
+        text,
+        font=label_font,
+        fill=WHITE + (255,),
+    )
+    return big.resize(size, Image.LANCZOS)
+
+
+def draw_bubble(image, caption):
+    """Draws a caption over a frame. See caption_overlay()."""
+    if not caption.get("text"):
+        return
+    key = ("caption", json.dumps(caption, sort_keys=True))
+    if key not in OVERLAYS:
+        # One at a time: an overlay has the size of a frame
+        for other in [name for name in OVERLAYS if name[0] == "caption"]:
+            del OVERLAYS[other]
+        OVERLAYS[key] = caption_overlay(image.size, caption)
+    image.paste(OVERLAYS[key], (0, 0), OVERLAYS[key])
+
+
+def draw_opening(image, card, docs_images):
+    """Lays the opening over the lower part of a frame: the banner, a heading and a line."""
+    if "opening" not in OVERLAYS:
+        size = image.size
+        panel_height = 322
+        top = size[1] - panel_height - 22
+        big_size = (size[0] * SMOOTH, size[1] * SMOOTH)
+        panel_box = tuple(
+            value * SMOOTH for value in (34, top, size[0] - 34, size[1] - 22)
+        )
+        big = soft_shadow(
+            big_size,
+            (panel_box[0], panel_box[1] + 8 * SMOOTH, panel_box[2], panel_box[3] + 8 * SMOOTH),
+            24 * SMOOTH,
+            12 * SMOOTH,
+            160,
+        )
+        ImageDraw.Draw(big).rounded_rectangle(
+            panel_box, 24 * SMOOTH, fill=WHITE + (255,), outline=CLOUDITY_BLUE + (255,), width=4 * SMOOTH
+        )
+        panel = big.resize(size, Image.LANCZOS)
+        draw = ImageDraw.Draw(panel)
+        y = top + 24
+        banner_file = os.path.join(docs_images, "sfdx-hardis-banner.png")
+        if os.path.exists(banner_file):
+            banner = Image.open(banner_file).convert("RGB")
+            banner_width = 700
+            banner = banner.resize(
+                (banner_width, int(banner.height * banner_width / banner.width)), Image.LANCZOS
+            )
+            panel.paste(banner, ((size[0] - banner_width) // 2, y))
+            y += banner.height + 14
+        for text, text_font, fill in (
+            (card.get("heading", ""), font(46), CLOUDITY_NAVY),
+            (" ".join(card.get("lines", [])), font(30, bold=False), CARD_TEXT),
+        ):
+            text_box = draw.textbbox((0, 0), text, font=text_font)
+            draw.text(((size[0] - (text_box[2] - text_box[0])) / 2, y), text, font=text_font, fill=fill)
+            y += text_box[3] + 14
+        OVERLAYS["opening"] = panel
+    image.paste(OVERLAYS["opening"], (0, 0), OVERLAYS["opening"])
+
+
+def build_card(size, card, docs_images):
+    """The card that ends a scripted recording: the banner, a heading, a few lines."""
+    image = Image.new("RGB", size, WHITE)
+    draw = ImageDraw.Draw(image)
+    y = 60
+    banner_file = os.path.join(docs_images, "sfdx-hardis-banner.png")
+    if os.path.exists(banner_file):
+        banner = Image.open(banner_file).convert("RGB")
+        width = 1150
+        banner = banner.resize(
+            (width, int(banner.height * width / banner.width)), Image.LANCZOS
+        )
+        image.paste(banner, ((size[0] - width) // 2, y))
+        y += banner.height + 50
+
+    def centered(text, text_font, fill, top):
+        box = draw.textbbox((0, 0), text, font=text_font)
+        draw.text(((size[0] - (box[2] - box[0])) / 2, top), text, font=text_font, fill=fill)
+
+    centered(card.get("heading", ""), font(52), CLOUDITY_NAVY, y)
+    y += 98
+    lines = card.get("lines", [])
+    line_font = font(34, bold=False)
+    if len(lines) == 1:
+        centered(lines[0], line_font, CARD_TEXT, y)
+        y += 70
+    else:
+        widest = max(draw.textbbox((0, 0), line, font=line_font)[2] for line in lines)
+        left = (size[0] - widest) // 2 + 24
+        for line in lines:
+            draw.ellipse((left - 44, y + 14, left - 24, y + 34), fill=CLOUDITY_BLUE)
+            draw.text((left, y), line, font=line_font, fill=CARD_TEXT)
+            y += 60
+    if card.get("footer"):
+        centered(card["footer"], font(38), CLOUDITY_BLUE, y + 14)
+    logo_file = os.path.join(docs_images, "cloudity-logo-text.png")
+    if os.path.exists(logo_file):
+        logo = Image.open(logo_file).convert("RGBA")
+        height = 84
+        logo = logo.resize((int(logo.width * height / logo.height), height), Image.LANCZOS)
+        image.paste(logo, ((size[0] - logo.width) // 2, size[1] - height - 30), logo)
+    return image
+
+
+def ease(value):
+    value = min(1.0, max(0.0, value))
+    return value * value * (3 - 2 * value)
+
+
+def build_scripted_gif(frames_dir, meta, target, dry_run, docs_images):
+    crop = meta.get("crop")
+    events = sorted(meta["events"], key=lambda event: event["t"])
+    cuts = [event for event in events if event["type"] == "cut"]
+
+    def load_frame(path):
+        image = Image.open(path).convert("RGB")
+        if crop:
+            image = image.crop((crop["left"], crop["top"], image.width, image.height))
+        return image
+
+    recorded = [
+        frame
+        for frame in meta["frames"]
+        if not any(cut["t"] <= frame["t"] < cut.get("until", cut["t"]) for cut in cuts)
+    ]
+    first = load_frame(os.path.join(frames_dir, recorded[0]["file"]))
+    if is_blank(first):
+        sys.exit(
+            f"{recorded[0]['file']} is blank: the session was probably locked while "
+            "recording. Unlock it and run `yarn screenshots` again."
+        )
+    width, frame_height = first.size
+    size = (width, frame_height)
+
+    # Output time of a recorded time: what a cut hides is removed, the stills it
+    # shows instead are added
+    shifts = []  # (recorded time the shift applies from, shift)
+    stills = []  # (output start, duration, path, click or None)
+    captions = []  # (output time, caption)
+    shift = 0
+    for cut in cuts:
+        start = cut["t"] - shift
+        shown = 0
+        if cut.get("stills"):
+            folder = os.path.join(frames_dir, cut["stills"])
+            with open(os.path.join(folder, "timeline.json"), encoding="utf8") as stream:
+                for still in json.load(stream)["stills"]:
+                    stills.append(
+                        (start + shown, still["ms"], os.path.join(folder, still["file"]), still.get("click"))
+                    )
+                    captions.append((start + shown, still.get("caption") or {}))
+                    shown += still["ms"]
+        shift += cut.get("until", cut["t"]) - cut["t"] - shown
+        shifts.append((cut.get("until", cut["t"]), shift))
+
+    def out_time(recorded_time):
+        applied = 0
+        for from_time, value in shifts:
+            if recorded_time >= from_time:
+                applied = value
+        return recorded_time - applied
+
+    hidden = lambda event: any(
+        cut["t"] < event["t"] < cut.get("until", cut["t"]) for cut in cuts
+    )
+    captions += [
+        (out_time(event["t"]), event)
+        for event in events
+        if event["type"] == "caption" and not hidden(event)
+    ]
+    captions.sort(key=lambda item: item[0])
+    cards = meta.get("cards") or {}
+    # The opening is laid over the first frames: nothing else is drawn on them
+    opening = cards.get("intro") or {}
+    opening_ms = opening.get("ms", 0)
+    # Where the pointer goes, and when it gets there
+    targets = [
+        (out_time(event["t"]), (event["x"], event["y"]), event["type"] == "click")
+        for event in events
+        if event["type"] in ("click", "scroll") and not hidden(event)
+    ]
+    for start, duration, _path, click in stills:
+        if click:
+            targets.append((start + duration - POINTER_RIPPLE_MS, (click["x"], click["y"]), True))
+    targets.sort(key=lambda item: item[0])
+
+    def caption_at(time):
+        current = {}
+        for at, value in captions:
+            if at <= time:
+                current = value
+        return current
+
+    def pointer_at(time):
+        position = (width * 0.62, frame_height * 0.62)
+        for at, target_position, is_click in targets:
+            if time >= at:
+                position = target_position
+                if is_click and time - at < POINTER_RIPPLE_MS:
+                    return position, (time - at) / POINTER_RIPPLE_MS
+                continue
+            if time >= at - POINTER_TRAVEL_MS:
+                progress = ease((time - (at - POINTER_TRAVEL_MS)) / POINTER_TRAVEL_MS)
+                position = (
+                    position[0] + (target_position[0] - position[0]) * progress,
+                    position[1] + (target_position[1] - position[1]) * progress,
+                )
+            break
+        return position, None
+
+    # The shots, in output order
+    # (output time, image path, whether it is a still: stills are not cropped)
+    shots = [
+        (out_time(frame["t"]), os.path.join(frames_dir, frame["file"]), False)
+        for frame in recorded
+    ]
+    for start, duration, path, _click in stills:
+        # A still is repeated at the frame rate: the pointer moves over it
+        for step in range(0, duration, SCRIPTED_STEP_MS):
+            shots.append((start + step, path, True))
+    shots.sort(key=lambda item: item[0])
+
+    loaded = {}
+
+    def compose(time, path, is_still):
+        if path not in loaded:
+            # One image at a time: consecutive shots of a still share theirs
+            loaded.clear()
+            image = Image.open(path).convert("RGB") if is_still else load_frame(path)
+            loaded[path] = image.crop((0, 0, width, frame_height))
+        canvas = Image.new("RGB", size, WHITE)
+        canvas.paste(loaded[path], (0, 0))
+        if time < opening_ms:
+            draw_opening(canvas, opening, docs_images)
+            return canvas
+        draw_bubble(canvas, caption_at(time))
+        position, ripple = pointer_at(time)
+        draw_pointer(canvas, position, ripple)
+        return canvas
+
+    # One palette for the whole GIF, from frames spread over the recording, the
+    # stills and the cards: the colors of GitHub and of the cards are not in the
+    # first frame
+    samples = [compose(*shots[index]) for index in range(0, len(shots), max(1, len(shots) // 16))]
+    samples += [compose(start, path, True) for start, _duration, path, _click in stills]
+    if cards.get("outro"):
+        samples.append(build_card(size, cards["outro"], docs_images))
+    # Reduced without blending pixels: a blend makes colors no frame has, and the
+    # palette would spend its entries on them
+    tile = (width // 3, size[1] // 3)
+    mosaic = Image.new("RGB", (tile[0], tile[1] * len(samples)))
+    for index, sample in enumerate(samples):
+        mosaic.paste(sample.resize(tile, Image.NEAREST), (0, tile[1] * index))
+    palette = mosaic.quantize(colors=255, method=Image.MEDIANCUT)
+
+    images = []
+    durations = []
+
+    def add(image, duration, dither=Image.NONE):
+        quantized = image.quantize(palette=palette, dither=dither)
+        if images and quantized.tobytes() == images[-1].tobytes():
+            durations[-1] += duration
+        else:
+            images.append(quantized)
+            durations.append(duration)
+
+    for index, (time, path, is_still) in enumerate(shots):
+        last = index + 1 == len(shots)
+        duration = SCRIPTED_END_HOLD_MS if last else shots[index + 1][0] - time
+        if duration <= 0:
+            continue
+        add(compose(time, path, is_still), int(duration))
+    if cards.get("outro"):
+        # Dithered: the banner of a card is a photograph
+        add(
+            build_card(size, cards["outro"], docs_images),
+            cards["outro"].get("ms", 5000),
+            Image.FLOYDSTEINBERG,
+        )
+
+    # A GIF counts in hundredths of a second: what a frame loses to the rounding
+    # is given to the next one, or the whole animation would run short
+    owed = 0
+    for index, duration in enumerate(durations):
+        rounded = max(20, int(round((duration + owed) / 10.0)) * 10)
+        owed += duration - rounded
+        durations[index] = rounded
+
+    print(
+        f"  {'(dry-run) ' if dry_run else ''}{os.path.basename(target)} "
+        f"{size[0]}x{size[1]} {len(images)} frames, {sum(durations) / 1000:.1f}s "
+        f"({len(shots)} shots)"
+    )
+    if dry_run:
+        return True
+    images[0].save(
+        target,
+        "GIF",
+        save_all=True,
+        append_images=images[1:],
+        duration=durations,
+        loop=0,
+        optimize=True,
+    )
+    print(f"    -> {os.path.getsize(target) // 1024} KB")
+    return True
+
+
+def build_gif(recording, target, dry_run, docs_images=DEFAULT_DOCS_IMAGES):
     """Assembles the frames of one recording into an optimized animated GIF.
 
     Consecutive identical frames are merged (their durations add up) and every
@@ -447,6 +934,12 @@ def build_gif(recording, target, dry_run):
     frames_dir = os.path.join(SHOTS_DIR, "recordings", recording)
     if not os.path.isdir(frames_dir):
         return False
+    scripted_file = os.path.join(frames_dir, "recording.json")
+    if os.path.exists(scripted_file):
+        with open(scripted_file, encoding="utf8") as stream:
+            scripted = json.load(stream)
+        if scripted.get("events") and scripted.get("frames"):
+            return build_scripted_gif(frames_dir, scripted, target, dry_run, docs_images)
     frame_files = sorted(
         os.path.join(frames_dir, name)
         for name in os.listdir(frames_dir)
@@ -516,10 +1009,29 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--docs-images", default=DEFAULT_DOCS_IMAGES)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--gif",
+        help="Only assemble this animated GIF (its documentation image name), and nothing else",
+    )
+    parser.add_argument(
+        "--shots-dir",
+        help="Folder of the captures, when they were not taken into doc-screenshots",
+    )
     args = parser.parse_args()
 
     if not os.path.isdir(args.docs_images):
         sys.exit(f"Documentation images folder not found: {args.docs_images}")
+    if args.shots_dir:
+        global SHOTS_DIR
+        SHOTS_DIR = os.path.abspath(args.shots_dir)
+    if args.gif:
+        recording = GIF_RECORDINGS.get(args.gif)
+        if not recording:
+            sys.exit(f"Unknown animated GIF: {args.gif}")
+        target = os.path.join(args.docs_images, args.gif)
+        if not build_gif(recording, target, args.dry_run, args.docs_images):
+            sys.exit(f"Recording not found: recordings/{recording}")
+        return
 
     missing = []
 
@@ -566,7 +1078,8 @@ def main():
 
     print("Animated GIFs:")
     for name, recording in GIF_RECORDINGS.items():
-        if not build_gif(recording, os.path.join(args.docs_images, name), args.dry_run):
+        target = os.path.join(args.docs_images, name)
+        if not build_gif(recording, target, args.dry_run, args.docs_images):
             missing.append(f"recordings/{recording}")
 
     print("Annotated screenshots:")

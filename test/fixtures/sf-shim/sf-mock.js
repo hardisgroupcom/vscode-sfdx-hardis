@@ -676,12 +676,47 @@ async function main() {
   // Status of the deployment actions per org branch, for the Deployment Actions
   // tab: the action recovery variant serves its statuses, any other run answers
   // none, so the status column stays hidden and the base images do not move
+  // Mark as done of the showcase recording: the status of the action is written in the state
+  // file, and answered as sfdx-hardis answers it, with the statuses of the Pull Request
+  if (
+    first === "hardis:project:action:set-status" &&
+    DOCS_PROFILE &&
+    args.includes("--json") &&
+    readShowcaseState()
+  ) {
+    const showcase = readShowcaseState();
+    const prId = args[args.indexOf("--pr") + 1] || "";
+    const actionId = (args[args.indexOf("--action-id") + 1] || "").replace(
+      /"/g,
+      "",
+    );
+    const orgBranch = args[args.indexOf("--org-branch") + 1] || "";
+    for (const entry of (showcase.actionStatuses || {})[prId] || []) {
+      if (entry.actionId === actionId && entry.orgBranch === orgBranch) {
+        entry.status = "success";
+        entry.note = showcase.markedDoneNote || "";
+      }
+    }
+    fs.writeFileSync(
+      process.env.SF_MOCK_SHOWCASE_FILE,
+      JSON.stringify(showcase, null, 2),
+    );
+    // A real sfdx-hardis takes a few seconds: the button of the panel is seen spinning
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    outputJsonIfRequested(
+      { status: 0, result: { statuses: showcase.actionStatuses } },
+      "",
+    );
+    return 0;
+  }
+
   if (
     first === "hardis:project:action:list" &&
     DOCS_PROFILE &&
     args.includes("--with-status")
   ) {
     const recovery = readActionRecoveryOverlay();
+    const showcase = readShowcaseState();
     // --with-workflows: the validation, MegaLinter and deployment comments of each Pull Request
     // asked for, so the Pull Request view has its three tabs filled
     let workflows;
@@ -693,14 +728,20 @@ async function main() {
         : "--pr-ids";
       const prIds = (args[args.indexOf(idsFlag) + 1] || "").split(",");
       for (const prId of prIds.filter((id) => /^\d+$/.test(id))) {
-        workflows[prId] = mockWorkflowRuns(prId);
+        workflows[prId] =
+          (showcase && (showcase.workflows || {})[prId]) ||
+          mockWorkflowRuns(prId);
       }
     }
     outputJsonIfRequested(
       {
         status: 0,
         result: {
-          statuses: recovery ? recovery.actionStatuses : null,
+          statuses: showcase
+            ? showcase.actionStatuses
+            : recovery
+              ? recovery.actionStatuses
+              : null,
           ...(workflows ? { workflows } : {}),
         },
       },
@@ -1689,6 +1730,23 @@ function deltaPackageXml() {
  */
 function readActionRecoveryOverlay() {
   const file = process.env.SF_MOCK_ACTION_RECOVERY_FILE;
+  if (!file) {
+    return null;
+  }
+  try {
+    return JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * State of the showcase recording of the DevOps Pipeline (SF_MOCK_SHOWCASE_FILE), or null
+ * outside of it: the comments of its Pull Request and the statuses of its deployment actions.
+ * The recording test rewrites the file as the Pull Request is merged, then deployed.
+ */
+function readShowcaseState() {
+  const file = process.env.SF_MOCK_SHOWCASE_FILE;
   if (!file) {
     return null;
   }

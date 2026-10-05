@@ -129,6 +129,21 @@ export class CdpWindow {
   }
 
   /**
+   * Save the whole window as a PNG, as the page gives it: nothing is cropped and the image is
+   * compressed for speed. A capture() decodes, crops and encodes each image, which takes longer
+   * than a frame of a recording lasts: its frames are cropped when the GIF is assembled.
+   */
+  async captureRaw(file: string): Promise<void> {
+    await this.connect();
+    const result = await this.send("Page.captureScreenshot", {
+      format: "png",
+      captureBeyondViewport: false,
+      optimizeForSpeed: true,
+    });
+    fs.writeFileSync(file, Buffer.from(result.data, "base64"));
+  }
+
+  /**
    * Click at a point of a capture (device pixels, `cropTop` pixels cropped out at the top), or
    * turn the wheel there when `scroll` is given (positive scrolls up, in notches, as a mouse does).
    */

@@ -1,0 +1,46 @@
+{
+  "width": 1485,
+  "height": 982,
+  "stills": [
+    {
+      "file": "1-files-changed.png",
+      "ms": 3400,
+      "caption": {
+        "text": "Reviewed in your git provider, as any Pull Request"
+      }
+    },
+    {
+      "file": "2-merge-box.png",
+      "ms": 3200,
+      "click": {
+        "x": 222,
+        "y": 491
+      },
+      "caption": {
+        "text": "Merge when the checks are green",
+        "box": [124, 464, 198, 55],
+        "side": "below"
+      }
+    },
+    {
+      "file": "3-confirm-merge.png",
+      "ms": 2400,
+      "click": {
+        "x": 207,
+        "y": 492
+      },
+      "caption": {
+        "text": "Confirm the merge",
+        "box": [124, 464, 167, 55],
+        "side": "right"
+      }
+    },
+    {
+      "file": "4-merged.png",
+      "ms": 3200,
+      "caption": {
+        "text": "Merged: your CI/CD pipeline takes over"
+      }
+    }
+  ]
+}
