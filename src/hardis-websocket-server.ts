@@ -730,6 +730,9 @@ export class LocalWebSocketServer {
           placeHolder: stripAnsi(prompt.placeholder || ""),
           ignoreFocusOut: true,
           value: prompt.initial,
+          // A secret (token, password) is masked while it is typed: sfdx-hardis marks its
+          // question as sensitive
+          password: prompt.sensitive === true,
         };
         vscode.window.showInputBox(inputBoxOptions).then((value) => {
           const response: any = {};

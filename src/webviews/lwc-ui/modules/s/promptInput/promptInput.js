@@ -382,6 +382,14 @@ export default class PromptInput extends SharedMixin(LightningElement) {
     return this.currentPrompt && this.currentPrompt.type === "text";
   }
 
+  // A secret (token, password) is typed in a masked field: sfdx-hardis marks its question as
+  // sensitive, and never echoes its answer
+  get textInputType() {
+    return this.currentPrompt && this.currentPrompt.sensitive === true
+      ? "password"
+      : "text";
+  }
+
   get isNumberInput() {
     return this.currentPrompt && this.currentPrompt.type === "number";
   }
