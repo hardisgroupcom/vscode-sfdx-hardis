@@ -41,6 +41,11 @@ newTaskNameRegexExample: "US-014-panels-required"
 genericTicketingProviderRegex: "(US-[0-9]{3})"
 genericTicketingProviderUrlBuilder: "https://sfdx-hardis-training.github.io/BACKLOG/{REF}/"
 genericTicketingProviderDetailsUrlBuilder: "https://sfdx-hardis-training.github.io/BACKLOG/{REF}.json"
+# A step somebody has to do by hand around a deployment is declared as a deployment
+# action of type manual (Lab 2.4), not in a spreadsheet kept somewhere else. With
+# this, Save / Publish sends you to the DevOps Pipeline panel instead of asking
+# for the URL of a manual actions file.
+manualActionsMode: sfdxHardis
 
 # --- Quality --------------------------------------------------------------
 testLevel: RunLocalTests

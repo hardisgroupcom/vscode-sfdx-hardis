@@ -650,6 +650,14 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
     }
     if (data && data.initialSectionSelected) {
       this.initialActiveTableValue = data.initialSectionSelected;
+    } else if (!this.activeTabValue) {
+      // The Custom Functions tab is static markup: it registers before the
+      // config sections arrive, and the tabset would open on it. A panel opened
+      // with no section starts on the first one.
+      const firstSection = (this.configSections || [])[0];
+      if (firstSection) {
+        this.initialActiveTableValue = firstSection.label;
+      }
     }
   }
 

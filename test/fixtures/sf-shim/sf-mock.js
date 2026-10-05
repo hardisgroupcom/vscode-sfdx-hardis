@@ -1650,6 +1650,8 @@ const DOCS_DEV_ORG_USER = DOCS_DEV_ORG.description;
 const DOCS_MANUAL_ACTIONS_URL =
   DOCS_SCENARIO.manualActionsUrl ||
   "https://mycompany.sharepoint.com/sites/crm/ManualActions.xlsx";
+const DOCS_MANUAL_ACTIONS_IN_SFDX_HARDIS =
+  DOCS_SCENARIO.manualActionsMode === "sfdxHardis";
 
 // The delta package.xml the Save / Publish scenario shows, taken from the
 // universe so the components named are the ones the learner just changed
@@ -2269,9 +2271,14 @@ const DOCS_SCENARIOS = {
       "log",
       "When your Pull Request has been merged:\n- DO NOT REUSE THE SAME BRANCH\n- Use New User Story menu (sf hardis:work:new), even if you work in the same sandbox or scratch org \u{1F60A}",
     );
+    // A project that manages its manual actions as deployment actions
+    // (manualActionsMode: sfdxHardis) is sent to the DevOps Pipeline panel, and
+    // gets no button for an external file
     log(
       "warning",
-      `If you have pre-deployment or post-deployment manual actions, record them in ${DOCS_MANUAL_ACTIONS_URL}`,
+      DOCS_MANUAL_ACTIONS_IN_SFDX_HARDIS
+        ? "Open the DevOps Pipeline panel to review and update the manual actions for your pull request."
+        : `If you have pre-deployment or post-deployment manual actions, record them in ${DOCS_MANUAL_ACTIONS_URL}`,
     );
     send({
       event: "reportFile",
@@ -2279,12 +2286,14 @@ const DOCS_SCENARIOS = {
       title: "Create Pull Request",
       type: "actionUrl",
     });
-    send({
-      event: "reportFile",
-      file: DOCS_MANUAL_ACTIONS_URL,
-      title: "Update Manual Actions file",
-      type: "actionUrl",
-    });
+    if (!DOCS_MANUAL_ACTIONS_IN_SFDX_HARDIS) {
+      send({
+        event: "reportFile",
+        file: DOCS_MANUAL_ACTIONS_URL,
+        title: "Update Manual Actions file",
+        type: "actionUrl",
+      });
+    }
     send({
       event: "reportFile",
       file: "vscode-sfdx-hardis.showPipeline",

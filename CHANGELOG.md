@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Pipeline Settings opens on its first tab, Deployment, instead of Custom Functions
+
 ## [8.10.0] 2026-10-04
 
 - DevOps Pipeline
