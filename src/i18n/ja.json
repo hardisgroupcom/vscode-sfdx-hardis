@@ -56,6 +56,7 @@
   "agentforceOption": "Agentforce",
   "ahaAuthInfo": "Aha! には、Aha! の個人設定で作成した API キーが必要です。",
   "ahaHostNotConfigured": "Aha! ホストが設定されていません。パイプライン設定で ahaHost を設定してください。",
+  "ahaHostUnreachable": "Aha! が {{host}} で想定どおりに応答しませんでした。パイプライン設定で ahaHost を確認してから、もう一度お試しください。",
   "aiCreditUsage": "AI クレジット使用状況",
   "aiCreditUsageTooltip": "Agentforce と Data 360 のクレジット消費をエージェントとアクション別に分析します（Data 360 が必要）",
   "aiDocConfigSection": "AI とドキュメントの設定",

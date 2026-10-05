@@ -56,6 +56,7 @@
   "agentforceOption": "Agentforce",
   "ahaAuthInfo": "Aha! vereist een API-sleutel, aangemaakt in je persoonlijke instellingen in Aha!.",
   "ahaHostNotConfigured": "De Aha!-host is niet geconfigureerd. Stel ahaHost in via de Pipeline-instellingen.",
+  "ahaHostUnreachable": "Aha! antwoordde niet zoals verwacht op {{host}}. Controleer ahaHost in de Pipeline-instellingen en probeer het opnieuw.",
   "aiCreditUsage": "AI-creditverbruik",
   "aiCreditUsageTooltip": "Splits het Agentforce- en Data 360-creditverbruik uit per agent en actie (vereist Data 360)",
   "aiDocConfigSection": "AI & Documentatieconfiguratie",

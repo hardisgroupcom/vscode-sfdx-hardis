@@ -56,6 +56,7 @@
   "agentforceOption": "Agentforce",
   "ahaAuthInfo": "Aha! richiede una chiave API, creata dalle tue impostazioni personali in Aha!.",
   "ahaHostNotConfigured": "L'host Aha! non è configurato. Imposta ahaHost nelle Impostazioni della pipeline.",
+  "ahaHostUnreachable": "Aha! non ha risposto come previsto su {{host}}. Controlla ahaHost nelle Impostazioni della pipeline, poi riprova.",
   "aiCreditUsage": "Consumo di crediti IA",
   "aiCreditUsageTooltip": "Analizza il consumo di crediti Agentforce e Data 360 per agente e azione (richiede Data 360)",
   "aiDocConfigSection": "Configurazione AI e documentazione",
