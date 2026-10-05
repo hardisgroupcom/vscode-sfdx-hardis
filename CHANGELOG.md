@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- A token or a password asked by a command is hidden while you type it
 - Pipeline Settings opens on its first tab, Deployment, instead of Custom Functions
 
 ## [8.10.0] 2026-10-04

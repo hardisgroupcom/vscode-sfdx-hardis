@@ -28,7 +28,7 @@
             <template if:true={isTextInput}>
                 <div class="slds-m-bottom_small">
                     <lightning-input
-                        type="text"
+                        type={textInputType}
                         label={i18n.yourInput}
                         placeholder={promptPlaceholder}
                         value={inputValue}
