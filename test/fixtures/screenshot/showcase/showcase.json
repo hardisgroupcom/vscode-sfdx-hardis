@@ -1,0 +1,168 @@
+{
+  "_comment": "Showcase recording of the DevOps Pipeline (sfdx-hardis-pipeline-view.gif): one Pull Request of the MyCompany-CRM universe, from review to deployed, with its deployment actions. The recording test adds it to the base fixtures in temporary files, in three states (open, merged with its deployment running, deployed). The GitHub stills of the github folder are taken by scripts/capture-github-merge.js.",
+  "pullRequest": {
+    "id": 130,
+    "number": 130,
+    "title": "CRM-1070 Agentforce case triage agent",
+    "description": "A Case Triage agent reads every new case, finds its category and sends it to the right queue.\n\n- New agent `Case_Triage_Agent` and its permission set\n- `CaseTriageService` can be called by the agent\n\nAgentforce must be activated before the deployment, and the agent after it: both are declared as deployment actions.",
+    "sourceBranch": "feature/CRM-1070-agentforce-case-triage",
+    "targetBranch": "integration",
+    "author": {
+      "name": "Nicolas Vuillamy",
+      "username": "nvuillam"
+    },
+    "authorLabel": "Nicolas Vuillamy",
+    "state": "open",
+    "createdAt": "2026-08-19T13:05:00.000Z",
+    "updatedAt": "2026-08-20T09:02:00.000Z",
+    "webUrl": "https://github.com/mycompany/salesforce-crm/pull/130",
+    "jobs": [
+      {
+        "name": "Check deployment to integration",
+        "status": "success",
+        "webUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/1131",
+        "updatedAt": "2026-08-20T09:02:00.000Z"
+      },
+      {
+        "name": "MegaLinter",
+        "status": "success",
+        "webUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/1130",
+        "updatedAt": "2026-08-20T08:58:00.000Z"
+      }
+    ],
+    "jobsStatus": "success",
+    "relatedTickets": [
+      {
+        "provider": "JIRA",
+        "id": "CRM-1070",
+        "url": "https://mycompany.atlassian.net/browse/CRM-1070",
+        "subject": "Agentforce case triage agent",
+        "status": "In Review",
+        "statusLabel": "In Review"
+      }
+    ]
+  },
+  "mergeDate": "2026-08-20T09:20:00.000Z",
+  "ticket": {
+    "id": "CRM-1070",
+    "subject": "Agentforce case triage agent",
+    "status": "In Review",
+    "statusLabel": "In Review",
+    "author": "Nicolas Vuillamy",
+    "authorLabel": "Nicolas Vuillamy"
+  },
+  "deploymentJobs": {
+    "running": {
+      "jobs": [
+        {
+          "name": "Deploy to integration",
+          "status": "running",
+          "webUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/1132",
+          "updatedAt": "2026-08-20T09:21:00.000Z"
+        }
+      ],
+      "jobsStatus": "running"
+    },
+    "success": {
+      "jobs": [
+        {
+          "name": "Deploy to integration",
+          "status": "success",
+          "webUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/1132",
+          "updatedAt": "2026-08-20T09:27:00.000Z"
+        }
+      ],
+      "jobsStatus": "success"
+    }
+  },
+  "workflows": {
+    "validation": {
+      "kind": "validation",
+      "status": "valid",
+      "targetBranch": "integration",
+      "jobUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/1131",
+      "commentUrl": "https://github.com/mycompany/salesforce-crm/pull/130#comment-1",
+      "date": "2026-08-20T09:02:00.000Z",
+      "testLevel": "RunSpecifiedTests",
+      "errorCount": 0,
+      "failedTestsCount": 0,
+      "body": "## 🔍 Validation Results (deployment simulation)\n\n✅ Deployment check success\n\nNo error has been found during the deployment\n\n✅ Your code coverage is ok 😊 **93%**, while target is **75%**\n\n| Component | Type | Change |\n| --- | --- | --- |\n| Case_Triage_Agent | Bot | Created |\n| Case_Triage_Agent_User | PermissionSet | Created |\n| CaseTriageService | ApexClass | Updated |\n\n### Pre-deployment Actions Results\n\n#### Manual Actions to perform before proceeding with deployment:\n\n- [ ] Activate Agentforce in Setup ([#130](https://github.com/mycompany/salesforce-crm/pull/130))\n\n*Tick a box once the action has been performed in the org: the next sfdx-hardis job will record it as done.*\n\n---\n\n| <!-- --> | Label | Type | Status | Details |\n|:--------:|-------|------|--------|---------|\n| 👋 | Activate Agentforce in Setup ([#130](https://github.com/mycompany/salesforce-crm/pull/130)) | manual | waiting for manual execution | Instructions in the details section below |\n| ⚪ | Assign the Agentforce license to the agent user ([#130](https://github.com/mycompany/salesforce-crm/pull/130)) | command | skipped | <!-- --> |\n\n*Legend: 👋 waiting for manual execution · ⚪ skipped*\n\n### Post-deployment Actions Results\n\n| <!-- --> | Label | Type | Status | Details |\n|:--------:|-------|------|--------|---------|\n| ⚪ | Run the case triage backfill batch ([#130](https://github.com/mycompany/salesforce-crm/pull/130)) | run-batch | skipped | <!-- --> |\n| ⚪ | Publish the Customer Portal ([#130](https://github.com/mycompany/salesforce-crm/pull/130)) | publish-community | skipped | <!-- --> |\n| ⚪ | Activate the Case Triage agent in Agentforce Builder ([#130](https://github.com/mycompany/salesforce-crm/pull/130)) | manual | skipped | <!-- --> |\n\n*Legend: ⚪ skipped*"
+    },
+    "megalinter": {
+      "kind": "megalinter",
+      "status": "valid",
+      "commentUrl": "https://github.com/mycompany/salesforce-crm/pull/130#comment-2",
+      "date": "2026-08-20T08:58:00.000Z",
+      "body": "## ✅ [MegaLinter](https://megalinter.io/9.0.1) analysis: Success\n\n| Descriptor | Linter | Files | Fixed | Errors | Warnings | Elapsed time |\n| --- | --- | --- | --- | --- | --- | --- |\n| ✅ APEX | [sfdx-scanner-apex](https://megalinter.io/9.0.1/descriptors/salesforce_sfdx_scanner_apex) | 1 | | 0 | 0 | 38.4s |\n| ✅ COPYPASTE | [jscpd](https://megalinter.io/9.0.1/descriptors/copypaste_jscpd) | yes | | no | no | 1.71s |\n| ✅ REPOSITORY | [gitleaks](https://megalinter.io/9.0.1/descriptors/repository_gitleaks) | yes | | no | no | 1.12s |\n| ✅ REPOSITORY | [secretlint](https://megalinter.io/9.0.1/descriptors/repository_secretlint) | yes | | no | no | 2.04s |\n| ✅ XML | [xmllint](https://megalinter.io/9.0.1/descriptors/xml_xmllint) | 2 | | 0 | 0 | 0.42s |"
+    },
+    "deployment": {
+      "kind": "deployment",
+      "status": "valid",
+      "targetBranch": "integration",
+      "jobUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/1132",
+      "commentUrl": "https://github.com/mycompany/salesforce-crm/pull/130#comment-3",
+      "date": "2026-08-20T09:27:00.000Z",
+      "testLevel": "RunSpecifiedTests",
+      "errorCount": 0,
+      "failedTestsCount": 0,
+      "body": "## 🚀 Deployment Results\n\n✅ Deployment success\n\n✅ Your code coverage is ok 😊 **93%**, while target is **75%**\n\n| Component | Type | Change |\n| --- | --- | --- |\n| Case_Triage_Agent | Bot | Created |\n| Case_Triage_Agent_User | PermissionSet | Created |\n| CaseTriageService | ApexClass | Updated |\n\n### Pre-deployment Actions Results\n\n| <!-- --> | Label | Type | Status | Details |\n|:--------:|-------|------|--------|---------|\n| ✅ | Activate Agentforce in Setup ([#130](https://github.com/mycompany/salesforce-crm/pull/130)) | manual | success | See details below |\n| ✅ | Assign the Agentforce license to the agent user ([#130](https://github.com/mycompany/salesforce-crm/pull/130)) | command | success | See details below |\n\n*Legend: ✅ success*\n\n### Post-deployment Actions Results\n\n#### Manual Actions to perform after deployment:\n\n- [ ] Activate the Case Triage agent in Agentforce Builder ([#130](https://github.com/mycompany/salesforce-crm/pull/130))\n\n*Tick a box once the action has been performed in the org: the next sfdx-hardis job will record it as done.*\n\n---\n\n| <!-- --> | Label | Type | Status | Details |\n|:--------:|-------|------|--------|---------|\n| ✅ | Run the case triage backfill batch ([#130](https://github.com/mycompany/salesforce-crm/pull/130)) | run-batch | success | See details below |\n| ✅ | Publish the Customer Portal ([#130](https://github.com/mycompany/salesforce-crm/pull/130)) | publish-community | success | See details below |\n| 👋 | Activate the Case Triage agent in Agentforce Builder ([#130](https://github.com/mycompany/salesforce-crm/pull/130)) | manual | waiting for manual execution | Instructions in the details section below |\n\n*Legend: ✅ success · 👋 waiting for manual execution*"
+    }
+  },
+  "actionStatuses": [
+    {
+      "actionId": "6f0b2b1e-1c9a-4e0d-9d2a-130a00000001",
+      "actionLabel": "Activate Agentforce in Setup",
+      "when": "pre-deploy",
+      "status": "success",
+      "note": "Done by hand by Nicolas Vuillamy"
+    },
+    {
+      "actionId": "6f0b2b1e-1c9a-4e0d-9d2a-130a00000002",
+      "actionLabel": "Assign the Agentforce license to the agent user",
+      "when": "pre-deploy",
+      "status": "success",
+      "note": ""
+    },
+    {
+      "actionId": "6f0b2b1e-1c9a-4e0d-9d2a-130a00000003",
+      "actionLabel": "Run the case triage backfill batch",
+      "when": "post-deploy",
+      "status": "success",
+      "note": ""
+    },
+    {
+      "actionId": "6f0b2b1e-1c9a-4e0d-9d2a-130a00000004",
+      "actionLabel": "Publish the Customer Portal",
+      "when": "post-deploy",
+      "status": "success",
+      "note": ""
+    },
+    {
+      "actionId": "6f0b2b1e-1c9a-4e0d-9d2a-130a00000005",
+      "actionLabel": "Activate the Case Triage agent in Agentforce Builder",
+      "when": "post-deploy",
+      "status": "manual",
+      "note": ""
+    }
+  ],
+  "markedDoneNote": "Done by hand by Nicolas Vuillamy",
+  "cards": {
+    "intro": {
+      "heading": "Salesforce DevOps, free and open source",
+      "lines": ["Follow one Pull Request, from review to done"],
+      "ms": 3600
+    },
+    "outro": {
+      "heading": "Salesforce DevOps, free and open source",
+      "lines": [
+        "No license to pay",
+        "No external server: everything runs in your own git provider and CI/CD",
+        "Compliance-friendly: no third party between you and your orgs",
+        "Free training course: sfdx-hardis-training.github.io",
+        "OnBoarding & Support by Cloudity Professional Services"
+      ],
+      "footer": "sfdx-hardis.cloudity.com",
+      "ms": 11000
+    }
+  }
+}

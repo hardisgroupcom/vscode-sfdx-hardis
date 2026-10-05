@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Pipeline Settings opens on its first tab, Deployment, instead of Custom Functions
+- Documentation: the DevOps Pipeline animation follows one Pull Request and its deployment actions, from review to deployed
 
 ## [8.10.0] 2026-10-04
 

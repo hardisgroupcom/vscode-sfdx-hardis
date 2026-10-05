@@ -1,6 +1,8 @@
 import * as assert from "assert";
 import * as fs from "fs";
 import * as vscode from "vscode";
+import { GitProvider } from "../../utils/gitProviders/gitProvider";
+import { TicketProvider } from "../../utils/ticketProviders/ticketProvider";
 
 /**
  * Shared helpers for the UI integration suites (real Extension Development
@@ -50,6 +52,17 @@ export async function activateExtension(): Promise<any> {
   const api = await extension!.activate();
   assert.ok(api, "activate() must return the test API");
   return api;
+}
+
+/**
+ * Builds the git and ticketing providers again, from the fixtures the
+ * SFDX_HARDIS_MOCK_GIT_PROVIDER_FILE and SFDX_HARDIS_MOCK_TICKET_PROVIDER_FILE
+ * variables name at that moment: how a test serves its own fixtures, or changes
+ * what the providers answer while it runs.
+ */
+export async function resetProviders(): Promise<void> {
+  await GitProvider.getInstance(true);
+  await TicketProvider.getInstance({ reset: true, authenticate: false });
 }
 
 /**

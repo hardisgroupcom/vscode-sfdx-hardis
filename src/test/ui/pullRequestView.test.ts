@@ -1,9 +1,13 @@
 import * as assert from "assert";
 import * as path from "path";
 import * as vscode from "vscode";
-import { activateExtension, recordSentMessages, waitFor } from "./uiTestUtils";
+import {
+  activateExtension,
+  recordSentMessages,
+  resetProviders,
+  waitFor,
+} from "./uiTestUtils";
 import { GitProvider } from "../../utils/gitProviders/gitProvider";
-import { TicketProvider } from "../../utils/ticketProviders/ticketProvider";
 
 /**
  * UI integration tests of the Pull Request view and of the Pull Requests explorer of the DevOps
@@ -33,11 +37,6 @@ suite("Pull Request view UI tests", function () {
     git: process.env.SFDX_HARDIS_MOCK_GIT_PROVIDER_FILE,
     ticket: process.env.SFDX_HARDIS_MOCK_TICKET_PROVIDER_FILE,
   };
-
-  async function resetProviders(): Promise<void> {
-    await GitProvider.getInstance(true);
-    await TicketProvider.getInstance({ reset: true, authenticate: false });
-  }
 
   async function openPipeline(deepLink?: any): Promise<any> {
     await vscode.commands.executeCommand(

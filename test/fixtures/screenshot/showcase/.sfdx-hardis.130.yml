@@ -1,0 +1,48 @@
+commandsPreDeploy:
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-130a00000001
+    label: Activate Agentforce in Setup
+    type: manual
+    when: pre-deploy
+    parameters:
+      instructions: |
+        1. Open **Setup**, type `Einstein Setup` in the Quick Find box, then turn on **Einstein**.
+        2. In the Quick Find box, type `Agentforce Agents`, then turn on **Agentforce**.
+        3. Check: the **New Agent** button is displayed. If it was already the case, there is nothing to do: tick the box anyway.
+    command: ""
+    context: process-deployment-only
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-130a00000002
+    label: Assign the Agentforce license to the agent user
+    type: command
+    when: pre-deploy
+    command: sf org assign permsetlicense --name AgentforceServiceAgentUserPsl --on-behalf-of case.triage.agent@mycompany.com
+    context: process-deployment-only
+commandsPostDeploy:
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-130a00000003
+    label: Run the case triage backfill batch
+    type: run-batch
+    when: post-deploy
+    parameters:
+      className: CaseTriageBackfillBatch
+      runMode: wait
+      waitTimeoutMinutes: 10
+    command: ""
+    context: process-deployment-only
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-130a00000004
+    label: Publish the Customer Portal
+    type: publish-community
+    when: post-deploy
+    parameters:
+      communityName: Customer Portal
+    command: ""
+    context: process-deployment-only
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-130a00000005
+    label: Activate the Case Triage agent in Agentforce Builder
+    type: manual
+    when: post-deploy
+    parameters:
+      instructions: |
+        1. Open **Setup**, type `Agentforce Agents` in the Quick Find box, then open **Case Triage Agent**.
+        2. Click **Open in Builder**, then **Activate**.
+        3. Check: the agent is displayed as **Active**.
+    command: ""
+    context: process-deployment-only

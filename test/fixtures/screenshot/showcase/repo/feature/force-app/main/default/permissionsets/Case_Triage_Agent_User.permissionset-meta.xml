@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <classAccesses>
+        <apexClass>CaseTriageService</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <description>Access the Case Triage agent needs to read and route cases.</description>
+    <hasActivationRequired>false</hasActivationRequired>
+    <label>Case Triage Agent User</label>
+    <objectPermissions>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <object>Case</object>
+    </objectPermissions>
+</PermissionSet>
