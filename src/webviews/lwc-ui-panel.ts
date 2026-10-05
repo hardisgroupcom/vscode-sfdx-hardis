@@ -9,6 +9,7 @@ import { Logger } from "../logger";
 import { getAllTranslations, getCurrentLocale, t } from "../i18n/i18n";
 import { DOCSITE_URL, PANEL_DOC_URLS } from "../constants";
 import type { ExecuteCommandOptions } from "../command-runner";
+import { getInternalCommandFailureReason } from "../utils/internalCommandUtils";
 
 type MessageListener = (messageType: string, data: any) => void;
 type ImagePathMap = Record<string, string[]>;
@@ -616,14 +617,36 @@ export class LwcUiPanel {
     }
     let result: any = null;
     const progressMessage = data.progressMessage || "Running command...";
+    // An internal command is an action somebody just clicked (open an org, set the default
+    // org, refresh a list): it must run again at every click, so the result execCommand keeps
+    // for 20 seconds is never reused here. A second click on Open used to do nothing.
+    const execOptions = { reuseRecentResult: false };
     try {
       if (data.command.includes("--json")) {
-        result = await execSfdxJsonWithProgress(command, {}, progressMessage);
+        result = await execSfdxJsonWithProgress(
+          command,
+          execOptions,
+          progressMessage,
+        );
       } else {
-        result = await execCommandWithProgress(command, {}, progressMessage);
+        result = await execCommandWithProgress(
+          command,
+          execOptions,
+          progressMessage,
+        );
       }
     } catch (error) {
       Logger.log("Error running internal command:\n" + JSON.stringify(error));
+    }
+    // A failure is not thrown, it is a result with a status: say so, or the click looks ignored
+    const failureReason = getInternalCommandFailureReason(result);
+    if (failureReason !== null) {
+      Logger.log(
+        `Internal command failed: ${command}\n${failureReason || JSON.stringify(result)}`,
+      );
+      vscode.window.showErrorMessage(
+        t("internalCommandFailed", { command, message: failureReason }),
+      );
     }
     this.sendMessage({
       type: "commandResult",

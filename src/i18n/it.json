@@ -1473,6 +1473,7 @@
   "instructionsHelp": "Istruzioni per la persona che eseguirà il passaggio, mostrate in markdown nei commenti della Pull Request.<br/>Scrivile come se chi legge non conoscesse affatto Salesforce: il passaggio viene ripetuto in ogni org, a volte mesi dopo, da un'altra persona.<br/>Indica il percorso esatto in Imposta, il nome esatto dell'elemento, il valore da impostare e come verificare che abbia funzionato.",
   "instructionsLabel": "Istruzioni",
   "instructionsPlaceholder": "1. Apri Imposta, digita ... nella Ricerca veloce, apri ...\n2. Fai clic su ..., poi Modifica, imposta ... a ...\n3. Fai clic su Salva\n4. Verifica: ...\nSe era già fatto, spunta comunque la casella",
+  "internalCommandFailed": "Il comando non è riuscito: {{command}}\n{{message}}",
   "invalidColorCode": "Questo non è un codice colore valido! (es: #0335fc)",
   "invalidMetadataType": "Tipo di metadati non valido (lettere, cifre e underscore)",
   "invalidOrgColorUrls": "🦙 Uno o più URL di colore org personalizzati non sono validi. Controlla la configurazione.",
