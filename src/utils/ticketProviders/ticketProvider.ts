@@ -10,6 +10,7 @@ const TICKET_PROVIDER_LABELS: Record<string, string> = {
   JIRA: "Jira",
   AZURE: "Azure Boards",
   SERVICENOW: "ServiceNow",
+  AHA: "Aha!",
   GENERIC: "Ticketing",
 };
 
@@ -65,12 +66,15 @@ export class TicketProvider {
       const { AzureBoardsProvider } = await import("./ticketProviderAzure");
       // eslint-disable-next-line @typescript-eslint/naming-convention
       const { ServiceNowProvider } = await import("./ticketProviderServiceNow");
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      const { AhaProvider } = await import("./ticketProviderAha");
 
       const allTicketProviders = [
         JiraProvider,
         GenericTicketingProvider,
         AzureBoardsProvider,
         ServiceNowProvider,
+        AhaProvider,
       ];
 
       const providerClass = allTicketProviders.find(
@@ -158,7 +162,7 @@ export class TicketProvider {
   }
 
   /**
-   * Brand name displayed in the UI ("Jira", "Azure Boards", "ServiceNow"), where
+   * Brand name displayed in the UI ("Jira", "Azure Boards", "ServiceNow", "Aha!"), where
    * `providerName` is the technical value stored in `ticketingProvider`. Never
    * translated: these are product names.
    */

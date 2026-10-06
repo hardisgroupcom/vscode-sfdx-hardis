@@ -42,3 +42,36 @@ reason = "CVE-2026-71437, prototype pollution reachable from mermaid diagram inp
 id = "GHSA-2v8p-3f2j-5mp7"
 ignoreUntil = 2026-11-16
 reason = "CVE-2026-50159, CSS injection through mermaid diagram input. Accepted risk, NOT claimed unreachable - same input analysis as GHSA-3rrr-jr9j-h3q3: branch names and org aliases are interpolated raw into node labels, and mermaid runs with securityLevel 'loose' (required for the clickable pull request links carried in edge labels). Accepted because the impact is bounded to restyling the local Pipeline webview: CSS cannot execute script, and the panel renders no credentials, tokens or org access data. Fixed only in mermaid 11.16.1, which is excluded by the pipeline cluster layout regression. Re-evaluate when mermaid ships a fix for the 11.16 layout regression."
+
+# simple-git 3.36.0 and @simple-git/argv-parser 1.1.1 - the four advisories below are fixed only in
+# simple-git 4.x (argv-parser 2.x is only pulled by simple-git 4). simple-git 4 strips inherited GIT_* and
+# askpass env vars by default, which changes how this extension authenticates, so the v4 migration is done
+# in its own pull request. Shared input analysis: every advisory needs untrusted input to reach the git
+# arguments, config or environment that simple-git passes to git. This extension builds every git argument
+# list itself (branch names, refs and paths read from the local repository) and never forwards user,
+# workspace or remote text as git options, config keys or env vars.
+
+[[IgnoredVulns]]
+id = "GHSA-858h-whjf-mvg5"
+ignoreUntil = 2026-12-06
+reason = "Added 2026-10-06: CVE-2026-102826, simple-git 3.36.0 command execution through crafted git arguments. Not reachable: the extension builds its git argument lists itself and never passes untrusted input to git args, config or env. Fixed only in simple-git 4.0.0, which strips inherited GIT_* / askpass env vars, so the migration is a separate pull request. Re-evaluate when the simple-git v4 migration is merged."
+
+[[IgnoredVulns]]
+id = "GHSA-g4wm-2vf7-vfgr"
+ignoreUntil = 2026-12-06
+reason = "Added 2026-10-06: CVE-2026-102827, simple-git 3.36.0 unsafe-operations plugin bypass via git config. Not reachable: the extension builds its git argument lists itself and never passes untrusted input to git args, config or env. Fixed only in simple-git 4.0.0, which strips inherited GIT_* / askpass env vars, so the migration is a separate pull request. Re-evaluate when the simple-git v4 migration is merged."
+
+[[IgnoredVulns]]
+id = "GHSA-x6jw-m9v5-85vh"
+ignoreUntil = 2026-12-06
+reason = "Added 2026-10-06: CVE-2026-102828, simple-git 3.36.0 unsafe-operation guard does not block trailer options. Not reachable: the extension builds its git argument lists itself and never passes untrusted input to git args, config or env. Fixed only in simple-git 4.0.1, which strips inherited GIT_* / askpass env vars, so the migration is a separate pull request. Re-evaluate when the simple-git v4 migration is merged."
+
+[[IgnoredVulns]]
+id = "GHSA-v5rq-49vh-5v5c"
+ignoreUntil = 2026-12-06
+reason = "Added 2026-10-06: CVE-2026-102829, @simple-git/argv-parser 1.1.1 does not flag the VISUAL editor env var. Not reachable: the extension never passes untrusted input to git args, config or env. Fixed only in argv-parser 2.0.1, which comes with simple-git 4, so the migration is a separate pull request. Re-evaluate when the simple-git v4 migration is merged."
+
+[[IgnoredVulns]]
+id = "GHSA-238p-pmpm-9mq7"
+ignoreUntil = 2026-11-16
+reason = "Added 2026-10-06: CVE-2026-103923, Low. katex 0.16.47 is pulled only by mermaid (katex@^0.16.25, held by the mermaid 11.15.0 pin) and the fix is only in katex 0.18.2, outside that range. KaTeX does not create prototype pollution, it only reads an already polluted Object.prototype, so it is exposed only together with the mermaid GHSA-3rrr-jr9j-h3q3 accepted risk above, and mermaid output is sanitized by DOMPurify (force-resolved in package.json). Re-evaluate together with the mermaid pin."

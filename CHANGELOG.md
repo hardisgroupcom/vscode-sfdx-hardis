@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- DevOps Pipeline: connect to **Aha!** as ticketing provider, to see the name and the status of the features of each Pull Request
 - Orgs Manager: **Open** opens the org at every click, and says why when it can not
 - A token or a password asked by a command is hidden while you type it
 - Pipeline Settings opens on its first tab, Deployment, instead of Custom Functions

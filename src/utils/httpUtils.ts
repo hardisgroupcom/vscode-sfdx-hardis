@@ -19,11 +19,18 @@ export interface HttpRequestOptions {
 
 export class HttpError extends Error {
   status: number;
+  /** Headers of the response, read by the adaptive batches to wait the delay of a Retry-After */
+  headers: Record<string, string>;
 
-  constructor(message: string, status: number) {
+  constructor(
+    message: string,
+    status: number,
+    headers: Record<string, string> = {},
+  ) {
     super(message);
     this.name = "HttpError";
     this.status = status;
+    this.headers = headers;
   }
 }
 
@@ -41,9 +48,14 @@ async function request(
     ...init,
   });
   if (!response.ok) {
+    const headers: Record<string, string> = {};
+    response.headers.forEach((value, key) => {
+      headers[key] = value;
+    });
     throw new HttpError(
       `Request to ${url} failed with status ${response.status}`,
       response.status,
+      headers,
     );
   }
   return response;

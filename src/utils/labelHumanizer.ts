@@ -33,6 +33,7 @@ const BRAND_WORDS: Record<string, string> = {
   bitbucket: "Bitbucket",
   azure: "Azure",
   jira: "Jira",
+  aha: "Aha!",
   grafana: "Grafana",
   sfdmu: "SFDMU",
   mermaid: "Mermaid",
