@@ -121,7 +121,7 @@ Runtime dependencies were deliberately reduced from 28 to 14. Before adding a pa
 - Follow the `register*` pattern in `src/commands/` for new commands
 - Error handling: try/catch with `Logger.log()` + `vscode.window.showErrorMessage()`
 - Execute CLI commands via `execSfdxJson("sf hardis:command")` or `execCommandWithProgress(command, message, label)`
-- Git operations via `simpleGit()` from `simple-git`
+- Git operations via `createSimpleGit(folder)` from `src/utils/simpleGitInstance.ts`, never a bare `simpleGit()` (ESLint refuses it): it keeps the inherited GIT_* environment that simple-git v4 strips
 - Use `--skipauth` flag for performance when org authentication check is not needed
 - Implement lazy loading for tree views; use `preLoadCache()` for startup optimization
 

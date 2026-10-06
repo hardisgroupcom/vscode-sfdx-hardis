@@ -23,7 +23,7 @@ The full procedure (code style, i18n, changelog rules, LWC styling, recipes) liv
 
 ## Key patterns
 
-- TypeScript: `t()` from `./i18n/i18n`, `CacheManager` for expensive ops, `register*` pattern in `src/commands/`, `execSfdxJson()` / `execCommandWithProgress()`, `simpleGit()`.
+- TypeScript: `t()` from `./i18n/i18n`, `CacheManager` for expensive ops, `register*` pattern in `src/commands/`, `execSfdxJson()` / `execCommandWithProgress()`, git through `createSimpleGit(folder)` from `src/utils/simpleGitInstance.ts` (never a bare `simpleGit()`).
 - LWC: components in `src/webviews/lwc-ui/modules/s/<name>/` (`.js`/`.html`/`.css`), extend `SharedMixin`, `{i18n.key}` in templates, `this.t()` in JS getters, no ternaries in HTML, `window.sendMessageToVSCode()`.
 - **LWC styling is theme-aware (dark + light)**: reuse `resources/global-theme.css` classes and SLDS first; never hardcode `#hex`, `rgb()`, `color: white`, `font-family`, or `font-weight: <number>`; use SLDS palette vars or `var(--vscode-*)` tokens. Layout-only CSS is fine. Never redefine a class that already exists globally, and never copy a legacy component stylesheet (many still contain hardcoded colors — they are bugs, not patterns).
 - **Shared UI kit**: status = `.hardis-pill` + `.hardis-pill-dot` + `.hardis-status-{success,running,pending,failed,unknown}` (green=success, blue=running, orange=pending, red=failed, neutral=unknown); tables = `s-hardis-datatable` with its `statusPill` / `avatarText` / `branchChip` cell types; branches = `.hardis-branch-chip`; colored buttons = tinted neutral (`.hardis-btn-tinted-green`, `.rf-type-*`), never filled `variant="success"`/`"brand"`.

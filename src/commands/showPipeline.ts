@@ -52,8 +52,8 @@ async function getOriginBranchUpdateStatus(branchName: string): Promise<{
   remoteHeadSha: string | null;
   hasNewRemoteCommit: boolean;
 }> {
-  const git = createSimpleGit(getWorkspaceRoot());
   try {
+    const git = createSimpleGit(getWorkspaceRoot());
     await git.raw(["fetch", "origin", branchName]);
     const remoteHeadSha = (await git.revparse([`origin/${branchName}`])).trim();
     const revListOutput = await git.raw([
@@ -80,8 +80,8 @@ async function getOriginBranchUpdateStatus(branchName: string): Promise<{
 }
 
 async function remoteBranchExists(branchName: string): Promise<boolean> {
-  const git = createSimpleGit(getWorkspaceRoot());
   try {
+    const git = createSimpleGit(getWorkspaceRoot());
     const result = await git.raw([
       "ls-remote",
       "--heads",
@@ -100,8 +100,8 @@ async function remoteBranchExists(branchName: string): Promise<boolean> {
 async function getOriginBranchHeadSha(
   branchName: string,
 ): Promise<string | null> {
-  const git = createSimpleGit(getWorkspaceRoot());
   try {
+    const git = createSimpleGit(getWorkspaceRoot());
     await git.raw(["fetch", "origin", branchName]);
     return (await git.revparse([`origin/${branchName}`])).trim();
   } catch (error: any) {

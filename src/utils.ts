@@ -1084,22 +1084,16 @@ export function setGitMenusItems(menuItems: any): void {
 
 export async function getGitParentBranch() {
   try {
+    // The workspace root must be explicit: without it git runs in the process working
+    // directory, which is not the opened project (e.g. in the Extension Development Host)
+    const git = createSimpleGit(getWorkspaceRoot(), { trimmed: true });
     // Resolve current HEAD rev first so we can skip the expensive show-branch
     // call when the branch has not changed since the last invocation.
-    const rev = await createSimpleGit(undefined, { trimmed: true }).raw(
-      "rev-parse",
-      "--abbrev-ref",
-      "HEAD",
-    );
+    const rev = await git.raw("rev-parse", "--abbrev-ref", "HEAD");
     if (rev === cachedParentBranchRev && cachedParentBranch !== null) {
       return cachedParentBranch;
     }
-    const outputFromGit = (
-      await createSimpleGit(undefined, { trimmed: true }).raw(
-        "show-branch",
-        "-a",
-      )
-    ).split("\n");
+    const outputFromGit = (await git.raw("show-branch", "-a")).split("\n");
     const allLinesNormalized = outputFromGit.map((line) =>
       line.trim().replace(/\].*/, ""),
     );

@@ -286,9 +286,8 @@ export async function readCurrentMonitoringConfig(): Promise<MonitoringUserConfi
 export async function readMonitoringConfigFromBranch(
   branch: string,
 ): Promise<MonitoringUserConfig> {
-  const workspaceRoot = getWorkspaceRoot();
-  const git = createSimpleGit(workspaceRoot);
   try {
+    const git = createSimpleGit(getWorkspaceRoot());
     const raw = await git.raw(["show", `${branch}:${CONFIG_FILE}`]);
     if (!raw) {
       return emptyMonitoringConfig();
@@ -301,9 +300,8 @@ export async function readMonitoringConfigFromBranch(
 }
 
 export async function listAvailableBranches(): Promise<string[]> {
-  const workspaceRoot = getWorkspaceRoot();
-  const git = createSimpleGit(workspaceRoot);
   try {
+    const git = createSimpleGit(getWorkspaceRoot());
     const out = await git.raw([
       "for-each-ref",
       "--format=%(refname:short)|%(committerdate:unix)",

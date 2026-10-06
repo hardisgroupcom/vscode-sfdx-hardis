@@ -1,18 +1,18 @@
 import * as assert from "assert";
+import { execFile } from "child_process";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-// A bare instance is needed here to prove what createSimpleGit adds
-// eslint-disable-next-line no-restricted-imports
-import { simpleGit } from "simple-git";
 import { createSimpleGit } from "../../utils/simpleGitInstance";
 
 // simple-git v4 removes inherited GIT_* variables (and EDITOR, VISUAL, PAGER, SSH_ASKPASS, PREFIX)
 // from the git process unless they are allowed. These tests run real git in throwaway repositories
 // and check that createSimpleGit still passes them through, as simple-git v3 did, with the guards
 // still on. Nothing here needs the VS Code API.
+// The fake GIT_ASKPASS, GIT_CONFIG_*... never go into process.env of the test host, where the
+// extension is running: the tests that need them run the factory in a node process of its own.
 
-// Variables a test sets in process.env, put back to their original value afterwards
+// Variables given to the child node process only
 const TEST_ENV: Record<string, string> = {
   GIT_CONFIG_COUNT: "2",
   GIT_CONFIG_KEY_0: "hardis.inherited",
@@ -59,6 +59,69 @@ async function writeAndCommit(
   await git.commit(message);
 }
 
+// Runs in a child node process, with TEST_ENV added to its environment: it creates the instances
+// the way the extension does and prints the output of each git call as JSON. The bare instance
+// proves what createSimpleGit adds.
+const CHILD_SCRIPT = `
+const [factoryPath, simpleGitPath, repo] = process.argv.slice(2);
+const { createSimpleGit } = require(factoryPath);
+const { simpleGit } = require(simpleGitPath);
+const configGetArgs = ["config", "--default", "hardis-not-set", "--get", "hardis.inherited"];
+(async () => {
+  const git = createSimpleGit(repo);
+  const result = {
+    inheritedConfig: await git.raw(["config", "--get", "hardis.inherited"]),
+    aliasEnv: await git.raw(["hardis-env"]),
+    editor: await git.raw(["var", "GIT_EDITOR"]),
+    pager: await git.raw(["var", "GIT_PAGER"]),
+    bareConfig: await simpleGit(repo).raw(configGetArgs),
+    factoryConfig: await git.raw(configGetArgs),
+  };
+  process.stdout.write(JSON.stringify(result));
+})().catch((e) => {
+  process.stderr.write(String((e && e.stack) || e));
+  process.exit(1);
+});
+`;
+
+type ChildGitResult = {
+  inheritedConfig: string;
+  aliasEnv: string;
+  editor: string;
+  pager: string;
+  bareConfig: string;
+  factoryConfig: string;
+};
+
+function runGitCallsInChildProcess(
+  sandbox: string,
+  repo: string,
+): Promise<ChildGitResult> {
+  const scriptFile = path.join(sandbox, "child-git-calls.js");
+  fs.writeFileSync(scriptFile, CHILD_SCRIPT);
+  // The test file runs from out/test/suite, next to the compiled factory in out/utils
+  const factoryPath = path.resolve(__dirname, "../../utils/simpleGitInstance");
+  const simpleGitPath = require.resolve("simple-git");
+  return new Promise((resolve, reject) => {
+    execFile(
+      // In the VS Code test host this is the Electron binary, run as plain node
+      process.execPath,
+      [scriptFile, factoryPath, simpleGitPath, repo],
+      {
+        env: { ...process.env, ...TEST_ENV, ELECTRON_RUN_AS_NODE: "1" },
+        timeout: 30000,
+      },
+      (error, stdout, stderr) => {
+        if (error) {
+          reject(new Error(`${error.message} ${stderr}`));
+          return;
+        }
+        resolve(JSON.parse(stdout));
+      },
+    );
+  });
+}
+
 async function rejectionMessage(promise: Promise<unknown>): Promise<string> {
   try {
     await promise;
@@ -70,22 +133,8 @@ async function rejectionMessage(promise: Promise<unknown>): Promise<string> {
 
 suite("simpleGitInstance Test Suite", function () {
   this.timeout(60000);
-  const originalEnv: Record<string, string | undefined> = {};
-
-  suiteSetup(() => {
-    for (const key of Object.keys(TEST_ENV)) {
-      originalEnv[key] = process.env[key];
-    }
-  });
 
   teardown(() => {
-    for (const key of Object.keys(TEST_ENV)) {
-      if (originalEnv[key] === undefined) {
-        delete process.env[key];
-      } else {
-        process.env[key] = originalEnv[key];
-      }
-    }
     for (const dir of sandboxes.splice(0)) {
       try {
         fs.rmSync(dir, { recursive: true, force: true });
@@ -96,49 +145,45 @@ suite("simpleGitInstance Test Suite", function () {
   });
 
   suite("inherited environment", () => {
-    let repo: string;
-    setup(async () => {
-      repo = makeSandbox("sg-env");
+    let result: ChildGitResult;
+    suiteSetup(async () => {
+      const sandbox = makeSandbox("sg-env");
+      const repo = path.join(sandbox, "repo");
+      fs.mkdirSync(repo);
       await initRepo(repo);
-      Object.assign(process.env, TEST_ENV);
+      result = await runGitCallsInChildProcess(sandbox, repo);
     });
 
-    test("passes GIT_CONFIG_COUNT/KEY/VALUE to git", async () => {
-      const value = await createSimpleGit(repo).raw([
-        "config",
-        "--get",
-        "hardis.inherited",
-      ]);
-      assert.strictEqual(value.trim(), "from-ci-runner");
+    test("leaves process.env of the test host untouched", () => {
+      for (const key of Object.keys(TEST_ENV)) {
+        assert.notStrictEqual(process.env[key], TEST_ENV[key], key);
+      }
     });
 
-    test("passes GIT_ASKPASS, SSH_ASKPASS and GIT_SSL_CAINFO to git and its child processes", async () => {
-      const envOutput = await createSimpleGit(repo).raw(["hardis-env"]);
+    test("passes GIT_CONFIG_COUNT/KEY/VALUE to git", () => {
+      assert.strictEqual(result.inheritedConfig.trim(), "from-ci-runner");
+    });
+
+    test("passes GIT_ASKPASS, SSH_ASKPASS and GIT_SSL_CAINFO to git and its child processes", () => {
+      const envOutput = result.aliasEnv;
       assert.ok(envOutput.includes("GIT_ASKPASS=hardis-askpass-test"));
       assert.ok(envOutput.includes("SSH_ASKPASS=hardis-ssh-askpass-test"));
       assert.ok(envOutput.includes("GIT_SSL_CAINFO=hardis-ca-test.pem"));
     });
 
-    test("passes GIT_EDITOR and GIT_PAGER, read back by git var", async () => {
-      const editor = await createSimpleGit(repo).raw(["var", "GIT_EDITOR"]);
-      assert.strictEqual(editor.trim(), "hardis-editor-test");
-      const pager = await createSimpleGit(repo).raw(["var", "GIT_PAGER"]);
-      assert.strictEqual(pager.trim(), "hardis-pager-test");
+    test("passes GIT_EDITOR and GIT_PAGER, read back by git var", () => {
+      assert.strictEqual(result.editor.trim(), "hardis-editor-test");
+      assert.strictEqual(result.pager.trim(), "hardis-pager-test");
     });
 
-    test("a bare simple-git instance does not see them: createSimpleGit is what keeps them", async () => {
+    test("a bare simple-git instance does not see them: createSimpleGit is what keeps them", () => {
       // --default makes git exit 0 with the sentinel when the key is not set, so any other failure rejects
-      const configGetArgs = [
-        "config",
-        "--default",
-        "hardis-not-set",
-        "--get",
-        "hardis.inherited",
-      ];
-      const bareValue = await simpleGit(repo).raw(configGetArgs);
-      assert.strictEqual(bareValue.trim(), "hardis-not-set");
-      const value = await createSimpleGit(repo).raw(configGetArgs);
-      assert.strictEqual(value.trim(), "from-ci-runner");
+      assert.strictEqual(result.bareConfig.trim(), "hardis-not-set");
+      assert.strictEqual(result.factoryConfig.trim(), "from-ci-runner");
+    });
+
+    test("refuses an empty folder instead of running git in process.cwd()", () => {
+      assert.throws(() => createSimpleGit(""), /needs the folder/);
     });
   });
 

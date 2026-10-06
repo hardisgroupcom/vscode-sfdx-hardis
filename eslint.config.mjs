@@ -13,6 +13,17 @@ const simpleGitFactoryRestriction = {
     "Use createSimpleGit() from src/utils/simpleGitInstance.ts: a bare simpleGit() drops the inherited GIT_* environment.",
 };
 
+// The same rule for the ways around a static import: a dynamic import(), require() and
+// import = require(). Type-only imports (import type { SimpleGit }) stay allowed.
+const simpleGitFactorySyntaxRestrictions = [
+  "ImportExpression[source.value='simple-git']",
+  "CallExpression[callee.name='require'][arguments.0.value='simple-git']",
+  "TSImportEqualsDeclaration[moduleReference.expression.value='simple-git']",
+].map((selector) => ({
+  selector,
+  message: simpleGitFactoryRestriction.message,
+}));
+
 export default [
   // Base JavaScript recommended rules
   js.configs.recommended,
@@ -216,6 +227,7 @@ export default [
         "error",
         { paths: [simpleGitFactoryRestriction] },
       ],
+      "no-restricted-syntax": ["error", ...simpleGitFactorySyntaxRestrictions],
     },
   },
 

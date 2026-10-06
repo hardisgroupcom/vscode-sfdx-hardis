@@ -150,10 +150,9 @@ export class GitProvider {
   }
 
   static async detectRepoInfo(): Promise<RepoInfo | null> {
-    const git = createSimpleGit(getWorkspaceRoot());
     let remotes: any[];
     try {
-      remotes = await git.getRemotes(true);
+      remotes = await createSimpleGit(getWorkspaceRoot()).getRemotes(true);
     } catch {
       // Not a git repository or git not available
       return null;

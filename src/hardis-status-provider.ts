@@ -12,6 +12,7 @@ import {
   setOrgCache,
 } from "./utils";
 import { Logger } from "./logger";
+import type { SimpleGit } from "simple-git";
 import { createSimpleGit } from "./utils/simpleGitInstance";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 import { LwcPanelManager } from "./lwc-panel-manager";
@@ -443,10 +444,12 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
 
   private async loadGitMenus() {
     const items: any = [];
-    const git = createSimpleGit(this.workspaceRoot);
+    // Only read once isRepo is true, which means it was created
+    let git!: SimpleGit;
     let isRepo = false;
     try {
-      isRepo = git && (await git.checkIsRepo()) === true;
+      git = createSimpleGit(this.workspaceRoot);
+      isRepo = (await git.checkIsRepo()) === true;
     } catch {
       // Not a git repository or git not available
     }

@@ -1,20 +1,18 @@
 import { simpleGit, SimpleGit, SimpleGitOptions } from "simple-git";
 
-export type SimpleGitUnsafeOptions = SimpleGitOptions["unsafe"];
-
 export type CreateSimpleGitOptions = {
   /** Kills a git process that prints nothing for this long */
   timeout?: SimpleGitOptions["timeout"];
   /** Trims the output of git.raw() */
   trimmed?: boolean;
   /** Lifts one simple-git guard for this instance only: set it only for a fixed value that needs it */
-  unsafe?: SimpleGitUnsafeOptions;
+  unsafe?: SimpleGitOptions["unsafe"];
 };
 
 /**
  * The only place where the extension creates a simple-git instance, so that every git call gets
- * the same environment. ESLint (no-restricted-imports in eslint.config.mjs) refuses an import of
- * simpleGit from 'simple-git' anywhere else in src/.
+ * the same environment. ESLint (eslint.config.mjs) refuses an import, a dynamic import or a
+ * require of the simple-git values anywhere else in src/; type-only imports stay allowed.
  *
  * Inherited environment: simple-git v4 removes every inherited GIT_* variable from the git
  * process, and EDITOR, VISUAL, PAGER, SSH_ASKPASS and PREFIX too, unless they are named in
@@ -36,25 +34,22 @@ export type CreateSimpleGitOptions = {
  * extension that call git with an abbreviated option fail the same way.
  *
  * The argument and config guards stay on: unsafe is only set for a call that needs it.
+ *
+ * baseDir is required: an empty value throws rather than letting git run in process.cwd(), which
+ * is not the opened project in the extension host. simple-git also throws at once when the folder
+ * does not exist, so a caller with a fallback creates the instance inside its try.
  */
 export function createSimpleGit(
-  baseDir?: string,
+  baseDir: string,
   options: CreateSimpleGitOptions = {},
 ): SimpleGit {
-  const simpleGitOptions: Partial<SimpleGitOptions> = {
+  // Without a folder, simple-git would run git in process.cwd(), which is not the opened project
+  if (!baseDir) {
+    throw new Error("createSimpleGit needs the folder git runs in");
+  }
+  return simpleGit({
+    ...options,
+    baseDir,
     allowEnvironment: Object.keys(process.env),
-  };
-  if (baseDir) {
-    simpleGitOptions.baseDir = baseDir;
-  }
-  if (options.timeout) {
-    simpleGitOptions.timeout = options.timeout;
-  }
-  if (options.trimmed) {
-    simpleGitOptions.trimmed = options.trimmed;
-  }
-  if (options.unsafe) {
-    simpleGitOptions.unsafe = options.unsafe;
-  }
-  return simpleGit(simpleGitOptions);
+  });
 }
