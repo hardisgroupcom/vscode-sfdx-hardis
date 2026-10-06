@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import simpleGit from "simple-git";
+import { createSimpleGit } from "../utils/simpleGitInstance";
 import { Commands } from "../commands";
 import { getWorkspaceRoot } from "../utils";
 import { LwcPanelManager } from "../lwc-panel-manager";
@@ -186,7 +186,7 @@ export function registerShowMonitoringConfig(commands: Commands) {
 
 async function getCurrentBranchName(): Promise<string | null> {
   try {
-    const git = simpleGit(getWorkspaceRoot());
+    const git = createSimpleGit(getWorkspaceRoot());
     const status = await git.status();
     return status.current || null;
   } catch (e) {

@@ -44,7 +44,7 @@ A matching **`design`** sub-agent is defined in `.claude/agents/design.md`. Pref
 
 5. **Consider integration points**:
    - **CLI execution**: `execSfdxJson()` for JSON output, `execCommandWithProgress()` for progress UI
-   - **Git**: `simpleGit()` from `simple-git` for git operations
+   - **Git**: `createSimpleGit(folder)` from `src/utils/simpleGitInstance.ts` for git operations (never a bare `simpleGit()`)
    - **Required extensions**: Salesforce Extension Pack (`salesforce.salesforcedx-vscode`)
    - **External tools**: SFDMU (data operations), sfdx-git-delta (package.xml from diff), MkDocs (docs, requires Python)
    - **Custom commands**: Users can define custom commands in `.sfdx-hardis.yml` (local or remote URL)

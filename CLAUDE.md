@@ -190,7 +190,7 @@ Runtime dependencies were deliberately cut from 28 to 14. **Do not add a new npm
 
 ### Key Integration Functions
 - `execSfdxJson(command)` / `execCommandWithProgress(command, message, label)` - Execute CLI commands
-- `simpleGit()` from `simple-git` - Git operations
+- `createSimpleGit()` from `src/utils/simpleGitInstance.ts` - Git operations (never a bare `simpleGit()`: simple-git v4 would drop the inherited `GIT_*` environment, ESLint refuses it)
 - `CacheManager` - VS Code globalState-backed cache with expiration
 
 ### Security

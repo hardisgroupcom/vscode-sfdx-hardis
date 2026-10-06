@@ -2,7 +2,8 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import simpleGit from "simple-git";
+import type { SimpleGit } from "simple-git";
+import { createSimpleGit } from "../utils/simpleGitInstance";
 import { Commands } from "../commands";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { LwcUiPanel } from "../webviews/lwc-ui-panel";
@@ -1577,8 +1578,9 @@ async function backToBranch(current: BackpromotePanelState): Promise<void> {
     vscode.window.showInformationMessage(t("backpromoteNoOriginalBranch"));
     return;
   }
-  const git = simpleGit(planRoot(plan));
+  let git: SimpleGit;
   try {
+    git = createSimpleGit(planRoot(plan));
     const status = await git.status();
     if (status.current !== checkout.originalBranch) {
       // A merged file not committed yet would be refused by the checkout, or carried onto the story branch
@@ -1592,7 +1594,7 @@ async function backToBranch(current: BackpromotePanelState): Promise<void> {
         );
         return;
       }
-      await git.checkout(checkout.originalBranch);
+      await checkoutOriginalBranch(git, checkout.originalBranch);
     }
   } catch (e: any) {
     vscode.window.showErrorMessage(
@@ -1646,6 +1648,31 @@ async function backToBranch(current: BackpromotePanelState): Promise<void> {
         }),
       );
     }
+  }
+}
+
+/**
+ * A failing post-checkout hook (for example one that calls git with an abbreviated option, which
+ * simple-git v4 makes git refuse) fails the checkout after HEAD has already moved. When the
+ * branch is the expected one, the checkout is taken as done so that the stash is still popped.
+ */
+async function checkoutOriginalBranch(
+  git: SimpleGit,
+  branch: string,
+): Promise<void> {
+  try {
+    await git.checkout(branch);
+  } catch (e: any) {
+    const head = await git
+      .revparse(["--abbrev-ref", "HEAD"])
+      .then((out) => out.trim())
+      .catch(() => "");
+    if (head !== branch) {
+      throw e;
+    }
+    Logger.log(
+      `[Backpromote] git checkout ${branch} reported an error after switching to it, continuing: ${String(e?.message || e)}`,
+    );
   }
 }
 

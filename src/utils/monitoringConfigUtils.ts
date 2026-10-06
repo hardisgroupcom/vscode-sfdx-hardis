@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import yaml from "js-yaml";
 import { dumpRepositoryYaml } from "./yamlUtils";
-import simpleGit from "simple-git";
+import { createSimpleGit } from "./simpleGitInstance";
 import { execSfdxJson, getWorkspaceRoot } from "../utils";
 import { CacheManager } from "./cache-manager";
 import { Logger } from "../logger";
@@ -286,9 +286,8 @@ export async function readCurrentMonitoringConfig(): Promise<MonitoringUserConfi
 export async function readMonitoringConfigFromBranch(
   branch: string,
 ): Promise<MonitoringUserConfig> {
-  const workspaceRoot = getWorkspaceRoot();
-  const git = simpleGit(workspaceRoot);
   try {
+    const git = createSimpleGit(getWorkspaceRoot());
     const raw = await git.raw(["show", `${branch}:${CONFIG_FILE}`]);
     if (!raw) {
       return emptyMonitoringConfig();
@@ -301,9 +300,8 @@ export async function readMonitoringConfigFromBranch(
 }
 
 export async function listAvailableBranches(): Promise<string[]> {
-  const workspaceRoot = getWorkspaceRoot();
-  const git = simpleGit(workspaceRoot);
   try {
+    const git = createSimpleGit(getWorkspaceRoot());
     const out = await git.raw([
       "for-each-ref",
       "--format=%(refname:short)|%(committerdate:unix)",
