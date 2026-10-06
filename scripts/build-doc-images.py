@@ -237,6 +237,9 @@ GUIDE_SHOTS = {
     "devops-pipeline.png": ("devops-pipeline", True),
     "pipeline-settings-menu.png": ("pipeline-settings-menu", True),
     "pipeline-packages-menu.png": ("pipeline-packages-menu", True),
+    # The No Overwrite entry of that menu: package-no-overwrite.xml in the package viewer, for the
+    # overwrite management page of sfdx-hardis
+    "package-no-overwrite.png": ("package-no-overwrite", True),
     "pipeline-workflow-cards.png": ("pipeline-workflow-cards", (315, 625, 1905, 835)),
     "pipeline-pr-actions-list.png": ("pipeline-pr-actions-list", (400, 40, 1865, 922)),
     # Pull Requests explorer and the window of one Pull Request (sfdx-hardis#2273), opened by
