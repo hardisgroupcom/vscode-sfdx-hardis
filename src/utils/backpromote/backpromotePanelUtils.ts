@@ -57,7 +57,11 @@ export const BACKPROMOTE_DIFF_CHOICES: BackpromoteDiffChoice[] = [
 ];
 
 export type BackpromoteComparisonStatus =
-  "same" | "different" | "missingInOrg" | "pendingInOrg" | "notCompared";
+  | "same"
+  | "different"
+  | "missingInOrg"
+  | "pendingInOrg"
+  | "notCompared";
 
 export interface BackpromoteLeftOutItem {
   key: string;
@@ -1883,4 +1887,21 @@ export function buildPlanProgress(
         message: lastMessageByStep.get(step) as string,
       })),
   };
+}
+
+/**
+ * Whether "Back to my branch" proposes to merge the parent branch into the original branch.
+ * Not when the original branch is the parent branch itself (merging it into itself makes no
+ * sense), nor when the parent branch is already in it: there is nothing to keep out of the next
+ * save then.
+ */
+export function shouldOfferParentMerge(
+  originalBranch: string,
+  parentBranch: string,
+  parentAlreadyMerged: boolean,
+): boolean {
+  if (!originalBranch || !parentBranch) {
+    return false;
+  }
+  return originalBranch !== parentBranch && !parentAlreadyMerged;
 }

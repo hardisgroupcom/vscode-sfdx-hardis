@@ -30,6 +30,11 @@
       "author": "Romain Panda",
       "authorLabel": "Romain Panda"
     },
+    "US-050": {
+      "subject": "Configure the pipeline up to production",
+      "author": "You",
+      "authorLabel": "You"
+    },
     "US-052": {
       "subject": "The Installation layout in two columns",
       "author": "Mariia Pyvovarchuk",

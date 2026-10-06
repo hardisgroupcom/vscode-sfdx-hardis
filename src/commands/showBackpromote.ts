@@ -65,6 +65,7 @@ import {
   backpromoteSessionKey,
   resumableBackpromoteSession,
   readCheckedOutBranch,
+  shouldOfferParentMerge,
 } from "../utils/backpromote/backpromotePanelUtils";
 
 const BACKPROMOTE_LWC_ID = "s-backpromote";
@@ -1565,7 +1566,8 @@ async function confirmAction(
 /**
  * Back to my branch: plain git, no backpromote. The original branch is checked out, the stash
  * the run made is popped, then a merge of the parent branch is proposed so the next save does
- * not commit the backpromoted metadata as the story's own work.
+ * not commit the backpromoted metadata as the story's own work. Not proposed when the original
+ * branch is the parent branch, or already contains it.
  */
 async function backToBranch(current: BackpromotePanelState): Promise<void> {
   const plan = current.plan;
@@ -1620,6 +1622,28 @@ async function backToBranch(current: BackpromotePanelState): Promise<void> {
         t("backpromoteStashPopFailed", { message: String(e?.message || e) }),
       );
     }
+  }
+  // merge-base --is-ancestor exits with an error when the parent is not merged yet
+  let parentAlreadyMerged: boolean;
+  try {
+    await git.raw([
+      "merge-base",
+      "--is-ancestor",
+      `origin/${plan.parentBranch}`,
+      "HEAD",
+    ]);
+    parentAlreadyMerged = true;
+  } catch {
+    parentAlreadyMerged = false;
+  }
+  if (
+    !shouldOfferParentMerge(
+      checkout.originalBranch,
+      plan.parentBranch,
+      parentAlreadyMerged,
+    )
+  ) {
+    return;
   }
   const mergeLabel = t("backpromoteMergeParentButton", {
     parentBranch: plan.parentBranch,
