@@ -71,3 +71,41 @@ GHSA-3rrr-jr9j-h3q3
 # exp:2026-11-16
 CVE-2026-50159
 GHSA-2v8p-3f2j-5mp7
+
+# --- simple-git 3.36.0 / @simple-git/argv-parser 1.1.1 -----------------------------------------------
+# The four advisories below are fixed only in simple-git 4.x (argv-parser 2.x comes with simple-git 4).
+# simple-git 4 strips inherited GIT_* and askpass env vars by default, which changes how this extension
+# authenticates, so the v4 migration is done in its own pull request. Shared input analysis: every
+# advisory needs untrusted input to reach the git arguments, config or environment that simple-git passes
+# to git. This extension builds every git argument list itself (branch names, refs and paths read from the
+# local repository) and never forwards user, workspace or remote text as git options, config keys or env
+# vars. Both the CVE and the GHSA id are listed. Re-evaluate when the simple-git v4 migration is merged.
+
+# simple-git command execution through crafted git arguments.
+# exp:2026-12-06
+CVE-2026-102826
+GHSA-858h-whjf-mvg5
+
+# simple-git unsafe-operations plugin bypass via git config.
+# exp:2026-12-06
+CVE-2026-102827
+GHSA-g4wm-2vf7-vfgr
+
+# simple-git unsafe-operation guard does not block trailer options.
+# exp:2026-12-06
+CVE-2026-102828
+GHSA-x6jw-m9v5-85vh
+
+# @simple-git/argv-parser does not flag the VISUAL editor env var.
+# exp:2026-12-06
+CVE-2026-102829
+GHSA-v5rq-49vh-5v5c
+
+# --- katex 0.16.47 (Low) ------------------------------------------------------------------------------
+# Pulled only by mermaid (katex@^0.16.25, held by the mermaid 11.15.0 pin above); the fix is only in katex
+# 0.18.2, outside that range. KaTeX does not create prototype pollution, it only reads an already polluted
+# Object.prototype, so it is exposed only together with the mermaid CVE-2026-71437 accepted risk above, and
+# mermaid output is sanitized by DOMPurify (force-resolved in package.json). Re-evaluate with the mermaid pin.
+# exp:2026-11-16
+CVE-2026-103923
+GHSA-238p-pmpm-9mq7

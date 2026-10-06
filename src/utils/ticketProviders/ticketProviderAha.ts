@@ -397,7 +397,7 @@ export class AhaProvider extends TicketProvider {
    *
    * Only a 401 or a 403 is Aha! refusing the key. Anything else (a host that
    * is not an Aha! account, a throttling, a server error, no answer at all)
-   * leaves the key unjudged.
+   * says nothing about the key.
    */
   private async checkCredentials(): Promise<
     "accepted" | "refused" | "unreachable"

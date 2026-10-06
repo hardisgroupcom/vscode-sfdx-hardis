@@ -98,8 +98,8 @@ suite("Aha! ticketing provider", () => {
     );
     // An account name may start with "http"
     assert.strictEqual(
-      AhaProvider.completeHostUrl("httpworks.aha.io"),
-      "https://httpworks.aha.io",
+      AhaProvider.completeHostUrl("http-tools.aha.io"),
+      "https://http-tools.aha.io",
     );
     assert.strictEqual(AhaProvider.completeHostUrl(""), "");
   });
@@ -250,7 +250,7 @@ suite("Aha! ticketing provider", () => {
             url: "https://acme.aha.io/features/PROD-12",
             workflow_status: { id: "700", name: "In development" },
             assigned_to_user: null,
-            created_by_user: { id: "22", name: "Bob Durand" },
+            created_by_user: { id: "22", name: "Alex Martin" },
             description: { body: "<p>The rule &amp; its message.</p>" },
           },
         },
@@ -269,7 +269,7 @@ suite("Aha! ticketing provider", () => {
       assert.strictEqual(ticket.foundOnServer, true);
       assert.strictEqual(ticket.subject, "Block a past close date");
       assert.strictEqual(ticket.statusLabel, "In development");
-      assert.strictEqual(ticket.authorLabel, "Bob Durand");
+      assert.strictEqual(ticket.authorLabel, "Alex Martin");
       assert.strictEqual(ticket.body, "The rule & its message.");
       assert.strictEqual(ticket.url, "https://acme.aha.io/features/PROD-12");
     });
