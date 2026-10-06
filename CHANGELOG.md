@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [8.11.0] 2026-10-06
+
 - DevOps Pipeline
   - Connect to **Aha!** as ticketing provider, to see the name and the status of the features of each Pull Request
   - Pipeline Settings opens on its first tab, Deployment, instead of Custom Functions
