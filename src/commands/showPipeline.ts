@@ -237,6 +237,7 @@ export function registerShowPipeline(commands: Commands) {
             jira: ["icons", "jira.svg"],
             azureboards: ["icons", "azureboards.svg"],
             servicenow: ["icons", "servicenow.svg"],
+            aha: ["icons", "aha.svg"],
           },
         },
       );

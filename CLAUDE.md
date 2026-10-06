@@ -100,7 +100,7 @@ Defined in `webpack.common.js`, with `webpack.dev.js` and `webpack.prod.js` over
 - `pipeline/branchStrategyMermaidBuilder.ts` - Pipeline diagram generation
 - `sfdx-hardis-config-utils.ts` - Custom commands/plugins from `.sfdx-hardis.yml`
 - `gitProviders/` - GitHub, GitLab, Bitbucket, Azure DevOps, Gitea integrations
-- `ticketProviders/` - Jira, Azure Boards, generic ticket integrations
+- `ticketProviders/` - Jira, Azure Boards, ServiceNow, Aha!, generic ticket integrations
 - `providerCredentials.ts` - Secure credential handling for git/ticket providers
 
 ### Command Registration Pattern

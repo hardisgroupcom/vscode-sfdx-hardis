@@ -56,7 +56,7 @@ export function getHashedPillClass(value) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Ticket statuses (Jira / Azure Boards / ServiceNow, localized)       */
+/* Ticket statuses (Jira / Azure Boards / ServiceNow / Aha!, localized) */
 /* ------------------------------------------------------------------ */
 
 // Keywords matched (case-insensitive, accents removed) against the status
@@ -78,6 +78,10 @@ const TICKET_STATUS_KEYWORDS = [
       "rechazado",
       "won't do",
       "wont do",
+      // Aha!: this family is read before the in progress one, which has implement
+      "will not implement",
+      "won't implement",
+      "wont implement",
     ],
   },
   {
@@ -89,6 +93,8 @@ const TICKET_STATUS_KEYWORDS = [
       "complete",
       "deployed",
       "released",
+      // Aha!: "Shipped". "Ready to ship" is not done yet, and does not match
+      "shipped",
       "termine",
       "ferme",
       "resolu",
@@ -121,6 +127,8 @@ const TICKET_STATUS_KEYWORDS = [
       "test",
       "active",
       "development",
+      // Aha!: "In design"
+      "design",
       // "implement" also matches "Implementation" and the ServiceNow
       // change_request state "Implement"
       "implement",
@@ -149,6 +157,8 @@ const TICKET_STATUS_KEYWORDS = [
       "assess",
       "authorize",
       "scheduled",
+      // Aha!: "Under consideration"
+      "consideration",
       "attente",
       "espera",
       "wartet",
@@ -206,7 +216,7 @@ function normalizeLabel(value) {
 
 /**
  * CSS classes of the pill displaying a ticket status. Statuses are free text
- * defined by each Jira / Azure Boards / ServiceNow project (and often
+ * defined by each Jira / Azure Boards / ServiceNow / Aha! project (and often
  * localized), so the label is matched against keyword families; anything
  * unrecognized still gets a stable hue rather than no color at all.
  * @param {string} statusLabel status label of the ticket
