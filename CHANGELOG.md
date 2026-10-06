@@ -2,15 +2,18 @@
 
 ## Unreleased
 
-- DevOps Pipeline: connect to **Aha!** as ticketing provider, to see the name and the status of the features of each Pull Request
+- DevOps Pipeline
+  - Connect to **Aha!** as ticketing provider, to see the name and the status of the features of each Pull Request
+  - Pipeline Settings opens on its first tab, Deployment, instead of Custom Functions
+- Backpromote: **Back to my branch** no longer offers to merge the parent branch into itself, or when it is already merged
 - Orgs Manager: **Open** opens the org at every click, and says why when it can not
 - A token or a password asked by a command is hidden while you type it
-- Pipeline Settings opens on its first tab, Deployment, instead of Custom Functions
-- Documentation: the DevOps Pipeline animation follows one Pull Request and its deployment actions, from review to deployed
-- Upgrade simple-git to v4 to fix security advisories, keeping the git environment variables set by VS Code, CI runners and proxies
-- Git hooks, aliases and merge drivers run by the extension's git commands must spell git options in full: an abbreviation such as `--dry` for `--dry-run` is now refused
-- Backpromote: **Back to my branch** no longer offers to merge the parent branch into itself, or when it is already merged
-- Documentation: the overwrite management page shows package-no-overwrite.xml in the package viewer
+- Git
+  - Upgrade simple-git to v4 to fix security advisories, keeping the git environment variables set by VS Code, CI runners and proxies
+  - Git hooks, aliases and merge drivers run by the extension's git commands must spell git options in full: an abbreviation such as `--dry` for `--dry-run` is now refused
+- Documentation
+  - The DevOps Pipeline animation follows one Pull Request and its deployment actions, from review to deployed
+  - The overwrite management page shows package-no-overwrite.xml in the package viewer
 
 ## [8.10.0] 2026-10-04
 
