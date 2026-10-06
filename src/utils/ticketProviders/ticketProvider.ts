@@ -60,9 +60,8 @@ export class TicketProvider {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       const { JiraProvider } = await import("./ticketProviderJira");
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      const { GenericTicketingProvider } = await import(
-        "./ticketProviderGeneric"
-      );
+      const { GenericTicketingProvider } =
+        await import("./ticketProviderGeneric");
       // eslint-disable-next-line @typescript-eslint/naming-convention
       const { AzureBoardsProvider } = await import("./ticketProviderAzure");
       // eslint-disable-next-line @typescript-eslint/naming-convention

@@ -1,9 +1,5 @@
 export type TicketProviderName =
-  | "JIRA"
-  | "AZURE"
-  | "SERVICENOW"
-  | "AHA"
-  | "GENERIC";
+  "JIRA" | "AZURE" | "SERVICENOW" | "AHA" | "GENERIC";
 
 export interface Ticket {
   provider: TicketProviderName;
