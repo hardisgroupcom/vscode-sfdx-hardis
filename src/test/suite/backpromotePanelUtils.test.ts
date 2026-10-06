@@ -45,6 +45,7 @@ import {
   planMergeAll,
   quoteCommandValue,
   recoverJsonCommandResult,
+  shouldOfferParentMerge,
 } from "../../utils/backpromote/backpromotePanelUtils";
 import {
   isBackpromoteBranchName,
@@ -1374,6 +1375,22 @@ suite("backpromotePanelUtils", () => {
       ["targetOrg"],
     );
     assert.strictEqual(buildPlanProgress([]), null);
+  });
+
+  test("shouldOfferParentMerge: never on the parent branch itself, nor when it is already merged", () => {
+    assert.strictEqual(
+      shouldOfferParentMerge("features/US-1-x", "integration", false),
+      true,
+    );
+    assert.strictEqual(
+      shouldOfferParentMerge("integration", "integration", false),
+      false,
+    );
+    assert.strictEqual(
+      shouldOfferParentMerge("features/US-1-x", "integration", true),
+      false,
+    );
+    assert.strictEqual(shouldOfferParentMerge("", "integration", false), false);
   });
 
   test("every label of the panel is translated in the 9 locales", () => {

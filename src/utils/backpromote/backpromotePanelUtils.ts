@@ -1884,3 +1884,20 @@ export function buildPlanProgress(
       })),
   };
 }
+
+/**
+ * Whether "Back to my branch" proposes to merge the parent branch into the original branch.
+ * Not when the original branch is the parent branch itself (merging it into itself makes no
+ * sense), nor when the parent branch is already in it: there is nothing to keep out of the next
+ * save then.
+ */
+export function shouldOfferParentMerge(
+  originalBranch: string,
+  parentBranch: string,
+  parentAlreadyMerged: boolean,
+): boolean {
+  if (!originalBranch || !parentBranch) {
+    return false;
+  }
+  return originalBranch !== parentBranch && !parentAlreadyMerged;
+}
