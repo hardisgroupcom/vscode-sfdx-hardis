@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import simpleGit from "simple-git";
+import { createSimpleGit } from "../utils/simpleGitInstance";
 import { Commands } from "../commands";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { LwcUiPanel } from "../webviews/lwc-ui-panel";
@@ -1577,7 +1577,7 @@ async function backToBranch(current: BackpromotePanelState): Promise<void> {
     vscode.window.showInformationMessage(t("backpromoteNoOriginalBranch"));
     return;
   }
-  const git = simpleGit(planRoot(plan));
+  const git = createSimpleGit(planRoot(plan));
   try {
     const status = await git.status();
     if (status.current !== checkout.originalBranch) {

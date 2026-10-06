@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import simpleGit from "simple-git";
+import { createSimpleGit } from "../simpleGitInstance";
 import type {
   CreateTokenOption,
   GoLive,
@@ -150,7 +150,7 @@ export class GitProvider {
   }
 
   static async detectRepoInfo(): Promise<RepoInfo | null> {
-    const git = simpleGit(getWorkspaceRoot());
+    const git = createSimpleGit(getWorkspaceRoot());
     let remotes: any[];
     try {
       remotes = await git.getRemotes(true);

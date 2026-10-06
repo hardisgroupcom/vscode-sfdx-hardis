@@ -1,4 +1,4 @@
-import simpleGit from "simple-git";
+import { createSimpleGit } from "./simpleGitInstance";
 import { getWorkspaceRoot } from "../utils";
 import { Logger } from "../logger";
 
@@ -24,7 +24,7 @@ export async function fetchBranch(
   root?: string,
 ): Promise<boolean> {
   try {
-    await simpleGit(root ?? getWorkspaceRoot(), {
+    await createSimpleGit(root ?? getWorkspaceRoot(), {
       timeout: { block: timeoutMs },
       // The ref is named in full: a clone limited to one branch would otherwise fetch without
       // writing the remote-tracking ref, and a branch name is never read as an option
@@ -55,7 +55,7 @@ export async function listFilesAtRef(
     // One git call for both answers: it fails on a ref that does not exist, and prints nothing
     // for a ref without that folder
     const folderPath = folder.replace(/\/+$/, "") + "/";
-    const out = await simpleGit(root ?? getWorkspaceRoot()).raw([
+    const out = await createSimpleGit(root ?? getWorkspaceRoot()).raw([
       "ls-tree",
       "--name-only",
       ref,
@@ -80,7 +80,7 @@ export async function readFileAtRef(
   root?: string,
 ): Promise<string | null> {
   try {
-    return await simpleGit(root ?? getWorkspaceRoot()).raw([
+    return await createSimpleGit(root ?? getWorkspaceRoot()).raw([
       "show",
       // Relative to the workspace folder, as the listing is: the project may sit in a
       // subfolder of the repository

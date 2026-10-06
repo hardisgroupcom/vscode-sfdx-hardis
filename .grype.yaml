@@ -72,31 +72,6 @@ ignore:
       name: mermaid
       version: 11.15.0
 
-  # simple-git 3.36.0 and @simple-git/argv-parser 1.1.1 - the four advisories below are fixed only in
-  # simple-git 4.x (argv-parser 2.x is only pulled by simple-git 4). They all need untrusted input to
-  # reach the git arguments, config or environment that simple-git passes to git. This extension builds
-  # every git argument list itself (branch names, refs and paths it read from the local repository) and
-  # never forwards user, workspace or remote text as git options, config keys or env vars.
-  # simple-git 4 strips inherited GIT_* and askpass env vars by default, which changes how this extension
-  # authenticates, so the v4 migration is done in its own pull request.
-  # Re-evaluate all four (~2026-12-06), or as soon as the simple-git v4 migration is merged.
-  - vulnerability: GHSA-858h-whjf-mvg5
-    package:
-      name: simple-git
-      version: 3.36.0
-  - vulnerability: GHSA-g4wm-2vf7-vfgr
-    package:
-      name: simple-git
-      version: 3.36.0
-  - vulnerability: GHSA-x6jw-m9v5-85vh
-    package:
-      name: simple-git
-      version: 3.36.0
-  - vulnerability: GHSA-v5rq-49vh-5v5c
-    package:
-      name: "@simple-git/argv-parser"
-      version: 1.1.1
-
   # GHSA-238p-pmpm-9mq7 / CVE-2026-103923 - katex 0.16.47, Low.
   # Pulled only by mermaid (katex@^0.16.25, pinned through the mermaid 11.15.0 pin above); the fix is only
   # in katex 0.18.2, outside the range mermaid accepts. KaTeX does not create prototype pollution, it only

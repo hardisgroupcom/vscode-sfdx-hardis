@@ -19,7 +19,7 @@ import * as yaml from "js-yaml";
 import { dumpRepositoryYaml } from "../yamlUtils";
 import * as os from "os";
 import * as path from "path";
-import { simpleGit } from "simple-git";
+import { createSimpleGit } from "../simpleGitInstance";
 import { getWorkspaceRoot } from "../../utils";
 import { Logger } from "../../logger";
 import { t } from "../../i18n/i18n";
@@ -307,10 +307,9 @@ export async function isGitRepo(): Promise<boolean> {
   // and bare repos correctly, which a plain `.git` filesystem check does not.
   isGitRepoInFlight = (async () => {
     try {
-      const out = await simpleGit(getWorkspaceRoot() || process.cwd()).raw([
-        "rev-parse",
-        "--is-inside-work-tree",
-      ]);
+      const out = await createSimpleGit(
+        getWorkspaceRoot() || process.cwd(),
+      ).raw(["rev-parse", "--is-inside-work-tree"]);
       isGitRepoCache = out.trim() === "true";
     } catch {
       // Not a git repository (or git unavailable)
@@ -334,7 +333,7 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
       // against the process working directory, which is not the opened
       // project (e.g. in the Extension Development Host)
       gitBranch = (
-        await simpleGit(getWorkspaceRoot() || process.cwd()).branchLocal()
+        await createSimpleGit(getWorkspaceRoot() || process.cwd()).branchLocal()
       ).current;
     } catch {
       return null;

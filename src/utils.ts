@@ -2,7 +2,7 @@ import * as c from "./utils/ansiColors";
 import * as childProcess from "child_process";
 import * as fs from "fs";
 import * as path from "path";
-import simpleGit from "simple-git";
+import { createSimpleGit } from "./utils/simpleGitInstance";
 
 import { Worker } from "worker_threads";
 import * as vscode from "vscode";
@@ -1086,7 +1086,7 @@ export async function getGitParentBranch() {
   try {
     // Resolve current HEAD rev first so we can skip the expensive show-branch
     // call when the branch has not changed since the last invocation.
-    const rev = await simpleGit({ trimmed: true }).raw(
+    const rev = await createSimpleGit(undefined, { trimmed: true }).raw(
       "rev-parse",
       "--abbrev-ref",
       "HEAD",
@@ -1095,7 +1095,10 @@ export async function getGitParentBranch() {
       return cachedParentBranch;
     }
     const outputFromGit = (
-      await simpleGit({ trimmed: true }).raw("show-branch", "-a")
+      await createSimpleGit(undefined, { trimmed: true }).raw(
+        "show-branch",
+        "-a",
+      )
     ).split("\n");
     const allLinesNormalized = outputFromGit.map((line) =>
       line.trim().replace(/\].*/, ""),

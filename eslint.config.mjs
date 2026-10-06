@@ -4,6 +4,15 @@ const js = require("@eslint/js");
 const typescript = require("@typescript-eslint/eslint-plugin");
 const typescriptParser = require("@typescript-eslint/parser");
 
+// Every git process the extension starts goes through createSimpleGit: it keeps the inherited
+// GIT_* environment that simple-git v4 removes by default.
+const simpleGitFactoryRestriction = {
+  name: "simple-git",
+  importNames: ["simpleGit"],
+  message:
+    "Use createSimpleGit() from src/utils/simpleGitInstance.ts: a bare simpleGit() drops the inherited GIT_* environment.",
+};
+
 export default [
   // Base JavaScript recommended rules
   js.configs.recommended,
@@ -194,6 +203,18 @@ export default [
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",
         },
+      ],
+    },
+  },
+
+  // simple-git instances: only the factory creates them
+  {
+    files: ["src/**/*.ts"],
+    ignores: ["src/utils/simpleGitInstance.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        { paths: [simpleGitFactoryRestriction] },
       ],
     },
   },

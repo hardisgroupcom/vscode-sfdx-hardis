@@ -18,7 +18,7 @@ import {
   readSfdxHardisConfig,
   writeSfdxHardisConfig,
 } from "../utils/sfdx-hardis-config-utils";
-import simpleGit from "simple-git";
+import { createSimpleGit } from "../utils/simpleGitInstance";
 import { gitRemoteToHttps } from "../utils/gitUrlUtils";
 
 async function safeFetchMonitoringCatalog(): Promise<MonitoringCatalogPayload | null> {
@@ -280,7 +280,8 @@ async function openRepositoryInNewWindow(repositoryUrl: string) {
     let origin = "";
     try {
       origin =
-        (await simpleGit(targetFolder).remote(["get-url", "origin"])) || "";
+        (await createSimpleGit(targetFolder).remote(["get-url", "origin"])) ||
+        "";
     } catch (e) {
       Logger.log(`Unable to read the origin of ${targetFolder}: ${e}`);
     }
@@ -323,7 +324,7 @@ async function openRepositoryInNewWindow(repositoryUrl: string) {
           title: t("deploymentRepositoryCloning", { url: browsableUrl }),
         },
         () =>
-          simpleGit(path.dirname(targetFolder)).clone(
+          createSimpleGit(path.dirname(targetFolder)).clone(
             repositoryUrl,
             targetFolder,
           ),

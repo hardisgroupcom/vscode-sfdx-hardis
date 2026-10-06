@@ -33,7 +33,7 @@ import { collectProviderCredentialEnvVars } from "../utils/providerCredentials";
 import { t } from "../i18n/i18n";
 import path from "path";
 import * as fs from "fs";
-import simpleGit from "simple-git";
+import { createSimpleGit } from "../utils/simpleGitInstance";
 import { listAllOrgs } from "../utils/orgUtils";
 import { getChildBranchNames } from "../utils/orgConfigUtils";
 import { readSfdxHardisConfig } from "../utils/sfdx-hardis-config-utils";
@@ -52,7 +52,7 @@ async function getOriginBranchUpdateStatus(branchName: string): Promise<{
   remoteHeadSha: string | null;
   hasNewRemoteCommit: boolean;
 }> {
-  const git = simpleGit(getWorkspaceRoot());
+  const git = createSimpleGit(getWorkspaceRoot());
   try {
     await git.raw(["fetch", "origin", branchName]);
     const remoteHeadSha = (await git.revparse([`origin/${branchName}`])).trim();
@@ -80,7 +80,7 @@ async function getOriginBranchUpdateStatus(branchName: string): Promise<{
 }
 
 async function remoteBranchExists(branchName: string): Promise<boolean> {
-  const git = simpleGit(getWorkspaceRoot());
+  const git = createSimpleGit(getWorkspaceRoot());
   try {
     const result = await git.raw([
       "ls-remote",
@@ -100,7 +100,7 @@ async function remoteBranchExists(branchName: string): Promise<boolean> {
 async function getOriginBranchHeadSha(
   branchName: string,
 ): Promise<string | null> {
-  const git = simpleGit(getWorkspaceRoot());
+  const git = createSimpleGit(getWorkspaceRoot());
   try {
     await git.raw(["fetch", "origin", branchName]);
     return (await git.revparse([`origin/${branchName}`])).trim();
@@ -1554,7 +1554,7 @@ async function getCheckoutInfo(): Promise<{
   behindOrigin: boolean;
 }> {
   try {
-    const git = simpleGit(getWorkspaceRoot());
+    const git = createSimpleGit(getWorkspaceRoot());
     const branch = (await git.revparse(["--abbrev-ref", "HEAD"])).trim();
     if (!branch || branch === "HEAD") {
       return { branch: "", behindOrigin: false };

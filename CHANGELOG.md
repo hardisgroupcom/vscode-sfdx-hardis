@@ -7,6 +7,7 @@
 - A token or a password asked by a command is hidden while you type it
 - Pipeline Settings opens on its first tab, Deployment, instead of Custom Functions
 - Documentation: the DevOps Pipeline animation follows one Pull Request and its deployment actions, from review to deployed
+- Upgrade simple-git to v4 to fix security advisories, keeping the git environment variables set by VS Code, CI runners and proxies
 
 ## [8.10.0] 2026-10-04
 

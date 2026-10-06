@@ -12,7 +12,7 @@ import {
   setOrgCache,
 } from "./utils";
 import { Logger } from "./logger";
-import simpleGit from "simple-git";
+import { createSimpleGit } from "./utils/simpleGitInstance";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { t } from "./i18n/i18n";
@@ -443,7 +443,7 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
 
   private async loadGitMenus() {
     const items: any = [];
-    const git = simpleGit(this.workspaceRoot);
+    const git = createSimpleGit(this.workspaceRoot);
     let isRepo = false;
     try {
       isRepo = git && (await git.checkIsRepo()) === true;
