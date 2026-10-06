@@ -2650,6 +2650,11 @@ const DOCS_SCENARIOS = {
       ...[...(orgs.scratchOrgs || [])].sort(byUrl),
       ...[...(orgs.nonScratchOrgs || [])].sort(byUrl),
     ];
+    // A universe can configure an org its other screens do not list yet (the
+    // training configures helios-preprod, which joins the pipeline in Level 3)
+    if (auth.org && !orgList.some((o) => o.username === auth.org.username)) {
+      orgList.push(auth.org);
+    }
     const org = orgList.find((o) => o.alias === auth.orgAlias) || orgList[0];
     const branch = auth.branchName;
     const upper = branch.toUpperCase();

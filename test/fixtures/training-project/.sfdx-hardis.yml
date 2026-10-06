@@ -13,8 +13,9 @@ developmentBranch: integration
 productionBranch: main
 # How the CI job gets into an org. Levels 1 and 2 use auth URLs kept in
 # GitHub secrets, which is the shortcut, so there is no certificate to look for
-# and the pipeline is right not to ask for one. Lab 3.1 replaces it with
-# a JWT certificate and puts this back to encryptedCert.
+# and the pipeline is right not to ask for one. Lab 3.1 gives preprod and main a
+# JWT certificate and leaves integration and uat on the shortcut, which a real
+# project would not do, so this setting stays as it is.
 orgAuthenticationMode: secretsOnly
 # One entry on purpose. A contributor at Levels 1 and 2 has exactly one place
 # to send a User Story, and a question with one answer is a question that
