@@ -456,6 +456,7 @@ suite("Aha! ticketing provider", () => {
       "createAhaApiKey",
       "enterAhaApiKey",
     ];
+    /* jscpd:ignore-start */
     for (const locale of LOCALES) {
       const translations = JSON.parse(
         fs.readFileSync(
@@ -470,5 +471,6 @@ suite("Aha! ticketing provider", () => {
         );
       }
     }
+    /* jscpd:ignore-end */
   });
 });
