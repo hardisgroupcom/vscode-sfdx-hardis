@@ -364,6 +364,7 @@ export function registerShowMetadataDependencies(commands: Commands) {
           if (!data?.username || components.length === 0) {
             return;
           }
+          // Default retrieve mode (Auto), as in the Metadata Retriever: Profiles complete, granted permissions only
           const retrieveResult = await executeMetadataRetrieve(
             data.username,
             components,

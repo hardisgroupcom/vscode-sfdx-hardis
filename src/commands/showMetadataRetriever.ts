@@ -30,6 +30,22 @@ import * as path from "path";
 import * as fs from "fs";
 import { LwcUiPanel } from "../webviews/lwc-ui-panel";
 import { generatePackageXml, mergeIntoPackageXml } from "./packageXml";
+import {
+  buildCrudReadCommand,
+  buildStandardRetrieveCommand,
+  candidateObjectNames,
+  DEFAULT_RETRIEVE_MODE,
+  failedOutcome,
+  buildEmptyObjectsCleaningCommand,
+  isActiveOnlyFlagUnknown,
+  removedEmptyObjectNames,
+  mergeRetrieveOutcomes,
+  parseRetrieveMode,
+  RetrieveMode,
+  RetrieveOutcome,
+  splitByRetrieveMode,
+  toMetadataArgs,
+} from "../utils/metadataRetrieveModes";
 
 type LocalPackageOption = { label: string; value: string };
 
@@ -462,6 +478,25 @@ function collectMetadataErrorDetails(messages: any[]): string[] {
 
 // The metadata type that the Salesforce CLI refused because its registry does
 // not know it (ex: GenOpAgentConfig), or null when the failure is something else
+// Name the type the CLI does not know and the rows to untick, instead of the raw registry error
+function showUnknownMetadataTypeError(result: any, metadataList: any[]) {
+  const metadataType = getUnknownMetadataType(result) as string;
+  const count = metadataList.filter(
+    (item) => item?.memberType === metadataType,
+  ).length;
+  Logger.log("Retrieve result:" + JSON.stringify(result));
+  vscode.window
+    .showErrorMessage(
+      t("failedToRetrieveUnknownMetadataType", { metadataType, count }),
+      "View logs",
+    )
+    .then((action) => {
+      if (action === "View logs") {
+        Logger.showOutputChannel();
+      }
+    });
+}
+
 function getUnknownMetadataType(result: any): string | null {
   const errorMsg = result?.error?.message || result?.message || "";
   const match =
@@ -502,6 +537,7 @@ function toRetrieveFile(
     state,
     type: item?.type || item?.memberType || "",
     fullName: item?.fullName || item?.memberName || "",
+    filePath: item?.filePath,
     error: error || item?.error,
   };
 }
@@ -553,7 +589,7 @@ export async function executeMetadataRetrieve(
   panel: LwcUiPanel,
   forceOverwrite = false,
   localPackagePath: string | null = null,
-  useCrudApi = false,
+  retrieveMode: RetrieveMode = DEFAULT_RETRIEVE_MODE,
 ): Promise<any> {
   // Lock local package selector while retrieving
   try {
@@ -565,11 +601,23 @@ export async function executeMetadataRetrieve(
     // ignore
   }
 
-  // Switch default package directory only for the duration of the retrieve
+  // Auto sends Profiles to sf hardis mdapi read --active-only and the rest to sf project retrieve start,
+  // the Full modes send everything to sf hardis mdapi read, Off everything to sf project retrieve start
+  const workspaceRoot = getWorkspaceRoot();
+  const itemsToRetrieve = metadataList.filter(
+    (item) => !(item?.deleted === true),
+  );
+  const { crudItems, standardItems } = splitByRetrieveMode(
+    itemsToRetrieve,
+    retrieveMode,
+  );
+
+  // Switch default package directory only for the duration of the retrieve. Both CLI calls write new
+  // files into the default package and update existing files where they are
   const initialDefaultPackage =
     defaultLocalPackageGuard.getInitialDefaultPackagePath();
   const shouldSwitchPackage =
-    !useCrudApi &&
+    itemsToRetrieve.length > 0 &&
     !!localPackagePath &&
     !!initialDefaultPackage &&
     normalizeSfdxProjectPath(localPackagePath) !==
@@ -587,171 +635,87 @@ export async function executeMetadataRetrieve(
     }
   }
 
-  // Split metadata list and create separate --metadata flags for each item.
-  // For foldered types (Report, Dashboard, EmailTemplate, Document) also pull
-  // the parent folder metadata in if it is missing locally, so deploys to
-  // other orgs do not fail because the folder does not exist there.
-  const workspaceRoot = getWorkspaceRoot();
-  // Folder auto-inclusion only applies to the file-based retrieve. The CRUD
-  // Metadata API (readMetadata) targets the requested components directly.
-  const expandedList = useCrudApi
-    ? metadataList
-    : await expandWithMissingFolderItems(metadataList);
-  const metadataItems = expandedList
-    .filter((item) => !(item?.deleted === true))
-    .map((item) => `--metadata "${item.memberType}:${item.memberName}"`)
-    .join(" ");
-  const command = useCrudApi
-    ? `sf hardis mdapi read ${metadataItems} --target-org ${username}` +
-      (localPackagePath ? ` --output-dir "${localPackagePath}"` : "") +
-      " --agent --ignore-errors --json"
-    : `sf project retrieve start ${metadataItems} --target-org ${username}` +
-      (forceOverwrite ? " --ignore-conflicts" : "") +
-      " --json";
-  Logger.log(`Retrieving metadata: ${command}`);
+  // Objects whose file exists before the retrieve: the empty object guard never touches those
+  const objectCandidates = candidateObjectNames(itemsToRetrieve);
+  const objectsExistingBefore = new Set(
+    (await findObjectFiles(objectCandidates)).keys(),
+  );
 
   // When every selected item is marked deleted there are no members to read or
   // retrieve. Skip the CLI call so we never run a command without any --metadata
   // members; the deleted-items handling below still removes the local files.
-  const hasItemsToRetrieve = metadataItems.trim().length > 0;
+  const hasItemsToRetrieve = itemsToRetrieve.length > 0;
   let result: any = null;
   try {
     if (hasItemsToRetrieve) {
-      result = await vscode.window.withProgress(
-        {
-          location: vscode.ProgressLocation.Notification,
-          title: displayTitle,
-          cancellable: false,
-        },
-        async (_progress) => {
-          return await execSfdxJson(command, { cwd: workspaceRoot });
-        },
+      const standardResult =
+        standardItems.length > 0
+          ? await runStandardRetrieve(
+              username,
+              standardItems,
+              displayTitle,
+              forceOverwrite,
+              workspaceRoot,
+            )
+          : null;
+      const crudResult =
+        crudItems.length > 0
+          ? await runCrudRead(
+              username,
+              crudItems,
+              displayTitle,
+              retrieveMode,
+              workspaceRoot,
+            )
+          : null;
+      if (
+        standardResult &&
+        crudResult?.result &&
+        getUnknownMetadataType(standardResult)
+      ) {
+        // The standard retrieve stopped on a type the CLI does not know: name it and the rows to
+        // untick, and still report what the CRUD read wrote
+        showUnknownMetadataTypeError(standardResult, standardItems);
+        result = crudResult;
+      } else {
+        result = combineRetrieveResults(
+          standardResult,
+          standardItems,
+          crudResult,
+          crudItems,
+        );
+      }
+
+      // A field, list view or record type retrieved without its object makes Salesforce CLI write an
+      // empty <CustomObject></CustomObject> file. Committed, it breaks the deployment: the CLI removes
+      // the ones not in git yet, never a committed file
+      const removedObjects = await removeNewEmptyCustomObjects(
+        objectCandidates,
+        objectsExistingBefore,
+        workspaceRoot,
       );
+      if (removedObjects.length > 0) {
+        if (Array.isArray(result?.result?.files)) {
+          result.result.files = result.result.files.filter(
+            (file: any) =>
+              !(
+                file?.type === "CustomObject" &&
+                removedObjects.includes(file?.fullName)
+              ),
+          );
+        }
+        vscode.window.showInformationMessage(
+          t("metadataRetrieverEmptyObjectsNotKept", {
+            count: removedObjects.length,
+            names: removedObjects.join(", "),
+          }),
+        );
+      }
     } else {
       result = {
         status: 0,
         result: { success: true, files: [], messages: [] },
       };
-    }
-
-    // Suggest user to force in case of conflicts (file-based retrieve only;
-    // the CRUD Metadata API overwrites local files without conflict checks).
-    if (!useCrudApi && result.code === "SourceConflictError") {
-      const choice = await vscode.window.showErrorMessage(
-        `Failed to retrieve metadata due to source conflicts.`,
-        "I don't care, overwrite! 🤪",
-        "Ok, nevermind 😑",
-      );
-      if (choice === "I don't care, overwrite! 🤪") {
-        return await executeMetadataRetrieve(
-          username,
-          metadataList,
-          displayTitle,
-          panel,
-          true,
-          localPackagePath,
-          useCrudApi,
-        );
-      }
-    }
-
-    // Command line too long: Create a package.xml in a temp dir and use --manifest
-    const errorMsg = result?.error?.message || "";
-    if (
-      errorMsg.includes(`command line is too long`) ||
-      errorMsg.includes(`ligne de commande est trop longue`) ||
-      errorMsg.includes(`ENAMETOOLONG`)
-    ) {
-      const tempDir = await fs.promises.mkdtemp(
-        path.join(os.tmpdir(), "sfdx-retrieve-"),
-      );
-      const tmpPackageXml = path.join(tempDir, "package.xml");
-      // Group metadata by type
-      const metadataByType = new Map<string, string[]>();
-
-      expandedList
-        .filter((item) => !(item?.deleted === true))
-        .forEach((item) => {
-          if (!metadataByType.has(item.memberType)) {
-            metadataByType.set(item.memberType, []);
-          }
-          metadataByType.get(item.memberType)!.push(item.memberName);
-        });
-      const sfdxProject = getSfdxProjectJson();
-      const apiVersion = sfdxProject?.sourceApiVersion || "65.0";
-      // Build package.xml content with grouped types
-      const typesBlocks = Array.from(metadataByType.entries())
-        .map(
-          ([memberType, memberNames]) =>
-            `  <types>\n${memberNames.map((name) => `    <members>${name}</members>`).join("\n")}\n    <name>${memberType}</name>\n  </types>`,
-        )
-        .join("\n");
-
-      const packageXmlContent = `<?xml version="1.0" encoding="UTF-8"?>
-    <Package xmlns="http://soap.sforce.com/2006/04/metadata">
-    ${typesBlocks}
-      <version>${apiVersion}</version>
-    </Package>`;
-      await fs.promises.writeFile(tmpPackageXml, packageXmlContent, {
-        encoding: "utf8",
-      });
-      const commandManifest = useCrudApi
-        ? `sf hardis mdapi read --manifest "${tmpPackageXml}" --target-org ${username}` +
-          (localPackagePath ? ` --output-dir "${localPackagePath}"` : "") +
-          " --agent --ignore-errors --json"
-        : `sf project retrieve start --manifest "${tmpPackageXml}" --target-org ${username}` +
-          (forceOverwrite ? " --ignore-conflicts" : "") +
-          " --json";
-      Logger.log(`Retrieving metadata with manifest: ${commandManifest}`);
-      result = await vscode.window.withProgress(
-        {
-          location: vscode.ProgressLocation.Notification,
-          title:
-            "Retrieving metadata (using manifest to avoid too long command line)...",
-          cancellable: false,
-        },
-        async (_progress) => {
-          return await execSfdxJson(commandManifest, { cwd: workspaceRoot });
-        },
-      );
-      // Clean up temp dir
-      try {
-        await fs.promises.rm(tempDir, { recursive: true, force: true });
-      } catch {
-        // ignore
-      }
-    }
-
-    // The CRUD Metadata API command (sf hardis mdapi read) returns
-    // successes/failures/skipped instead of the `sf project retrieve start`
-    // files/messages shape. Normalize it so partial success remains visible to
-    // the shared notification, local-file re-check and package.xml handling.
-    if (useCrudApi) {
-      const normalizedCrudResult = normalizeCrudReadResult(result);
-      const crudFailed =
-        !result ||
-        result.status === 1 ||
-        !!result.error ||
-        !!result.errorMessage;
-      if (normalizedCrudResult) {
-        result.result = normalizedCrudResult;
-      } else if (crudFailed) {
-        // Force the shared error branch to surface the CLI error message.
-        if (result) {
-          result.result = null;
-        }
-      } else {
-        // Backward-compatible fallback for older command output that does not
-        // expose successes/failures/skipped yet.
-        const retrievedFiles = expandedList
-          .filter((item) => !(item?.deleted === true))
-          .map((item) => toRetrieveFile(item, "Changed"));
-        result.result = {
-          success: true,
-          files: retrievedFiles,
-          messages: [],
-        };
-      }
     }
 
     // Delete files corresponding to deleted items
@@ -991,22 +955,7 @@ export async function executeMetadataRetrieve(
         }
       }
     } else if (getUnknownMetadataType(result)) {
-      // Name the type and the rows to untick, instead of the raw registry error
-      const metadataType = getUnknownMetadataType(result) as string;
-      const count = metadataList.filter(
-        (item) => item?.memberType === metadataType,
-      ).length;
-      Logger.log("Retrieve result:" + JSON.stringify(result));
-      vscode.window
-        .showErrorMessage(
-          t("failedToRetrieveUnknownMetadataType", { metadataType, count }),
-          "View logs",
-        )
-        .then((action) => {
-          if (action === "View logs") {
-            Logger.showOutputChannel();
-          }
-        });
+      showUnknownMetadataTypeError(result, metadataList);
     } else {
       const errorMsg =
         result?.error?.message || result?.message || "Unknown error occurred";
@@ -1051,6 +1000,325 @@ export async function executeMetadataRetrieve(
     // ignore
   }
   return result;
+}
+
+// sf project retrieve start on the items routed to the file-based retrieve. Also pulls the missing
+// parent folders of foldered types, offers to overwrite on source conflicts, and falls back to a
+// temporary package.xml when the command line is too long.
+async function runStandardRetrieve(
+  username: string,
+  items: any[],
+  displayTitle: string,
+  forceOverwrite: boolean,
+  workspaceRoot: string,
+): Promise<any> {
+  // For foldered types (Report, Dashboard, EmailTemplate, Document) also pull
+  // the parent folder metadata in if it is missing locally, so deploys to
+  // other orgs do not fail because the folder does not exist there.
+  const expandedList = await expandWithMissingFolderItems(items);
+  const command = buildStandardRetrieveCommand({
+    source: toMetadataArgs(expandedList),
+    username,
+    forceOverwrite,
+  });
+  Logger.log(`Retrieving metadata: ${command}`);
+  let result = await execWithRetrieveProgress(
+    command,
+    displayTitle,
+    workspaceRoot,
+  );
+
+  // Suggest user to force in case of conflicts
+  if (!forceOverwrite && result?.code === "SourceConflictError") {
+    const choice = await vscode.window.showErrorMessage(
+      `Failed to retrieve metadata due to source conflicts.`,
+      "I don't care, overwrite! 🤪",
+      "Ok, nevermind 😑",
+    );
+    if (choice === "I don't care, overwrite! 🤪") {
+      return await runStandardRetrieve(
+        username,
+        items,
+        displayTitle,
+        true,
+        workspaceRoot,
+      );
+    }
+  }
+
+  if (isCommandLineTooLong(result)) {
+    result = await runWithTemporaryManifest(
+      expandedList,
+      (manifestPath) =>
+        buildStandardRetrieveCommand({
+          source: `--manifest "${manifestPath}"`,
+          username,
+          forceOverwrite,
+        }),
+      workspaceRoot,
+    );
+  }
+  return result;
+}
+
+// sf hardis mdapi read on the items routed to the CRUD Metadata API. Its successes/failures/skipped
+// output is normalized to the sf project retrieve start files/messages shape, so partial success
+// remains visible to the shared notification, local-file re-check and package.xml handling.
+async function runCrudRead(
+  username: string,
+  items: any[],
+  displayTitle: string,
+  retrieveMode: RetrieveMode,
+  workspaceRoot: string,
+  activeOnlySupported = true,
+): Promise<any> {
+  // Folder auto-inclusion only applies to the file-based retrieve. The CRUD
+  // Metadata API (readMetadata) targets the requested components directly.
+  const command = buildCrudReadCommand({
+    source: toMetadataArgs(items),
+    username,
+    mode: retrieveMode,
+    activeOnlySupported,
+  });
+  Logger.log(`Retrieving metadata: ${command}`);
+  let result = await execWithRetrieveProgress(
+    command,
+    displayTitle,
+    workspaceRoot,
+  );
+  if (isCommandLineTooLong(result)) {
+    result = await runWithTemporaryManifest(
+      items,
+      (manifestPath) =>
+        buildCrudReadCommand({
+          source: `--manifest "${manifestPath}"`,
+          username,
+          mode: retrieveMode,
+          activeOnlySupported,
+        }),
+      workspaceRoot,
+    );
+  }
+  if (activeOnlySupported && isActiveOnlyFlagUnknown(result)) {
+    Logger.log(
+      "The installed sfdx-hardis does not know --active-only: reading again without it. Upgrade sfdx-hardis to leave out the permissions that grant nothing.",
+    );
+    return await runCrudRead(
+      username,
+      items,
+      displayTitle,
+      retrieveMode,
+      workspaceRoot,
+      false,
+    );
+  }
+
+  const normalizedCrudResult = normalizeCrudReadResult(result);
+  const crudFailed =
+    !result || result.status === 1 || !!result.error || !!result.errorMessage;
+  if (normalizedCrudResult) {
+    result.result = normalizedCrudResult;
+  } else if (crudFailed) {
+    // Force the shared error branch to surface the CLI error message.
+    if (result) {
+      result.result = null;
+    }
+  } else {
+    // Backward-compatible fallback for older command output that does not
+    // expose successes/failures/skipped yet.
+    result.result = {
+      success: true,
+      files: items.map((item) => toRetrieveFile(item, "Changed")),
+      messages: [],
+    };
+  }
+  return result;
+}
+
+async function execWithRetrieveProgress(
+  command: string,
+  displayTitle: string,
+  workspaceRoot: string,
+): Promise<any> {
+  return await vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Notification,
+      title: displayTitle,
+      cancellable: false,
+    },
+    async (_progress) => {
+      return await execSfdxJson(command, { cwd: workspaceRoot });
+    },
+  );
+}
+
+function isCommandLineTooLong(result: any): boolean {
+  const errorMsg = result?.error?.message || "";
+  return (
+    errorMsg.includes(`command line is too long`) ||
+    errorMsg.includes(`ligne de commande est trop longue`) ||
+    errorMsg.includes(`ENAMETOOLONG`)
+  );
+}
+
+// Command line too long: create a package.xml in a temp dir and run the command with --manifest
+async function runWithTemporaryManifest(
+  items: any[],
+  buildCommand: (manifestPath: string) => string,
+  workspaceRoot: string,
+): Promise<any> {
+  const tempDir = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), "sfdx-retrieve-"),
+  );
+  const tmpPackageXml = path.join(tempDir, "package.xml");
+  // Group metadata by type
+  const metadataByType = new Map<string, string[]>();
+  items.forEach((item) => {
+    if (!metadataByType.has(item.memberType)) {
+      metadataByType.set(item.memberType, []);
+    }
+    metadataByType.get(item.memberType)!.push(item.memberName);
+  });
+  const sfdxProject = getSfdxProjectJson();
+  const apiVersion = sfdxProject?.sourceApiVersion || "65.0";
+  // Build package.xml content with grouped types
+  const typesBlocks = Array.from(metadataByType.entries())
+    .map(
+      ([memberType, memberNames]) =>
+        `  <types>\n${memberNames.map((name) => `    <members>${name}</members>`).join("\n")}\n    <name>${memberType}</name>\n  </types>`,
+    )
+    .join("\n");
+
+  const packageXmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+    <Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    ${typesBlocks}
+      <version>${apiVersion}</version>
+    </Package>`;
+  await fs.promises.writeFile(tmpPackageXml, packageXmlContent, {
+    encoding: "utf8",
+  });
+  const commandManifest = buildCommand(tmpPackageXml);
+  Logger.log(`Retrieving metadata with manifest: ${commandManifest}`);
+  const result = await execWithRetrieveProgress(
+    commandManifest,
+    "Retrieving metadata (using manifest to avoid too long command line)...",
+    workspaceRoot,
+  );
+  // Clean up temp dir
+  try {
+    await fs.promises.rm(tempDir, { recursive: true, force: true });
+  } catch {
+    // ignore
+  }
+  return result;
+}
+
+// Return the raw result when only one CLI call ran, so its own error branches (unknown metadata type...)
+// still apply. When both ran, merge them: a call that returned nothing usable becomes failed entries
+// for its items with its error, so the success of the other one, or both errors, stay visible.
+function combineRetrieveResults(
+  standardResult: any,
+  standardItems: any[],
+  crudResult: any,
+  crudItems: any[],
+): any {
+  if (!crudResult) {
+    return standardResult;
+  }
+  if (!standardResult) {
+    return crudResult;
+  }
+  const toOutcome = (callResult: any, items: any[]): RetrieveOutcome =>
+    callResult?.result
+      ? callResult.result
+      : failedOutcome(
+          items,
+          callResult?.error?.message ||
+            callResult?.message ||
+            "Unknown error occurred",
+        );
+  return {
+    status: 0,
+    result: mergeRetrieveOutcomes([
+      toOutcome(standardResult, standardItems),
+      toOutcome(crudResult, crudItems),
+    ]),
+  };
+}
+
+// Paths of the .object-meta.xml files of these objects in the project package directories, by object
+async function findObjectFiles(
+  objectNames: string[],
+): Promise<Map<string, string[]>> {
+  const found = new Map<string, string[]>();
+  if (objectNames.length === 0) {
+    return found;
+  }
+  const workspaceRoot = getWorkspaceRoot();
+  const packages = await listSfdxProjectPackageDirectories();
+  const patterns: string[] = [];
+  for (const objectName of objectNames) {
+    for (const pkgDir of packages) {
+      patterns.push(
+        path
+          .join(
+            pkgDir,
+            "**",
+            "objects",
+            objectName,
+            `${objectName}.object-meta.xml`,
+          )
+          .replace(/\\/g, "/"),
+      );
+    }
+  }
+  if (patterns.length === 0) {
+    return found;
+  }
+  const combinedPattern =
+    patterns.length > 1 ? `{${patterns.join(",")}}` : patterns[0];
+  const uris = await vscode.workspace.findFiles(
+    new vscode.RelativePattern(workspaceRoot, combinedPattern),
+    GLOB_IGNORE_PATTERNS,
+  );
+  for (const uri of uris) {
+    const objectName = path.basename(uri.fsPath, ".object-meta.xml");
+    if (!found.has(objectName)) {
+      found.set(objectName, []);
+    }
+    found.get(objectName)!.push(uri.fsPath);
+  }
+  return found;
+}
+
+// When the retrieve made object files appear that were not there before, run the CLI cleaning of empty
+// CustomObject files, the same one Save / Publish runs with emptyItems. Returns the objects removed.
+async function removeNewEmptyCustomObjects(
+  objectCandidates: string[],
+  objectsExistingBefore: Set<string>,
+  workspaceRoot: string,
+): Promise<string[]> {
+  const newObjects = objectCandidates.filter(
+    (objectName) => !objectsExistingBefore.has(objectName),
+  );
+  if (newObjects.length === 0) {
+    return [];
+  }
+  const appeared = await findObjectFiles(newObjects);
+  if (appeared.size === 0) {
+    return [];
+  }
+  try {
+    const command = buildEmptyObjectsCleaningCommand();
+    Logger.log(`Removing empty CustomObject files: ${command}`);
+    const result = await execSfdxJson(command, { cwd: workspaceRoot });
+    return removedEmptyObjectNames(result);
+  } catch (e: any) {
+    Logger.log(
+      `Could not remove the empty CustomObject files: ${e?.message || e}`,
+    );
+    return [];
+  }
 }
 
 /** Sends the metadata presets (defaults + .sfdx-hardis.yml ones) to the panel */
@@ -2253,7 +2521,7 @@ function buildMetadataKeys(name: any, mt: any) {
 /* jscpd:ignore-start */
 async function handleRetrieveSelectedMetadata(panel: any, data: any) {
   try {
-    const { username, metadata, localPackage, useCrudApi } = data;
+    const { username, metadata, localPackage, retrieveMode, useCrudApi } = data;
 
     if (
       !username ||
@@ -2281,7 +2549,7 @@ async function handleRetrieveSelectedMetadata(panel: any, data: any) {
       panel,
       false,
       localPackage || null,
-      useCrudApi === true,
+      parseRetrieveMode(retrieveMode, useCrudApi),
     );
   } catch (error: any) {
     Logger.log(`Error retrieving selected metadata: ${error.message}`);
@@ -2317,6 +2585,7 @@ async function handleRetrieveMetadata(panel: any, data: any) {
       memberName,
       deleted,
       localPackage,
+      retrieveMode,
       useCrudApi,
     } = data;
 
@@ -2350,7 +2619,7 @@ async function handleRetrieveMetadata(panel: any, data: any) {
       panel,
       false,
       localPackage || null,
-      useCrudApi === true,
+      parseRetrieveMode(retrieveMode, useCrudApi),
     );
   } catch (error: any) {
     Logger.log(`Error retrieving metadata: ${error.message}`);

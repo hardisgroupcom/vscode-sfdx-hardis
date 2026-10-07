@@ -88,7 +88,14 @@ async function main() {
   // clone as the workspace instead of a fixture project. It walks the labs of
   // the training course through the real panels, against real orgs. See
   // src/test/ui/labDriver.ts.
+  // Real org run of the Metadata Retriever (SFDX_HARDIS_REAL_RETRIEVER=true): like the lab
+  // driver, the real CLI and a real project given by SFDX_HARDIS_LAB_WORKSPACE, with the
+  // debugging port of the screenshot run so the panel can be captured. See
+  // src/test/ui/retrieverRealOrg.test.ts.
+  const realRetriever = process.env.SFDX_HARDIS_REAL_RETRIEVER === "true";
+
   const labDriver =
+    realRetriever ||
     process.argv.includes("--labs") ||
     process.env.SFDX_HARDIS_LAB_DRIVER === "true";
 
@@ -522,7 +529,7 @@ async function main() {
   // src/test/ui/cdpWindow.ts): clicks and captures go to the page, never to the desktop
   // cspell:ignore backgrounding
 
-  const cdpPort = docScreenshots ? await findFreePort() : 0;
+  const cdpPort = docScreenshots || realRetriever ? await findFreePort() : 0;
 
   // The window itself is another matter: started the usual way, it opens in front of whoever is
   // working on the machine and takes the focus, at every run. On Windows it is created on a
@@ -589,6 +596,7 @@ async function main() {
         ...(labDriver
           ? {
               SFDX_HARDIS_LAB_DRIVER: "true",
+              ...(realRetriever ? { SFDX_HARDIS_REAL_RETRIEVER: "true" } : {}),
               SFDX_HARDIS_LAB_SPECS: process.env.SFDX_HARDIS_LAB_SPECS || "",
               SFDX_HARDIS_LAB_ONLY: process.env.SFDX_HARDIS_LAB_ONLY || "",
               CI: undefined,
