@@ -24,8 +24,21 @@
   row-gap: 4px;
 }
 
+/* Retrieve mode: label beside the list, so the action row keeps the height of its buttons */
+.retrieve-mode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.retrieve-mode-label {
+  margin: 0;
+  padding: 0;
+  white-space: nowrap;
+}
+
 .retrieve-mode-select {
-  min-width: 180px;
+  min-width: 170px;
 }
 
 .local-package-combo {

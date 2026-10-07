@@ -183,15 +183,18 @@
             ></lightning-button>
           </div>
           <div class="hardis-action-row-aside slds-form-element slds-form-element_compact">
-            <lightning-combobox
-              class="retrieve-mode-select"
-              label={i18n.retrieveModeLabel}
-              value={retrieveMode}
-              options={retrieveModeOptions}
-              onchange={handleRetrieveModeChange}
-              title={retrieveModeTooltip}
-              dropdown-alignment="right"
-            ></lightning-combobox>
+            <div class="retrieve-mode" title={retrieveModeTooltip}>
+              <span class="slds-form-element__label retrieve-mode-label">{i18n.retrieveModeLabel}</span>
+              <lightning-combobox
+                class="retrieve-mode-select"
+                label={i18n.retrieveModeLabel}
+                variant="label-hidden"
+                value={retrieveMode}
+                options={retrieveModeOptions}
+                onchange={handleRetrieveModeChange}
+                dropdown-alignment="right"
+              ></lightning-combobox>
+            </div>
             <lightning-input
               type="toggle"
               label={i18n.checkLocalFiles}
