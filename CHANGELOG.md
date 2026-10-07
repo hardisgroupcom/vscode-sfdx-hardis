@@ -4,6 +4,7 @@
 
 - Metadata Retriever: pick a retrieve mode. **Auto**, the default, brings Profiles back complete with only the permissions they grant
 - Metadata Retriever no longer keeps the empty CustomObject file written when a field is retrieved without its object
+- Metadata Retriever: retrieving the same items again right after a retrieve writes the files again, instead of reusing the previous result
 
 ## [8.11.0] 2026-10-06
 
