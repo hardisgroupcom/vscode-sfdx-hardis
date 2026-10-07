@@ -183,17 +183,15 @@
             ></lightning-button>
           </div>
           <div class="hardis-action-row-aside slds-form-element slds-form-element_compact">
-            <lightning-input
-              type="toggle"
-              label={i18n.useCrudApiLabel}
-              aria-label={i18n.useCrudApiLabel}
-              checked={useCrudApi}
-              onchange={handleUseCrudApiChange}
-              variant="standard"
-              title={useCrudApiTooltip}
-              message-toggle-active=""
-              message-toggle-inactive=""
-            ></lightning-input>
+            <lightning-combobox
+              class="retrieve-mode-select"
+              label={i18n.retrieveModeLabel}
+              value={retrieveMode}
+              options={retrieveModeOptions}
+              onchange={handleRetrieveModeChange}
+              title={retrieveModeTooltip}
+              dropdown-alignment="right"
+            ></lightning-combobox>
             <lightning-input
               type="toggle"
               label={i18n.checkLocalFiles}
@@ -209,8 +207,8 @@
           </div>
         </div>
 
-        <!-- CRUD API deployability notice (shown only when Full metadata is on) -->
-        <template if:true={useCrudApi}>
+        <!-- CRUD API deployability notice (shown for every mode that reads with sf hardis mdapi read) -->
+        <template if:true={showCrudApiWarning}>
           <div class="hardis-note warning slds-m-top_x-small" role="alert">
             <lightning-icon icon-name="utility:warning" size="x-small"></lightning-icon>
             <span>{i18n.useCrudApiWarning}</span>

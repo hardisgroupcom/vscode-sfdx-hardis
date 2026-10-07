@@ -86,7 +86,8 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
   @track hasSearched = false;
   @track checkLocalFiles = false;
   @track checkLocalAvailable = true;
-  @track useCrudApi = false;
+  // Retrieve mode: auto | fullActiveOnly | full | off. Not persisted, every opening starts on Auto
+  @track retrieveMode = "auto";
   @track isLoadingOrgs = false;
   @track isLoadingPackages = false;
   @track isLoading = false;
@@ -449,8 +450,41 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       : this.t("noProjectJsonFound");
   }
 
-  get useCrudApiTooltip() {
-    return this.t("useCrudApiTooltip");
+  get retrieveModeOptions() {
+    return [
+      {
+        label: this.t("retrieveModeAuto"),
+        value: "auto",
+        description: this.t("retrieveModeAutoDescription"),
+      },
+      {
+        label: this.t("retrieveModeFullActiveOnly"),
+        value: "fullActiveOnly",
+        description: this.t("retrieveModeFullActiveOnlyDescription"),
+      },
+      {
+        label: this.t("retrieveModeFull"),
+        value: "full",
+        description: this.t("retrieveModeFullDescription"),
+      },
+      {
+        label: this.t("retrieveModeOff"),
+        value: "off",
+        description: this.t("retrieveModeOffDescription"),
+      },
+    ];
+  }
+
+  get retrieveModeTooltip() {
+    const selected = this.retrieveModeOptions.find(
+      (option) => option.value === this.retrieveMode,
+    );
+    return selected ? selected.description : "";
+  }
+
+  // The CRUD Metadata API deployability note concerns every mode that uses sf hardis mdapi read
+  get showCrudApiWarning() {
+    return this.retrieveMode !== "off";
   }
 
   get hasResults() {
@@ -736,12 +770,8 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
     }
   }
 
-  handleUseCrudApiChange(event) {
-    // lightning-input toggle may expose the boolean on event.target.checked or event.detail.checked
-    this.useCrudApi =
-      event.target?.checked === true ||
-      event.detail?.checked === true ||
-      event.detail?.value === true;
+  handleRetrieveModeChange(event) {
+    this.retrieveMode = event.detail.value;
   }
 
   handleQueryModeChange(event) {
@@ -990,7 +1020,7 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       data: {
         username: this.selectedOrg,
         localPackage: this.selectedLocalPackage,
-        useCrudApi: this.useCrudApi,
+        retrieveMode: this.retrieveMode,
         metadata: this.selectedRows.map((row) => ({
           memberType: row.MemberType,
           memberName: row.MemberName,
@@ -1231,7 +1261,7 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       data: {
         username: this.selectedOrg,
         localPackage: this.selectedLocalPackage,
-        useCrudApi: this.useCrudApi,
+        retrieveMode: this.retrieveMode,
         memberType: row.MemberType,
         memberName: row.MemberName,
         deleted: row.IsDeleted === true,

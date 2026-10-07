@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Metadata Retriever: pick a retrieve mode. **Auto**, the default, brings Profiles back complete with only the permissions they grant
+- Metadata Retriever no longer keeps the empty CustomObject file written when a field is retrieved without its object
+
 ## [8.11.0] 2026-10-06
 
 - DevOps Pipeline

@@ -24,6 +24,10 @@
   row-gap: 4px;
 }
 
+.retrieve-mode-select {
+  min-width: 180px;
+}
+
 .local-package-combo {
   min-width: 220px;
 }
