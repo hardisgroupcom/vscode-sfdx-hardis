@@ -47,6 +47,9 @@ genericTicketingProviderDetailsUrlBuilder: "https://sfdx-hardis-training.github.
 # this, Save / Publish sends you to the DevOps Pipeline panel instead of asking
 # for the URL of a manual actions file.
 manualActionsMode: sfdxHardis
+# A manual step to do before the deployment stops the check of its Pull Request until
+# somebody marks it as done (Labs 2.4 and 3.5). sfdx-hardis only lists it by default.
+failValidationOnPendingManualActions: true
 
 # --- Quality --------------------------------------------------------------
 testLevel: RunLocalTests
