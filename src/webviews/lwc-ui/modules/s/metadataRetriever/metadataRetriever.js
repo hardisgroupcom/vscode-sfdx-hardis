@@ -482,9 +482,12 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
     return selected ? selected.description : "";
   }
 
-  // The CRUD Metadata API deployability note concerns every mode that uses sf hardis mdapi read
+  // The CRUD Metadata API deployability note is for the modes that read everything with it. Auto only
+  // reads Profiles that way, and a warning displayed by default would be read by nobody
   get showCrudApiWarning() {
-    return this.retrieveMode !== "off";
+    return (
+      this.retrieveMode === "full" || this.retrieveMode === "fullActiveOnly"
+    );
   }
 
   get hasResults() {
