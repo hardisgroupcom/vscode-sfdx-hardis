@@ -149,9 +149,7 @@
   "cards": {
     "intro": {
       "heading": "Salesforce DevOps, free and open source",
-      "lines": [
-        "Follow one Pull Request, from review to done"
-      ],
+      "lines": ["Follow one Pull Request, from review to done"],
       "ms": 3600
     },
     "outro": {
