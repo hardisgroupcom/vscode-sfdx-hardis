@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Showcase screenshots: the Validation and Deployment tabs of the Pull Request window show the new layout of the sfdx-hardis comments
 - Training screenshots: the project fixture turns on the stop of a validation on a pending manual step, like the course does
 
 ## [8.12.0] 2026-10-07
