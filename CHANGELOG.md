@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Training screenshots: the project fixture turns on the stop of a validation on a pending manual step, like the course does
+
 ## [8.12.0] 2026-10-07
 
 - Metadata Retriever: pick a retrieve mode. **Auto**, the default, brings Profiles back complete with only the permissions they grant
