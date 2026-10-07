@@ -1147,7 +1147,13 @@ async function execWithRetrieveProgress(
       cancellable: false,
     },
     async (_progress) => {
-      return await execSfdxJson(command, { cwd: workspaceRoot });
+      // A retrieve writes files: the same command run again a few seconds later, after the user
+      // discarded what it wrote or switched retrieve mode, must write them again, not hand back the
+      // result execSfdxJson keeps for 20 seconds
+      return await execSfdxJson(command, {
+        cwd: workspaceRoot,
+        reuseRecentResult: false,
+      });
     },
   );
 }
@@ -1311,7 +1317,11 @@ async function removeNewEmptyCustomObjects(
   try {
     const command = buildEmptyObjectsCleaningCommand();
     Logger.log(`Removing empty CustomObject files: ${command}`);
-    const result = await execSfdxJson(command, { cwd: workspaceRoot });
+    // Removes files: never answered from a previous run, like the retrieve it follows
+    const result = await execSfdxJson(command, {
+      cwd: workspaceRoot,
+      reuseRecentResult: false,
+    });
     return removedEmptyObjectNames(result);
   } catch (e: any) {
     Logger.log(
