@@ -4,7 +4,8 @@ import {
   buildStandardRetrieveCommand,
   candidateObjectNames,
   failedOutcome,
-  isEmptyCustomObjectXml,
+  isActiveOnlyFlagUnknown,
+  removedEmptyObjectNames,
   mergeRetrieveOutcomes,
   parseRetrieveMode,
   splitByRetrieveMode,
@@ -47,7 +48,6 @@ suite("metadataRetrieveModes Test Suite", () => {
       buildCrudReadCommand({
         source: toMetadataArgs([ITEMS[0]]),
         username: "me@acme.com",
-        localPackagePath: null,
         mode,
       });
     assert.ok(build("auto").includes(" --active-only"));
@@ -59,15 +59,34 @@ suite("metadataRetrieveModes Test Suite", () => {
     );
   });
 
-  test("the CRUD read writes into the chosen local package", () => {
+  test("the CRUD read never passes --output-dir, and can leave --active-only out", () => {
     const command = buildCrudReadCommand({
       source: '--manifest "C:/tmp/package.xml"',
       username: "me@acme.com",
-      localPackagePath: "force-app",
       mode: "auto",
     });
-    assert.ok(command.includes(' --output-dir "force-app"'));
+    assert.ok(!command.includes("--output-dir"));
     assert.ok(command.includes('--manifest "C:/tmp/package.xml"'));
+    assert.ok(
+      !buildCrudReadCommand({
+        source: "",
+        username: "me@acme.com",
+        mode: "auto",
+        activeOnlySupported: false,
+      }).includes("--active-only"),
+    );
+  });
+
+  test("recognizes an sfdx-hardis that does not know --active-only", () => {
+    assert.ok(
+      isActiveOnlyFlagUnknown({
+        status: 1,
+        message: "Nonexistent flag: --active-only\nSee more help with --help",
+      }),
+    );
+    assert.ok(
+      !isActiveOnlyFlagUnknown({ status: 1, message: "INVALID_SESSION_ID" }),
+    );
   });
 
   test("the standard retrieve ignores conflicts only when asked", () => {
@@ -109,18 +128,26 @@ suite("metadataRetrieveModes Test Suite", () => {
     );
   });
 
-  test("recognizes an empty CustomObject file", () => {
-    assert.ok(
-      isEmptyCustomObjectXml(
-        '<?xml version="1.0" encoding="UTF-8"?>\r\n<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"></CustomObject>\r\n',
-      ),
+  test("reads the objects the empty items cleaning removed", () => {
+    assert.deepStrictEqual(
+      removedEmptyObjectNames({
+        status: 0,
+        result: {
+          removed: [
+            {
+              type: "CustomObject",
+              file: "C:\\repo\\force-app\\main\\default\\objects\\Account\\Account.object-meta.xml",
+            },
+            {
+              type: "SharingRules",
+              file: "force-app/main/default/sharingRules/Acme__c.sharingRules-meta.xml",
+            },
+          ],
+        },
+      }),
+      ["Account"],
     );
-    assert.ok(isEmptyCustomObjectXml("<CustomObject/>"));
-    assert.ok(
-      !isEmptyCustomObjectXml(
-        '<?xml version="1.0" encoding="UTF-8"?>\n<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">\n    <label>Acme</label>\n</CustomObject>\n',
-      ),
-    );
+    assert.deepStrictEqual(removedEmptyObjectNames({ status: 1 }), []);
   });
 
   test("merges two outcomes, and a failed call fails only its own items", () => {

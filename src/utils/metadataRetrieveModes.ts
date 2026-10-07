@@ -72,22 +72,56 @@ export function toMetadataArgs(items: RetrieveItem[]): string {
     .join(" ");
 }
 
+// No --output-dir: with it, the CLI merges only inside that folder and a Profile that lives in another
+// package directory would be written twice. The chosen package is made the default one instead, so new
+// files land there and existing ones are updated in place, as with sf project retrieve start.
 export function buildCrudReadCommand(options: {
   source: string;
   username: string;
-  localPackagePath: string | null;
   mode: RetrieveMode;
+  // false when the installed sfdx-hardis does not know --active-only yet
+  activeOnlySupported?: boolean;
 }): string {
   const activeOnly =
-    options.mode === "auto" || options.mode === "fullActiveOnly";
+    options.activeOnlySupported !== false &&
+    (options.mode === "auto" || options.mode === "fullActiveOnly");
   return (
     `sf hardis mdapi read ${options.source} --target-org ${options.username}` +
-    (options.localPackagePath
-      ? ` --output-dir "${options.localPackagePath}"`
-      : "") +
     (activeOnly ? " --active-only" : "") +
     " --agent --ignore-errors --json"
   );
+}
+
+// sfdx-hardis older than 8.15.0 rejects --active-only: the read is then run again without it
+export function isActiveOnlyFlagUnknown(result: any): boolean {
+  const message = `${result?.error?.message || ""} ${result?.message || ""} ${result?.errorMessage || ""}`;
+  return (
+    message.includes("--active-only") &&
+    /nonexistent flag|unknown flag|unexpected argument/i.test(message)
+  );
+}
+
+// Command that deletes the empty CustomObject files a retrieve just wrote. The CLI keeps any file
+// already committed, so only the ones this retrieve created (not in git yet) are removed.
+export function buildEmptyObjectsCleaningCommand(): string {
+  return "sf hardis:project:clean:emptyitems --metadata-type CustomObject --agent --json";
+}
+
+// Object names of the CustomObject files the cleaning removed, from its --json output
+export function removedEmptyObjectNames(result: any): string[] {
+  const removed = Array.isArray(result?.result?.removed)
+    ? result.result.removed
+    : [];
+  const names = removed
+    .filter((item: any) => item?.type === "CustomObject" && item?.file)
+    .map((item: any) =>
+      String(item.file)
+        .replace(/\\/g, "/")
+        .split("/")
+        .pop()!
+        .replace(".object-meta.xml", ""),
+    );
+  return [...new Set<string>(names)];
 }
 
 export function buildStandardRetrieveCommand(options: {
@@ -115,18 +149,6 @@ export function candidateObjectNames(items: RetrieveItem[]): string[] {
     }
   }
   return [...names].filter((name) => name !== "" && !name.includes("*"));
-}
-
-// True when the file holds a CustomObject root element with nothing in it.
-export function isEmptyCustomObjectXml(content: string): boolean {
-  const body = content
-    .replace(/<\?xml[^>]*\?>/g, "")
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .trim();
-  return (
-    /^<CustomObject\b[^>]*\/>$/.test(body) ||
-    /^<CustomObject\b[^>]*>\s*<\/CustomObject>$/.test(body)
-  );
 }
 
 // Outcome of a CLI call that returned no usable result: every requested item failed with its error.

@@ -36,7 +36,9 @@ import {
   candidateObjectNames,
   DEFAULT_RETRIEVE_MODE,
   failedOutcome,
-  isEmptyCustomObjectXml,
+  buildEmptyObjectsCleaningCommand,
+  isActiveOnlyFlagUnknown,
+  removedEmptyObjectNames,
   mergeRetrieveOutcomes,
   parseRetrieveMode,
   RetrieveMode,
@@ -476,6 +478,25 @@ function collectMetadataErrorDetails(messages: any[]): string[] {
 
 // The metadata type that the Salesforce CLI refused because its registry does
 // not know it (ex: GenOpAgentConfig), or null when the failure is something else
+// Name the type the CLI does not know and the rows to untick, instead of the raw registry error
+function showUnknownMetadataTypeError(result: any, metadataList: any[]) {
+  const metadataType = getUnknownMetadataType(result) as string;
+  const count = metadataList.filter(
+    (item) => item?.memberType === metadataType,
+  ).length;
+  Logger.log("Retrieve result:" + JSON.stringify(result));
+  vscode.window
+    .showErrorMessage(
+      t("failedToRetrieveUnknownMetadataType", { metadataType, count }),
+      "View logs",
+    )
+    .then((action) => {
+      if (action === "View logs") {
+        Logger.showOutputChannel();
+      }
+    });
+}
+
 function getUnknownMetadataType(result: any): string | null {
   const errorMsg = result?.error?.message || result?.message || "";
   const match =
@@ -591,12 +612,12 @@ export async function executeMetadataRetrieve(
     retrieveMode,
   );
 
-  // Switch default package directory only for the duration of the retrieve: the CRUD read writes
-  // into the chosen package with --output-dir instead
+  // Switch default package directory only for the duration of the retrieve. Both CLI calls write new
+  // files into the default package and update existing files where they are
   const initialDefaultPackage =
     defaultLocalPackageGuard.getInitialDefaultPackagePath();
   const shouldSwitchPackage =
-    standardItems.length > 0 &&
+    itemsToRetrieve.length > 0 &&
     !!localPackagePath &&
     !!initialDefaultPackage &&
     normalizeSfdxProjectPath(localPackagePath) !==
@@ -644,23 +665,34 @@ export async function executeMetadataRetrieve(
               crudItems,
               displayTitle,
               retrieveMode,
-              localPackagePath,
               workspaceRoot,
             )
           : null;
-      result = combineRetrieveResults(
-        standardResult,
-        standardItems,
-        crudResult,
-        crudItems,
-      );
+      if (
+        standardResult &&
+        crudResult?.result &&
+        getUnknownMetadataType(standardResult)
+      ) {
+        // The standard retrieve stopped on a type the CLI does not know: name it and the rows to
+        // untick, and still report what the CRUD read wrote
+        showUnknownMetadataTypeError(standardResult, standardItems);
+        result = crudResult;
+      } else {
+        result = combineRetrieveResults(
+          standardResult,
+          standardItems,
+          crudResult,
+          crudItems,
+        );
+      }
 
       // A field, list view or record type retrieved without its object makes Salesforce CLI write an
-      // empty <CustomObject></CustomObject> file. Committed, it breaks the deployment: remove the ones
-      // this retrieve just created, never a file that was there before
+      // empty <CustomObject></CustomObject> file. Committed, it breaks the deployment: the CLI removes
+      // the ones not in git yet, never a committed file
       const removedObjects = await removeNewEmptyCustomObjects(
         objectCandidates,
         objectsExistingBefore,
+        workspaceRoot,
       );
       if (removedObjects.length > 0) {
         if (Array.isArray(result?.result?.files)) {
@@ -923,22 +955,7 @@ export async function executeMetadataRetrieve(
         }
       }
     } else if (getUnknownMetadataType(result)) {
-      // Name the type and the rows to untick, instead of the raw registry error
-      const metadataType = getUnknownMetadataType(result) as string;
-      const count = metadataList.filter(
-        (item) => item?.memberType === metadataType,
-      ).length;
-      Logger.log("Retrieve result:" + JSON.stringify(result));
-      vscode.window
-        .showErrorMessage(
-          t("failedToRetrieveUnknownMetadataType", { metadataType, count }),
-          "View logs",
-        )
-        .then((action) => {
-          if (action === "View logs") {
-            Logger.showOutputChannel();
-          }
-        });
+      showUnknownMetadataTypeError(result, metadataList);
     } else {
       const errorMsg =
         result?.error?.message || result?.message || "Unknown error occurred";
@@ -1052,16 +1069,16 @@ async function runCrudRead(
   items: any[],
   displayTitle: string,
   retrieveMode: RetrieveMode,
-  localPackagePath: string | null,
   workspaceRoot: string,
+  activeOnlySupported = true,
 ): Promise<any> {
   // Folder auto-inclusion only applies to the file-based retrieve. The CRUD
   // Metadata API (readMetadata) targets the requested components directly.
   const command = buildCrudReadCommand({
     source: toMetadataArgs(items),
     username,
-    localPackagePath,
     mode: retrieveMode,
+    activeOnlySupported,
   });
   Logger.log(`Retrieving metadata: ${command}`);
   let result = await execWithRetrieveProgress(
@@ -1076,10 +1093,23 @@ async function runCrudRead(
         buildCrudReadCommand({
           source: `--manifest "${manifestPath}"`,
           username,
-          localPackagePath,
           mode: retrieveMode,
+          activeOnlySupported,
         }),
       workspaceRoot,
+    );
+  }
+  if (activeOnlySupported && isActiveOnlyFlagUnknown(result)) {
+    Logger.log(
+      "The installed sfdx-hardis does not know --active-only: reading again without it. Upgrade sfdx-hardis to leave out the permissions that grant nothing.",
+    );
+    return await runCrudRead(
+      username,
+      items,
+      displayTitle,
+      retrieveMode,
+      workspaceRoot,
+      false,
     );
   }
 
@@ -1185,7 +1215,7 @@ async function runWithTemporaryManifest(
 
 // Return the raw result when only one CLI call ran, so its own error branches (unknown metadata type...)
 // still apply. When both ran, merge them: a call that returned nothing usable becomes failed entries
-// for its items, so the success of the other one stays visible.
+// for its items with its error, so the success of the other one, or both errors, stay visible.
 function combineRetrieveResults(
   standardResult: any,
   standardItems: any[],
@@ -1197,14 +1227,6 @@ function combineRetrieveResults(
   }
   if (!standardResult) {
     return crudResult;
-  }
-  // An unknown metadata type stops the standard retrieve: keep its raw result, so the dedicated
-  // message names the type and the rows to untick
-  if (
-    (!standardResult.result && !crudResult.result) ||
-    getUnknownMetadataType(standardResult)
-  ) {
-    return standardResult;
   }
   const toOutcome = (callResult: any, items: any[]): RetrieveOutcome =>
     callResult?.result
@@ -1269,34 +1291,34 @@ async function findObjectFiles(
   return found;
 }
 
-// Delete the empty object files the retrieve just wrote. Returns the names of the objects removed.
+// When the retrieve made object files appear that were not there before, run the CLI cleaning of empty
+// CustomObject files, the same one Save / Publish runs with emptyItems. Returns the objects removed.
 async function removeNewEmptyCustomObjects(
   objectCandidates: string[],
   objectsExistingBefore: Set<string>,
+  workspaceRoot: string,
 ): Promise<string[]> {
   const newObjects = objectCandidates.filter(
     (objectName) => !objectsExistingBefore.has(objectName),
   );
-  const removed: string[] = [];
-  for (const [objectName, filePaths] of await findObjectFiles(newObjects)) {
-    for (const filePath of filePaths) {
-      try {
-        const content = await fs.promises.readFile(filePath, "utf8");
-        if (isEmptyCustomObjectXml(content)) {
-          await fs.promises.rm(filePath);
-          Logger.log(`Removed empty CustomObject file ${filePath}`);
-          if (!removed.includes(objectName)) {
-            removed.push(objectName);
-          }
-        }
-      } catch (e: any) {
-        Logger.log(
-          `Could not check CustomObject file ${filePath}: ${e?.message || e}`,
-        );
-      }
-    }
+  if (newObjects.length === 0) {
+    return [];
   }
-  return removed;
+  const appeared = await findObjectFiles(newObjects);
+  if (appeared.size === 0) {
+    return [];
+  }
+  try {
+    const command = buildEmptyObjectsCleaningCommand();
+    Logger.log(`Removing empty CustomObject files: ${command}`);
+    const result = await execSfdxJson(command, { cwd: workspaceRoot });
+    return removedEmptyObjectNames(result);
+  } catch (e: any) {
+    Logger.log(
+      `Could not remove the empty CustomObject files: ${e?.message || e}`,
+    );
+    return [];
+  }
 }
 
 /** Sends the metadata presets (defaults + .sfdx-hardis.yml ones) to the panel */
