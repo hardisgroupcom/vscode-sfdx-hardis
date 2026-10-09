@@ -282,3 +282,27 @@ export class CdpWindow {
     );
   }
 }
+
+/**
+ * Saves the whole window as `<shotsDir>/<name>.png`, for a run that documents what it saw. Does
+ * nothing without a folder or without the debugging port, and a failed capture never fails the
+ * test that asked for it.
+ */
+export async function captureWindowTo(
+  shotsDir: string,
+  name: string,
+): Promise<void> {
+  const port = CdpWindow.portFromEnv();
+  if (!shotsDir || !port) {
+    return;
+  }
+  fs.mkdirSync(shotsDir, { recursive: true });
+  const driver = new CdpWindow(port);
+  try {
+    await driver.capture(path.join(shotsDir, `${name}.png`), { top: 0 });
+  } catch (error: any) {
+    console.log(`      [shot] ${name}: FAILED ${error?.message || error}`);
+  } finally {
+    driver.close();
+  }
+}

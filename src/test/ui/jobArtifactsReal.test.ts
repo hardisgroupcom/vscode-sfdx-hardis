@@ -4,7 +4,7 @@ import * as path from "path";
 import * as vscode from "vscode";
 import WebSocket from "ws";
 import { activateExtension, recordSentMessages, waitFor } from "./uiTestUtils";
-import { CdpWindow } from "./cdpWindow";
+import { CdpWindow, captureWindowTo } from "./cdpWindow";
 
 /**
  * The Files button of the Pull Request view against a REAL git provider, with the REAL
@@ -55,40 +55,7 @@ suite("Job artifacts on a real git provider", function () {
   const prNumber = Number(process.env.SFDX_HARDIS_REAL_JOB_ARTIFACTS_PR || "");
   const shotsDir = process.env.SFDX_HARDIS_REAL_JOB_ARTIFACTS_SHOTS || "";
 
-  async function shoot(name: string): Promise<void> {
-    const port = CdpWindow.portFromEnv();
-    if (!shotsDir || !port) {
-      return;
-    }
-    fs.mkdirSync(shotsDir, { recursive: true });
-    const driver = new CdpWindow(port);
-    try {
-      await driver.capture(path.join(shotsDir, `${name}.png`), { top: 0 });
-    } catch (error: any) {
-      console.log(`      [shot] ${name}: FAILED ${error?.message || error}`);
-    } finally {
-      driver.close();
-    }
-  }
-
-  // waitFor for a producer that has to ask the webview: polls until it answers something
-  async function poll(
-    producer: () => Promise<any>,
-    timeoutMs: number,
-    label: string,
-  ): Promise<any> {
-    const start = Date.now();
-    for (;;) {
-      const value = await producer();
-      if (value) {
-        return value;
-      }
-      if (Date.now() - start > timeoutMs) {
-        throw new Error(`Timeout (${timeoutMs}ms) waiting for: ${label}`);
-      }
-      await new Promise((resolve) => setTimeout(resolve, 500));
-    }
-  }
+  const shoot = (name: string) => captureWindowTo(shotsDir, name);
 
   // Evaluates an expression in the page of the pipeline webview, and returns its value
   async function inWebview(expression: string): Promise<any> {
@@ -273,7 +240,7 @@ suite("Job artifacts on a real git provider", function () {
       this.skip();
     }
     // The Validation tab is the one shown: its run has a Files button after Open comment
-    const buttons = await poll(
+    const buttons = await waitFor<any>(
       async () => {
         const labels = await inWebview(`
           const row = deepAll(panelDocument, ".hardis-list-actions").find(
@@ -301,7 +268,7 @@ suite("Job artifacts on a real git provider", function () {
       button.click();
       return true;
     `);
-    const names = await poll(
+    const names = await waitFor<any>(
       async () => {
         const found = await inWebview(`
           const list = deepAll(panelDocument, ".run-file-name")
@@ -357,7 +324,7 @@ suite("Job artifacts on a real git provider", function () {
       prNumber,
       tab: "megalinter",
     });
-    await poll(
+    await waitFor<any>(
       async () =>
         (await inWebview(`
           // The run shown must be the MegaLinter one: the tab is still changing at first
@@ -374,7 +341,7 @@ suite("Job artifacts on a real git provider", function () {
       60000,
       "the Files button of the MegaLinter run",
     );
-    const crumbs = await poll(
+    const crumbs = await waitFor<any>(
       async () => {
         const found = await inWebview(`
           const list = deepAll(panelDocument, ".run-files-crumb")
@@ -401,7 +368,7 @@ suite("Job artifacts on a real git provider", function () {
       return name;
     `);
     assert.ok(folder, "a folder in the list");
-    const inside = await poll(
+    const inside = await waitFor<any>(
       async () => {
         const found = await inWebview(`
           const list = deepAll(panelDocument, ".run-files-crumb")
