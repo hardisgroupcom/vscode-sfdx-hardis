@@ -20,6 +20,7 @@ import { HardisColors } from "./hardis-colors";
 import { CacheManager } from "./utils/cache-manager";
 import { runSalesforceCliMcpServer } from "./utils/mcpUtils";
 import { SecretsManager } from "./utils/secretsManager";
+import { watchEnvFile } from "./utils/envFileCredentials";
 import { getExtensionConfigSections } from "./utils/extensionConfigUtils";
 import { startEventLoopMonitor } from "./utils/eventLoopMonitor";
 import {
@@ -53,6 +54,8 @@ export function activate(context: vscode.ExtensionContext) {
   CacheManager.init(context.globalState, context.globalStorageUri.fsPath);
   CacheManager.clearExpired();
   SecretsManager.init(context);
+  // Provider credentials of the workspace .env file: read again when it changes
+  watchEnvFile(context);
   // Node compile cache shared by every sf command started by the extension
   try {
     const compileCacheDir = path.join(

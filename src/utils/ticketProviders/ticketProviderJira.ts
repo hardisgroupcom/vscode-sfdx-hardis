@@ -5,7 +5,8 @@ import { TicketProvider } from "./ticketProvider";
 import { Ticket, TicketProviderName } from "./types";
 import { Logger } from "../../logger";
 import { getConfig } from "../pipeline/sfdxHardisConfig";
-import { SecretsManager } from "../secretsManager";
+import { SecretsManager, SecretSource } from "../secretsManager";
+import { PROVIDER_ENV_VAR_NAMES } from "../envFileCredentials";
 import { Version2Client, Version3Client } from "jira.js";
 import { t } from "../../i18n/i18n";
 import {
@@ -67,39 +68,55 @@ export class JiraProvider extends TicketProvider {
 
   async getTicketingWebUrl(): Promise<string | null> {
     if (!this.jiraHost) {
-      const config = await getConfig("project");
-      this.jiraHost = this.completeJiraHostUrl(config.jiraHost || "");
+      this.jiraHost = await this.readHost();
     }
     return this.jiraHost || null;
   }
 
   async initializeConnection(): Promise<boolean | null> {
-    const config = await getConfig("project");
-    this.jiraHost = this.completeJiraHostUrl(config.jiraHost || "");
+    this.jiraHost = await this.readHost();
     if (!this.jiraHost) {
       Logger.log("JIRA host not configured.");
       return false;
     }
     this.hostKey = this.jiraHost.replace(/\./g, "_").toUpperCase();
-    let jiraPAT =
-      (await SecretsManager.getSecret(this.hostKey + "_JIRA_PAT")) || "";
-    let jiraEmail =
-      (await SecretsManager.getSecret(this.hostKey + "_JIRA_EMAIL")) || "";
-    let jiraToken =
-      (await SecretsManager.getSecret(this.hostKey + "_JIRA_TOKEN")) || "";
+    const jiraPAT = await SecretsManager.resolveSecret(
+      this.hostKey + "_JIRA_PAT",
+      PROVIDER_ENV_VAR_NAMES.jiraPat,
+    );
+    const jiraEmail = await SecretsManager.resolveSecret(
+      this.hostKey + "_JIRA_EMAIL",
+      PROVIDER_ENV_VAR_NAMES.jiraEmail,
+    );
+    const jiraToken = await SecretsManager.resolveSecret(
+      this.hostKey + "_JIRA_TOKEN",
+      PROVIDER_ENV_VAR_NAMES.jiraToken,
+    );
     let connected: boolean | null = null;
-    if (jiraPAT) {
-      connected = await this.initializeClient(jiraPAT, "", "");
+    if (jiraPAT?.value) {
+      connected = await this.initializeClient(
+        jiraPAT.value,
+        "",
+        "",
+        jiraPAT.source,
+      );
     }
-    if (!connected && jiraEmail && jiraToken) {
-      connected = await this.initializeClient("", jiraEmail, jiraToken);
+    if (!connected && jiraEmail?.value && jiraToken?.value) {
+      // Both values are needed: a stored one is a credential the user entered
+      connected = await this.initializeClient(
+        "",
+        jiraEmail.value,
+        jiraToken.value,
+        [jiraEmail.source, jiraToken.source].includes("storage")
+          ? "storage"
+          : jiraToken.source,
+      );
     }
     return connected;
   }
 
   async authenticate(): Promise<boolean | null> {
-    const config = await getConfig("project");
-    this.jiraHost = this.completeJiraHostUrl(config.jiraHost || "");
+    this.jiraHost = await this.readHost();
     if (!this.jiraHost) {
       Logger.log(
         "JIRA host not configured. Please set jiraHost in .sfdx-hardis.yml",
@@ -239,6 +256,16 @@ export class JiraProvider extends TicketProvider {
     return await this.initializeClient("", email, token);
   }
 
+  /** Host of the Jira site: JIRA_HOST first, like the CLI, then jiraHost */
+  private async readHost(): Promise<string> {
+    const config = await getConfig("project");
+    const fromEnvironment = await SecretsManager.getSecret(
+      "JIRA_HOST",
+      PROVIDER_ENV_VAR_NAMES.jiraHost,
+    );
+    return this.completeJiraHostUrl(fromEnvironment || config.jiraHost || "");
+  }
+
   private isJiraCloud(): boolean {
     return (
       this.jiraHost.includes("atlassian.net") ||
@@ -263,6 +290,7 @@ export class JiraProvider extends TicketProvider {
     pat: string,
     email: string,
     token: string,
+    credentialSource?: SecretSource,
   ): Promise<boolean> {
     try {
       if (!email && !token && !pat) {
@@ -297,6 +325,7 @@ export class JiraProvider extends TicketProvider {
         createTokenUrl: tokenUrl,
         docUrl:
           "https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/",
+        credentialSource,
       });
       this.jiraClient = null;
       return false;

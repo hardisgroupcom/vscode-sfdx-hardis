@@ -6,6 +6,7 @@ import { Ticket, TicketProviderName } from "./types";
 import { Logger } from "../../logger";
 import { getConfig } from "../pipeline/sfdxHardisConfig";
 import { SecretsManager } from "../secretsManager";
+import { PROVIDER_ENV_VAR_NAMES } from "../envFileCredentials";
 import { getJson, HttpError } from "../httpUtils";
 import { t } from "../../i18n/i18n";
 import {
@@ -109,7 +110,11 @@ export class AhaProvider extends TicketProvider {
       Logger.log("Aha! host not configured.");
       return false;
     }
-    this.apiKey = (await SecretsManager.getSecret(this.secretKey())) || "";
+    this.apiKey =
+      (await SecretsManager.getSecret(
+        this.secretKey(),
+        PROVIDER_ENV_VAR_NAMES.ahaApiKey,
+      )) || "";
     if (!this.apiKey) {
       return false;
     }

@@ -11,7 +11,8 @@ import {
   Job,
   JobStatus,
 } from "./types";
-import { SecretsManager } from "../secretsManager";
+import { SecretsManager, SecretSource } from "../secretsManager";
+import { PROVIDER_ENV_VAR_NAMES } from "../envFileCredentials";
 import { Logger } from "../../logger";
 import { PROVIDER_BATCH_PROFILES, mapWithConcurrency } from "../concurrency";
 import { t } from "../../i18n/i18n";
@@ -183,17 +184,27 @@ export class GitProviderBitbucket extends GitProvider {
 
   async initialize() {
     this.secretTokenIdentifier = this.hostKey + "_BITBUCKET_TOKEN";
-    const token =
-      (await SecretsManager.getSecret(this.hostKey + "_BITBUCKET_TOKEN")) || "";
+    const resolvedToken = await SecretsManager.resolveSecret(
+      this.hostKey + "_BITBUCKET_TOKEN",
+      PROVIDER_ENV_VAR_NAMES.bitbucketToken,
+    );
+    const token = resolvedToken?.value || "";
     const email =
-      (await SecretsManager.getSecret(this.hostKey + "_BITBUCKET_EMAIL")) || "";
+      (await SecretsManager.getSecret(
+        this.hostKey + "_BITBUCKET_EMAIL",
+        PROVIDER_ENV_VAR_NAMES.bitbucketEmail,
+      )) || "";
 
     if (token && this.repoInfo?.host && this.repoInfo.remoteUrl) {
-      await this.initializeClient(email, token);
+      await this.initializeClient(email, token, resolvedToken?.source);
     }
   }
 
-  private async initializeClient(email: string, token: string): Promise<void> {
+  private async initializeClient(
+    email: string,
+    token: string,
+    credentialSource?: SecretSource,
+  ): Promise<void> {
     if (email) {
       this.bitbucketClient = new Bitbucket({
         auth: {
@@ -239,6 +250,7 @@ export class GitProviderBitbucket extends GitProvider {
           docUrl:
             "https://support.atlassian.com/bitbucket-cloud/docs/access-tokens/",
           onlyIfPipelineConfigured: true,
+          credentialSource,
         });
       }
     } else {

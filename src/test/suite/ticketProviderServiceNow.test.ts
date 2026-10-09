@@ -35,6 +35,63 @@ suite("ServiceNow ticketing provider", () => {
     assert.strictEqual(ServiceNowProvider.completeInstanceUrl(""), "");
   });
 
+  test("a record link opens the form of its table, by sys_id or by number", () => {
+    // A nav_to.do?uri= link is rewritten by the Next Experience with the `?` of
+    // the inner URL encoded twice, and the classic frame answers "page not found"
+    assert.strictEqual(
+      ServiceNowProvider.recordUrl(
+        "https://acme.service-now.com",
+        "dmn_demand",
+        {
+          sysId: "0123456789abcdef0123456789abcdef",
+        },
+      ),
+      "https://acme.service-now.com/dmn_demand.do?sys_id=0123456789abcdef0123456789abcdef",
+    );
+    // Encoded once: the query holds a literal `=` that must not become `%253D`
+    assert.strictEqual(
+      ServiceNowProvider.recordUrl("https://acme.service-now.com", "incident", {
+        number: "INC0012345",
+      }),
+      "https://acme.service-now.com/incident.do?sysparm_query=number%3DINC0012345",
+    );
+    // The sys_id is preferred when both are known
+    assert.strictEqual(
+      ServiceNowProvider.recordUrl("acme.service-now.com/", "incident", {
+        sysId: "abc",
+        number: "INC0012345",
+      }),
+      "https://acme.service-now.com/incident.do?sys_id=abc",
+    );
+    assert.ok(
+      !ServiceNowProvider.recordUrl(
+        "https://acme.service-now.com",
+        "incident",
+        {
+          sysId: "abc",
+        },
+      ).includes("nav_to.do"),
+    );
+    assert.strictEqual(
+      ServiceNowProvider.recordUrl("", "incident", { number: "INC0012345" }),
+      "",
+    );
+    assert.strictEqual(
+      ServiceNowProvider.recordUrl("https://acme.service-now.com", "", {
+        number: "INC0012345",
+      }),
+      "",
+    );
+    assert.strictEqual(
+      ServiceNowProvider.recordUrl(
+        "https://acme.service-now.com",
+        "incident",
+        {},
+      ),
+      "",
+    );
+  });
+
   test("built-in prefixes resolve to their ServiceNow table", () => {
     assert.strictEqual(
       ServiceNowProvider.tableOfTicketId("INC0012345"),
@@ -210,8 +267,7 @@ suite("ServiceNow records collected from a string", () => {
     const provider = new ServiceNowProvider();
     (provider as any).loadStoredCredentials = async () => options.connected;
     provider.getTicketIdentifierRegexes = async () => options.regexes;
-    provider.buildTicketUrl = async (ticketId: string) =>
-      `https://acme.service-now.com/incident.do?sysparm_query=number=${ticketId}`;
+    (provider as any).instanceUrl = "https://acme.service-now.com";
     return provider;
   }
 
@@ -227,7 +283,10 @@ suite("ServiceNow records collected from a string", () => {
       tickets.map((ticket) => ticket.id),
       ["INC0012345"],
     );
-    assert.ok(tickets[0].url.endsWith("number=INC0012345"));
+    assert.strictEqual(
+      tickets[0].url,
+      "https://acme.service-now.com/incident.do?sysparm_query=number%3DINC0012345",
+    );
   });
 
   test("the documented regex shape yields the record number too", async () => {

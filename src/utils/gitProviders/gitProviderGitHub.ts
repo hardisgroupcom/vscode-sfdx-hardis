@@ -13,7 +13,8 @@ import {
 } from "./types";
 import { Logger } from "../../logger";
 import { PROVIDER_BATCH_PROFILES, mapWithConcurrency } from "../concurrency";
-import { SecretsManager } from "../secretsManager";
+import { SecretsManager, SecretSource } from "../secretsManager";
+import { PROVIDER_ENV_VAR_NAMES } from "../envFileCredentials";
 import { t } from "../../i18n/i18n";
 import {
   promptForToken,
@@ -182,7 +183,12 @@ export class GitProviderGitHub extends GitProvider {
     // Prefer a stored personal access token; otherwise fall back to the native
     // VS Code GitHub session — unless the user explicitly disconnected (the native
     // session cannot be removed programmatically, so we honor a disconnect flag).
-    let accessToken = await SecretsManager.getSecret(this.hostKey + "_TOKEN");
+    const resolvedToken = await SecretsManager.resolveSecret(
+      this.hostKey + "_TOKEN",
+      PROVIDER_ENV_VAR_NAMES.githubToken,
+    );
+    let accessToken = resolvedToken?.value;
+    const credentialSource: SecretSource | undefined = resolvedToken?.source;
     if (!accessToken) {
       const disconnected = await SecretsManager.getSecret(
         this.hostKey + "_DISCONNECTED",
@@ -234,6 +240,7 @@ export class GitProviderGitHub extends GitProvider {
         docUrl:
           "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens",
         onlyIfPipelineConfigured: true,
+        credentialSource,
       });
     }
   }
