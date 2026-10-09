@@ -306,3 +306,80 @@ export async function captureWindowTo(
     driver.close();
   }
 }
+
+// Runs in the page of a webview: every element of the panel, through the shadow roots
+const DEEP_QUERY = `
+  const deepAll = (root, selector, found = []) => {
+    for (const element of root.querySelectorAll("*")) {
+      if (element.matches(selector)) {
+        found.push(element);
+      }
+      if (element.shadowRoot) {
+        deepAll(element.shadowRoot, selector, found);
+      }
+    }
+    return found;
+  };
+  const frame = document.querySelector("iframe");
+  const panelDocument = (frame && frame.contentDocument) || document;
+`;
+
+/**
+ * Evaluates an expression in the page of the webview shown, and returns its value. The
+ * expression is the body of a function: it has `deepAll(root, selector)` and `panelDocument`
+ * at hand, and ends with a `return`. It is how a test clicks inside a panel without a
+ * coordinate. Every webview is asked, and the first one that answers a value wins.
+ */
+export async function inWebview(expression: string): Promise<any> {
+  const port = CdpWindow.portFromEnv();
+  if (!port) {
+    throw new Error("the window was not started with a debugging port");
+  }
+  const targets: any[] = await (
+    await fetch(`http://127.0.0.1:${port}/json/list`)
+  ).json();
+  const webviews = targets.filter((target) =>
+    String(target.url || "").startsWith("vscode-webview://"),
+  );
+  for (const target of webviews) {
+    const value = await evaluateInTarget(
+      target.webSocketDebuggerUrl,
+      expression,
+    );
+    if (value !== null && value !== undefined) {
+      return value;
+    }
+  }
+  return null;
+}
+
+function evaluateInTarget(url: string, expression: string): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const socket = new WebSocket(url, { perMessageDeflate: false });
+    const timer = setTimeout(() => {
+      socket.close();
+      reject(new Error("no answer from the webview"));
+    }, 15000);
+    socket.once("error", reject);
+    socket.once("open", () => {
+      socket.send(
+        JSON.stringify({
+          id: 1,
+          method: "Runtime.evaluate",
+          params: {
+            expression: `(() => { ${DEEP_QUERY} ${expression} })()`,
+            returnByValue: true,
+          },
+        }),
+      );
+    });
+    socket.on("message", (data) => {
+      const message = JSON.parse(data.toString());
+      if (message.id === 1) {
+        clearTimeout(timer);
+        socket.close();
+        resolve(message.result?.result?.value);
+      }
+    });
+  });
+}

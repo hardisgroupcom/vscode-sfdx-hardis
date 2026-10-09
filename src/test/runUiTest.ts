@@ -208,10 +208,25 @@ async function main() {
   const freshPipeline = pipelineState.startsWith("fresh");
   // ...and before the extension itself was signed in to the git provider
   const disconnectedProvider = pipelineState === "fresh-disconnected";
+  // ...and once the first Pull Request of the project is open: the universe names it, with its
+  // branch, in git-provider-mock-first-pr.json
+  const firstPullRequest =
+    pipelineState === "fresh-pr" && universeDir
+      ? JSON.parse(
+          fs.readFileSync(
+            path.join(universeDir, "git-provider-mock-first-pr.json"),
+            "utf8",
+          ),
+        )
+      : null;
 
   if (universe) {
     for (const branch of universe.branches || []) {
-      if (freshPipeline && /^(features|fixes|training)\//.test(branch)) {
+      if (
+        freshPipeline &&
+        /^(features|fixes|training)\//.test(branch) &&
+        !(firstPullRequest?.branches || []).includes(branch)
+      ) {
         continue;
       }
       git(`branch ${branch}`);
@@ -291,7 +306,7 @@ async function main() {
       );
   if (freshPipeline) {
     const fixture = JSON.parse(fs.readFileSync(gitProviderFixtureFile, "utf8"));
-    fixture.openPullRequests = [];
+    fixture.openPullRequests = firstPullRequest?.addOpenPullRequests || [];
     fixture.mergedPullRequestsByBranch = {};
     fixture.branchJobs = {};
     if (disconnectedProvider) {

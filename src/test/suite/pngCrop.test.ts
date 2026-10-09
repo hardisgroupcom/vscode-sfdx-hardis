@@ -158,7 +158,10 @@ suite("PNG crop of the UI harness captures", () => {
       ),
       "captures, clicks and recordings go through src/test/ui/cdpWindow.ts",
     );
-    assert.match(suiteSource, /import \{ CdpWindow \} from "\.\/cdpWindow"/);
+    assert.match(
+      suiteSource,
+      /import \{ CdpWindow(, \w+)* \} from "\.\/cdpWindow"/,
+    );
     assert.match(
       readSourceFile("test/runUiTest.ts"),
       /--remote-debugging-port=/,

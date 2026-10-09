@@ -710,6 +710,36 @@ async function main() {
     return 0;
   }
 
+  // The files a job published as artifacts: a universe names the ones of its own jobs, by job
+  // address. Nothing is written on disk, the panel only lists them
+  if (first === "hardis:git:artifacts:download" && DOCS_PROFILE) {
+    const jobUrl = (args[args.indexOf("--job-url") + 1] || "").replace(
+      /"/g,
+      "",
+    );
+    const files = universeValue("jobArtifacts", {})[jobUrl] || [
+      { path: "apex-coverage-results.json", sizeBytes: 3270 },
+      { path: "deploy-result-calculated-package-xml.json", sizeBytes: 28477 },
+      { path: "deployment-components.csv", sizeBytes: 1786 },
+      { path: "xls/deployment-components.xlsx", sizeBytes: 8730 },
+    ];
+    outputJsonIfRequested(
+      {
+        status: 0,
+        result: {
+          status: "success",
+          jobUrl,
+          folder: path.join(process.cwd(), "hardis-report", "job-artifacts"),
+          artifacts: [],
+          files,
+          message: "",
+        },
+      },
+      "",
+    );
+    return 0;
+  }
+
   if (
     first === "hardis:project:action:list" &&
     DOCS_PROFILE &&
@@ -730,6 +760,7 @@ async function main() {
       for (const prId of prIds.filter((id) => /^\d+$/.test(id))) {
         workflows[prId] =
           (showcase && (showcase.workflows || {})[prId]) ||
+          universeValue("workflows", {})[prId] ||
           mockWorkflowRuns(prId);
       }
     }

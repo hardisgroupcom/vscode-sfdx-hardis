@@ -2,9 +2,8 @@ import * as assert from "assert";
 import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
-import WebSocket from "ws";
 import { activateExtension, recordSentMessages, waitFor } from "./uiTestUtils";
-import { CdpWindow, captureWindowTo } from "./cdpWindow";
+import { CdpWindow, captureWindowTo, inWebview } from "./cdpWindow";
 
 /**
  * The Files button of the Pull Request view against a REAL git provider, with the REAL
@@ -31,23 +30,6 @@ const REAL_MODE = process.env.SFDX_HARDIS_REAL_JOB_ARTIFACTS === "true";
 const LWC_ID = "s-pipeline";
 const DOWNLOAD_TIMEOUT_MS = 180000;
 
-// Runs in the page of a webview: every element of the panel, through the shadow roots
-const DEEP_QUERY = `
-  const deepAll = (root, selector, found = []) => {
-    for (const element of root.querySelectorAll("*")) {
-      if (element.matches(selector)) {
-        found.push(element);
-      }
-      if (element.shadowRoot) {
-        deepAll(element.shadowRoot, selector, found);
-      }
-    }
-    return found;
-  };
-  const frame = document.querySelector("iframe");
-  const panelDocument = (frame && frame.contentDocument) || document;
-`;
-
 suite("Job artifacts on a real git provider", function () {
   this.timeout(DOWNLOAD_TIMEOUT_MS * 6);
 
@@ -61,56 +43,6 @@ suite("Job artifacts on a real git provider", function () {
   const shotsDir = process.env.SFDX_HARDIS_REAL_JOB_ARTIFACTS_SHOTS || "";
 
   const shoot = (name: string) => captureWindowTo(shotsDir, name);
-
-  // Evaluates an expression in the page of the pipeline webview, and returns its value
-  async function inWebview(expression: string): Promise<any> {
-    const port = CdpWindow.portFromEnv();
-    assert.ok(port, "the window was started with a debugging port");
-    const targets: any[] = await (
-      await fetch(`http://127.0.0.1:${port}/json/list`)
-    ).json();
-    const webviews = targets.filter((target) =>
-      String(target.url || "").startsWith("vscode-webview://"),
-    );
-    for (const target of webviews) {
-      const value = await evaluate(target.webSocketDebuggerUrl, expression);
-      if (value !== null && value !== undefined) {
-        return value;
-      }
-    }
-    return null;
-  }
-
-  function evaluate(url: string, expression: string): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const socket = new WebSocket(url, { perMessageDeflate: false });
-      const timer = setTimeout(() => {
-        socket.close();
-        reject(new Error("no answer from the webview"));
-      }, 15000);
-      socket.once("error", reject);
-      socket.once("open", () => {
-        socket.send(
-          JSON.stringify({
-            id: 1,
-            method: "Runtime.evaluate",
-            params: {
-              expression: `(() => { ${DEEP_QUERY} ${expression} })()`,
-              returnByValue: true,
-            },
-          }),
-        );
-      });
-      socket.on("message", (data) => {
-        const message = JSON.parse(data.toString());
-        if (message.id === 1) {
-          clearTimeout(timer);
-          socket.close();
-          resolve(message.result?.result?.value);
-        }
-      });
-    });
-  }
 
   // The labels of the buttons of the run shown: the Validation tab is the one opened
   async function runButtons(): Promise<string[]> {
