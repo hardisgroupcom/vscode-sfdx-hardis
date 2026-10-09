@@ -1765,7 +1765,12 @@ async function loadDeploymentActionStatuses(data: any): Promise<{
     return {
       statuses: null,
       ...(withForecast ? { forecast: null } : {}),
-      ...(withWorkflows ? { workflows: result?.workflows || null } : {}),
+      ...(withWorkflows
+        ? {
+            workflows: result?.workflows || null,
+            artifactsSupported: result?.artifactsSupported === true,
+          }
+        : {}),
       requestId,
     };
   }

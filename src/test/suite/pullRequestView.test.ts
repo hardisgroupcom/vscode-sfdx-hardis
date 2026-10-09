@@ -649,6 +649,19 @@ suite("Pull Request view", () => {
         /sf hardis:git:artifacts:download --agent --job-url "\$\{jobUrl\}"/,
       );
     });
+
+    test("the capability goes with the runs, also when no action status came back", () => {
+      const host = readSourceFile("commands/showPipeline.ts");
+      // Once with the statuses, once without: the runs are shown in both cases
+      assert.strictEqual(
+        (
+          host.match(
+            /artifactsSupported: result\??\.artifactsSupported === true/g,
+          ) || []
+        ).length,
+        2,
+      );
+    });
   });
 
   suite("wiring", () => {

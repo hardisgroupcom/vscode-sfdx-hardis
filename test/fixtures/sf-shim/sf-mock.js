@@ -742,7 +742,8 @@ async function main() {
             : recovery
               ? recovery.actionStatuses
               : null,
-          ...(workflows ? { workflows } : {}),
+          // The files of the jobs can be downloaded: the runs get their Files button
+          ...(workflows ? { workflows, artifactsSupported: true } : {}),
         },
       },
       "",
