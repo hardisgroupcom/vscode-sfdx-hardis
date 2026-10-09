@@ -112,6 +112,27 @@ suite("Job artifacts on a real git provider", function () {
     });
   }
 
+  // The labels of the buttons of the run shown: the Validation tab is the one opened
+  async function runButtons(): Promise<string[]> {
+    const buttons: string[] = await waitFor<any>(
+      async () => {
+        const labels = await inWebview(`
+          const row = deepAll(panelDocument, ".hardis-list-actions").find(
+            (actions) => actions.offsetParent !== null,
+          );
+          return row
+            ? [...row.querySelectorAll("button")].map((button) => button.textContent.trim())
+            : null;
+        `);
+        return Array.isArray(labels) && labels.length > 0 ? labels : null;
+      },
+      60000,
+      "the buttons of the validation run",
+    );
+    console.log(`      buttons: ${buttons.join(" | ")}`);
+    return buttons;
+  }
+
   suiteSetup(async function () {
     if (!REAL_MODE) {
       this.skip();
@@ -266,22 +287,7 @@ suite("Job artifacts on a real git provider", function () {
     if (artifactsSupported || !CdpWindow.portFromEnv()) {
       this.skip();
     }
-    const buttons = await waitFor<any>(
-      async () => {
-        const labels = await inWebview(`
-          const row = deepAll(panelDocument, ".hardis-list-actions").find(
-            (actions) => actions.offsetParent !== null,
-          );
-          return row
-            ? [...row.querySelectorAll("button")].map((button) => button.textContent.trim())
-            : null;
-        `);
-        return Array.isArray(labels) && labels.length > 0 ? labels : null;
-      },
-      60000,
-      "the buttons of the validation run",
-    );
-    console.log(`      buttons: ${buttons.join(" | ")}`);
+    const buttons = await runButtons();
     assert.strictEqual(buttons.length, 2, "job and comment");
     const filesButtons = await inWebview(
       `return deepAll(panelDocument, "button.run-files-button").length;`,
@@ -299,22 +305,7 @@ suite("Job artifacts on a real git provider", function () {
       this.skip();
     }
     // The Validation tab is the one shown: its run has a Files button after Open comment
-    const buttons = await waitFor<any>(
-      async () => {
-        const labels = await inWebview(`
-          const row = deepAll(panelDocument, ".hardis-list-actions").find(
-            (actions) => actions.offsetParent !== null,
-          );
-          return row
-            ? [...row.querySelectorAll("button")].map((button) => button.textContent.trim())
-            : null;
-        `);
-        return Array.isArray(labels) && labels.length > 0 ? labels : null;
-      },
-      60000,
-      "the buttons of the validation run",
-    );
-    console.log(`      buttons: ${buttons.join(" | ")}`);
+    const buttons = await runButtons();
     assert.strictEqual(buttons.length, 3, "job, comment and files");
     assert.match(buttons[2], /^Files/);
     await shoot("job-artifacts-1-row");
