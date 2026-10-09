@@ -20,6 +20,10 @@ import { CdpWindow, captureWindowTo } from "./cdpWindow";
  *   SFDX_HARDIS_REAL_JOB_ARTIFACTS_SHOTS  optional folder for captures of the panel
  *   plus the token of the provider in the environment (GITHUB_TOKEN...)
  *
+ * It runs on any provider. Where the files cannot be downloaded (Bitbucket), it checks instead
+ * that no Files button is offered and that "Open job" stays. The MegaLinter step is skipped on
+ * a Pull Request without a MegaLinter run.
+ *
  *   yarn dev && yarn compile && node ./out/test/runUiTest.js
  */
 
@@ -52,6 +56,7 @@ suite("Job artifacts on a real git provider", function () {
   let sent: any[] = [];
   let workspaceRoot = "";
   let runs: any[] = [];
+  let artifactsSupported = false;
   const prNumber = Number(process.env.SFDX_HARDIS_REAL_JOB_ARTIFACTS_PR || "");
   const shotsDir = process.env.SFDX_HARDIS_REAL_JOB_ARTIFACTS_SHOTS || "";
 
@@ -153,23 +158,36 @@ suite("Job artifacts on a real git provider", function () {
       "the runs of the Pull Request",
     );
     assert.strictEqual(
-      answer.data.artifactsSupported,
-      true,
-      "sfdx-hardis says the files of the jobs can be downloaded",
+      typeof answer.data.artifactsSupported,
+      "boolean",
+      "sfdx-hardis says whether the files of the jobs can be downloaded",
     );
+    artifactsSupported = answer.data.artifactsSupported;
     runs = answer.data.workflows?.[String(prNumber)] || [];
     console.log(
-      `      runs: ${runs.map((run) => `${run.kind} ${run.jobUrl}`).join(" | ")}`,
+      `      artifactsSupported: ${artifactsSupported}, runs: ${runs.map((run) => `${run.kind} ${run.jobUrl}`).join(" | ")}`,
     );
-    assert.ok(runs.length > 0, "the Pull Request has runs");
-    for (const kind of ["validation", "megalinter"]) {
-      const run = runs.find((candidate) => candidate.kind === kind);
-      assert.ok(run, `a ${kind} run`);
-      assert.match(run.jobUrl, /^https?:\/\//, `${kind} has a job URL`);
+    const validation = runs.find(
+      (candidate) => candidate.kind === "validation",
+    );
+    assert.ok(validation, "a validation run");
+    assert.match(validation.jobUrl, /^https?:\/\//, "validation has a job URL");
+    const megalinter = runs.find(
+      (candidate) => candidate.kind === "megalinter",
+    );
+    if (megalinter) {
+      assert.match(
+        megalinter.jobUrl,
+        /^https?:\/\//,
+        "megalinter has a job URL",
+      );
     }
   });
 
-  test("the files of every job are downloaded in the workspace", async () => {
+  test("the files of every job are downloaded in the workspace", async function () {
+    if (!artifactsSupported) {
+      this.skip();
+    }
     for (const run of runs.filter((candidate) => candidate.jobUrl)) {
       const requestedAt = Date.now();
       panel.simulateWebviewMessage({
@@ -190,13 +208,22 @@ suite("Job artifacts on a real git provider", function () {
       console.log(
         `      ${run.kind}: ${data.status}, ${data.files.length} file(s) in ${data.folder}`,
       );
-      assert.strictEqual(data.status, "success", data.message);
       assert.strictEqual(data.jobUrl, run.jobUrl);
+      // Only the validation job is sure to publish reports: another one can have none, or lost them
+      if (run.kind !== "validation" && data.status !== "success") {
+        assert.ok(["none", "expired"].includes(data.status), data.message);
+        continue;
+      }
+      assert.strictEqual(data.status, "success", data.message);
       assert.ok(data.files.length > 0, "the job published files");
+      // Lower case on both sides: Windows gives the same folder with either case
       assert.ok(
         path
           .resolve(data.folder)
-          .startsWith(path.resolve(workspaceRoot, "hardis-report")),
+          .toLowerCase()
+          .startsWith(
+            path.resolve(workspaceRoot, "hardis-report").toLowerCase(),
+          ),
         "the files are under hardis-report of the workspace",
       );
       for (const file of data.files) {
@@ -235,8 +262,40 @@ suite("Job artifacts on a real git provider", function () {
     );
   });
 
+  test("without download on this provider, the run only offers its job and its comment", async function () {
+    if (artifactsSupported || !CdpWindow.portFromEnv()) {
+      this.skip();
+    }
+    const buttons = await waitFor<any>(
+      async () => {
+        const labels = await inWebview(`
+          const row = deepAll(panelDocument, ".hardis-list-actions").find(
+            (actions) => actions.offsetParent !== null,
+          );
+          return row
+            ? [...row.querySelectorAll("button")].map((button) => button.textContent.trim())
+            : null;
+        `);
+        return Array.isArray(labels) && labels.length > 0 ? labels : null;
+      },
+      60000,
+      "the buttons of the validation run",
+    );
+    console.log(`      buttons: ${buttons.join(" | ")}`);
+    assert.strictEqual(buttons.length, 2, "job and comment");
+    const filesButtons = await inWebview(
+      `return deepAll(panelDocument, "button.run-files-button").length;`,
+    );
+    assert.strictEqual(
+      filesButtons,
+      0,
+      "no Files button anywhere in the panel",
+    );
+    await shoot("job-artifacts-1-row-unsupported");
+  });
+
   test("the Files button of a run lists its files, and a click opens one", async function () {
-    if (!CdpWindow.portFromEnv()) {
+    if (!artifactsSupported || !CdpWindow.portFromEnv()) {
       this.skip();
     }
     // The Validation tab is the one shown: its run has a Files button after Open comment
@@ -316,7 +375,11 @@ suite("Job artifacts on a real git provider", function () {
   });
 
   test("the files of the MegaLinter job are browsed by folder", async function () {
-    if (!CdpWindow.portFromEnv()) {
+    if (
+      !artifactsSupported ||
+      !CdpWindow.portFromEnv() ||
+      !runs.some((candidate) => candidate.kind === "megalinter")
+    ) {
       this.skip();
     }
     await vscode.commands.executeCommand("vscode-sfdx-hardis.showPipeline", {
