@@ -92,7 +92,7 @@ suite("Provider credentials of the workspace .env file", () => {
   test("malformed lines are skipped, not fatal", () => {
     const content = [
       "this is not a variable",
-      "=novalue",
+      "=orphan",
       "GITHUB_TOKEN",
       "JIRA_PAT=ok",
     ].join("\n");
