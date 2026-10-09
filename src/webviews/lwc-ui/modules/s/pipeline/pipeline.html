@@ -738,6 +738,8 @@
                                 <lightning-tab onactive={handleModalTabActive} label={i18n.journeyValidation} value="validation" icon-name="utility:search" icon-assistive-text={i18n.journeyValidation}>
                                     <s-workflow-runs
                                         runs={modalValidationRuns}
+                                        artifacts={jobArtifacts}
+                                        artifacts-supported={artifactsSupported}
                                         loading={workflowsLoading}
                                         empty-label={noValidationLabel}
                                     ></s-workflow-runs>
@@ -745,6 +747,8 @@
                                 <lightning-tab onactive={handleModalTabActive} label={i18n.prCodeQualityTab} value="megalinter" icon-name="utility:shield" icon-assistive-text={i18n.prCodeQualityTab}>
                                     <s-workflow-runs
                                         runs={modalMegaLinterRuns}
+                                        artifacts={jobArtifacts}
+                                        artifacts-supported={artifactsSupported}
                                         loading={workflowsLoading}
                                         empty-label={noMegaLinterLabel}
                                     ></s-workflow-runs>
@@ -752,6 +756,8 @@
                                 <lightning-tab onactive={handleModalTabActive} label={i18n.workflowDeploymentNoBranch} value="deployment" icon-name="utility:upload" icon-assistive-text={i18n.workflowDeploymentNoBranch}>
                                     <s-workflow-runs
                                         runs={modalDeploymentRuns}
+                                        artifacts={jobArtifacts}
+                                        artifacts-supported={artifactsSupported}
                                         loading={workflowsLoading}
                                         empty-label={noDeploymentLabel}
                                     ></s-workflow-runs>

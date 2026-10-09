@@ -12,23 +12,30 @@ import { TicketProvider } from "../../utils/ticketProviders/ticketProvider";
 export const EXTENSION_ID = "NicolasVuillamy.vscode-sfdx-hardis";
 
 /**
- * Polls `producer` until it returns a truthy value or the timeout elapses.
+ * Polls `producer` until it returns a truthy value or the timeout elapses. The producer can be
+ * asynchronous (a question to the webview): it is awaited, then asked again `intervalMs` later.
  */
 export async function waitFor<T>(
-  producer: () => T | undefined | null | false,
+  producer: () =>
+    | T
+    | undefined
+    | null
+    | false
+    | Promise<T | undefined | null | false>,
   timeoutMs: number,
   label: string,
+  intervalMs = 100,
 ): Promise<T> {
   const start = Date.now();
   for (;;) {
-    const value = producer();
+    const value = await producer();
     if (value) {
       return value;
     }
     if (Date.now() - start > timeoutMs) {
       throw new Error(`Timeout (${timeoutMs}ms) waiting for: ${label}`);
     }
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
   }
 }
 

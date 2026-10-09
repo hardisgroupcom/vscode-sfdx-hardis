@@ -10,17 +10,20 @@ export async function run(): Promise<void> {
   // Real-CLI perf runs only execute the perf gate: the other suites expect
   // the mocked sf CLI, which is not on the PATH in that mode.
   // The lab driver is the same case, and walks the training course instead.
-  // The real org run of the Metadata Retriever is a lab driver run with one suite of its own.
+  // The real org run of the Metadata Retriever is a lab driver run with one suite of its own,
+  // and so is the real git provider run of the job artifacts.
   const pattern =
     process.env.SFDX_HARDIS_REAL_RETRIEVER === "true"
       ? "**/retrieverRealOrg.test.js"
-      : process.env.SFDX_HARDIS_DOC_SCREENSHOTS === "true"
-        ? "**/docScreenshots.test.js"
-        : process.env.SFDX_HARDIS_REAL_CLI_PERF === "true"
-          ? "**/realCliPerf.test.js"
-          : process.env.SFDX_HARDIS_LAB_DRIVER === "true"
-            ? "**/labs.test.js"
-            : "**/*.test.js";
+      : process.env.SFDX_HARDIS_REAL_JOB_ARTIFACTS === "true"
+        ? "**/jobArtifactsReal.test.js"
+        : process.env.SFDX_HARDIS_DOC_SCREENSHOTS === "true"
+          ? "**/docScreenshots.test.js"
+          : process.env.SFDX_HARDIS_REAL_CLI_PERF === "true"
+            ? "**/realCliPerf.test.js"
+            : process.env.SFDX_HARDIS_LAB_DRIVER === "true"
+              ? "**/labs.test.js"
+              : "**/*.test.js";
   return runMochaSuite({
     testsRoot: __dirname,
     pattern,

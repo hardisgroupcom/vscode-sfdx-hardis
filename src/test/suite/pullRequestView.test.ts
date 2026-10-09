@@ -6,6 +6,7 @@ import {
   readSourceFile,
 } from "./lwcSourceUtils";
 import {
+  isSafeJobUrl,
   looksLikePullRequestUrl,
   parsePullRequestNumberFromUrl,
 } from "../../utils/pullRequestUrlUtils";
@@ -37,6 +38,8 @@ const EXPORTED = [
   "journeyPathStep",
   "safeWebUrl",
   "isTrustedCommentImage",
+  "buildArtifactEntries",
+  "formatFileSize",
 ];
 
 function loadPullRequestUtils(): any {
@@ -467,6 +470,183 @@ suite("Pull Request view", () => {
           null,
         ),
         null,
+      );
+    });
+  });
+
+  suite("job files", () => {
+    const files = (paths: string[]) =>
+      paths.map((path, index) => ({ path, sizeBytes: (index + 1) * 1024 }));
+    const manyFiles = files([
+      "megalinter-reports/linters_logs/APEX-SUCCESS.log",
+      "megalinter-reports/linters_logs/FLOW-WARNING.log",
+      "megalinter-reports/IDE-config/.vscode/extensions.json",
+      "megalinter-reports/IDE-config.txt",
+      "megalinter-reports/megalinter-report.json",
+      "megalinter-reports/megalinter.log",
+      "megalinter-reports/a.csv",
+      "megalinter-reports/b.csv",
+      "megalinter-reports/c.csv",
+      "megalinter-reports/d.csv",
+      "mega-linter.log",
+    ]);
+
+    test("a few files are listed all at once, with their path", () => {
+      const listing = utils.buildArtifactEntries(
+        files(["xls/deployment-components.xlsx", "deploy-result.json"]),
+      );
+      assert.strictEqual(listing.byFolder, false);
+      assert.deepStrictEqual(listing.crumbs, []);
+      assert.deepStrictEqual(
+        listing.entries.map((entry: any) => [entry.label, entry.isFolder]),
+        [
+          ["xls/deployment-components.xlsx", false],
+          ["deploy-result.json", false],
+        ],
+      );
+      assert.strictEqual(
+        utils.buildArtifactEntries(
+          files(new Array(10).fill("a").map((name, index) => name + index)),
+        ).byFolder,
+        false,
+      );
+    });
+
+    test("more than ten files are browsed folder by folder, folders first", () => {
+      const root = utils.buildArtifactEntries(manyFiles);
+      assert.strictEqual(root.byFolder, true);
+      assert.deepStrictEqual(
+        root.entries.map((entry: any) => [
+          entry.label,
+          entry.isFolder,
+          entry.fileCount,
+        ]),
+        [
+          ["megalinter-reports", true, 10],
+          ["mega-linter.log", false, undefined],
+        ],
+      );
+      assert.deepStrictEqual(root.crumbs, [{ label: "", path: "" }]);
+
+      const reports = utils.buildArtifactEntries(
+        manyFiles,
+        "megalinter-reports",
+      );
+      assert.deepStrictEqual(
+        reports.entries
+          .filter((entry: any) => entry.isFolder)
+          .map((entry: any) => [entry.path, entry.fileCount]),
+        [
+          ["megalinter-reports/IDE-config", 1],
+          ["megalinter-reports/linters_logs", 2],
+        ],
+      );
+      assert.strictEqual(
+        reports.entries.filter((entry: any) => !entry.isFolder).length,
+        7,
+      );
+      // A file keeps its full path, the one opened, under the name of its folder
+      assert.deepStrictEqual(
+        reports.entries.find((entry: any) => entry.label === "megalinter.log")
+          .path,
+        "megalinter-reports/megalinter.log",
+      );
+
+      const logs = utils.buildArtifactEntries(
+        manyFiles,
+        "megalinter-reports/linters_logs/",
+      );
+      assert.deepStrictEqual(logs.crumbs, [
+        { label: "", path: "" },
+        { label: "megalinter-reports", path: "megalinter-reports" },
+        { label: "linters_logs", path: "megalinter-reports/linters_logs" },
+      ]);
+      assert.strictEqual(logs.entries.length, 2);
+    });
+
+    test("a folder is not confused with another one that starts like it", () => {
+      const listing = utils.buildArtifactEntries(
+        [...manyFiles, { path: "megalinter-reports-old/x.log", sizeBytes: 1 }],
+        "megalinter-reports",
+      );
+      assert.ok(
+        !listing.entries.some((entry: any) => entry.path.includes("-old")),
+      );
+    });
+
+    test("anything that is not a list of files gives an empty list", () => {
+      for (const value of [null, undefined, "x", [{ path: "" }, null]]) {
+        assert.deepStrictEqual(utils.buildArtifactEntries(value).entries, []);
+      }
+    });
+
+    test("sizes read as a person writes them", () => {
+      assert.strictEqual(utils.formatFileSize(512), "512 B");
+      assert.strictEqual(utils.formatFileSize(48 * 1024), "48 KB");
+      assert.strictEqual(utils.formatFileSize(1.25 * 1024 * 1024), "1.3 MB");
+      assert.strictEqual(utils.formatFileSize(undefined), "0 B");
+    });
+
+    test("only a plain job address reaches the command line", () => {
+      for (const url of [
+        "https://github.com/acme/my-repo/actions/runs/123456",
+        "https://gitlab.acme.com/group/sub/project/-/jobs/987",
+        "http://gitlab.internal:8080/group/project/-/jobs/987",
+        "https://dev.azure.com/acme/My%20Project/_build/results?buildId=42&view=results",
+      ]) {
+        assert.strictEqual(isSafeJobUrl(url), true, url);
+      }
+      for (const url of [
+        'https://github.com/acme/repo/actions/runs/1" && calc "',
+        "https://github.com/acme/repo/actions/runs/1 --debug",
+        "https://github.com/acme/repo/actions/runs/$(whoami)",
+        "https://github.com/acme/repo/actions/runs/`whoami`",
+        "https://github.com/acme/repo/actions/runs/1;ls",
+        "https://github.com/acme/repo/actions/runs/1|more",
+        "file:///etc/passwd",
+        "",
+        null,
+      ]) {
+        assert.strictEqual(isSafeJobUrl(url), false, String(url));
+      }
+    });
+
+    test("the Files button sits after Open comment, only when the files can be downloaded", () => {
+      const runsHtml = readModuleFile("workflowRuns", "workflowRuns.html");
+      assert.ok(
+        runsHtml.indexOf("i18n.workflowOpenComment") <
+          runsHtml.indexOf("onclick={handleFilesClick}"),
+      );
+      assert.match(
+        runsHtml,
+        /<template if:true=\{row\.showFiles\}>\s*<button[^>]*onclick=\{handleFilesClick\}/,
+      );
+      const runsJs = readModuleFile("workflowRuns", "workflowRuns.js");
+      assert.match(
+        runsJs,
+        /const showFiles = this\.artifactsSupported === true && !!jobUrl;/,
+      );
+      // The three tabs give their list the answers and the capability
+      const html = readModuleFile("pipeline", "pipeline.html");
+      assert.strictEqual(
+        html.split("artifacts-supported={artifactsSupported}").length - 1,
+        3,
+      );
+      assert.strictEqual(html.split("artifacts={jobArtifacts}").length - 1, 3);
+    });
+
+    test("the files are downloaded by sfdx-hardis, in agent mode, for a checked address", () => {
+      const host = readSourceFile("commands/showPipeline.ts");
+      const loader = host.slice(
+        host.indexOf("async function loadJobArtifacts("),
+      );
+      assert.ok(
+        loader.indexOf("if (!isSafeJobUrl(jobUrl))") <
+          loader.indexOf("execSfdxJson("),
+      );
+      assert.match(
+        loader,
+        /sf hardis:git:artifacts:download --agent --job-url "\$\{jobUrl\}"/,
       );
     });
   });

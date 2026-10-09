@@ -59,3 +59,15 @@ export function parsePullRequestNumberFromUrl(
   const prNumber = parseInt(match[1], 10);
   return prNumber > 0 ? prNumber : null;
 }
+
+/**
+ * True when a job URL can be written on a command line: a web address made only of the
+ * characters a job URL of a git provider holds. It comes from a Pull Request comment, which
+ * anyone allowed to comment can write, so nothing that a shell reads (quotes, spaces, $, `, ;,
+ * |, <, >, parentheses) is let through.
+ */
+export function isSafeJobUrl(value: unknown): boolean {
+  return /^https?:\/\/[A-Za-z0-9.-]+(:\d+)?\/[A-Za-z0-9:/._~?&=%-]*$/.test(
+    String(value || ""),
+  );
+}

@@ -197,6 +197,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   modalWorkflows = null;
   // True when the installed sfdx-hardis cannot return the runs: the Workflows tab is hidden
   workflowsUnavailable = false;
+  // True when the files the jobs published as artifacts can be downloaded by sfdx-hardis
+  artifactsSupported = false;
+  // Answers of sf hardis:git:artifacts:download, by job URL
+  jobArtifacts = {};
   // Branch checked out in the workspace, where the actions of the Pull Request are read and written
   modalCheckout = null;
   // Subject, status and assignee of the tickets of the window are being read
@@ -1728,6 +1732,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         break;
       case "returnDeploymentActionBackpromotes":
         this.handleReturnDeploymentActionBackpromotes(data);
+        break;
+      case "returnJobArtifacts":
+        // The files of a job, asked by one of the run lists of the Pull Request view
+        if (data?.jobUrl) {
+          this.jobArtifacts = { ...this.jobArtifacts, [data.jobUrl]: data };
+        }
         break;
       case "returnSchedulableClasses":
         this.handleReturnSchedulableClasses(data);
@@ -3642,6 +3652,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       }
     }
     this.workflowsUnavailable = false;
+    // Absent with a sfdx-hardis older than the download of job artifacts: no Files button
+    this.artifactsSupported = data.artifactsSupported === true;
     this.modalWorkflows = runs;
   }
 

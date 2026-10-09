@@ -30,8 +30,65 @@
                             <template if:true={row.commentUrl}>
                                 <button class="slds-button slds-button_neutral" data-url={row.commentUrl} onclick={handleOpenUrl}>{i18n.workflowOpenComment}</button>
                             </template>
+                            <template if:true={row.showFiles}>
+                                <button class="slds-button slds-button_neutral run-files-button" data-job={row.jobUrl} onclick={handleFilesClick}>
+                                    <lightning-icon icon-name="utility:open_folder" size="x-small" class="slds-m-right_xx-small"></lightning-icon>{row.filesLabel}
+                                </button>
+                            </template>
                         </div>
                     </div>
+                    <template if:true={row.filesOpen}>
+                        <div class="hardis-list-detail run-files">
+                            <template if:true={row.filesLoading}>
+                                <div class="run-files-loading">
+                                    <div class="slds-is-relative run-files-spinner">
+                                        <lightning-spinner alternative-text={i18n.workflowFilesLoading} size="x-small"></lightning-spinner>
+                                    </div>
+                                    <span class="slds-text-color_weak">{i18n.workflowFilesLoading}</span>
+                                </div>
+                            </template>
+                            <template if:true={row.filesMessage}>
+                                <p class="slds-text-color_weak">{row.filesMessage}</p>
+                            </template>
+                            <template if:true={row.hasFiles}>
+                                <template if:true={row.showCrumbs}>
+                                    <div class="run-files-crumbs">
+                                        <template for:each={row.crumbs} for:item="crumb">
+                                            <span key={crumb.key} class="run-files-crumb">
+                                                <template if:false={crumb.isLast}>
+                                                    <button class="slds-button hardis-textlink" data-job={row.jobUrl} data-path={crumb.path} onclick={handleFolderClick}>{crumb.label}</button>
+                                                    <span class="run-files-separator">/</span>
+                                                </template>
+                                                <template if:true={crumb.isLast}>
+                                                    <span class="run-files-current">{crumb.label}</span>
+                                                </template>
+                                            </span>
+                                        </template>
+                                    </div>
+                                </template>
+                                <ul class="run-files-list">
+                                    <template for:each={row.folderEntries} for:item="entry">
+                                        <li key={entry.key}>
+                                            <button class="slds-button run-file" data-job={row.jobUrl} data-path={entry.path} onclick={handleFolderClick} title={entry.path}>
+                                                <lightning-icon icon-name="utility:open_folder" size="x-small"></lightning-icon>
+                                                <span class="run-file-name">{entry.label}</span>
+                                                <span class="run-file-meta">{entry.meta}</span>
+                                            </button>
+                                        </li>
+                                    </template>
+                                    <template for:each={row.fileEntries} for:item="entry">
+                                        <li key={entry.key}>
+                                            <button class="slds-button run-file" data-job={row.jobUrl} data-path={entry.path} onclick={handleFileClick} title={entry.path}>
+                                                <lightning-icon icon-name="utility:file" size="x-small"></lightning-icon>
+                                                <span class="run-file-name">{entry.label}</span>
+                                                <span class="run-file-meta">{entry.meta}</span>
+                                            </button>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </template>
+                        </div>
+                    </template>
                     <template if:true={row.hasBody}>
                         <div class="hardis-list-detail">
                             <s-markdown-view markdown={row.body}></s-markdown-view>
