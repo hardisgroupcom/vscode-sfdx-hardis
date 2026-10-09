@@ -448,3 +448,86 @@ export function safeWebUrl(value) {
   const text = String(value || "").trim();
   return /^https?:\/\/[^\s"'<>]+$/i.test(text) ? text : "";
 }
+
+// Above this number of files, the files of a job are browsed folder by folder
+export const ARTIFACT_FLAT_LIST_MAX = 10;
+
+/**
+ * What the Files list of a run shows. Up to ARTIFACT_FLAT_LIST_MAX files, all of them with their
+ * path. Above, the content of one folder: its sub-folders first, each with the number of files
+ * under it, then its own files, and the breadcrumb leading to it.
+ * `files` are the { path, sizeBytes } returned by sf hardis:git:artifacts:download, with paths
+ * relative to the folder of the job and forward slashes.
+ */
+export function buildArtifactEntries(
+  files,
+  currentFolder = "",
+  flatMax = ARTIFACT_FLAT_LIST_MAX,
+) {
+  const list = (Array.isArray(files) ? files : []).filter(
+    (file) => file && typeof file.path === "string" && file.path !== "",
+  );
+  const fileEntry = (file, label) => ({
+    key: `file:${file.path}`,
+    isFolder: false,
+    label,
+    path: file.path,
+    sizeBytes: Number(file.sizeBytes) || 0,
+  });
+  if (list.length <= flatMax) {
+    return {
+      byFolder: false,
+      crumbs: [],
+      entries: list.map((file) => fileEntry(file, file.path)),
+    };
+  }
+  const folder = String(currentFolder || "").replace(/^\/+|\/+$/g, "");
+  const prefix = folder ? `${folder}/` : "";
+  const folderCounts = new Map();
+  const ownFiles = [];
+  for (const file of list) {
+    if (!file.path.startsWith(prefix)) {
+      continue;
+    }
+    const rest = file.path.slice(prefix.length);
+    const slash = rest.indexOf("/");
+    if (slash === -1) {
+      ownFiles.push(fileEntry(file, rest));
+    } else {
+      const name = rest.slice(0, slash);
+      folderCounts.set(name, (folderCounts.get(name) || 0) + 1);
+    }
+  }
+  const folders = [...folderCounts.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([name, fileCount]) => ({
+      key: `folder:${prefix}${name}`,
+      isFolder: true,
+      label: name,
+      path: `${prefix}${name}`,
+      fileCount,
+    }));
+  const crumbs = [{ label: "", path: "" }];
+  folder
+    .split("/")
+    .filter(Boolean)
+    .forEach((segment, index, segments) => {
+      crumbs.push({
+        label: segment,
+        path: segments.slice(0, index + 1).join("/"),
+      });
+    });
+  return { byFolder: true, crumbs, entries: [...folders, ...ownFiles] };
+}
+
+/** Size of a file as a reader expects it: 512 B, 48 KB, 1.2 MB */
+export function formatFileSize(sizeBytes) {
+  const bytes = Number(sizeBytes) || 0;
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  if (bytes < 1024 * 1024) {
+    return `${Math.round(bytes / 1024)} KB`;
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}

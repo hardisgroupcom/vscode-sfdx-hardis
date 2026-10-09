@@ -93,9 +93,16 @@ async function main() {
   // debugging port of the screenshot run so the panel can be captured. See
   // src/test/ui/retrieverRealOrg.test.ts.
   const realRetriever = process.env.SFDX_HARDIS_REAL_RETRIEVER === "true";
+  // Real git provider run of the Files button of the Pull Request view
+  // (SFDX_HARDIS_REAL_JOB_ARTIFACTS=true): the same setting, on a clone of a repository whose
+  // jobs still have artifacts. It opens no browser, so its window stays on the hidden desktop.
+  // See src/test/ui/jobArtifactsReal.test.ts.
+  const realJobArtifacts =
+    process.env.SFDX_HARDIS_REAL_JOB_ARTIFACTS === "true";
 
   const labDriver =
     realRetriever ||
+    realJobArtifacts ||
     process.argv.includes("--labs") ||
     process.env.SFDX_HARDIS_LAB_DRIVER === "true";
 
@@ -529,7 +536,10 @@ async function main() {
   // src/test/ui/cdpWindow.ts): clicks and captures go to the page, never to the desktop
   // cspell:ignore backgrounding
 
-  const cdpPort = docScreenshots || realRetriever ? await findFreePort() : 0;
+  const cdpPort =
+    docScreenshots || realRetriever || realJobArtifacts
+      ? await findFreePort()
+      : 0;
 
   // The window itself is another matter: started the usual way, it opens in front of whoever is
   // working on the machine and takes the focus, at every run. On Windows it is created on a
@@ -540,7 +550,7 @@ async function main() {
   const hiddenDesktop =
     process.platform === "win32" &&
     !process.env.CI &&
-    !labDriver &&
+    (!labDriver || realJobArtifacts) &&
     process.env.SFDX_HARDIS_UI_VISIBLE !== "true";
   let vscodeExecutablePath: string | undefined;
   if (hiddenDesktop) {
@@ -597,6 +607,9 @@ async function main() {
           ? {
               SFDX_HARDIS_LAB_DRIVER: "true",
               ...(realRetriever ? { SFDX_HARDIS_REAL_RETRIEVER: "true" } : {}),
+              ...(realJobArtifacts
+                ? { SFDX_HARDIS_REAL_JOB_ARTIFACTS: "true" }
+                : {}),
               SFDX_HARDIS_LAB_SPECS: process.env.SFDX_HARDIS_LAB_SPECS || "",
               SFDX_HARDIS_LAB_ONLY: process.env.SFDX_HARDIS_LAB_ONLY || "",
               CI: undefined,
