@@ -210,14 +210,19 @@ async function main() {
   const disconnectedProvider = pipelineState === "fresh-disconnected";
   // ...and once the first Pull Request of the project is open: the universe names it, with its
   // branch, in git-provider-mock-first-pr.json
+  const readUniverseFile = (name: string) =>
+    JSON.parse(fs.readFileSync(path.join(universeDir, name), "utf8"));
   const firstPullRequest =
     pipelineState === "fresh-pr" && universeDir
-      ? JSON.parse(
-          fs.readFileSync(
-            path.join(universeDir, "git-provider-mock-first-pr.json"),
-            "utf8",
-          ),
-        )
+      ? readUniverseFile("git-provider-mock-first-pr.json")
+      : null;
+  // Pull Requests a capture needs on top of any state, with their branches: a file of the
+  // universe, named by SFDX_HARDIS_DOC_SCREENSHOTS_EXTRA_PRS
+  const extraPullRequestsFile =
+    process.env.SFDX_HARDIS_DOC_SCREENSHOTS_EXTRA_PRS || "";
+  const extraPullRequests =
+    extraPullRequestsFile && universeDir
+      ? readUniverseFile(extraPullRequestsFile)
       : null;
 
   if (universe) {
@@ -230,6 +235,11 @@ async function main() {
         continue;
       }
       git(`branch ${branch}`);
+    }
+    for (const branch of extraPullRequests?.branches || []) {
+      if (!(universe.branches || []).includes(branch)) {
+        git(`branch ${branch}`);
+      }
     }
     git(`remote add origin ${universe.remote}`);
   } else if (docScreenshots) {
@@ -304,6 +314,19 @@ async function main() {
         "screenshot",
         "git-provider-mock.json",
       );
+  if (extraPullRequests) {
+    const fixture = JSON.parse(fs.readFileSync(gitProviderFixtureFile, "utf8"));
+    fixture.openPullRequests = [
+      ...(extraPullRequests.addOpenPullRequests || []),
+      ...(fixture.openPullRequests || []),
+    ];
+    gitProviderFixtureFile = path.join(workDir, "git-provider-mock.json");
+    fs.writeFileSync(
+      gitProviderFixtureFile,
+      JSON.stringify(fixture, null, 2),
+      "utf8",
+    );
+  }
   if (freshPipeline) {
     const fixture = JSON.parse(fs.readFileSync(gitProviderFixtureFile, "utf8"));
     fixture.openPullRequests = firstPullRequest?.addOpenPullRequests || [];

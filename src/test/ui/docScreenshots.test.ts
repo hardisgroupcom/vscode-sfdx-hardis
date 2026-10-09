@@ -1332,8 +1332,21 @@ suite("Documentation screenshots", function () {
       this.skip();
     }
     const prNumber = Number(process.env.SFDX_HARDIS_DOC_SCREENSHOTS_PR || 128);
-    checkoutWorkspaceBranch(FEATURE_BRANCH);
+    // A Pull Request of somebody else is reviewed from the major branch, which is also the
+    // one that holds the pipeline configuration of the state captured
+    if (!process.env.SFDX_HARDIS_DOC_SCREENSHOTS_EXTRA_PRS) {
+      checkoutWorkspaceBranch(FEATURE_BRANCH);
+    }
     try {
+      // The pipeline the Pull Request is opened from: its number sits next to its branch
+      await shootPanel(panelManager, {
+        name: "pipeline-pr-files-pipeline",
+        command: "vscode-sfdx-hardis.showPipeline",
+        lwcId: "s-pipeline",
+        ready: pipelineFullyLoaded,
+        settleMs: 9000,
+        force: true,
+      });
       await shootPanel(panelManager, {
         name: "pipeline-pr-files-row",
         command: "vscode-sfdx-hardis.showPipeline",
