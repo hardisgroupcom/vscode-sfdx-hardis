@@ -15,6 +15,7 @@ import {
 } from "./types";
 import { mapGitLabMergeStatus } from "./mergeStatus";
 import { SecretsManager } from "../secretsManager";
+import { PROVIDER_ENV_VAR_NAMES } from "../envFileCredentials";
 import { CacheManager } from "../cache-manager";
 import { Logger } from "../../logger";
 import { PROVIDER_BATCH_PROFILES, mapWithConcurrency } from "../concurrency";
@@ -139,9 +140,11 @@ export class GitProviderGitlab extends GitProvider {
     // Check if we have info to connect to Gitlab using Gitbeaker
     this.isActive = false;
     this.secretTokenIdentifier = this.hostKey + "_TOKEN";
-    const gitlabToken = await SecretsManager.getSecret(
+    const resolvedToken = await SecretsManager.resolveSecret(
       this.secretTokenIdentifier,
+      PROVIDER_ENV_VAR_NAMES.gitlabToken,
     );
+    const gitlabToken = resolvedToken?.value;
     if (gitlabToken && this.repoInfo?.host && this.repoInfo?.remoteUrl) {
       const host =
         this.repoInfo.host === "gitlab.com"
@@ -189,6 +192,7 @@ export class GitProviderGitlab extends GitProvider {
           docUrl:
             "https://docs.gitlab.com/user/profile/personal_access_tokens/",
           onlyIfPipelineConfigured: true,
+          credentialSource: resolvedToken?.source,
         });
       }
     }

@@ -101,6 +101,35 @@ export class ServiceNowProvider extends TicketProvider {
   }
 
   /**
+   * Link to a record: the form of its table, opened by sys_id when the record
+   * has been read, by number otherwise.
+   *
+   * The plain `<table>.do` form works on the classic UI and on the Next
+   * Experience, which wraps it in its own frame. A `nav_to.do?uri=` link does
+   * not: the Next Experience rewrites it and encodes the `?` of the inner URL
+   * twice, so the frame answers "page not found". The query is encoded once:
+   * ServiceNow decodes `number%3D...` itself, and encoding it again would send
+   * the same literal `%3D` to the frame.
+   */
+  static recordUrl(
+    instanceUrl: string,
+    table: string,
+    record: { sysId?: string; number?: string },
+  ): string {
+    const base = ServiceNowProvider.completeInstanceUrl(instanceUrl);
+    if (!base || !table) {
+      return "";
+    }
+    if (record.sysId) {
+      return `${base}/${table}.do?sys_id=${encodeURIComponent(record.sysId)}`;
+    }
+    if (record.number) {
+      return `${base}/${table}.do?sysparm_query=${encodeURIComponent(`number=${record.number}`)}`;
+    }
+    return "";
+  }
+
+  /**
    * Record number prefix -> table, with the tables declared by the project merged in.
    *
    * serviceNowTablePrefixes takes the form `PREFIX:table,PREFIX:table`, so the tables
@@ -445,7 +474,9 @@ export class ServiceNowProvider extends TicketProvider {
         tickets.push({
           provider: "SERVICENOW",
           id: number,
-          url: `${instanceUrl}/${table}.do?sysparm_query=number=${number}`,
+          url: ServiceNowProvider.recordUrl(instanceUrl, table || "", {
+            number,
+          }),
         });
       }
     }
@@ -461,7 +492,7 @@ export class ServiceNowProvider extends TicketProvider {
     if (!instanceUrl || !table) {
       return "";
     }
-    return `${instanceUrl}/${table}.do?sysparm_query=number=${number}`;
+    return ServiceNowProvider.recordUrl(instanceUrl, table, { number });
   }
 
   /**
@@ -558,7 +589,9 @@ export class ServiceNowProvider extends TicketProvider {
       }
       const sysId = ServiceNowProvider.rawFieldValue(record, "sys_id");
       if (sysId) {
-        ticket.url = `${this.instanceUrl}/nav_to.do?uri=/${table}.do?sys_id=${sysId}`;
+        ticket.url = ServiceNowProvider.recordUrl(this.instanceUrl, table, {
+          sysId,
+        });
       }
       ticket.foundOnServer = true;
       Logger.log(`Collected data for ServiceNow record ${number}`);

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- DevOps Pipeline
+  - Git and ticketing providers connect on their own from the credentials of the `.env` file at the root of the repository (GitHub, GitLab, Azure DevOps, Bitbucket, Jira, ServiceNow, Aha!), named as the sfdx-hardis CI/CD variables, and the commands launched by the extension receive them too
+  - Credentials you enter in the extension always win over the `.env` file, a `.env` credential that does not work leaves the provider disconnected without any message, and a provider you disconnect stays disconnected until you connect again or restart VS Code
+  - Fix ServiceNow ticket links, which opened a "Page not found" page on the Next Experience UI
 - Showcase screenshots: the Validation and Deployment tabs of the Pull Request window show the new layout of the sfdx-hardis comments
 - Training screenshots: the project fixture turns on the stop of a validation on a pending manual step, like the course does
 

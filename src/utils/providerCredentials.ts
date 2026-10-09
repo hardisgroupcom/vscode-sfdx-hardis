@@ -3,7 +3,8 @@ import { GitProvider } from "./gitProviders/gitProvider";
 import { CreateTokenOption } from "./gitProviders/types";
 import { TicketProvider } from "./ticketProviders/ticketProvider";
 import type { AhaProvider } from "./ticketProviders/ticketProviderAha";
-import { SecretsManager } from "./secretsManager";
+import { SecretsManager, SecretSource } from "./secretsManager";
+import { onEnvFileChanged, PROVIDER_ENV_VAR_NAMES } from "./envFileCredentials";
 import { getConfig, isPipelineConfigured } from "./pipeline/sfdxHardisConfig";
 import { Logger } from "../logger";
 import { t } from "../i18n/i18n";
@@ -98,6 +99,11 @@ export async function promptForToken(options: {
  * the provider: git provider authentication only powers pipeline features (DevOps
  * Pipeline, pull requests, CI jobs), so in a project without branch configuration the
  * failure is only traced in the logs, never shown.
+ *
+ * `credentialSource` says where the refused credentials came from. Credentials the
+ * user never entered in the extension (the process environment, the workspace `.env`
+ * file) fail silently: a line in the logs, no message, and the provider stays
+ * disconnected until the user connects by hand.
  */
 export async function showAuthFailureGuidance(options: {
   providerName: string;
@@ -106,7 +112,21 @@ export async function showAuthFailureGuidance(options: {
   docUrl: string;
   retry?: () => Promise<void> | void;
   onlyIfPipelineConfigured?: boolean;
+  credentialSource?: SecretSource;
 }): Promise<void> {
+  if (
+    options.credentialSource === "envFile" ||
+    options.credentialSource === "process"
+  ) {
+    Logger.log(
+      `${options.providerName} authentication failed with the credentials read from ${
+        options.credentialSource === "envFile"
+          ? "the workspace .env file"
+          : "the environment"
+      }: not prompting to sign in. Connect by hand to use other credentials.`,
+    );
+    return;
+  }
   if (
     options.onlyIfPipelineConfigured === true &&
     !(await isPipelineConfigured())
@@ -153,6 +173,7 @@ export async function showAuthFailureGuidance(options: {
  */
 export const SECRET_ENV_KEYS = new Set([
   "GITHUB_TOKEN",
+  "CI_SFDX_HARDIS_GITHUB_TOKEN",
   "CI_SFDX_HARDIS_GITLAB_TOKEN",
   "CI_SFDX_HARDIS_AZURE_TOKEN",
   "SYSTEM_ACCESSTOKEN",
@@ -230,8 +251,10 @@ export function refreshProviderCredentialEnvCache(): Promise<void> {
 }
 
 // Any stored/deleted secret (provider connect, disconnect, token update)
-// invalidates the cached credential env vars
+// invalidates the cached credential env vars, and so does a change of the
+// workspace .env file
 SecretsManager.onSecretChanged(invalidateProviderCredentialEnvCache);
+onEnvFileChanged(invalidateProviderCredentialEnvCache);
 
 /**
  * Collects available provider credentials (git + ticketing) and returns them
@@ -302,6 +325,7 @@ async function collectProviderCredentialEnvVarsNow(): Promise<
           // Prefer a stored personal access token; otherwise use the native session
           const storedToken = await SecretsManager.getSecret(
             hostKey + "_TOKEN",
+            PROVIDER_ENV_VAR_NAMES.githubToken,
           );
           if (storedToken) {
             env.GITHUB_TOKEN = storedToken;
@@ -318,14 +342,20 @@ async function collectProviderCredentialEnvVarsNow(): Promise<
           break;
         }
         case "gitlab": {
-          const token = await SecretsManager.getSecret(hostKey + "_TOKEN");
+          const token = await SecretsManager.getSecret(
+            hostKey + "_TOKEN",
+            PROVIDER_ENV_VAR_NAMES.gitlabToken,
+          );
           if (token) {
             env.CI_SFDX_HARDIS_GITLAB_TOKEN = token;
           }
           break;
         }
         case "azure": {
-          const token = await SecretsManager.getSecret(hostKey + "_TOKEN");
+          const token = await SecretsManager.getSecret(
+            hostKey + "_TOKEN",
+            PROVIDER_ENV_VAR_NAMES.azureToken,
+          );
           if (token) {
             env.CI_SFDX_HARDIS_AZURE_TOKEN = token;
             env.SYSTEM_ACCESSTOKEN = token;
@@ -335,6 +365,7 @@ async function collectProviderCredentialEnvVarsNow(): Promise<
         case "bitbucket": {
           const token = await SecretsManager.getSecret(
             hostKey + "_BITBUCKET_TOKEN",
+            PROVIDER_ENV_VAR_NAMES.bitbucketToken,
           );
           if (token) {
             env.CI_SFDX_HARDIS_BITBUCKET_TOKEN = token;
@@ -348,6 +379,7 @@ async function collectProviderCredentialEnvVarsNow(): Promise<
           // token as a Bearer token and get "Unauthorized".
           const email = await SecretsManager.getSecret(
             hostKey + "_BITBUCKET_EMAIL",
+            PROVIDER_ENV_VAR_NAMES.bitbucketEmail,
           );
           if (email) {
             env.CI_SFDX_HARDIS_BITBUCKET_EMAIL = email;
@@ -404,7 +436,14 @@ async function collectProviderCredentialEnvVarsNow(): Promise<
       ticketProvider.providerName === "JIRA"
     ) {
       const config = await getConfig("project");
-      let jiraHost = (config.jiraHost || "").trim();
+      // JIRA_HOST first, then jiraHost, like the CLI
+      const hostFromEnvironment = (
+        (await SecretsManager.getSecret(
+          "JIRA_HOST",
+          PROVIDER_ENV_VAR_NAMES.jiraHost,
+        )) || ""
+      ).trim();
+      let jiraHost = hostFromEnvironment || (config.jiraHost || "").trim();
       if (
         jiraHost &&
         !jiraHost.startsWith("http://") &&
@@ -413,16 +452,30 @@ async function collectProviderCredentialEnvVarsNow(): Promise<
         jiraHost = "https://" + jiraHost;
       }
       if (jiraHost) {
+        if (hostFromEnvironment) {
+          // A host read from the .env file must reach the command too: the CLI
+          // does not read that file itself
+          env.JIRA_HOST = jiraHost;
+        }
         const hostKey = jiraHost.replace(/\./g, "_").toUpperCase();
-        const pat = await SecretsManager.getSecret(hostKey + "_JIRA_PAT");
+        const pat = await SecretsManager.getSecret(
+          hostKey + "_JIRA_PAT",
+          PROVIDER_ENV_VAR_NAMES.jiraPat,
+        );
         if (pat) {
           env.JIRA_PAT = pat;
         }
-        const email = await SecretsManager.getSecret(hostKey + "_JIRA_EMAIL");
+        const email = await SecretsManager.getSecret(
+          hostKey + "_JIRA_EMAIL",
+          PROVIDER_ENV_VAR_NAMES.jiraEmail,
+        );
         if (email) {
           env.JIRA_EMAIL = email;
         }
-        const token = await SecretsManager.getSecret(hostKey + "_JIRA_TOKEN");
+        const token = await SecretsManager.getSecret(
+          hostKey + "_JIRA_TOKEN",
+          PROVIDER_ENV_VAR_NAMES.jiraToken,
+        );
         if (token) {
           env.JIRA_TOKEN = token;
         }

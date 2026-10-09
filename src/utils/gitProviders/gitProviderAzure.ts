@@ -24,7 +24,8 @@ import {
   repositoryKeyFromRemoteUrl,
   setCachedPullRequestDescription,
 } from "../pullRequestDescriptionCache";
-import { SecretsManager } from "../secretsManager";
+import { SecretsManager, SecretSource } from "../secretsManager";
+import { PROVIDER_ENV_VAR_NAMES } from "../envFileCredentials";
 import { BuildApi } from "azure-devops-node-api/BuildApi";
 import { t } from "../../i18n/i18n";
 import {
@@ -173,7 +174,12 @@ export class GitProviderAzure extends GitProvider {
   }
 
   async initialize() {
-    const pat = await SecretsManager.getSecret(this.hostKey + "_TOKEN");
+    const resolvedPat = await SecretsManager.resolveSecret(
+      this.hostKey + "_TOKEN",
+      PROVIDER_ENV_VAR_NAMES.azureToken,
+    );
+    const pat = resolvedPat?.value;
+    const credentialSource: SecretSource | undefined = resolvedPat?.source;
     let authHandler: any;
     if (pat) {
       authHandler = azdev.getPersonalAccessTokenHandler(pat);
@@ -230,6 +236,7 @@ export class GitProviderAzure extends GitProvider {
         docUrl:
           "https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate",
         onlyIfPipelineConfigured: true,
+        credentialSource,
       });
     }
   }
