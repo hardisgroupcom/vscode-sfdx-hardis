@@ -700,6 +700,17 @@ suite("Pull Request view", () => {
       );
     });
 
+    test("a line says the statuses are loading, where the switch and the totals will be", () => {
+      const loading = html.indexOf("if:true={showActionsHeadLoading}");
+      const head = html.indexOf("if:true={showActionsHead}");
+      assert.ok(loading > 0, "the loading line is in the template");
+      assert.ok(loading < head, "it stands where the head will be");
+      assert.match(
+        js,
+        /get showActionsHeadLoading\(\) \{\s+return \(\s+this\.modalActions\.length > 0 &&\s+!this\.modalActionStatuses &&\s+this\.actionStatusesLoading/,
+      );
+    });
+
     test("one Pull Request opens on its description, then its comments by kind", () => {
       assert.match(
         html,

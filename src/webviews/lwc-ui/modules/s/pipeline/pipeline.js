@@ -4284,6 +4284,16 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return this.showPromotionToggle || this.modalActionTotals.length > 0;
   }
 
+  // The statuses are being read for the first time: the switch and the totals are not there
+  // yet, and a line says so where they will be
+  get showActionsHeadLoading() {
+    return (
+      this.modalActions.length > 0 &&
+      !this.modalActionStatuses &&
+      this.actionStatusesLoading
+    );
+  }
+
   // The pills of every Pull Request of the window added up, in the mode shown,
   // each one a switch hiding or showing the actions it counts. The Status mode
   // also counts the actions no header pill counts (not run yet, skipped), so

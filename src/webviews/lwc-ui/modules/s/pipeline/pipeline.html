@@ -531,6 +531,14 @@
                             <template if:true={modalActions.length}>
                                 <!-- The switch between the status in the branch and the next promotion,
                                      and the pills of every Pull Request added up -->
+                                <template if:true={showActionsHeadLoading}>
+                                    <div class="da-actions-head da-head-loading">
+                                        <div class="slds-is-relative da-head-spinner">
+                                            <lightning-spinner alternative-text={i18n.loadingLabel} size="x-small"></lightning-spinner>
+                                        </div>
+                                        <span class="slds-text-color_weak">{i18n.loadingLabel}</span>
+                                    </div>
+                                </template>
                                 <template if:true={showActionsHead}>
                                     <div class="da-actions-head">
                                         <div class="da-head-line">
