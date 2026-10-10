@@ -735,7 +735,6 @@ export class GitProvider {
     }
   }
 
-  // The repository the cached answers belong to, from the git remote of the working copy
   // Only the runs that are not over are opened: a finished run costs no call
   private async expandUnfinishedRuns(
     runs: Job[],
@@ -760,6 +759,7 @@ export class GitProvider {
     );
   }
 
+  // The repository the cached answers belong to, from the git remote of the working copy
   private pipelineCacheRepositoryKey(): string | null {
     const remoteUrl = this.repoInfo?.remoteUrl;
     return remoteUrl ? repositoryKeyFromRemoteUrl(remoteUrl) : null;

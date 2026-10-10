@@ -252,7 +252,8 @@ export function journeyBranchPath(orgs, targetBranch) {
  *   { <branch>: [job] } }, each job with its kind. Null while they are not known.
  * - vehicles: the promotions and the merges between two major branches the panel knows, open or
  *   merged ({ number, sourceBranch, targetBranch, state, mergeDate, promotionPullRequests })
- * - arrivals: { <branch>: [dates of the merges made into the branch since its last promotion] }
+ * - arrivals: { <branch>: [{ number, date } of the merges made into the branch since its last
+ *   promotion] }
  *
  * Step states: waiting, running, pending, success, merged, deployed, failed, unknown.
  *
@@ -413,6 +414,7 @@ export function buildPullRequestJourney({
       deployments = runningDeployments({
         jobs: runningJobs?.branches?.[branch],
         reachedAt,
+        reachedBy: index === 0 ? pr.number : carrier?.number,
         runs,
         branch,
         arrivals: arrivals?.[branch],
@@ -562,12 +564,22 @@ function openCarrier(pr, branch, previousBranch, vehicles) {
  * Once the Pull Request has its deployment result, only a job started after it counts: the same
  * deployment being run again.
  */
-function runningDeployments({ jobs, reachedAt, runs, branch, arrivals }) {
+function runningDeployments({
+  jobs,
+  reachedAt,
+  reachedBy,
+  runs,
+  branch,
+  arrivals,
+}) {
   if (!Array.isArray(jobs) || !Number.isFinite(reachedAt)) {
     return [];
   }
-  // A provider that does not say when a job started still says when it last moved
-  const startOf = (job) => timeOf(job.startedAt || job.updatedAt);
+  // When the run of the job was created, when the provider says so: a job can wait for a runner,
+  // and what was merged meanwhile is not what it deploys. A provider that does not say when a
+  // job started still says when it last moved.
+  const startOf = (job) =>
+    timeOf(job.queuedAt || job.startedAt || job.updatedAt);
   const unfinished = jobs.filter(
     (job) =>
       job.kind === "deployment" &&
@@ -583,8 +595,14 @@ function runningDeployments({ jobs, reachedAt, runs, branch, arrivals }) {
         timeOf(run.date) >= reachedAt,
     )
     .map((run) => timeOf(run.date));
+  // Each arrival is { number, date }, or a date alone. The merge that brought the story is no
+  // later merge, whatever date another list of the provider gives it.
   const laterMerges = (Array.isArray(arrivals) ? arrivals : [])
-    .map(timeOf)
+    .map((arrival) =>
+      arrival && typeof arrival === "object" ? arrival : { date: arrival },
+    )
+    .filter((arrival) => !(reachedBy > 0 && arrival.number === reachedBy))
+    .map((arrival) => timeOf(arrival.date))
     .filter((time) => time > reachedAt);
   const mine = unfinished.filter(
     (job) => !laterMerges.some((time) => time <= startOf(job)),
@@ -747,6 +765,14 @@ export function buildArtifactEntries(
       });
     });
   return { byFolder: true, crumbs, entries: [...folders, ...ownFiles] };
+}
+
+/**
+ * What the duration of a finished job is kept under: its kind with its link. One link can be the
+ * one of a whole pipeline, which runs the validation and the code quality check.
+ */
+export function jobDurationKey(kind, url) {
+  return `${kind || ""}|${url || ""}`;
 }
 
 /**

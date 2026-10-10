@@ -87,6 +87,8 @@ export type Job = {
   kind?: JobKind;
   // Name of the pipeline, build or workflow run the job is part of, when it was read out of one
   parentName?: string;
+  // When the run the job is part of was created: a job can wait for a runner long after that
+  queuedAt?: string;
   // optional provider raw payload
   raw?: any;
 };
@@ -231,6 +233,8 @@ export type GoLive = {
 
 /** When a CI job ran, read back from its link: what the time it took is computed from. */
 export type JobTiming = {
+  // True for a job that is queued or running: the run is not over, whatever its other jobs say
+  waiting?: boolean;
   startedAt?: string; // ISO date string
   finishedAt?: string; // ISO date string, absent while the job is not over
 };

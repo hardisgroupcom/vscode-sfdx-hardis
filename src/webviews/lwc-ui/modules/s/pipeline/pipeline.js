@@ -21,6 +21,7 @@ import {
   resetModalLoadingFlags,
   runningJobRows,
   safeWebUrl,
+  jobDurationKey,
 } from "s/pullRequestUtils";
 
 // How often the jobs of the Pull Request shown are read again: while one is going on, and
@@ -219,9 +220,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   _runningJobsRequestId = 0;
   _runningJobsTimer = null;
   _runningJobsPaused = false;
-  // Seconds each finished job of the Pull Request took, by job URL
+  // Seconds each finished job of the Pull Request took, by kind and job URL (jobDurationKey).
+  // Null for a job asked for that has no duration to give
   jobDurations = {};
-  _jobDurationsRequestId = 0;
   _jobDurationsStale = false;
   _runningJobsUnknownCount = 0;
   // Holder mutated in place, so that filling it while rendering renders nothing again
@@ -3350,7 +3351,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     for (const [branch, prs] of this.branchPullRequestsMap) {
       arrivals[branch] = (prs || [])
         .filter((item) => item?.targetBranch === branch && item.mergeDate)
-        .map((item) => item.mergeDate);
+        .map((item) => ({ number: item.number, date: item.mergeDate }));
     }
     return arrivals;
   }
@@ -3493,23 +3494,33 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       pullRequest: listOf(data.pullRequest, previous?.pullRequest),
       branches,
     };
-    // By kind and not by address: a pipeline that gets its jobs changes the address shown,
-    // and nothing ended
-    const kindsOf = (jobs) =>
+    const entriesOf = (jobs) =>
       jobs
         ? [
-            ...(jobs.pullRequest || []).map((job) => `|${job.kind}`),
-            ...Object.entries(jobs.branches || {}).flatMap(([branch, list]) =>
-              list.map((job) => `${branch}|${job.kind}`),
+            ...(jobs.pullRequest || []).map((job) => ({ scope: "", job })),
+            ...Object.entries(jobs.branches || {}).flatMap(([scope, list]) =>
+              list.map((job) => ({ scope, job })),
             ),
           ]
         : [];
-    const before = kindsOf(previous);
-    const after = kindsOf(next);
+    const after = entriesOf(next);
+    // A job is gone when its address is. Not when its pipeline was listed as a whole and now
+    // gives its jobs: the address changed and nothing ended.
+    const ended = entriesOf(previous).some(
+      ({ scope, job }) =>
+        !after.some(
+          (other) =>
+            other.scope === scope &&
+            other.job.kind === job.kind &&
+            ((other.job.webUrl || other.job.name) ===
+              (job.webUrl || job.name) ||
+              (!job.parentName && !!other.job.parentName)),
+        ),
+    );
     this.modalRunningJobs = next;
     // A job that was going on and no longer is has posted its comment: read the comments again,
     // keeping on screen what is already there
-    if (before.some((kind) => !after.includes(kind))) {
+    if (ended) {
       // A job run again keeps its link on some providers: its duration is asked again
       this._jobDurationsStale = true;
       this._requestActionStatuses({ refresh: true });
@@ -3982,25 +3993,21 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     const jobs = [];
     for (const run of this.modalWorkflows || []) {
       const url = safeWebUrl(run.jobUrl);
+      const key = jobDurationKey(run.kind, url);
       if (
         url &&
-        (refresh || !(url in this.jobDurations)) &&
-        !jobs.some((job) => job.url === url)
+        (refresh || !(key in this.jobDurations)) &&
+        !jobs.some((job) => job.key === key)
       ) {
-        jobs.push({ url, kind: run.kind });
+        jobs.push({ key, url, kind: run.kind });
       }
     }
     if (jobs.length === 0 || !this.gitAuthenticated) {
       return;
     }
-    this._jobDurationsRequestId += 1;
     window.sendMessageToVSCode({
       type: "loadJobDurations",
-      data: {
-        jobs: jobs.slice(0, 30),
-        refresh,
-        requestId: this._jobDurationsRequestId,
-      },
+      data: { jobs: jobs.slice(0, 30), refresh },
     });
   }
 

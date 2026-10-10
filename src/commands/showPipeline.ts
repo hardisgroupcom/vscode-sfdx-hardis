@@ -1882,7 +1882,7 @@ async function loadPullRequestRunningJobs(data: any): Promise<{
   return answer;
 }
 
-// Seconds each finished job took, by job link: what is over does not change
+// Seconds each finished job took, by kind and job link: what is over does not change
 const jobDurationCache = new Map<string, number>();
 const JOB_KIND_OF_TAB: Record<string, JobKind> = {
   validation: "validation",
@@ -1891,31 +1891,32 @@ const JOB_KIND_OF_TAB: Record<string, JobKind> = {
 };
 
 /**
- * The time the jobs behind the comments of a Pull Request took, in seconds by job link, read
- * from the git provider: a comment says when it was posted, not how long its job ran. Only
- * finished jobs are answered. `refresh` asks again for a job that may have been run again under
- * the same link. Never fails: a job that cannot be read has no duration.
+ * The time the jobs behind the comments of a Pull Request took, in seconds, read from the git
+ * provider: a comment says when it was posted, not how long its job ran.
+ *
+ * Answered by the key the panel gave to each job (its kind and its link: one pipeline link can
+ * hold the validation and the code quality check). Null for a job that is not over or cannot be
+ * read, so the panel does not ask for it at every load. `refresh` asks again for a job that may
+ * have been run again under the same link. Never fails.
  */
 async function loadJobDurations(data: any): Promise<{
-  requestId: number;
-  durations: Record<string, number>;
+  durations: Record<string, number | null>;
 }> {
-  const answer = {
-    requestId: Number(data?.requestId) || 0,
-    durations: {} as Record<string, number>,
-  };
-  const asked: { url: string; kind: string }[] = [];
+  const answer = { durations: {} as Record<string, number | null> };
+  const asked: { key: string; url: string; kind: string }[] = [];
   for (const job of Array.isArray(data?.jobs) ? data.jobs.slice(0, 30) : []) {
     const url = typeof job?.url === "string" ? job.url : "";
-    if (!/^https?:\/\//.test(url)) {
+    const key = typeof job?.key === "string" ? job.key : "";
+    if (!key || !/^https?:\/\//.test(url)) {
       continue;
     }
     const known =
-      data?.refresh === true ? undefined : jobDurationCache.get(url);
+      data?.refresh === true ? undefined : jobDurationCache.get(key);
     if (known !== undefined) {
-      answer.durations[url] = known;
+      answer.durations[key] = known;
     } else {
-      asked.push({ url, kind: String(job.kind || "") });
+      answer.durations[key] = null;
+      asked.push({ key, url, kind: String(job.kind || "") });
     }
   }
   if (asked.length === 0) {
@@ -1933,22 +1934,22 @@ async function loadJobDurations(data: any): Promise<{
     return answer;
   }
   const provider = gitProvider;
-  await Promise.all(
-    asked.map(async (job) => {
-      try {
-        const seconds = jobDurationSeconds(
-          await provider.getJobTiming(job.url, JOB_KIND_OF_TAB[job.kind]),
-        );
-        if (seconds !== null) {
-          jobDurationCache.set(job.url, seconds);
-          answer.durations[job.url] = seconds;
-        }
-      } catch (e: any) {
-        Logger.log(
-          `[vscode-sfdx-hardis] Duration of ${job.url} not available: ${e?.message || e}`,
-        );
+  await mapWithConcurrencySettled(
+    asked,
+    async (job) => {
+      const seconds = jobDurationSeconds(
+        await provider.getJobTiming(job.url, JOB_KIND_OF_TAB[job.kind]),
+      );
+      if (seconds !== null) {
+        jobDurationCache.set(job.key, seconds);
+        answer.durations[job.key] = seconds;
       }
-    }),
+    },
+    undefined,
+    (e: any, job) =>
+      Logger.log(
+        `[vscode-sfdx-hardis] Duration of ${job.url} not available: ${e?.message || e}`,
+      ),
   );
   return answer;
 }

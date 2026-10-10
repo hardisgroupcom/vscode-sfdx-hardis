@@ -967,6 +967,7 @@ export class GitProviderGitHub extends GitProvider {
         name: job.name,
         startedAt: job.started_at || undefined,
         finishedAt: job.completed_at || undefined,
+        waiting: job.status !== "completed",
       })),
       kind,
     );

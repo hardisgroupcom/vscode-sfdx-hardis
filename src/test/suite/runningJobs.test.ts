@@ -65,6 +65,16 @@ suite("Running jobs of a Pull Request", () => {
         null,
       );
       assert.strictEqual(pickJobTiming([{ name: "Deployment" }]), null);
+      // One job over and one still queued: the run is not over
+      assert.strictEqual(
+        jobDurationSeconds(
+          pickJobTiming(
+            [check, { name: "Deployment check 2", waiting: true }],
+            "validation",
+          ),
+        ),
+        null,
+      );
       assert.strictEqual(jobDurationSeconds(null), null);
       assert.strictEqual(
         jobDurationSeconds({
@@ -198,6 +208,20 @@ suite("Running jobs of a Pull Request", () => {
       assert.deepStrictEqual(
         pickUnfinishedJobsByKind(runs, () => [], "validation"),
         [],
+      );
+    });
+
+    test("a renamed deployment is still shown next to a MegaLinter that kept its name", () => {
+      const runs = [
+        job({ name: "Mega-Linter", status: "success" }),
+        job({ name: "CD" }),
+      ];
+      assert.deepStrictEqual(
+        pickUnfinishedJobsByKind(runs, () => [], "deployment").map((item) => [
+          item.name,
+          item.kind,
+        ]),
+        [["CD", "deployment"]],
       );
     });
 
@@ -492,11 +516,13 @@ suite("Running jobs of a Pull Request", () => {
           name: "Run MegaLinter",
           started_on: "2026-10-10T08:00:00.000Z",
           completed_on: "2026-10-10T08:06:00.000Z",
+          state: { name: "COMPLETED" },
         },
         {
           name: "Simulate SFDX deployment",
           started_on: "2026-10-10T08:00:00.000Z",
           completed_on: "2026-10-10T08:02:05.000Z",
+          state: { name: "COMPLETED" },
         },
       ];
       const timing = await provider(timed, calls).getJobTiming(

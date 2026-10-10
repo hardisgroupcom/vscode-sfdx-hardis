@@ -41,6 +41,7 @@ const EXPORTED = [
   "isTrustedCommentImage",
   "buildArtifactEntries",
   "formatDuration",
+  "jobDurationKey",
   "formatFileSize",
 ];
 
@@ -1426,19 +1427,20 @@ suite("Pull Request view", () => {
         new Function(
           "window",
           "safeWebUrl",
+          "jobDurationKey",
           `return { ${extractMember(js, "_requestJobDurations()")}, ${extractMember(js, "handleReturnJobDurations(data)")} };`,
         )(
           { sendMessageToVSCode: (message: any) => messages.push(message) },
           utils.safeWebUrl,
+          utils.jobDurationKey,
         ),
         {
           gitAuthenticated: true,
           jobDurations: {},
-          ["_jobDurationsRequestId"]: 0,
           ["_jobDurationsStale"]: false,
           modalWorkflows: [
             { kind: "validation", jobUrl: "https://git.example.com/runs/1" },
-            { kind: "megalinter", jobUrl: "https://git.example.com/runs/2" },
+            { kind: "megalinter", jobUrl: "https://git.example.com/runs/1" },
             { kind: "validation", jobUrl: "https://git.example.com/runs/1" },
             { kind: "deployment", jobUrl: "" },
           ],
@@ -1446,21 +1448,35 @@ suite("Pull Request view", () => {
       );
       view._requestJobDurations();
       assert.deepStrictEqual(messages.pop().data, {
+        // One pipeline link for two kinds of job: each one is asked
         jobs: [
-          { url: "https://git.example.com/runs/1", kind: "validation" },
-          { url: "https://git.example.com/runs/2", kind: "megalinter" },
+          {
+            key: "validation|https://git.example.com/runs/1",
+            url: "https://git.example.com/runs/1",
+            kind: "validation",
+          },
+          {
+            key: "megalinter|https://git.example.com/runs/1",
+            url: "https://git.example.com/runs/1",
+            kind: "megalinter",
+          },
         ],
         refresh: false,
-        requestId: 1,
       });
       view.handleReturnJobDurations({
-        durations: { "https://git.example.com/runs/1": 125 },
+        durations: { "validation|https://git.example.com/runs/1": 125 },
       });
       view._requestJobDurations();
       assert.deepStrictEqual(
-        messages.pop().data.jobs.map((job: any) => job.url),
-        ["https://git.example.com/runs/2"],
+        messages.pop().data.jobs.map((job: any) => job.kind),
+        ["megalinter"],
       );
+      // A job with no duration to give is not asked for again
+      view.handleReturnJobDurations({
+        durations: { "megalinter|https://git.example.com/runs/1": null },
+      });
+      view._requestJobDurations();
+      assert.strictEqual(messages.length, 0);
       // A job run again can keep its link: everything is asked again
       view["_jobDurationsStale"] = true;
       view._requestJobDurations();

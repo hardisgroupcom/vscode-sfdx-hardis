@@ -1064,10 +1064,9 @@ export class GitProviderBitbucket extends GitProvider {
     jobUrl: string,
     kind?: JobKind,
   ): Promise<JobTiming | null> {
-    const buildNumber =
-      this.repoInfo?.webUrl && (jobUrl || "").startsWith(this.repoInfo.webUrl)
-        ? /\/pipelines\/results\/(\d+)/.exec(jobUrl)?.[1]
-        : undefined;
+    const buildNumber = this.isRepositoryUrl(jobUrl)
+      ? /\/pipelines\/results\/(\d+)/.exec(jobUrl)?.[1]
+      : undefined;
     if (
       !this.bitbucketClient ||
       !this.workspace ||
@@ -1090,6 +1089,7 @@ export class GitProviderBitbucket extends GitProvider {
         name: String(step.name || ""),
         startedAt: step.started_on || undefined,
         finishedAt: step.completed_on || undefined,
+        waiting: step.state?.name !== "COMPLETED",
       })),
       kind,
     );
@@ -1110,7 +1110,7 @@ export class GitProviderBitbucket extends GitProvider {
     const statusUrl = String(run.webUrl || run.raw?.url || "");
     const buildNumber =
       run.raw?.build_number ||
-      (this.repoInfo?.webUrl && statusUrl.startsWith(this.repoInfo.webUrl)
+      (this.isRepositoryUrl(statusUrl)
         ? /\/results\/(\d+)/.exec(statusUrl)?.[1]
         : undefined);
     const pipelineId = String(
@@ -1153,6 +1153,20 @@ export class GitProviderBitbucket extends GitProvider {
     return pipeline?.build_number && this.repoInfo?.webUrl
       ? `${this.repoInfo.webUrl}/pipelines/results/${pipeline.build_number}`
       : undefined;
+  }
+
+  // True for an address under the page of this repository. The slug is compared whatever its
+  // case: a remote can be written with capitals Bitbucket does not use in its own links
+  private isRepositoryUrl(url: string): boolean {
+    const base = String(this.repoInfo?.webUrl || "")
+      .toLowerCase()
+      .replace(/\/+$/, "");
+    return (
+      !!base &&
+      String(url || "")
+        .toLowerCase()
+        .startsWith(`${base}/`)
+    );
   }
 
   private mapPipelineStateToJobStatus(

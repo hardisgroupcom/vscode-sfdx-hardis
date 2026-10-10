@@ -1367,6 +1367,8 @@ export class GitProviderAzure extends GitProvider {
           name: String(record.name || ""),
           startedAt: record.startTime?.toISOString?.(),
           finishedAt: record.finishTime?.toISOString?.(),
+          // State of a timeline record: Completed is 2
+          waiting: record.state !== 2,
         })),
       kind,
     );

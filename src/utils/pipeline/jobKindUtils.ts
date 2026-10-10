@@ -32,30 +32,33 @@ export function classifyJobKind(name: string | undefined | null): JobKind {
  * When the job of a Pull Request comment ran, out of the jobs of the run its link names. The link
  * names a whole run (a workflow run, a build, a pipeline) that can hold other jobs: the ones of
  * the kind asked for are kept, and all of them when none can be told apart. A job that never
- * started (skipped) does not count. No end date while one of the jobs kept is not over.
+ * started (skipped) does not count. No end date while one of the jobs kept is not over, a job
+ * still queued included.
  */
 export function pickJobTiming(
   jobs: (JobTiming & { name?: string })[],
   kind?: JobKind,
 ): JobTiming | null {
-  const started = (jobs || []).filter((job) =>
+  const all = jobs || [];
+  const ofKind = kind
+    ? all.filter((job) => classifyJobKind(job.name) === kind)
+    : [];
+  const kept = ofKind.length > 0 ? ofKind : all;
+  const started = kept.filter((job) =>
     Number.isFinite(Date.parse(job.startedAt || "")),
   );
-  const ofKind = kind
-    ? started.filter((job) => classifyJobKind(job.name) === kind)
-    : [];
-  const kept = ofKind.length > 0 ? ofKind : started;
-  if (kept.length === 0) {
+  if (started.length === 0) {
     return null;
   }
-  const ends = kept.map((job) => Date.parse(job.finishedAt || ""));
+  const ends = started.map((job) => Date.parse(job.finishedAt || ""));
+  const over =
+    !kept.some((job) => job.waiting === true) &&
+    ends.every((end) => Number.isFinite(end));
   return {
     startedAt: new Date(
-      Math.min(...kept.map((job) => Date.parse(job.startedAt || ""))),
+      Math.min(...started.map((job) => Date.parse(job.startedAt || ""))),
     ).toISOString(),
-    finishedAt: ends.every((end) => Number.isFinite(end))
-      ? new Date(Math.max(...ends)).toISOString()
-      : undefined,
+    finishedAt: over ? new Date(Math.max(...ends)).toISOString() : undefined,
   };
 }
 
@@ -83,9 +86,11 @@ export function isUnfinishedJob(job: Job | undefined | null): boolean {
  * can be told apart, the run itself is shown, as `fallbackKind`: the tab then links to the whole
  * pipeline rather than saying nothing is running.
  *
- * Not when another run of the same commit has a name that says what it does: the run nobody can
- * name is then another CI of the project (a security scan, unit tests), and none of the tabs is
- * its place.
+ * Not when another run of the same commit is named as the kind the tab waits for: the run nobody
+ * can name is then another CI of the project (a security scan, unit tests), and none of the tabs
+ * is its place. A project that renamed its deployment and kept MegaLinter still has it shown.
+ *
+ * `queuedAt` of a job is when its run was created: a job can wait for a runner long after that.
  */
 export function pickUnfinishedJobsByKind(
   runs: Job[],
@@ -93,8 +98,8 @@ export function pickUnfinishedJobsByKind(
   fallbackKind: JobKind,
 ): Job[] {
   const picked: Job[] = [];
-  const someRunIsKnown = (runs || []).some(
-    (run) => classifyJobKind(run.name) !== "other",
+  const fallbackIsNamed = (runs || []).some(
+    (run) => classifyJobKind(run.name) === fallbackKind,
   );
   for (const run of runs || []) {
     if (!isUnfinishedJob(run)) {
@@ -111,13 +116,14 @@ export function pickUnfinishedJobsByKind(
           ...job,
           parentName: run.name,
           startedAt: job.startedAt || run.startedAt,
+          queuedAt: run.startedAt,
         })),
       );
       continue;
     }
     // No job of the run can be told apart (renamed jobs, or a run that is one job already)
     const runKind = classifyJobKind(run.name);
-    if (runKind === "other" && someRunIsKnown) {
+    if (runKind === "other" && fallbackIsNamed) {
       continue;
     }
     picked.push({ ...run, kind: runKind === "other" ? fallbackKind : runKind });
@@ -131,5 +137,6 @@ export function pickUnfinishedJobsByKind(
     startedAt: job.startedAt,
     kind: job.kind,
     parentName: job.parentName,
+    ...(job.queuedAt ? { queuedAt: job.queuedAt } : {}),
   }));
 }
