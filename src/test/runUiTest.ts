@@ -97,8 +97,12 @@ async function main() {
   // (SFDX_HARDIS_REAL_JOB_ARTIFACTS=true): the same setting, on a clone of a repository whose
   // jobs still have artifacts. It opens no browser, so its window stays on the hidden desktop.
   // See src/test/ui/jobArtifactsReal.test.ts.
+  // Real git provider run of the jobs still running in the Pull Request view
+  // (SFDX_HARDIS_REAL_RUNNING_JOBS=true): same setting again, and it only reads. See
+  // src/test/ui/runningJobsReal.test.ts.
+  const realRunningJobs = process.env.SFDX_HARDIS_REAL_RUNNING_JOBS === "true";
   const realJobArtifacts =
-    process.env.SFDX_HARDIS_REAL_JOB_ARTIFACTS === "true";
+    process.env.SFDX_HARDIS_REAL_JOB_ARTIFACTS === "true" || realRunningJobs;
 
   const labDriver =
     realRetriever ||
@@ -645,9 +649,11 @@ async function main() {
           ? {
               SFDX_HARDIS_LAB_DRIVER: "true",
               ...(realRetriever ? { SFDX_HARDIS_REAL_RETRIEVER: "true" } : {}),
-              ...(realJobArtifacts
-                ? { SFDX_HARDIS_REAL_JOB_ARTIFACTS: "true" }
-                : {}),
+              ...(realRunningJobs
+                ? { SFDX_HARDIS_REAL_RUNNING_JOBS: "true" }
+                : realJobArtifacts
+                  ? { SFDX_HARDIS_REAL_JOB_ARTIFACTS: "true" }
+                  : {}),
               SFDX_HARDIS_LAB_SPECS: process.env.SFDX_HARDIS_LAB_SPECS || "",
               SFDX_HARDIS_LAB_ONLY: process.env.SFDX_HARDIS_LAB_ONLY || "",
               CI: undefined,

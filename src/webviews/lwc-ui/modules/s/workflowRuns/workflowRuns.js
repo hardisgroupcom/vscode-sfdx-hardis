@@ -2,6 +2,8 @@ import { LightningElement, api } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
 import {
   buildArtifactEntries,
+  jobDurationKey,
+  formatDuration,
   formatFileSize,
   journeyPillClass,
   safeWebUrl,
@@ -12,6 +14,13 @@ import {
  * the Pull Request by sfdx-hardis and by MegaLinter, shown as they are, each one under a line
  * giving its outcome, its date and the links to the job, to the comment itself and to the files
  * the job published as artifacts.
+ *
+ * A job that is not over has posted no comment yet: `runningJobs`, read from the git provider,
+ * are listed first, each one with the link to the job, above the result of the previous run.
+ * It says for how long it has been going on, counted every second.
+ *
+ * `durations` are the seconds each finished job took, by kind and job URL (jobDurationKey),
+ * read from the git provider.
  *
  * `runs` are the runs of one kind, from the `workflows` list returned by
  * `sf hardis:project:action:list --with-workflows`. `artifacts` are the answers of
@@ -25,7 +34,15 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
   // False when the installed sfdx-hardis or the git provider cannot download the files of a job
   @api artifactsSupported = false;
   _runs = [];
+  _runningJobs = [];
   _artifacts = {};
+  _durations = {};
+  // Clock of the jobs going on, moved every second while one of them is shown
+  _now = Date.now();
+  _clock = null;
+  _connected = false;
+  // Holder changed in place, so that filling it while rendering renders nothing again
+  _rowsMemo = {};
   // Job URLs whose list of files is unfolded
   _openJobs = [];
   // Job URLs whose files were asked and not answered yet
@@ -41,6 +58,42 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
   }
   set runs(value) {
     this._runs = Array.isArray(value) ? value : [];
+  }
+
+  // Jobs of this kind still running or queued ({ kind, status, name, webUrl, startedAt,
+  // targetBranch, carriedBy })
+  @api
+  get runningJobs() {
+    return this._runningJobs;
+  }
+  set runningJobs(value) {
+    this._runningJobs = Array.isArray(value) ? value : [];
+    this._syncClock();
+  }
+
+  @api
+  get durations() {
+    return this._durations;
+  }
+  set durations(value) {
+    this._durations = value && typeof value === "object" ? value : {};
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    this._connected = true;
+    this._boundSyncClock = () => this._syncClock();
+    document.addEventListener("visibilitychange", this._boundSyncClock);
+    this._syncClock();
+  }
+
+  disconnectedCallback() {
+    if (super.disconnectedCallback) {
+      super.disconnectedCallback();
+    }
+    this._connected = false;
+    document.removeEventListener("visibilitychange", this._boundSyncClock);
+    this._syncClock();
   }
 
   @api
@@ -59,42 +112,83 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
     return this._runs.length > 0;
   }
 
-  get showEmpty() {
-    return !this.loading && !this.hasRuns;
+  get hasRunningJobs() {
+    return this._runningJobs.length > 0;
   }
 
-  get rows() {
-    return this._runs.map((run, index) => {
-      const branch = run.targetBranch || "";
+  get showEmpty() {
+    return !this.loading && !this.hasRuns && !this.hasRunningJobs;
+  }
+
+  // Nothing to wait for behind a spinner when a job is already there to show
+  get showLoading() {
+    return this.loading && !this.hasRunningJobs;
+  }
+
+  get runningRows() {
+    return this._runningJobs.map((job, index) => {
+      const label = this._label(job.kind, job.targetBranch || "");
       const context = [];
-      if (run.date) {
-        context.push(this._formatDate(run.date));
+      // The name of the job, when it says more than the title of the row ("Mega-Linter" under
+      // "MegaLinter" does not)
+      const bare = (text) =>
+        String(text || "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "");
+      if (job.name && bare(job.name) !== bare(label)) {
+        context.push(job.name);
       }
-      if (run.errorCount > 0) {
-        context.push(this.t("workflowErrors", { count: run.errorCount }));
-      }
-      if (run.failedTestsCount > 0) {
-        context.push(
-          this.t("workflowFailedTests", { count: run.failedTestsCount }),
+      const started = job.startedAt ? this._formatDate(job.startedAt) : "";
+      if (started) {
+        context.push(this.t("workflowStartedAt", { date: started }));
+        // Never negative: the clock of the workstation can be a little behind the provider
+        const elapsed = formatDuration(
+          Math.max(0, this._now - new Date(job.startedAt).getTime()) / 1000,
         );
+        if (elapsed) {
+          context.push(this.t("workflowElapsed", { duration: elapsed }));
+        }
       }
-      if (run.quickDeploy === true) {
-        context.push(this.i18n.workflowQuickDeploy);
+      if (job.carriedBy > 0) {
+        context.push(this.t("journeyCarriedBy", { number: job.carriedBy }));
       }
-      const jobUrl = safeWebUrl(run.jobUrl);
+      const running = job.status === "running";
       return {
-        key: `run-${index}`,
-        label: this._label(run.kind, branch),
+        key: `running-${index}`,
+        label,
         context: context.join(" · "),
-        statusLabel: this._statusLabel(run.status),
-        pillClass: journeyPillClass(run.status),
-        jobUrl,
-        commentUrl: safeWebUrl(run.commentUrl),
-        hasBody: !!run.body,
-        body: run.body || "",
-        ...this._filesState(jobUrl),
+        statusLabel: running
+          ? this.i18n.jobStatusRunning
+          : this.i18n.jobStatusPending,
+        pillClass: journeyPillClass(running ? "running" : "pending"),
+        running,
+        jobUrl: safeWebUrl(job.webUrl),
       };
     });
+  }
+
+  // Not rebuilt by the clock of the running jobs: only when what the rows show changes. Every
+  // input is replaced, never changed in place.
+  get rows() {
+    const inputs = [
+      this._runs,
+      this._durations,
+      this._artifacts,
+      this._openJobs,
+      this._pendingJobs,
+      this._folders,
+      this._requestTimes,
+      this.artifactsSupported,
+    ];
+    const memo = this._rowsMemo;
+    if (
+      !memo.inputs ||
+      inputs.some((input, index) => input !== memo.inputs[index])
+    ) {
+      memo.inputs = inputs;
+      memo.rows = this._buildRows();
+    }
+    return memo.rows;
   }
 
   handleOpenUrl(event) {
@@ -141,6 +235,64 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
         type: "openFile",
         data: { filePath: `${folder}/${path}` },
       });
+    }
+  }
+
+  _buildRows() {
+    return this._runs.map((run, index) => {
+      const branch = run.targetBranch || "";
+      const context = [];
+      const jobUrl = safeWebUrl(run.jobUrl);
+      if (run.date) {
+        context.push(this._formatDate(run.date));
+      }
+      const duration = formatDuration(
+        this._durations[jobDurationKey(run.kind, jobUrl)],
+      );
+      if (jobUrl && duration) {
+        context.push(this.t("workflowDuration", { duration }));
+      }
+      if (run.errorCount > 0) {
+        context.push(this.t("workflowErrors", { count: run.errorCount }));
+      }
+      if (run.failedTestsCount > 0) {
+        context.push(
+          this.t("workflowFailedTests", { count: run.failedTestsCount }),
+        );
+      }
+      if (run.quickDeploy === true) {
+        context.push(this.i18n.workflowQuickDeploy);
+      }
+      return {
+        key: `run-${index}`,
+        label: this._label(run.kind, branch),
+        context: context.join(" · "),
+        statusLabel: this._statusLabel(run.status),
+        pillClass: journeyPillClass(run.status),
+        jobUrl,
+        commentUrl: safeWebUrl(run.commentUrl),
+        hasBody: !!run.body,
+        body: run.body || "",
+        ...this._filesState(jobUrl),
+      };
+    });
+  }
+
+  // The clock only runs while a job that says when it started is on screen
+  _syncClock() {
+    // Not for a panel nobody looks at
+    const needed =
+      this._connected &&
+      !document.hidden &&
+      this._runningJobs.some((job) => job.startedAt);
+    if (needed && !this._clock) {
+      this._now = Date.now();
+      this._clock = setInterval(() => {
+        this._now = Date.now();
+      }, 1000);
+    } else if (!needed && this._clock) {
+      clearInterval(this._clock);
+      this._clock = null;
     }
   }
 

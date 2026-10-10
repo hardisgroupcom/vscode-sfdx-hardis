@@ -11,6 +11,8 @@ import {
   Job,
   JobStatus,
 } from "./types";
+import type { JobKind, JobTiming } from "./types";
+import { pickJobTiming } from "../pipeline/jobKindUtils";
 import { Logger } from "../../logger";
 import { PROVIDER_BATCH_PROFILES, mapWithConcurrency } from "../concurrency";
 import { SecretsManager, SecretSource } from "../secretsManager";
@@ -359,7 +361,10 @@ export class GitProviderGitHub extends GitProvider {
     }
   }
 
-  async getPullRequestByNumber(number: number): Promise<PullRequest | null> {
+  async getPullRequestByNumber(
+    number: number,
+    options?: { withJobs?: boolean },
+  ): Promise<PullRequest | null> {
     if (!this.gitHubClient || !this.repoInfo) {
       return null;
     }
@@ -375,7 +380,7 @@ export class GitProviderGitHub extends GitProvider {
       });
       const converted = await this.convertAndCollectJobsList(
         [pullRequest as any],
-        { withJobs: false },
+        { withJobs: options?.withJobs === true },
       );
       return converted[0] || null;
     } catch (err) {
@@ -938,6 +943,36 @@ export class GitProviderGitHub extends GitProvider {
     }
   }
 
+  /** The jobs of the workflow run a comment links to: .../actions/runs/<run id> */
+  async getJobTiming(
+    jobUrl: string,
+    kind?: JobKind,
+  ): Promise<JobTiming | null> {
+    const runId = Number(/\/actions\/runs\/(\d+)/.exec(jobUrl || "")?.[1]);
+    if (!this.gitHubClient || !this.repoInfo || !runId) {
+      return null;
+    }
+    const response = await this.gitHubClient.actions.listJobsForWorkflowRun({
+      owner: this.repoInfo.owner,
+      repo: this.repoInfo.repo,
+      run_id: runId,
+      per_page: 100,
+    });
+    await this.logApiCall("actions.listJobsForWorkflowRun", {
+      caller: "getJobTiming",
+      runId,
+    });
+    return pickJobTiming(
+      (response.data?.jobs || []).map((job: any) => ({
+        name: job.name,
+        startedAt: job.started_at || undefined,
+        finishedAt: job.completed_at || undefined,
+        waiting: job.status !== "completed",
+      })),
+      kind,
+    );
+  }
+
   async getJobsForBranchLatestCommit(
     branchName: string,
   ): Promise<{ jobs: Job[]; jobsStatus: JobStatus } | null> {
@@ -1065,6 +1100,7 @@ export class GitProviderGitHub extends GitProvider {
       status: this.convertWorkflowRunToJobStatus(run),
       webUrl: run.html_url,
       updatedAt: run.updated_at,
+      startedAt: run.run_started_at || run.created_at,
       raw: run,
     }));
   }

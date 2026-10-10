@@ -8,6 +8,8 @@ import type {
   PullRequest,
   PullRequestSearchResult,
   Job,
+  JobKind,
+  JobTiming,
   RepoInfo,
   JobStatus,
 } from "./types";
@@ -24,6 +26,10 @@ import { SecretsManager } from "../secretsManager";
 import { TicketProvider } from "../ticketProviders/ticketProvider";
 import { Ticket } from "../ticketProviders/types";
 import { completePullRequestsWithActions } from "../prePostCommandsUtils";
+import {
+  isUnfinishedJob,
+  pickUnfinishedJobsByKind,
+} from "../pipeline/jobKindUtils";
 import path from "path";
 import * as fs from "fs";
 
@@ -367,6 +373,65 @@ export class GitProvider {
     return null;
   }
 
+  /**
+   * The jobs inside a pipeline, a build or a workflow run, each one with the link to its own
+   * page. Empty when the provider lists a run that is one job already (a GitHub workflow), or
+   * when the run comes from a commit status of an external CI.
+   */
+  async listJobsOfRun(_run: Job): Promise<Job[]> {
+    return [];
+  }
+
+  /**
+   * When the job behind a link written in a Pull Request comment ran. `kind` says which job of
+   * the run is meant, on the providers whose link names a whole build or pipeline. Null when the
+   * link is not one of a job of this provider.
+   */
+  async getJobTiming(
+    _jobUrl: string,
+    _kind?: JobKind,
+  ): Promise<JobTiming | null> {
+    return null;
+  }
+
+  /**
+   * The jobs still running or queued for an open Pull Request, each one with its kind
+   * (validation, code quality): what the tabs of the Pull Request view show before the job has
+   * posted its comment. Nothing for a Pull Request that is merged or closed.
+   *
+   * Null when the provider gave no answer: that is not "no job", and the caller keeps what it
+   * knew rather than showing a job that runs as ended.
+   */
+  async listUnfinishedJobsOfPullRequest(
+    prNumber: number,
+  ): Promise<Job[] | null> {
+    const pullRequest = await this.getPullRequestByNumber(prNumber, {
+      withJobs: true,
+    });
+    if (!pullRequest) {
+      return null;
+    }
+    if (pullRequest.state && pullRequest.state !== "open") {
+      return [];
+    }
+    return await this.expandUnfinishedRuns(
+      pullRequest.jobs || [],
+      "validation",
+    );
+  }
+
+  /**
+   * The deployment jobs still running or queued on a major branch. Null when the provider gave
+   * no answer.
+   */
+  async listUnfinishedJobsOfBranch(branchName: string): Promise<Job[] | null> {
+    const branchJobs = await this.getJobsForBranchLatestCommit(branchName);
+    if (!branchJobs) {
+      return null;
+    }
+    return await this.expandUnfinishedRuns(branchJobs.jobs || [], "deployment");
+  }
+
   async listOpenPullRequests(): Promise<PullRequest[]> {
     Logger.log(
       `listOpenPullRequests not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
@@ -414,10 +479,13 @@ export class GitProvider {
 
   /**
    * Fetches a single Pull Request by its provider-native number (GitHub number, GitLab
-   * iid, Azure id, Bitbucket id), without its jobs. Used to resolve the stories declared
-   * by a promotion Pull Request when they are no longer in a loaded window.
+   * iid, Azure id, Bitbucket id), without its jobs unless they are asked for. Used to resolve
+   * the stories declared by a promotion Pull Request when they are no longer in a loaded window.
    */
-  async getPullRequestByNumber(_number: number): Promise<PullRequest | null> {
+  async getPullRequestByNumber(
+    _number: number,
+    _options?: { withJobs?: boolean },
+  ): Promise<PullRequest | null> {
     Logger.log(
       `getPullRequestByNumber not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
     );
@@ -665,6 +733,30 @@ export class GitProvider {
         pullRequests,
       );
     }
+  }
+
+  // Only the runs that are not over are opened: a finished run costs no call
+  private async expandUnfinishedRuns(
+    runs: Job[],
+    fallbackKind: "validation" | "deployment",
+  ): Promise<Job[]> {
+    const jobsByRun = new Map<Job, Job[]>();
+    await Promise.all(
+      runs.filter(isUnfinishedJob).map(async (run) => {
+        try {
+          jobsByRun.set(run, await this.listJobsOfRun(run));
+        } catch (e: any) {
+          Logger.log(
+            `Error listing the jobs of ${run.name}: ${e?.message || String(e)}`,
+          );
+        }
+      }),
+    );
+    return pickUnfinishedJobsByKind(
+      runs,
+      (run) => jobsByRun.get(run) || [],
+      fallbackKind,
+    );
   }
 
   // The repository the cached answers belong to, from the git remote of the working copy

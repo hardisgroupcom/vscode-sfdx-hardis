@@ -2,7 +2,11 @@ import { PrePostCommand } from "../prePostCommandsUtils";
 import { Ticket } from "../ticketProviders/types";
 
 export type ProviderName =
-  "gitlab" | "github" | "azure" | "bitbucket" | "gitea";
+  | "gitlab"
+  | "github"
+  | "azure"
+  | "bitbucket"
+  | "gitea";
 
 /**
  * An access token the user can create on a git provider to authenticate the extension.
@@ -59,7 +63,14 @@ export type PullRequestMergeStatus = "mergeable" | "conflicts" | "unknown";
 
 // Job run status for CI workflows associated with a pull request commit
 export type JobStatus =
-  "running" | "success" | "failed" | "pending" | "unknown";
+  | "running"
+  | "success"
+  | "failed"
+  | "pending"
+  | "unknown";
+
+// What a CI job does for a Pull Request, told from its name: see utils/pipeline/jobKindUtils.ts
+export type JobKind = "validation" | "codeQuality" | "deployment" | "other";
 
 export type Job = {
   // job identifier/name (e.g. workflow name or job name)
@@ -70,6 +81,14 @@ export type Job = {
   webUrl?: string;
   // timestamp when the job was last updated (ISO string)
   updatedAt?: string;
+  // timestamp when the job started, or was queued when it has not started yet (ISO string)
+  startedAt?: string;
+  // Filled on the jobs sent to the Pull Request view
+  kind?: JobKind;
+  // Name of the pipeline, build or workflow run the job is part of, when it was read out of one
+  parentName?: string;
+  // When the run the job is part of was created: a job can wait for a runner long after that
+  queuedAt?: string;
   // optional provider raw payload
   raw?: any;
 };
@@ -210,6 +229,14 @@ export type GoLive = {
   title?: string; // promotion PR title, when available
   mergeDate?: string; // ISO date string of the merge
   webUrl?: string; // canonical UI url of the promotion PR
+};
+
+/** When a CI job ran, read back from its link: what the time it took is computed from. */
+export type JobTiming = {
+  // True for a job that is queued or running: the run is not over, whatever its other jobs say
+  waiting?: boolean;
+  startedAt?: string; // ISO date string
+  finishedAt?: string; // ISO date string, absent while the job is not over
 };
 
 export type RepoInfo = {
