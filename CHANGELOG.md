@@ -7,6 +7,7 @@
 - DevOps Pipeline: a job that is still running shows in the Validation, Code Quality and Deployment tabs of its Pull Request, with a link to the job, and the step of the journey moves while it runs
 - DevOps Pipeline: the jobs of a Pull Request say how long they have been running, and how long they took once finished
 - DevOps Pipeline: each branch in the journey of a Pull Request names the Pull Request that carried it there, or the open one it is waiting for
+- Fix a Pull Request opened from a link on a given tab, which could show its first tab instead
 - Fix the window of a merged Azure DevOps Pull Request, which showed it as closed, without its journey
 
 ## [8.12.1] 2026-10-09

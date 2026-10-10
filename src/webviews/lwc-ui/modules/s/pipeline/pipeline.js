@@ -2908,6 +2908,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       // was set aside by a deep link
       const wantedTab = tab || this._nextModalTab;
       this._nextModalTab = null;
+      if (wantedTab && this.prViewPending) {
+        // The window is there but the Pull Request is still being read: its tabs do not exist
+        // yet, so the tab is kept for the answer
+        this._nextModalTab = wantedTab;
+        return;
+      }
       if (wantedTab) {
         this._showModalTab(wantedTab);
       }
@@ -3823,8 +3829,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.apexTestsByLineRows = [];
 
     // Open on the tab requested by a deep link, on the Pull Requests tab otherwise
-    this.modalActiveTabValue = this._nextModalTab || "general";
+    const wantedTab = this._nextModalTab || "general";
     this._nextModalTab = null;
+    if (this.showPRModal) {
+      // The window is already on screen, opened by the click with its first tab: the tabset
+      // only follows once the tabs of the Pull Request are rendered
+      this._showModalTab(wantedTab);
+    } else {
+      this.modalActiveTabValue = wantedTab;
+    }
 
     this.showPRModal = true;
   }
