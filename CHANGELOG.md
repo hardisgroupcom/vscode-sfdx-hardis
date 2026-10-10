@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- DevOps Pipeline: the Validation, Code Quality and Deployment tabs of a Pull Request have a Files button on each job, listing the report files the job published (by folder when there are many) and opening them in VS Code, on GitHub, GitLab and Azure DevOps
+- DevOps Pipeline: the Pull Request window opens as soon as it is clicked, with its title and header, while the rest loads.
+
 ## [8.12.1] 2026-10-09
 
 - DevOps Pipeline

@@ -1,4 +1,4 @@
-import { CdpWindow } from "./cdpWindow";
+import { CdpWindow, inWebview } from "./cdpWindow";
 import { execFileSync, execSync, spawnSync } from "child_process";
 import * as fs from "fs";
 import * as os from "os";
@@ -1322,6 +1322,67 @@ suite("Documentation screenshots", function () {
     await click(958, 227); // "Deployment Actions" tab of the modal
     await sleep(1500);
     await captureStable("pipeline-branch-modal-actions");
+  });
+
+  // The files of a job, in the Pull Request view: the Validation tab of a Pull Request, then
+  // its Files button opened. SFDX_HARDIS_DOC_SCREENSHOTS_PR names the Pull Request of another
+  // universe. The click goes through the webview itself, so no coordinate is involved.
+  test("pipeline: files of a job in the pull request view", async function () {
+    if (!shouldTake("pipeline-pr-files")) {
+      this.skip();
+    }
+    const prNumber = Number(process.env.SFDX_HARDIS_DOC_SCREENSHOTS_PR || 128);
+    // A Pull Request of somebody else is reviewed from the major branch, which is also the
+    // one that holds the pipeline configuration of the state captured
+    if (!process.env.SFDX_HARDIS_DOC_SCREENSHOTS_EXTRA_PRS) {
+      checkoutWorkspaceBranch(FEATURE_BRANCH);
+    }
+    try {
+      // The pipeline the Pull Request is opened from: its number sits next to its branch
+      await shootPanel(panelManager, {
+        name: "pipeline-pr-files-pipeline",
+        command: "vscode-sfdx-hardis.showPipeline",
+        lwcId: "s-pipeline",
+        ready: pipelineFullyLoaded,
+        settleMs: 9000,
+        force: true,
+      });
+      await shootPanel(panelManager, {
+        name: "pipeline-pr-files-row",
+        command: "vscode-sfdx-hardis.showPipeline",
+        lwcId: "s-pipeline",
+        ready: pipelineFullyLoaded,
+        settleMs: 9000,
+        force: true,
+        commandArgs: { focus: "pullRequest", prNumber, tab: "validation" },
+      });
+      const clicked = await inWebview(`
+        const button = deepAll(panelDocument, "button.run-files-button").find(
+          (candidate) => candidate.offsetParent !== null,
+        );
+        if (!button) { return null; }
+        button.click();
+        return true;
+      `);
+      if (clicked !== true) {
+        throw new Error("No Files button on the validation run");
+      }
+      await waitFor(
+        async () =>
+          (await inWebview(`
+            return deepAll(panelDocument, ".run-file-name").filter(
+              (name) => name.offsetParent !== null,
+            ).length || null;
+          `)) > 0,
+        30000,
+        "the files under the validation run",
+      );
+      await sleep(800);
+      await cleanChrome();
+      await captureStable("pipeline-pr-files-list");
+    } finally {
+      checkoutWorkspaceBranch("integration");
+    }
   });
 
   // Pull Request view and Pull Requests explorer (sfdx-hardis#2273): opened by deep links,

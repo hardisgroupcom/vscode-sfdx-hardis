@@ -407,6 +407,20 @@
   margin-bottom: 0.75rem;
 }
 
+/* Shown while the statuses are read, as high as the switch that replaces it so
+   the groups below do not move */
+.da-head-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2rem;
+}
+
+.da-head-spinner {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
 /* The switch on the left, the totals on the right: on a narrow panel the
    totals wrap under the switch */
 .da-head-line {

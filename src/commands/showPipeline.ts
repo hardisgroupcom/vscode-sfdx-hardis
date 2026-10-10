@@ -30,6 +30,7 @@ import {
   getWorkspaceRoot,
 } from "../utils";
 import { collectProviderCredentialEnvVars } from "../utils/providerCredentials";
+import { isSafeJobUrl } from "../utils/pullRequestUrlUtils";
 import { t } from "../i18n/i18n";
 import path from "path";
 import * as fs from "fs";
@@ -497,6 +498,13 @@ export function registerShowPipeline(commands: Commands) {
           panel.sendMessage({
             type: "returnDeploymentActionStatuses",
             data: await loadDeploymentActionStatuses(data),
+          });
+        }
+        // Files a job of the Pull Request published as artifacts
+        else if (type === "loadJobArtifacts") {
+          panel.sendMessage({
+            type: "returnJobArtifacts",
+            data: await loadJobArtifacts(data),
           });
         }
         // Get PR info for modal
@@ -1694,6 +1702,7 @@ async function loadDeploymentActionStatuses(data: any): Promise<{
   statuses: Record<string, any[]> | null;
   forecast?: any;
   workflows?: Record<string, any[]> | null;
+  artifactsSupported?: boolean;
   requestId: number;
 }> {
   const requestId = Number(data?.requestId) || 0;
@@ -1756,7 +1765,12 @@ async function loadDeploymentActionStatuses(data: any): Promise<{
     return {
       statuses: null,
       ...(withForecast ? { forecast: null } : {}),
-      ...(withWorkflows ? { workflows: result?.workflows || null } : {}),
+      ...(withWorkflows
+        ? {
+            workflows: result?.workflows || null,
+            artifactsSupported: result?.artifactsSupported === true,
+          }
+        : {}),
       requestId,
     };
   }
@@ -1764,9 +1778,79 @@ async function loadDeploymentActionStatuses(data: any): Promise<{
     statuses: result.statuses,
     ...(withForecast ? { forecast: result.forecast || null } : {}),
     // null with a CLI older than --with-workflows: the panel then hides its Workflows tab
-    ...(withWorkflows ? { workflows: result.workflows || null } : {}),
+    ...(withWorkflows
+      ? {
+          workflows: result.workflows || null,
+          // Absent with a sfdx-hardis older than sf hardis:git:artifacts:download
+          artifactsSupported: result.artifactsSupported === true,
+        }
+      : {}),
     requestId,
   };
+}
+
+/**
+ * The files a CI job published as artifacts, downloaded and extracted in the workspace by
+ * sf hardis:git:artifacts:download, which only downloads when its local copy is not the current
+ * one. requestedAt goes back so the list can tell this answer from the one of an older request.
+ */
+async function loadJobArtifacts(data: any): Promise<{
+  jobUrl: string;
+  requestedAt: number;
+  status: string;
+  folder: string;
+  files: { path: string; sizeBytes: number }[];
+  message: string;
+}> {
+  const jobUrl = String(data?.jobUrl || "");
+  const answer = {
+    jobUrl,
+    requestedAt: Number(data?.requestedAt) || 0,
+    status: "error",
+    folder: "",
+    files: [],
+    message: "",
+  };
+  if (!isSafeJobUrl(jobUrl)) {
+    return answer;
+  }
+  let env: Record<string, string> = {};
+  try {
+    env = await collectProviderCredentialEnvVars();
+  } catch (e: any) {
+    Logger.log(
+      `[vscode-sfdx-hardis] Job artifacts: provider credentials not collected: ${e?.message || e}`,
+    );
+  }
+  try {
+    const result = await execSfdxJson(
+      `sf hardis:git:artifacts:download --agent --job-url "${jobUrl}"`,
+      {
+        fail: false,
+        output: false,
+        debug: false,
+        reuseRecentResult: false,
+        env,
+      },
+    );
+    if (result?.status === 0 && result?.result) {
+      return {
+        ...answer,
+        status: String(result.result.status || "error"),
+        folder: String(result.result.folder || ""),
+        files: Array.isArray(result.result.files) ? result.result.files : [],
+        message: String(result.result.message || ""),
+      };
+    }
+    const message = String(result?.errorMessage || result?.message || "");
+    Logger.log(`[vscode-sfdx-hardis] Job artifacts not available: ${message}`);
+    return { ...answer, message };
+  } catch (e: any) {
+    Logger.log(
+      `[vscode-sfdx-hardis] Job artifacts not available: ${e?.message || e}`,
+    );
+    return { ...answer, message: String(e?.message || "") };
+  }
 }
 
 /**

@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
 import { activateExtension, recordSentMessages, waitFor } from "./uiTestUtils";
-import { CdpWindow } from "./cdpWindow";
+import { captureWindowTo } from "./cdpWindow";
 
 /**
  * The Metadata Retriever against a REAL org, with the REAL Salesforce CLI: the retrieve modes and
@@ -74,21 +74,7 @@ suite("Metadata Retriever on a real org", function () {
   const countTag = (xml: string, tag: string) =>
     (xml.match(new RegExp(`<${tag}>`, "g")) || []).length;
 
-  async function shoot(name: string): Promise<void> {
-    const port = CdpWindow.portFromEnv();
-    if (!shotsDir || !port) {
-      return;
-    }
-    fs.mkdirSync(shotsDir, { recursive: true });
-    const driver = new CdpWindow(port);
-    try {
-      await driver.capture(path.join(shotsDir, `${name}.png`), { top: 0 });
-    } catch (error: any) {
-      console.log(`      [shot] ${name}: FAILED ${error?.message || error}`);
-    } finally {
-      driver.close();
-    }
-  }
+  const shoot = (name: string) => captureWindowTo(shotsDir, name);
 
   async function openPanel(): Promise<any> {
     await vscode.commands.executeCommand(

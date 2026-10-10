@@ -400,6 +400,17 @@
                             <div class="hardis-empty-desc">{i18n.prExplorerEmptyDesc}</div>
                         </div>
                     </template>
+                    <!-- Opened by the click: what the panel already holds, while the rest is read -->
+                    <template if:true={showPendingPullRequestHeader}>
+                        <div class="slds-m-bottom_small">
+                            <s-pull-request-header
+                                pull-request={singlePullRequest}
+                                journey={modalJourney}
+                                loading
+                                platform-label={repoPlatformLabel}
+                            ></s-pull-request-header>
+                        </div>
+                    </template>
                     <template if:true={prViewLoading}>
                         <div class="slds-is-relative slds-p-vertical_large slds-text-align_center">
                             <lightning-spinner alternative-text={i18n.loadingLabel} size="medium"></lightning-spinner>
@@ -520,6 +531,14 @@
                             <template if:true={modalActions.length}>
                                 <!-- The switch between the status in the branch and the next promotion,
                                      and the pills of every Pull Request added up -->
+                                <template if:true={showActionsHeadLoading}>
+                                    <div class="da-actions-head da-head-loading">
+                                        <div class="slds-is-relative da-head-spinner">
+                                            <lightning-spinner alternative-text={i18n.loadingLabel} size="x-small"></lightning-spinner>
+                                        </div>
+                                        <span class="slds-text-color_weak">{i18n.loadingLabel}</span>
+                                    </div>
+                                </template>
                                 <template if:true={showActionsHead}>
                                     <div class="da-actions-head">
                                         <div class="da-head-line">
@@ -738,6 +757,8 @@
                                 <lightning-tab onactive={handleModalTabActive} label={i18n.journeyValidation} value="validation" icon-name="utility:search" icon-assistive-text={i18n.journeyValidation}>
                                     <s-workflow-runs
                                         runs={modalValidationRuns}
+                                        artifacts={jobArtifacts}
+                                        artifacts-supported={artifactsSupported}
                                         loading={workflowsLoading}
                                         empty-label={noValidationLabel}
                                     ></s-workflow-runs>
@@ -745,6 +766,8 @@
                                 <lightning-tab onactive={handleModalTabActive} label={i18n.prCodeQualityTab} value="megalinter" icon-name="utility:shield" icon-assistive-text={i18n.prCodeQualityTab}>
                                     <s-workflow-runs
                                         runs={modalMegaLinterRuns}
+                                        artifacts={jobArtifacts}
+                                        artifacts-supported={artifactsSupported}
                                         loading={workflowsLoading}
                                         empty-label={noMegaLinterLabel}
                                     ></s-workflow-runs>
@@ -752,6 +775,8 @@
                                 <lightning-tab onactive={handleModalTabActive} label={i18n.workflowDeploymentNoBranch} value="deployment" icon-name="utility:upload" icon-assistive-text={i18n.workflowDeploymentNoBranch}>
                                     <s-workflow-runs
                                         runs={modalDeploymentRuns}
+                                        artifacts={jobArtifacts}
+                                        artifacts-supported={artifactsSupported}
                                         loading={workflowsLoading}
                                         empty-label={noDeploymentLabel}
                                     ></s-workflow-runs>

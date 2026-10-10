@@ -93,9 +93,16 @@ async function main() {
   // debugging port of the screenshot run so the panel can be captured. See
   // src/test/ui/retrieverRealOrg.test.ts.
   const realRetriever = process.env.SFDX_HARDIS_REAL_RETRIEVER === "true";
+  // Real git provider run of the Files button of the Pull Request view
+  // (SFDX_HARDIS_REAL_JOB_ARTIFACTS=true): the same setting, on a clone of a repository whose
+  // jobs still have artifacts. It opens no browser, so its window stays on the hidden desktop.
+  // See src/test/ui/jobArtifactsReal.test.ts.
+  const realJobArtifacts =
+    process.env.SFDX_HARDIS_REAL_JOB_ARTIFACTS === "true";
 
   const labDriver =
     realRetriever ||
+    realJobArtifacts ||
     process.argv.includes("--labs") ||
     process.env.SFDX_HARDIS_LAB_DRIVER === "true";
 
@@ -201,13 +208,38 @@ async function main() {
   const freshPipeline = pipelineState.startsWith("fresh");
   // ...and before the extension itself was signed in to the git provider
   const disconnectedProvider = pipelineState === "fresh-disconnected";
+  // ...and once the first Pull Request of the project is open: the universe names it, with its
+  // branch, in git-provider-mock-first-pr.json
+  const readUniverseFile = (name: string) =>
+    JSON.parse(fs.readFileSync(path.join(universeDir, name), "utf8"));
+  const firstPullRequest =
+    pipelineState === "fresh-pr" && universeDir
+      ? readUniverseFile("git-provider-mock-first-pr.json")
+      : null;
+  // Pull Requests a capture needs on top of any state, with their branches: a file of the
+  // universe, named by SFDX_HARDIS_DOC_SCREENSHOTS_EXTRA_PRS
+  const extraPullRequestsFile =
+    process.env.SFDX_HARDIS_DOC_SCREENSHOTS_EXTRA_PRS || "";
+  const extraPullRequests =
+    extraPullRequestsFile && universeDir
+      ? readUniverseFile(extraPullRequestsFile)
+      : null;
 
   if (universe) {
     for (const branch of universe.branches || []) {
-      if (freshPipeline && /^(features|fixes|training)\//.test(branch)) {
+      if (
+        freshPipeline &&
+        /^(features|fixes|training)\//.test(branch) &&
+        !(firstPullRequest?.branches || []).includes(branch)
+      ) {
         continue;
       }
       git(`branch ${branch}`);
+    }
+    for (const branch of extraPullRequests?.branches || []) {
+      if (!(universe.branches || []).includes(branch)) {
+        git(`branch ${branch}`);
+      }
     }
     git(`remote add origin ${universe.remote}`);
   } else if (docScreenshots) {
@@ -282,9 +314,22 @@ async function main() {
         "screenshot",
         "git-provider-mock.json",
       );
+  if (extraPullRequests) {
+    const fixture = JSON.parse(fs.readFileSync(gitProviderFixtureFile, "utf8"));
+    fixture.openPullRequests = [
+      ...(extraPullRequests.addOpenPullRequests || []),
+      ...(fixture.openPullRequests || []),
+    ];
+    gitProviderFixtureFile = path.join(workDir, "git-provider-mock.json");
+    fs.writeFileSync(
+      gitProviderFixtureFile,
+      JSON.stringify(fixture, null, 2),
+      "utf8",
+    );
+  }
   if (freshPipeline) {
     const fixture = JSON.parse(fs.readFileSync(gitProviderFixtureFile, "utf8"));
-    fixture.openPullRequests = [];
+    fixture.openPullRequests = firstPullRequest?.addOpenPullRequests || [];
     fixture.mergedPullRequestsByBranch = {};
     fixture.branchJobs = {};
     if (disconnectedProvider) {
@@ -529,7 +574,10 @@ async function main() {
   // src/test/ui/cdpWindow.ts): clicks and captures go to the page, never to the desktop
   // cspell:ignore backgrounding
 
-  const cdpPort = docScreenshots || realRetriever ? await findFreePort() : 0;
+  const cdpPort =
+    docScreenshots || realRetriever || realJobArtifacts
+      ? await findFreePort()
+      : 0;
 
   // The window itself is another matter: started the usual way, it opens in front of whoever is
   // working on the machine and takes the focus, at every run. On Windows it is created on a
@@ -540,7 +588,7 @@ async function main() {
   const hiddenDesktop =
     process.platform === "win32" &&
     !process.env.CI &&
-    !labDriver &&
+    (!labDriver || realJobArtifacts) &&
     process.env.SFDX_HARDIS_UI_VISIBLE !== "true";
   let vscodeExecutablePath: string | undefined;
   if (hiddenDesktop) {
@@ -597,6 +645,9 @@ async function main() {
           ? {
               SFDX_HARDIS_LAB_DRIVER: "true",
               ...(realRetriever ? { SFDX_HARDIS_REAL_RETRIEVER: "true" } : {}),
+              ...(realJobArtifacts
+                ? { SFDX_HARDIS_REAL_JOB_ARTIFACTS: "true" }
+                : {}),
               SFDX_HARDIS_LAB_SPECS: process.env.SFDX_HARDIS_LAB_SPECS || "",
               SFDX_HARDIS_LAB_ONLY: process.env.SFDX_HARDIS_LAB_ONLY || "",
               CI: undefined,

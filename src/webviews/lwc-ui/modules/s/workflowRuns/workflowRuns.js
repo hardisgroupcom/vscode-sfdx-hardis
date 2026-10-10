@@ -1,20 +1,39 @@
 import { LightningElement, api } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
-import { journeyPillClass, safeWebUrl } from "s/pullRequestUtils";
+import {
+  buildArtifactEntries,
+  formatFileSize,
+  journeyPillClass,
+  safeWebUrl,
+} from "s/pullRequestUtils";
 
 /**
  * Validation, Deployment and MegaLinter tabs of the Pull Request view: the comments posted on
  * the Pull Request by sfdx-hardis and by MegaLinter, shown as they are, each one under a line
- * giving its outcome, its date and the links to the job and to the comment itself.
+ * giving its outcome, its date and the links to the job, to the comment itself and to the files
+ * the job published as artifacts.
  *
  * `runs` are the runs of one kind, from the `workflows` list returned by
- * `sf hardis:project:action:list --with-workflows`.
+ * `sf hardis:project:action:list --with-workflows`. `artifacts` are the answers of
+ * `sf hardis:git:artifacts:download`, by job URL: the files are downloaded when the user asks for
+ * them, and opened from the workspace.
  */
 export default class WorkflowRuns extends SharedMixin(LightningElement) {
   @api loading = false;
   // Text shown when the Pull Request has no comment of this kind
   @api emptyLabel = "";
+  // False when the installed sfdx-hardis or the git provider cannot download the files of a job
+  @api artifactsSupported = false;
   _runs = [];
+  _artifacts = {};
+  // Job URLs whose list of files is unfolded
+  _openJobs = [];
+  // Job URLs whose files were asked and not answered yet
+  _pendingJobs = [];
+  // Folder shown for each job URL, when its files are browsed by folder
+  _folders = {};
+  // When each job was last asked, to tell the answer of this request from an older one
+  _requestTimes = {};
 
   @api
   get runs() {
@@ -22,6 +41,18 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
   }
   set runs(value) {
     this._runs = Array.isArray(value) ? value : [];
+  }
+
+  @api
+  get artifacts() {
+    return this._artifacts;
+  }
+  set artifacts(value) {
+    this._artifacts = value && typeof value === "object" ? value : {};
+    // An answer ends the wait of its job
+    this._pendingJobs = this._pendingJobs.filter(
+      (jobUrl) => !this._isAnswered(jobUrl),
+    );
   }
 
   get hasRuns() {
@@ -50,16 +81,18 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
       if (run.quickDeploy === true) {
         context.push(this.i18n.workflowQuickDeploy);
       }
+      const jobUrl = safeWebUrl(run.jobUrl);
       return {
         key: `run-${index}`,
         label: this._label(run.kind, branch),
         context: context.join(" · "),
         statusLabel: this._statusLabel(run.status),
         pillClass: journeyPillClass(run.status),
-        jobUrl: safeWebUrl(run.jobUrl),
+        jobUrl,
         commentUrl: safeWebUrl(run.commentUrl),
         hasBody: !!run.body,
         body: run.body || "",
+        ...this._filesState(jobUrl),
       };
     });
   }
@@ -69,6 +102,100 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
     if (url) {
       window.sendMessageToVSCode({ type: "openExternal", data: { url } });
     }
+  }
+
+  // Shows or hides the files of a job. Showing them always asks sfdx-hardis again, which only
+  // downloads when the job published other artifacts since: the files already known stay
+  // displayed meanwhile.
+  handleFilesClick(event) {
+    const jobUrl = safeWebUrl(event.currentTarget.dataset.job);
+    if (!jobUrl) {
+      return;
+    }
+    if (this._openJobs.includes(jobUrl)) {
+      this._openJobs = this._openJobs.filter((url) => url !== jobUrl);
+      return;
+    }
+    this._openJobs = [...this._openJobs, jobUrl];
+    if (!this._pendingJobs.includes(jobUrl)) {
+      this._requestTimes = { ...this._requestTimes, [jobUrl]: Date.now() };
+      this._pendingJobs = [...this._pendingJobs, jobUrl];
+      window.sendMessageToVSCode({
+        type: "loadJobArtifacts",
+        data: { jobUrl, requestedAt: this._requestTimes[jobUrl] },
+      });
+    }
+  }
+
+  // A folder of the list or of the breadcrumb
+  handleFolderClick(event) {
+    const { job, path } = event.currentTarget.dataset;
+    this._folders = { ...this._folders, [job]: path || "" };
+  }
+
+  handleFileClick(event) {
+    const { job, path } = event.currentTarget.dataset;
+    const folder = this._artifacts[job]?.folder;
+    if (folder && path) {
+      window.sendMessageToVSCode({
+        type: "openFile",
+        data: { filePath: `${folder}/${path}` },
+      });
+    }
+  }
+
+  // What the Files button of a run and the list under it show
+  _filesState(jobUrl) {
+    const showFiles = this.artifactsSupported === true && !!jobUrl;
+    const answer = showFiles ? this._artifacts[jobUrl] : null;
+    const files = answer?.status === "success" ? answer.files || [] : null;
+    const open = showFiles && this._openJobs.includes(jobUrl);
+    const pending = this._pendingJobs.includes(jobUrl);
+    const listing = buildArtifactEntries(files || [], this._folders[jobUrl]);
+    let message = "";
+    if (open && !pending && answer && !files) {
+      message =
+        answer.status === "expired"
+          ? this.i18n.workflowFilesExpired
+          : answer.status === "none"
+            ? this.i18n.workflowFilesNone
+            : answer.message || this.i18n.workflowFilesError;
+    } else if (open && !pending && files && files.length === 0) {
+      message = this.i18n.workflowFilesNone;
+    }
+    return {
+      showFiles,
+      filesLabel: files
+        ? this.t("workflowFilesCount", { count: files.length })
+        : this.i18n.workflowFiles,
+      filesOpen: open,
+      // Files already known stay displayed while sfdx-hardis checks them again
+      filesLoading: open && pending && !files,
+      filesMessage: message,
+      hasFiles: open && !!files && files.length > 0,
+      showCrumbs: listing.byFolder,
+      crumbs: listing.crumbs.map((crumb, index) => ({
+        key: `crumb-${index}`,
+        path: crumb.path,
+        label: crumb.path === "" ? this.i18n.workflowFilesRoot : crumb.label,
+        isLast: index === listing.crumbs.length - 1,
+      })),
+      folderEntries: listing.entries
+        .filter((entry) => entry.isFolder)
+        .map((entry) => ({
+          ...entry,
+          meta: this.t("workflowFilesFolderCount", { count: entry.fileCount }),
+        })),
+      fileEntries: listing.entries
+        .filter((entry) => !entry.isFolder)
+        .map((entry) => ({ ...entry, meta: formatFileSize(entry.sizeBytes) })),
+    };
+  }
+
+  // True when the answer held for a job is the one of its last request
+  _isAnswered(jobUrl) {
+    const answer = this._artifacts[jobUrl];
+    return !!answer && (answer.requestedAt || 0) >= this._requestTimes[jobUrl];
   }
 
   _label(kind, branch) {
