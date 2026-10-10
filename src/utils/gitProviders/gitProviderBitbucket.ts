@@ -300,14 +300,42 @@ export class GitProviderBitbucket extends GitProvider {
         caller: "getPullRequestByNumber",
         number,
       });
-      const converted = await this.convertAndCollectJobsList(
-        response?.data ? [response.data as any] : [],
-        { withJobs: options?.withJobs === true },
-      );
+      const raw: any = response?.data;
+      if (raw) {
+        await this.completeMergeCommitDate(raw);
+      }
+      const converted = await this.convertAndCollectJobsList(raw ? [raw] : [], {
+        withJobs: options?.withJobs === true,
+      });
       return converted[0] || null;
     } catch (err) {
       Logger.log(`Error fetching PR #${number}: ${String(err)}`);
       return null;
+    }
+  }
+
+  // A Pull Request says which commit merged it, not when: the commit does
+  private async completeMergeCommitDate(rawPr: any): Promise<void> {
+    const hash = rawPr?.merge_commit?.hash;
+    if (rawPr?.state !== "MERGED" || !hash || rawPr.merge_commit.date) {
+      return;
+    }
+    try {
+      const response = await this.bitbucketClient!.commits.get({
+        workspace: this.workspace!,
+        repo_slug: this.repoSlug!,
+        commit: hash,
+      } as any);
+      await this.logApiCall("commits.get", {
+        caller: "completeMergeCommitDate",
+        commit: hash,
+      });
+      const date = (response?.data as any)?.date;
+      if (date) {
+        rawPr.merge_commit.date = date;
+      }
+    } catch (e) {
+      Logger.log(`Error reading merge commit ${hash}: ${String(e)}`);
     }
   }
 
@@ -509,6 +537,7 @@ export class GitProviderBitbucket extends GitProvider {
         allBranches,
         commitHashes,
         this.oldestCommitDateWithMargin(commits),
+        new Map(commits.map((c: any) => [c.hash, c.date])),
       );
     } catch (err) {
       Logger.log(
@@ -670,6 +699,7 @@ export class GitProviderBitbucket extends GitProvider {
         allBranches,
         commitHashes,
         this.oldestCommitDateWithMargin(commits),
+        new Map(commits.map((c: any) => [c.hash, c.date])),
       );
       this.setCachedLatestMergePrs(cacheKey, result);
       return result;
@@ -692,6 +722,8 @@ export class GitProviderBitbucket extends GitProvider {
     commitHashes: string[],
     // Oldest commit of the window: Pull Requests updated before that cannot belong to it
     updatedAfter?: Date,
+    // Date of each commit: the one of its merge commit is when a Pull Request was merged
+    commitDates?: Map<string, string>,
   ): Promise<PullRequest[]> {
     // Bounded in time: without it every page of the merged history of the branch was walked to
     // keep the handful of Pull Requests that belong to the window. Bounded in parallelism too:
@@ -713,12 +745,17 @@ export class GitProviderBitbucket extends GitProvider {
       if (!mergeCommitHash) {
         return false;
       }
-      return commitHashes.some(
+      const matching = commitHashes.find(
         (hash) =>
           hash === mergeCommitHash ||
           hash.startsWith(mergeCommitHash) ||
           mergeCommitHash.startsWith(hash),
       );
+      const mergedAt = matching ? commitDates?.get(matching) : undefined;
+      if (mergedAt) {
+        pr.merge_commit.date = mergedAt;
+      }
+      return !!matching;
     });
 
     const uniquePRsMap = new Map();
@@ -799,8 +836,12 @@ export class GitProviderBitbucket extends GitProvider {
       webUrl: pr.links?.html?.href || pr.links?.self?.href || "",
       sourceBranch: pr.source?.branch?.name || "",
       targetBranch: pr.destination?.branch?.name || "",
+      // updated_on moves with every comment, the one of the deployment job included: the date
+      // of the merge commit is used when a caller could read it
       mergeDate:
-        pr.state === "MERGED" && pr.updated_on ? pr.updated_on : undefined,
+        pr.state === "MERGED"
+          ? pr.merge_commit?.date || pr.updated_on || undefined
+          : undefined,
       createdAt: pr.created_on || undefined,
       updatedAt: pr.updated_on || undefined,
       jobsStatus: "unknown",
@@ -1000,16 +1041,6 @@ export class GitProviderBitbucket extends GitProvider {
     }
   }
 
-  // The API gives a pipeline no web address: its page is the build number under the repository
-  private pipelineWebUrl(pipeline: any): string | undefined {
-    if (pipeline?.links?.html?.href) {
-      return pipeline.links.html.href;
-    }
-    return pipeline?.build_number && this.repoInfo?.webUrl
-      ? `${this.repoInfo.webUrl}/pipelines/results/${pipeline.build_number}`
-      : undefined;
-  }
-
   /**
    * Workspace and repository slug of a remote URL (git@bitbucket.org:workspace/repo.git,
    * https://bitbucket.org/workspace/repo.git), the slug without the ".git" of a clone address:
@@ -1033,9 +1064,13 @@ export class GitProviderBitbucket extends GitProvider {
     if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
       return [];
     }
+    // The status of another CI can end the same way: only an address of this repository counts
+    const statusUrl = String(run.webUrl || run.raw?.url || "");
     const buildNumber =
       run.raw?.build_number ||
-      /\/results\/(\d+)/.exec(String(run.webUrl || run.raw?.url || ""))?.[1];
+      (this.repoInfo?.webUrl && statusUrl.startsWith(this.repoInfo.webUrl)
+        ? /\/results\/(\d+)/.exec(statusUrl)?.[1]
+        : undefined);
     const pipelineId = String(
       (run.raw?.build_number && run.raw?.uuid) || buildNumber || "",
     );
@@ -1066,6 +1101,16 @@ export class GitProviderBitbucket extends GitProvider {
       updatedAt: step.completed_on || step.started_on || undefined,
       startedAt: step.started_on || run.startedAt || undefined,
     }));
+  }
+
+  // The API gives a pipeline no web address: its page is the build number under the repository
+  private pipelineWebUrl(pipeline: any): string | undefined {
+    if (pipeline?.links?.html?.href) {
+      return pipeline.links.html.href;
+    }
+    return pipeline?.build_number && this.repoInfo?.webUrl
+      ? `${this.repoInfo.webUrl}/pipelines/results/${pipeline.build_number}`
+      : undefined;
   }
 
   private mapPipelineStateToJobStatus(

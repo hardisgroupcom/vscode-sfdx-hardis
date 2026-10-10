@@ -26,6 +26,8 @@ import {
 // while nothing is, to notice the one a new commit or a merge starts
 const RUNNING_JOBS_POLL_ACTIVE_MS = 20000;
 const RUNNING_JOBS_POLL_IDLE_MS = 60000;
+// Answers in a row the git provider may fail to give before a job shown as running is dropped
+const RUNNING_JOBS_MAX_UNKNOWN = 3;
 
 // Characters an action id or a branch name may hold to be passed to a command line
 const SAFE_ACTION_ID = /^[\w .:@/+-]+$/;
@@ -215,6 +217,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   modalRunningJobs = null;
   _runningJobsRequestId = 0;
   _runningJobsTimer = null;
+  _runningJobsPaused = false;
+  _runningJobsUnknownCount = 0;
+  // Holder mutated in place, so that filling it while rendering renders nothing again
+  _journeyMemo = {};
   // True when the files the jobs published as artifacts can be downloaded by sfdx-hardis
   artifactsSupported = false;
   // Answers of sf hardis:git:artifacts:download, by job URL
@@ -2195,6 +2201,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     );
     // Restart timer with appropriate interval when visibility changes
     this._startAutoRefresh();
+    // The running jobs were not asked for while nobody looked
+    if (this._isVisible && this._runningJobsPaused) {
+      this._requestRunningJobs();
+    }
   }
 
   _startAutoRefresh() {
@@ -3276,13 +3286,31 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (!pr) {
       return [];
     }
+    // The header and the getters of three tabs read it at every render: built once for the same
+    // inputs, and never kept past the current turn, since some of them are changed in place
+    const inputs = [
+      pr,
+      this.pipelineData,
+      this.branchPullRequestsMap,
+      this.openPullRequests,
+      this.modalActionStatuses,
+      this.modalWorkflows,
+      this.modalRunningJobs,
+    ];
+    const memo = this._journeyMemo;
+    if (
+      memo?.inputs &&
+      inputs.every((input, index) => input === memo.inputs[index])
+    ) {
+      return memo.journey;
+    }
     const windows = {};
     for (const [branch, prs] of this.branchPullRequestsMap) {
       windows[branch] = (prs || [])
         .filter((item) => item.promotedAway !== true)
         .map((item) => item.number);
     }
-    return buildPullRequestJourney({
+    const journey = buildPullRequestJourney({
       pr,
       orgs: this.pipelineData?.orgs || [],
       windows,
@@ -3292,6 +3320,19 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       vehicles: this._journeyVehicles(),
       arrivals: this._journeyArrivals(),
     });
+    if (memo) {
+      memo.inputs = inputs;
+      memo.journey = journey;
+      memo.rows = null;
+      if (!memo.clearing) {
+        memo.clearing = true;
+        Promise.resolve().then(() => {
+          memo.inputs = null;
+          memo.clearing = false;
+        });
+      }
+    }
+    return journey;
   }
 
   // When something was merged into each major branch since its last promotion: a deployment
@@ -3330,7 +3371,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   // The jobs still going on, by tab: shown above what the comments of the Pull Request report
   get modalRunningJobRows() {
-    return runningJobRows(this.modalJourney);
+    const journey = this.modalJourney;
+    const memo = this._journeyMemo;
+    if (memo?.journey !== journey) {
+      return runningJobRows(journey);
+    }
+    if (!memo.rows) {
+      memo.rows = runningJobRows(journey);
+    }
+    return memo.rows;
   }
 
   get modalValidationRunningJobs() {
@@ -3412,22 +3461,47 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     ) {
       return;
     }
-    const urlsOf = (jobs) =>
+    // What the git provider could not answer (null) keeps what the window showed: an error is
+    // not a job that ended. Not for ever: after a few answers in a row it is taken as empty.
+    const previous = this.modalRunningJobs;
+    const answered = data.branches || {};
+    const unknown =
+      data.pullRequest === null ||
+      Object.values(answered).some((jobs) => jobs === null);
+    this._runningJobsUnknownCount = unknown
+      ? (this._runningJobsUnknownCount || 0) + 1
+      : 0;
+    const keep = this._runningJobsUnknownCount <= RUNNING_JOBS_MAX_UNKNOWN;
+    const listOf = (jobs, kept) =>
+      Array.isArray(jobs) ? jobs : keep && Array.isArray(kept) ? kept : [];
+    const branches = {};
+    for (const [branch, jobs] of Object.entries(answered)) {
+      const list = listOf(jobs, previous?.branches?.[branch]);
+      if (list.length > 0) {
+        branches[branch] = list;
+      }
+    }
+    const next = {
+      pullRequest: listOf(data.pullRequest, previous?.pullRequest),
+      branches,
+    };
+    // By kind and not by address: a pipeline that gets its jobs changes the address shown,
+    // and nothing ended
+    const kindsOf = (jobs) =>
       jobs
         ? [
-            ...(jobs.pullRequest || []),
-            ...Object.values(jobs.branches || {}).flat(),
-          ].map((job) => `${job.kind}|${job.webUrl || job.name}`)
+            ...(jobs.pullRequest || []).map((job) => `|${job.kind}`),
+            ...Object.entries(jobs.branches || {}).flatMap(([branch, list]) =>
+              list.map((job) => `${branch}|${job.kind}`),
+            ),
+          ]
         : [];
-    const before = urlsOf(this.modalRunningJobs);
-    const after = urlsOf(data);
-    this.modalRunningJobs = {
-      pullRequest: Array.isArray(data.pullRequest) ? data.pullRequest : [],
-      branches: data.branches || {},
-    };
+    const before = kindsOf(previous);
+    const after = kindsOf(next);
+    this.modalRunningJobs = next;
     // A job that was going on and no longer is has posted its comment: read the comments again,
     // keeping on screen what is already there
-    if (before.some((url) => !after.includes(url))) {
+    if (before.some((kind) => !after.includes(kind))) {
       this._requestActionStatuses({ refresh: true });
     }
     this._runningJobsTimer = setTimeout(
@@ -3435,10 +3509,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         this._runningJobsTimer = null;
         // Nothing is asked for a panel nobody looks at: the next look asks again
         if (document.hidden) {
-          this._runningJobsTimer = setTimeout(
-            () => this._requestRunningJobs(),
-            RUNNING_JOBS_POLL_IDLE_MS,
-          );
+          this._runningJobsPaused = true;
           return;
         }
         this._requestRunningJobs();
@@ -3450,6 +3521,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   _stopRunningJobsPoll() {
+    this._runningJobsPaused = false;
     if (this._runningJobsTimer) {
       clearTimeout(this._runningJobsTimer);
       this._runningJobsTimer = null;

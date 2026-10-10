@@ -384,12 +384,20 @@ export class GitProvider {
    * The jobs still running or queued for an open Pull Request, each one with its kind
    * (validation, code quality): what the tabs of the Pull Request view show before the job has
    * posted its comment. Nothing for a Pull Request that is merged or closed.
+   *
+   * Null when the provider gave no answer: that is not "no job", and the caller keeps what it
+   * knew rather than showing a job that runs as ended.
    */
-  async listUnfinishedJobsOfPullRequest(prNumber: number): Promise<Job[]> {
+  async listUnfinishedJobsOfPullRequest(
+    prNumber: number,
+  ): Promise<Job[] | null> {
     const pullRequest = await this.getPullRequestByNumber(prNumber, {
       withJobs: true,
     });
-    if (!pullRequest || (pullRequest.state && pullRequest.state !== "open")) {
+    if (!pullRequest) {
+      return null;
+    }
+    if (pullRequest.state && pullRequest.state !== "open") {
       return [];
     }
     return await this.expandUnfinishedRuns(
@@ -398,37 +406,16 @@ export class GitProvider {
     );
   }
 
-  /** The deployment jobs still running or queued on a major branch. */
-  async listUnfinishedJobsOfBranch(branchName: string): Promise<Job[]> {
+  /**
+   * The deployment jobs still running or queued on a major branch. Null when the provider gave
+   * no answer.
+   */
+  async listUnfinishedJobsOfBranch(branchName: string): Promise<Job[] | null> {
     const branchJobs = await this.getJobsForBranchLatestCommit(branchName);
-    return await this.expandUnfinishedRuns(
-      branchJobs?.jobs || [],
-      "deployment",
-    );
-  }
-
-  // Only the runs that are not over are opened: a finished run costs no call
-  private async expandUnfinishedRuns(
-    runs: Job[],
-    fallbackKind: "validation" | "deployment",
-  ): Promise<Job[]> {
-    const jobsByRun = new Map<Job, Job[]>();
-    await Promise.all(
-      runs.filter(isUnfinishedJob).map(async (run) => {
-        try {
-          jobsByRun.set(run, await this.listJobsOfRun(run));
-        } catch (e: any) {
-          Logger.log(
-            `Error listing the jobs of ${run.name}: ${e?.message || String(e)}`,
-          );
-        }
-      }),
-    );
-    return pickUnfinishedJobsByKind(
-      runs,
-      (run) => jobsByRun.get(run) || [],
-      fallbackKind,
-    );
+    if (!branchJobs) {
+      return null;
+    }
+    return await this.expandUnfinishedRuns(branchJobs.jobs || [], "deployment");
   }
 
   async listOpenPullRequests(): Promise<PullRequest[]> {
@@ -735,6 +722,30 @@ export class GitProvider {
   }
 
   // The repository the cached answers belong to, from the git remote of the working copy
+  // Only the runs that are not over are opened: a finished run costs no call
+  private async expandUnfinishedRuns(
+    runs: Job[],
+    fallbackKind: "validation" | "deployment",
+  ): Promise<Job[]> {
+    const jobsByRun = new Map<Job, Job[]>();
+    await Promise.all(
+      runs.filter(isUnfinishedJob).map(async (run) => {
+        try {
+          jobsByRun.set(run, await this.listJobsOfRun(run));
+        } catch (e: any) {
+          Logger.log(
+            `Error listing the jobs of ${run.name}: ${e?.message || String(e)}`,
+          );
+        }
+      }),
+    );
+    return pickUnfinishedJobsByKind(
+      runs,
+      (run) => jobsByRun.get(run) || [],
+      fallbackKind,
+    );
+  }
+
   private pipelineCacheRepositoryKey(): string | null {
     const remoteUrl = this.repoInfo?.remoteUrl;
     return remoteUrl ? repositoryKeyFromRemoteUrl(remoteUrl) : null;

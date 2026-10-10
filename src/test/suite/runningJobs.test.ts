@@ -136,6 +136,17 @@ suite("Running jobs of a Pull Request", () => {
       );
     });
 
+    test("a run nobody can name is left out next to one that says what it does", () => {
+      const runs = [
+        job({ name: "Simulate Deployment (sfdx-hardis)", status: "success" }),
+        job({ name: "CodeQL" }),
+      ];
+      assert.deepStrictEqual(
+        pickUnfinishedJobsByKind(runs, () => [], "validation"),
+        [],
+      );
+    });
+
     test("a pipeline only finishing a cleanup shows nothing", () => {
       const picked = pickUnfinishedJobsByKind(
         [job({ name: "main" })],
@@ -386,6 +397,38 @@ suite("Running jobs of a Pull Request", () => {
         },
       });
       assert.strictEqual(calls[0].pipeline_uuid, "31");
+    });
+
+    test("the status of another CI ending like a pipeline address opens no pipeline", async () => {
+      const calls: any[] = [];
+      const jobs = await provider(steps, calls).listJobsOfRun({
+        name: "other-ci",
+        status: "running",
+        webUrl: "https://ci.example.com/builds/results/31",
+        raw: { key: "other-ci" },
+      });
+      assert.deepStrictEqual(jobs, []);
+      assert.strictEqual(calls.length, 0);
+    });
+
+    test("a merged Pull Request is dated by its merge commit, not by its last comment", () => {
+      const convert = (raw: any) =>
+        (provider(steps, []) as any).convertToPullRequest({
+          id: 8,
+          state: "MERGED",
+          updated_on: "2026-10-10T15:48:33.000Z",
+          ...raw,
+        });
+      assert.strictEqual(
+        convert({
+          merge_commit: { hash: "04a0", date: "2026-10-10T15:43:39.000Z" },
+        }).mergeDate,
+        "2026-10-10T15:43:39.000Z",
+      );
+      assert.strictEqual(
+        convert({ merge_commit: { hash: "04a0" } }).mergeDate,
+        "2026-10-10T15:48:33.000Z",
+      );
     });
 
     test("the slug of the repository has no .git, which the pipelines endpoints refuse", () => {

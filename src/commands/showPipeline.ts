@@ -1801,22 +1801,23 @@ async function loadDeploymentActionStatuses(data: any): Promise<{
  * path, read from the git provider: the tabs of the Pull Request view show them until the job
  * posts its comment. The panel decides which branch run concerns the Pull Request.
  *
- * Never fails: a provider that cannot answer gives an empty list, and the tabs show what the
- * comments say. The request id goes back so the panel can drop a late answer.
+ * Never fails. What the provider could not answer is null, for the Pull Request or for one
+ * branch, and is not an empty list: the panel keeps what it showed instead of taking an error
+ * for a job that ended. The request id goes back so the panel can drop a late answer.
  */
 async function loadPullRequestRunningJobs(data: any): Promise<{
   requestId: number;
   prNumber: number;
-  pullRequest: Job[];
-  branches: Record<string, Job[]>;
+  pullRequest: Job[] | null;
+  branches: Record<string, Job[] | null>;
 }> {
   const requestId = Number(data?.requestId) || 0;
   const prNumber = Number(data?.prNumber) || 0;
   const answer = {
     requestId,
     prNumber,
-    pullRequest: [] as Job[],
-    branches: {} as Record<string, Job[]>,
+    pullRequest: [] as Job[] | null,
+    branches: {} as Record<string, Job[] | null>,
   };
   const branchNames: string[] = (
     Array.isArray(data?.branches) ? data.branches : []
@@ -1825,30 +1826,51 @@ async function loadPullRequestRunningJobs(data: any): Promise<{
       (branch: any) => typeof branch === "string" && /^[\w./-]+$/.test(branch),
     )
     .slice(0, 10);
+  let gitProvider: GitProvider | null = null;
   try {
-    const gitProvider = await GitProvider.getInstance();
-    if (!gitProvider?.isActive) {
-      return answer;
-    }
-    const [pullRequestJobs, ...branchJobs] = await Promise.all([
-      prNumber > 0 && data?.open === true
-        ? gitProvider.listUnfinishedJobsOfPullRequest(prNumber)
-        : Promise.resolve([] as Job[]),
-      ...branchNames.map((branch) =>
-        gitProvider.listUnfinishedJobsOfBranch(branch),
-      ),
-    ]);
-    answer.pullRequest = pullRequestJobs;
-    branchNames.forEach((branch, index) => {
-      if (branchJobs[index].length > 0) {
-        answer.branches[branch] = branchJobs[index];
-      }
-    });
+    gitProvider = await GitProvider.getInstance();
   } catch (e: any) {
     Logger.log(
-      `[vscode-sfdx-hardis] Running jobs of Pull Request #${prNumber} not available: ${e?.message || e}`,
+      `[vscode-sfdx-hardis] Git provider not available for the running jobs: ${e?.message || e}`,
     );
   }
+  if (!gitProvider?.isActive) {
+    return answer;
+  }
+  const provider = gitProvider;
+  // One lookup that fails says nothing about the others
+  const orUnknown = async (
+    what: string,
+    lookup: () => Promise<Job[] | null>,
+  ): Promise<Job[] | null> => {
+    try {
+      return await lookup();
+    } catch (e: any) {
+      Logger.log(
+        `[vscode-sfdx-hardis] Running jobs of ${what} not available: ${e?.message || e}`,
+      );
+      return null;
+    }
+  };
+  const [pullRequestJobs, ...branchJobs] = await Promise.all([
+    prNumber > 0 && data?.open === true
+      ? orUnknown(`Pull Request #${prNumber}`, () =>
+          provider.listUnfinishedJobsOfPullRequest(prNumber),
+        )
+      : Promise.resolve([] as Job[]),
+    ...branchNames.map((branch) =>
+      orUnknown(`branch ${branch}`, () =>
+        provider.listUnfinishedJobsOfBranch(branch),
+      ),
+    ),
+  ]);
+  answer.pullRequest = pullRequestJobs;
+  branchNames.forEach((branch, index) => {
+    const jobs = branchJobs[index];
+    if (jobs === null || jobs.length > 0) {
+      answer.branches[branch] = jobs;
+    }
+  });
   return answer;
 }
 

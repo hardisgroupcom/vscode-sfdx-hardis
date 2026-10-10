@@ -437,6 +437,32 @@ export function buildPullRequestJourney({
   return steps;
 }
 
+/**
+ * The rows the Validation, Code Quality and Deployment tabs show above the comments, out of the
+ * running jobs the journey attributed to its steps: { validation, megalinter, deployment }, each
+ * row a job with the branch of its step and the Pull Request that carried the story there.
+ */
+export function runningJobRows(steps) {
+  const rows = { validation: [], megalinter: [], deployment: [] };
+  for (const step of Array.isArray(steps) ? steps : []) {
+    for (const job of step.runningJobs || []) {
+      const tab =
+        step.kind === "branch"
+          ? "deployment"
+          : job.kind === "codeQuality"
+            ? "megalinter"
+            : "validation";
+      rows[tab].push({
+        ...job,
+        kind: tab,
+        targetBranch: step.branch,
+        carriedBy: step.kind === "branch" ? step.carriedBy : null,
+      });
+    }
+  }
+  return rows;
+}
+
 function timeOf(date) {
   const time = date ? new Date(date).getTime() : NaN;
   return Number.isFinite(time) ? time : NaN;
@@ -529,9 +555,12 @@ function openCarrier(pr, branch, previousBranch, vehicles) {
  * The deployment jobs of a branch that are deploying this Pull Request: the ones started once
  * the story was in the branch. A job that started before is the business of another Pull Request.
  *
- * Once the Pull Request has its deployment result, what runs next on the branch deploys a later
- * merge, unless nothing was merged into the branch since: then the same deployment is being run
- * again, and it is still the one of this Pull Request.
+ * A job started once something else was merged into the branch deploys that merge, whether or
+ * not this Pull Request has its deployment result yet: the result of a story carried by a
+ * promotion sits on the promotion, and an old story must not claim every deployment that follows.
+ *
+ * Once the Pull Request has its deployment result, only a job started after it counts: the same
+ * deployment being run again.
  */
 function runningDeployments({ jobs, reachedAt, runs, branch, arrivals }) {
   if (!Array.isArray(jobs) || !Number.isFinite(reachedAt)) {
@@ -554,42 +583,17 @@ function runningDeployments({ jobs, reachedAt, runs, branch, arrivals }) {
         timeOf(run.date) >= reachedAt,
     )
     .map((run) => timeOf(run.date));
+  const laterMerges = (Array.isArray(arrivals) ? arrivals : [])
+    .map(timeOf)
+    .filter((time) => time > reachedAt);
+  const mine = unfinished.filter(
+    (job) => !laterMerges.some((time) => time <= startOf(job)),
+  );
   if (results.length === 0) {
-    return unfinished;
+    return mine;
   }
   const settledAt = Math.max(...results);
-  const mergedSince = (Array.isArray(arrivals) ? arrivals : []).some(
-    (date) => timeOf(date) > reachedAt,
-  );
-  return mergedSince
-    ? []
-    : unfinished.filter((job) => startOf(job) > settledAt);
-}
-
-/**
- * The rows the Validation, Code Quality and Deployment tabs show above the comments, out of the
- * running jobs the journey attributed to its steps: { validation, megalinter, deployment }, each
- * row a job with the branch of its step and the Pull Request that carried the story there.
- */
-export function runningJobRows(steps) {
-  const rows = { validation: [], megalinter: [], deployment: [] };
-  for (const step of Array.isArray(steps) ? steps : []) {
-    for (const job of step.runningJobs || []) {
-      const tab =
-        step.kind === "branch"
-          ? "deployment"
-          : job.kind === "codeQuality"
-            ? "megalinter"
-            : "validation";
-      rows[tab].push({
-        ...job,
-        kind: tab,
-        targetBranch: step.branch,
-        carriedBy: step.kind === "branch" ? step.carriedBy : null,
-      });
-    }
-  }
-  return rows;
+  return mine.filter((job) => startOf(job) > settledAt);
 }
 
 /**

@@ -40,6 +40,10 @@ export function isUnfinishedJob(job: Job | undefined | null): boolean {
  * a deployment (a cleanup, a scratch org creation) is left out. When nothing of an unfinished run
  * can be told apart, the run itself is shown, as `fallbackKind`: the tab then links to the whole
  * pipeline rather than saying nothing is running.
+ *
+ * Not when another run of the same commit has a name that says what it does: the run nobody can
+ * name is then another CI of the project (a security scan, unit tests), and none of the tabs is
+ * its place.
  */
 export function pickUnfinishedJobsByKind(
   runs: Job[],
@@ -47,6 +51,9 @@ export function pickUnfinishedJobsByKind(
   fallbackKind: JobKind,
 ): Job[] {
   const picked: Job[] = [];
+  const someRunIsKnown = (runs || []).some(
+    (run) => classifyJobKind(run.name) !== "other",
+  );
   for (const run of runs || []) {
     if (!isUnfinishedJob(run)) {
       continue;
@@ -68,6 +75,9 @@ export function pickUnfinishedJobsByKind(
     }
     // No job of the run can be told apart (renamed jobs, or a run that is one job already)
     const runKind = classifyJobKind(run.name);
+    if (runKind === "other" && someRunIsKnown) {
+      continue;
+    }
     picked.push({ ...run, kind: runKind === "other" ? fallbackKind : runKind });
   }
   // The payload of the provider is not sent to the panel

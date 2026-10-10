@@ -562,6 +562,24 @@ suite("Pull Request view", () => {
       });
       assert.strictEqual(integration(rerun).state, "running");
 
+      // No result on this Pull Request (a promotion carries it) and something else was merged
+      // since: the deployment that runs is the one of that merge
+      const later = journey({
+        arrivals: {
+          integration: ["2026-10-01T10:00:00.000Z", "2026-10-01T10:58:00.000Z"],
+        },
+        runningJobs: settledJobs,
+      });
+      assert.strictEqual(integration(later).state, "merged");
+      assert.deepStrictEqual(integration(later).runningJobs, []);
+      // Its own deployment started before that other merge
+      const own = journey({
+        arrivals: {
+          integration: ["2026-10-01T10:00:00.000Z", "2026-10-01T10:58:00.000Z"],
+        },
+      });
+      assert.strictEqual(integration(own).state, "running");
+
       // A check of the branch is no deployment
       const check = journey({
         runningJobs: {
