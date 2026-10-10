@@ -2,11 +2,7 @@ import { PrePostCommand } from "../prePostCommandsUtils";
 import { Ticket } from "../ticketProviders/types";
 
 export type ProviderName =
-  | "gitlab"
-  | "github"
-  | "azure"
-  | "bitbucket"
-  | "gitea";
+  "gitlab" | "github" | "azure" | "bitbucket" | "gitea";
 
 /**
  * An access token the user can create on a git provider to authenticate the extension.
@@ -63,11 +59,7 @@ export type PullRequestMergeStatus = "mergeable" | "conflicts" | "unknown";
 
 // Job run status for CI workflows associated with a pull request commit
 export type JobStatus =
-  | "running"
-  | "success"
-  | "failed"
-  | "pending"
-  | "unknown";
+  "running" | "success" | "failed" | "pending" | "unknown";
 
 // What a CI job does for a Pull Request, told from its name: see utils/pipeline/jobKindUtils.ts
 export type JobKind = "validation" | "codeQuality" | "deployment" | "other";
