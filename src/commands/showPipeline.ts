@@ -6,7 +6,8 @@ import { LwcPanelManager } from "../lwc-panel-manager";
 import { LwcUiPanel } from "../webviews/lwc-ui-panel";
 import { Commands } from "../commands";
 import { showPackageXmlPanel } from "./packageXml";
-import { PullRequest } from "../utils/gitProviders/types";
+import { Job, JobKind, PullRequest } from "../utils/gitProviders/types";
+import { jobDurationSeconds } from "../utils/pipeline/jobKindUtils";
 import { TicketProvider } from "../utils/ticketProviders/ticketProvider";
 import { Ticket } from "../utils/ticketProviders/types";
 import { mapWithConcurrencySettled } from "../utils/concurrency";
@@ -498,6 +499,20 @@ export function registerShowPipeline(commands: Commands) {
           panel.sendMessage({
             type: "returnDeploymentActionStatuses",
             data: await loadDeploymentActionStatuses(data),
+          });
+        }
+        // Jobs still running for the Pull Request shown, and on the branches of its path
+        else if (type === "loadPullRequestRunningJobs") {
+          panel.sendMessage({
+            type: "returnPullRequestRunningJobs",
+            data: await loadPullRequestRunningJobs(data),
+          });
+        }
+        // Time the finished jobs of the Pull Request took
+        else if (type === "loadJobDurations") {
+          panel.sendMessage({
+            type: "returnJobDurations",
+            data: await loadJobDurations(data),
           });
         }
         // Files a job of the Pull Request published as artifacts
@@ -1787,6 +1802,156 @@ async function loadDeploymentActionStatuses(data: any): Promise<{
       : {}),
     requestId,
   };
+}
+
+/**
+ * The jobs that are still running or queued for a Pull Request and on the major branches of its
+ * path, read from the git provider: the tabs of the Pull Request view show them until the job
+ * posts its comment. The panel decides which branch run concerns the Pull Request.
+ *
+ * Never fails. What the provider could not answer is null, for the Pull Request or for one
+ * branch, and is not an empty list: the panel keeps what it showed instead of taking an error
+ * for a job that ended. The request id goes back so the panel can drop a late answer.
+ */
+async function loadPullRequestRunningJobs(data: any): Promise<{
+  requestId: number;
+  prNumber: number;
+  pullRequest: Job[] | null;
+  branches: Record<string, Job[] | null>;
+}> {
+  const requestId = Number(data?.requestId) || 0;
+  const prNumber = Number(data?.prNumber) || 0;
+  const answer = {
+    requestId,
+    prNumber,
+    pullRequest: [] as Job[] | null,
+    branches: {} as Record<string, Job[] | null>,
+  };
+  const branchNames: string[] = (
+    Array.isArray(data?.branches) ? data.branches : []
+  )
+    .filter(
+      (branch: any) => typeof branch === "string" && /^[\w./-]+$/.test(branch),
+    )
+    .slice(0, 10);
+  let gitProvider: GitProvider | null = null;
+  try {
+    gitProvider = await GitProvider.getInstance();
+  } catch (e: any) {
+    Logger.log(
+      `[vscode-sfdx-hardis] Git provider not available for the running jobs: ${e?.message || e}`,
+    );
+  }
+  if (!gitProvider?.isActive) {
+    return answer;
+  }
+  const provider = gitProvider;
+  // One lookup that fails says nothing about the others
+  const orUnknown = async (
+    what: string,
+    lookup: () => Promise<Job[] | null>,
+  ): Promise<Job[] | null> => {
+    try {
+      return await lookup();
+    } catch (e: any) {
+      Logger.log(
+        `[vscode-sfdx-hardis] Running jobs of ${what} not available: ${e?.message || e}`,
+      );
+      return null;
+    }
+  };
+  const [pullRequestJobs, ...branchJobs] = await Promise.all([
+    prNumber > 0 && data?.open === true
+      ? orUnknown(`Pull Request #${prNumber}`, () =>
+          provider.listUnfinishedJobsOfPullRequest(prNumber),
+        )
+      : Promise.resolve([] as Job[]),
+    ...branchNames.map((branch) =>
+      orUnknown(`branch ${branch}`, () =>
+        provider.listUnfinishedJobsOfBranch(branch),
+      ),
+    ),
+  ]);
+  answer.pullRequest = pullRequestJobs;
+  branchNames.forEach((branch, index) => {
+    const jobs = branchJobs[index];
+    if (jobs === null || jobs.length > 0) {
+      answer.branches[branch] = jobs;
+    }
+  });
+  return answer;
+}
+
+// Seconds each finished job took, by kind and job link: what is over does not change
+const jobDurationCache = new Map<string, number>();
+const JOB_KIND_OF_TAB: Record<string, JobKind> = {
+  validation: "validation",
+  megalinter: "codeQuality",
+  deployment: "deployment",
+};
+
+/**
+ * The time the jobs behind the comments of a Pull Request took, in seconds, read from the git
+ * provider: a comment says when it was posted, not how long its job ran.
+ *
+ * Answered by the key the panel gave to each job (its kind and its link: one pipeline link can
+ * hold the validation and the code quality check). Null for a job that is not over or cannot be
+ * read, so the panel does not ask for it at every load. `refresh` asks again for a job that may
+ * have been run again under the same link. Never fails.
+ */
+async function loadJobDurations(data: any): Promise<{
+  durations: Record<string, number | null>;
+}> {
+  const answer = { durations: {} as Record<string, number | null> };
+  const asked: { key: string; url: string; kind: string }[] = [];
+  for (const job of Array.isArray(data?.jobs) ? data.jobs.slice(0, 30) : []) {
+    const url = typeof job?.url === "string" ? job.url : "";
+    const key = typeof job?.key === "string" ? job.key : "";
+    if (!key || !/^https?:\/\//.test(url)) {
+      continue;
+    }
+    const known =
+      data?.refresh === true ? undefined : jobDurationCache.get(key);
+    if (known !== undefined) {
+      answer.durations[key] = known;
+    } else {
+      answer.durations[key] = null;
+      asked.push({ key, url, kind: String(job.kind || "") });
+    }
+  }
+  if (asked.length === 0) {
+    return answer;
+  }
+  let gitProvider: GitProvider | null = null;
+  try {
+    gitProvider = await GitProvider.getInstance();
+  } catch (e: any) {
+    Logger.log(
+      `[vscode-sfdx-hardis] Git provider not available for the job durations: ${e?.message || e}`,
+    );
+  }
+  if (!gitProvider?.isActive) {
+    return answer;
+  }
+  const provider = gitProvider;
+  await mapWithConcurrencySettled(
+    asked,
+    async (job) => {
+      const seconds = jobDurationSeconds(
+        await provider.getJobTiming(job.url, JOB_KIND_OF_TAB[job.kind]),
+      );
+      if (seconds !== null) {
+        jobDurationCache.set(job.key, seconds);
+        answer.durations[job.key] = seconds;
+      }
+    },
+    undefined,
+    (e: any, job) =>
+      Logger.log(
+        `[vscode-sfdx-hardis] Duration of ${job.url} not available: ${e?.message || e}`,
+      ),
+  );
+  return answer;
 }
 
 /**
