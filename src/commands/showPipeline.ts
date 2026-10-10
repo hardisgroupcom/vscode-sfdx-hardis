@@ -6,7 +6,7 @@ import { LwcPanelManager } from "../lwc-panel-manager";
 import { LwcUiPanel } from "../webviews/lwc-ui-panel";
 import { Commands } from "../commands";
 import { showPackageXmlPanel } from "./packageXml";
-import { PullRequest } from "../utils/gitProviders/types";
+import { Job, PullRequest } from "../utils/gitProviders/types";
 import { TicketProvider } from "../utils/ticketProviders/ticketProvider";
 import { Ticket } from "../utils/ticketProviders/types";
 import { mapWithConcurrencySettled } from "../utils/concurrency";
@@ -498,6 +498,13 @@ export function registerShowPipeline(commands: Commands) {
           panel.sendMessage({
             type: "returnDeploymentActionStatuses",
             data: await loadDeploymentActionStatuses(data),
+          });
+        }
+        // Jobs still running for the Pull Request shown, and on the branches of its path
+        else if (type === "loadPullRequestRunningJobs") {
+          panel.sendMessage({
+            type: "returnPullRequestRunningJobs",
+            data: await loadPullRequestRunningJobs(data),
           });
         }
         // Files a job of the Pull Request published as artifacts
@@ -1787,6 +1794,62 @@ async function loadDeploymentActionStatuses(data: any): Promise<{
       : {}),
     requestId,
   };
+}
+
+/**
+ * The jobs that are still running or queued for a Pull Request and on the major branches of its
+ * path, read from the git provider: the tabs of the Pull Request view show them until the job
+ * posts its comment. The panel decides which branch run concerns the Pull Request.
+ *
+ * Never fails: a provider that cannot answer gives an empty list, and the tabs show what the
+ * comments say. The request id goes back so the panel can drop a late answer.
+ */
+async function loadPullRequestRunningJobs(data: any): Promise<{
+  requestId: number;
+  prNumber: number;
+  pullRequest: Job[];
+  branches: Record<string, Job[]>;
+}> {
+  const requestId = Number(data?.requestId) || 0;
+  const prNumber = Number(data?.prNumber) || 0;
+  const answer = {
+    requestId,
+    prNumber,
+    pullRequest: [] as Job[],
+    branches: {} as Record<string, Job[]>,
+  };
+  const branchNames: string[] = (
+    Array.isArray(data?.branches) ? data.branches : []
+  )
+    .filter(
+      (branch: any) => typeof branch === "string" && /^[\w./-]+$/.test(branch),
+    )
+    .slice(0, 10);
+  try {
+    const gitProvider = await GitProvider.getInstance();
+    if (!gitProvider?.isActive) {
+      return answer;
+    }
+    const [pullRequestJobs, ...branchJobs] = await Promise.all([
+      prNumber > 0 && data?.open === true
+        ? gitProvider.listUnfinishedJobsOfPullRequest(prNumber)
+        : Promise.resolve([] as Job[]),
+      ...branchNames.map((branch) =>
+        gitProvider.listUnfinishedJobsOfBranch(branch),
+      ),
+    ]);
+    answer.pullRequest = pullRequestJobs;
+    branchNames.forEach((branch, index) => {
+      if (branchJobs[index].length > 0) {
+        answer.branches[branch] = branchJobs[index];
+      }
+    });
+  } catch (e: any) {
+    Logger.log(
+      `[vscode-sfdx-hardis] Running jobs of Pull Request #${prNumber} not available: ${e?.message || e}`,
+    );
+  }
+  return answer;
 }
 
 /**

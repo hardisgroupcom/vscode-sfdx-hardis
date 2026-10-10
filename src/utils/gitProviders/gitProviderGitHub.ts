@@ -359,7 +359,10 @@ export class GitProviderGitHub extends GitProvider {
     }
   }
 
-  async getPullRequestByNumber(number: number): Promise<PullRequest | null> {
+  async getPullRequestByNumber(
+    number: number,
+    options?: { withJobs?: boolean },
+  ): Promise<PullRequest | null> {
     if (!this.gitHubClient || !this.repoInfo) {
       return null;
     }
@@ -375,7 +378,7 @@ export class GitProviderGitHub extends GitProvider {
       });
       const converted = await this.convertAndCollectJobsList(
         [pullRequest as any],
-        { withJobs: false },
+        { withJobs: options?.withJobs === true },
       );
       return converted[0] || null;
     } catch (err) {
@@ -1065,6 +1068,7 @@ export class GitProviderGitHub extends GitProvider {
       status: this.convertWorkflowRunToJobStatus(run),
       webUrl: run.html_url,
       updatedAt: run.updated_at,
+      startedAt: run.run_started_at || run.created_at,
       raw: run,
     }));
   }

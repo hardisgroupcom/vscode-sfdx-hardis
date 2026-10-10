@@ -13,6 +13,9 @@ import {
  * giving its outcome, its date and the links to the job, to the comment itself and to the files
  * the job published as artifacts.
  *
+ * A job that is not over has posted no comment yet: `runningJobs`, read from the git provider,
+ * are listed first, each one with the link to the job, above the result of the previous run.
+ *
  * `runs` are the runs of one kind, from the `workflows` list returned by
  * `sf hardis:project:action:list --with-workflows`. `artifacts` are the answers of
  * `sf hardis:git:artifacts:download`, by job URL: the files are downloaded when the user asks for
@@ -25,6 +28,7 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
   // False when the installed sfdx-hardis or the git provider cannot download the files of a job
   @api artifactsSupported = false;
   _runs = [];
+  _runningJobs = [];
   _artifacts = {};
   // Job URLs whose list of files is unfolded
   _openJobs = [];
@@ -43,6 +47,16 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
     this._runs = Array.isArray(value) ? value : [];
   }
 
+  // Jobs of this kind still running or queued ({ kind, status, name, webUrl, startedAt,
+  // targetBranch, carriedBy })
+  @api
+  get runningJobs() {
+    return this._runningJobs;
+  }
+  set runningJobs(value) {
+    this._runningJobs = Array.isArray(value) ? value : [];
+  }
+
   @api
   get artifacts() {
     return this._artifacts;
@@ -59,8 +73,52 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
     return this._runs.length > 0;
   }
 
+  get hasRunningJobs() {
+    return this._runningJobs.length > 0;
+  }
+
   get showEmpty() {
-    return !this.loading && !this.hasRuns;
+    return !this.loading && !this.hasRuns && !this.hasRunningJobs;
+  }
+
+  // Nothing to wait for behind a spinner when a job is already there to show
+  get showLoading() {
+    return this.loading && !this.hasRunningJobs;
+  }
+
+  get runningRows() {
+    return this._runningJobs.map((job, index) => {
+      const label = this._label(job.kind, job.targetBranch || "");
+      const context = [];
+      // The name of the job, when it says more than the title of the row ("Mega-Linter" under
+      // "MegaLinter" does not)
+      const bare = (text) =>
+        String(text || "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "");
+      if (job.name && bare(job.name) !== bare(label)) {
+        context.push(job.name);
+      }
+      const started = job.startedAt ? this._formatDate(job.startedAt) : "";
+      if (started) {
+        context.push(this.t("workflowStartedAt", { date: started }));
+      }
+      if (job.carriedBy > 0) {
+        context.push(this.t("journeyCarriedBy", { number: job.carriedBy }));
+      }
+      const running = job.status === "running";
+      return {
+        key: `running-${index}`,
+        label,
+        context: context.join(" · "),
+        statusLabel: running
+          ? this.i18n.jobStatusRunning
+          : this.i18n.jobStatusPending,
+        pillClass: journeyPillClass(running ? "running" : "pending"),
+        running,
+        jobUrl: safeWebUrl(job.webUrl),
+      };
+    });
   }
 
   get rows() {

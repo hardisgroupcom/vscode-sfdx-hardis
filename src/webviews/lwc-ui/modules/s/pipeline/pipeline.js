@@ -16,8 +16,16 @@ import {
   applyModalState,
   buildPullRequestJourney,
   captureModalState,
+  journeyBranchPath,
+  lookupState,
   resetModalLoadingFlags,
+  runningJobRows,
 } from "s/pullRequestUtils";
+
+// How often the jobs of the Pull Request shown are read again: while one is going on, and
+// while nothing is, to notice the one a new commit or a merge starts
+const RUNNING_JOBS_POLL_ACTIVE_MS = 20000;
+const RUNNING_JOBS_POLL_IDLE_MS = 60000;
 
 // Characters an action id or a branch name may hold to be passed to a command line
 const SAFE_ACTION_ID = /^[\w .:@/+-]+$/;
@@ -202,6 +210,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   modalWorkflows = null;
   // True when the installed sfdx-hardis cannot return the runs: the Workflows tab is hidden
   workflowsUnavailable = false;
+  // Jobs the git provider says are still running or queued for the Pull Request shown and on
+  // the branches of its path (null until they are known)
+  modalRunningJobs = null;
+  _runningJobsRequestId = 0;
+  _runningJobsTimer = null;
   // True when the files the jobs published as artifacts can be downloaded by sfdx-hardis
   artifactsSupported = false;
   // Answers of sf hardis:git:artifacts:download, by job URL
@@ -1003,6 +1016,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
     // Clean up auto-refresh timer
     this._stopAutoRefresh();
+    this._stopRunningJobsPoll();
   }
 
   _handleWindowResize() {
@@ -1699,6 +1713,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         // A retried or closed action changes its status: reload it in the open modal
         if (this.showPRModal) {
           this._requestActionStatuses();
+          this._requestRunningJobs();
         }
         break;
       case "openPullRequestsUpdated":
@@ -1737,6 +1752,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         break;
       case "returnDeploymentActionBackpromotes":
         this.handleReturnDeploymentActionBackpromotes(data);
+        break;
+      case "returnPullRequestRunningJobs":
+        this.handleReturnPullRequestRunningJobs(data);
         break;
       case "returnJobArtifacts":
         // The files of a job, asked by one of the run lists of the Pull Request view
@@ -3011,6 +3029,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       this._loadGoLives(this.modalBranchName);
     }
     this._requestTicketDetails(this.modalPullRequests);
+    this._requestRunningJobs();
     this._showModalTab(entry.state.modalActiveTabValue);
   }
 
@@ -3269,7 +3288,172 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       windows,
       statuses: this.modalActionStatuses?.[String(pr.number)] || [],
       workflows: this.modalWorkflows || [],
+      runningJobs: this.modalRunningJobs,
+      vehicles: this._journeyVehicles(),
+      arrivals: this._journeyArrivals(),
     });
+  }
+
+  // When something was merged into each major branch since its last promotion: a deployment
+  // that runs after a later merge is not the one of the Pull Request shown
+  _journeyArrivals() {
+    const arrivals = {};
+    for (const [branch, prs] of this.branchPullRequestsMap) {
+      arrivals[branch] = (prs || [])
+        .filter((item) => item?.targetBranch === branch && item.mergeDate)
+        .map((item) => item.mergeDate);
+    }
+    return arrivals;
+  }
+
+  // The promotions and the merges between two major branches the panel holds, open or merged:
+  // the journey names the one that carried the story to each branch, or that will
+  _journeyVehicles() {
+    const byNumber = new Map();
+    const lists = [
+      ...this.branchPullRequestsMap.values(),
+      this.openPullRequests || [],
+    ];
+    for (const list of lists) {
+      for (const item of list || []) {
+        if (
+          item?.number > 0 &&
+          !byNumber.has(item.number) &&
+          this._isPromotionOrMajorPr(item)
+        ) {
+          byNumber.set(item.number, item);
+        }
+      }
+    }
+    return [...byNumber.values()];
+  }
+
+  // The jobs still going on, by tab: shown above what the comments of the Pull Request report
+  get modalRunningJobRows() {
+    return runningJobRows(this.modalJourney);
+  }
+
+  get modalValidationRunningJobs() {
+    return this.modalRunningJobRows.validation;
+  }
+
+  get modalMegaLinterRunningJobs() {
+    return this.modalRunningJobRows.megalinter;
+  }
+
+  get modalDeploymentRunningJobs() {
+    return this.modalRunningJobRows.deployment;
+  }
+
+  // A tab holding a job that is going on says so next to its name, whichever tab is open
+  _runningTabIcon(jobs) {
+    return jobs.length > 0 ? "utility:spinner" : null;
+  }
+
+  get validationTabEndIcon() {
+    return this._runningTabIcon(this.modalValidationRunningJobs);
+  }
+
+  get megaLinterTabEndIcon() {
+    return this._runningTabIcon(this.modalMegaLinterRunningJobs);
+  }
+
+  get deploymentTabEndIcon() {
+    return this._runningTabIcon(this.modalDeploymentRunningJobs);
+  }
+
+  // Asks the git provider which jobs are not over: the checks of an open Pull Request, the
+  // deployments of the branches a merged one goes through. Asked again on a timer while the
+  // window is open, so a job shows when it starts and leaves when it ends.
+  _requestRunningJobs() {
+    this._stopRunningJobsPoll();
+    // Not asked of showPRModal: a Pull Request opened by a link is asked for before its window
+    // is shown. A closed window has no Pull Request left.
+    const pr = this.singlePullRequest;
+    if (
+      !pr ||
+      !(pr.number > 0) ||
+      !this.gitAuthenticated ||
+      this.explorerMode
+    ) {
+      return;
+    }
+    const state = lookupState(pr);
+    const vehicle = pr.isPromotion === true || pr.isMajorToMajor === true;
+    const branches =
+      state === "merged"
+        ? journeyBranchPath(
+            this.pipelineData?.orgs || [],
+            pr.targetBranch,
+          ).slice(0, vehicle ? 1 : undefined)
+        : [];
+    if (state !== "open" && branches.length === 0) {
+      return;
+    }
+    this._runningJobsRequestId += 1;
+    window.sendMessageToVSCode({
+      type: "loadPullRequestRunningJobs",
+      data: {
+        prNumber: pr.number,
+        open: state === "open",
+        branches,
+        requestId: this._runningJobsRequestId,
+      },
+    });
+  }
+
+  handleReturnPullRequestRunningJobs(data) {
+    const pr = this.singlePullRequest;
+    if (
+      !data ||
+      data.requestId !== this._runningJobsRequestId ||
+      !pr ||
+      pr.number !== data.prNumber
+    ) {
+      return;
+    }
+    const urlsOf = (jobs) =>
+      jobs
+        ? [
+            ...(jobs.pullRequest || []),
+            ...Object.values(jobs.branches || {}).flat(),
+          ].map((job) => `${job.kind}|${job.webUrl || job.name}`)
+        : [];
+    const before = urlsOf(this.modalRunningJobs);
+    const after = urlsOf(data);
+    this.modalRunningJobs = {
+      pullRequest: Array.isArray(data.pullRequest) ? data.pullRequest : [],
+      branches: data.branches || {},
+    };
+    // A job that was going on and no longer is has posted its comment: read the comments again,
+    // keeping on screen what is already there
+    if (before.some((url) => !after.includes(url))) {
+      this._requestActionStatuses({ refresh: true });
+    }
+    this._runningJobsTimer = setTimeout(
+      () => {
+        this._runningJobsTimer = null;
+        // Nothing is asked for a panel nobody looks at: the next look asks again
+        if (document.hidden) {
+          this._runningJobsTimer = setTimeout(
+            () => this._requestRunningJobs(),
+            RUNNING_JOBS_POLL_IDLE_MS,
+          );
+          return;
+        }
+        this._requestRunningJobs();
+      },
+      after.length > 0
+        ? RUNNING_JOBS_POLL_ACTIVE_MS
+        : RUNNING_JOBS_POLL_IDLE_MS,
+    );
+  }
+
+  _stopRunningJobsPoll() {
+    if (this._runningJobsTimer) {
+      clearTimeout(this._runningJobsTimer);
+      this._runningJobsTimer = null;
+    }
   }
 
   // The Validation, Deployment and MegaLinter tabs show the comments of the Pull Request itself,
@@ -3413,6 +3597,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       return;
     }
     this.showPRModal = false;
+    this._stopRunningJobsPoll();
+    this._runningJobsRequestId += 1;
     this._resetPromotionModalState();
     // Every field of the modal goes back to its default: see MODAL_STATE_DEFAULTS
     applyModalState(this, null);
@@ -3527,6 +3713,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       : this._aggregateActionsFromPRs([pr]);
     this._resetActionFilters();
     this._requestActionStatuses();
+    this._requestRunningJobs();
 
     // Set Apex tests list for this single PR
     const apexTests =

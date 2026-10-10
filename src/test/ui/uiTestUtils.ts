@@ -17,7 +17,11 @@ export const EXTENSION_ID = "NicolasVuillamy.vscode-sfdx-hardis";
  */
 export async function waitFor<T>(
   producer: () =>
-    T | undefined | null | false | Promise<T | undefined | null | false>,
+    | T
+    | undefined
+    | null
+    | false
+    | Promise<T | undefined | null | false>,
   timeoutMs: number,
   label: string,
   intervalMs = 100,

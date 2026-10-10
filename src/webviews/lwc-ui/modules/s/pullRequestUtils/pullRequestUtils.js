@@ -51,6 +51,7 @@ export const MODAL_STATE_DEFAULTS = {
   apexTestsMode: "view",
   apexTestsByLineRows: [],
   modalWorkflows: null,
+  modalRunningJobs: null,
   modalCheckout: null,
   workflowsUnavailable: false,
 };
@@ -247,8 +248,18 @@ export function journeyBranchPath(orgs, targetBranch) {
  * - statuses: the deployment action status entries of the Pull Request ({ orgBranch, status })
  * - workflows: the runs read from the validation and deployment comments ({ kind, status,
  *   targetBranch, jobUrl })
+ * - runningJobs: the jobs the git provider says are not over, { pullRequest: [job], branches:
+ *   { <branch>: [job] } }, each job with its kind. Null while they are not known.
+ * - vehicles: the promotions and the merges between two major branches the panel knows, open or
+ *   merged ({ number, sourceBranch, targetBranch, state, mergeDate, promotionPullRequests })
+ * - arrivals: { <branch>: [dates of the merges made into the branch since its last promotion] }
  *
  * Step states: waiting, running, pending, success, merged, deployed, failed, unknown.
+ *
+ * Each step past the target branch names the Pull Request that carried the story there
+ * (carriedBy), or the open one that will (carriedBy with carrierOpen). A step also holds the
+ * jobs that are running for it (runningJobs): the checks of the Pull Request on the validation
+ * step, the deployment of the branch on a branch step.
  */
 export function buildPullRequestJourney({
   pr,
@@ -256,6 +267,9 @@ export function buildPullRequestJourney({
   windows,
   statuses,
   workflows,
+  runningJobs,
+  vehicles,
+  arrivals,
 }) {
   const steps = [];
   if (!pr) {
@@ -284,6 +298,20 @@ export function buildPullRequestJourney({
         pending: "pending",
       }[String(pr.jobsStatus || "")] || "unknown";
   }
+  // What the git provider just said wins over the status read with the list of Pull Requests,
+  // which can be a minute old: a job that ended must not keep the step moving
+  const checks =
+    !merged && lookupState(pr) === "open" && runningJobs
+      ? (runningJobs.pullRequest || []).filter(
+          (job) => job.kind === "validation" || job.kind === "codeQuality",
+        )
+      : [];
+  if (runningJobs && ["running", "pending"].includes(validationState)) {
+    validationState = "unknown";
+  }
+  if (checks.length > 0) {
+    validationState = unfinishedState(checks);
+  }
   if (validationState === "unknown" && validationRun) {
     validationState =
       { valid: "success", invalid: "failed", pending: "pending" }[
@@ -296,6 +324,8 @@ export function buildPullRequestJourney({
     branch: pr.targetBranch || "",
     state: validationState,
     carriedBy: null,
+    carrierOpen: false,
+    runningJobs: checks,
   });
 
   // A Pull Request closed without being merged will never reach a branch
@@ -330,9 +360,39 @@ export function buildPullRequestJourney({
     }
   });
 
+  const knownVehicles = (Array.isArray(vehicles) ? vehicles : []).filter(
+    (vehicle) => vehicle && vehicle.number > 0 && vehicle.number !== pr.number,
+  );
+  // When the story reached the branch of the previous step, when that is known
+  let reachedPreviousAt = NaN;
   path.forEach((branch, index) => {
+    const isReached = merged && index <= reached;
+    let carrier = null;
+    let carrierOpen = false;
+    let reachedAt = NaN;
+    if (isReached && index === 0) {
+      reachedAt = timeOf(pr.mergeDate);
+    } else if (isReached) {
+      carrier = mergedCarrier({
+        pr,
+        branch,
+        previousBranch: path[index - 1],
+        deployedVia,
+        isFurthest: index === reached,
+        vehicles: knownVehicles,
+        reachedPreviousAt,
+      });
+      reachedAt = timeOf(carrier?.mergeDate);
+    } else if (merged && known && index === reached + 1) {
+      // The next branch: an open promotion declaring the story, or an open merge from the branch
+      // the story waits in, will take it there
+      carrier = openCarrier(pr, branch, path[index - 1], knownVehicles);
+      carrierOpen = !!carrier;
+    }
+
     let state = "waiting";
-    if (merged && index <= reached) {
+    let deployments = [];
+    if (isReached) {
       state = "merged";
       const run = [...runs]
         .reverse()
@@ -350,23 +410,186 @@ export function buildPullRequestJourney({
       ) {
         state = "failed";
       }
+      deployments = runningDeployments({
+        jobs: runningJobs?.branches?.[branch],
+        reachedAt,
+        runs,
+        branch,
+        arrivals: arrivals?.[branch],
+      });
+      if (deployments.length > 0) {
+        state = unfinishedState(deployments);
+      }
     } else if (merged && !known) {
       state = "unknown";
     }
-    const via = deployedVia.find((item) => item.targetBranch === branch);
-    const carrier =
-      !via && pr.carriedByPullRequest && index === reached && index > 0
-        ? pr.carriedByPullRequest
-        : via;
     steps.push({
       key: `branch-${branch}`,
       kind: "branch",
       branch,
       state,
       carriedBy: carrier?.number > 0 ? carrier.number : null,
+      carrierOpen,
+      runningJobs: deployments,
     });
+    reachedPreviousAt = reachedAt;
   });
   return steps;
+}
+
+function timeOf(date) {
+  const time = date ? new Date(date).getTime() : NaN;
+  return Number.isFinite(time) ? time : NaN;
+}
+
+// Running as soon as one job runs, pending when they are all queued
+function unfinishedState(jobs) {
+  return jobs.some((job) => job.status === "running") ? "running" : "pending";
+}
+
+function sameBranch(a, b) {
+  return String(a || "").toLowerCase() === String(b || "").toLowerCase() && !!a;
+}
+
+function declaresStory(vehicle, pr) {
+  return (
+    Array.isArray(vehicle.promotionPullRequests) &&
+    vehicle.promotionPullRequests.includes(pr.number)
+  );
+}
+
+/**
+ * The merged Pull Request that brought a story into a branch past its target: the promotion that
+ * declared it, else the first merge from the previous branch made after the story got there.
+ * Null when nothing says which one it was: a carrier is never guessed.
+ */
+function mergedCarrier({
+  pr,
+  branch,
+  previousBranch,
+  deployedVia,
+  isFurthest,
+  vehicles,
+  reachedPreviousAt,
+}) {
+  const merged = vehicles.filter(
+    (vehicle) =>
+      lookupState(vehicle) === "merged" &&
+      sameBranch(vehicle.targetBranch, branch),
+  );
+  const via = deployedVia.find((item) => sameBranch(item.targetBranch, branch));
+  if (via?.number > 0) {
+    return via;
+  }
+  const declaring = merged.find((vehicle) => declaresStory(vehicle, pr));
+  if (declaring) {
+    return declaring;
+  }
+  if (isFurthest && pr.carriedByPullRequest?.number > 0) {
+    const known = merged.find(
+      (vehicle) => vehicle.number === pr.carriedByPullRequest.number,
+    );
+    return known || pr.carriedByPullRequest;
+  }
+  if (!Number.isFinite(reachedPreviousAt)) {
+    return null;
+  }
+  return (
+    merged
+      .filter(
+        (vehicle) =>
+          sameBranch(vehicle.sourceBranch, previousBranch) &&
+          timeOf(vehicle.mergeDate) >= reachedPreviousAt,
+      )
+      .sort((a, b) => timeOf(a.mergeDate) - timeOf(b.mergeDate))[0] || null
+  );
+}
+
+// The open Pull Request that will take the story to the next branch, the oldest when several do
+function openCarrier(pr, branch, previousBranch, vehicles) {
+  const open = vehicles
+    .filter(
+      (vehicle) =>
+        lookupState(vehicle) === "open" &&
+        sameBranch(vehicle.targetBranch, branch),
+    )
+    .sort((a, b) => a.number - b.number);
+  return (
+    open.find((vehicle) => declaresStory(vehicle, pr)) ||
+    open.find(
+      (vehicle) =>
+        sameBranch(vehicle.sourceBranch, previousBranch) &&
+        !Array.isArray(vehicle.promotionPullRequests),
+    ) ||
+    null
+  );
+}
+
+/**
+ * The deployment jobs of a branch that are deploying this Pull Request: the ones started once
+ * the story was in the branch. A job that started before is the business of another Pull Request.
+ *
+ * Once the Pull Request has its deployment result, what runs next on the branch deploys a later
+ * merge, unless nothing was merged into the branch since: then the same deployment is being run
+ * again, and it is still the one of this Pull Request.
+ */
+function runningDeployments({ jobs, reachedAt, runs, branch, arrivals }) {
+  if (!Array.isArray(jobs) || !Number.isFinite(reachedAt)) {
+    return [];
+  }
+  // A provider that does not say when a job started still says when it last moved
+  const startOf = (job) => timeOf(job.startedAt || job.updatedAt);
+  const unfinished = jobs.filter(
+    (job) =>
+      job.kind === "deployment" &&
+      ["running", "pending"].includes(job.status) &&
+      startOf(job) >= reachedAt,
+  );
+  const results = runs
+    .filter(
+      (run) =>
+        run.kind === "deployment" &&
+        run.targetBranch === branch &&
+        ["valid", "invalid"].includes(run.status) &&
+        timeOf(run.date) >= reachedAt,
+    )
+    .map((run) => timeOf(run.date));
+  if (results.length === 0) {
+    return unfinished;
+  }
+  const settledAt = Math.max(...results);
+  const mergedSince = (Array.isArray(arrivals) ? arrivals : []).some(
+    (date) => timeOf(date) > reachedAt,
+  );
+  return mergedSince
+    ? []
+    : unfinished.filter((job) => startOf(job) > settledAt);
+}
+
+/**
+ * The rows the Validation, Code Quality and Deployment tabs show above the comments, out of the
+ * running jobs the journey attributed to its steps: { validation, megalinter, deployment }, each
+ * row a job with the branch of its step and the Pull Request that carried the story there.
+ */
+export function runningJobRows(steps) {
+  const rows = { validation: [], megalinter: [], deployment: [] };
+  for (const step of Array.isArray(steps) ? steps : []) {
+    for (const job of step.runningJobs || []) {
+      const tab =
+        step.kind === "branch"
+          ? "deployment"
+          : job.kind === "codeQuality"
+            ? "megalinter"
+            : "validation";
+      rows[tab].push({
+        ...job,
+        kind: tab,
+        targetBranch: step.branch,
+        carriedBy: step.kind === "branch" ? step.carriedBy : null,
+      });
+    }
+  }
+  return rows;
 }
 
 /**
@@ -427,9 +650,11 @@ export function journeyPathStep(state, loading = false) {
         running: "running",
         pending: "pending",
       }[state] || "ahead";
+  // What is going on moves: a band sweeps across the step, whether the job runs or waits
+  const moving = !loading && (look === "running" || look === "pending");
   return {
     look,
-    stepClass: `hardis-path-step hardis-path-${look}`,
+    stepClass: `hardis-path-step hardis-path-${look}${moving ? " hardis-path-moving" : ""}`,
     mark: { done: "\u2713", failed: "\u2715" }[look] || "",
     // A dot for what is going on, nothing for what has not started
     dot: loading || look === "running" || look === "pending",

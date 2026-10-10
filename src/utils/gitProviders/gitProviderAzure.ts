@@ -289,7 +289,10 @@ export class GitProviderAzure extends GitProvider {
     }
   }
 
-  async getPullRequestByNumber(number: number): Promise<PullRequest | null> {
+  async getPullRequestByNumber(
+    number: number,
+    options?: { withJobs?: boolean },
+  ): Promise<PullRequest | null> {
     if (!this.repoInfo || !this.gitApi) {
       return null;
     }
@@ -312,7 +315,7 @@ export class GitProviderAzure extends GitProvider {
       const converted = await this.convertAndCollectJobsList(
         [pullRequest],
         branchName,
-        { withJobs: false },
+        { withJobs: options?.withJobs === true },
       );
       return converted[0] || null;
     } catch (err) {
@@ -1326,10 +1329,69 @@ export class GitProviderAzure extends GitProvider {
           status: this.mapAzureBuildStatus(build),
           webUrl: build._links?.web?.href,
           updatedAt: (build.finishTime || build.queueTime)?.toISOString(),
+          startedAt: (build.startTime || build.queueTime)?.toISOString(),
           raw: build,
         },
       ];
     }
+  }
+
+  /**
+   * The jobs of a build, read from its timeline, each one with the link to its own log. Azure
+   * DevOps has no page per job: the build page opens on a job with `view=logs&j=<record id>`.
+   */
+  async listJobsOfRun(run: Job): Promise<Job[]> {
+    const buildId = Number(run.raw?.id);
+    // A status of an external CI has a target URL and no build
+    if (!this.buildApi || !this.repoInfo || !buildId || !run.raw?.definition) {
+      return [];
+    }
+    const timeline = await this.buildApi.getBuildTimeline(
+      this.repoInfo.owner,
+      buildId,
+    );
+    await this.logApiCall("buildApi.getBuildTimeline", {
+      caller: "listJobsOfRun",
+      buildId,
+    });
+    const buildUrl = run.webUrl || "";
+    const separator = buildUrl.includes("?") ? "&" : "?";
+    return (timeline?.records || [])
+      .filter((record: any) => record?.type === "Job")
+      .map((record: any) => ({
+        name: String(record.name || ""),
+        status: this.mapAzureTimelineRecordStatus(record),
+        webUrl:
+          buildUrl && record.id
+            ? `${buildUrl}${separator}view=logs&j=${record.id}`
+            : buildUrl || undefined,
+        updatedAt: (record.finishTime || record.startTime)?.toISOString?.(),
+        startedAt:
+          record.startTime?.toISOString?.() ||
+          (run.raw.startTime || run.raw.queueTime)?.toISOString?.(),
+      }));
+  }
+
+  /**
+   * A record of a build timeline. State: Pending (0), InProgress (1), Completed (2).
+   * Result, once completed: Succeeded (0), SucceededWithIssues (1), Failed (2), Canceled (3),
+   * Skipped (4), Abandoned (5). A skipped job says nothing about the commit.
+   */
+  private mapAzureTimelineRecordStatus(record: any): JobStatus {
+    if (record?.state === 1) {
+      return "running";
+    }
+    if (record?.state === 0) {
+      return "pending";
+    }
+    const result = record?.result;
+    if (result === 0 || result === 1) {
+      return "success";
+    }
+    if (result === 4) {
+      return "unknown";
+    }
+    return "failed";
   }
 
   /**
@@ -1498,6 +1560,7 @@ export class GitProviderAzure extends GitProvider {
         status: this.mapAzureBuildStatus(build),
         webUrl: build._links?.web?.href,
         updatedAt: (build.finishTime || build.queueTime)?.toISOString(),
+        startedAt: (build.startTime || build.queueTime)?.toISOString(),
         raw: build,
       };
 
@@ -1580,8 +1643,12 @@ export class GitProviderAzure extends GitProvider {
     }
     if (status === PullRequestStatus.Completed) {
       // Check if PR was actually merged or just closed
-      // mergeStatus indicates if merge succeeded
-      if (pr.mergeStatus === ("succeeded" as any)) {
+      // mergeStatus indicates if merge succeeded. The node client gives the enum as its number
+      // (PullRequestAsyncStatus.Succeeded is 3), the REST API as its name: a comparison with
+      // the name alone read every merged Pull Request fetched by its number as closed, and its
+      // window then showed no journey.
+      const mergeStatus: any = pr.mergeStatus;
+      if (mergeStatus === 3 || mergeStatus === "succeeded") {
         return "merged";
       }
       return "closed";

@@ -224,12 +224,10 @@ export class GitProviderBitbucket extends GitProvider {
     // Examples:
     // git@bitbucket.org:workspace/repo.git
     // https://bitbucket.org/workspace/repo.git
-    const match = this.repoInfo!.remoteUrl.match(
-      new RegExp("[:/]([^/:]+/[^/]+)(.git)?$"),
+    const parts = GitProviderBitbucket.workspaceAndSlug(
+      this.repoInfo!.remoteUrl,
     );
-    const projectPath = match ? match[1] : null;
-    if (projectPath) {
-      const parts = projectPath.split("/");
+    if (parts) {
       this.workspace = parts[0];
       this.repoSlug = parts[1];
       // validate credentials by requesting repository info
@@ -285,7 +283,10 @@ export class GitProviderBitbucket extends GitProvider {
     }
   }
 
-  async getPullRequestByNumber(number: number): Promise<PullRequest | null> {
+  async getPullRequestByNumber(
+    number: number,
+    options?: { withJobs?: boolean },
+  ): Promise<PullRequest | null> {
     if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
       return null;
     }
@@ -301,7 +302,7 @@ export class GitProviderBitbucket extends GitProvider {
       });
       const converted = await this.convertAndCollectJobsList(
         response?.data ? [response.data as any] : [],
-        { withJobs: false },
+        { withJobs: options?.withJobs === true },
       );
       return converted[0] || null;
     } catch (err) {
@@ -847,6 +848,7 @@ export class GitProviderBitbucket extends GitProvider {
           name: s.name || s.key || "Build",
           status: this.mapCommitStatusStateToJobStatus(s.state),
           webUrl: s.url || undefined,
+          startedAt: s.created_on || undefined,
           updatedAt: s.updated_on || undefined,
           raw: s,
         }));
@@ -887,7 +889,8 @@ export class GitProviderBitbucket extends GitProvider {
             pipeline.uuid ||
             "Default pipeline name",
           status: this.mapPipelineStateToJobStatus(pipeline.state),
-          webUrl: pipeline.links?.html?.href || undefined,
+          webUrl: this.pipelineWebUrl(pipeline),
+          startedAt: pipeline.created_on || undefined,
           updatedAt: pipeline.updated_on || undefined,
           raw: pipeline,
         },
@@ -939,6 +942,7 @@ export class GitProviderBitbucket extends GitProvider {
             name: s.name || s.key || "Build",
             status: this.mapCommitStatusStateToJobStatus(s.state),
             webUrl: s.url || undefined,
+            startedAt: s.created_on || undefined,
             updatedAt: s.updated_on || undefined,
             raw: s,
           }));
@@ -984,7 +988,8 @@ export class GitProviderBitbucket extends GitProvider {
           pipeline.uuid ||
           "Default pipeline name",
         status: this.mapPipelineStateToJobStatus(pipeline.state),
-        webUrl: pipeline.links?.html?.href || undefined,
+        webUrl: this.pipelineWebUrl(pipeline),
+        startedAt: pipeline.created_on || undefined,
         updatedAt: pipeline.updated_on || undefined,
         raw: pipeline,
       };
@@ -993,6 +998,74 @@ export class GitProviderBitbucket extends GitProvider {
       Logger.log(`Error fetching jobs for branch ${branchName}: ${String(e)}`);
       return null;
     }
+  }
+
+  // The API gives a pipeline no web address: its page is the build number under the repository
+  private pipelineWebUrl(pipeline: any): string | undefined {
+    if (pipeline?.links?.html?.href) {
+      return pipeline.links.html.href;
+    }
+    return pipeline?.build_number && this.repoInfo?.webUrl
+      ? `${this.repoInfo.webUrl}/pipelines/results/${pipeline.build_number}`
+      : undefined;
+  }
+
+  /**
+   * Workspace and repository slug of a remote URL (git@bitbucket.org:workspace/repo.git,
+   * https://bitbucket.org/workspace/repo.git), the slug without the ".git" of a clone address:
+   * the Pull Request endpoints accept it, the pipelines ones answer 404.
+   */
+  static workspaceAndSlug(remoteUrl: string): [string, string] | null {
+    const match = String(remoteUrl || "").match(
+      /[:/]([^/:]+)\/([^/]+?)(\.git)?\/?$/,
+    );
+    return match ? [match[1], match[2]] : null;
+  }
+
+  /**
+   * The steps of a Bitbucket pipeline, each one with the link to its own page.
+   *
+   * A pipeline is listed either as itself (it has a uuid) or as the commit status it reports,
+   * which only carries the address of its page: the build number at the end of that address
+   * names the pipeline as well as its uuid does.
+   */
+  async listJobsOfRun(run: Job): Promise<Job[]> {
+    if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
+      return [];
+    }
+    const buildNumber =
+      run.raw?.build_number ||
+      /\/results\/(\d+)/.exec(String(run.webUrl || run.raw?.url || ""))?.[1];
+    const pipelineId = String(
+      (run.raw?.build_number && run.raw?.uuid) || buildNumber || "",
+    );
+    if (!pipelineId) {
+      return [];
+    }
+    const response = await this.bitbucketClient.pipelines.listSteps({
+      workspace: this.workspace,
+      repo_slug: this.repoSlug,
+      pipeline_uuid: pipelineId,
+    } as any);
+    await this.logApiCall("pipelines.listSteps", {
+      caller: "listJobsOfRun",
+      pipeline: pipelineId,
+    });
+    const steps: any[] = (response?.data as any)?.values ?? [];
+    const pipelineUrl =
+      buildNumber && this.repoInfo?.webUrl
+        ? `${this.repoInfo.webUrl}/pipelines/results/${buildNumber}`
+        : "";
+    return steps.map((step: any) => ({
+      name: String(step.name || ""),
+      status: this.mapPipelineStateToJobStatus(step.state),
+      webUrl:
+        pipelineUrl && step.uuid
+          ? `${pipelineUrl}/steps/${encodeURIComponent(step.uuid)}`
+          : run.webUrl,
+      updatedAt: step.completed_on || step.started_on || undefined,
+      startedAt: step.started_on || run.startedAt || undefined,
+    }));
   }
 
   private mapPipelineStateToJobStatus(
