@@ -2534,6 +2534,7 @@
   "workflowNoValidation": "Nenhum resultado de validação foi publicado nesta {{prLabel}} ainda",
   "workflowOpenComment": "Abrir comentário",
   "workflowOpenJob": "Abrir job",
+  "workflowQueuedAt": "Na fila desde {{date}}",
   "workflowQuickDeploy": "Quick Deploy",
   "workflowStartedAt": "Iniciado {{date}}",
   "workflowValidation": "Validação contra {{branch}}",

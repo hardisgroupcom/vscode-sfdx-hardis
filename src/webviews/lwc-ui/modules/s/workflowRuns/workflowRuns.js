@@ -138,9 +138,16 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
       if (job.name && bare(job.name) !== bare(label)) {
         context.push(job.name);
       }
+      const running = job.status === "running";
       const started = job.startedAt ? this._formatDate(job.startedAt) : "";
       if (started) {
-        context.push(this.t("workflowStartedAt", { date: started }));
+        // A job waiting for a runner has no start yet: its date is the one it was queued at,
+        // and the count starts again from its real start
+        context.push(
+          this.t(running ? "workflowStartedAt" : "workflowQueuedAt", {
+            date: started,
+          }),
+        );
         // Never negative: the clock of the workstation can be a little behind the provider
         const elapsed = formatDuration(
           Math.max(0, this._now - new Date(job.startedAt).getTime()) / 1000,
@@ -152,7 +159,6 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
       if (job.carriedBy > 0) {
         context.push(this.t("journeyCarriedBy", { number: job.carriedBy }));
       }
-      const running = job.status === "running";
       return {
         key: `running-${index}`,
         label,

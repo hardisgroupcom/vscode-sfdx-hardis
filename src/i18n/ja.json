@@ -2534,6 +2534,7 @@
   "workflowNoValidation": "この {{prLabel}} には、まだ検証結果が投稿されていません",
   "workflowOpenComment": "コメントを開く",
   "workflowOpenJob": "ジョブを開く",
+  "workflowQueuedAt": "{{date}} にキュー登録",
   "workflowQuickDeploy": "Quick Deploy",
   "workflowStartedAt": "{{date}} に開始",
   "workflowValidation": "{{branch}} に対する検証",

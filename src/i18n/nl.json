@@ -2534,6 +2534,7 @@
   "workflowNoValidation": "Er is nog geen validatieresultaat geplaatst op deze {{prLabel}}",
   "workflowOpenComment": "Opmerking openen",
   "workflowOpenJob": "Job openen",
+  "workflowQueuedAt": "In wachtrij sinds {{date}}",
   "workflowQuickDeploy": "Quick Deploy",
   "workflowStartedAt": "Gestart {{date}}",
   "workflowValidation": "Validatie tegen {{branch}}",
