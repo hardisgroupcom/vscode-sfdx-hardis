@@ -400,6 +400,17 @@
                             <div class="hardis-empty-desc">{i18n.prExplorerEmptyDesc}</div>
                         </div>
                     </template>
+                    <!-- Opened by the click: what the panel already holds, while the rest is read -->
+                    <template if:true={showPendingPullRequestHeader}>
+                        <div class="slds-m-bottom_small">
+                            <s-pull-request-header
+                                pull-request={singlePullRequest}
+                                journey={modalJourney}
+                                loading
+                                platform-label={repoPlatformLabel}
+                            ></s-pull-request-header>
+                        </div>
+                    </template>
                     <template if:true={prViewLoading}>
                         <div class="slds-is-relative slds-p-vertical_large slds-text-align_center">
                             <lightning-spinner alternative-text={i18n.loadingLabel} size="medium"></lightning-spinner>

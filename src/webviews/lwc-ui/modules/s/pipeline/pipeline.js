@@ -181,8 +181,13 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   showPRModal = false;
   // Pull Requests explorer: the modal opened by the search button, with a lookup on top
   explorerMode = false;
-  // A Pull Request is being read for the modal that is already open
+  // A Pull Request is being read for the modal
   prViewLoading = false;
+  // The window was opened by the click itself, before the Pull Request was read: it shows what
+  // the panel already holds about it, and is closed again when there is no such Pull Request
+  prViewPending = false;
+  // The pending window was given the Pull Request itself, not only its number
+  pendingHasPullRequest = false;
   // Windows left to open a Pull Request, most recent last: { label, state }. Back restores one
   // without reading anything again, so the stories ticked for a promotion are still ticked
   @track _modalStack = [];
@@ -2825,6 +2830,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.modalMode = "singlePR";
     this.explorerMode = true;
     this.prViewLoading = false;
+    this.prViewPending = false;
     this.showPRModal = true;
     // The lookup only exists once the modal is rendered
     // eslint-disable-next-line @lwc/lwc/no-async-operation
@@ -2875,7 +2881,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       this._modalStack = this._modalStack.slice(0, -1);
     }
     this._stackPushedForRequest = false;
-    if (this.showPRModal && keepStack && this.modalPullRequests.length > 0) {
+    if (
+      this.showPRModal &&
+      keepStack &&
+      !this.prViewPending &&
+      this.modalPullRequests.length > 0
+    ) {
       this._modalStack = [
         ...this._modalStack,
         { label: this.modalCrumbLabel, state: captureModalState(this) },
@@ -2888,7 +2899,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (tab) {
       this._nextModalTab = tab;
     }
-    this.prViewLoading = this.showPRModal;
+    // Nothing on screen yet: the window opens with the click, not with the answer, which can
+    // take seconds when the git provider is slow
+    if (!this.showPRModal || this.prViewPending) {
+      this._openPendingPullRequestWindow(pr, number);
+    }
+    this.prViewLoading = true;
     this._prViewRequestId += 1;
     window.sendMessageToVSCode({
       type: "getPrInfoForModal",
@@ -2899,6 +2915,29 @@ export default class Pipeline extends SharedMixin(LightningElement) {
           : { prNumber: number }),
       },
     });
+  }
+
+  // The window of a Pull Request that is still being read: its title and its header come from
+  // what the panel already holds, a spinner stands where the tabs will be
+  _openPendingPullRequestWindow(pr, number) {
+    applyModalState(this, null);
+    this.modalMode = "singlePR";
+    this.modalBranchName = pr?.sourceBranch || "";
+    this.modalPullRequests = this._mapPrsWithIcons([
+      pr || { number, title: "" },
+    ]);
+    this.pendingHasPullRequest = !!pr;
+    this.prViewPending = true;
+    this.showPRModal = true;
+  }
+
+  get showPendingPullRequestHeader() {
+    return (
+      this.prViewPending &&
+      this.prViewLoading &&
+      this.pendingHasPullRequest &&
+      this.isSinglePRMode
+    );
   }
 
   // Name of the window currently shown, as the breadcrumb will call it once it is left
@@ -3380,6 +3419,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     resetModalLoadingFlags(this);
     this.explorerMode = false;
     this.prViewLoading = false;
+    this.prViewPending = false;
     // A Pull Request still being read must not open the window again
     this._prViewRequestId += 1;
     this._clearStackOnAnswer = false;
@@ -3431,11 +3471,18 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       pr = null;
     }
     this.prViewLoading = false;
+    const openedByClick = this.prViewPending;
+    this.prViewPending = false;
     if (!pr) {
       // The backend request failed (no git provider / error): the modal will not
       // open, so drop the tab a deep link may have requested instead of letting
       // it leak into the next successful modal open.
       this._nextModalTab = null;
+      // The window opened by the click has nothing to show
+      if (openedByClick) {
+        this.handleClosePRModal();
+        return;
+      }
       // The window that was left for this Pull Request is still the one on screen
       if (this._stackPushedForRequest) {
         this._modalStack = this._modalStack.slice(0, -1);

@@ -677,6 +677,29 @@ suite("Pull Request view", () => {
       );
     });
 
+    test("the window opens with the click, before the Pull Request is read", () => {
+      const body = js.slice(
+        js.indexOf("  openPullRequestView({"),
+        js.indexOf("  _openPendingPullRequestWindow("),
+      );
+      const opens = body.indexOf(
+        "this._openPendingPullRequestWindow(pr, number)",
+      );
+      const asks = body.indexOf('type: "getPrInfoForModal"');
+      assert.ok(opens > 0, "openPullRequestView opens the pending window");
+      assert.ok(
+        opens < asks,
+        "the window is opened before the extension is asked",
+      );
+      // What the panel already holds is shown above the spinner
+      assert.ok(html.includes("if:true={showPendingPullRequestHeader}"));
+      // No such Pull Request: the window opened by the click is closed again
+      assert.match(
+        js,
+        /if \(openedByClick\) \{\s+this\.handleClosePRModal\(\);/,
+      );
+    });
+
     test("one Pull Request opens on its description, then its comments by kind", () => {
       assert.match(
         html,
