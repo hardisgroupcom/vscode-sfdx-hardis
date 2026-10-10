@@ -2,6 +2,7 @@ import { LightningElement, api } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
 import {
   buildArtifactEntries,
+  formatDuration,
   formatFileSize,
   journeyPillClass,
   safeWebUrl,
@@ -15,6 +16,9 @@ import {
  *
  * A job that is not over has posted no comment yet: `runningJobs`, read from the git provider,
  * are listed first, each one with the link to the job, above the result of the previous run.
+ * It says for how long it has been going on, counted every second.
+ *
+ * `durations` are the seconds each finished job took, by job URL, read from the git provider.
  *
  * `runs` are the runs of one kind, from the `workflows` list returned by
  * `sf hardis:project:action:list --with-workflows`. `artifacts` are the answers of
@@ -30,6 +34,11 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
   _runs = [];
   _runningJobs = [];
   _artifacts = {};
+  _durations = {};
+  // Clock of the jobs going on, moved every second while one of them is shown
+  _now = Date.now();
+  _clock = null;
+  _connected = false;
   // Job URLs whose list of files is unfolded
   _openJobs = [];
   // Job URLs whose files were asked and not answered yet
@@ -55,6 +64,29 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
   }
   set runningJobs(value) {
     this._runningJobs = Array.isArray(value) ? value : [];
+    this._syncClock();
+  }
+
+  @api
+  get durations() {
+    return this._durations;
+  }
+  set durations(value) {
+    this._durations = value && typeof value === "object" ? value : {};
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    this._connected = true;
+    this._syncClock();
+  }
+
+  disconnectedCallback() {
+    if (super.disconnectedCallback) {
+      super.disconnectedCallback();
+    }
+    this._connected = false;
+    this._syncClock();
   }
 
   @api
@@ -102,6 +134,12 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
       const started = job.startedAt ? this._formatDate(job.startedAt) : "";
       if (started) {
         context.push(this.t("workflowStartedAt", { date: started }));
+        const elapsed = formatDuration(
+          (this._now - new Date(job.startedAt).getTime()) / 1000,
+        );
+        if (elapsed) {
+          context.push(this.t("workflowElapsed", { duration: elapsed }));
+        }
       }
       if (job.carriedBy > 0) {
         context.push(this.t("journeyCarriedBy", { number: job.carriedBy }));
@@ -125,8 +163,13 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
     return this._runs.map((run, index) => {
       const branch = run.targetBranch || "";
       const context = [];
+      const jobUrl = safeWebUrl(run.jobUrl);
       if (run.date) {
         context.push(this._formatDate(run.date));
+      }
+      const duration = formatDuration(this._durations[jobUrl]);
+      if (jobUrl && duration) {
+        context.push(this.t("workflowDuration", { duration }));
       }
       if (run.errorCount > 0) {
         context.push(this.t("workflowErrors", { count: run.errorCount }));
@@ -139,7 +182,6 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
       if (run.quickDeploy === true) {
         context.push(this.i18n.workflowQuickDeploy);
       }
-      const jobUrl = safeWebUrl(run.jobUrl);
       return {
         key: `run-${index}`,
         label: this._label(run.kind, branch),
@@ -199,6 +241,21 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
         type: "openFile",
         data: { filePath: `${folder}/${path}` },
       });
+    }
+  }
+
+  // The clock only runs while a job that says when it started is on screen
+  _syncClock() {
+    const needed =
+      this._connected && this._runningJobs.some((job) => job.startedAt);
+    if (needed && !this._clock) {
+      this._now = Date.now();
+      this._clock = setInterval(() => {
+        this._now = Date.now();
+      }, 1000);
+    } else if (!needed && this._clock) {
+      clearInterval(this._clock);
+      this._clock = null;
     }
   }
 

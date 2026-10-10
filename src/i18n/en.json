@@ -2517,6 +2517,8 @@
   "withoutEmojis": "Without Emojis",
   "workflowDeployment": "Deployment to {{branch}}",
   "workflowDeploymentNoBranch": "Deployment",
+  "workflowDuration": "Duration {{duration}}",
+  "workflowElapsed": "{{duration}} elapsed",
   "workflowErrors": "{{count}} deployment error(s)",
   "workflowFailedTests": "{{count}} failed test(s)",
   "workflowFiles": "Files",

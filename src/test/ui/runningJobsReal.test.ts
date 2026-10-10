@@ -20,6 +20,9 @@ import { CdpWindow, captureWindowTo, inWebview } from "./cdpWindow";
  *   SFDX_HARDIS_REAL_RUNNING_JOBS_CARRIED optional "<story number>:<carrier number>", a merged
  *                                         story and the Pull Request that took it to a later
  *                                         branch: its journey must name it
+ *   SFDX_HARDIS_REAL_RUNNING_JOBS_DURATIONS optional tabs (validation, megalinter, deployment),
+ *                                         comma separated, whose finished job must say how long
+ *                                         it took
  *   SFDX_HARDIS_REAL_RUNNING_JOBS_SHOTS   optional folder for captures of the panel
  *   plus the token of the provider in the environment (GITHUB_TOKEN...)
  *
@@ -211,6 +214,15 @@ suite("Running jobs on a real git provider", function () {
           `      ${kind} tab: "${row.title}" | ${row.meta} | ${row.status} | ${row.url} | bar ${row.bar}`,
         );
       }
+      // The job says for how long it has been going on, and the count moves
+      const elapsedOf = (found: any[]) =>
+        (found || []).find((row: any) => urls.includes(row.url))?.meta || "";
+      assert.match(elapsedOf(rows), /\d+s elapsed/, "elapsed time of the job");
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+      const later = elapsedOf(await runningRows());
+      console.log(`      ${kind} tab, 2.5 seconds later: ${later}`);
+      assert.match(later, /\d+s elapsed/);
+      assert.notStrictEqual(later, elapsedOf(rows), "the elapsed time moves");
       // Give the tab the time to be drawn before it is captured
       await new Promise((resolve) => setTimeout(resolve, 1500));
       await captureWindowTo(shotsDir, `running-jobs-${kind}`);
@@ -248,6 +260,69 @@ suite("Running jobs on a real git provider", function () {
       moving.some((step) => /^Validation/.test(step.text)),
       expected.some((kind) => kind !== "deployment"),
     );
+  });
+
+  test("a finished job says how long it took", async function () {
+    const tabs = (process.env.SFDX_HARDIS_REAL_RUNNING_JOBS_DURATIONS || "")
+      .split(",")
+      .map((tab) => tab.trim())
+      .filter(Boolean);
+    if (tabs.length === 0 || !CdpWindow.portFromEnv()) {
+      this.skip();
+    }
+    for (const tab of tabs) {
+      await openView(tab);
+      panel = await waitFor(
+        () => panelManager.getPanel(LWC_ID),
+        60000,
+        "the pipeline panel to open",
+      );
+      if (sent.length === 0) {
+        sent = recordSentMessages(panel);
+      }
+      const rows: any[] = await waitFor<any>(
+        async () => {
+          // The webview of a panel that just opened may not answer yet
+          const found = await inWebview(`
+            const rows = deepAll(panelDocument, ".hardis-list")
+              .filter((row) => row.offsetParent !== null)
+              .filter((row) => !row.querySelector(".hardis-status-running, .hardis-status-pending"))
+              .map((row) => ({
+                title: (row.querySelector(".hardis-list-title") || {}).textContent || "",
+                meta: (row.querySelector(".hardis-list-meta") || {}).textContent || "",
+                status: (row.querySelector(".hardis-pill") || {}).textContent || "",
+                url: (row.querySelector("button[data-url]") || { dataset: {} }).dataset.url || "",
+              }));
+            return rows.length > 0 ? rows : null;
+          `).catch(() => null);
+          return Array.isArray(found) &&
+            // The rows are the ones of this tab once their title says so
+            found.some(
+              (row: any) =>
+                /Duration (\d+h )?(\d+m )?\d+s/.test(row.meta) &&
+                row.title
+                  .toLowerCase()
+                  .startsWith(tab === "megalinter" ? "megalinter" : tab),
+            )
+            ? found
+            : null;
+        },
+        WAIT_FOR_JOB_MS / 2,
+        `a finished job with its duration in the ${tab} tab`,
+      );
+      for (const row of rows) {
+        console.log(
+          `      ${tab} tab: "${row.title}" | ${row.meta} | ${row.status} | ${row.url}`,
+        );
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await captureWindowTo(shotsDir, `job-duration-${tab}`);
+    }
+    for (const message of sent.filter(
+      (item) => item?.type === "returnJobDurations",
+    )) {
+      console.log(`      durations: ${JSON.stringify(message.data.durations)}`);
+    }
   });
 
   test("the journey of a carried story names the Pull Request that carried it", async function () {

@@ -229,6 +229,12 @@ export type GoLive = {
   webUrl?: string; // canonical UI url of the promotion PR
 };
 
+/** When a CI job ran, read back from its link: what the time it took is computed from. */
+export type JobTiming = {
+  startedAt?: string; // ISO date string
+  finishedAt?: string; // ISO date string, absent while the job is not over
+};
+
 export type RepoInfo = {
   providerName: ProviderName;
   host: string; // e.g. 'gitlab.com', 'github.com', 'dev.azure.com', 'bitbucket.org'

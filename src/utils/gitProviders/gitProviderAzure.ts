@@ -9,6 +9,8 @@ import {
   Job,
   JobStatus,
 } from "./types";
+import type { JobKind, JobTiming } from "./types";
+import { pickJobTiming } from "../pipeline/jobKindUtils";
 import { mapAzureMergeStatus } from "./mergeStatus";
 import * as azdev from "azure-devops-node-api";
 import { GitApi } from "azure-devops-node-api/GitApi";
@@ -1334,6 +1336,40 @@ export class GitProviderAzure extends GitProvider {
         },
       ];
     }
+  }
+
+  /**
+   * The job of the build a comment links to: .../_build/results?buildId=<id>. A build runs the
+   * checks of a Pull Request as several jobs, so the one of the kind asked for is looked for.
+   */
+  async getJobTiming(
+    jobUrl: string,
+    kind?: JobKind,
+  ): Promise<JobTiming | null> {
+    const buildId = Number(
+      /\/_build\/results\?(?:[^#]*&)?buildId=(\d+)/.exec(jobUrl || "")?.[1],
+    );
+    if (!this.buildApi || !this.repoInfo || !buildId) {
+      return null;
+    }
+    const timeline = await this.buildApi.getBuildTimeline(
+      this.repoInfo.owner,
+      buildId,
+    );
+    await this.logApiCall("buildApi.getBuildTimeline", {
+      caller: "getJobTiming",
+      buildId,
+    });
+    return pickJobTiming(
+      (timeline?.records || [])
+        .filter((record: any) => record?.type === "Job")
+        .map((record: any) => ({
+          name: String(record.name || ""),
+          startedAt: record.startTime?.toISOString?.(),
+          finishedAt: record.finishTime?.toISOString?.(),
+        })),
+      kind,
+    );
   }
 
   /**

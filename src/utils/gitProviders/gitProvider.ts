@@ -8,6 +8,8 @@ import type {
   PullRequest,
   PullRequestSearchResult,
   Job,
+  JobKind,
+  JobTiming,
   RepoInfo,
   JobStatus,
 } from "./types";
@@ -378,6 +380,18 @@ export class GitProvider {
    */
   async listJobsOfRun(_run: Job): Promise<Job[]> {
     return [];
+  }
+
+  /**
+   * When the job behind a link written in a Pull Request comment ran. `kind` says which job of
+   * the run is meant, on the providers whose link names a whole build or pipeline. Null when the
+   * link is not one of a job of this provider.
+   */
+  async getJobTiming(
+    _jobUrl: string,
+    _kind?: JobKind,
+  ): Promise<JobTiming | null> {
+    return null;
   }
 
   /**

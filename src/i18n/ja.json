@@ -2517,6 +2517,8 @@
   "withoutEmojis": "絵文字なし",
   "workflowDeployment": "{{branch}} へのデプロイ",
   "workflowDeploymentNoBranch": "デプロイ",
+  "workflowDuration": "所要時間 {{duration}}",
+  "workflowElapsed": "経過時間 {{duration}}",
   "workflowErrors": "デプロイエラー {{count}} 件",
   "workflowFailedTests": "失敗したテスト {{count}} 件",
   "workflowFiles": "ファイル",

@@ -1411,22 +1411,26 @@ suite("Documentation screenshots", function () {
     if (!open) {
       throw new Error(`No open Pull Request #${openNumber} in the fixture`);
     }
+    // Started a moment ago: the row says for how long the job has been going on
+    const startedAt = new Date(Date.now() - 95000).toISOString();
     open.jobsStatus = "running";
     open.jobs = [
       {
         name: "Simulate Deployment (sfdx-hardis)",
         status: "running",
         webUrl: `${repoUrl}/actions/runs/1131`,
-        startedAt: "2026-08-20T09:12:00.000Z",
+        startedAt,
       },
       {
         name: "Mega-Linter",
         status: "pending",
         webUrl: `${repoUrl}/actions/runs/1132`,
-        startedAt: "2026-08-20T09:12:00.000Z",
+        startedAt,
       },
     ];
-    // The merge of #124 started the deployment of integration, which is not over
+    // The merge of #124 started the deployment of integration, which is not over. The story
+    // was merged on a fixed date: a deployment started after it, and still going on
+    const mergedStartedAt = new Date(Date.now() - 215000).toISOString();
     fixture.branchJobs = fixture.branchJobs || {};
     fixture.branchJobs.integration = {
       jobs: [
@@ -1434,7 +1438,7 @@ suite("Documentation screenshots", function () {
           name: "Process Deployment (sfdx-hardis)",
           status: "running",
           webUrl: `${repoUrl}/actions/runs/1133`,
-          startedAt: "2026-08-19T15:11:00.000Z",
+          startedAt: mergedStartedAt,
         },
       ],
       jobsStatus: "running",

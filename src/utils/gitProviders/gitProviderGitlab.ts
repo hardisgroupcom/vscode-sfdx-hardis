@@ -13,6 +13,7 @@ import {
   Job,
   JobStatus,
 } from "./types";
+import type { JobTiming } from "./types";
 import { mapGitLabMergeStatus } from "./mergeStatus";
 import { SecretsManager } from "../secretsManager";
 import { PROVIDER_ENV_VAR_NAMES } from "../envFileCredentials";
@@ -1071,6 +1072,26 @@ export class GitProviderGitlab extends GitProvider {
         undefined,
       raw: pipeline,
     };
+  }
+
+  /** The job a comment links to: .../-/jobs/<job id> */
+  async getJobTiming(jobUrl: string): Promise<JobTiming | null> {
+    const jobId = Number(/\/-\/jobs\/(\d+)/.exec(jobUrl || "")?.[1]);
+    if (!this.gitlabClient || !this.gitlabProjectId || !jobId) {
+      return null;
+    }
+    const job: any = await this.gitlabClient.Jobs.show(
+      this.gitlabProjectId,
+      jobId,
+    );
+    await this.logApiCall("Jobs.show", { caller: "getJobTiming", jobId });
+    const startedAt = job?.started_at || job?.startedAt;
+    return startedAt
+      ? {
+          startedAt,
+          finishedAt: job.finished_at || job.finishedAt || undefined,
+        }
+      : null;
   }
 
   /**

@@ -749,6 +749,25 @@ export function buildArtifactEntries(
   return { byFolder: true, crumbs, entries: [...folders, ...ownFiles] };
 }
 
+/**
+ * A number of seconds in hours, minutes and seconds: 45s, 2m 05s, 1h 02m 05s. Empty for what is
+ * not a duration (unknown, negative).
+ */
+export function formatDuration(seconds) {
+  const total = Math.floor(Number(seconds));
+  if (seconds === null || seconds === undefined || !(total >= 0)) {
+    return "";
+  }
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const rest = total % 60;
+  const two = (value) => String(value).padStart(2, "0");
+  if (hours > 0) {
+    return `${hours}h ${two(minutes)}m ${two(rest)}s`;
+  }
+  return minutes > 0 ? `${minutes}m ${two(rest)}s` : `${rest}s`;
+}
+
 /** Size of a file as a reader expects it: 512 B, 48 KB, 1.2 MB */
 export function formatFileSize(sizeBytes) {
   const bytes = Number(sizeBytes) || 0;

@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import { GitProvider } from "./gitProvider";
 import type {
+  JobTiming,
   CreateTokenOption,
   GoLive,
   Job,
@@ -131,6 +132,26 @@ export class GitProviderMock extends GitProvider {
       this.pullRequestMatchesSearch(query, pullRequest),
     );
     return this.buildSearchResult(matching, this.searchLimit(options));
+  }
+
+  // jobTimings of the fixture, by job link. Any other job took a few minutes, always the same
+  // ones for the same link, so that a capture does not change from one run to the next
+  async getJobTiming(jobUrl: string): Promise<JobTiming | null> {
+    const known = (this.fixture.jobTimings || {})[jobUrl];
+    if (known) {
+      return known;
+    }
+    let seed = 0;
+    for (const character of String(jobUrl || "")) {
+      seed = (seed * 31 + character.charCodeAt(0)) % 9973;
+    }
+    const startedAt = Date.UTC(2026, 0, 1);
+    return {
+      startedAt: new Date(startedAt).toISOString(),
+      finishedAt: new Date(
+        startedAt + (95 + (seed % 240)) * 1000,
+      ).toISOString(),
+    };
   }
 
   async getJobsForBranchLatestCommit(

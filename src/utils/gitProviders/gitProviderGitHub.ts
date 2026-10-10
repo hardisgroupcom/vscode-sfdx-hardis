@@ -11,6 +11,8 @@ import {
   Job,
   JobStatus,
 } from "./types";
+import type { JobKind, JobTiming } from "./types";
+import { pickJobTiming } from "../pipeline/jobKindUtils";
 import { Logger } from "../../logger";
 import { PROVIDER_BATCH_PROFILES, mapWithConcurrency } from "../concurrency";
 import { SecretsManager, SecretSource } from "../secretsManager";
@@ -939,6 +941,35 @@ export class GitProviderGitHub extends GitProvider {
     } catch {
       return [];
     }
+  }
+
+  /** The jobs of the workflow run a comment links to: .../actions/runs/<run id> */
+  async getJobTiming(
+    jobUrl: string,
+    kind?: JobKind,
+  ): Promise<JobTiming | null> {
+    const runId = Number(/\/actions\/runs\/(\d+)/.exec(jobUrl || "")?.[1]);
+    if (!this.gitHubClient || !this.repoInfo || !runId) {
+      return null;
+    }
+    const response = await this.gitHubClient.actions.listJobsForWorkflowRun({
+      owner: this.repoInfo.owner,
+      repo: this.repoInfo.repo,
+      run_id: runId,
+      per_page: 100,
+    });
+    await this.logApiCall("actions.listJobsForWorkflowRun", {
+      caller: "getJobTiming",
+      runId,
+    });
+    return pickJobTiming(
+      (response.data?.jobs || []).map((job: any) => ({
+        name: job.name,
+        startedAt: job.started_at || undefined,
+        finishedAt: job.completed_at || undefined,
+      })),
+      kind,
+    );
   }
 
   async getJobsForBranchLatestCommit(

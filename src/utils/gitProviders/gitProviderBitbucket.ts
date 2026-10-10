@@ -11,6 +11,8 @@ import {
   Job,
   JobStatus,
 } from "./types";
+import type { JobKind, JobTiming } from "./types";
+import { pickJobTiming } from "../pipeline/jobKindUtils";
 import { SecretsManager, SecretSource } from "../secretsManager";
 import { PROVIDER_ENV_VAR_NAMES } from "../envFileCredentials";
 import { Logger } from "../../logger";
@@ -1051,6 +1053,46 @@ export class GitProviderBitbucket extends GitProvider {
       /[:/]([^/:]+)\/([^/]+?)(\.git)?\/?$/,
     );
     return match ? [match[1], match[2]] : null;
+  }
+
+  /**
+   * The step of the pipeline a comment links to: .../pipelines/results/<build number>. The
+   * checks of a Pull Request are steps of one pipeline, so the one of the kind asked for is
+   * looked for.
+   */
+  async getJobTiming(
+    jobUrl: string,
+    kind?: JobKind,
+  ): Promise<JobTiming | null> {
+    const buildNumber =
+      this.repoInfo?.webUrl && (jobUrl || "").startsWith(this.repoInfo.webUrl)
+        ? /\/pipelines\/results\/(\d+)/.exec(jobUrl)?.[1]
+        : undefined;
+    if (
+      !this.bitbucketClient ||
+      !this.workspace ||
+      !this.repoSlug ||
+      !buildNumber
+    ) {
+      return null;
+    }
+    const response = await this.bitbucketClient.pipelines.listSteps({
+      workspace: this.workspace,
+      repo_slug: this.repoSlug,
+      pipeline_uuid: buildNumber,
+    } as any);
+    await this.logApiCall("pipelines.listSteps", {
+      caller: "getJobTiming",
+      pipeline: buildNumber,
+    });
+    return pickJobTiming(
+      ((response?.data as any)?.values ?? []).map((step: any) => ({
+        name: String(step.name || ""),
+        startedAt: step.started_on || undefined,
+        finishedAt: step.completed_on || undefined,
+      })),
+      kind,
+    );
   }
 
   /**

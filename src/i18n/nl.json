@@ -2517,6 +2517,8 @@
   "withoutEmojis": "Zonder emoji's",
   "workflowDeployment": "Implementatie naar {{branch}}",
   "workflowDeploymentNoBranch": "Implementatie",
+  "workflowDuration": "Duur {{duration}}",
+  "workflowElapsed": "Sinds {{duration}}",
   "workflowErrors": "{{count}} implementatiefout(en)",
   "workflowFailedTests": "{{count}} mislukte test(s)",
   "workflowFiles": "Bestanden",

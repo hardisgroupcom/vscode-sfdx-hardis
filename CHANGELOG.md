@@ -5,6 +5,7 @@
 - DevOps Pipeline: the Validation, Code Quality and Deployment tabs of a Pull Request have a Files button on each job, listing the report files the job published (by folder when there are many) and opening them in VS Code, on GitHub, GitLab and Azure DevOps
 - DevOps Pipeline: the Pull Request window opens as soon as it is clicked, with its title and header, while the rest loads.
 - DevOps Pipeline: a job that is still running shows in the Validation, Code Quality and Deployment tabs of its Pull Request, with a link to the job, and the step of the journey moves while it runs
+- DevOps Pipeline: the jobs of a Pull Request say how long they have been running, and how long they took once finished
 - DevOps Pipeline: each branch in the journey of a Pull Request names the Pull Request that carried it there, or the open one it is waiting for
 - Fix the window of a merged Azure DevOps Pull Request, which showed it as closed, without its journey
 

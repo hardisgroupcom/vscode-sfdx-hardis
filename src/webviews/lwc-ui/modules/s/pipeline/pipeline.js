@@ -20,6 +20,7 @@ import {
   lookupState,
   resetModalLoadingFlags,
   runningJobRows,
+  safeWebUrl,
 } from "s/pullRequestUtils";
 
 // How often the jobs of the Pull Request shown are read again: while one is going on, and
@@ -218,6 +219,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   _runningJobsRequestId = 0;
   _runningJobsTimer = null;
   _runningJobsPaused = false;
+  // Seconds each finished job of the Pull Request took, by job URL
+  jobDurations = {};
+  _jobDurationsRequestId = 0;
+  _jobDurationsStale = false;
   _runningJobsUnknownCount = 0;
   // Holder mutated in place, so that filling it while rendering renders nothing again
   _journeyMemo = {};
@@ -1758,6 +1763,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         break;
       case "returnDeploymentActionBackpromotes":
         this.handleReturnDeploymentActionBackpromotes(data);
+        break;
+      case "returnJobDurations":
+        this.handleReturnJobDurations(data);
         break;
       case "returnPullRequestRunningJobs":
         this.handleReturnPullRequestRunningJobs(data);
@@ -3502,6 +3510,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // A job that was going on and no longer is has posted its comment: read the comments again,
     // keeping on screen what is already there
     if (before.some((kind) => !after.includes(kind))) {
+      // A job run again keeps its link on some providers: its duration is asked again
+      this._jobDurationsStale = true;
       this._requestActionStatuses({ refresh: true });
     }
     this._runningJobsTimer = setTimeout(
@@ -3961,6 +3971,43 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // Absent with a sfdx-hardis older than the download of job artifacts: no Files button
     this.artifactsSupported = data.artifactsSupported === true;
     this.modalWorkflows = runs;
+    this._requestJobDurations();
+  }
+
+  // A comment says when it was posted, not how long its job ran: the git provider is asked, by
+  // job link, for the jobs whose duration is not known yet
+  _requestJobDurations() {
+    const refresh = this._jobDurationsStale === true;
+    this._jobDurationsStale = false;
+    const jobs = [];
+    for (const run of this.modalWorkflows || []) {
+      const url = safeWebUrl(run.jobUrl);
+      if (
+        url &&
+        (refresh || !(url in this.jobDurations)) &&
+        !jobs.some((job) => job.url === url)
+      ) {
+        jobs.push({ url, kind: run.kind });
+      }
+    }
+    if (jobs.length === 0 || !this.gitAuthenticated) {
+      return;
+    }
+    this._jobDurationsRequestId += 1;
+    window.sendMessageToVSCode({
+      type: "loadJobDurations",
+      data: {
+        jobs: jobs.slice(0, 30),
+        refresh,
+        requestId: this._jobDurationsRequestId,
+      },
+    });
+  }
+
+  handleReturnJobDurations(data) {
+    if (data?.durations && Object.keys(data.durations).length > 0) {
+      this.jobDurations = { ...this.jobDurations, ...data.durations };
+    }
   }
 
   handleReturnDeploymentActionStatuses(data) {

@@ -1,6 +1,8 @@
 import * as assert from "assert";
 import {
   classifyJobKind,
+  jobDurationSeconds,
+  pickJobTiming,
   pickUnfinishedJobsByKind,
 } from "../../utils/pipeline/jobKindUtils";
 import { GitProviderGitlab } from "../../utils/gitProviders/gitProviderGitlab";
@@ -22,6 +24,58 @@ function job(overrides: Partial<Job> & { name: string }): Job {
 }
 
 suite("Running jobs of a Pull Request", () => {
+  suite("time a job took", () => {
+    const check = {
+      name: "DeploymentCheck",
+      startedAt: "2026-10-10T08:00:10.000Z",
+      finishedAt: "2026-10-10T08:03:15.000Z",
+    };
+    const linter = {
+      name: "MegaLinter",
+      startedAt: "2026-10-10T08:00:05.000Z",
+      finishedAt: "2026-10-10T08:09:00.000Z",
+    };
+
+    test("the job of the kind asked for is the one timed", () => {
+      assert.strictEqual(
+        jobDurationSeconds(pickJobTiming([check, linter], "validation")),
+        185,
+      );
+      assert.strictEqual(
+        jobDurationSeconds(pickJobTiming([check, linter], "codeQuality")),
+        535,
+      );
+    });
+
+    test("jobs nobody can tell apart are timed together, first start to last end", () => {
+      const steps = [
+        { ...check, name: "step-a" },
+        { ...linter, name: "step-b" },
+      ];
+      assert.deepStrictEqual(pickJobTiming(steps, "validation"), {
+        startedAt: "2026-10-10T08:00:05.000Z",
+        finishedAt: "2026-10-10T08:09:00.000Z",
+      });
+    });
+
+    test("a job that is not over has no duration, a skipped one does not count", () => {
+      const running = { ...check, finishedAt: undefined };
+      assert.strictEqual(
+        jobDurationSeconds(pickJobTiming([running], "validation")),
+        null,
+      );
+      assert.strictEqual(pickJobTiming([{ name: "Deployment" }]), null);
+      assert.strictEqual(jobDurationSeconds(null), null);
+      assert.strictEqual(
+        jobDurationSeconds({
+          startedAt: "2026-10-10T08:03:15.000Z",
+          finishedAt: "2026-10-10T08:00:10.000Z",
+        }),
+        null,
+      );
+    });
+  });
+
   suite("kind of a job", () => {
     test("tells the jobs of the CI files sfdx-hardis installs", () => {
       const expected: Record<string, string> = {
@@ -429,6 +483,37 @@ suite("Running jobs of a Pull Request", () => {
         convert({ merge_commit: { hash: "04a0" } }).mergeDate,
         "2026-10-10T15:48:33.000Z",
       );
+    });
+
+    test("the step of the kind asked for gives the time a comment's job took", async () => {
+      const calls: any[] = [];
+      const timed = [
+        {
+          name: "Run MegaLinter",
+          started_on: "2026-10-10T08:00:00.000Z",
+          completed_on: "2026-10-10T08:06:00.000Z",
+        },
+        {
+          name: "Simulate SFDX deployment",
+          started_on: "2026-10-10T08:00:00.000Z",
+          completed_on: "2026-10-10T08:02:05.000Z",
+        },
+      ];
+      const timing = await provider(timed, calls).getJobTiming(
+        "https://bitbucket.org/ws/repo/pipelines/results/31",
+        "validation",
+      );
+      assert.strictEqual(calls[0].pipeline_uuid, "31");
+      assert.strictEqual(jobDurationSeconds(timing), 125);
+      // The link of another repository, or of another CI, is not asked
+      assert.strictEqual(
+        await provider(timed, calls).getJobTiming(
+          "https://jenkins.example.com/pipelines/results/31",
+          "validation",
+        ),
+        null,
+      );
+      assert.strictEqual(calls.length, 1);
     });
 
     test("the slug of the repository has no .git, which the pipelines endpoints refuse", () => {

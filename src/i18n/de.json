@@ -2517,6 +2517,8 @@
   "withoutEmojis": "Ohne Emojis",
   "workflowDeployment": "Bereitstellung in {{branch}}",
   "workflowDeploymentNoBranch": "Bereitstellung",
+  "workflowDuration": "Dauer {{duration}}",
+  "workflowElapsed": "Seit {{duration}}",
   "workflowErrors": "{{count}} Bereitstellungsfehler",
   "workflowFailedTests": "{{count}} fehlgeschlagene(r) Test(s)",
   "workflowFiles": "Dateien",

@@ -1,4 +1,4 @@
-import { Job, JobKind } from "../gitProviders/types";
+import { Job, JobKind, JobTiming } from "../gitProviders/types";
 
 /**
  * What a CI job does, told from its name. The names are the ones of the CI files sfdx-hardis
@@ -26,6 +26,48 @@ export function classifyJobKind(name: string | undefined | null): JobKind {
     return "deployment";
   }
   return "other";
+}
+
+/**
+ * When the job of a Pull Request comment ran, out of the jobs of the run its link names. The link
+ * names a whole run (a workflow run, a build, a pipeline) that can hold other jobs: the ones of
+ * the kind asked for are kept, and all of them when none can be told apart. A job that never
+ * started (skipped) does not count. No end date while one of the jobs kept is not over.
+ */
+export function pickJobTiming(
+  jobs: (JobTiming & { name?: string })[],
+  kind?: JobKind,
+): JobTiming | null {
+  const started = (jobs || []).filter((job) =>
+    Number.isFinite(Date.parse(job.startedAt || "")),
+  );
+  const ofKind = kind
+    ? started.filter((job) => classifyJobKind(job.name) === kind)
+    : [];
+  const kept = ofKind.length > 0 ? ofKind : started;
+  if (kept.length === 0) {
+    return null;
+  }
+  const ends = kept.map((job) => Date.parse(job.finishedAt || ""));
+  return {
+    startedAt: new Date(
+      Math.min(...kept.map((job) => Date.parse(job.startedAt || ""))),
+    ).toISOString(),
+    finishedAt: ends.every((end) => Number.isFinite(end))
+      ? new Date(Math.max(...ends)).toISOString()
+      : undefined,
+  };
+}
+
+/** Seconds a finished job took, null while it is not over or when its dates are not known. */
+export function jobDurationSeconds(
+  timing: JobTiming | null | undefined,
+): number | null {
+  const start = Date.parse(timing?.startedAt || "");
+  const end = Date.parse(timing?.finishedAt || "");
+  return Number.isFinite(start) && Number.isFinite(end) && end >= start
+    ? Math.round((end - start) / 1000)
+    : null;
 }
 
 export function isUnfinishedJob(job: Job | undefined | null): boolean {

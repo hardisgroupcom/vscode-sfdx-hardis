@@ -40,6 +40,7 @@ const EXPORTED = [
   "safeWebUrl",
   "isTrustedCommentImage",
   "buildArtifactEntries",
+  "formatDuration",
   "formatFileSize",
 ];
 
@@ -1406,6 +1407,66 @@ suite("Pull Request view", () => {
         host,
         /if \(result && isUnknownFlagError\(firstError\)\) \{\s*workflowsFlagRefused = true;/,
       );
+    });
+
+    test("a duration reads in hours, minutes and seconds", () => {
+      assert.strictEqual(utils.formatDuration(0), "0s");
+      assert.strictEqual(utils.formatDuration(45), "45s");
+      assert.strictEqual(utils.formatDuration(125), "2m 05s");
+      assert.strictEqual(utils.formatDuration(3600), "1h 00m 00s");
+      assert.strictEqual(utils.formatDuration(3725.9), "1h 02m 05s");
+      for (const unknown of [undefined, null, NaN, -3, "soon"]) {
+        assert.strictEqual(utils.formatDuration(unknown), "");
+      }
+    });
+
+    test("the durations are asked once per job link, and again after a job ended", () => {
+      const messages: any[] = [];
+      const view = Object.assign(
+        new Function(
+          "window",
+          "safeWebUrl",
+          `return { ${extractMember(js, "_requestJobDurations()")}, ${extractMember(js, "handleReturnJobDurations(data)")} };`,
+        )(
+          { sendMessageToVSCode: (message: any) => messages.push(message) },
+          utils.safeWebUrl,
+        ),
+        {
+          gitAuthenticated: true,
+          jobDurations: {},
+          ["_jobDurationsRequestId"]: 0,
+          ["_jobDurationsStale"]: false,
+          modalWorkflows: [
+            { kind: "validation", jobUrl: "https://git.example.com/runs/1" },
+            { kind: "megalinter", jobUrl: "https://git.example.com/runs/2" },
+            { kind: "validation", jobUrl: "https://git.example.com/runs/1" },
+            { kind: "deployment", jobUrl: "" },
+          ],
+        },
+      );
+      view._requestJobDurations();
+      assert.deepStrictEqual(messages.pop().data, {
+        jobs: [
+          { url: "https://git.example.com/runs/1", kind: "validation" },
+          { url: "https://git.example.com/runs/2", kind: "megalinter" },
+        ],
+        refresh: false,
+        requestId: 1,
+      });
+      view.handleReturnJobDurations({
+        durations: { "https://git.example.com/runs/1": 125 },
+      });
+      view._requestJobDurations();
+      assert.deepStrictEqual(
+        messages.pop().data.jobs.map((job: any) => job.url),
+        ["https://git.example.com/runs/2"],
+      );
+      // A job run again can keep its link: everything is asked again
+      view["_jobDurationsStale"] = true;
+      view._requestJobDurations();
+      const again = messages.pop().data;
+      assert.strictEqual(again.refresh, true);
+      assert.strictEqual(again.jobs.length, 2);
     });
 
     test("the running jobs are asked for a Pull Request whose window is not shown yet", () => {
