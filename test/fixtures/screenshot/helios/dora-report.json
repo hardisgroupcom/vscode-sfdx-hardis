@@ -1,0 +1,871 @@
+{
+  "schemaVersion": 2,
+  "period": {
+    "days": 90,
+    "from": "2026-06-24T17:15:00.000Z",
+    "to": "2026-09-22T17:15:00.000Z",
+    "previousFrom": "2026-03-26T17:15:00.000Z"
+  },
+  "source": {
+    "provider": "sfdx-hardis GitHub connector",
+    "repository": "https://github.com/my-username/sfdx-hardis-training.git"
+  },
+  "branches": [
+    {
+      "name": "integration",
+      "level": 10,
+      "isProduction": false,
+      "oldestRunDate": "2026-09-04T16:18:01Z",
+      "metrics": {
+        "deploymentFrequency": {
+          "perDay": 0.1,
+          "perWeek": 0.7,
+          "level": "medium",
+          "previousPerWeek": null
+        },
+        "leadTime": {
+          "medianDays": 1,
+          "p90Days": 1.3,
+          "avgDays": 1.2,
+          "level": "elite",
+          "previousMedianDays": null
+        },
+        "changeFailureRate": {
+          "percent": 10,
+          "level": "high",
+          "previousPercent": null
+        },
+        "mttr": {
+          "medianHours": 19.1,
+          "avgHours": 19.1,
+          "recoveries": 1,
+          "level": "high",
+          "previousMedianHours": null
+        },
+        "reworkRate": {
+          "percent": 10,
+          "level": "high",
+          "previousPercent": null
+        }
+      },
+      "supplementary": {
+        "deploymentDuration": {
+          "median": 3,
+          "p90": 3.4,
+          "avg": 2.9
+        },
+        "queueTime": {
+          "median": 0.1,
+          "p90": 0.1,
+          "avg": 0.1
+        },
+        "prCycleTime": {
+          "median": 0.6,
+          "p90": 1.3,
+          "avg": 1.2
+        },
+        "changeVolume": {
+          "prsPerWeek": 0.8,
+          "deploymentsPerWeek": 0.7
+        },
+        "validationSuccessRate": 76.9
+      },
+      "counts": {
+        "deployments": 10,
+        "succeeded": 9,
+        "failed": 1,
+        "canceled": 0,
+        "validations": 13,
+        "pullRequests": 10,
+        "openPullRequests": 1
+      },
+      "weeks": [
+        {
+          "week": "2026-W26",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W27",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W28",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W29",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W30",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W31",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W32",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W33",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W34",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W35",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W36",
+          "succeeded": 2,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 2,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 1.3
+        },
+        {
+          "week": "2026-W37",
+          "succeeded": 1,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 3,
+          "validationsFailed": 1,
+          "leadTimeMedianDays": 1.1
+        },
+        {
+          "week": "2026-W38",
+          "succeeded": 6,
+          "failed": 1,
+          "canceled": 0,
+          "validations": 8,
+          "validationsFailed": 2,
+          "leadTimeMedianDays": 0.3
+        },
+        {
+          "week": "2026-W39",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        }
+      ],
+      "failedDeployments": [
+        {
+          "date": "2026-09-19T16:15:00Z",
+          "runName": "Process Deployment (sfdx-hardis)",
+          "runUrl": "https://github.com/my-username/sfdx-hardis-training/actions/runs/17830016857",
+          "triggeredBy": "You",
+          "pullRequest": {
+            "id": "71",
+            "title": "US-062 Put the delivery managers in a Crew Leads group",
+            "url": "https://github.com/my-username/sfdx-hardis-training/pull/71",
+            "author": "Mariia Pyvovarchuk"
+          },
+          "recoveryHours": 19.1
+        }
+      ],
+      "slowPullRequests": [],
+      "hotfixPullRequests": [],
+      "attention": [
+        {
+          "code": "stalePullRequests",
+          "severity": "warning",
+          "message": "1 Pull Request(s) open for more than 7 days, oldest: US-020 Refactor InstallationScheduler (10 days)",
+          "url": "https://github.com/my-username/sfdx-hardis-training/pull/3"
+        }
+      ]
+    },
+    {
+      "name": "uat",
+      "level": 20,
+      "isProduction": false,
+      "oldestRunDate": "2026-09-21T14:18:44Z",
+      "metrics": {
+        "deploymentFrequency": {
+          "perDay": 0.01,
+          "perWeek": 0.1,
+          "level": "low",
+          "previousPerWeek": null
+        },
+        "leadTime": {
+          "medianDays": 0.2,
+          "p90Days": 0.2,
+          "avgDays": 0.2,
+          "level": "elite",
+          "previousMedianDays": null
+        },
+        "changeFailureRate": {
+          "percent": 0,
+          "level": "elite",
+          "previousPercent": null
+        },
+        "mttr": {
+          "medianHours": null,
+          "avgHours": null,
+          "recoveries": 0,
+          "level": "none",
+          "previousMedianHours": null
+        },
+        "reworkRate": {
+          "percent": 0,
+          "level": "elite",
+          "previousPercent": null
+        }
+      },
+      "supplementary": {
+        "deploymentDuration": {
+          "median": 3.6,
+          "p90": 3.6,
+          "avg": 3.6
+        },
+        "queueTime": {
+          "median": 0.1,
+          "p90": 0.1,
+          "avg": 0.1
+        },
+        "prCycleTime": {
+          "median": 0.2,
+          "p90": 0.2,
+          "avg": 0.2
+        },
+        "changeVolume": {
+          "prsPerWeek": 0.1,
+          "deploymentsPerWeek": 0.1
+        },
+        "validationSuccessRate": 100
+      },
+      "counts": {
+        "deployments": 1,
+        "succeeded": 1,
+        "failed": 0,
+        "canceled": 0,
+        "validations": 1,
+        "pullRequests": 1,
+        "openPullRequests": 0
+      },
+      "weeks": [
+        {
+          "week": "2026-W26",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W27",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W28",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W29",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W30",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W31",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W32",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W33",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W34",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W35",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W36",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W37",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W38",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W39",
+          "succeeded": 1,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 1,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 0.2
+        }
+      ],
+      "failedDeployments": [],
+      "slowPullRequests": [],
+      "hotfixPullRequests": [],
+      "attention": []
+    },
+    {
+      "name": "preprod",
+      "level": 30,
+      "isProduction": false,
+      "oldestRunDate": "2026-09-22T10:19:34Z",
+      "metrics": {
+        "deploymentFrequency": {
+          "perDay": 0.01,
+          "perWeek": 0.1,
+          "level": "low",
+          "previousPerWeek": null
+        },
+        "leadTime": {
+          "medianDays": 0.1,
+          "p90Days": 0.1,
+          "avgDays": 0.1,
+          "level": "elite",
+          "previousMedianDays": null
+        },
+        "changeFailureRate": {
+          "percent": 0,
+          "level": "elite",
+          "previousPercent": null
+        },
+        "mttr": {
+          "medianHours": null,
+          "avgHours": null,
+          "recoveries": 0,
+          "level": "none",
+          "previousMedianHours": null
+        },
+        "reworkRate": {
+          "percent": 0,
+          "level": "elite",
+          "previousPercent": null
+        }
+      },
+      "supplementary": {
+        "deploymentDuration": {
+          "median": 4.4,
+          "p90": 4.4,
+          "avg": 4.4
+        },
+        "queueTime": {
+          "median": 0.1,
+          "p90": 0.1,
+          "avg": 0.1
+        },
+        "prCycleTime": {
+          "median": 0.1,
+          "p90": 0.1,
+          "avg": 0.1
+        },
+        "changeVolume": {
+          "prsPerWeek": 0.1,
+          "deploymentsPerWeek": 0.1
+        },
+        "validationSuccessRate": 100
+      },
+      "counts": {
+        "deployments": 1,
+        "succeeded": 1,
+        "failed": 0,
+        "canceled": 0,
+        "validations": 1,
+        "pullRequests": 1,
+        "openPullRequests": 0
+      },
+      "weeks": [
+        {
+          "week": "2026-W26",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W27",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W28",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W29",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W30",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W31",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W32",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W33",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W34",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W35",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W36",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W37",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W38",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W39",
+          "succeeded": 1,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 1,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 0.1
+        }
+      ],
+      "failedDeployments": [],
+      "slowPullRequests": [],
+      "hotfixPullRequests": [],
+      "attention": []
+    },
+    {
+      "name": "main",
+      "level": 100,
+      "isProduction": true,
+      "oldestRunDate": "2026-09-22T15:19:50Z",
+      "metrics": {
+        "deploymentFrequency": {
+          "perDay": 0.01,
+          "perWeek": 0.1,
+          "level": "low",
+          "previousPerWeek": null
+        },
+        "leadTime": {
+          "medianDays": 0.1,
+          "p90Days": 0.1,
+          "avgDays": 0.1,
+          "level": "elite",
+          "previousMedianDays": null
+        },
+        "changeFailureRate": {
+          "percent": 0,
+          "level": "elite",
+          "previousPercent": null
+        },
+        "mttr": {
+          "medianHours": null,
+          "avgHours": null,
+          "recoveries": 0,
+          "level": "none",
+          "previousMedianHours": null
+        },
+        "reworkRate": {
+          "percent": 0,
+          "level": "elite",
+          "previousPercent": null
+        }
+      },
+      "supplementary": {
+        "deploymentDuration": {
+          "median": 4.7,
+          "p90": 4.7,
+          "avg": 4.7
+        },
+        "queueTime": {
+          "median": 0.1,
+          "p90": 0.1,
+          "avg": 0.1
+        },
+        "prCycleTime": {
+          "median": 0.1,
+          "p90": 0.1,
+          "avg": 0.1
+        },
+        "changeVolume": {
+          "prsPerWeek": 0.1,
+          "deploymentsPerWeek": 0.1
+        },
+        "validationSuccessRate": 100
+      },
+      "counts": {
+        "deployments": 1,
+        "succeeded": 1,
+        "failed": 0,
+        "canceled": 0,
+        "validations": 1,
+        "pullRequests": 1,
+        "openPullRequests": 0
+      },
+      "weeks": [
+        {
+          "week": "2026-W26",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W27",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W28",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W29",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W30",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W31",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W32",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W33",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W34",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W35",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W36",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W37",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W38",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W39",
+          "succeeded": 1,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 1,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 0.1
+        }
+      ],
+      "failedDeployments": [],
+      "slowPullRequests": [],
+      "hotfixPullRequests": [],
+      "attention": []
+    }
+  ],
+  "pipeline": null,
+  "contributors": [
+    {
+      "name": "You",
+      "pullRequests": 7,
+      "avgCycleDays": 0.5,
+      "deploymentsTriggered": 9,
+      "failedDeployments": 1
+    },
+    {
+      "name": "Mariia Pyvovarchuk",
+      "pullRequests": 4,
+      "avgCycleDays": 0.4,
+      "deploymentsTriggered": 0,
+      "failedDeployments": 0
+    },
+    {
+      "name": "Victor Squeeker",
+      "pullRequests": 0,
+      "avgCycleDays": null,
+      "deploymentsTriggered": 4,
+      "failedDeployments": 0
+    },
+    {
+      "name": "Romain Panda",
+      "pullRequests": 2,
+      "avgCycleDays": 3.5,
+      "deploymentsTriggered": 0,
+      "failedDeployments": 0
+    }
+  ]
+}

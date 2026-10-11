@@ -902,9 +902,16 @@ async function main() {
       );
       return 0;
     }
-    const report = JSON.parse(
-      fs.readFileSync(path.join(__dirname, "dora-report.json"), "utf8"),
-    );
+    // A fixture universe can serve its own report, so the panel shows its own repository,
+    // branches and people. Without one, the base report is used, unchanged.
+    const universeReport = process.env.SF_MOCK_UNIVERSE_DIR
+      ? path.join(process.env.SF_MOCK_UNIVERSE_DIR, "dora-report.json")
+      : "";
+    const reportFile =
+      universeReport && fs.existsSync(universeReport)
+        ? universeReport
+        : path.join(__dirname, "dora-report.json");
+    const report = JSON.parse(fs.readFileSync(reportFile, "utf8"));
     // The fixture holds one period: only its length follows the flag
     const period = parseInt(args[args.indexOf("--period") + 1], 10);
     if (args.includes("--period") && Number.isInteger(period)) {

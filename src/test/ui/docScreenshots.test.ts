@@ -2368,9 +2368,14 @@ suite("Documentation screenshots", function () {
     if (!shouldTake("dora-metrics")) {
       this.skip();
     }
+    // A universe names the branch whose tab it shows: the base one shows the branch that
+    // needs attention
     const shots = [
       { name: "dora-metrics", tab: "overview" },
-      { name: "dora-metrics-branch", tab: "preprod" },
+      {
+        name: "dora-metrics-branch",
+        tab: universeSetting("doraBranchTab") || "preprod",
+      },
       { name: "dora-metrics-contributors", tab: "contributors" },
     ];
     for (const shot of shots) {
@@ -2383,6 +2388,26 @@ suite("Documentation screenshots", function () {
         settleMs: 3000,
         force: true,
       });
+    }
+    // The Export menu open, for a universe that shows the click: it names the point of the
+    // button ("x,y" in its universe.json). The base universe takes no such shot.
+    const exportMenu = universeSetting("doraExportMenu");
+    if (exportMenu) {
+      const point = parsePoint(exportMenu, 0, 0);
+      if (point.x > 0 && point.y > 0) {
+        await shootPanel(panelManager, {
+          name: "dora-metrics",
+          command: "vscode-sfdx-hardis.showDoraMetrics",
+          lwcId: "s-dora-metrics",
+          commandArgs: { period: 90, tab: "overview" },
+          ready: (initData) => initData.loading === false && !!initData.report,
+          settleMs: 3000,
+          force: true,
+        });
+        await click(point.x, point.y);
+        await sleep(2500);
+        await captureStable("dora-metrics-export-menu");
+      }
     }
     // The whole tab of a branch, down to its lists: two zoom levels out
     await vscode.commands.executeCommand("workbench.action.zoomOut");
