@@ -351,9 +351,12 @@ export class BranchStrategyMermaidBuilder {
       // (a stale local branch, a typo in a target): without a node of its own, mermaid draws the
       // raw node id ("preprodBranch") outside of the Git Branches box
       const targetNodeName = this.sanitizeNodeName(targetBranch) + "Branch";
+      // Not when the target is itself the branch of an open Pull Request (stacked Pull
+      // Requests): it gets its feature node from its own group, whatever the order of the groups
       if (
         targetBranch &&
-        !this.gitBranches.find((b) => b.nodeName === targetNodeName)
+        !this.gitBranches.find((b) => b.nodeName === targetNodeName) &&
+        !featurePullRequests.find((pr) => pr.sourceBranch === targetBranch)
       ) {
         this.gitBranches.push({
           name: targetBranch,

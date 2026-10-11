@@ -1073,6 +1073,24 @@ suite("An open promotion is drawn on the edge between its two branches", () => {
     assert.ok(node!.includes("hotfixes<") || node!.includes('hotfixes"'));
   });
 
+  test("stacked Pull Requests declare each branch once, whatever their order", () => {
+    const out = diagram(
+      [
+        openPr(52, "features/US-2-child", "features/US-1-parent"),
+        openPr(51, "features/US-1-parent", "integration"),
+      ],
+      false,
+    );
+    const declared = out
+      .split("\n")
+      .map((line) => /^\s*(\w+Branch)[(@]/.exec(line)?.[1])
+      .filter((name) => name);
+    assert.deepStrictEqual(
+      declared.filter((name, index) => declared.indexOf(name) !== index),
+      [],
+    );
+  });
+
   test("the promotion sits on the uat to preprod edge, not on a node of its own", () => {
     const out = diagram(
       [openPr(41, "promotion/uat/preprod/2026-09-06-1", "preprod")],

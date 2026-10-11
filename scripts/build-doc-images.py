@@ -348,13 +348,30 @@ def build_settings_reference(guide_dir, dry_run):
     scripts/build-pipeline-settings-doc.mjs of sfdx-hardis then writes the page and the pills.
     """
     print("Pipeline Settings reference screenshots:")
-    for file_name in sorted(os.listdir(SHOTS_DIR) if os.path.isdir(SHOTS_DIR) else []):
-        if not (file_name.startswith(SETTINGS_REF_PREFIX) and file_name.endswith(".png")):
-            continue
+    reference = os.path.join(SHOTS_DIR, "pipeline-settings-reference.json")
+    if not os.path.exists(reference):
+        print("  no pipeline-settings-reference.json: run yarn screenshots pipeline-settings-reference")
+        return
+    # The captures of the last run only: a tab that got shorter or was renamed leaves older
+    # captures in the folder, which the page no longer shows
+    with open(reference, encoding="utf-8") as handle:
+        names = {
+            shot["name"] + ".png"
+            for tab in json.load(handle)["tabs"]
+            for shot in tab["shots"]
+            if shot["rows"]
+        }
+    for file_name in sorted(names):
         image = load(file_name[: -len(".png")])
         if image is None:
             continue
         save(crop_to_webview(image), os.path.join(guide_dir, file_name), dry_run)
+    # And the images of an earlier run that this one no longer produces
+    for file_name in sorted(os.listdir(guide_dir) if os.path.isdir(guide_dir) else []):
+        if file_name.startswith(SETTINGS_REF_PREFIX) and file_name not in names:
+            print(f"  {file_name} removed: no longer captured")
+            if not dry_run:
+                os.remove(os.path.join(guide_dir, file_name))
 
 
 def crop_to_webview(image):
