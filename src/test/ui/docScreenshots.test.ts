@@ -3525,6 +3525,33 @@ suite("Documentation screenshots", function () {
     await captureStable("pipeline-config-branch-edit");
   });
 
+  // The Deployment tab of a branch, unlocked: where a major branch is told which branch it
+  // merges into. Lab 3.1 of the training gives uat its merge target to preprod there, so the
+  // branch comes from the run (SFDX_HARDIS_DOC_SCREENSHOTS_SETTINGS_BRANCH) and defaults to
+  // the branch the other branch captures use.
+  test("pipeline configuration (branch, merge target)", async function () {
+    if (!shouldTake("pipeline-config-branch-merge-target")) {
+      this.skip();
+    }
+    const branch =
+      process.env.SFDX_HARDIS_DOC_SCREENSHOTS_SETTINGS_BRANCH || "integration";
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await vscode.commands.executeCommand(
+      "vscode-sfdx-hardis.showPipelineConfig",
+      branch,
+      "Deployment",
+    );
+    await sleep(4500);
+    // capture() is what maximizes the window: the click below aims at the captured image
+    await capture("pipeline-config-branch-merge-target");
+    await sleep(600);
+    // Edit, same place as on the branch panel above
+    await click(1848, 104);
+    await sleep(3000);
+    await cleanChrome();
+    await captureStable("pipeline-config-branch-merge-target");
+  });
+
   // The User Stories tab, unlocked and scrolled to the two lists a contributor
   // picks a target branch from. Lab 3.1 of the training adds a line to each of
   // them, and the pairing is by position, which only a picture makes obvious.
