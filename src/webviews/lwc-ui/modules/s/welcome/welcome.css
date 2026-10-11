@@ -185,7 +185,7 @@
 }
 
 .welcome-tagline a {
-    color: var(--vscode-textLink-foreground);
+    color: var(--slds-g-color-palette-blue-40);
     text-decoration: none;
 }
 
@@ -223,7 +223,7 @@
     display: block;
     margin-top: 0.5rem;
     font-size: 0.8rem;
-    color: var(--vscode-textLink-foreground);
+    color: var(--slds-g-color-palette-blue-40);
     cursor: pointer;
 }
 

@@ -4,6 +4,7 @@
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
+import { getEffectiveActionContext } from "s/deploymentActionUtils";
 
 export default class DeploymentAction extends SharedMixin(LightningElement) {
   @api action = null;
@@ -233,7 +234,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     return options.filter((option) => allowed.includes(option.value));
   }
 
-  _getContextOptions(type = "command") {
+  _getContextOptions(type = "command", when = "") {
     const options = [
       { label: this.t("checkAndProcessDeployment"), value: "all" },
       { label: this.t("checkDeploymentOnly"), value: "check-deployment-only" },
@@ -242,15 +243,26 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
         value: "process-deployment-only",
       },
     ];
-    const allowed = this._getTypeConstraints(type).context;
+    // A manual step to do before the deployment has to be done before the merge: the validation
+    // job always lists it, whatever its context, so the dialog offers no other one
+    const allowed =
+      type === "manual" && when === "pre-deploy"
+        ? ["all"]
+        : this._getTypeConstraints(type).context;
     return options.filter((option) => allowed.includes(option.value));
   }
 
   _updateWhenAndContextOptions(type = "command") {
     this.whenOptions = this._getWhenOptions(type);
-    this.contextOptions = this._getContextOptions(type);
-
     const allowedWhen = this.whenOptions.map((option) => option.value);
+    // The moment the action ends up with, once normalized below: the contexts offered depend
+    // on it, so it is settled first
+    const storedWhen = this.displayedAction?.when || "";
+    const currentWhen =
+      allowedWhen.length > 0 && !allowedWhen.includes(storedWhen)
+        ? allowedWhen[0]
+        : storedWhen;
+    this.contextOptions = this._getContextOptions(type, currentWhen);
     const allowedContext = this.contextOptions.map((option) => option.value);
 
     if (this.isEditMode) {
@@ -500,6 +512,13 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
 
   get actionContext() {
     return this.action?.context || "all";
+  }
+
+  // What the context field shows. A manual step to do before the deployment saved with another
+  // context (the former default of this dialog) reads as what the CLI does with it, instead of
+  // a value the field no longer offers.
+  get displayedContext() {
+    return getEffectiveActionContext(this.displayedAction);
   }
 
   // Dynamic field visibility based on type
@@ -1115,6 +1134,10 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       this.editedAction.parameters[paramName] = value;
     } else {
       this.editedAction[field] = value;
+    }
+    if (field === "when") {
+      // The moment decides which contexts a manual step may have
+      this._updateWhenAndContextOptions(this.editedAction.type || "command");
     }
     this.validationError = "";
   }

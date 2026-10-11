@@ -38,7 +38,7 @@
 .prl-chip:focus-visible,
 .prl-pill-button:focus-visible,
 .prl-ticket:focus-visible {
-  outline: 2px solid var(--vscode-focusBorder, currentColor);
+  outline: 2px solid var(--slds-g-color-palette-blue-50);
   outline-offset: 2px;
 }
 

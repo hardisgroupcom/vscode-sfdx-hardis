@@ -272,6 +272,7 @@ GUIDE_SHOTS = {
     "extension-config.png": ("extension-config", True),
 }
 GUIDE_FOLDER = "vscode-guide"
+SETTINGS_REF_PREFIX = "pipeline-settings-ref-"
 
 # --- Animated GIFs ------------------------------------------------------------
 # doc GIF name -> recording folder in doc-screenshots/recordings/
@@ -337,6 +338,40 @@ def save(image, target, dry_run):
         image.save(target, "JPEG", quality=92)
     else:
         image.save(target, "PNG")
+
+
+def build_settings_reference(guide_dir, dry_run):
+    """Pipeline Settings reference: one capture per tab and per scope, several for a tall tab.
+
+    Their list follows the settings the panel has, so it is read from the captures (test
+    "pipeline settings reference") instead of being written here.
+    scripts/build-pipeline-settings-doc.mjs of sfdx-hardis then writes the page and the pills.
+    """
+    print("Pipeline Settings reference screenshots:")
+    reference = os.path.join(SHOTS_DIR, "pipeline-settings-reference.json")
+    if not os.path.exists(reference):
+        print("  no pipeline-settings-reference.json: run yarn screenshots pipeline-settings-reference")
+        return
+    # The captures of the last run only: a tab that got shorter or was renamed leaves older
+    # captures in the folder, which the page no longer shows
+    with open(reference, encoding="utf-8") as handle:
+        names = {
+            shot["name"] + ".png"
+            for tab in json.load(handle)["tabs"]
+            for shot in tab["shots"]
+            if shot["rows"]
+        }
+    for file_name in sorted(names):
+        image = load(file_name[: -len(".png")])
+        if image is None:
+            continue
+        save(crop_to_webview(image), os.path.join(guide_dir, file_name), dry_run)
+    # And the images of an earlier run that this one no longer produces
+    for file_name in sorted(os.listdir(guide_dir) if os.path.isdir(guide_dir) else []):
+        if file_name.startswith(SETTINGS_REF_PREFIX) and file_name not in names:
+            print(f"  {file_name} removed: no longer captured")
+            if not dry_run:
+                os.remove(os.path.join(guide_dir, file_name))
 
 
 def crop_to_webview(image):
@@ -1013,6 +1048,11 @@ def main():
     parser.add_argument("--docs-images", default=DEFAULT_DOCS_IMAGES)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument(
+        "--settings-reference-only",
+        action="store_true",
+        help="only write the Pipeline Settings reference screenshots, and leave every other image alone",
+    )
+    parser.add_argument(
         "--gif",
         help="Only assemble this animated GIF (its documentation image name), and nothing else",
     )
@@ -1038,6 +1078,13 @@ def main():
 
     missing = []
 
+    if args.settings_reference_only:
+        guide_dir = os.path.join(args.docs_images, GUIDE_FOLDER)
+        if not args.dry_run:
+            os.makedirs(guide_dir, exist_ok=True)
+        build_settings_reference(guide_dir, args.dry_run)
+        return
+
     print("Panel screenshots:")
     for name, capture in PANEL_SHOTS.items():
         image = load(capture)
@@ -1062,6 +1109,8 @@ def main():
         elif crop:
             image = image.crop(crop)
         save(image, os.path.join(guide_dir, name), args.dry_run)
+
+    build_settings_reference(guide_dir, args.dry_run)
 
     print("Side bar row crops:")
     for name, (capture, index) in ROW_CROPS.items():

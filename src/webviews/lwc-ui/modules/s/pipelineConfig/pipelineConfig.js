@@ -4,6 +4,7 @@ import {
   getActionTypeLabel,
   getActionTypeIconName,
   getActionContextLabel,
+  getEffectiveActionContext,
   getActionTypePillClass,
   getActionContextPillClass,
 } from "s/deploymentActionUtils";
@@ -1418,7 +1419,11 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
         const typeCode = obj.type || "command";
         rowData._displayLabel =
           obj.label || obj.command || obj.id || this.t("unnamedAction");
-        const contextCode = obj.context || "all";
+        // entry.key is commandsPreDeploy or commandsPostDeploy: the moment of every action of the list
+        const contextCode = getEffectiveActionContext(
+          obj,
+          entry.key === "commandsPreDeploy" ? "pre-deploy" : "post-deploy",
+        );
         rowData._typeLabel = getActionTypeLabel(
           typeCode,
           translate,

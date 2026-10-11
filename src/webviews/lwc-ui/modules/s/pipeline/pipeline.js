@@ -10,6 +10,7 @@ import {
   getActionTypeIconName,
   getActionTypePillClass,
   getActionWhenPillClass,
+  getEffectiveActionContext,
 } from "s/deploymentActionUtils";
 import { getTicketStatusPillClass } from "s/pillUtils";
 import {
@@ -5856,7 +5857,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 }
 
-// Context of a deployment action as stored in its file, "all" when not set
+// Context a deployment action runs in: the one of its file, "all" when not set, and "all" for a
+// manual step to do before the deployment, as the CLI decides
 function fullActionContext(row) {
-  return row?._fullAction?.context || "all";
+  return getEffectiveActionContext(row?._fullAction);
 }

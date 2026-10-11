@@ -127,7 +127,7 @@ Hardcoded colors break one of the two themes, and there is no theme-switch event
 2. `resources/global-theme-variables.css` - SLDS palette tokens (`--slds-g-color-palette-*`), auto light/dark via the CSS `light-dark()` function
 3. `out/assets/styles/salesforce-lightning-design-system.min.css` - the official SLDS library
 
-**Lookup order before writing any CSS rule**: global-theme.css class -> SLDS class -> (only then) a small custom rule using `var(--slds-g-color-palette-*)` or `var(--vscode-*)` tokens.
+**Lookup order before writing any CSS rule**: global-theme.css class -> SLDS class -> (only then) a small custom rule using `var(--slds-g-color-palette-*)` tokens. Never a `var(--vscode-*)` color: the panel theme is its own setting (light by default) and does not follow the VS Code theme.
 
 - **Never** write literal `#hex`, `rgb()`, `color: white`, `font-family`, or numeric `font-weight` in component CSS. Layout-only properties (`display`, `flex`, `gap`, `padding`, `margin`, `border-radius`, `overflow`) are always safe.
 - **Never redefine a class that already exists in `global-theme.css`** - the component rule wins on specificity tie-breaking and silently disables the theme-aware version.

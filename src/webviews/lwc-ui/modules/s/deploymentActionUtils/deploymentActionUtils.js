@@ -107,6 +107,16 @@ export function getActionWhenPillClass(whenCode) {
   return getPillClass(WHEN_HUE_BY_CODE[whenCode]);
 }
 
+// Context an action really runs in, as the sfdx-hardis CLI decides it (getEffectiveActionContext
+// in actionUtils.ts): a manual step to do before the deployment has to be done before the merge,
+// so the validation job lists it whatever context its file holds.
+export function getEffectiveActionContext(action, when) {
+  if (action?.type === "manual" && (when || action?.when) === "pre-deploy") {
+    return "all";
+  }
+  return action?.context || "all";
+}
+
 export function getActionContextLabel(contextCode, t) {
   const labelKey = CONTEXT_LABEL_KEY_BY_CODE[contextCode];
   return labelKey ? t(labelKey) : contextCode;

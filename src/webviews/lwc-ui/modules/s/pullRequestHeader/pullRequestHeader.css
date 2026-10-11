@@ -16,7 +16,7 @@
 }
 
 .pr-head-date {
-  color: var(--vscode-descriptionForeground, inherit);
+  color: var(--slds-g-color-neutral-base-40);
   font-size: 0.8125rem;
 }
 
