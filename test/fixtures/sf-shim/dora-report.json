@@ -1,0 +1,2065 @@
+{
+  "schemaVersion": 2,
+  "period": {
+    "days": 90,
+    "from": "2026-07-13T06:00:00.000Z",
+    "to": "2026-10-11T06:00:00.000Z",
+    "previousFrom": "2026-04-14T06:00:00.000Z"
+  },
+  "source": {
+    "provider": "sfdx-hardis GitHub connector",
+    "repository": "https://github.com/mycompany/salesforce-crm.git"
+  },
+  "branches": [
+    {
+      "name": "integration",
+      "level": 10,
+      "isProduction": false,
+      "oldestRunDate": "2026-07-13T08:12:40Z",
+      "metrics": {
+        "deploymentFrequency": {
+          "perDay": 1.3,
+          "perWeek": 9.1,
+          "level": "elite",
+          "previousPerWeek": 8.4
+        },
+        "leadTime": {
+          "medianDays": 0.8,
+          "p90Days": 2.6,
+          "avgDays": 1.1,
+          "level": "elite",
+          "previousMedianDays": 1.1
+        },
+        "changeFailureRate": {
+          "percent": 10,
+          "level": "high",
+          "previousPercent": 7.1
+        },
+        "mttr": {
+          "medianHours": 2.5,
+          "avgHours": 3.8,
+          "recoveries": 13,
+          "level": "high",
+          "previousMedianHours": 3.4
+        },
+        "reworkRate": {
+          "percent": 6.9,
+          "level": "high",
+          "previousPercent": 5.8
+        },
+        "changeLeadTime": {
+          "medianDays": 0.8,
+          "p90Days": 2.6,
+          "avgDays": 1.1,
+          "previousMedianDays": 1.1,
+          "changes": 118,
+          "level": "elite",
+          "weeks": [
+            {
+              "week": "2026-W29",
+              "medianDays": 0.9
+            },
+            {
+              "week": "2026-W30",
+              "medianDays": 0.7
+            },
+            {
+              "week": "2026-W31",
+              "medianDays": 1.1
+            },
+            {
+              "week": "2026-W32",
+              "medianDays": 0.8
+            },
+            {
+              "week": "2026-W33",
+              "medianDays": 0.6
+            },
+            {
+              "week": "2026-W34",
+              "medianDays": 0.9
+            },
+            {
+              "week": "2026-W35",
+              "medianDays": 0.8
+            },
+            {
+              "week": "2026-W36",
+              "medianDays": 0.7
+            },
+            {
+              "week": "2026-W37",
+              "medianDays": 1
+            },
+            {
+              "week": "2026-W38",
+              "medianDays": 0.8
+            },
+            {
+              "week": "2026-W39",
+              "medianDays": 0.7
+            },
+            {
+              "week": "2026-W40",
+              "medianDays": 0.9
+            },
+            {
+              "week": "2026-W41",
+              "medianDays": 0.8
+            }
+          ]
+        }
+      },
+      "supplementary": {
+        "deploymentDuration": {
+          "median": 6.2,
+          "p90": 9.8,
+          "avg": 6.9
+        },
+        "queueTime": {
+          "median": 0.4,
+          "p90": 1.9,
+          "avg": 0.7
+        },
+        "prCycleTime": {
+          "median": 0.7,
+          "p90": 2.9,
+          "avg": 1.1
+        },
+        "changeVolume": {
+          "prsPerWeek": 9.8,
+          "deploymentsPerWeek": 9.1
+        },
+        "validationSuccessRate": 91.3
+      },
+      "counts": {
+        "deployments": 130,
+        "succeeded": 117,
+        "failed": 13,
+        "canceled": 2,
+        "validations": 310,
+        "pullRequests": 126,
+        "openPullRequests": 6
+      },
+      "weeks": [
+        {
+          "week": "2026-W29",
+          "succeeded": 8,
+          "failed": 1,
+          "canceled": 0,
+          "validations": 22,
+          "validationsFailed": 2,
+          "leadTimeMedianDays": 0.9
+        },
+        {
+          "week": "2026-W30",
+          "succeeded": 9,
+          "failed": 0,
+          "canceled": 1,
+          "validations": 24,
+          "validationsFailed": 1,
+          "leadTimeMedianDays": 0.7
+        },
+        {
+          "week": "2026-W31",
+          "succeeded": 7,
+          "failed": 1,
+          "canceled": 0,
+          "validations": 21,
+          "validationsFailed": 2,
+          "leadTimeMedianDays": 1.1
+        },
+        {
+          "week": "2026-W32",
+          "succeeded": 10,
+          "failed": 2,
+          "canceled": 0,
+          "validations": 27,
+          "validationsFailed": 4,
+          "leadTimeMedianDays": 0.8
+        },
+        {
+          "week": "2026-W33",
+          "succeeded": 9,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 23,
+          "validationsFailed": 1,
+          "leadTimeMedianDays": 0.6
+        },
+        {
+          "week": "2026-W34",
+          "succeeded": 8,
+          "failed": 1,
+          "canceled": 0,
+          "validations": 22,
+          "validationsFailed": 2,
+          "leadTimeMedianDays": 0.9
+        },
+        {
+          "week": "2026-W35",
+          "succeeded": 11,
+          "failed": 1,
+          "canceled": 1,
+          "validations": 28,
+          "validationsFailed": 3,
+          "leadTimeMedianDays": 0.8
+        },
+        {
+          "week": "2026-W36",
+          "succeeded": 9,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 24,
+          "validationsFailed": 1,
+          "leadTimeMedianDays": 0.7
+        },
+        {
+          "week": "2026-W37",
+          "succeeded": 10,
+          "failed": 2,
+          "canceled": 0,
+          "validations": 26,
+          "validationsFailed": 3,
+          "leadTimeMedianDays": 1
+        },
+        {
+          "week": "2026-W38",
+          "succeeded": 8,
+          "failed": 1,
+          "canceled": 0,
+          "validations": 22,
+          "validationsFailed": 2,
+          "leadTimeMedianDays": 0.8
+        },
+        {
+          "week": "2026-W39",
+          "succeeded": 9,
+          "failed": 1,
+          "canceled": 0,
+          "validations": 24,
+          "validationsFailed": 2,
+          "leadTimeMedianDays": 0.7
+        },
+        {
+          "week": "2026-W40",
+          "succeeded": 10,
+          "failed": 2,
+          "canceled": 0,
+          "validations": 27,
+          "validationsFailed": 3,
+          "leadTimeMedianDays": 0.9
+        },
+        {
+          "week": "2026-W41",
+          "succeeded": 9,
+          "failed": 1,
+          "canceled": 0,
+          "validations": 20,
+          "validationsFailed": 1,
+          "leadTimeMedianDays": 0.8
+        }
+      ],
+      "failedDeployments": [
+        {
+          "date": "2026-10-06T09:37:00Z",
+          "runName": "Process Deployment (sfdx-hardis)",
+          "runUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/38021005551",
+          "triggeredBy": "Mariia",
+          "pullRequest": {
+            "id": "124",
+            "title": "CRM-1049 Opportunity stage notifications",
+            "url": "https://github.com/mycompany/salesforce-crm/pull/124",
+            "author": "Sam Dubois"
+          },
+          "recoveryHours": 1.4
+        },
+        {
+          "date": "2026-09-30T14:18:00Z",
+          "runName": "Process Deployment (sfdx-hardis)",
+          "runUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/38021003678",
+          "triggeredBy": "Victor",
+          "pullRequest": {
+            "id": "123",
+            "title": "CRM-1044 Segment field on Account",
+            "url": "https://github.com/mycompany/salesforce-crm/pull/123",
+            "author": "Alex Martin"
+          },
+          "recoveryHours": 3.6
+        },
+        {
+          "date": "2026-09-28T11:03:00Z",
+          "runName": "Process Deployment (sfdx-hardis)",
+          "runUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/38021001805",
+          "triggeredBy": "Romain",
+          "pullRequest": {
+            "id": "122",
+            "title": "CRM-1038 Minimize Sales User profile",
+            "url": "https://github.com/mycompany/salesforce-crm/pull/122",
+            "author": "Lisa Chen"
+          },
+          "recoveryHours": 0.9
+        },
+        {
+          "date": "2026-09-25T17:26:00Z",
+          "runName": "Process Deployment (sfdx-hardis)",
+          "runUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/38020999932",
+          "triggeredBy": "Victor",
+          "pullRequest": {
+            "id": "111",
+            "title": "CRM-1012 Case routing rules",
+            "url": "https://github.com/mycompany/salesforce-crm/pull/111",
+            "author": "Victor"
+          },
+          "recoveryHours": 2.9
+        },
+        {
+          "date": "2026-09-16T10:55:00Z",
+          "runName": "Process Deployment (sfdx-hardis)",
+          "runUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/38020998059",
+          "triggeredBy": "Mariia",
+          "pullRequest": {
+            "id": "104",
+            "title": "CRM-998 Quote PDF template",
+            "url": "https://github.com/mycompany/salesforce-crm/pull/104",
+            "author": "Mariia"
+          },
+          "recoveryHours": 6.3
+        },
+        {
+          "date": "2026-09-10T13:08:00Z",
+          "runName": "Process Deployment (sfdx-hardis)",
+          "runUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/38020996186",
+          "triggeredBy": "Victor",
+          "pullRequest": {
+            "id": "99",
+            "title": "CRM-987 Lead scoring flow",
+            "url": "https://github.com/mycompany/salesforce-crm/pull/99",
+            "author": "Victor"
+          },
+          "recoveryHours": 2.2
+        },
+        {
+          "date": "2026-09-08T09:41:00Z",
+          "runName": "Process Deployment (sfdx-hardis)",
+          "runUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/38020994313",
+          "triggeredBy": "Romain",
+          "pullRequest": {
+            "id": "96",
+            "title": "CRM-975 Territory sync batch",
+            "url": "https://github.com/mycompany/salesforce-crm/pull/96",
+            "author": "Romain"
+          },
+          "recoveryHours": 4.7
+        },
+        {
+          "date": "2026-08-26T15:02:00Z",
+          "runName": "Process Deployment (sfdx-hardis)",
+          "runUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/38020992440",
+          "triggeredBy": "Victor",
+          "pullRequest": {
+            "id": "83",
+            "title": "CRM-961 Contract renewal reminder",
+            "url": "https://github.com/mycompany/salesforce-crm/pull/83",
+            "author": "Victor"
+          },
+          "recoveryHours": 1.2
+        },
+        {
+          "date": "2026-08-21T11:20:00Z",
+          "runName": "Process Deployment (sfdx-hardis)",
+          "runUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/38020990567",
+          "triggeredBy": "Mariia",
+          "pullRequest": {
+            "id": "74",
+            "title": "CRM-954 Invoice rounding",
+            "url": "https://github.com/mycompany/salesforce-crm/pull/74",
+            "author": "Mariia"
+          },
+          "recoveryHours": 2.5
+        },
+        {
+          "date": "2026-08-06T16:47:00Z",
+          "runName": "Process Deployment (sfdx-hardis)",
+          "runUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/38020988694",
+          "triggeredBy": "Romain",
+          "pullRequest": {
+            "id": "61",
+            "title": "CRM-940 Partner portal sharing",
+            "url": "https://github.com/mycompany/salesforce-crm/pull/61",
+            "author": "Romain"
+          },
+          "recoveryHours": 18.4
+        },
+        {
+          "date": "2026-08-03T10:05:00Z",
+          "runName": "Process Deployment (sfdx-hardis)",
+          "runUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/38020986821",
+          "triggeredBy": "Victor",
+          "pullRequest": {
+            "id": "58",
+            "title": "CRM-933 Order validation rule",
+            "url": "https://github.com/mycompany/salesforce-crm/pull/58",
+            "author": "Victor"
+          },
+          "recoveryHours": 0.6
+        },
+        {
+          "date": "2026-07-28T14:32:00Z",
+          "runName": "Process Deployment (sfdx-hardis)",
+          "runUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/38020984948",
+          "triggeredBy": "Mariia",
+          "pullRequest": {
+            "id": "52",
+            "title": "CRM-921 Knowledge article layout",
+            "url": "https://github.com/mycompany/salesforce-crm/pull/52",
+            "author": "Mariia"
+          },
+          "recoveryHours": 3.1
+        },
+        {
+          "date": "2026-07-15T09:14:00Z",
+          "runName": "Process Deployment (sfdx-hardis)",
+          "runUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/38020983075",
+          "triggeredBy": "Victor",
+          "pullRequest": {
+            "id": "41",
+            "title": "CRM-915 Campaign member status",
+            "url": "https://github.com/mycompany/salesforce-crm/pull/41",
+            "author": "Victor"
+          },
+          "recoveryHours": 1.8
+        }
+      ],
+      "slowPullRequests": [
+        {
+          "id": "117",
+          "title": "CRM-1018 Lead conversion assistant",
+          "url": "https://github.com/mycompany/salesforce-crm/pull/117",
+          "author": "Romain",
+          "cycleDays": 16.4
+        },
+        {
+          "id": "119",
+          "title": "CRM-1024 Case auto escalation",
+          "url": "https://github.com/mycompany/salesforce-crm/pull/119",
+          "author": "Mariia",
+          "cycleDays": 12.1
+        },
+        {
+          "id": "96",
+          "title": "CRM-975 Territory sync batch",
+          "url": "https://github.com/mycompany/salesforce-crm/pull/96",
+          "author": "Romain",
+          "cycleDays": 9.8
+        },
+        {
+          "id": "61",
+          "title": "CRM-940 Partner portal sharing",
+          "url": "https://github.com/mycompany/salesforce-crm/pull/61",
+          "author": "Romain",
+          "cycleDays": 8.2
+        }
+      ],
+      "hotfixPullRequests": [
+        {
+          "id": "44",
+          "title": "Hotfix: missing field permission on Invoice",
+          "url": "https://github.com/mycompany/salesforce-crm/pull/44",
+          "author": "Victor",
+          "sourceBranch": "hotfix/invoice-field-permission",
+          "mergedDate": "2026-07-16T15:22:10Z"
+        },
+        {
+          "id": "55",
+          "title": "Hotfix: flow fault on Case close",
+          "url": "https://github.com/mycompany/salesforce-crm/pull/55",
+          "author": "Mariia",
+          "sourceBranch": "hotfix/case-close-flow",
+          "mergedDate": "2026-07-29T09:48:31Z"
+        },
+        {
+          "id": "63",
+          "title": "Fix: test class data setup",
+          "url": "https://github.com/mycompany/salesforce-crm/pull/63",
+          "author": "Romain",
+          "sourceBranch": "fix/test-data-setup",
+          "mergedDate": "2026-08-07T13:05:44Z"
+        },
+        {
+          "id": "76",
+          "title": "Hotfix: invoice rounding",
+          "url": "https://github.com/mycompany/salesforce-crm/pull/76",
+          "author": "Mariia",
+          "sourceBranch": "hotfix/invoice-rounding",
+          "mergedDate": "2026-08-21T16:31:02Z"
+        },
+        {
+          "id": "85",
+          "title": "Fix: contract reminder date",
+          "url": "https://github.com/mycompany/salesforce-crm/pull/85",
+          "author": "Victor",
+          "sourceBranch": "fix/contract-reminder-date",
+          "mergedDate": "2026-08-27T10:17:56Z"
+        },
+        {
+          "id": "98",
+          "title": "Hotfix: territory batch scope",
+          "url": "https://github.com/mycompany/salesforce-crm/pull/98",
+          "author": "Romain",
+          "sourceBranch": "hotfix/territory-batch-scope",
+          "mergedDate": "2026-09-09T14:40:13Z"
+        },
+        {
+          "id": "106",
+          "title": "Fix: quote PDF footer",
+          "url": "https://github.com/mycompany/salesforce-crm/pull/106",
+          "author": "Mariia",
+          "sourceBranch": "fix/quote-pdf-footer",
+          "mergedDate": "2026-09-18T11:26:39Z"
+        },
+        {
+          "id": "113",
+          "title": "Hotfix: case routing queue",
+          "url": "https://github.com/mycompany/salesforce-crm/pull/113",
+          "author": "Victor",
+          "sourceBranch": "hotfix/case-routing-queue",
+          "mergedDate": "2026-09-29T08:54:20Z"
+        },
+        {
+          "id": "126",
+          "title": "CRM-1061 Fix opportunity trigger recursion",
+          "url": "https://github.com/mycompany/salesforce-crm/pull/126",
+          "author": "Victor",
+          "sourceBranch": "hotfix/opportunity-trigger-recursion",
+          "mergedDate": "2026-10-07T12:09:48Z"
+        }
+      ],
+      "attention": [
+        {
+          "code": "stalePullRequests",
+          "severity": "warning",
+          "message": "4 Pull Request(s) open for more than 7 days, oldest: CRM-1042 Account hierarchy (12 days)",
+          "url": "https://github.com/mycompany/salesforce-crm/pull/128"
+        }
+      ]
+    },
+    {
+      "name": "uat",
+      "level": 20,
+      "isProduction": false,
+      "oldestRunDate": "2026-07-14T07:45:02Z",
+      "metrics": {
+        "deploymentFrequency": {
+          "perDay": 0.32,
+          "perWeek": 2.3,
+          "level": "high",
+          "previousPerWeek": 2
+        },
+        "leadTime": {
+          "medianDays": 3.2,
+          "p90Days": 7.9,
+          "avgDays": 3.8,
+          "level": "high",
+          "previousMedianDays": 3.9
+        },
+        "changeFailureRate": {
+          "percent": 9.4,
+          "level": "high",
+          "previousPercent": 6.5
+        },
+        "mttr": {
+          "medianHours": 6,
+          "avgHours": 6.6,
+          "recoveries": 3,
+          "level": "high",
+          "previousMedianHours": 9.5
+        },
+        "reworkRate": {
+          "percent": 6.3,
+          "level": "high",
+          "previousPercent": 6.3
+        },
+        "changeLeadTime": {
+          "medianDays": 4.1,
+          "p90Days": 9.6,
+          "avgDays": 4.7,
+          "previousMedianDays": 4.9,
+          "changes": 106,
+          "level": "high",
+          "weeks": [
+            {
+              "week": "2026-W29",
+              "medianDays": 4.3
+            },
+            {
+              "week": "2026-W30",
+              "medianDays": 3.7
+            },
+            {
+              "week": "2026-W31",
+              "medianDays": 4.8
+            },
+            {
+              "week": "2026-W32",
+              "medianDays": 4
+            },
+            {
+              "week": "2026-W33",
+              "medianDays": 3.5
+            },
+            {
+              "week": "2026-W34",
+              "medianDays": 5.1
+            },
+            {
+              "week": "2026-W35",
+              "medianDays": 4.5
+            },
+            {
+              "week": "2026-W36",
+              "medianDays": 3.8
+            },
+            {
+              "week": "2026-W37",
+              "medianDays": 3.9
+            },
+            {
+              "week": "2026-W38",
+              "medianDays": 4.7
+            },
+            {
+              "week": "2026-W39",
+              "medianDays": 3.6
+            },
+            {
+              "week": "2026-W40",
+              "medianDays": 4.1
+            },
+            {
+              "week": "2026-W41",
+              "medianDays": 4.2
+            }
+          ]
+        }
+      },
+      "supplementary": {
+        "deploymentDuration": {
+          "median": 11.5,
+          "p90": 16.2,
+          "avg": 12.1
+        },
+        "queueTime": {
+          "median": 0.6,
+          "p90": 2.4,
+          "avg": 0.9
+        },
+        "prCycleTime": {
+          "median": 2.6,
+          "p90": 6.8,
+          "avg": 3.2
+        },
+        "changeVolume": {
+          "prsPerWeek": 2.3,
+          "deploymentsPerWeek": 2.3
+        },
+        "validationSuccessRate": 92.8
+      },
+      "counts": {
+        "deployments": 32,
+        "succeeded": 29,
+        "failed": 3,
+        "canceled": 1,
+        "validations": 69,
+        "pullRequests": 30,
+        "openPullRequests": 5
+      },
+      "weeks": [
+        {
+          "week": "2026-W29",
+          "succeeded": 2,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 5,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 3.4
+        },
+        {
+          "week": "2026-W30",
+          "succeeded": 3,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 6,
+          "validationsFailed": 1,
+          "leadTimeMedianDays": 2.8
+        },
+        {
+          "week": "2026-W31",
+          "succeeded": 2,
+          "failed": 1,
+          "canceled": 0,
+          "validations": 6,
+          "validationsFailed": 1,
+          "leadTimeMedianDays": 3.9
+        },
+        {
+          "week": "2026-W32",
+          "succeeded": 2,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 5,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 3.1
+        },
+        {
+          "week": "2026-W33",
+          "succeeded": 3,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 6,
+          "validationsFailed": 1,
+          "leadTimeMedianDays": 2.6
+        },
+        {
+          "week": "2026-W34",
+          "succeeded": 1,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 3,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 4.2
+        },
+        {
+          "week": "2026-W35",
+          "succeeded": 2,
+          "failed": 1,
+          "canceled": 0,
+          "validations": 6,
+          "validationsFailed": 1,
+          "leadTimeMedianDays": 3.6
+        },
+        {
+          "week": "2026-W36",
+          "succeeded": 3,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 6,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 2.9
+        },
+        {
+          "week": "2026-W37",
+          "succeeded": 2,
+          "failed": 0,
+          "canceled": 1,
+          "validations": 5,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 3
+        },
+        {
+          "week": "2026-W38",
+          "succeeded": 2,
+          "failed": 1,
+          "canceled": 0,
+          "validations": 6,
+          "validationsFailed": 1,
+          "leadTimeMedianDays": 3.8
+        },
+        {
+          "week": "2026-W39",
+          "succeeded": 3,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 6,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 2.7
+        },
+        {
+          "week": "2026-W40",
+          "succeeded": 2,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 5,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 3.2
+        },
+        {
+          "week": "2026-W41",
+          "succeeded": 2,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 4,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 3.3
+        }
+      ],
+      "failedDeployments": [
+        {
+          "date": "2026-09-16T09:26:00Z",
+          "runName": "Process Deployment (sfdx-hardis)",
+          "runUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/38020464864",
+          "triggeredBy": "Mariia",
+          "pullRequest": {
+            "id": "118",
+            "title": "Promotion: integration to uat",
+            "url": "https://github.com/mycompany/salesforce-crm/pull/118",
+            "author": "Nadia Ferreira"
+          },
+          "recoveryHours": 4.3
+        },
+        {
+          "date": "2026-08-25T15:44:00Z",
+          "runName": "Process Deployment (sfdx-hardis)",
+          "runUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/38020462991",
+          "triggeredBy": "Romain",
+          "pullRequest": {
+            "id": "92",
+            "title": "Promotion: integration to uat",
+            "url": "https://github.com/mycompany/salesforce-crm/pull/92",
+            "author": "Romain"
+          },
+          "recoveryHours": 6
+        },
+        {
+          "date": "2026-07-30T10:12:00Z",
+          "runName": "Process Deployment (sfdx-hardis)",
+          "runUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/38020461118",
+          "triggeredBy": "Mariia",
+          "pullRequest": {
+            "id": "59",
+            "title": "Promotion: integration to uat",
+            "url": "https://github.com/mycompany/salesforce-crm/pull/59",
+            "author": "Mariia"
+          },
+          "recoveryHours": 9.4
+        }
+      ],
+      "slowPullRequests": [
+        {
+          "id": "92",
+          "title": "Promotion: integration to uat",
+          "url": "https://github.com/mycompany/salesforce-crm/pull/92",
+          "author": "Romain",
+          "cycleDays": 9.2
+        },
+        {
+          "id": "71",
+          "title": "Promotion: integration to uat",
+          "url": "https://github.com/mycompany/salesforce-crm/pull/71",
+          "author": "Mariia",
+          "cycleDays": 7.6
+        }
+      ],
+      "hotfixPullRequests": [
+        {
+          "id": "78",
+          "title": "Hotfix: invoice rounding",
+          "url": "https://github.com/mycompany/salesforce-crm/pull/78",
+          "author": "Mariia",
+          "sourceBranch": "hotfix/invoice-rounding",
+          "mergedDate": "2026-08-24T09:12:27Z"
+        },
+        {
+          "id": "115",
+          "title": "Hotfix: case routing queue",
+          "url": "https://github.com/mycompany/salesforce-crm/pull/115",
+          "author": "Victor",
+          "sourceBranch": "hotfix/case-routing-queue",
+          "mergedDate": "2026-09-30T10:33:51Z"
+        }
+      ],
+      "attention": []
+    },
+    {
+      "name": "preprod",
+      "level": 30,
+      "isProduction": false,
+      "oldestRunDate": "2026-07-28T13:20:15Z",
+      "metrics": {
+        "deploymentFrequency": {
+          "perDay": 0.11,
+          "perWeek": 0.8,
+          "level": "medium",
+          "previousPerWeek": 0.9
+        },
+        "leadTime": {
+          "medianDays": 9.5,
+          "p90Days": 14.3,
+          "avgDays": 9.9,
+          "level": "medium",
+          "previousMedianDays": 8.1
+        },
+        "changeFailureRate": {
+          "percent": 23.1,
+          "level": "low",
+          "previousPercent": 15.4
+        },
+        "mttr": {
+          "medianHours": 26,
+          "avgHours": 26,
+          "recoveries": 2,
+          "level": "medium",
+          "previousMedianHours": 18
+        },
+        "reworkRate": {
+          "percent": 7.7,
+          "level": "high",
+          "previousPercent": 8.3
+        },
+        "changeLeadTime": {
+          "medianDays": 12.6,
+          "p90Days": 21.4,
+          "avgDays": 13.5,
+          "previousMedianDays": 11.8,
+          "changes": 83,
+          "level": "medium",
+          "weeks": [
+            {
+              "week": "2026-W29",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W30",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W31",
+              "medianDays": 11.5
+            },
+            {
+              "week": "2026-W32",
+              "medianDays": 13.3
+            },
+            {
+              "week": "2026-W33",
+              "medianDays": 12.2
+            },
+            {
+              "week": "2026-W34",
+              "medianDays": 13
+            },
+            {
+              "week": "2026-W35",
+              "medianDays": 11.9
+            },
+            {
+              "week": "2026-W36",
+              "medianDays": 12.6
+            },
+            {
+              "week": "2026-W37",
+              "medianDays": 14.4
+            },
+            {
+              "week": "2026-W38",
+              "medianDays": 12.5
+            },
+            {
+              "week": "2026-W39",
+              "medianDays": 12.7
+            },
+            {
+              "week": "2026-W40",
+              "medianDays": 13.2
+            },
+            {
+              "week": "2026-W41",
+              "medianDays": null
+            }
+          ]
+        }
+      },
+      "supplementary": {
+        "deploymentDuration": {
+          "median": 18.4,
+          "p90": 27.5,
+          "avg": 19.6
+        },
+        "queueTime": {
+          "median": 0.8,
+          "p90": 3.1,
+          "avg": 1.2
+        },
+        "prCycleTime": {
+          "median": 4.1,
+          "p90": 11.5,
+          "avg": 5.3
+        },
+        "changeVolume": {
+          "prsPerWeek": 0.9,
+          "deploymentsPerWeek": 0.8
+        },
+        "validationSuccessRate": 87.5
+      },
+      "counts": {
+        "deployments": 13,
+        "succeeded": 10,
+        "failed": 3,
+        "canceled": 0,
+        "validations": 24,
+        "pullRequests": 12,
+        "openPullRequests": 1
+      },
+      "weeks": [
+        {
+          "week": "2026-W29",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W30",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W31",
+          "succeeded": 1,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 2,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 8.4
+        },
+        {
+          "week": "2026-W32",
+          "succeeded": 1,
+          "failed": 1,
+          "canceled": 0,
+          "validations": 3,
+          "validationsFailed": 1,
+          "leadTimeMedianDays": 10.2
+        },
+        {
+          "week": "2026-W33",
+          "succeeded": 1,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 2,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 9.1
+        },
+        {
+          "week": "2026-W34",
+          "succeeded": 1,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 2,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 9.9
+        },
+        {
+          "week": "2026-W35",
+          "succeeded": 1,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 2,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 8.8
+        },
+        {
+          "week": "2026-W36",
+          "succeeded": 1,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 2,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 9.5
+        },
+        {
+          "week": "2026-W37",
+          "succeeded": 1,
+          "failed": 1,
+          "canceled": 0,
+          "validations": 3,
+          "validationsFailed": 1,
+          "leadTimeMedianDays": 11.3
+        },
+        {
+          "week": "2026-W38",
+          "succeeded": 1,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 2,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 9.4
+        },
+        {
+          "week": "2026-W39",
+          "succeeded": 1,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 2,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 9.6
+        },
+        {
+          "week": "2026-W40",
+          "succeeded": 1,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 2,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 10.1
+        },
+        {
+          "week": "2026-W41",
+          "succeeded": 0,
+          "failed": 1,
+          "canceled": 0,
+          "validations": 2,
+          "validationsFailed": 1,
+          "leadTimeMedianDays": null
+        }
+      ],
+      "failedDeployments": [
+        {
+          "date": "2026-10-08T09:31:00Z",
+          "runName": "Process Deployment (sfdx-hardis)",
+          "runUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/38019881088",
+          "triggeredBy": "Romain",
+          "pullRequest": {
+            "id": "112",
+            "title": "Promotion: uat to preprod",
+            "url": "https://github.com/mycompany/salesforce-crm/pull/112",
+            "author": "Nadia Ferreira"
+          },
+          "recoveryHours": null
+        },
+        {
+          "date": "2026-09-08T11:52:00Z",
+          "runName": "Process Deployment (sfdx-hardis)",
+          "runUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/38019879215",
+          "triggeredBy": "Mariia",
+          "pullRequest": {
+            "id": "101",
+            "title": "Promotion: uat to preprod",
+            "url": "https://github.com/mycompany/salesforce-crm/pull/101",
+            "author": "Mariia"
+          },
+          "recoveryHours": 30.5
+        },
+        {
+          "date": "2026-08-05T14:06:00Z",
+          "runName": "Process Deployment (sfdx-hardis)",
+          "runUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/38019877342",
+          "triggeredBy": "Romain",
+          "pullRequest": {
+            "id": "66",
+            "title": "Promotion: uat to preprod",
+            "url": "https://github.com/mycompany/salesforce-crm/pull/66",
+            "author": "Romain"
+          },
+          "recoveryHours": 21.5
+        }
+      ],
+      "slowPullRequests": [
+        {
+          "id": "101",
+          "title": "Promotion: uat to preprod",
+          "url": "https://github.com/mycompany/salesforce-crm/pull/101",
+          "author": "Mariia",
+          "cycleDays": 14.3
+        }
+      ],
+      "hotfixPullRequests": [
+        {
+          "id": "80",
+          "title": "Hotfix: invoice rounding",
+          "url": "https://github.com/mycompany/salesforce-crm/pull/80",
+          "author": "Mariia",
+          "sourceBranch": "hotfix/invoice-rounding",
+          "mergedDate": "2026-08-25T14:02:09Z"
+        }
+      ],
+      "attention": [
+        {
+          "code": "deploymentFailing",
+          "severity": "error",
+          "message": "Deployment failed on 2026-10-08 and has not succeeded since (3 days)",
+          "url": "https://github.com/mycompany/salesforce-crm/actions/runs/38019881088"
+        },
+        {
+          "code": "failureRateUp",
+          "severity": "warning",
+          "message": "Failure rate went from 15.4 % to 23.1 % compared with the previous period",
+          "url": null
+        },
+        {
+          "code": "pipelineBacklog",
+          "severity": "warning",
+          "message": "3 change(s) waiting in preprod for more than 30 days, oldest: CRM-961 Contract renewal reminder (38 days)",
+          "url": "https://github.com/mycompany/salesforce-crm/pull/83"
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "level": 100,
+      "isProduction": true,
+      "oldestRunDate": "2026-07-16T18:03:27Z",
+      "metrics": {
+        "deploymentFrequency": {
+          "perDay": 0.07,
+          "perWeek": 0.5,
+          "level": "medium",
+          "previousPerWeek": 0.6
+        },
+        "leadTime": {
+          "medianDays": 14.2,
+          "p90Days": 19.8,
+          "avgDays": 14.5,
+          "level": "medium",
+          "previousMedianDays": 16
+        },
+        "changeFailureRate": {
+          "percent": 14.3,
+          "level": "medium",
+          "previousPercent": 0
+        },
+        "mttr": {
+          "medianHours": 0.8,
+          "avgHours": 0.8,
+          "recoveries": 1,
+          "level": "elite",
+          "previousMedianHours": null
+        },
+        "reworkRate": {
+          "percent": 0,
+          "level": "elite",
+          "previousPercent": 12.5
+        },
+        "changeLeadTime": {
+          "medianDays": 21.4,
+          "p90Days": 33.8,
+          "avgDays": 22.7,
+          "previousMedianDays": 24.9,
+          "changes": 64,
+          "level": "medium",
+          "weeks": [
+            {
+              "week": "2026-W29",
+              "medianDays": 21
+            },
+            {
+              "week": "2026-W30",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W31",
+              "medianDays": 22.3
+            },
+            {
+              "week": "2026-W32",
+              "medianDays": 21.4
+            },
+            {
+              "week": "2026-W33",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W34",
+              "medianDays": 20.1
+            },
+            {
+              "week": "2026-W35",
+              "medianDays": 23.6
+            },
+            {
+              "week": "2026-W36",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W37",
+              "medianDays": 21.2
+            },
+            {
+              "week": "2026-W38",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W39",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W40",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W41",
+              "medianDays": null
+            }
+          ]
+        }
+      },
+      "supplementary": {
+        "deploymentDuration": {
+          "median": 24.1,
+          "p90": 31,
+          "avg": 25.2
+        },
+        "queueTime": {
+          "median": 0.5,
+          "p90": 1.6,
+          "avg": 0.7
+        },
+        "prCycleTime": {
+          "median": 1.2,
+          "p90": 3.4,
+          "avg": 1.6
+        },
+        "changeVolume": {
+          "prsPerWeek": 0.5,
+          "deploymentsPerWeek": 0.5
+        },
+        "validationSuccessRate": 93.3
+      },
+      "counts": {
+        "deployments": 7,
+        "succeeded": 6,
+        "failed": 1,
+        "canceled": 0,
+        "validations": 15,
+        "pullRequests": 7,
+        "openPullRequests": 0
+      },
+      "weeks": [
+        {
+          "week": "2026-W29",
+          "succeeded": 1,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 2,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 13.8
+        },
+        {
+          "week": "2026-W30",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W31",
+          "succeeded": 1,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 2,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 15.1
+        },
+        {
+          "week": "2026-W32",
+          "succeeded": 1,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 2,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 14.2
+        },
+        {
+          "week": "2026-W33",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 1,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W34",
+          "succeeded": 1,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 2,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 12.9
+        },
+        {
+          "week": "2026-W35",
+          "succeeded": 1,
+          "failed": 1,
+          "canceled": 0,
+          "validations": 3,
+          "validationsFailed": 1,
+          "leadTimeMedianDays": 16.4
+        },
+        {
+          "week": "2026-W36",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W37",
+          "succeeded": 1,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 2,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": 14
+        },
+        {
+          "week": "2026-W38",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W39",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 1,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W40",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        },
+        {
+          "week": "2026-W41",
+          "succeeded": 0,
+          "failed": 0,
+          "canceled": 0,
+          "validations": 0,
+          "validationsFailed": 0,
+          "leadTimeMedianDays": null
+        }
+      ],
+      "failedDeployments": [
+        {
+          "date": "2026-08-27T18:40:00Z",
+          "runName": "Process Deployment (sfdx-hardis)",
+          "runUrl": "https://github.com/mycompany/salesforce-crm/actions/runs/38019102557",
+          "triggeredBy": "Victor",
+          "pullRequest": {
+            "id": "89",
+            "title": "Release 2026-08-27",
+            "url": "https://github.com/mycompany/salesforce-crm/pull/89",
+            "author": "Victor"
+          },
+          "recoveryHours": 0.8
+        }
+      ],
+      "slowPullRequests": [],
+      "hotfixPullRequests": [],
+      "attention": [
+        {
+          "code": "failureRateUp",
+          "severity": "warning",
+          "message": "Failure rate went from 0 % to 14.3 % compared with the previous period",
+          "url": null
+        },
+        {
+          "code": "noRecentDeployment",
+          "severity": "info",
+          "message": "No successful deployment for 32 days",
+          "url": "https://github.com/mycompany/salesforce-crm/actions/runs/38019146203"
+        }
+      ]
+    }
+  ],
+  "pipeline": {
+    "stages": [
+      {
+        "branch": "integration",
+        "isProduction": false,
+        "entered": 118,
+        "waiting": {
+          "count": 9,
+          "staleCount": 0,
+          "oldestDays": 5.8,
+          "medianDays": 2.7,
+          "changes": [
+            {
+              "id": "122",
+              "title": "CRM-1038 Minimize Sales User profile",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/122",
+              "author": "Lisa Chen",
+              "since": "2026-10-05T10:48:00Z",
+              "days": 5.8
+            },
+            {
+              "id": "123",
+              "title": "CRM-1044 Segment field on Account",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/123",
+              "author": "Alex Martin",
+              "since": "2026-10-06T15:36:00Z",
+              "days": 4.6
+            },
+            {
+              "id": "124",
+              "title": "CRM-1049 Opportunity stage notifications",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/124",
+              "author": "Sam Dubois",
+              "since": "2026-10-07T08:24:00Z",
+              "days": 3.9
+            },
+            {
+              "id": "125",
+              "title": "CRM-1052 Order discount approval",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/125",
+              "author": "Victor",
+              "since": "2026-10-08T03:36:00Z",
+              "days": 3.1
+            },
+            {
+              "id": "126",
+              "title": "CRM-1061 Fix opportunity trigger recursion",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/126",
+              "author": "Victor",
+              "since": "2026-10-08T13:12:00Z",
+              "days": 2.7
+            },
+            {
+              "id": "127",
+              "title": "CRM-1055 Account team sharing",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/127",
+              "author": "Mariia",
+              "since": "2026-10-09T01:12:00Z",
+              "days": 2.2
+            },
+            {
+              "id": "129",
+              "title": "CRM-1057 Case SLA milestones",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/129",
+              "author": "Romain",
+              "since": "2026-10-09T20:24:00Z",
+              "days": 1.4
+            },
+            {
+              "id": "130",
+              "title": "CRM-1058 Lead source picklist",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/130",
+              "author": "Mariia",
+              "since": "2026-10-10T08:24:00Z",
+              "days": 0.9
+            },
+            {
+              "id": "131",
+              "title": "CRM-1063 Quote line editor",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/131",
+              "author": "Victor",
+              "since": "2026-10-10T22:48:00Z",
+              "days": 0.3
+            }
+          ]
+        }
+      },
+      {
+        "branch": "uat",
+        "isProduction": false,
+        "entered": 2,
+        "waiting": {
+          "count": 14,
+          "staleCount": 0,
+          "oldestDays": 19.2,
+          "medianDays": 13.6,
+          "changes": [
+            {
+              "id": "104",
+              "title": "CRM-998 Quote PDF template",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/104",
+              "author": "Mariia",
+              "since": "2026-09-22T01:12:00Z",
+              "days": 19.2
+            },
+            {
+              "id": "106",
+              "title": "Fix: quote PDF footer",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/106",
+              "author": "Mariia",
+              "since": "2026-09-22T15:36:00Z",
+              "days": 18.6
+            },
+            {
+              "id": "108",
+              "title": "CRM-1009 Contact deduplication",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/108",
+              "author": "Romain",
+              "since": "2026-09-23T08:24:00Z",
+              "days": 17.9
+            },
+            {
+              "id": "109",
+              "title": "CRM-1011 Opportunity team roles",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/109",
+              "author": "Victor",
+              "since": "2026-09-25T22:48:00Z",
+              "days": 15.3
+            },
+            {
+              "id": "110",
+              "title": "CRM-1014 Campaign ROI report",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/110",
+              "author": "Mariia",
+              "since": "2026-09-26T10:48:00Z",
+              "days": 14.8
+            },
+            {
+              "id": "111",
+              "title": "CRM-1012 Case routing rules",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/111",
+              "author": "Victor",
+              "since": "2026-09-28T20:24:00Z",
+              "days": 12.4
+            },
+            {
+              "id": "113",
+              "title": "Hotfix: case routing queue",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/113",
+              "author": "Victor",
+              "since": "2026-09-29T13:12:00Z",
+              "days": 11.7
+            },
+            {
+              "id": "114",
+              "title": "CRM-1020 Asset warranty flow",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/114",
+              "author": "Romain",
+              "since": "2026-09-30T18:00:00Z",
+              "days": 10.5
+            },
+            {
+              "id": "116",
+              "title": "CRM-1022 Partner onboarding",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/116",
+              "author": "Mariia",
+              "since": "2026-10-03T03:36:00Z",
+              "days": 8.1
+            },
+            {
+              "id": "117",
+              "title": "CRM-1018 Lead conversion assistant",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/117",
+              "author": "Romain",
+              "since": "2026-10-04T15:36:00Z",
+              "days": 6.6
+            }
+          ]
+        }
+      },
+      {
+        "branch": "preprod",
+        "isProduction": false,
+        "entered": 1,
+        "waiting": {
+          "count": 22,
+          "staleCount": 3,
+          "oldestDays": 38.4,
+          "medianDays": 27,
+          "changes": [
+            {
+              "id": "83",
+              "title": "CRM-961 Contract renewal reminder",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/83",
+              "author": "Victor",
+              "since": "2026-09-02T20:24:00Z",
+              "days": 38.4
+            },
+            {
+              "id": "85",
+              "title": "Fix: contract reminder date",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/85",
+              "author": "Victor",
+              "since": "2026-09-05T03:36:00Z",
+              "days": 36.1
+            },
+            {
+              "id": "88",
+              "title": "CRM-969 Service entitlement",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/88",
+              "author": "Romain",
+              "since": "2026-09-07T13:12:00Z",
+              "days": 33.7
+            },
+            {
+              "id": "90",
+              "title": "CRM-972 Price book sync",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/90",
+              "author": "Mariia",
+              "since": "2026-09-11T18:00:00Z",
+              "days": 29.5
+            },
+            {
+              "id": "93",
+              "title": "CRM-978 Email template branding",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/93",
+              "author": "Victor",
+              "since": "2026-09-14T01:12:00Z",
+              "days": 27.2
+            },
+            {
+              "id": "95",
+              "title": "CRM-981 Survey invitation flow",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/95",
+              "author": "Mariia",
+              "since": "2026-09-14T10:48:00Z",
+              "days": 26.8
+            },
+            {
+              "id": "96",
+              "title": "CRM-975 Territory sync batch",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/96",
+              "author": "Romain",
+              "since": "2026-09-16T22:48:00Z",
+              "days": 24.3
+            },
+            {
+              "id": "98",
+              "title": "Hotfix: territory batch scope",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/98",
+              "author": "Romain",
+              "since": "2026-09-18T08:24:00Z",
+              "days": 22.9
+            },
+            {
+              "id": "99",
+              "title": "CRM-987 Lead scoring flow",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/99",
+              "author": "Victor",
+              "since": "2026-09-19T15:36:00Z",
+              "days": 21.6
+            },
+            {
+              "id": "100",
+              "title": "CRM-992 Dashboard for renewals",
+              "url": "https://github.com/mycompany/salesforce-crm/pull/100",
+              "author": "Mariia",
+              "since": "2026-09-20T20:24:00Z",
+              "days": 20.4
+            }
+          ]
+        }
+      },
+      {
+        "branch": "main",
+        "isProduction": true,
+        "entered": 0,
+        "waiting": {
+          "count": 0,
+          "staleCount": 0,
+          "oldestDays": null,
+          "medianDays": null,
+          "changes": []
+        }
+      }
+    ],
+    "steps": [
+      {
+        "from": "integration",
+        "to": "uat",
+        "changes": 104,
+        "viaPromotion": 0,
+        "waitDays": {
+          "median": 2.9,
+          "p90": 6.4,
+          "avg": 3.3
+        },
+        "previousMedianDays": 3.6
+      },
+      {
+        "from": "uat",
+        "to": "preprod",
+        "changes": 82,
+        "viaPromotion": 12,
+        "waitDays": {
+          "median": 8.4,
+          "p90": 15.1,
+          "avg": 8.9
+        },
+        "previousMedianDays": 6.7
+      },
+      {
+        "from": "preprod",
+        "to": "main",
+        "changes": 64,
+        "viaPromotion": 0,
+        "waitDays": {
+          "median": 7.6,
+          "p90": 13.9,
+          "avg": 8.2
+        },
+        "previousMedianDays": 11.2
+      }
+    ],
+    "timeToProduction": {
+      "medianDays": 21.4,
+      "p90Days": 33.8,
+      "avgDays": 22.7,
+      "level": "medium",
+      "previousMedianDays": 24.9,
+      "changes": 64
+    },
+    "bottleneck": {
+      "from": "uat",
+      "to": "preprod"
+    },
+    "weeks": [
+      {
+        "week": "2026-W29",
+        "medianDays": 21,
+        "changes": 9
+      },
+      {
+        "week": "2026-W30",
+        "medianDays": null,
+        "changes": 0
+      },
+      {
+        "week": "2026-W31",
+        "medianDays": 22.3,
+        "changes": 10
+      },
+      {
+        "week": "2026-W32",
+        "medianDays": 21.4,
+        "changes": 11
+      },
+      {
+        "week": "2026-W33",
+        "medianDays": null,
+        "changes": 0
+      },
+      {
+        "week": "2026-W34",
+        "medianDays": 20.1,
+        "changes": 11
+      },
+      {
+        "week": "2026-W35",
+        "medianDays": 23.6,
+        "changes": 12
+      },
+      {
+        "week": "2026-W36",
+        "medianDays": null,
+        "changes": 0
+      },
+      {
+        "week": "2026-W37",
+        "medianDays": 21.2,
+        "changes": 11
+      },
+      {
+        "week": "2026-W38",
+        "medianDays": null,
+        "changes": 0
+      },
+      {
+        "week": "2026-W39",
+        "medianDays": null,
+        "changes": 0
+      },
+      {
+        "week": "2026-W40",
+        "medianDays": null,
+        "changes": 0
+      },
+      {
+        "week": "2026-W41",
+        "medianDays": null,
+        "changes": 0
+      }
+    ],
+    "slowestChanges": [
+      {
+        "id": "61",
+        "title": "CRM-940 Partner portal sharing",
+        "url": "https://github.com/mycompany/salesforce-crm/pull/61",
+        "author": "Romain",
+        "enteredAt": "integration",
+        "totalDays": 45.4,
+        "stages": [
+          {
+            "branch": "integration",
+            "arrivedAt": "2026-08-06T16:36:00Z",
+            "deployedAt": "2026-08-06T16:47:00Z"
+          },
+          {
+            "branch": "uat",
+            "arrivedAt": "2026-08-12T09:20:00Z",
+            "deployedAt": "2026-08-12T09:31:00Z"
+          },
+          {
+            "branch": "preprod",
+            "arrivedAt": "2026-08-26T13:54:00Z",
+            "deployedAt": "2026-08-26T14:05:00Z"
+          },
+          {
+            "branch": "main",
+            "arrivedAt": "2026-09-10T18:11:00Z",
+            "deployedAt": "2026-09-10T18:22:00Z"
+          }
+        ]
+      },
+      {
+        "id": "52",
+        "title": "CRM-921 Knowledge article layout",
+        "url": "https://github.com/mycompany/salesforce-crm/pull/52",
+        "author": "Mariia",
+        "enteredAt": "integration",
+        "totalDays": 38.4,
+        "stages": [
+          {
+            "branch": "integration",
+            "arrivedAt": "2026-07-28T14:21:00Z",
+            "deployedAt": "2026-07-28T14:32:00Z"
+          },
+          {
+            "branch": "uat",
+            "arrivedAt": "2026-08-04T10:05:00Z",
+            "deployedAt": "2026-08-04T10:16:00Z"
+          },
+          {
+            "branch": "preprod",
+            "arrivedAt": "2026-08-19T13:29:00Z",
+            "deployedAt": "2026-08-19T13:40:00Z"
+          },
+          {
+            "branch": "main",
+            "arrivedAt": "2026-08-27T19:17:00Z",
+            "deployedAt": "2026-08-27T19:28:00Z"
+          }
+        ]
+      },
+      {
+        "id": "58",
+        "title": "CRM-933 Order validation rule",
+        "url": "https://github.com/mycompany/salesforce-crm/pull/58",
+        "author": "Victor",
+        "enteredAt": "integration",
+        "totalDays": 35.2,
+        "stages": [
+          {
+            "branch": "integration",
+            "arrivedAt": "2026-08-03T09:54:00Z",
+            "deployedAt": "2026-08-03T10:05:00Z"
+          },
+          {
+            "branch": "uat",
+            "arrivedAt": "2026-08-12T09:20:00Z",
+            "deployedAt": "2026-08-12T09:31:00Z"
+          },
+          {
+            "branch": "preprod",
+            "arrivedAt": "2026-08-26T13:54:00Z",
+            "deployedAt": "2026-08-26T14:05:00Z"
+          },
+          {
+            "branch": "main",
+            "arrivedAt": "2026-09-03T18:00:00Z",
+            "deployedAt": "2026-09-03T18:11:00Z"
+          }
+        ]
+      },
+      {
+        "id": "74",
+        "title": "CRM-954 Invoice rounding",
+        "url": "https://github.com/mycompany/salesforce-crm/pull/74",
+        "author": "Mariia",
+        "enteredAt": "integration",
+        "totalDays": 30.3,
+        "stages": [
+          {
+            "branch": "integration",
+            "arrivedAt": "2026-08-14T11:09:00Z",
+            "deployedAt": "2026-08-14T11:20:00Z"
+          },
+          {
+            "branch": "uat",
+            "arrivedAt": "2026-08-20T09:01:00Z",
+            "deployedAt": "2026-08-20T09:12:00Z"
+          },
+          {
+            "branch": "preprod",
+            "arrivedAt": "2026-09-02T15:25:00Z",
+            "deployedAt": "2026-09-02T15:36:00Z"
+          },
+          {
+            "branch": "main",
+            "arrivedAt": "2026-09-10T18:11:00Z",
+            "deployedAt": "2026-09-10T18:22:00Z"
+          }
+        ]
+      },
+      {
+        "id": "41",
+        "title": "CRM-915 Campaign member status",
+        "url": "https://github.com/mycompany/salesforce-crm/pull/41",
+        "author": "Victor",
+        "enteredAt": "integration",
+        "totalDays": 25.4,
+        "stages": [
+          {
+            "branch": "integration",
+            "arrivedAt": "2026-07-15T09:03:00Z",
+            "deployedAt": "2026-07-15T09:14:00Z"
+          },
+          {
+            "branch": "uat",
+            "arrivedAt": "2026-07-22T09:51:00Z",
+            "deployedAt": "2026-07-22T10:02:00Z"
+          },
+          {
+            "branch": "preprod",
+            "arrivedAt": "2026-07-29T14:07:00Z",
+            "deployedAt": "2026-07-29T14:18:00Z"
+          },
+          {
+            "branch": "main",
+            "arrivedAt": "2026-08-07T18:29:00Z",
+            "deployedAt": "2026-08-07T18:40:00Z"
+          }
+        ]
+      }
+    ],
+    "untraced": 0
+  },
+  "contributors": [
+    {
+      "name": "Victor",
+      "pullRequests": 67,
+      "avgCycleDays": 2.4,
+      "deploymentsTriggered": 70,
+      "failedDeployments": 7
+    },
+    {
+      "name": "Mariia",
+      "pullRequests": 60,
+      "avgCycleDays": 3.1,
+      "deploymentsTriggered": 63,
+      "failedDeployments": 7
+    },
+    {
+      "name": "Romain",
+      "pullRequests": 48,
+      "avgCycleDays": 4.6,
+      "deploymentsTriggered": 49,
+      "failedDeployments": 6
+    }
+  ]
+}

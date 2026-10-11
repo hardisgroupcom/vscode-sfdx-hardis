@@ -172,6 +172,10 @@ export class ThemeUtils {
         vscode: "git-merge",
         hardis: "merge.svg",
       },
+      "vscode-sfdx-hardis.showDoraMetrics": {
+        vscode: "graph",
+        hardis: "gauge.svg",
+      },
       "hardis:work:save": { vscode: "save", hardis: "save.svg" },
       "hardis:work:resetselection": { vscode: "history", hardis: "reset.svg" },
       "vscode-sfdx-hardis.showPipeline": {
