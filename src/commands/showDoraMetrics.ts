@@ -108,9 +108,8 @@ export function registerShowDoraMetrics(commands: Commands) {
           await loadDoraMetrics(current, data?.refresh === true);
         } else if (type === "connectToGit") {
           // Heavy module: loaded when the button is clicked, not with the panel
-          const { connectGitProvider } = await import(
-            "../utils/gitProviders/connectGitProvider"
-          );
+          const { connectGitProvider } =
+            await import("../utils/gitProviders/connectGitProvider");
           if (await connectGitProvider()) {
             await loadDoraMetrics(current, false);
           }
