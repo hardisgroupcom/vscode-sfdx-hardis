@@ -51,7 +51,8 @@ const GIT_PULL_REFUSAL_COOLDOWN_MS = 60 * 60 * 1000;
 const promptedRemoteUpdatesByBranch = new Map<string, string>();
 const declinedRemotePullPromptUntilByBranch = new Map<string, number>();
 const notifiedAutoFixBranchHeadByPullRequest = new Map<string, string>();
-// One listener for the pipeline panel, replaced when the panel is opened again
+// One listener for the pipeline panel. It is disposed with the panel, and
+// replaced when the command runs again over a panel that is still open.
 let windowFocusListener: vscode.Disposable | undefined;
 async function getOriginBranchUpdateStatus(branchName: string): Promise<{
   remoteHeadSha: string | null;
@@ -255,15 +256,11 @@ export function registerShowPipeline(commands: Commands) {
       // so it is told here, and decides whether there is anything to ask.
       windowFocusListener?.dispose();
       windowFocusListener = vscode.window.onDidChangeWindowState((state) => {
-        if (panel.isDisposed()) {
-          windowFocusListener?.dispose();
-          windowFocusListener = undefined;
-          return;
-        }
-        if (state.focused) {
+        if (state.focused && !panel.isDisposed()) {
           panel.sendMessage({ type: "windowFocused", data: {} });
         }
       });
+      panel.addDisposable(windowFocusListener);
 
       let pipelineProperties: PipelineInfo | null = null;
 
@@ -347,7 +344,24 @@ export function registerShowPipeline(commands: Commands) {
       // driven by the LWC itself (overlay on the existing diagram for a manual
       // refresh, nothing for an auto/interval refresh), so this routine does NOT
       // push mermaidLoading:true up front — that would replace the diagram.
-      const loadPipelineFull = async (opts?: { resetGit?: boolean }) => {
+      // One at a time. The timer of the panel, its Refresh button and the
+      // check for a new Pull Request can all ask for a reload within the same
+      // second. Two of them running together both rename the draft actions
+      // file of a Pull Request that was just found, and the second fails on a
+      // file that is no longer there. Whoever asks while a load runs gets that
+      // load: it is as fresh as theirs would have been.
+      let fullLoadInFlight: Promise<void> | null = null;
+      const loadPipelineFull = (opts?: {
+        resetGit?: boolean;
+      }): Promise<void> => {
+        if (!fullLoadInFlight) {
+          fullLoadInFlight = runPipelineFullLoad(opts).finally(() => {
+            fullLoadInFlight = null;
+          });
+        }
+        return fullLoadInFlight;
+      };
+      const runPipelineFullLoad = async (opts?: { resetGit?: boolean }) => {
         try {
           const full = await loadAllPipelineInfo({
             browseGitProvider: true,
@@ -407,9 +421,18 @@ export function registerShowPipeline(commands: Commands) {
         // a reload only if it does. Never a reload to find out.
         else if (type === "checkCurrentBranchPullRequest") {
           try {
-            const provider = await GitProvider.getInstance();
             const branch = await getCurrentGitBranch();
-            if (provider?.isActive && branch) {
+            // A major branch is merged into, it has no Pull Request to wait
+            // for: somebody who works on integration all day must not cost a
+            // call each time they come back to VS Code
+            const majorBranches: string[] = (
+              pipelineProperties?.pipelineData?.orgs || []
+            ).map((org: any) => org?.branchName);
+            if (!branch || majorBranches.includes(branch)) {
+              return;
+            }
+            const provider = await GitProvider.getInstance();
+            if (provider?.isActive) {
               const found =
                 await provider.getActivePullRequestFromBranch(branch);
               if (found) {
