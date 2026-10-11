@@ -2361,6 +2361,50 @@ suite("Documentation screenshots", function () {
     });
   });
 
+  // DORA metrics panel, from the report the mocked sf CLI answers: the overview of the four
+  // major branches, the tab of a branch that needs attention, and the contributors. The tab
+  // is a deep link of the command, so no click is needed.
+  test("DORA metrics", async function () {
+    if (!shouldTake("dora-metrics")) {
+      this.skip();
+    }
+    const shots = [
+      { name: "dora-metrics", tab: "overview" },
+      { name: "dora-metrics-branch", tab: "preprod" },
+      { name: "dora-metrics-contributors", tab: "contributors" },
+    ];
+    for (const shot of shots) {
+      await shootPanel(panelManager, {
+        name: shot.name,
+        command: "vscode-sfdx-hardis.showDoraMetrics",
+        lwcId: "s-dora-metrics",
+        commandArgs: { period: 90, tab: shot.tab },
+        ready: (initData) => initData.loading === false && !!initData.report,
+        settleMs: 3000,
+        force: true,
+      });
+    }
+    // The whole tab of a branch, down to its lists: two zoom levels out
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await sleep(800);
+    try {
+      await shootPanel(panelManager, {
+        name: "dora-metrics-branch-full",
+        command: "vscode-sfdx-hardis.showDoraMetrics",
+        lwcId: "s-dora-metrics",
+        commandArgs: { period: 90, tab: "uat" },
+        ready: (initData) => initData.loading === false && !!initData.report,
+        settleMs: 3000,
+        force: true,
+      });
+    } finally {
+      await vscode.commands.executeCommand("workbench.action.zoomIn");
+      await vscode.commands.executeCommand("workbench.action.zoomIn");
+      await sleep(800);
+    }
+  });
+
   // The Metadata Retriever doing the job it exists for: "what did I just change
   // in my org, and which of it belongs to my User Story". The training walks a
   // beginner through it before every publish, so it needs the results list and

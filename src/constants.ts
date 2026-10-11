@@ -8,7 +8,7 @@ const showBanner = false;
 export const RECOMMENDED_SFDX_CLI_VERSION: string | null = "2.151.6";
 export const NODE_JS_MINIMUM_VERSION = 24.0;
 // Pre-release identifiers are ignored when comparing, so 8.0.0-beta.x satisfies it
-export const RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION: string = "8.15.0";
+export const RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION: string = "8.17.0";
 export const BANNER_IMAGE_URL = showBanner
   ? "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/refs/heads/main/docs/assets/images/cloudity-banner.png"
   : false;
@@ -31,6 +31,7 @@ export const PANEL_DOC_URLS: Record<string, string> = {
     DOCSITE_URL + "/vscode-extension-metadata-dependencies/",
   "s-data-workbench": DOCSITE_URL + "/vscode-extension-data-workbench/",
   "s-files-workbench": DOCSITE_URL + "/vscode-extension-files-workbench/",
+  "s-dora-metrics": DOCSITE_URL + "/hardis/doc/salesforce-devops-dora-report/",
 };
 export const SFDX_HARDIS_REPOSITORY_URL =
   "https://github.com/hardisgroupcom/sfdx-hardis";

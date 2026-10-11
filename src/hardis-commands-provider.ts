@@ -314,6 +314,14 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             requiresProject: true,
             helpUrl: DOCSITE_URL + "/hardis/project/promotion/create/",
           },
+          {
+            id: "vscode-sfdx-hardis.showDoraMetrics",
+            label: t("doraMetrics"),
+            tooltip: t("doraMetricsTooltip"),
+            command: "vscode-sfdx-hardis.showDoraMetrics",
+            requiresProject: true,
+            helpUrl: DOCSITE_URL + "/hardis/doc/salesforce-devops-dora-report/",
+          },
         ],
       },
       {

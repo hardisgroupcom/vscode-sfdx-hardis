@@ -396,6 +396,11 @@
         "icon": "$(rocket)"
       },
       {
+        "command": "vscode-sfdx-hardis.showDoraMetrics",
+        "title": "SFDX Hardis: DORA metrics",
+        "icon": "$(graph)"
+      },
+      {
         "command": "vscode-sfdx-hardis.showSetup",
         "title": "SFDX Hardis: Setup",
         "icon": "$(tools)"
