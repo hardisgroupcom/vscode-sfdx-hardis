@@ -31,6 +31,7 @@ import {
   getWorkspaceRoot,
 } from "../utils";
 import { collectProviderCredentialEnvVars } from "../utils/providerCredentials";
+import { connectGitProvider } from "../utils/gitProviders/connectGitProvider";
 import { isSafeJobUrl } from "../utils/pullRequestUrlUtils";
 import { t } from "../i18n/i18n";
 import path from "path";
@@ -917,50 +918,13 @@ export function registerShowPipeline(commands: Commands) {
         }
         // Authenticate or re-authenticate to Git provider
         else if (type === "connectToGit") {
-          const gitProvider = await GitProvider.getInstance();
-          if (!gitProvider) {
-            vscode.window.showErrorMessage(t("noGitProviderDetected"));
-            return;
-          }
-          Logger.log(
-            `Authenticating to Git provider: ${gitProvider.repoInfo?.providerName} at ${gitProvider.repoInfo?.host}`,
-          );
-          let authRes: boolean | null;
-          try {
-            authRes = await gitProvider.authenticate();
-          } catch (e) {
-            const viewLogsLabel = t("viewLogs");
-            vscode.window
-              .showErrorMessage(t("gitProviderAuthError"), viewLogsLabel)
-              .then((action) => {
-                if (action === viewLogsLabel) {
-                  Logger.showOutputChannel();
-                }
-              });
-            Logger.log(
-              `Error during Git provider authentication: ${String(e)}`,
-            );
-            return;
-          }
-          if (authRes === true) {
-            vscode.window.showInformationMessage(
-              t("successfullyConnectedToGitProvider"),
-            );
+          if (await connectGitProvider()) {
             // Reuse the just-authenticated provider instance instead of rebuilding it
             // (resetGit: false). Rebuilding would re-run initialize() and call
             // getSession({ createIfNone: false }) immediately after the new VS Code
             // sign-in, which can momentarily return no session and wrongly report the
             // provider as not connected.
             await loadPipelineStaged();
-          } else if (authRes === false) {
-            const viewLogsLabel = t("viewLogs");
-            vscode.window
-              .showErrorMessage(t("failedConnectGitProvider"), viewLogsLabel)
-              .then((action) => {
-                if (action === viewLogsLabel) {
-                  Logger.showOutputChannel();
-                }
-              });
           }
         } else if (type === "connectToTicketing") {
           const ticketProvider = await TicketProvider.getInstance({

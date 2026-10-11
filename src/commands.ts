@@ -33,6 +33,7 @@ import { registerShowPackageXml } from "./commands/packageXml";
 import { registerGitMergeDriverToggle } from "./commands/gitMergeDriver";
 import { registerShowDocumentationWorkbench } from "./commands/showDocumentationWorkbench";
 import { registerShowBackpromote } from "./commands/showBackpromote";
+import { registerShowDoraMetrics } from "./commands/showDoraMetrics";
 import { t } from "./i18n/i18n";
 import { ExtraCommands } from "./utils/extraCommands";
 import { refreshAllRefreshableUis } from "./utils/uiUtils";
@@ -109,6 +110,7 @@ export class Commands {
     registerShowPackageXml(this);
     registerShowDocumentationWorkbench(this);
     registerShowBackpromote(this);
+    registerShowDoraMetrics(this);
     this.registerSearchCommands();
   }
 

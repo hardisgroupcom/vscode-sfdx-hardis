@@ -200,6 +200,7 @@ export class LwcUiPanel {
     } = {
       "s-apex-tests-select": t("apexTests"),
       "s-backpromote": t("backpromote"),
+      "s-dora-metrics": t("doraMetrics"),
       "s-command-execution": t("commandExecution"),
       "s-data-workbench": t("dataImportExportWorkbench"),
       "s-deployment-action": t("deploymentActionDetails"),

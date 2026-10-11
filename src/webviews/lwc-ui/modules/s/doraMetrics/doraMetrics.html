@@ -1,0 +1,518 @@
+<template>
+  <div class="slds-p-around_x-small blue-back">
+    <div class="hardis-page-head">
+      <div class="hardis-tile featured indigo">
+        <lightning-icon icon-name="utility:chart" size="medium"></lightning-icon>
+      </div>
+      <div class="hardis-page-head-text">
+        <h1 class="hardis-page-title">{i18n.doraMetrics}</h1>
+        <p class="hardis-page-subtitle">{i18n.doraMetricsSubtitle}</p>
+      </div>
+      <div class="hardis-page-head-actions">
+        <lightning-combobox
+          class="dora-period"
+          label={i18n.doraPeriodLabel}
+          variant="label-hidden"
+          value={periodValue}
+          options={periodOptions}
+          onchange={handlePeriodChange}
+        ></lightning-combobox>
+        <lightning-button
+          variant="neutral"
+          label={i18n.refreshLabel}
+          icon-name="utility:refresh"
+          disabled={refreshDisabled}
+          onclick={handleRefresh}
+        ></lightning-button>
+        <lightning-button-menu
+          label={i18n.doraExport}
+          alternative-text={i18n.doraExport}
+          icon-name="utility:download"
+          variant="border"
+          menu-alignment="right"
+          disabled={exportDisabled}
+        >
+          <lightning-menu-item
+            value="markdown"
+            label={i18n.doraExportMarkdown}
+            icon-name="utility:file"
+            onclick={handleExportMarkdown}
+          ></lightning-menu-item>
+          <lightning-menu-item
+            value="pdf"
+            label={i18n.doraExportPdf}
+            icon-name="utility:pdf_ext"
+            onclick={handleExportPdf}
+          ></lightning-menu-item>
+        </lightning-button-menu>
+        <lightning-button-icon
+          icon-name="utility:help"
+          variant="border-filled"
+          alternative-text={i18n.documentation}
+          title={i18n.documentation}
+          onclick={handleOpenPanelDoc}
+        ></lightning-button-icon>
+      </div>
+    </div>
+
+    <!-- Repository, dates of the period, and the branches whose data starts later -->
+    <template lwc:if={hasMetaItems}>
+      <ul class="dora-meta">
+        <template for:each={metaItems} for:item="item">
+          <li key={item.key} class="dora-meta-item">{item.text}</li>
+        </template>
+      </ul>
+    </template>
+
+    <!-- First reading: nothing to show yet -->
+    <template lwc:if={showLoading}>
+      <div class="hardis-panel-body">
+        <div class="dora-loading" role="status">
+          <!-- lightning-spinner centers itself in its closest positioned parent: this box -->
+          <div class="dora-loading-spinner">
+            <lightning-spinner alternative-text={loadingText} size="small" variant="brand"></lightning-spinner>
+          </div>
+          <p class="dora-loading-text">{loadingText}</p>
+        </div>
+      </div>
+    </template>
+
+    <!-- The last result stays on screen while the git provider is read again -->
+    <template lwc:if={isRefreshing}>
+      <div class="hardis-note dora-refreshing" role="status">
+        <div class="dora-refreshing-spinner">
+          <lightning-spinner alternative-text={refreshingText} size="x-small" variant="brand"></lightning-spinner>
+        </div>
+        <p>{refreshingText}</p>
+      </div>
+    </template>
+
+    <template lwc:if={showNoGitProvider}>
+      <div class="hardis-panel-body dora-state">
+        <div class="hardis-empty">
+          <div class="hardis-tile featured amber">
+            <lightning-icon icon-name="utility:key" size="small"></lightning-icon>
+          </div>
+          <h3 class="hardis-empty-title">{i18n.doraNoGitProviderTitle}</h3>
+          <p class="hardis-empty-desc">{i18n.doraNoGitProviderDesc}</p>
+          <div class="hardis-empty-actions">
+            <lightning-button variant="neutral" class="hardis-btn-tinted-blue" label={i18n.connectToGit} onclick={handleConnectToGit}></lightning-button>
+            <lightning-button variant="neutral" icon-name="utility:refresh" label={i18n.tryAgainLabel} onclick={handleRetry}></lightning-button>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template lwc:if={showOldCli}>
+      <div class="hardis-panel-body dora-state">
+        <div class="hardis-empty">
+          <div class="hardis-tile featured amber">
+            <lightning-icon icon-name="utility:upload" size="small"></lightning-icon>
+          </div>
+          <h3 class="hardis-empty-title">{i18n.doraOldCliTitle}</h3>
+          <p class="hardis-empty-desc">{oldCliDescription}</p>
+          <div class="hardis-empty-actions">
+            <lightning-button variant="neutral" class="hardis-btn-tinted-blue" label={i18n.openSetup} onclick={handleOpenSetup}></lightning-button>
+            <lightning-button variant="neutral" icon-name="utility:refresh" label={i18n.tryAgainLabel} onclick={handleRetry}></lightning-button>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- Any other failure, a token that cannot read the CI jobs included: the message of sfdx-hardis -->
+    <template lwc:if={showCliError}>
+      <div class="hardis-panel-body dora-state">
+        <div class="hardis-empty">
+          <div class="hardis-tile featured red">
+            <lightning-icon icon-name="utility:warning" size="small"></lightning-icon>
+          </div>
+          <h3 class="hardis-empty-title">{i18n.doraErrorTitle}</h3>
+          <div class="hardis-note error dora-error-message" role="alert">
+            <p>{errorMessage}</p>
+          </div>
+          <div class="hardis-empty-actions">
+            <lightning-button variant="neutral" class="hardis-btn-tinted-blue" icon-name="utility:refresh" label={i18n.tryAgainLabel} onclick={handleRetry}></lightning-button>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template lwc:if={showEmpty}>
+      <div class="hardis-panel-body">
+        <div class="hardis-empty">
+          <div class="hardis-tile featured slate">
+            <lightning-icon icon-name="utility:chart" size="small"></lightning-icon>
+          </div>
+          <h3 class="hardis-empty-title">{i18n.doraEmptyTitle}</h3>
+          <p class="hardis-empty-desc">{i18n.doraEmptyDesc}</p>
+        </div>
+      </div>
+    </template>
+
+    <template lwc:if={showContent}>
+      <div class="hardis-panel-body">
+        <lightning-tabset active-tab-value={activeTab}>
+          <!-- Overview: every major branch side by side -->
+          <lightning-tab label={i18n.doraOverview} value="overview" icon-name="utility:table" onactive={handleTabActive}>
+            <!-- Pipeline flow: each branch with what waits in it, the wait between two branches, the time to production -->
+            <template lwc:if={hasPipeline}>
+              <div class="hardis-group-label dora-first-label">{i18n.doraPipelineFlow}</div>
+              <p class="hardis-group-desc dora-pipeline-desc">{i18n.doraPipelineFlowDesc}</p>
+              <div class="dora-pipeline">
+                <div class="dora-pipeline-strip">
+                  <template for:each={view.pipeline.items} for:item="item">
+                    <template lwc:if={item.isStage}>
+                      <button
+                        key={item.key}
+                        type="button"
+                        class={item.className}
+                        title={item.title}
+                        data-branch={item.branch}
+                        aria-pressed={item.selected}
+                        disabled={item.disabled}
+                        onclick={handleSelectStage}
+                      >
+                        <span class="hardis-branch-chip">{item.branch}</span>
+                        <span class="dora-stage-count">{item.waitingText}</span>
+                        <template lwc:if={item.hasWaiting}>
+                          <span class="dora-stage-sub">{item.oldestText}</span>
+                        </template>
+                      </button>
+                    </template>
+                    <template lwc:else>
+                      <div key={item.key} class="dora-step" title={item.title}>
+                        <lightning-icon icon-name="utility:forward" size="xx-small" alternative-text={item.route}></lightning-icon>
+                        <template lwc:if={item.hasWait}>
+                          <span class="dora-step-wait">{item.waitText}</span>
+                        </template>
+                        <span>{item.changesText}</span>
+                        <template lwc:if={item.hasPromotion}>
+                          <span>{item.promotionText}</span>
+                        </template>
+                        <template lwc:if={item.hasPrevious}>
+                          <span class="slds-assistive-text">{item.previousText}</span>
+                        </template>
+                        <template lwc:if={item.isBottleneck}>
+                          <span class="hardis-pill hardis-status-pending"><span class="hardis-pill-dot"></span>{i18n.doraLongestWait}</span>
+                        </template>
+                      </div>
+                    </template>
+                  </template>
+                </div>
+                <template lwc:if={view.pipeline.hasTotal}>
+                  <div class="hardis-card dora-tile dora-pipeline-total">
+                    <div class="hardis-prop-key">{view.pipeline.total.label}</div>
+                    <template lwc:if={view.pipeline.total.hasValue}>
+                      <div class="dora-tile-value">{view.pipeline.total.valueText}</div>
+                    </template>
+                    <div class="dora-cell">
+                      <span class={view.pipeline.total.pillClass}><span class="hardis-pill-dot"></span>{view.pipeline.total.levelLabel}</span>
+                      <template lwc:if={view.pipeline.total.hasTrend}>
+                        <span class="dora-trend" title={view.pipeline.total.previousText}>
+                          <lightning-icon icon-name={view.pipeline.total.trendIcon} size="xx-small" alternative-text={view.pipeline.total.previousText}></lightning-icon>
+                        </span>
+                      </template>
+                    </div>
+                    <p class="hardis-card-desc">{view.pipeline.total.changesText}</p>
+                    <template lwc:if={view.pipeline.total.hasPrevious}>
+                      <p class="hardis-card-desc">{view.pipeline.total.previousText}</p>
+                    </template>
+                  </div>
+                </template>
+              </div>
+              <!-- Steps between branches that are not drawn side by side -->
+              <template lwc:if={view.pipeline.hasOtherSteps}>
+                <ul class="dora-other-steps">
+                  <template for:each={view.pipeline.otherSteps} for:item="step">
+                    <li key={step.key} title={step.title}>
+                      <span class="dora-step-route">{step.route}</span>
+                      <template lwc:if={step.hasWait}>
+                        <span class="dora-step-wait">{step.waitText}</span>
+                      </template>
+                      <span>{step.changesText}</span>
+                      <template lwc:if={step.hasPrevious}>
+                        <span class="slds-assistive-text">{step.previousText}</span>
+                      </template>
+                    </li>
+                  </template>
+                </ul>
+              </template>
+              <template lwc:if={view.pipeline.hasUntraced}>
+                <p class="hardis-group-desc dora-none">{view.pipeline.untracedText}</p>
+              </template>
+              <template lwc:if={view.pipeline.hasSelected}>
+                <div class="hardis-group-label" role="status">{view.pipeline.selectedTitle}</div>
+                <s-hardis-datatable
+                  key-field="key"
+                  data={view.pipeline.waitingRows}
+                  columns={waitingColumns}
+                  column-widths-mode="auto"
+                  hide-checkbox-column
+                  onrowaction={handlePullRequestRowAction}
+                ></s-hardis-datatable>
+                <template lwc:if={view.pipeline.selectedLimited}>
+                  <p class="hardis-group-desc dora-none">{view.pipeline.selectedLimitedText}</p>
+                </template>
+              </template>
+              <div class="dora-lists dora-pipeline-lists">
+                <button type="button" class="hardis-textlink dora-toggle" data-key={view.pipeline.slowestKey} aria-expanded={view.pipeline.slowestOpen} disabled={view.pipeline.slowestDisabled} onclick={handleToggleList}>
+                  <lightning-icon icon-name={view.pipeline.slowestIcon} size="xx-small"></lightning-icon>
+                  <span>{view.pipeline.slowestTitle}</span>
+                </button>
+                <template lwc:if={view.pipeline.slowestOpen}>
+                  <s-hardis-datatable
+                    key-field="key"
+                    data={view.pipeline.slowestRows}
+                    columns={slowestColumns}
+                    column-widths-mode="auto"
+                    hide-checkbox-column
+                    onrowaction={handlePullRequestRowAction}
+                  ></s-hardis-datatable>
+                </template>
+              </div>
+            </template>
+
+            <template lwc:if={hasAttention}>
+              <div class="hardis-group-label dora-first-label">{attentionTitle}</div>
+              <ul class="dora-attention">
+                <template for:each={view.attention} for:item="item">
+                  <li key={item.key} class="dora-attention-item">
+                    <span class={item.pillClass}><span class="hardis-pill-dot"></span>{item.pillLabel}</span>
+                    <span class="dora-attention-message">{item.message}</span>
+                    <template lwc:if={item.hasUrl}>
+                      <lightning-button variant="neutral" label={i18n.openLabel} icon-name="utility:new_window" icon-position="right" data-url={item.url} onclick={handleOpenAttention}></lightning-button>
+                    </template>
+                  </li>
+                </template>
+              </ul>
+            </template>
+
+            <div class="dora-overview-scroll">
+              <table class="slds-table slds-table_bordered slds-table_cell-buffer dora-overview">
+                <thead>
+                  <tr class="slds-line-height_reset">
+                    <th scope="col">{i18n.doraBranchColumn}</th>
+                    <th scope="col">{i18n.doraDeploymentsPerWeek}</th>
+                    <th scope="col">{trendColumnLabel}</th>
+                    <th scope="col">{i18n.doraLeadTimeMedian}</th>
+                    <th scope="col">{i18n.doraFailureRate}</th>
+                    <th scope="col">{i18n.doraRecoveryMedian}</th>
+                    <th scope="col">{i18n.doraRework}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template for:each={view.branches} for:item="branch">
+                    <tr
+                      key={branch.key}
+                      class="dora-overview-row"
+                      tabindex="0"
+                      title={branch.rowLabel}
+                      data-tab={branch.tabValue}
+                      onclick={handleOpenBranch}
+                      onkeydown={handleBranchRowKeydown}
+                    >
+                      <th scope="row">
+                        <div class="dora-cell">
+                          <span class="hardis-branch-chip">{branch.name}</span>
+                          <template lwc:if={branch.isProduction}>
+                            <span class={branch.productionPillClass}>{i18n.doraProduction}</span>
+                          </template>
+                        </div>
+                      </th>
+                      <td>
+                        <div class="dora-cell">
+                          <template lwc:if={branch.frequency.hasValue}>
+                            <span class="dora-cell-value">{branch.frequency.valueText}</span>
+                          </template>
+                          <span class={branch.frequency.pillClass}><span class="hardis-pill-dot"></span>{branch.frequency.levelLabel}</span>
+                          <template lwc:if={branch.frequency.hasTrend}>
+                            <span class="dora-trend" title={branch.frequency.previousText}>
+                              <lightning-icon icon-name={branch.frequency.trendIcon} size="xx-small" alternative-text={branch.frequency.previousText}></lightning-icon>
+                            </span>
+                          </template>
+                        </div>
+                      </td>
+                      <td>
+                        <svg class="dora-sparkline" viewBox={branch.sparkline.viewBox} role="img" aria-label={branch.sparkline.title}>
+                          <polyline class={branch.sparkline.lineClass} points={branch.sparkline.points}></polyline>
+                          <template lwc:if={branch.sparkline.hasLastPoint}>
+                            <circle class="dora-sparkline-dot" cx={branch.sparkline.lastX} cy={branch.sparkline.lastY} r="2.2"></circle>
+                          </template>
+                        </svg>
+                      </td>
+                      <template for:each={branch.otherMetrics} for:item="metric">
+                        <td key={metric.key}>
+                          <div class="dora-cell">
+                            <template lwc:if={metric.hasValue}>
+                              <span class="dora-cell-value">{metric.valueText}</span>
+                            </template>
+                            <span class={metric.pillClass}><span class="hardis-pill-dot"></span>{metric.levelLabel}</span>
+                            <template lwc:if={metric.hasTrend}>
+                              <span class="dora-trend" title={metric.previousText}>
+                                <lightning-icon icon-name={metric.trendIcon} size="xx-small" alternative-text={metric.previousText}></lightning-icon>
+                              </span>
+                            </template>
+                          </div>
+                        </td>
+                      </template>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </lightning-tab>
+
+          <!-- One tab per major branch -->
+          <template for:each={view.branches} for:item="branch">
+            <lightning-tab key={branch.key} label={branch.tabLabel} value={branch.tabValue} onactive={handleTabActive}>
+              <template lwc:if={branch.hasAttention}>
+                <div class="hardis-group-label dora-first-label">{branch.attentionTitle}</div>
+                <ul class="dora-attention">
+                  <template for:each={branch.attention} for:item="item">
+                    <li key={item.key} class="dora-attention-item">
+                      <span class={item.pillClass}><span class="hardis-pill-dot"></span>{item.pillLabel}</span>
+                      <span class="dora-attention-message">{item.message}</span>
+                      <template lwc:if={item.hasUrl}>
+                        <lightning-button variant="neutral" label={i18n.openLabel} icon-name="utility:new_window" icon-position="right" data-url={item.url} onclick={handleOpenAttention}></lightning-button>
+                      </template>
+                    </li>
+                  </template>
+                </ul>
+              </template>
+
+              <div class="dora-tiles">
+                <template for:each={branch.metrics} for:item="metric">
+                  <div key={metric.key} class="hardis-card dora-tile">
+                    <div class="hardis-prop-key">{metric.label}</div>
+                    <template lwc:if={metric.hasValue}>
+                      <div class="dora-tile-value">{metric.valueText}</div>
+                    </template>
+                    <div class="dora-cell">
+                      <span class={metric.pillClass}><span class="hardis-pill-dot"></span>{metric.levelLabel}</span>
+                      <template lwc:if={metric.hasTrend}>
+                        <span class="dora-trend" title={metric.previousText}>
+                          <lightning-icon icon-name={metric.trendIcon} size="xx-small" alternative-text={metric.previousText}></lightning-icon>
+                        </span>
+                      </template>
+                    </div>
+                    <template lwc:if={metric.hasPrevious}>
+                      <p class="hardis-card-desc">{metric.previousText}</p>
+                    </template>
+                    <template lwc:if={metric.hasDetail}>
+                      <p class="hardis-card-desc">{metric.detailText}</p>
+                    </template>
+                  </div>
+                </template>
+              </div>
+
+              <div class="hardis-group-label">{i18n.doraDeploymentsPerWeek}</div>
+              <div class="dora-chart-box">
+                <svg class="dora-chart" viewBox={branch.chart.viewBox} role="img" aria-label={branch.chart.label} preserveAspectRatio="xMidYMid meet">
+                  <template for:each={branch.chart.yTicks} for:item="tick">
+                    <g key={tick.key}>
+                      <line class="dora-chart-grid" x1={branch.chart.plotLeft} x2={branch.chart.plotRight} y1={tick.y} y2={tick.y}></line>
+                      <text class="dora-chart-axis" x={tick.labelX} y={tick.labelY} text-anchor="end">{tick.label}</text>
+                    </g>
+                  </template>
+                  <template for:each={branch.chart.bars} for:item="bar">
+                    <g key={bar.key}>
+                      <title>{bar.title}</title>
+                      <template lwc:if={bar.hasSucceeded}>
+                        <rect class="dora-bar-succeeded" x={bar.x} y={bar.succeededY} width={bar.width} height={bar.succeededHeight} rx="2"></rect>
+                      </template>
+                      <template lwc:if={bar.hasFailed}>
+                        <rect class="dora-bar-failed" x={bar.x} y={bar.failedY} width={bar.width} height={bar.failedHeight} rx="2"></rect>
+                      </template>
+                    </g>
+                  </template>
+                  <template for:each={branch.chart.labels} for:item="label">
+                    <text key={label.key} class="dora-chart-axis" x={label.x} y={label.y} text-anchor="middle">{label.text}</text>
+                  </template>
+                </svg>
+                <template lwc:if={branch.chart.isEmpty}>
+                  <p class="dora-chart-empty">{i18n.doraNoDeploymentInPeriod}</p>
+                </template>
+                <div class="dora-legend">
+                  <span class="dora-legend-item"><span class="dora-legend-swatch dora-legend-succeeded"></span>{i18n.doraSucceeded}</span>
+                  <span class="dora-legend-item"><span class="dora-legend-swatch dora-legend-failed"></span>{i18n.doraFailed}</span>
+                </div>
+              </div>
+
+              <div class="hardis-group-label">{branch.failedTitle}</div>
+              <template lwc:if={branch.hasFailed}>
+                <s-hardis-datatable
+                  key-field="key"
+                  data={branch.failedRows}
+                  columns={failedColumns}
+                  column-widths-mode="auto"
+                  hide-checkbox-column
+                  onrowaction={handleFailedRowAction}
+                ></s-hardis-datatable>
+              </template>
+              <template lwc:else>
+                <p class="hardis-group-desc dora-none">{i18n.doraNoFailedDeployment}</p>
+              </template>
+
+              <div class="hardis-group-label">{i18n.doraSupplementaryMetrics}</div>
+              <div class="hardis-prop-grid">
+                <template for:each={branch.supplementary} for:item="item">
+                  <div key={item.key} class="hardis-prop">
+                    <div class="hardis-prop-key">{item.label}</div>
+                    <div class="hardis-prop-value">{item.value}</div>
+                  </div>
+                </template>
+              </div>
+
+              <!-- The lists behind the lead time and the rework rate, closed until asked for -->
+              <div class="dora-lists">
+                <button type="button" class="hardis-textlink dora-toggle" data-key={branch.slowKey} aria-expanded={branch.slowOpen} disabled={branch.slowDisabled} onclick={handleToggleList}>
+                  <lightning-icon icon-name={branch.slowIcon} size="xx-small"></lightning-icon>
+                  <span>{branch.slowTitle}</span>
+                </button>
+                <template lwc:if={branch.slowOpen}>
+                  <s-hardis-datatable
+                    key-field="key"
+                    data={branch.slowRows}
+                    columns={slowColumns}
+                    column-widths-mode="auto"
+                    hide-checkbox-column
+                    onrowaction={handlePullRequestRowAction}
+                  ></s-hardis-datatable>
+                </template>
+                <button type="button" class="hardis-textlink dora-toggle" data-key={branch.hotfixKey} aria-expanded={branch.hotfixOpen} disabled={branch.hotfixDisabled} onclick={handleToggleList}>
+                  <lightning-icon icon-name={branch.hotfixIcon} size="xx-small"></lightning-icon>
+                  <span>{branch.hotfixTitle}</span>
+                </button>
+                <template lwc:if={branch.hotfixOpen}>
+                  <s-hardis-datatable
+                    key-field="key"
+                    data={branch.hotfixRows}
+                    columns={hotfixColumns}
+                    column-widths-mode="auto"
+                    hide-checkbox-column
+                    onrowaction={handlePullRequestRowAction}
+                  ></s-hardis-datatable>
+                </template>
+              </div>
+            </lightning-tab>
+          </template>
+
+          <lightning-tab label={i18n.doraContributors} value="contributors" icon-name="utility:people" onactive={handleTabActive}>
+            <template lwc:if={hasContributors}>
+              <s-hardis-datatable
+                key-field="key"
+                data={view.contributors}
+                columns={contributorColumns}
+                column-widths-mode="fixed"
+                hide-checkbox-column
+              ></s-hardis-datatable>
+            </template>
+            <template lwc:else>
+              <p class="hardis-group-desc dora-none">{i18n.doraNoContributor}</p>
+            </template>
+          </lightning-tab>
+        </lightning-tabset>
+      </div>
+    </template>
+  </div>
+</template>

@@ -85,6 +85,7 @@ const lwcModules = {
   "s-package-xml": () => import("s/packageXml"),
   "s-data-workbench": () => import("s/dataWorkbench"),
   "s-backpromote": () => import("s/backpromote"),
+  "s-dora-metrics": () => import("s/doraMetrics"),
   "s-files-workbench": () => import("s/filesWorkbench"),
   "s-documentation-workbench": () => import("s/documentationWorkbench"),
   "s-documentation-config": () => import("s/documentationConfig"),

@@ -1,0 +1,405 @@
+/* Layout and chart paint only: type, pills, cards and tables come from resources/global-theme.css.
+   Every color is a palette token, which switches between the light and the dark theme by itself. */
+
+.dora-period {
+  min-width: 11rem;
+}
+
+.dora-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 1.1rem;
+  margin: -0.4rem 0 0.8rem;
+  padding: 0 0.4rem;
+  list-style: none;
+  font-size: 0.78rem;
+  color: var(--slds-g-color-neutral-base-50);
+}
+
+.dora-meta-item {
+  overflow-wrap: anywhere;
+}
+
+.dora-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 2.5rem 1rem;
+}
+
+.dora-loading-spinner {
+  position: relative;
+  width: 2rem;
+  height: 2rem;
+}
+
+.dora-loading-text {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--slds-g-color-neutral-base-50);
+}
+
+.dora-refreshing {
+  align-items: center;
+  margin-bottom: 0.8rem;
+}
+
+.dora-refreshing-spinner {
+  position: relative;
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+}
+
+.dora-state {
+  margin-bottom: 0.9rem;
+}
+
+.dora-error-message {
+  max-width: 70ch;
+  text-align: left;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.dora-first-label {
+  margin-top: 0.3rem;
+}
+
+/* Needs attention */
+
+.dora-attention {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.dora-attention-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--slds-g-color-neutral-base-90);
+  border-radius: 8px;
+}
+
+.dora-attention-message {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.82rem;
+  color: var(--slds-g-color-neutral-base-10);
+  overflow-wrap: anywhere;
+}
+
+/* Overview table */
+
+.dora-overview-scroll {
+  overflow-x: auto;
+}
+
+.dora-overview th,
+.dora-overview td {
+  vertical-align: middle;
+}
+
+.dora-overview-row {
+  cursor: pointer;
+}
+
+.dora-overview-row:hover > td,
+.dora-overview-row:hover > th {
+  background: var(--slds-g-color-neutral-base-95);
+}
+
+.dora-overview-row:focus-visible {
+  outline: 2px solid var(--slds-g-color-palette-cloud-blue-40);
+  outline-offset: -2px;
+}
+
+.dora-cell {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.45rem;
+}
+
+.dora-cell-value {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--slds-g-color-neutral-base-10);
+}
+
+.dora-trend {
+  display: inline-flex;
+  align-items: center;
+  --slds-c-icon-color-foreground-default: var(--slds-g-color-neutral-base-50);
+}
+
+.dora-sparkline {
+  display: block;
+  width: 104px;
+  height: 24px;
+}
+
+.dora-sparkline-line {
+  fill: none;
+  stroke: var(--slds-g-color-palette-cloud-blue-40);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dora-sparkline-empty {
+  stroke: var(--slds-g-color-neutral-base-80);
+}
+
+.dora-sparkline-dot {
+  fill: var(--slds-g-color-palette-cloud-blue-40);
+  stroke: none;
+}
+
+/* Branch tab */
+
+.dora-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.7rem;
+  margin-top: 0.3rem;
+}
+
+.dora-tile {
+  gap: 0.35rem;
+}
+
+.dora-tile-value {
+  font-size: 1.45rem;
+  line-height: 1.2;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+  color: var(--slds-g-color-neutral-base-10);
+}
+
+.dora-chart-box {
+  position: relative;
+  max-width: 760px;
+}
+
+.dora-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.dora-chart-grid {
+  stroke: var(--slds-g-color-neutral-base-90);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.dora-chart-axis {
+  fill: var(--slds-g-color-neutral-base-50);
+  stroke: none;
+  font-size: 10px;
+}
+
+.dora-bar-succeeded {
+  fill: var(--slds-g-color-palette-green-50);
+  stroke: none;
+}
+
+.dora-bar-failed {
+  fill: var(--slds-g-color-palette-red-50);
+  stroke: none;
+}
+
+.dora-chart-empty {
+  position: absolute;
+  inset: 35% 0 auto 0;
+  margin: 0;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--slds-g-color-neutral-base-50);
+}
+
+.dora-legend {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.2rem;
+  font-size: 0.76rem;
+  color: var(--slds-g-color-neutral-base-50);
+}
+
+.dora-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.dora-legend-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.dora-legend-succeeded {
+  background: var(--slds-g-color-palette-green-50);
+}
+
+.dora-legend-failed {
+  background: var(--slds-g-color-palette-red-50);
+}
+
+.dora-none {
+  margin: 0 0 0.4rem;
+}
+
+.dora-lists {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin-top: 1.1rem;
+}
+
+.dora-lists s-hardis-datatable {
+  align-self: stretch;
+}
+
+.dora-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+}
+
+/* Pipeline flow */
+
+.dora-pipeline-desc {
+  margin: 0 0 0.5rem;
+}
+
+.dora-pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.7rem;
+  margin-bottom: 0.6rem;
+}
+
+.dora-pipeline-strip {
+  display: flex;
+  flex: 1 1 30rem;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.dora-stage {
+  display: flex;
+  flex: 1 1 7.5rem;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.3rem;
+  min-width: 7.5rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--slds-g-color-neutral-base-90);
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dora-stage:hover:not(:disabled) {
+  background: var(--slds-g-color-neutral-base-95);
+}
+
+.dora-stage:focus-visible {
+  outline: 2px solid var(--slds-g-color-palette-cloud-blue-40);
+  outline-offset: 1px;
+}
+
+.dora-stage:disabled {
+  cursor: default;
+}
+
+.dora-stage-selected {
+  border-color: var(--slds-g-color-palette-cloud-blue-40);
+  box-shadow: inset 0 0 0 1px var(--slds-g-color-palette-cloud-blue-40);
+}
+
+.dora-stage-count {
+  font-size: 0.95rem;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+  color: var(--slds-g-color-neutral-base-10);
+}
+
+.dora-stage:disabled .dora-stage-count {
+  font-weight: normal;
+  color: var(--slds-g-color-neutral-base-50);
+}
+
+.dora-stage-sub {
+  font-size: 0.74rem;
+  color: var(--slds-g-color-neutral-base-50);
+}
+
+.dora-step {
+  display: flex;
+  flex: 0 1 6.5rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  min-width: 5.5rem;
+  font-size: 0.74rem;
+  text-align: center;
+  color: var(--slds-g-color-neutral-base-50);
+  --slds-c-icon-color-foreground-default: var(--slds-g-color-neutral-base-50);
+}
+
+.dora-step-wait {
+  font-size: 0.9rem;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+  color: var(--slds-g-color-neutral-base-10);
+}
+
+.dora-pipeline-total {
+  flex: 0 1 14rem;
+  min-width: 11rem;
+}
+
+.dora-other-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 1.2rem;
+  margin: 0 0 0.6rem;
+  padding: 0;
+  list-style: none;
+  font-size: 0.78rem;
+  color: var(--slds-g-color-neutral-base-50);
+}
+
+.dora-other-steps li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.dora-step-route {
+  color: var(--slds-g-color-neutral-base-10);
+}
+
+.dora-pipeline-lists {
+  margin: 0.5rem 0 1rem;
+}

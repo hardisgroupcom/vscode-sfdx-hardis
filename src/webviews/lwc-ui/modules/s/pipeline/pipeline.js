@@ -1995,11 +1995,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     });
   }
 
-  handleGenerateDoraReport() {
+  // The DORA metrics panel: it exports the report from its own menu
+  handleShowDoraMetrics() {
     window.sendMessageToVSCode({
-      type: "runCommand",
+      type: "runVsCodeCommand",
       data: {
-        command: "sf hardis:doc:dora-report",
+        command: "vscode-sfdx-hardis.showDoraMetrics",
       },
     });
   }

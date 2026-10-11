@@ -860,6 +860,67 @@ async function main() {
     return 0;
   }
 
+  // DORA metrics panel: four major branches over 13 weeks, with failures, items needing
+  // attention and the values of the previous period. The report command itself (no
+  // --data-only) runs like any other sfdx-hardis command, in the command runner.
+  // SF_MOCK_DORA=old simulates an sfdx-hardis that does not know the flags of the panel,
+  // =legacy one that answers the report read from an org, =error a failed reading.
+  if (
+    first === "hardis:doc:dora-report" &&
+    args.includes("--data-only") &&
+    args.includes("--json")
+  ) {
+    const variant = process.env.SF_MOCK_DORA || "";
+    if (variant === "old") {
+      console.log(
+        JSON.stringify({
+          code: "NonexistentFlagsError",
+          name: "NonexistentFlagsError",
+          message: "Nonexistent flag: --data-only\nSee more help with --help",
+          status: 2,
+          stack: "",
+        }),
+      );
+      return 2;
+    }
+    if (variant === "error") {
+      console.log(
+        JSON.stringify({
+          name: "SfError",
+          message:
+            "The token cannot read the CI jobs of https://github.com/mycompany/salesforce-crm (HTTP 403)",
+          status: 1,
+          stack: "",
+        }),
+      );
+      return 1;
+    }
+    if (variant === "legacy") {
+      outputJsonIfRequested(
+        { status: 0, result: { outputString: "DORA report generated" } },
+        "",
+      );
+      return 0;
+    }
+    // A fixture universe can serve its own report, so the panel shows its own repository,
+    // branches and people. Without one, the base report is used, unchanged.
+    const universeReport = process.env.SF_MOCK_UNIVERSE_DIR
+      ? path.join(process.env.SF_MOCK_UNIVERSE_DIR, "dora-report.json")
+      : "";
+    const reportFile =
+      universeReport && fs.existsSync(universeReport)
+        ? universeReport
+        : path.join(__dirname, "dora-report.json");
+    const report = JSON.parse(fs.readFileSync(reportFile, "utf8"));
+    // The fixture holds one period: only its length follows the flag
+    const period = parseInt(args[args.indexOf("--period") + 1], 10);
+    if (args.includes("--period") && Number.isInteger(period)) {
+      report.period.days = period;
+    }
+    outputJsonIfRequested({ status: 0, result: report }, "");
+    return 0;
+  }
+
   // Backpromote panel: plan, prepare, run, confirm and reset answer plan documents
   if (
     first === "hardis:work:backpromote" &&

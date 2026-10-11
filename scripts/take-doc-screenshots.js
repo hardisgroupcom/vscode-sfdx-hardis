@@ -44,7 +44,25 @@ const NPM_PACKAGES = [
 // The extension requires this minimal sfdx-hardis version (see
 // RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION in src/constants.ts). While v8 is not
 // published, npm still returns a v7, which the Setup panel would flag in red.
-const MIN_SFDX_HARDIS_VERSION = "8.0.0";
+// The version the extension asks for can also be ahead of the last one published on npm,
+// while the sfdx-hardis release that goes with a new panel is not out yet.
+const MIN_SFDX_HARDIS_VERSION = requiredSfdxHardisVersion() || "8.0.0";
+
+function requiredSfdxHardisVersion() {
+  try {
+    const constants = fs.readFileSync(
+      path.join(repoRoot, "src", "constants.ts"),
+      "utf8",
+    );
+    const match =
+      /RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION[^=]*=\s*"(\d+\.\d+\.\d+)"/.exec(
+        constants,
+      );
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
+}
 
 // Same problem one level up: the extension pins the Salesforce CLI version it
 // recommends (RECOMMENDED_SFDX_CLI_VERSION in src/constants.ts), and that pin
