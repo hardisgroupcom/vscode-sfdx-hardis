@@ -232,6 +232,73 @@ suite("DORA metrics panel", () => {
     assert.deepStrictEqual(sanitizeDoraReport({}).branches, []);
   });
 
+  test("the addresses of the pipeline flow are checked too, and its lists are lists", () => {
+    const pipeline = sanitizeDoraReport({
+      branches: [],
+      pipeline: {
+        bottleneck: null,
+        untraced: 2,
+        stages: [
+          {
+            branch: "uat",
+            waiting: {
+              count: 2,
+              changes: [
+                { id: "1", url: "command:evil" },
+                { id: "2", url: "https://example.com/pull/2" },
+                null,
+              ],
+            },
+          },
+          // A stage sfdx-hardis wrote without what waits in it
+          { branch: "main" },
+          null,
+        ],
+        steps: "not a list",
+        slowestChanges: [
+          { id: "3", url: "javascript:alert(1)", stages: null },
+          { id: "4", url: "https://example.com/pull/4", stages: [null, {}] },
+        ],
+      },
+    }).pipeline;
+    assert.deepStrictEqual(
+      pipeline.stages.map((stage: any) => stage.branch),
+      ["uat", "main"],
+    );
+    assert.deepStrictEqual(
+      pipeline.stages[0].waiting.changes.map((change: any) => change.url),
+      ["", "https://example.com/pull/2"],
+    );
+    assert.strictEqual(pipeline.stages[0].waiting.count, 2);
+    assert.deepStrictEqual(pipeline.stages[1].waiting.changes, []);
+    assert.deepStrictEqual(pipeline.steps, []);
+    assert.deepStrictEqual(pipeline.weeks, []);
+    assert.deepStrictEqual(
+      pipeline.slowestChanges.map((change: any) => [
+        change.url,
+        change.stages.length,
+      ]),
+      [
+        ["", 0],
+        ["https://example.com/pull/4", 1],
+      ],
+    );
+    // What the sanitizer does not know is left as sfdx-hardis wrote it
+    assert.strictEqual(pipeline.untraced, 2);
+  });
+
+  test("a report without a pipeline flow has none: sfdx-hardis computed none, or is older", () => {
+    assert.strictEqual(sanitizeDoraReport({ branches: [] }).pipeline, null);
+    assert.strictEqual(
+      sanitizeDoraReport({ branches: [], pipeline: null }).pipeline,
+      null,
+    );
+    assert.strictEqual(
+      sanitizeDoraReport({ branches: [], pipeline: "x" }).pipeline,
+      null,
+    );
+  });
+
   test("the fixture of the mocked sf CLI is left as it is by the sanitizer", () => {
     const fixture = loadFixture();
     assert.deepStrictEqual(sanitizeDoraReport(fixture), fixture);

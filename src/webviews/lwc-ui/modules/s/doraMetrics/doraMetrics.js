@@ -124,7 +124,11 @@ export default class DoraMetrics extends SharedMixin(LightningElement) {
     this.deepLinkTab = null;
     // And so does the branch whose waiting changes it asked to list, or none
     this.selectedStage = (data && data.waiting) || null;
-    this.applyState(data || {});
+    this.applyState(
+      this.selectedStage && !(data && data.tab)
+        ? { ...data, tab: OVERVIEW_TAB }
+        : data || {},
+    );
   }
 
   @api
@@ -319,7 +323,7 @@ export default class DoraMetrics extends SharedMixin(LightningElement) {
         initialWidth: 150,
       },
       {
-        label: this.i18n.doraTimeToProduction,
+        label: this.i18n.doraTotalTimeColumn,
         fieldName: "totalLabel",
         type: "text",
         initialWidth: 160,
@@ -801,6 +805,9 @@ export default class DoraMetrics extends SharedMixin(LightningElement) {
     const stepView = (step, index) => {
       const route = this.t("doraStepRoute", { from: step.from, to: step.to });
       const viaPromotion = Number(step.viaPromotion) || 0;
+      const previousText = this.t("doraPreviousPeriod", {
+        value: this.formatUnit("doraValueDays", step.previousMedianDays),
+      });
       return {
         key: `step-${index}-${step.from}-${step.to}`,
         isStep: true,
@@ -816,10 +823,11 @@ export default class DoraMetrics extends SharedMixin(LightningElement) {
         }),
         isBottleneck:
           step.from === bottleneck.from && step.to === bottleneck.to,
+        hasPrevious: isNumber(step.previousMedianDays),
+        previousText,
+        // On hover for who has a mouse, read out for who has not
         title: isNumber(step.previousMedianDays)
-          ? `${route} - ${this.t("doraPreviousPeriod", {
-              value: this.formatUnit("doraValueDays", step.previousMedianDays),
-            })}`
+          ? route + " - " + previousText
           : route,
       };
     };
@@ -859,6 +867,9 @@ export default class DoraMetrics extends SharedMixin(LightningElement) {
       };
     });
 
+    if (!selected) {
+      this.selectedStage = null;
+    }
     const waitingRows = selected
       ? (selected.waiting.changes || []).map((change, index) => ({
           ...this.pullRequestFields(change),

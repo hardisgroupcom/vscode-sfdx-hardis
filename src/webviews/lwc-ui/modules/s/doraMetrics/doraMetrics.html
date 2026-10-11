@@ -189,6 +189,9 @@
                         <template lwc:if={item.hasPromotion}>
                           <span>{item.promotionText}</span>
                         </template>
+                        <template lwc:if={item.hasPrevious}>
+                          <span class="slds-assistive-text">{item.previousText}</span>
+                        </template>
                         <template lwc:if={item.isBottleneck}>
                           <span class="hardis-pill hardis-status-pending"><span class="hardis-pill-dot"></span>{i18n.doraLongestWait}</span>
                         </template>
@@ -227,6 +230,9 @@
                         <span class="dora-step-wait">{step.waitText}</span>
                       </template>
                       <span>{step.changesText}</span>
+                      <template lwc:if={step.hasPrevious}>
+                        <span class="slds-assistive-text">{step.previousText}</span>
+                      </template>
                     </li>
                   </template>
                 </ul>
@@ -235,7 +241,7 @@
                 <p class="hardis-group-desc dora-none">{view.pipeline.untracedText}</p>
               </template>
               <template lwc:if={view.pipeline.hasSelected}>
-                <div class="hardis-group-label">{view.pipeline.selectedTitle}</div>
+                <div class="hardis-group-label" role="status">{view.pipeline.selectedTitle}</div>
                 <s-hardis-datatable
                   key-field="key"
                   data={view.pipeline.waitingRows}

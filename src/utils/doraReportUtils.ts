@@ -110,6 +110,7 @@ export function sanitizeDoraReport(report: any): any {
   return {
     ...report,
     branches,
+    pipeline: sanitizeDoraPipeline(report?.pipeline),
     contributors: asArray(report?.contributors),
   };
 }
@@ -145,6 +146,34 @@ export function doraErrorMessage(result: any): string {
     return stripAnsiCodes(stderr).slice(0, 2000);
   }
   return "";
+}
+
+// The pipeline flow with its lists made lists of objects and its addresses checked. null when
+// sfdx-hardis computed none, or is too old to compute one
+function sanitizeDoraPipeline(pipeline: any): any {
+  if (!pipeline || typeof pipeline !== "object") {
+    return null;
+  }
+  return {
+    ...pipeline,
+    stages: asObjects(pipeline.stages).map((stage: any) => ({
+      ...stage,
+      waiting: {
+        ...(stage.waiting || {}),
+        changes: asObjects(stage.waiting?.changes).map(withSafePullRequestUrl),
+      },
+    })),
+    steps: asObjects(pipeline.steps),
+    weeks: asObjects(pipeline.weeks),
+    slowestChanges: asObjects(pipeline.slowestChanges).map((change: any) => ({
+      ...withSafePullRequestUrl(change),
+      stages: asObjects(change.stages),
+    })),
+  };
+}
+
+function asObjects(value: unknown): any[] {
+  return asArray(value).filter((item) => item && typeof item === "object");
 }
 
 function asArray(value: unknown): any[] {
