@@ -2514,7 +2514,7 @@ lightning-helptext::part(icon) {
   align-items: center;
   gap: 0.375rem;
   margin-top: 0.25rem;
-  color: var(--vscode-descriptionForeground, inherit);
+  color: var(--slds-g-color-neutral-base-40);
   font-size: 0.8125rem;
 }
 .hardis-list-status,
@@ -2548,14 +2548,14 @@ lightning-helptext::part(icon) {
   padding: 0;
   font: inherit;
   text-align: left;
-  color: var(--vscode-textLink-foreground, inherit);
+  color: var(--slds-g-color-palette-blue-40);
   cursor: pointer;
 }
 .slds-scope[data-theme] .hardis-pr-ref:hover {
   text-decoration: underline;
 }
 .slds-scope[data-theme] .hardis-pr-ref:focus-visible {
-  outline: 2px solid var(--vscode-focusBorder, currentColor);
+  outline: 2px solid var(--slds-g-color-palette-blue-50);
   outline-offset: 2px;
 }
 
@@ -2729,7 +2729,7 @@ lightning-helptext::part(icon) {
   list-style: revert;
 }
 .hardis-markdown a {
-  color: var(--vscode-textLink-foreground, inherit);
+  color: var(--slds-g-color-palette-blue-40);
 }
 .hardis-markdown img {
   max-width: 100%;

@@ -353,6 +353,54 @@ export async function inWebview(expression: string): Promise<any> {
   return null;
 }
 
+/**
+ * Where the webview shown sits in the VS Code window, in CSS pixels of the window, with the size
+ * of the window itself. It is what turns a position inside a panel into a position in a capture.
+ */
+export async function webviewBoxInWindow(): Promise<{
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  windowWidth: number;
+  windowHeight: number;
+} | null> {
+  const port = CdpWindow.portFromEnv();
+  if (!port) {
+    return null;
+  }
+  const targets: any[] = await (
+    await fetch(`http://127.0.0.1:${port}/json/list`)
+  ).json();
+  const workbench = targets.find(
+    (target) =>
+      target.type === "page" && String(target.url || "").includes("workbench"),
+  );
+  if (!workbench) {
+    return null;
+  }
+  return evaluateInTarget(
+    workbench.webSocketDebuggerUrl,
+    `
+    const visible = Array.from(document.querySelectorAll("iframe.webview"))
+      .map((element) => element.getBoundingClientRect())
+      .filter((rect) => rect.width > 200 && rect.height > 200);
+    if (visible.length === 0) {
+      return null;
+    }
+    const rect = visible[0];
+    return {
+      x: rect.left,
+      y: rect.top,
+      width: rect.width,
+      height: rect.height,
+      windowWidth: window.innerWidth,
+      windowHeight: window.innerHeight,
+    };
+  `,
+  );
+}
+
 function evaluateInTarget(url: string, expression: string): Promise<any> {
   return new Promise((resolve, reject) => {
     const socket = new WebSocket(url, { perMessageDeflate: false });

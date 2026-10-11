@@ -1061,6 +1061,18 @@ suite("An open promotion is drawn on the edge between its two branches", () => {
     return builder.build({ format: "string", withMermaidTag: false }) as string;
   }
 
+  test("a Pull Request into a branch the pipeline does not declare gets a node named after it", () => {
+    const out = diagram(
+      [openPr(37, "fix/US-045-installation-date-hotfix", "hotfixes")],
+      false,
+    );
+    const node = out
+      .split("\n")
+      .find((line) => line.trim().startsWith("hotfixesBranch("));
+    assert.ok(node, "the undeclared target must be declared as a node");
+    assert.ok(node!.includes("hotfixes<") || node!.includes('hotfixes"'));
+  });
+
   test("the promotion sits on the uat to preprod edge, not on a node of its own", () => {
     const out = diagram(
       [openPr(41, "promotion/uat/preprod/2026-09-06-1", "preprod")],

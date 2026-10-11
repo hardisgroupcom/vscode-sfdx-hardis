@@ -347,6 +347,22 @@ export class BranchStrategyMermaidBuilder {
           featureBranchLevel,
         );
       }
+      // A Pull Request into a branch the pipeline configuration of this checkout does not declare
+      // (a stale local branch, a typo in a target): without a node of its own, mermaid draws the
+      // raw node id ("preprodBranch") outside of the Git Branches box
+      const targetNodeName = this.sanitizeNodeName(targetBranch) + "Branch";
+      if (
+        targetBranch &&
+        !this.gitBranches.find((b) => b.nodeName === targetNodeName)
+      ) {
+        this.gitBranches.push({
+          name: targetBranch,
+          nodeName: targetNodeName,
+          label: BRANCH_ICON_SVG + " " + this.escapeHtmlLabel(targetBranch),
+          class: "gitFeature",
+          level: featureBranchLevel + 1,
+        });
+      }
     }
 
     // Add retrofit link only if it does not mess with the diagram display :/

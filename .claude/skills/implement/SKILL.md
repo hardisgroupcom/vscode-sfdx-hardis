@@ -197,7 +197,8 @@ VS Code webviews render in BOTH dark and light themes. Hardcoded colors break on
 
 3. **Only if neither covers it**, write a small custom rule using **theme-aware tokens only**:
    - SLDS palette variables from `global-theme-variables.css` (e.g. `var(--slds-g-color-palette-purple-40)`, `var(--slds-g-color-palette-green-50)`).
-   - VS Code theme tokens (`var(--vscode-foreground)`, `var(--vscode-editor-background)`, `var(--vscode-descriptionForeground)`, `var(--vscode-textLink-foreground)`, `inherit`, `currentColor`).
+   - `inherit` and `currentColor`.
+   - **Never a `var(--vscode-*)` color.** The panel theme is its own setting (`vsCodeSfdxHardis.theme.colorTheme`, light by default) and does not follow the VS Code theme: a VS Code color on a light panel in a dark VS Code is pale text on white. `var(--vscode-editor-font-family)` is fine, a font is not a color.
    - **Never** literal `#hex`, `rgb()`, `color: white`, `background: linear-gradient(#aaa, #bbb)`, `font-family: "Inter"`, `font-weight: 700`. These do not adapt and produce unreadable text in the opposite mode.
 
 #### What's safe in component CSS

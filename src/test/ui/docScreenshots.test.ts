@@ -1,4 +1,4 @@
-import { CdpWindow, inWebview } from "./cdpWindow";
+import { CdpWindow, inWebview, webviewBoxInWindow } from "./cdpWindow";
 import { execFileSync, execSync, spawnSync } from "child_process";
 import * as fs from "fs";
 import * as os from "os";
@@ -12,6 +12,8 @@ import {
   waitFor,
 } from "./uiTestUtils";
 import { CacheManager } from "../../utils/cache-manager";
+import { SfdxHardisConfigHelper } from "../../utils/pipeline/sfdxHardisConfigHelper";
+import { t } from "../../i18n/i18n";
 
 /**
  * Documentation screenshot harness.
@@ -2284,6 +2286,168 @@ suite("Documentation screenshots", function () {
       await vscode.commands.executeCommand("workbench.action.zoomIn");
       await sleep(800);
     }
+  });
+
+  // Every tab of Pipeline Settings, on the project scope then on a branch scope, for the
+  // reference page of sfdx-hardis (docs/vscode-extension-pipeline-settings.md). A tab taller
+  // than the window is captured in several parts. Next to the images, the test writes
+  // pipeline-settings-reference.json: the rows of each capture and where each one sits, which
+  // is what scripts/build-pipeline-settings-doc.mjs of sfdx-hardis numbers the pills from.
+  test("pipeline settings reference", async function () {
+    if (!shouldTake("pipeline-settings-reference")) {
+      this.skip();
+    }
+    // The setting rows of the tab shown, in display order, and the element that scrolls them
+    const ROWS = `
+      const view = panelDocument.defaultView;
+      const labels = deepAll(panelDocument, ".hardis-field-label").filter((element) => {
+        const rect = element.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+      });
+      let scroller = panelDocument.scrollingElement;
+      let node = labels[0] || null;
+      while (node) {
+        const parent = node.parentElement || (node.getRootNode && node.getRootNode().host) || null;
+        if (!parent) {
+          break;
+        }
+        const style = parent instanceof view.Element || parent.nodeType === 1 ? view.getComputedStyle(parent) : null;
+        if (style && /(auto|scroll)/.test(style.overflowY) && parent.scrollHeight > parent.clientHeight + 4) {
+          scroller = parent;
+          break;
+        }
+        node = parent;
+      }
+    `;
+    const readRows = async (): Promise<any> => {
+      const raw = await inWebview(`
+        ${ROWS}
+        if (labels.length === 0 && deepAll(panelDocument, ".pipeline-config-tab-body").length === 0) {
+          return null;
+        }
+        return JSON.stringify({
+          scrollTop: scroller ? scroller.scrollTop : 0,
+          rows: labels.map((element) => {
+            const rect = element.getBoundingClientRect();
+            const span = element.querySelector("span");
+            return {
+              label: ((span && span.textContent) || element.textContent || "").trim(),
+              fx: rect.left / view.innerWidth,
+              fy: (rect.top + rect.height / 2) / view.innerHeight,
+            };
+          }),
+        });
+      `);
+      return raw ? JSON.parse(raw) : { scrollTop: 0, rows: [] };
+    };
+    const scrollBy = async (pixels: number): Promise<void> => {
+      await inWebview(`
+        ${ROWS}
+        if (scroller) {
+          scroller.scrollTop = scroller.scrollTop + ${Math.round(pixels)};
+        }
+        return true;
+      `);
+      await sleep(900);
+    };
+    const slug = (label: string) =>
+      label
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+    const reference: any = {
+      titleBar: TITLE_BAR_HEIGHT,
+      sideBar: SIDE_BAR_WIDTH,
+      tabs: [],
+    };
+    const scopes = [
+      { scope: "global", branch: null as string | null },
+      { scope: "branch", branch: "integration" as string | null },
+    ];
+    for (const { scope, branch } of scopes) {
+      const sections = SfdxHardisConfigHelper.SECTIONS.filter((section) =>
+        section.keys.some((key) =>
+          SfdxHardisConfigHelper.CONFIGURABLE_FIELDS.find(
+            (field) => field.name === key && field.scopes.includes(scope),
+          ),
+        ),
+      );
+      for (const section of sections) {
+        const tabLabel = t(section.label);
+        const baseName = `pipeline-settings-ref-${scope}-${slug(tabLabel)}`;
+        await vscode.commands.executeCommand(
+          "workbench.action.closeAllEditors",
+        );
+        await sleep(400);
+        await vscode.commands.executeCommand(
+          "vscode-sfdx-hardis.showPipelineConfig",
+          branch,
+          tabLabel,
+        );
+        await waitFor(
+          () => panelManager.getPanel("s-pipeline-config"),
+          20000,
+          "s-pipeline-config panel to open",
+        );
+        await sleep(4000);
+        await cleanChrome();
+        const tab: any = {
+          scope,
+          branch,
+          section: section.label,
+          tab: tabLabel,
+          // Every key the tab can show on this scope: some rows only appear once another
+          // setting is filled (the ticketing provider decides which ticketing rows exist)
+          keys: section.keys.filter((key) =>
+            SfdxHardisConfigHelper.CONFIGURABLE_FIELDS.find(
+              (field) => field.name === key && field.scopes.includes(scope),
+            ),
+          ),
+          shots: [],
+        };
+        const all = (await readRows()).rows.map((row: any) => row.label);
+        let done = 0;
+        for (let part = 1; part <= 5; part++) {
+          const name = part === 1 ? baseName : `${baseName}-${part}`;
+          // Read once the capture is stable: the panel can still shift by a few pixels right
+          // after it opens, and a pill placed from an earlier read lands beside its row
+          await captureStable(name);
+          const state = await readRows();
+          // Rows fully inside the capture. Every one of them gets its pill, including those
+          // an earlier part already showed: a row without a number in the middle of numbered
+          // ones reads as a row the page forgot.
+          const inside = state.rows
+            .map((row: any, index: number) => ({ ...row, n: index + 1 }))
+            .filter((row: any) => row.fy > 0.04 && row.fy < 0.93);
+          const visible = inside.filter((row: any) => row.n > done);
+          tab.shots.push({
+            name,
+            box: await webviewBoxInWindow(),
+            rows: inside,
+          });
+          if (visible.length > 0) {
+            done = visible[visible.length - 1].n;
+          }
+          if (done >= all.length || visible.length === 0) {
+            break;
+          }
+          // Bring the first row not numbered yet near the top of the next part
+          const next = state.rows[done];
+          const box = await webviewBoxInWindow();
+          await scrollBy((next.fy - 0.08) * (box ? box.height : 800));
+        }
+        tab.rows = all;
+        reference.tabs.push(tab);
+        console.log(
+          `      [settings] ${scope} / ${tabLabel}: ${all.length} row(s), ${tab.shots.length} capture(s)`,
+        );
+      }
+    }
+    fs.writeFileSync(
+      path.join(OUT_DIR, "pipeline-settings-reference.json"),
+      JSON.stringify(reference, null, 2),
+    );
+    recordGate("pipeline-settings-reference");
   });
 
   // Security & Privacy tab of the same panel: the anonymization editor, opened
