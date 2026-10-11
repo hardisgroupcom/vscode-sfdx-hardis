@@ -129,8 +129,12 @@ export default class PullRequestHeader extends SharedMixin(LightningElement) {
         dot: path.dot,
         dotClass: path.dotClass,
         carriedBy: step.carriedBy,
+        // The Pull Request that brought the story to the branch, or the open one that will
         carriedByLabel: step.carriedBy
-          ? this.t("journeyCarriedBy", { number: step.carriedBy })
+          ? this.t(
+              step.carrierOpen ? "journeyWaitingFor" : "journeyCarriedBy",
+              { number: step.carriedBy },
+            )
           : "",
       };
     });

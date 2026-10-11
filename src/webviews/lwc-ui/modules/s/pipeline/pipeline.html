@@ -754,28 +754,34 @@
                             </template>
                             <!-- Validation, Code Quality (MegaLinter) and Deployment tabs: the comments posted on the Pull Request itself -->
                             <template if:true={showWorkflowsTab}>
-                                <lightning-tab onactive={handleModalTabActive} label={i18n.journeyValidation} value="validation" icon-name="utility:search" icon-assistive-text={i18n.journeyValidation}>
+                                <lightning-tab onactive={handleModalTabActive} label={i18n.journeyValidation} value="validation" icon-name="utility:search" icon-assistive-text={i18n.journeyValidation} end-icon-name={validationTabEndIcon} end-icon-alternative-text={i18n.jobStatusRunning}>
                                     <s-workflow-runs
                                         runs={modalValidationRuns}
+                                        running-jobs={modalValidationRunningJobs}
                                         artifacts={jobArtifacts}
+                                        durations={jobDurations}
                                         artifacts-supported={artifactsSupported}
                                         loading={workflowsLoading}
                                         empty-label={noValidationLabel}
                                     ></s-workflow-runs>
                                 </lightning-tab>
-                                <lightning-tab onactive={handleModalTabActive} label={i18n.prCodeQualityTab} value="megalinter" icon-name="utility:shield" icon-assistive-text={i18n.prCodeQualityTab}>
+                                <lightning-tab onactive={handleModalTabActive} label={i18n.prCodeQualityTab} value="megalinter" icon-name="utility:shield" icon-assistive-text={i18n.prCodeQualityTab} end-icon-name={megaLinterTabEndIcon} end-icon-alternative-text={i18n.jobStatusRunning}>
                                     <s-workflow-runs
                                         runs={modalMegaLinterRuns}
+                                        running-jobs={modalMegaLinterRunningJobs}
                                         artifacts={jobArtifacts}
+                                        durations={jobDurations}
                                         artifacts-supported={artifactsSupported}
                                         loading={workflowsLoading}
                                         empty-label={noMegaLinterLabel}
                                     ></s-workflow-runs>
                                 </lightning-tab>
-                                <lightning-tab onactive={handleModalTabActive} label={i18n.workflowDeploymentNoBranch} value="deployment" icon-name="utility:upload" icon-assistive-text={i18n.workflowDeploymentNoBranch}>
+                                <lightning-tab onactive={handleModalTabActive} label={i18n.workflowDeploymentNoBranch} value="deployment" icon-name="utility:upload" icon-assistive-text={i18n.workflowDeploymentNoBranch} end-icon-name={deploymentTabEndIcon} end-icon-alternative-text={i18n.jobStatusRunning}>
                                     <s-workflow-runs
                                         runs={modalDeploymentRuns}
+                                        running-jobs={modalDeploymentRunningJobs}
                                         artifacts={jobArtifacts}
+                                        durations={jobDurations}
                                         artifacts-supported={artifactsSupported}
                                         loading={workflowsLoading}
                                         empty-label={noDeploymentLabel}

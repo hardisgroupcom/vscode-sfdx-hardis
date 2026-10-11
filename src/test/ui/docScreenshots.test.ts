@@ -1385,6 +1385,96 @@ suite("Documentation screenshots", function () {
     }
   });
 
+  // Jobs still running, in the Pull Request view: the checks of an open Pull Request in its
+  // Validation and Code Quality tabs, then the deployment a merge started in the Deployment tab
+  // of the merged story. The fixture of the run is copied with those jobs going on.
+  // SFDX_HARDIS_DOC_SCREENSHOTS_PR names the open Pull Request of another fixture, which has
+  // no merged story to show: only its two checks are captured.
+  test("pipeline: running jobs in the pull request view", async function () {
+    if (!shouldTake("pipeline-pr-running")) {
+      this.skip();
+    }
+    const gitBefore = process.env.SFDX_HARDIS_MOCK_GIT_PROVIDER_FILE;
+    if (!gitBefore) {
+      throw new Error(
+        "The running jobs captures need the git provider fixture",
+      );
+    }
+    const ownPr = Number(process.env.SFDX_HARDIS_DOC_SCREENSHOTS_PR || 0);
+    const openNumber = ownPr || 128;
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "sfh-running-"));
+    const fixture = JSON.parse(fs.readFileSync(gitBefore, "utf8"));
+    const repoUrl = fixture.repoInfo?.webUrl || "";
+    const open = fixture.openPullRequests.find(
+      (pr: any) => pr.number === openNumber,
+    );
+    if (!open) {
+      throw new Error(`No open Pull Request #${openNumber} in the fixture`);
+    }
+    // Started a moment ago: the row says for how long the job has been going on
+    const startedAt = new Date(Date.now() - 95000).toISOString();
+    open.jobsStatus = "running";
+    open.jobs = [
+      {
+        name: "Simulate Deployment (sfdx-hardis)",
+        status: "running",
+        webUrl: `${repoUrl}/actions/runs/1131`,
+        startedAt,
+      },
+      {
+        name: "Mega-Linter",
+        status: "pending",
+        webUrl: `${repoUrl}/actions/runs/1132`,
+        startedAt,
+      },
+    ];
+    // The merge of #124 started the deployment of integration, which is not over. The story
+    // was merged on a fixed date: a deployment started after it, and still going on
+    const mergedStartedAt = new Date(Date.now() - 215000).toISOString();
+    fixture.branchJobs = fixture.branchJobs || {};
+    fixture.branchJobs.integration = {
+      jobs: [
+        {
+          name: "Process Deployment (sfdx-hardis)",
+          status: "running",
+          webUrl: `${repoUrl}/actions/runs/1133`,
+          startedAt: mergedStartedAt,
+        },
+      ],
+      jobsStatus: "running",
+    };
+    const gitFile = path.join(tempDir, "git-provider-mock.json");
+    fs.writeFileSync(gitFile, JSON.stringify(fixture, null, 2));
+    process.env.SFDX_HARDIS_MOCK_GIT_PROVIDER_FILE = gitFile;
+    await resetProviders();
+    checkoutWorkspaceBranch(FEATURE_BRANCH);
+    try {
+      const shots: [string, number, string][] = [
+        ["pipeline-pr-running-validation", openNumber, "validation"],
+        ["pipeline-pr-running-megalinter", openNumber, "megalinter"],
+      ];
+      if (!ownPr) {
+        shots.push(["pipeline-pr-running-deployment", 124, "deployment"]);
+      }
+      for (const [name, prNumber, tab] of shots) {
+        await shootPanel(panelManager, {
+          name,
+          command: "vscode-sfdx-hardis.showPipeline",
+          lwcId: "s-pipeline",
+          ready: pipelineFullyLoaded,
+          settleMs: 9000,
+          force: true,
+          commandArgs: { focus: "pullRequest", prNumber, tab },
+        });
+      }
+    } finally {
+      checkoutWorkspaceBranch("integration");
+      process.env.SFDX_HARDIS_MOCK_GIT_PROVIDER_FILE = gitBefore;
+      fs.rmSync(tempDir, { recursive: true, force: true });
+      await resetProviders();
+    }
+  });
+
   // Pull Request view and Pull Requests explorer (sfdx-hardis#2273): opened by deep links,
   // so no coordinate is involved. One capture per tab that shows a comment or the description.
   test("pipeline: pull request view and explorer", async function () {

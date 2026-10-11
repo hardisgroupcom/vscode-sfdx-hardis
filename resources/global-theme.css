@@ -2146,6 +2146,16 @@ lightning-helptext::part(icon) {
     animation: none;
   }
 }
+/* Indeterminate: something is going on and nobody knows how far it is. A hairline under the
+   row of a running job, the shine of the fill being all that moves. */
+.slds-scope[data-theme] .hardis-progress-track.indeterminate {
+  height: 3px;
+  border-radius: 0;
+}
+.slds-scope[data-theme] .hardis-progress-track.indeterminate .hardis-progress-fill {
+  width: 100%;
+  border-radius: 0;
+}
 .slds-scope[data-theme] .hardis-progress-meta {
   display: flex;
   justify-content: space-between;
@@ -2616,6 +2626,32 @@ lightning-helptext::part(icon) {
 .hardis-path-pending {
   background: var(--slds-g-color-palette-orange-90);
   color: var(--slds-g-color-palette-orange-30);
+}
+/* A step whose job is going on: a band of light sweeps across it, in the color of its text */
+.hardis-path-moving {
+  background-image: linear-gradient(
+    100deg,
+    transparent 30%,
+    color-mix(in srgb, currentColor 30%, transparent) 50%,
+    transparent 70%
+  );
+  background-size: 220% 100%;
+  background-repeat: no-repeat;
+  animation: hardis-path-sweep 1.8s linear infinite;
+}
+@keyframes hardis-path-sweep {
+  from {
+    background-position: 120% 0;
+  }
+  to {
+    background-position: -20% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hardis-path-moving {
+    animation: none;
+    background-image: none;
+  }
 }
 .hardis-path-mark {
   font-weight: 700;

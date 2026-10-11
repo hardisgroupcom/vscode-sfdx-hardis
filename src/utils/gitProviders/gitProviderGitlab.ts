@@ -13,6 +13,7 @@ import {
   Job,
   JobStatus,
 } from "./types";
+import type { JobTiming } from "./types";
 import { mapGitLabMergeStatus } from "./mergeStatus";
 import { SecretsManager } from "../secretsManager";
 import { PROVIDER_ENV_VAR_NAMES } from "../envFileCredentials";
@@ -301,7 +302,10 @@ export class GitProviderGitlab extends GitProvider {
     });
   }
 
-  async getPullRequestByNumber(number: number): Promise<PullRequest | null> {
+  async getPullRequestByNumber(
+    number: number,
+    options?: { withJobs?: boolean },
+  ): Promise<PullRequest | null> {
     if (!this.gitlabClient || !this.gitlabProjectId) {
       return null;
     }
@@ -316,7 +320,7 @@ export class GitProviderGitlab extends GitProvider {
       });
       const converted = await this.convertAndCollectJobsList(
         [mergeRequest as any],
-        { withJobs: false },
+        { withJobs: options?.withJobs === true },
       );
       return converted[0] || null;
     } catch (err) {
@@ -1059,8 +1063,69 @@ export class GitProviderGitlab extends GitProvider {
       status: this.mapGitLabPipelineStatusToJobStatus(pipeline.status),
       webUrl: pipeline.web_url || pipeline.webUrl || undefined,
       updatedAt: pipeline.updated_at || pipeline.updatedAt || undefined,
+      startedAt:
+        pipeline.started_at ||
+        pipeline.startedAt ||
+        pipeline.created_at ||
+        pipeline.createdAt ||
+        undefined,
       raw: pipeline,
     };
+  }
+
+  /** The job a comment links to: .../-/jobs/<job id> */
+  async getJobTiming(jobUrl: string): Promise<JobTiming | null> {
+    const jobId = Number(/\/-\/jobs\/(\d+)/.exec(jobUrl || "")?.[1]);
+    if (!this.gitlabClient || !this.gitlabProjectId || !jobId) {
+      return null;
+    }
+    const job: any = await this.gitlabClient.Jobs.show(
+      this.gitlabProjectId,
+      jobId,
+    );
+    await this.logApiCall("Jobs.show", { caller: "getJobTiming", jobId });
+    const startedAt = job?.started_at || job?.startedAt;
+    return startedAt
+      ? {
+          startedAt,
+          finishedAt: job.finished_at || job.finishedAt || undefined,
+        }
+      : null;
+  }
+
+  /**
+   * The jobs of a pipeline, each one with the link to its own page. A job of a later stage is
+   * "created" while the pipeline runs: it is listed as pending, since it will run. A manual or
+   * skipped job is not waited for by anybody.
+   */
+  async listJobsOfRun(run: Job): Promise<Job[]> {
+    const pipelineId = Number(run.raw?.id);
+    // A commit status of an external CI has no pipeline to open
+    if (
+      !this.gitlabClient ||
+      !this.gitlabProjectId ||
+      !pipelineId ||
+      !(run.raw?.web_url || run.raw?.webUrl)
+    ) {
+      return [];
+    }
+    const jobs: any[] =
+      (await this.gitlabClient.Jobs.all(this.gitlabProjectId, {
+        pipelineId,
+        perPage: 100,
+        maxPages: 1,
+      })) || [];
+    await this.logApiCall("Jobs.all", {
+      caller: "listJobsOfRun",
+      pipelineId,
+    });
+    return jobs.map((job: any) => ({
+      name: String(job.name || ""),
+      status: this.mapGitLabPipelineStatusToJobStatus(job.status),
+      webUrl: job.web_url || job.webUrl || run.webUrl,
+      updatedAt: job.finished_at || job.started_at || job.created_at,
+      startedAt: job.started_at || job.startedAt || job.created_at,
+    }));
   }
 
   /**

@@ -1,5 +1,35 @@
 <template>
-    <template if:true={loading}>
+    <!-- Jobs still going on: nothing is posted on the Pull Request before they end -->
+    <template if:true={hasRunningJobs}>
+        <div class="runs">
+            <template for:each={runningRows} for:item="row">
+                <div key={row.key} class="hardis-list">
+                    <div class="hardis-list-row">
+                        <div class="hardis-list-main">
+                            <div class="hardis-list-title">{row.label}</div>
+                            <template if:true={row.context}>
+                                <div class="hardis-list-meta">{row.context}</div>
+                            </template>
+                        </div>
+                        <div class="hardis-list-status">
+                            <span class={row.pillClass}><span class="hardis-pill-dot"></span>{row.statusLabel}</span>
+                        </div>
+                        <div class="hardis-list-actions">
+                            <template if:true={row.jobUrl}>
+                                <button class="slds-button slds-button_neutral hardis-btn-tinted-blue" data-url={row.jobUrl} onclick={handleOpenUrl}>{i18n.workflowOpenJob}</button>
+                            </template>
+                        </div>
+                    </div>
+                    <template if:true={row.running}>
+                        <div class="hardis-progress-track indeterminate" aria-hidden="true">
+                            <div class="hardis-progress-fill active"></div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </div>
+    </template>
+    <template if:true={showLoading}>
         <div class="slds-is-relative slds-p-vertical_large slds-text-align_center">
             <lightning-spinner alternative-text={i18n.loadingLabel} size="small"></lightning-spinner>
         </div>

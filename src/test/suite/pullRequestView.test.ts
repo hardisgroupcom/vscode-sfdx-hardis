@@ -36,9 +36,12 @@ const EXPORTED = [
   "buildPullRequestJourney",
   "journeyPillClass",
   "journeyPathStep",
+  "runningJobRows",
   "safeWebUrl",
   "isTrustedCommentImage",
   "buildArtifactEntries",
+  "formatDuration",
+  "jobDurationKey",
   "formatFileSize",
 ];
 
@@ -300,6 +303,385 @@ suite("Pull Request view", () => {
       const preprod = steps.find((step: any) => step.branch === "preprod");
       assert.strictEqual(preprod.state, "merged");
       assert.strictEqual(preprod.carriedBy, 140);
+    });
+
+    test("names the Pull Request that carried the story to every branch it reached", () => {
+      const steps = utils.buildPullRequestJourney({
+        pr: pullRequest({
+          state: "merged",
+          mergeDate: "2026-10-01T10:00:00.000Z",
+        }),
+        orgs: ORGS,
+        // Reached preprod: listed in its window
+        windows: { preprod: [128] },
+        vehicles: [
+          // Merged before the story was in integration: it did not carry it
+          {
+            number: 130,
+            state: "merged",
+            sourceBranch: "integration",
+            targetBranch: "uat",
+            mergeDate: "2026-09-30T10:00:00.000Z",
+          },
+          {
+            number: 135,
+            state: "merged",
+            sourceBranch: "integration",
+            targetBranch: "uat",
+            mergeDate: "2026-10-02T10:00:00.000Z",
+          },
+          {
+            number: 137,
+            state: "merged",
+            sourceBranch: "integration",
+            targetBranch: "uat",
+            mergeDate: "2026-10-03T10:00:00.000Z",
+          },
+          {
+            number: 141,
+            state: "merged",
+            sourceBranch: "uat",
+            targetBranch: "preprod",
+            mergeDate: "2026-10-04T10:00:00.000Z",
+          },
+          {
+            number: 150,
+            state: "open",
+            sourceBranch: "preprod",
+            targetBranch: "main",
+          },
+        ],
+      });
+      assert.deepStrictEqual(
+        steps.map((step: any) => [
+          step.branch,
+          step.kind,
+          step.carriedBy,
+          step.carrierOpen,
+        ]),
+        [
+          ["integration", "validation", null, false],
+          // Its own merge took it to its target branch
+          ["integration", "branch", null, false],
+          ["uat", "branch", 135, false],
+          ["preprod", "branch", 141, false],
+          // Not there yet: the open merge that will take it
+          ["main", "branch", 150, true],
+        ],
+      );
+    });
+
+    test("a promotion that declares the story is its carrier, open or merged", () => {
+      const steps = utils.buildPullRequestJourney({
+        pr: pullRequest({
+          state: "merged",
+          mergeDate: "2026-10-01T10:00:00.000Z",
+        }),
+        orgs: ORGS,
+        windows: { uat: [128] },
+        vehicles: [
+          {
+            number: 139,
+            state: "merged",
+            sourceBranch: "promotion/integration/uat/2026-10-02-0900",
+            targetBranch: "uat",
+            mergeDate: "2026-10-02T10:00:00.000Z",
+            promotionPullRequests: [128, 131],
+          },
+          // Another promotion toward preprod, for other stories
+          {
+            number: 142,
+            state: "open",
+            sourceBranch: "promotion/uat/preprod/2026-10-03-0900",
+            targetBranch: "preprod",
+            promotionPullRequests: [131],
+          },
+          {
+            number: 143,
+            state: "open",
+            sourceBranch: "promotion/uat/preprod/2026-10-03-1000",
+            targetBranch: "preprod",
+            promotionPullRequests: [128],
+          },
+        ],
+      });
+      const byBranch = (branch: string) =>
+        steps.find(
+          (step: any) => step.kind === "branch" && step.branch === branch,
+        );
+      assert.strictEqual(byBranch("uat").carriedBy, 139);
+      assert.strictEqual(byBranch("uat").carrierOpen, false);
+      assert.strictEqual(byBranch("preprod").carriedBy, 143);
+      assert.strictEqual(byBranch("preprod").carrierOpen, true);
+      // Nothing is known about the step after the next one
+      assert.strictEqual(byBranch("main").carriedBy, null);
+    });
+
+    test("never guesses a carrier when no date says which merge it was", () => {
+      const steps = utils.buildPullRequestJourney({
+        pr: pullRequest({ state: "merged" }),
+        orgs: ORGS,
+        windows: { uat: [128] },
+        vehicles: [
+          {
+            number: 135,
+            state: "merged",
+            sourceBranch: "integration",
+            targetBranch: "uat",
+            mergeDate: "2026-10-02T10:00:00.000Z",
+          },
+        ],
+      });
+      assert.strictEqual(
+        steps.find((step: any) => step.key === "branch-uat").carriedBy,
+        null,
+      );
+    });
+
+    test("the checks of an open Pull Request move its validation step", () => {
+      const running = utils.buildPullRequestJourney({
+        pr: pullRequest({ jobsStatus: "failed" }),
+        orgs: ORGS,
+        windows: {},
+        runningJobs: {
+          pullRequest: [
+            { kind: "codeQuality", status: "running", name: "Mega-Linter" },
+            { kind: "validation", status: "pending", name: "Simulate" },
+            { kind: "deployment", status: "running", name: "Not a check" },
+          ],
+          branches: {},
+        },
+      });
+      assert.strictEqual(running[0].state, "running");
+      assert.strictEqual(running[0].runningJobs.length, 2);
+
+      const queued = utils.buildPullRequestJourney({
+        pr: pullRequest(),
+        orgs: ORGS,
+        windows: {},
+        runningJobs: {
+          pullRequest: [
+            { kind: "validation", status: "pending", name: "Simulate" },
+          ],
+          branches: {},
+        },
+      });
+      assert.strictEqual(queued[0].state, "pending");
+    });
+
+    test("a job that just ended no longer moves the step, whatever the list still says", () => {
+      const steps = utils.buildPullRequestJourney({
+        // Read with the list of Pull Requests, up to a minute ago
+        pr: pullRequest({ jobsStatus: "running" }),
+        orgs: ORGS,
+        windows: {},
+        workflows: [{ kind: "validation", status: "valid" }],
+        runningJobs: { pullRequest: [], branches: {} },
+      });
+      assert.strictEqual(steps[0].state, "success");
+      // While the provider did not answer yet, the list is all there is
+      const before = utils.buildPullRequestJourney({
+        pr: pullRequest({ jobsStatus: "running" }),
+        orgs: ORGS,
+        windows: {},
+        runningJobs: null,
+      });
+      assert.strictEqual(before[0].state, "running");
+    });
+
+    test("a deployment started after the merge is the one of the Pull Request", () => {
+      const deployment = {
+        kind: "deployment",
+        status: "running",
+        name: "deploy_to_org",
+        webUrl: "https://git.example.com/jobs/9",
+        startedAt: "2026-10-01T10:01:00.000Z",
+      };
+      const journey = (overrides: Record<string, any> = {}) =>
+        utils.buildPullRequestJourney({
+          pr: pullRequest({
+            state: "merged",
+            mergeDate: "2026-10-01T10:00:00.000Z",
+          }),
+          orgs: ORGS,
+          windows: { integration: [128] },
+          runningJobs: {
+            pullRequest: [],
+            branches: { integration: [deployment] },
+          },
+          ...overrides,
+        });
+      const integration = (steps: any[]) =>
+        steps.find((step: any) => step.key === "branch-integration");
+
+      assert.strictEqual(integration(journey()).state, "running");
+      assert.deepStrictEqual(integration(journey()).runningJobs, [deployment]);
+
+      // Started before the merge: the deployment of an earlier Pull Request
+      const earlier = journey({
+        runningJobs: {
+          pullRequest: [],
+          branches: {
+            integration: [
+              { ...deployment, startedAt: "2026-10-01T09:50:00.000Z" },
+            ],
+          },
+        },
+      });
+      assert.strictEqual(integration(earlier).state, "merged");
+
+      // Its deployment has its result: what runs now deploys a later merge
+      const settledWorkflows = [
+        {
+          kind: "deployment",
+          targetBranch: "integration",
+          status: "valid",
+          date: "2026-10-01T10:05:00.000Z",
+        },
+      ];
+      const settledJobs = {
+        pullRequest: [],
+        branches: {
+          integration: [
+            { ...deployment, startedAt: "2026-10-01T11:00:00.000Z" },
+          ],
+        },
+      };
+      const settled = journey({
+        workflows: settledWorkflows,
+        arrivals: {
+          integration: ["2026-10-01T10:00:00.000Z", "2026-10-01T10:58:00.000Z"],
+        },
+        runningJobs: settledJobs,
+      });
+      assert.strictEqual(integration(settled).state, "deployed");
+      assert.deepStrictEqual(integration(settled).runningJobs, []);
+      // Nothing was merged since: the same deployment is being run again
+      const rerun = journey({
+        workflows: settledWorkflows,
+        arrivals: { integration: ["2026-10-01T10:00:00.000Z"] },
+        runningJobs: settledJobs,
+      });
+      assert.strictEqual(integration(rerun).state, "running");
+
+      // No result on this Pull Request (a promotion carries it) and something else was merged
+      // since: the deployment that runs is the one of that merge
+      const later = journey({
+        arrivals: {
+          integration: ["2026-10-01T10:00:00.000Z", "2026-10-01T10:58:00.000Z"],
+        },
+        runningJobs: settledJobs,
+      });
+      assert.strictEqual(integration(later).state, "merged");
+      assert.deepStrictEqual(integration(later).runningJobs, []);
+      // Its own deployment started before that other merge
+      const own = journey({
+        arrivals: {
+          integration: ["2026-10-01T10:00:00.000Z", "2026-10-01T10:58:00.000Z"],
+        },
+      });
+      assert.strictEqual(integration(own).state, "running");
+
+      // A check of the branch is no deployment
+      const check = journey({
+        runningJobs: {
+          pullRequest: [],
+          branches: { integration: [{ ...deployment, kind: "validation" }] },
+        },
+      });
+      assert.strictEqual(integration(check).state, "merged");
+    });
+
+    test("the deployment of a later branch counts from the merge of its carrier", () => {
+      const steps = utils.buildPullRequestJourney({
+        pr: pullRequest({
+          state: "merged",
+          mergeDate: "2026-10-01T10:00:00.000Z",
+          alreadyDeployedVia: [
+            {
+              number: 140,
+              targetBranch: "uat",
+              mergeDate: "2026-10-03T10:00:00.000Z",
+            },
+          ],
+        }),
+        orgs: ORGS,
+        windows: {},
+        runningJobs: {
+          pullRequest: [],
+          branches: {
+            uat: [
+              {
+                kind: "deployment",
+                status: "pending",
+                name: "deploy_to_org",
+                startedAt: "2026-10-03T10:00:30.000Z",
+              },
+            ],
+          },
+        },
+      });
+      const uat = steps.find((step: any) => step.key === "branch-uat");
+      assert.strictEqual(uat.state, "pending");
+      const rows = utils.runningJobRows(steps);
+      assert.deepStrictEqual(rows.validation, []);
+      assert.deepStrictEqual(
+        rows.deployment.map((row: any) => [
+          row.kind,
+          row.targetBranch,
+          row.carriedBy,
+          row.status,
+        ]),
+        [["deployment", "uat", 140, "pending"]],
+      );
+    });
+
+    test("the running checks go to their tab", () => {
+      const rows = utils.runningJobRows(
+        utils.buildPullRequestJourney({
+          pr: pullRequest(),
+          orgs: ORGS,
+          windows: {},
+          runningJobs: {
+            pullRequest: [
+              { kind: "codeQuality", status: "running", name: "Mega-Linter" },
+              { kind: "validation", status: "running", name: "Simulate" },
+            ],
+            branches: {},
+          },
+        }),
+      );
+      assert.deepStrictEqual(
+        [rows.validation, rows.megalinter, rows.deployment].map((list: any[]) =>
+          list.map((row: any) => `${row.kind}:${row.name}:${row.targetBranch}`),
+        ),
+        [
+          ["validation:Simulate:integration"],
+          ["megalinter:Mega-Linter:integration"],
+          [],
+        ],
+      );
+    });
+
+    test("a step whose job is going on moves, a step being read does not", () => {
+      assert.match(
+        utils.journeyPathStep("running").stepClass,
+        /hardis-path-running hardis-path-moving$/,
+      );
+      assert.match(
+        utils.journeyPathStep("pending").stepClass,
+        /hardis-path-pending hardis-path-moving$/,
+      );
+      for (const state of ["success", "deployed", "failed", "waiting"]) {
+        assert.doesNotMatch(
+          utils.journeyPathStep(state).stepClass,
+          /hardis-path-moving/,
+        );
+      }
+      assert.doesNotMatch(
+        utils.journeyPathStep("running", true).stepClass,
+        /hardis-path-moving/,
+      );
     });
 
     test("a Pull Request closed without being merged goes to no branch", () => {
@@ -1028,8 +1410,139 @@ suite("Pull Request view", () => {
       );
     });
 
+    test("a duration reads in hours, minutes and seconds", () => {
+      assert.strictEqual(utils.formatDuration(0), "0s");
+      assert.strictEqual(utils.formatDuration(45), "45s");
+      assert.strictEqual(utils.formatDuration(125), "2m 05s");
+      assert.strictEqual(utils.formatDuration(3600), "1h 00m 00s");
+      assert.strictEqual(utils.formatDuration(3725.9), "1h 02m 05s");
+      for (const unknown of [undefined, null, NaN, -3, "soon"]) {
+        assert.strictEqual(utils.formatDuration(unknown), "");
+      }
+    });
+
+    test("the durations are asked once per job link, and again after a job ended", () => {
+      const messages: any[] = [];
+      const view = Object.assign(
+        new Function(
+          "window",
+          "safeWebUrl",
+          "jobDurationKey",
+          `return { ${extractMember(js, "_requestJobDurations()")}, ${extractMember(js, "handleReturnJobDurations(data)")} };`,
+        )(
+          { sendMessageToVSCode: (message: any) => messages.push(message) },
+          utils.safeWebUrl,
+          utils.jobDurationKey,
+        ),
+        {
+          gitAuthenticated: true,
+          jobDurations: {},
+          ["_jobDurationsStale"]: false,
+          modalWorkflows: [
+            { kind: "validation", jobUrl: "https://git.example.com/runs/1" },
+            { kind: "megalinter", jobUrl: "https://git.example.com/runs/1" },
+            { kind: "validation", jobUrl: "https://git.example.com/runs/1" },
+            { kind: "deployment", jobUrl: "" },
+          ],
+        },
+      );
+      view._requestJobDurations();
+      assert.deepStrictEqual(messages.pop().data, {
+        // One pipeline link for two kinds of job: each one is asked
+        jobs: [
+          {
+            key: "validation|https://git.example.com/runs/1",
+            url: "https://git.example.com/runs/1",
+            kind: "validation",
+          },
+          {
+            key: "megalinter|https://git.example.com/runs/1",
+            url: "https://git.example.com/runs/1",
+            kind: "megalinter",
+          },
+        ],
+        refresh: false,
+      });
+      view.handleReturnJobDurations({
+        durations: { "validation|https://git.example.com/runs/1": 125 },
+      });
+      view._requestJobDurations();
+      assert.deepStrictEqual(
+        messages.pop().data.jobs.map((job: any) => job.kind),
+        ["megalinter"],
+      );
+      // A job with no duration to give is not asked for again
+      view.handleReturnJobDurations({
+        durations: { "megalinter|https://git.example.com/runs/1": null },
+      });
+      view._requestJobDurations();
+      assert.strictEqual(messages.length, 0);
+      // A job run again can keep its link: everything is asked again
+      view["_jobDurationsStale"] = true;
+      view._requestJobDurations();
+      const again = messages.pop().data;
+      assert.strictEqual(again.refresh, true);
+      assert.strictEqual(again.jobs.length, 2);
+    });
+
+    test("the running jobs are asked for a Pull Request whose window is not shown yet", () => {
+      const messages: any[] = [];
+      const view = (pr: any, overrides: Record<string, any> = {}) =>
+        Object.assign(
+          new Function(
+            "window",
+            "lookupState",
+            "journeyBranchPath",
+            `return { ${extractMember(js, "_requestRunningJobs()")} };`,
+          )(
+            { sendMessageToVSCode: (message: any) => messages.push(message) },
+            utils.lookupState,
+            utils.journeyBranchPath,
+          ),
+          {
+            // A Pull Request opened by a link is read before its window is displayed
+            showPRModal: false,
+            singlePullRequest: pr,
+            gitAuthenticated: true,
+            explorerMode: false,
+            pipelineData: { orgs: ORGS },
+            ["_runningJobsRequestId"]: 0,
+            ["_stopRunningJobsPoll"]: () => undefined,
+            ...overrides,
+          },
+        );
+      view(pullRequest())._requestRunningJobs();
+      assert.deepStrictEqual(messages.pop(), {
+        type: "loadPullRequestRunningJobs",
+        data: { prNumber: 128, open: true, branches: [], requestId: 1 },
+      });
+      // Merged: the deployments of the branches it goes through
+      view(pullRequest({ state: "merged" }))._requestRunningJobs();
+      assert.deepStrictEqual(messages.pop().data.branches, [
+        "integration",
+        "uat",
+        "preprod",
+        "main",
+      ]);
+      // A vehicle ends in the branch it is merged into
+      view(
+        pullRequest({
+          state: "merged",
+          targetBranch: "uat",
+          isPromotion: true,
+        }),
+      )._requestRunningJobs();
+      assert.deepStrictEqual(messages.pop().data.branches, ["uat"]);
+      // Nothing to ask without a git provider, for a closed one, or for a draft
+      view(pullRequest(), { gitAuthenticated: false })._requestRunningJobs();
+      view(pullRequest({ state: "closed" }))._requestRunningJobs();
+      view(pullRequest({ number: -1 }))._requestRunningJobs();
+      assert.strictEqual(messages.length, 0);
+    });
+
     test("coming back to a Pull Request asks for the comments it was left without", () => {
       const requests: number[] = [];
+      const runningJobsRequests: number[] = [];
       const back = (state: Record<string, any>) => {
         const view = Object.assign(
           new Function(
@@ -1047,6 +1560,8 @@ suite("Pull Request view", () => {
             modalPullRequests: [],
             ["_requestActionStatuses"]: () => requests.push(1),
             ["_requestTicketDetails"]: () => undefined,
+            // The jobs still going on are always asked again: they changed meanwhile
+            ["_requestRunningJobs"]: () => runningJobsRequests.push(1),
             ["_showModalTab"]: () => undefined,
             ["_loadGoLives"]: () => undefined,
           },
@@ -1069,6 +1584,7 @@ suite("Pull Request view", () => {
         workflowPrNumbers: [128],
       });
       assert.strictEqual(requests.length, 1);
+      assert.strictEqual(runningJobsRequests.length, 2);
       // A branch window has no comment tab
       back({
         modalMode: "branch",
