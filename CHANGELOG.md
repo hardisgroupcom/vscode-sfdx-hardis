@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- DevOps Pipeline: the My Pull Request card finds a Pull Request you have just created in the browser as soon as you come back to VS Code, instead of saying it does not exist for up to a minute
+
 ## [8.13.0] 2026-10-11
 
 - DORA metrics: a new panel, opened from the DevOps Pipeline menu, shows how often, how fast and how safely each major org is deployed, with the time a change takes to reach production, what needs attention, the failed deployments and the contributors

@@ -252,6 +252,17 @@ export class LwcUiPanel {
     this.persistentMessageListeners = [];
   }
 
+  /**
+   * Ties a resource to the life of this panel: it is disposed with it.
+   */
+  public addDisposable(disposable: vscode.Disposable): void {
+    if (this._isDisposed) {
+      disposable.dispose();
+      return;
+    }
+    this.disposables.push(disposable);
+  }
+
   public isDisposed(): boolean {
     return this._isDisposed;
   }

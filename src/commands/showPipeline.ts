@@ -51,6 +51,9 @@ const GIT_PULL_REFUSAL_COOLDOWN_MS = 60 * 60 * 1000;
 const promptedRemoteUpdatesByBranch = new Map<string, string>();
 const declinedRemotePullPromptUntilByBranch = new Map<string, number>();
 const notifiedAutoFixBranchHeadByPullRequest = new Map<string, string>();
+// One listener for the pipeline panel. It is disposed with the panel, and
+// replaced when the command runs again over a panel that is still open.
+let windowFocusListener: vscode.Disposable | undefined;
 async function getOriginBranchUpdateStatus(branchName: string): Promise<{
   remoteHeadSha: string | null;
   hasNewRemoteCommit: boolean;
@@ -247,6 +250,18 @@ export function registerShowPipeline(commands: Commands) {
 
       panel.updateTitle(t("devOpsPipeline"));
 
+      // Coming back to VS Code is the moment the pipeline is looked at again,
+      // most often right after a Pull Request was created or merged in the
+      // browser. The webview is not told when the window gets the focus back,
+      // so it is told here, and decides whether there is anything to ask.
+      windowFocusListener?.dispose();
+      windowFocusListener = vscode.window.onDidChangeWindowState((state) => {
+        if (state.focused && !panel.isDisposed()) {
+          panel.sendMessage({ type: "windowFocused", data: {} });
+        }
+      });
+      panel.addDisposable(windowFocusListener);
+
       let pipelineProperties: PipelineInfo | null = null;
 
       // The deep link travels with the staged payloads: the webview applies
@@ -329,7 +344,24 @@ export function registerShowPipeline(commands: Commands) {
       // driven by the LWC itself (overlay on the existing diagram for a manual
       // refresh, nothing for an auto/interval refresh), so this routine does NOT
       // push mermaidLoading:true up front — that would replace the diagram.
-      const loadPipelineFull = async (opts?: { resetGit?: boolean }) => {
+      // One at a time. The timer of the panel, its Refresh button and the
+      // check for a new Pull Request can all ask for a reload within the same
+      // second. Two of them running together both rename the draft actions
+      // file of a Pull Request that was just found, and the second fails on a
+      // file that is no longer there. Whoever asks while a load runs gets that
+      // load: it is as fresh as theirs would have been.
+      let fullLoadInFlight: Promise<void> | null = null;
+      const loadPipelineFull = (opts?: {
+        resetGit?: boolean;
+      }): Promise<void> => {
+        if (!fullLoadInFlight) {
+          fullLoadInFlight = runPipelineFullLoad(opts).finally(() => {
+            fullLoadInFlight = null;
+          });
+        }
+        return fullLoadInFlight;
+      };
+      const runPipelineFullLoad = async (opts?: { resetGit?: boolean }) => {
         try {
           const full = await loadAllPipelineInfo({
             browseGitProvider: true,
@@ -383,6 +415,36 @@ export function registerShowPipeline(commands: Commands) {
         if (type === "refreshPipeline") {
           ticketDetailsCache.clear();
           await loadPipelineFull();
+        }
+        // The card says the current branch has no Pull Request, and somebody
+        // came back to the panel: one call to know whether it has one now, and
+        // a reload only if it does. Never a reload to find out.
+        else if (type === "checkCurrentBranchPullRequest") {
+          try {
+            const branch = await getCurrentGitBranch();
+            // A major branch is merged into, it has no Pull Request to wait
+            // for: somebody who works on integration all day must not cost a
+            // call each time they come back to VS Code
+            const majorBranches: string[] = (
+              pipelineProperties?.pipelineData?.orgs || []
+            ).map((org: any) => org?.name);
+            if (!branch || majorBranches.includes(branch)) {
+              return;
+            }
+            const provider = await GitProvider.getInstance();
+            if (provider?.isActive) {
+              const found =
+                await provider.getActivePullRequestFromBranch(branch);
+              if (found) {
+                await loadPipelineFull();
+              }
+            }
+          } catch (e: any) {
+            Logger.log(
+              "[vscode-sfdx-hardis] Pull Request check failed: " +
+                (e?.message || e),
+            );
+          }
         }
         // Update panel title
         else if (type === "updatePanelTitle") {
