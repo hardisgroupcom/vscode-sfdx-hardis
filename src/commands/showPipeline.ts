@@ -427,7 +427,7 @@ export function registerShowPipeline(commands: Commands) {
             // call each time they come back to VS Code
             const majorBranches: string[] = (
               pipelineProperties?.pipelineData?.orgs || []
-            ).map((org: any) => org?.branchName);
+            ).map((org: any) => org?.name);
             if (!branch || majorBranches.includes(branch)) {
               return;
             }
