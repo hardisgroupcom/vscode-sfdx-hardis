@@ -154,6 +154,118 @@
         <lightning-tabset active-tab-value={activeTab}>
           <!-- Overview: every major branch side by side -->
           <lightning-tab label={i18n.doraOverview} value="overview" icon-name="utility:table" onactive={handleTabActive}>
+            <!-- Pipeline flow: each branch with what waits in it, the wait between two branches, the time to production -->
+            <template lwc:if={hasPipeline}>
+              <div class="hardis-group-label dora-first-label">{i18n.doraPipelineFlow}</div>
+              <p class="hardis-group-desc dora-pipeline-desc">{i18n.doraPipelineFlowDesc}</p>
+              <div class="dora-pipeline">
+                <div class="dora-pipeline-strip">
+                  <template for:each={view.pipeline.items} for:item="item">
+                    <template lwc:if={item.isStage}>
+                      <button
+                        key={item.key}
+                        type="button"
+                        class={item.className}
+                        title={item.title}
+                        data-branch={item.branch}
+                        aria-pressed={item.selected}
+                        disabled={item.disabled}
+                        onclick={handleSelectStage}
+                      >
+                        <span class="hardis-branch-chip">{item.branch}</span>
+                        <span class="dora-stage-count">{item.waitingText}</span>
+                        <template lwc:if={item.hasWaiting}>
+                          <span class="dora-stage-sub">{item.oldestText}</span>
+                        </template>
+                      </button>
+                    </template>
+                    <template lwc:else>
+                      <div key={item.key} class="dora-step" title={item.title}>
+                        <lightning-icon icon-name="utility:forward" size="xx-small" alternative-text={item.route}></lightning-icon>
+                        <template lwc:if={item.hasWait}>
+                          <span class="dora-step-wait">{item.waitText}</span>
+                        </template>
+                        <span>{item.changesText}</span>
+                        <template lwc:if={item.hasPromotion}>
+                          <span>{item.promotionText}</span>
+                        </template>
+                        <template lwc:if={item.isBottleneck}>
+                          <span class="hardis-pill hardis-status-pending"><span class="hardis-pill-dot"></span>{i18n.doraLongestWait}</span>
+                        </template>
+                      </div>
+                    </template>
+                  </template>
+                </div>
+                <template lwc:if={view.pipeline.hasTotal}>
+                  <div class="hardis-card dora-tile dora-pipeline-total">
+                    <div class="hardis-prop-key">{view.pipeline.total.label}</div>
+                    <template lwc:if={view.pipeline.total.hasValue}>
+                      <div class="dora-tile-value">{view.pipeline.total.valueText}</div>
+                    </template>
+                    <div class="dora-cell">
+                      <span class={view.pipeline.total.pillClass}><span class="hardis-pill-dot"></span>{view.pipeline.total.levelLabel}</span>
+                      <template lwc:if={view.pipeline.total.hasTrend}>
+                        <span class="dora-trend" title={view.pipeline.total.previousText}>
+                          <lightning-icon icon-name={view.pipeline.total.trendIcon} size="xx-small" alternative-text={view.pipeline.total.previousText}></lightning-icon>
+                        </span>
+                      </template>
+                    </div>
+                    <p class="hardis-card-desc">{view.pipeline.total.changesText}</p>
+                    <template lwc:if={view.pipeline.total.hasPrevious}>
+                      <p class="hardis-card-desc">{view.pipeline.total.previousText}</p>
+                    </template>
+                  </div>
+                </template>
+              </div>
+              <!-- Steps between branches that are not drawn side by side -->
+              <template lwc:if={view.pipeline.hasOtherSteps}>
+                <ul class="dora-other-steps">
+                  <template for:each={view.pipeline.otherSteps} for:item="step">
+                    <li key={step.key} title={step.title}>
+                      <span class="dora-step-route">{step.route}</span>
+                      <template lwc:if={step.hasWait}>
+                        <span class="dora-step-wait">{step.waitText}</span>
+                      </template>
+                      <span>{step.changesText}</span>
+                    </li>
+                  </template>
+                </ul>
+              </template>
+              <template lwc:if={view.pipeline.hasUntraced}>
+                <p class="hardis-group-desc dora-none">{view.pipeline.untracedText}</p>
+              </template>
+              <template lwc:if={view.pipeline.hasSelected}>
+                <div class="hardis-group-label">{view.pipeline.selectedTitle}</div>
+                <s-hardis-datatable
+                  key-field="key"
+                  data={view.pipeline.waitingRows}
+                  columns={waitingColumns}
+                  column-widths-mode="auto"
+                  hide-checkbox-column
+                  onrowaction={handlePullRequestRowAction}
+                ></s-hardis-datatable>
+                <template lwc:if={view.pipeline.selectedLimited}>
+                  <p class="hardis-group-desc dora-none">{view.pipeline.selectedLimitedText}</p>
+                </template>
+              </template>
+              <div class="dora-lists dora-pipeline-lists">
+                <button type="button" class="hardis-textlink dora-toggle" data-key={view.pipeline.slowestKey} aria-expanded={view.pipeline.slowestOpen} disabled={view.pipeline.slowestDisabled} onclick={handleToggleList}>
+                  <lightning-icon icon-name={view.pipeline.slowestIcon} size="xx-small"></lightning-icon>
+                  <span>{view.pipeline.slowestTitle}</span>
+                </button>
+                <template lwc:if={view.pipeline.slowestOpen}>
+                  <s-hardis-datatable
+                    key-field="key"
+                    data={view.pipeline.slowestRows}
+                    columns={slowestColumns}
+                    column-widths-mode="auto"
+                    hide-checkbox-column
+                    onrowaction={handlePullRequestRowAction}
+                  ></s-hardis-datatable>
+                </template>
+              </div>
+            </template>
+
             <template lwc:if={hasAttention}>
               <div class="hardis-group-label dora-first-label">{attentionTitle}</div>
               <ul class="dora-attention">
@@ -279,6 +391,9 @@
                     </div>
                     <template lwc:if={metric.hasPrevious}>
                       <p class="hardis-card-desc">{metric.previousText}</p>
+                    </template>
+                    <template lwc:if={metric.hasDetail}>
+                      <p class="hardis-card-desc">{metric.detailText}</p>
                     </template>
                   </div>
                 </template>

@@ -15,6 +15,7 @@ interface ChartUtils {
   labelIndexes(count: any, maxLabels?: number): Set<number>;
   buildWeeklyBarChart(weeks: any): any;
   buildSparkline(values: any, size?: any): any;
+  buildPipelineStrip(pipeline: any): { items: any[]; otherSteps: any[] };
 }
 
 function loadChartUtils(): ChartUtils {
@@ -22,7 +23,7 @@ function loadChartUtils(): ChartUtils {
   assert.ok(!/^import /m.test(source), "the module must stay free of imports");
   const body =
     source.replace(/^export /gm, "") +
-    "\nreturn { shortWeekLabel, integerTicks, labelIndexes, buildWeeklyBarChart, buildSparkline };";
+    "\nreturn { shortWeekLabel, integerTicks, labelIndexes, buildWeeklyBarChart, buildSparkline, buildPipelineStrip };";
   return new Function(body)() as ChartUtils;
 }
 
@@ -245,5 +246,51 @@ suite("DORA chart utils", () => {
     assert.strictEqual(none.last, null);
     assert.strictEqual(none.isEmpty, true);
     assert.strictEqual(chartUtils.buildSparkline(undefined).isEmpty, true);
+  });
+
+  test("the pipeline flow alternates each branch with the step to the next one", () => {
+    const stage = (branch: string) => ({ branch });
+    const step = (from: string, to: string) => ({ from, to });
+    const strip = chartUtils.buildPipelineStrip({
+      stages: [stage("integration"), stage("uat"), stage("main")],
+      steps: [step("integration", "uat"), step("uat", "main")],
+    });
+    assert.deepStrictEqual(
+      strip.items.map((item) =>
+        item.kind === "stage"
+          ? item.stage.branch
+          : `${item.step.from}>${item.step.to}`,
+      ),
+      ["integration", "integration>uat", "uat", "uat>main", "main"],
+    );
+    assert.deepStrictEqual(strip.otherSteps, []);
+  });
+
+  test("a step between branches that are not neighbors is returned apart", () => {
+    const stage = (branch: string) => ({ branch });
+    const strip = chartUtils.buildPipelineStrip({
+      stages: [stage("integration"), stage("uat"), stage("main")],
+      steps: [
+        { from: "integration", to: "uat" },
+        // A hotfix path, and a branch nothing is merged from
+        { from: "integration", to: "main" },
+      ],
+    });
+    assert.deepStrictEqual(
+      strip.items.map((item) => item.kind),
+      ["stage", "step", "stage", "stage"],
+    );
+    assert.deepStrictEqual(strip.otherSteps, [
+      { from: "integration", to: "main" },
+    ]);
+  });
+
+  test("no pipeline flow draws nothing", () => {
+    for (const pipeline of [null, undefined, {}, { stages: "x" }]) {
+      assert.deepStrictEqual(chartUtils.buildPipelineStrip(pipeline), {
+        items: [],
+        otherSteps: [],
+      });
+    }
   });
 });

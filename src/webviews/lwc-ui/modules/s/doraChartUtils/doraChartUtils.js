@@ -201,6 +201,38 @@ export function buildSparkline(values, size = {}) {
   };
 }
 
+/**
+ * Order the pipeline flow is drawn in: each branch, followed by the step to the
+ * branch drawn next when sfdx-hardis measured one. A step between two branches
+ * that are not neighbors (a branch merged into two others) cannot sit between
+ * them: it is returned apart.
+ * @param {{stages?: object[], steps?: object[]}} pipeline pipeline of the report
+ * @returns {{items: object[], otherSteps: object[]}} items: { kind: "stage", stage } or { kind: "step", step }
+ */
+export function buildPipelineStrip(pipeline) {
+  const stages = Array.isArray(pipeline && pipeline.stages)
+    ? pipeline.stages
+    : [];
+  const steps = Array.isArray(pipeline && pipeline.steps) ? pipeline.steps : [];
+  const drawn = new Set();
+  const items = [];
+  stages.forEach((stage, index) => {
+    items.push({ kind: "stage", stage });
+    const next = stages[index + 1];
+    const step = next
+      ? steps.find(
+          (candidate) =>
+            candidate.from === stage.branch && candidate.to === next.branch,
+        )
+      : undefined;
+    if (step) {
+      drawn.add(step);
+      items.push({ kind: "step", step });
+    }
+  });
+  return { items, otherSteps: steps.filter((step) => !drawn.has(step)) };
+}
+
 // 1, 2 or 5 times a power of ten, never below 1: the graduations stay integers
 function niceIntegerStep(rawStep) {
   if (rawStep <= 1) {

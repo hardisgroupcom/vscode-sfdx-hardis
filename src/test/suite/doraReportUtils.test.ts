@@ -240,7 +240,6 @@ suite("DORA metrics panel", () => {
   test("the fixture is consistent: weekly counts add up to the counts, rates match them", () => {
     const fixture = loadFixture();
     assert.strictEqual(fixture.schemaVersion, 2);
-    assert.strictEqual(fixture.pipeline, null);
     assert.deepStrictEqual(
       fixture.branches.map((branch: any) => branch.name),
       ["integration", "uat", "preprod", "main"],
@@ -304,6 +303,7 @@ suite("DORA metrics panel", () => {
       "deploymentFailing",
       "failureRateUp",
       "noRecentDeployment",
+      "pipelineBacklog",
       "stalePullRequests",
     ]);
     assert.deepStrictEqual(
@@ -328,6 +328,71 @@ suite("DORA metrics panel", () => {
     );
   });
 
+  test("the pipeline flow of the fixture agrees with its branches", () => {
+    const fixture = loadFixture();
+    const pipeline = fixture.pipeline;
+    const names = fixture.branches.map((branch: any) => branch.name);
+    assert.deepStrictEqual(
+      pipeline.stages.map((stage: any) => stage.branch),
+      names,
+    );
+    assert.deepStrictEqual(
+      pipeline.steps.map((step: any) => [step.from, step.to]),
+      names.slice(1).map((to: string, index: number) => [names[index], to]),
+    );
+    // The step changes wait the longest at
+    const slowest = [...pipeline.steps].sort(
+      (a: any, b: any) => b.waitDays.median - a.waitDays.median,
+    )[0];
+    assert.deepStrictEqual(pipeline.bottleneck, {
+      from: slowest.from,
+      to: slowest.to,
+    });
+    for (const stage of pipeline.stages) {
+      const waiting = stage.waiting;
+      assert.ok(waiting.changes.length <= 10, stage.branch);
+      assert.ok(waiting.changes.length <= waiting.count, stage.branch);
+      const days = waiting.changes.map((change: any) => change.days);
+      // The oldest first
+      assert.deepStrictEqual(
+        [...days].sort((a: number, b: number) => b - a),
+        days,
+        stage.branch,
+      );
+      assert.strictEqual(waiting.oldestDays, days.length ? days[0] : null);
+      assert.strictEqual(
+        waiting.staleCount,
+        days.filter((value: number) => value > 30).length,
+        stage.branch,
+      );
+    }
+    // What reaches a branch came from the branch before, or was merged straight into it
+    for (const step of pipeline.steps) {
+      const target = fixture.branches.find((b: any) => b.name === step.to);
+      const stage = pipeline.stages.find((s: any) => s.branch === step.to);
+      assert.strictEqual(
+        target.metrics.changeLeadTime.changes,
+        step.changes + stage.entered,
+        step.to,
+      );
+      assert.ok(step.viaPromotion <= step.changes);
+    }
+    const production = fixture.branches.find((b: any) => b.isProduction);
+    assert.strictEqual(
+      pipeline.timeToProduction.medianDays,
+      production.metrics.changeLeadTime.medianDays,
+    );
+    assert.strictEqual(
+      pipeline.timeToProduction.changes,
+      sum(pipeline.weeks.map((week: any) => week.changes)),
+    );
+    for (const change of pipeline.slowestChanges) {
+      const last = change.stages[change.stages.length - 1];
+      assert.strictEqual(last.branch, production.name);
+      assert.strictEqual(change.stages[0].branch, change.enteredAt);
+    }
+  });
+
   test("the component only draws: no rating threshold, no HTML rendering", () => {
     const js = readModuleFile("doraMetrics", "doraMetrics.js");
     const html = readModuleFile("doraMetrics", "doraMetrics.html");
@@ -342,8 +407,10 @@ suite("DORA metrics panel", () => {
     const sends = js.match(/type: "open(External|PullRequest)"/g) || [];
     assert.strictEqual(sends.length, 2);
     assert.ok(js.includes("const safeUrl = httpUrl(url);"));
-    // No Pipeline flow tab in this version
-    assert.ok(!/pipeline/i.test(html));
+    // The pipeline flow is drawn in the order and with the bottleneck sfdx-hardis gives
+    assert.ok(js.includes("buildPipelineStrip(pipeline)"));
+    assert.ok(js.includes("pipeline.bottleneck"));
+    assert.ok(!code.includes(".sort("));
   });
 
   test("the stylesheet of the panel has no hardcoded color nor font", () => {

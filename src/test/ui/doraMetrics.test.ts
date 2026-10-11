@@ -124,6 +124,17 @@ suite("DORA metrics panel UI tests", function () {
     assert.strictEqual(preprod.metrics.changeFailureRate.level, "low");
     assert.strictEqual(preprod.attention[0].code, "deploymentFailing");
     assert.strictEqual(state.report.contributors.length, 3);
+    // The pipeline flow and the lead time of the changes come with it
+    assert.strictEqual(preprod.metrics.changeLeadTime.medianDays, 12.6);
+    assert.deepStrictEqual(state.report.pipeline.bottleneck, {
+      from: "uat",
+      to: "preprod",
+    });
+    assert.strictEqual(state.report.pipeline.timeToProduction.medianDays, 21.4);
+    assert.deepStrictEqual(
+      state.report.pipeline.stages.map((stage: any) => stage.waiting.count),
+      [9, 14, 22, 0],
+    );
     assert.ok(state.readAt, "the reading time is kept");
 
     const call = dataCalls().pop();

@@ -2370,8 +2370,14 @@ suite("Documentation screenshots", function () {
     }
     // A universe names the branch whose tab it shows: the base one shows the branch that
     // needs attention
-    const shots = [
+    const shots: { name: string; tab: string; waiting?: string }[] = [
       { name: "dora-metrics", tab: "overview" },
+      // The overview with the changes waiting in a branch of the pipeline flow listed
+      {
+        name: "dora-metrics-waiting",
+        tab: "overview",
+        waiting: universeSetting("doraWaitingBranch") || "preprod",
+      },
       {
         name: "dora-metrics-branch",
         tab: universeSetting("doraBranchTab") || "preprod",
@@ -2383,7 +2389,7 @@ suite("Documentation screenshots", function () {
         name: shot.name,
         command: "vscode-sfdx-hardis.showDoraMetrics",
         lwcId: "s-dora-metrics",
-        commandArgs: { period: 90, tab: shot.tab },
+        commandArgs: { period: 90, tab: shot.tab, waiting: shot.waiting },
         ready: (initData) => initData.loading === false && !!initData.report,
         settleMs: 3000,
         force: true,

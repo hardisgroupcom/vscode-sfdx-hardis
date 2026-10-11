@@ -276,3 +276,130 @@
   gap: 0.35rem;
   font-size: 0.82rem;
 }
+
+/* Pipeline flow */
+
+.dora-pipeline-desc {
+  margin: 0 0 0.5rem;
+}
+
+.dora-pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.7rem;
+  margin-bottom: 0.6rem;
+}
+
+.dora-pipeline-strip {
+  display: flex;
+  flex: 1 1 30rem;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.dora-stage {
+  display: flex;
+  flex: 1 1 7.5rem;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.3rem;
+  min-width: 7.5rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--slds-g-color-neutral-base-90);
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dora-stage:hover:not(:disabled) {
+  background: var(--slds-g-color-neutral-base-95);
+}
+
+.dora-stage:focus-visible {
+  outline: 2px solid var(--slds-g-color-palette-cloud-blue-40);
+  outline-offset: 1px;
+}
+
+.dora-stage:disabled {
+  cursor: default;
+}
+
+.dora-stage-selected {
+  border-color: var(--slds-g-color-palette-cloud-blue-40);
+  box-shadow: inset 0 0 0 1px var(--slds-g-color-palette-cloud-blue-40);
+}
+
+.dora-stage-count {
+  font-size: 0.95rem;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+  color: var(--slds-g-color-neutral-base-10);
+}
+
+.dora-stage:disabled .dora-stage-count {
+  font-weight: normal;
+  color: var(--slds-g-color-neutral-base-50);
+}
+
+.dora-stage-sub {
+  font-size: 0.74rem;
+  color: var(--slds-g-color-neutral-base-50);
+}
+
+.dora-step {
+  display: flex;
+  flex: 0 1 6.5rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  min-width: 5.5rem;
+  font-size: 0.74rem;
+  text-align: center;
+  color: var(--slds-g-color-neutral-base-50);
+  --slds-c-icon-color-foreground-default: var(--slds-g-color-neutral-base-50);
+}
+
+.dora-step-wait {
+  font-size: 0.9rem;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+  color: var(--slds-g-color-neutral-base-10);
+}
+
+.dora-pipeline-total {
+  flex: 0 1 14rem;
+  min-width: 11rem;
+}
+
+.dora-other-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 1.2rem;
+  margin: 0 0 0.6rem;
+  padding: 0;
+  list-style: none;
+  font-size: 0.78rem;
+  color: var(--slds-g-color-neutral-base-50);
+}
+
+.dora-other-steps li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.dora-step-route {
+  color: var(--slds-g-color-neutral-base-10);
+}
+
+.dora-pipeline-lists {
+  margin: 0.5rem 0 1rem;
+}

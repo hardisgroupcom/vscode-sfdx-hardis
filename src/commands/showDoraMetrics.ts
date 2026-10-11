@@ -46,6 +46,8 @@ interface DoraPanelState {
   providerLabel: string;
   // Tab to open: "overview", "contributors" or the name of a major branch
   tab: string | null;
+  // Branch of the pipeline flow whose waiting changes are listed when the panel opens
+  waiting: string | null;
   // sfdx-hardis version the panel asks for when the installed one is too old
   minimalCliVersion: string;
   error: DoraPanelError | null;
@@ -83,13 +85,15 @@ export function registerShowDoraMetrics(commands: Commands) {
 
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showDoraMetrics",
-    async (args?: { period?: number; tab?: string }) => {
+    async (args?: { period?: number; tab?: string; waiting?: string }) => {
       if (args?.period !== undefined) {
         sessionPeriod = normalizeDoraPeriod(args.period);
       }
       // The panel opens at once, on the last result when there is one
       const state = initialState(sessionPeriod);
       state.tab = typeof args?.tab === "string" ? args.tab.slice(0, 250) : null;
+      state.waiting =
+        typeof args?.waiting === "string" ? args.waiting.slice(0, 250) : null;
       const panel = LwcPanelManager.getInstance().getOrCreatePanel(
         DORA_LWC_ID,
         state,
@@ -104,8 +108,9 @@ export function registerShowDoraMetrics(commands: Commands) {
           await loadDoraMetrics(current, data?.refresh === true);
         } else if (type === "connectToGit") {
           // Heavy module: loaded when the button is clicked, not with the panel
-          const { connectGitProvider } =
-            await import("../utils/gitProviders/connectGitProvider");
+          const { connectGitProvider } = await import(
+            "../utils/gitProviders/connectGitProvider"
+          );
           if (await connectGitProvider()) {
             await loadDoraMetrics(current, false);
           }
@@ -142,6 +147,7 @@ function initialState(period: number): DoraPanelState {
     readAt: last?.readAt || null,
     providerLabel: "",
     tab: null,
+    waiting: null,
     minimalCliVersion: RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
     error: null,
   };

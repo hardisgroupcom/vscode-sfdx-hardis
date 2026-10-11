@@ -7,7 +7,11 @@ import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
 import { getAvatarClass, getInitials } from "s/avatarUtils";
 import { getPillClass } from "s/pillUtils";
-import { buildSparkline, buildWeeklyBarChart } from "s/doraChartUtils";
+import {
+  buildPipelineStrip,
+  buildSparkline,
+  buildWeeklyBarChart,
+} from "s/doraChartUtils";
 
 /**
  * DORA metrics panel.
@@ -80,6 +84,15 @@ const METRICS = [
   },
 ];
 
+// Time to production is rated and compared like the lead time of a branch
+const TIME_TO_PRODUCTION = {
+  key: "timeToProduction",
+  labelKey: "doraTimeToProduction",
+  value: "medianDays",
+  previous: "previousMedianDays",
+  unitKey: "doraValueDays",
+};
+
 export default class DoraMetrics extends SharedMixin(LightningElement) {
   period = 90;
   periods = [30, 90, 180, 365];
@@ -92,16 +105,25 @@ export default class DoraMetrics extends SharedMixin(LightningElement) {
   activeTab = OVERVIEW_TAB;
   // Collapsible lists the user opened, by "<branch>:<list>"
   openLists = {};
+  // Branch of the pipeline flow whose waiting changes are listed
+  selectedStage = null;
   // Tab the command that opened the panel asked for, and the one still waiting for its report
   deepLinkTab = null;
   wantedTab = null;
   // Everything the template iterates on, rebuilt when the report changes
-  @track view = { branches: [], contributors: [], attention: [] };
+  @track view = {
+    branches: [],
+    contributors: [],
+    attention: [],
+    pipeline: null,
+  };
 
   @api
   initialize(data) {
     // The panel was opened (again): the tab asked for by the command applies, even the same one
     this.deepLinkTab = null;
+    // And so does the branch whose waiting changes it asked to list, or none
+    this.selectedStage = (data && data.waiting) || null;
     this.applyState(data || {});
   }
 
@@ -258,6 +280,57 @@ export default class DoraMetrics extends SharedMixin(LightningElement) {
     return this.t("doraWeeksCount", {
       count: Array.isArray(weeks) ? weeks.length : 0,
     });
+  }
+
+  // --- Pipeline flow ---
+
+  get hasPipeline() {
+    return !!this.view.pipeline;
+  }
+
+  get waitingColumns() {
+    return [
+      this.pullRequestColumn(),
+      this.authorColumn(),
+      {
+        label: this.i18n.doraWaitingSinceColumn,
+        fieldName: "sinceLabel",
+        type: "text",
+        initialWidth: 200,
+        cellAttributes: { class: "hardis-date-cell" },
+      },
+      {
+        label: this.i18n.doraWaitingForColumn,
+        fieldName: "daysLabel",
+        type: "text",
+        initialWidth: 130,
+      },
+    ];
+  }
+
+  get slowestColumns() {
+    return [
+      this.pullRequestColumn(),
+      this.authorColumn(),
+      {
+        label: this.i18n.doraMergedIntoColumn,
+        fieldName: "enteredAt",
+        type: "branchChip",
+        initialWidth: 150,
+      },
+      {
+        label: this.i18n.doraTimeToProduction,
+        fieldName: "totalLabel",
+        type: "text",
+        initialWidth: 160,
+      },
+      {
+        label: this.i18n.doraPathColumn,
+        fieldName: "pathLabel",
+        type: "text",
+        wrapText: true,
+      },
+    ];
   }
 
   // --- Contributors ---
@@ -452,6 +525,16 @@ export default class DoraMetrics extends SharedMixin(LightningElement) {
     }
   }
 
+  // A branch of the pipeline flow lists what is waiting in it, a second click closes the list
+  handleSelectStage(event) {
+    const branch = event.currentTarget.dataset.branch;
+    if (!branch) {
+      return;
+    }
+    this.selectedStage = this.selectedStage === branch ? null : branch;
+    this.rebuildView();
+  }
+
   handleOpenAttention(event) {
     this.openExternal(event.currentTarget.dataset.url);
   }
@@ -541,6 +624,7 @@ export default class DoraMetrics extends SharedMixin(LightningElement) {
     this.applyWantedTab(branches);
     this.view = {
       branches,
+      pipeline: this.buildPipelineView(this.report?.pipeline),
       // Every item of every branch, each one named by its branch
       attention: branches.flatMap((branch) =>
         branch.attention.map((item) => ({
@@ -590,9 +674,24 @@ export default class DoraMetrics extends SharedMixin(LightningElement) {
   buildBranchView(branch) {
     const name = String(branch.name || "");
     const weeks = Array.isArray(branch.weeks) ? branch.weeks : [];
-    const metrics = METRICS.map((metric) =>
-      this.buildMetricView(metric, branch.metrics?.[metric.key] || {}),
-    );
+    // The lead time of the changes that reached the branch, when sfdx-hardis followed them
+    // through the pipeline: the one of the Pull Requests of the branch is then a detail line
+    const changeLeadTime = isNumber(branch.metrics?.changeLeadTime?.medianDays)
+      ? branch.metrics.changeLeadTime
+      : null;
+    const metrics = METRICS.map((metric) => {
+      if (metric.key !== "leadTime" || !changeLeadTime) {
+        return this.buildMetricView(metric, branch.metrics?.[metric.key] || {});
+      }
+      const pullRequestDays = branch.metrics?.leadTime?.medianDays;
+      return {
+        ...this.buildMetricView(metric, changeLeadTime),
+        hasDetail: isNumber(pullRequestDays),
+        detailText: this.t("doraPullRequestLeadTime", {
+          value: this.formatUnit(metric.unitKey, pullRequestDays),
+        }),
+      };
+    });
     const chart = buildWeeklyBarChart(weeks);
     const sparkline = buildSparkline(weeks.map((week) => week.succeeded));
     const failedRows = (branch.failedDeployments || []).map((failed, index) =>
@@ -688,6 +787,145 @@ export default class DoraMetrics extends SharedMixin(LightningElement) {
       hotfixDisabled: hotfixRows.length === 0,
       hotfixOpen: hotfixOpen,
       hotfixIcon: toggleIcon(hotfixOpen),
+    };
+  }
+
+  // The pipeline flow of the overview: each branch with what is waiting in it, the wait
+  // between two branches, the time to production and the changes that took the longest
+  buildPipelineView(pipeline) {
+    const strip = buildPipelineStrip(pipeline);
+    if (strip.items.length === 0) {
+      return null;
+    }
+    const bottleneck = pipeline.bottleneck || {};
+    const stepView = (step, index) => {
+      const route = this.t("doraStepRoute", { from: step.from, to: step.to });
+      const viaPromotion = Number(step.viaPromotion) || 0;
+      return {
+        key: `step-${index}-${step.from}-${step.to}`,
+        isStep: true,
+        route,
+        hasWait: isNumber(step.waitDays?.median),
+        waitText: this.formatUnit("doraValueDays", step.waitDays?.median),
+        changesText: this.t("doraStepChanges", {
+          count: this.formatNumber(step.changes),
+        }),
+        hasPromotion: viaPromotion > 0,
+        promotionText: this.t("doraStepViaPromotion", {
+          count: this.formatNumber(viaPromotion),
+        }),
+        isBottleneck:
+          step.from === bottleneck.from && step.to === bottleneck.to,
+        title: isNumber(step.previousMedianDays)
+          ? `${route} - ${this.t("doraPreviousPeriod", {
+              value: this.formatUnit("doraValueDays", step.previousMedianDays),
+            })}`
+          : route,
+      };
+    };
+    let selected = null;
+    const items = strip.items.map((item, index) => {
+      if (item.kind === "step") {
+        return stepView(item.step, index);
+      }
+      const stage = item.stage;
+      const branch = String(stage.branch || "");
+      const waiting = stage.waiting || {};
+      const count = Number(waiting.count) || 0;
+      const isSelected = count > 0 && this.selectedStage === branch;
+      if (isSelected) {
+        selected = stage;
+      }
+      return {
+        key: `stage-${branch}`,
+        isStage: true,
+        branch,
+        isProduction: stage.isProduction === true,
+        hasWaiting: count > 0,
+        waitingText:
+          count > 0
+            ? this.t("doraWaitingCount", { count: this.formatNumber(count) })
+            : this.i18n.doraNothingWaiting,
+        oldestText: this.t("doraOldestWaiting", {
+          value: this.formatUnit("doraValueDays", waiting.oldestDays),
+        }),
+        disabled: count === 0,
+        selected: isSelected,
+        className: isSelected ? "dora-stage dora-stage-selected" : "dora-stage",
+        title:
+          count > 0
+            ? this.t("doraShowWaiting", { branch })
+            : this.i18n.doraNothingWaiting,
+      };
+    });
+
+    const waitingRows = selected
+      ? (selected.waiting.changes || []).map((change, index) => ({
+          ...this.pullRequestFields(change),
+          key: `waiting-${index}`,
+          sinceLabel: this.formatDate(change.since),
+          daysLabel: this.formatUnit("doraValueDays", change.days),
+        }))
+      : [];
+    const slowestRows = (pipeline.slowestChanges || []).map(
+      (change, index) => ({
+        ...this.pullRequestFields(change),
+        key: `slowest-${index}`,
+        enteredAt: change.enteredAt || "",
+        totalLabel: this.formatUnit("doraValueDays", change.totalDays),
+        pathLabel: (change.stages || [])
+          .map(
+            (stage) =>
+              `${stage.branch} ${this.formatDate(stage.deployedAt || stage.arrivedAt)}`,
+          )
+          .join(" → "),
+      }),
+    );
+    const slowestKey = "pipeline:slowest";
+    const slowestOpen =
+      slowestRows.length > 0 && this.openLists[slowestKey] === true;
+    const toProduction = pipeline.timeToProduction;
+    const untraced = Number(pipeline.untraced) || 0;
+    return {
+      items,
+      otherSteps: strip.otherSteps.map((step, index) =>
+        stepView(step, `other-${index}`),
+      ),
+      hasOtherSteps: strip.otherSteps.length > 0,
+      hasTotal: !!toProduction,
+      total: toProduction
+        ? {
+            ...this.buildMetricView(TIME_TO_PRODUCTION, toProduction),
+            changesText: this.t("doraChangesDelivered", {
+              count: this.formatNumber(toProduction.changes),
+            }),
+          }
+        : null,
+      hasSelected: !!selected,
+      selectedTitle: selected
+        ? this.t("doraWaitingIn", {
+            branch: selected.branch,
+            count: this.formatNumber(selected.waiting.count),
+          })
+        : "",
+      // sfdx-hardis lists the oldest ones only
+      selectedLimited: selected
+        ? selected.waiting.count > waitingRows.length
+        : false,
+      selectedLimitedText: this.t("doraWaitingListLimited", {
+        count: this.formatNumber(waitingRows.length),
+      }),
+      waitingRows,
+      slowestRows,
+      slowestTitle: this.t("doraSlowestChanges", { count: slowestRows.length }),
+      slowestKey,
+      slowestDisabled: slowestRows.length === 0,
+      slowestOpen,
+      slowestIcon: toggleIcon(slowestOpen),
+      hasUntraced: untraced > 0,
+      untracedText: this.t("doraUntracedChanges", {
+        count: this.formatNumber(untraced),
+      }),
     };
   }
 

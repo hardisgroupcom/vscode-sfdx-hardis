@@ -46,6 +46,72 @@
           "percent": 10,
           "level": "high",
           "previousPercent": null
+        },
+        "changeLeadTime": {
+          "medianDays": 1,
+          "p90Days": 1.3,
+          "avgDays": 1.2,
+          "level": "elite",
+          "previousMedianDays": null,
+          "changes": 10,
+          "weeks": [
+            {
+              "week": "2026-W26",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W27",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W28",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W29",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W30",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W31",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W32",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W33",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W34",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W35",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W36",
+              "medianDays": 1.3
+            },
+            {
+              "week": "2026-W37",
+              "medianDays": 1.1
+            },
+            {
+              "week": "2026-W38",
+              "medianDays": 0.3
+            },
+            {
+              "week": "2026-W39",
+              "medianDays": null
+            }
+          ]
         }
       },
       "supplementary": {
@@ -268,6 +334,72 @@
           "percent": 0,
           "level": "elite",
           "previousPercent": null
+        },
+        "changeLeadTime": {
+          "medianDays": 4.6,
+          "p90Days": 17.2,
+          "avgDays": 7.6,
+          "level": "high",
+          "previousMedianDays": null,
+          "changes": 10,
+          "weeks": [
+            {
+              "week": "2026-W26",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W27",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W28",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W29",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W30",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W31",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W32",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W33",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W34",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W35",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W36",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W37",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W38",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W39",
+              "medianDays": 4.6
+            }
+          ]
         }
       },
       "supplementary": {
@@ -469,6 +601,72 @@
           "percent": 0,
           "level": "elite",
           "previousPercent": null
+        },
+        "changeLeadTime": {
+          "medianDays": 5.5,
+          "p90Days": 18,
+          "avgDays": 8.4,
+          "level": "high",
+          "previousMedianDays": null,
+          "changes": 10,
+          "weeks": [
+            {
+              "week": "2026-W26",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W27",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W28",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W29",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W30",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W31",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W32",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W33",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W34",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W35",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W36",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W37",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W38",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W39",
+              "medianDays": 5.5
+            }
+          ]
         }
       },
       "supplementary": {
@@ -670,6 +868,72 @@
           "percent": 0,
           "level": "elite",
           "previousPercent": null
+        },
+        "changeLeadTime": {
+          "medianDays": 5.7,
+          "p90Days": 18.3,
+          "avgDays": 8.6,
+          "level": "high",
+          "previousMedianDays": null,
+          "changes": 10,
+          "weeks": [
+            {
+              "week": "2026-W26",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W27",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W28",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W29",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W30",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W31",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W32",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W33",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W34",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W35",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W36",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W37",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W38",
+              "medianDays": null
+            },
+            {
+              "week": "2026-W39",
+              "medianDays": 5.7
+            }
+          ]
         }
       },
       "supplementary": {
@@ -837,7 +1101,483 @@
       "attention": []
     }
   ],
-  "pipeline": null,
+  "pipeline": {
+    "stages": [
+      {
+        "branch": "integration",
+        "isProduction": false,
+        "entered": 10,
+        "waiting": {
+          "count": 0,
+          "staleCount": 0,
+          "oldestDays": null,
+          "medianDays": null,
+          "changes": []
+        }
+      },
+      {
+        "branch": "uat",
+        "isProduction": false,
+        "entered": 0,
+        "waiting": {
+          "count": 0,
+          "staleCount": 0,
+          "oldestDays": null,
+          "medianDays": null,
+          "changes": []
+        }
+      },
+      {
+        "branch": "preprod",
+        "isProduction": false,
+        "entered": 0,
+        "waiting": {
+          "count": 0,
+          "staleCount": 0,
+          "oldestDays": null,
+          "medianDays": null,
+          "changes": []
+        }
+      },
+      {
+        "branch": "main",
+        "isProduction": true,
+        "entered": 0,
+        "waiting": {
+          "count": 0,
+          "staleCount": 0,
+          "oldestDays": null,
+          "medianDays": null,
+          "changes": []
+        }
+      }
+    ],
+    "steps": [
+      {
+        "from": "integration",
+        "to": "uat",
+        "changes": 10,
+        "viaPromotion": 0,
+        "waitDays": {
+          "median": 4,
+          "p90": 15.9,
+          "avg": 6.3
+        },
+        "previousMedianDays": null
+      },
+      {
+        "from": "uat",
+        "to": "preprod",
+        "changes": 10,
+        "viaPromotion": 0,
+        "waitDays": {
+          "median": 0.8,
+          "p90": 0.8,
+          "avg": 0.8
+        },
+        "previousMedianDays": null
+      },
+      {
+        "from": "preprod",
+        "to": "main",
+        "changes": 10,
+        "viaPromotion": 0,
+        "waitDays": {
+          "median": 0.2,
+          "p90": 0.2,
+          "avg": 0.2
+        },
+        "previousMedianDays": null
+      }
+    ],
+    "timeToProduction": {
+      "medianDays": 5.7,
+      "p90Days": 18.3,
+      "avgDays": 8.6,
+      "level": "high",
+      "previousMedianDays": null,
+      "changes": 10
+    },
+    "bottleneck": {
+      "from": "integration",
+      "to": "uat"
+    },
+    "weeks": [
+      {
+        "week": "2026-W26",
+        "medianDays": null,
+        "changes": 0
+      },
+      {
+        "week": "2026-W27",
+        "medianDays": null,
+        "changes": 0
+      },
+      {
+        "week": "2026-W28",
+        "medianDays": null,
+        "changes": 0
+      },
+      {
+        "week": "2026-W29",
+        "medianDays": null,
+        "changes": 0
+      },
+      {
+        "week": "2026-W30",
+        "medianDays": null,
+        "changes": 0
+      },
+      {
+        "week": "2026-W31",
+        "medianDays": null,
+        "changes": 0
+      },
+      {
+        "week": "2026-W32",
+        "medianDays": null,
+        "changes": 0
+      },
+      {
+        "week": "2026-W33",
+        "medianDays": null,
+        "changes": 0
+      },
+      {
+        "week": "2026-W34",
+        "medianDays": null,
+        "changes": 0
+      },
+      {
+        "week": "2026-W35",
+        "medianDays": null,
+        "changes": 0
+      },
+      {
+        "week": "2026-W36",
+        "medianDays": null,
+        "changes": 0
+      },
+      {
+        "week": "2026-W37",
+        "medianDays": null,
+        "changes": 0
+      },
+      {
+        "week": "2026-W38",
+        "medianDays": null,
+        "changes": 0
+      },
+      {
+        "week": "2026-W39",
+        "medianDays": 5.7,
+        "changes": 10
+      }
+    ],
+    "slowestChanges": [
+      {
+        "id": "40",
+        "title": "US-014 Show the crew how many panels a job needs",
+        "url": "https://github.com/my-username/sfdx-hardis-training/pull/40",
+        "author": "You",
+        "enteredAt": "integration",
+        "totalDays": 19.3,
+        "stages": [
+          {
+            "branch": "integration",
+            "arrivedAt": "2026-09-04T16:15:00Z",
+            "deployedAt": "2026-09-04T16:18:01Z"
+          },
+          {
+            "branch": "uat",
+            "arrivedAt": "2026-09-21T14:15:00Z",
+            "deployedAt": "2026-09-21T14:18:44Z"
+          },
+          {
+            "branch": "preprod",
+            "arrivedAt": "2026-09-22T10:15:00Z",
+            "deployedAt": "2026-09-22T10:19:34Z"
+          },
+          {
+            "branch": "main",
+            "arrivedAt": "2026-09-22T15:15:00Z",
+            "deployedAt": "2026-09-22T15:19:50Z"
+          }
+        ]
+      },
+      {
+        "id": "41",
+        "title": "US-016 Let the crew leave notes on an installation",
+        "url": "https://github.com/my-username/sfdx-hardis-training/pull/41",
+        "author": "You",
+        "enteredAt": "integration",
+        "totalDays": 18.3,
+        "stages": [
+          {
+            "branch": "integration",
+            "arrivedAt": "2026-09-05T16:15:00Z",
+            "deployedAt": "2026-09-05T16:17:47Z"
+          },
+          {
+            "branch": "uat",
+            "arrivedAt": "2026-09-21T14:15:00Z",
+            "deployedAt": "2026-09-21T14:18:44Z"
+          },
+          {
+            "branch": "preprod",
+            "arrivedAt": "2026-09-22T10:15:00Z",
+            "deployedAt": "2026-09-22T10:19:34Z"
+          },
+          {
+            "branch": "main",
+            "arrivedAt": "2026-09-22T15:15:00Z",
+            "deployedAt": "2026-09-22T15:19:50Z"
+          }
+        ]
+      },
+      {
+        "id": "1",
+        "title": "US-018 Cap the crew size a planner can assign",
+        "url": "https://github.com/my-username/sfdx-hardis-training/pull/1",
+        "author": "Mariia Pyvovarchuk",
+        "enteredAt": "integration",
+        "totalDays": 12.3,
+        "stages": [
+          {
+            "branch": "integration",
+            "arrivedAt": "2026-09-11T10:15:00Z",
+            "deployedAt": "2026-09-11T10:18:19Z"
+          },
+          {
+            "branch": "uat",
+            "arrivedAt": "2026-09-21T14:15:00Z",
+            "deployedAt": "2026-09-21T14:18:44Z"
+          },
+          {
+            "branch": "preprod",
+            "arrivedAt": "2026-09-22T10:15:00Z",
+            "deployedAt": "2026-09-22T10:19:34Z"
+          },
+          {
+            "branch": "main",
+            "arrivedAt": "2026-09-22T15:15:00Z",
+            "deployedAt": "2026-09-22T15:19:50Z"
+          }
+        ]
+      },
+      {
+        "id": "2",
+        "title": "US-019 Generate a quote PDF from an opportunity",
+        "url": "https://github.com/my-username/sfdx-hardis-training/pull/2",
+        "author": "Romain Panda",
+        "enteredAt": "integration",
+        "totalDays": 11.3,
+        "stages": [
+          {
+            "branch": "integration",
+            "arrivedAt": "2026-09-17T11:15:00Z",
+            "deployedAt": "2026-09-17T11:18:23Z"
+          },
+          {
+            "branch": "uat",
+            "arrivedAt": "2026-09-21T14:15:00Z",
+            "deployedAt": "2026-09-21T14:18:44Z"
+          },
+          {
+            "branch": "preprod",
+            "arrivedAt": "2026-09-22T10:15:00Z",
+            "deployedAt": "2026-09-22T10:19:34Z"
+          },
+          {
+            "branch": "main",
+            "arrivedAt": "2026-09-22T15:15:00Z",
+            "deployedAt": "2026-09-22T15:19:50Z"
+          }
+        ]
+      },
+      {
+        "id": "24",
+        "title": "US-024 Crew size becomes mandatory",
+        "url": "https://github.com/my-username/sfdx-hardis-training/pull/24",
+        "author": "You",
+        "enteredAt": "integration",
+        "totalDays": 6.3,
+        "stages": [
+          {
+            "branch": "integration",
+            "arrivedAt": "2026-09-16T15:15:00Z",
+            "deployedAt": "2026-09-16T15:18:32Z"
+          },
+          {
+            "branch": "uat",
+            "arrivedAt": "2026-09-21T14:15:00Z",
+            "deployedAt": "2026-09-21T14:18:44Z"
+          },
+          {
+            "branch": "preprod",
+            "arrivedAt": "2026-09-22T10:15:00Z",
+            "deployedAt": "2026-09-22T10:19:34Z"
+          },
+          {
+            "branch": "main",
+            "arrivedAt": "2026-09-22T15:15:00Z",
+            "deployedAt": "2026-09-22T15:19:50Z"
+          }
+        ]
+      },
+      {
+        "id": "60",
+        "title": "US-050 Configure the pipeline up to production",
+        "url": "https://github.com/my-username/sfdx-hardis-training/pull/60",
+        "author": "You",
+        "enteredAt": "integration",
+        "totalDays": 5.1,
+        "stages": [
+          {
+            "branch": "integration",
+            "arrivedAt": "2026-09-17T15:15:00Z",
+            "deployedAt": "2026-09-17T15:17:38Z"
+          },
+          {
+            "branch": "uat",
+            "arrivedAt": "2026-09-21T14:15:00Z",
+            "deployedAt": "2026-09-21T14:18:44Z"
+          },
+          {
+            "branch": "preprod",
+            "arrivedAt": "2026-09-22T10:15:00Z",
+            "deployedAt": "2026-09-22T10:19:34Z"
+          },
+          {
+            "branch": "main",
+            "arrivedAt": "2026-09-22T15:15:00Z",
+            "deployedAt": "2026-09-22T15:19:50Z"
+          }
+        ]
+      },
+      {
+        "id": "64",
+        "title": "US-052 The Installation layout in two columns",
+        "url": "https://github.com/my-username/sfdx-hardis-training/pull/64",
+        "author": "Mariia Pyvovarchuk",
+        "enteredAt": "integration",
+        "totalDays": 4.3,
+        "stages": [
+          {
+            "branch": "integration",
+            "arrivedAt": "2026-09-18T14:15:00Z",
+            "deployedAt": "2026-09-18T14:17:55Z"
+          },
+          {
+            "branch": "uat",
+            "arrivedAt": "2026-09-21T14:15:00Z",
+            "deployedAt": "2026-09-21T14:18:44Z"
+          },
+          {
+            "branch": "preprod",
+            "arrivedAt": "2026-09-22T10:15:00Z",
+            "deployedAt": "2026-09-22T10:19:34Z"
+          },
+          {
+            "branch": "main",
+            "arrivedAt": "2026-09-22T15:15:00Z",
+            "deployedAt": "2026-09-22T15:19:50Z"
+          }
+        ]
+      },
+      {
+        "id": "70",
+        "title": "US-056 Show the panels each crew member has to lay",
+        "url": "https://github.com/my-username/sfdx-hardis-training/pull/70",
+        "author": "Romain Panda",
+        "enteredAt": "integration",
+        "totalDays": 4,
+        "stages": [
+          {
+            "branch": "integration",
+            "arrivedAt": "2026-09-19T11:15:00Z",
+            "deployedAt": "2026-09-19T11:18:07Z"
+          },
+          {
+            "branch": "uat",
+            "arrivedAt": "2026-09-21T14:15:00Z",
+            "deployedAt": "2026-09-21T14:18:44Z"
+          },
+          {
+            "branch": "preprod",
+            "arrivedAt": "2026-09-22T10:15:00Z",
+            "deployedAt": "2026-09-22T10:19:34Z"
+          },
+          {
+            "branch": "main",
+            "arrivedAt": "2026-09-22T15:15:00Z",
+            "deployedAt": "2026-09-22T15:19:50Z"
+          }
+        ]
+      },
+      {
+        "id": "71",
+        "title": "US-062 Put the delivery managers in a Crew Leads group",
+        "url": "https://github.com/my-username/sfdx-hardis-training/pull/71",
+        "author": "Mariia Pyvovarchuk",
+        "enteredAt": "integration",
+        "totalDays": 3.3,
+        "stages": [
+          {
+            "branch": "integration",
+            "arrivedAt": "2026-09-19T16:11:00Z",
+            "deployedAt": "2026-09-20T11:18:13Z"
+          },
+          {
+            "branch": "uat",
+            "arrivedAt": "2026-09-21T14:15:00Z",
+            "deployedAt": "2026-09-21T14:18:44Z"
+          },
+          {
+            "branch": "preprod",
+            "arrivedAt": "2026-09-22T10:15:00Z",
+            "deployedAt": "2026-09-22T10:19:34Z"
+          },
+          {
+            "branch": "main",
+            "arrivedAt": "2026-09-22T15:15:00Z",
+            "deployedAt": "2026-09-22T15:19:50Z"
+          }
+        ]
+      },
+      {
+        "id": "72",
+        "title": "US-062 Fix the crew capacity action",
+        "url": "https://github.com/my-username/sfdx-hardis-training/pull/72",
+        "author": "Mariia Pyvovarchuk",
+        "enteredAt": "integration",
+        "totalDays": 2.3,
+        "stages": [
+          {
+            "branch": "integration",
+            "arrivedAt": "2026-09-20T11:15:00Z",
+            "deployedAt": "2026-09-20T11:18:13Z"
+          },
+          {
+            "branch": "uat",
+            "arrivedAt": "2026-09-21T14:15:00Z",
+            "deployedAt": "2026-09-21T14:18:44Z"
+          },
+          {
+            "branch": "preprod",
+            "arrivedAt": "2026-09-22T10:15:00Z",
+            "deployedAt": "2026-09-22T10:19:34Z"
+          },
+          {
+            "branch": "main",
+            "arrivedAt": "2026-09-22T15:15:00Z",
+            "deployedAt": "2026-09-22T15:19:50Z"
+          }
+        ]
+      }
+    ],
+    "untraced": 0
+  },
   "contributors": [
     {
       "name": "You",
