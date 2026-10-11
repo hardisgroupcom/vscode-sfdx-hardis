@@ -51,6 +51,8 @@ const GIT_PULL_REFUSAL_COOLDOWN_MS = 60 * 60 * 1000;
 const promptedRemoteUpdatesByBranch = new Map<string, string>();
 const declinedRemotePullPromptUntilByBranch = new Map<string, number>();
 const notifiedAutoFixBranchHeadByPullRequest = new Map<string, string>();
+// One listener for the pipeline panel, replaced when the panel is opened again
+let windowFocusListener: vscode.Disposable | undefined;
 async function getOriginBranchUpdateStatus(branchName: string): Promise<{
   remoteHeadSha: string | null;
   hasNewRemoteCommit: boolean;
@@ -247,6 +249,22 @@ export function registerShowPipeline(commands: Commands) {
 
       panel.updateTitle(t("devOpsPipeline"));
 
+      // Coming back to VS Code is the moment the pipeline is looked at again,
+      // most often right after a Pull Request was created or merged in the
+      // browser. The webview is not told when the window gets the focus back,
+      // so it is told here, and decides whether there is anything to ask.
+      windowFocusListener?.dispose();
+      windowFocusListener = vscode.window.onDidChangeWindowState((state) => {
+        if (panel.isDisposed()) {
+          windowFocusListener?.dispose();
+          windowFocusListener = undefined;
+          return;
+        }
+        if (state.focused) {
+          panel.sendMessage({ type: "windowFocused", data: {} });
+        }
+      });
+
       let pipelineProperties: PipelineInfo | null = null;
 
       // The deep link travels with the staged payloads: the webview applies
@@ -383,6 +401,27 @@ export function registerShowPipeline(commands: Commands) {
         if (type === "refreshPipeline") {
           ticketDetailsCache.clear();
           await loadPipelineFull();
+        }
+        // The card says the current branch has no Pull Request, and somebody
+        // came back to the panel: one call to know whether it has one now, and
+        // a reload only if it does. Never a reload to find out.
+        else if (type === "checkCurrentBranchPullRequest") {
+          try {
+            const provider = await GitProvider.getInstance();
+            const branch = await getCurrentGitBranch();
+            if (provider?.isActive && branch) {
+              const found =
+                await provider.getActivePullRequestFromBranch(branch);
+              if (found) {
+                await loadPipelineFull();
+              }
+            }
+          } catch (e: any) {
+            Logger.log(
+              "[vscode-sfdx-hardis] Pull Request check failed: " +
+                (e?.message || e),
+            );
+          }
         }
         // Update panel title
         else if (type === "updatePanelTitle") {

@@ -86,6 +86,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track communitiesLoading = false;
   @track communitiesRequestId = null;
   _refreshTimer = null;
+  // When the git provider was last asked whether the current branch has a Pull Request
+  _lastPullRequestCheckAt = 0;
   _isVisible = true;
   _isAutoRefresh = false;
   _mermaidZoomStep = 0.1;
@@ -1721,6 +1723,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @api
   handleMessage(messageType, data) {
     switch (messageType) {
+      case "windowFocused":
+        this._checkForNewPullRequest();
+        break;
       case "refreshPipeline":
         this.refreshPipeline();
         // A retried or closed action changes its status: reload it in the open modal
@@ -2212,10 +2217,49 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     );
     // Restart timer with appropriate interval when visibility changes
     this._startAutoRefresh();
+    if (this._isVisible) {
+      this._checkForNewPullRequest();
+    }
     // The running jobs were not asked for while nobody looked
     if (this._isVisible && this._runningJobsPaused) {
       this._requestRunningJobs();
     }
+  }
+
+  /**
+   * Ask whether the current branch got its Pull Request, when somebody comes
+   * back to the panel: the tab is shown again, or VS Code gets the focus back.
+   *
+   * A Pull Request is created in the browser. The My Pull Request card kept
+   * saying it did not exist until the next tick of the timer, up to a minute
+   * later, and coming back to the tab restarted that minute.
+   *
+   * Git providers count their calls, so this is as cheap as it can be: it only
+   * runs while the card says the Pull Request does not exist, it costs one
+   * call, not a reload of the pipeline, and never more than one every 30
+   * seconds. The pipeline is reloaded once, when the answer is yes. In every
+   * other state the timer is the only thing that reloads, as before.
+   */
+  _checkForNewPullRequest() {
+    const MIN_INTERVAL_MS = 30000;
+    if (!this.gitAuthenticated || !this._isVisible) {
+      return;
+    }
+    if (this.currentBranchPullRequest?.number !== -1) {
+      return;
+    }
+    // A load already under way answers the question
+    if (this.mermaidLoading || this.mermaidRefreshing || this.prLoading) {
+      return;
+    }
+    if (Date.now() - this._lastPullRequestCheckAt < MIN_INTERVAL_MS) {
+      return;
+    }
+    this._lastPullRequestCheckAt = Date.now();
+    window.sendMessageToVSCode({
+      type: "checkCurrentBranchPullRequest",
+      data: {},
+    });
   }
 
   _startAutoRefresh() {
