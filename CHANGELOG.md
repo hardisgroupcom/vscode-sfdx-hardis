@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The links to the [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com/) course point at its final address
 - DevOps Pipeline: the My Pull Request card finds a Pull Request you have just created in the browser as soon as you come back to VS Code, instead of saying it does not exist for up to a minute
 
 ## [8.13.0] 2026-10-11
