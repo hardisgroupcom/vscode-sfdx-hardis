@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Training screenshots: the `uat` window of the promotion branches lab holds the seven Pull Requests a learner has at that step
+
 ## [8.14.0] 2026-10-13
 
 - Scratch Org Pool: a new panel, opened from the DevOps Pipeline menu and the commands menu, shows the scratch orgs available in the pool, who took the last ones and the failed creations, and lets you get a scratch org, refill or reset the pool

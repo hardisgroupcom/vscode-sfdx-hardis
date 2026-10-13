@@ -181,6 +181,42 @@
             "foundOnServer": true
           }
         ]
+      },
+      {
+        "id": 60,
+        "number": 60,
+        "title": "Pipeline configuration, from the release manager",
+        "sourceBranch": "config/pipeline-2026-09-20-0905",
+        "targetBranch": "integration",
+        "author": {
+          "name": "You",
+          "username": "you"
+        },
+        "authorLabel": "You",
+        "state": "merged",
+        "mergeDate": "2026-09-20T09:15:00.000Z",
+        "createdAt": "2026-09-20T09:15:00.000Z",
+        "webUrl": "https://github.com/hardisgroupcom/sfdx-hardis-training/pull/60",
+        "jobsStatus": "success",
+        "relatedTickets": []
+      },
+      {
+        "id": 59,
+        "number": 59,
+        "title": "Retrofit: US-045 back down into integration",
+        "sourceBranch": "retrofit/US-045-retrofit",
+        "targetBranch": "integration",
+        "author": {
+          "name": "You",
+          "username": "you"
+        },
+        "authorLabel": "You",
+        "state": "merged",
+        "mergeDate": "2026-09-19T15:15:00.000Z",
+        "createdAt": "2026-09-19T15:15:00.000Z",
+        "webUrl": "https://github.com/hardisgroupcom/sfdx-hardis-training/pull/59",
+        "jobsStatus": "success",
+        "relatedTickets": []
       }
     ]
   }

@@ -216,6 +216,22 @@
       "branchName": "promotion/uat/preprod/2026-09-24-0930",
       "candidates": [
         {
+          "number": 59,
+          "title": "Retrofit: US-045 back down into integration",
+          "author": "you",
+          "commit": "4e8a1f6",
+          "date": "2026-09-19 15:15",
+          "branch": "retrofit/US-045-retrofit"
+        },
+        {
+          "number": 60,
+          "title": "Pipeline configuration, from the release manager",
+          "author": "you",
+          "commit": "a6c03d2",
+          "date": "2026-09-20 09:15",
+          "branch": "config/pipeline-2026-09-20-0905"
+        },
+        {
           "number": 61,
           "title": "US-058 Record the warranty term on a panel batch",
           "author": "you",
