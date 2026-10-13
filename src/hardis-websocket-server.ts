@@ -14,6 +14,7 @@ import { t } from "./i18n/i18n";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { refreshDataWorkbenchPanel } from "./commands/showDataWorkbench";
+import { emitCommandCompleted } from "./utils/commandCompletionEvents";
 import {
   extractTargetOrgUsername,
   peekSinglePendingCommandPanel,
@@ -283,6 +284,13 @@ export class LocalWebSocketServer {
         return;
       }
       const clientData = this.clients[data.context?.id];
+      // The panels whose data this command changed read it again
+      if (typeof clientData?.context?.command === "string") {
+        emitCommandCompleted(
+          clientData.context.command,
+          String(data?.status || "success"),
+        );
+      }
       /* jscpd:ignore-start */
       if (clientData?.panel) {
         // Mark command as completed in the panel

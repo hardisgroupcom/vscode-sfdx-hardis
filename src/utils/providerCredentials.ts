@@ -6,6 +6,8 @@ import type { AhaProvider } from "./ticketProviders/ticketProviderAha";
 import { SecretsManager, SecretSource } from "./secretsManager";
 import { onEnvFileChanged, PROVIDER_ENV_VAR_NAMES } from "./envFileCredentials";
 import { getConfig, isPipelineConfigured } from "./pipeline/sfdxHardisConfig";
+import { poolEncryptionKeySecretName } from "./scratchOrgPoolUtils";
+import { getWorkspaceRoot } from "../utils";
 import { Logger } from "../logger";
 import { t } from "../i18n/i18n";
 
@@ -185,6 +187,7 @@ export const SECRET_ENV_KEYS = new Set([
   "SERVICENOW_USERNAME",
   "SERVICENOW_PASSWORD",
   "AHA_API_KEY",
+  "SFDX_HARDIS_POOL_ENCRYPTION_KEY",
 ]);
 
 // In-memory cache of collected credentials: they are re-read from secret
@@ -308,6 +311,16 @@ export async function collectProviderCredentialEnvVars(): Promise<
   return { ...collected };
 }
 
+/**
+ * Stores the encryption key of the scratch org pool of this repository in the VS Code secret
+ * storage. Every sf hardis command launched afterwards receives it.
+ *
+ * SECURITY: the key is a secret, it is never logged nor sent to a webview.
+ */
+export async function storePoolEncryptionKey(value: string): Promise<void> {
+  await SecretsManager.setSecret(await getPoolEncryptionKeySecretName(), value);
+}
+
 async function collectProviderCredentialEnvVarsNow(): Promise<
   Record<string, string>
 > {
@@ -393,6 +406,21 @@ async function collectProviderCredentialEnvVarsNow(): Promise<
   } catch (e) {
     Logger.log(
       `Could not collect git provider credentials: ${e instanceof Error ? e.message : String(e)}`,
+    );
+  }
+
+  // --- Encryption key of the scratch org pool ---
+  try {
+    const poolEncryptionKey = await SecretsManager.getSecret(
+      await getPoolEncryptionKeySecretName(),
+      PROVIDER_ENV_VAR_NAMES.poolEncryptionKey,
+    );
+    if (poolEncryptionKey) {
+      env.SFDX_HARDIS_POOL_ENCRYPTION_KEY = poolEncryptionKey;
+    }
+  } catch (e) {
+    Logger.log(
+      `Could not collect the scratch org pool encryption key: ${e instanceof Error ? e.message : String(e)}`,
     );
   }
 
@@ -488,4 +516,14 @@ async function collectProviderCredentialEnvVarsNow(): Promise<
   }
 
   return env;
+}
+
+// One key per repository: named after its git remote, or after its folder when it has none
+async function getPoolEncryptionKeySecretName(): Promise<string> {
+  const repoInfo = await GitProvider.detectRepoInfo();
+  return poolEncryptionKeySecretName(
+    repoInfo
+      ? `${repoInfo.host}/${repoInfo.owner}/${repoInfo.repo}`
+      : getWorkspaceRoot(),
+  );
 }

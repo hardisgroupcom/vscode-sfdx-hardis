@@ -34,6 +34,7 @@ import { registerGitMergeDriverToggle } from "./commands/gitMergeDriver";
 import { registerShowDocumentationWorkbench } from "./commands/showDocumentationWorkbench";
 import { registerShowBackpromote } from "./commands/showBackpromote";
 import { registerShowDoraMetrics } from "./commands/showDoraMetrics";
+import { registerShowScratchOrgPool } from "./commands/showScratchOrgPool";
 import { t } from "./i18n/i18n";
 import { ExtraCommands } from "./utils/extraCommands";
 import { refreshAllRefreshableUis } from "./utils/uiUtils";
@@ -111,6 +112,7 @@ export class Commands {
     registerShowDocumentationWorkbench(this);
     registerShowBackpromote(this);
     registerShowDoraMetrics(this);
+    registerShowScratchOrgPool(this);
     this.registerSearchCommands();
   }
 

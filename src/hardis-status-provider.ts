@@ -22,11 +22,17 @@ import { ThemeUtils } from "./utils/themeUtils";
 import { loadProjectSfdxHardisConfig } from "./utils/sfdx-hardis-config-utils";
 import { CacheManager } from "./utils/cache-manager";
 import { emitOrgsChanged } from "./utils/orgChangeEvents";
+import {
+  buildScratchOrgPoolViewCommand,
+  readScratchOrgPoolCounts,
+} from "./utils/scratchOrgPoolUtils";
 
 // Module-level flag: true while the background scratch-pool fetch is in flight
 let SCRATCH_POOL_LOADING = false;
 // Module-level flag: true once the scratch-pool result has been inserted into the tree
 let SCRATCH_POOL_LOADED = false;
+// Available and maximum number of scratch orgs of the pool, as last read
+const SCRATCH_POOL_COUNTS_CACHE_KEY = "scratchPoolCounts";
 
 const GIT_FETCH_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const GIT_FETCH_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes (CacheManager TTL)
@@ -322,23 +328,20 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
         if (config?.poolConfig) {
           if (SCRATCH_POOL_LOADED) {
             // Background fetch already completed — read the cached result
-            const cachedPoolRes = CacheManager.get<any>(
-              "project",
-              "scratchPoolView",
-            );
-            if (
-              cachedPoolRes?.status === 0 &&
-              (cachedPoolRes?.result?.availableScratchOrgs ||
-                cachedPoolRes?.result?.availableScratchOrgs === 0)
-            ) {
+            const poolCounts = CacheManager.get<{
+              available: number;
+              max: number;
+            }>("project", SCRATCH_POOL_COUNTS_CACHE_KEY);
+            if (poolCounts) {
+              // A click opens the Scratch Org Pool panel
               items.push({
                 id: "scratch-org-pool-view",
                 label: t("poolAvailable", {
-                  available: cachedPoolRes.result.availableScratchOrgs,
-                  max: cachedPoolRes.result.maxScratchOrgs,
+                  available: poolCounts.available,
+                  max: poolCounts.max,
                 }),
                 tooltip: t("poolTooltip"),
-                command: "sf hardis:scratch:pool:view",
+                command: "vscode-sfdx-hardis.showScratchOrgPool",
                 iconId: "org:pool",
               });
             }
@@ -347,16 +350,36 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
             SCRATCH_POOL_LOADING = true;
             void (async () => {
               try {
+                // A pool stored in the git provider is read with its token. Heavy
+                // module: loaded here, in the background, not with the status view
+                const { collectProviderCredentialEnvVars } =
+                  await import("./utils/providerCredentials");
                 const poolViewRes = await execSfdxJson(
-                  "sf hardis:scratch:pool:view",
-                  { output: false, fail: false },
+                  buildScratchOrgPoolViewCommand(),
+                  {
+                    output: false,
+                    fail: false,
+                    env: await collectProviderCredentialEnvVars(),
+                  },
                 );
-                await CacheManager.set(
-                  "project",
-                  "scratchPoolView",
-                  poolViewRes,
-                  1000 * 60 * 15,
-                );
+                // Only the two counts are kept: the answer of an older sfdx-hardis
+                // holds the credentials of the pool
+                const poolCounts = readScratchOrgPoolCounts(poolViewRes);
+                if (poolCounts) {
+                  await CacheManager.set(
+                    "project",
+                    SCRATCH_POOL_COUNTS_CACHE_KEY,
+                    poolCounts,
+                    1000 * 60 * 15,
+                  );
+                } else {
+                  await CacheManager.delete(
+                    "project",
+                    SCRATCH_POOL_COUNTS_CACHE_KEY,
+                  );
+                }
+                // The whole answer used to be kept under this key
+                await CacheManager.delete("project", "scratchPoolView");
                 SCRATCH_POOL_LOADED = true;
               } catch (e) {
                 Logger.log(

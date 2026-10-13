@@ -63,6 +63,14 @@
                             icon-name="utility:chart"
                             onclick={handleShowDoraMetrics}
                         ></lightning-menu-item>
+                        <template if:true={showScratchOrgPool}>
+                            <lightning-menu-item
+                                value="scratchOrgPool"
+                                label={i18n.scratchOrgPoolTitle}
+                                icon-name="utility:database"
+                                onclick={handleShowScratchOrgPool}
+                            ></lightning-menu-item>
+                        </template>
                     </lightning-button-menu>
                     <lightning-button-menu
                         alternative-text={i18n.deploymentPackages}

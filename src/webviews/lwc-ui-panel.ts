@@ -213,6 +213,7 @@ export class LwcUiPanel {
       "s-metadata-retriever": t("metadataRetriever"),
       "s-org-manager": t("orgsManager"),
       "s-org-monitoring": t("orgMonitoringWorkbench"),
+      "s-scratch-org-pool": t("scratchOrgPoolTitle"),
       "s-package-xml": t("packageXml"),
       "s-pipeline": t("devOpsPipeline"),
       "s-pipeline-config": t("pipelineConfig"),

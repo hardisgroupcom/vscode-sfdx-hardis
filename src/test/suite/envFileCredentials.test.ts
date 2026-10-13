@@ -143,6 +143,7 @@ suite("Provider credentials of the workspace .env file", () => {
       ...PROVIDER_ENV_VAR_NAMES.jiraToken,
       ...PROVIDER_ENV_VAR_NAMES.serviceNowPassword,
       ...PROVIDER_ENV_VAR_NAMES.ahaApiKey,
+      ...PROVIDER_ENV_VAR_NAMES.poolEncryptionKey,
     ]) {
       assert.ok(SECRET_ENV_KEYS.has(name), `${name} is not in SECRET_ENV_KEYS`);
     }

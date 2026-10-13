@@ -1,0 +1,80 @@
+/* Layout only: type, cards, notes and tables come from resources/global-theme.css. */
+
+.pool-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 2.5rem 1rem;
+}
+
+.pool-loading-spinner {
+  position: relative;
+  width: 2rem;
+  height: 2rem;
+}
+
+.pool-loading-text {
+  margin: 0;
+}
+
+.pool-refreshing {
+  align-items: center;
+  margin-bottom: 0.8rem;
+}
+
+.pool-refreshing-spinner {
+  position: relative;
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+}
+
+.pool-state {
+  margin-bottom: 0.9rem;
+}
+
+.pool-error-message {
+  max-width: 70ch;
+  text-align: left;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.pool-status {
+  margin-bottom: 0.9rem;
+}
+
+/* A table sizes its columns in whole pixels: in a box a fraction of a pixel narrower than
+   their sum it gets a horizontal scrollbar, so the box is a whole number of pixels wide */
+.pool-table {
+  width: round(down, 100%, 1px);
+}
+
+.pool-section {
+  margin-top: 1.4rem;
+}
+
+.pool-failures {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pool-failure {
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.pool-failure-text {
+  min-width: 0;
+}
+
+.pool-failure-error {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
