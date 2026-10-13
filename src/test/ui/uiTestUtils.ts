@@ -35,6 +35,67 @@ export async function waitFor<T>(
   }
 }
 
+/**
+ * The state of a panel that loads its data after it opens, once the data arrived: its
+ * initialization data with `loading` false.
+ * @param accept one more condition on that state (ex: the data is there, not an error)
+ */
+export async function waitForPanelLoaded(
+  panel: any,
+  label: string,
+  accept: (state: any) => boolean = () => true,
+): Promise<any> {
+  return waitFor(
+    () => {
+      const state = panel.getInitializationData();
+      return state && state.loading === false && accept(state) ? state : null;
+    },
+    40000,
+    label,
+  );
+}
+
+/**
+ * Closes the panel when it is open, opens it again through its command and returns it, as it
+ * is before its data arrived.
+ * @param args argument of the command, when it takes one (ex: a deep link)
+ */
+export async function openFreshPanel(
+  panelManager: any,
+  lwcId: string,
+  showCommand: string,
+  args?: any,
+): Promise<any> {
+  panelManager.disposePanel(lwcId);
+  await vscode.commands.executeCommand(showCommand, args);
+  return waitFor(
+    () => panelManager.getPanel(lwcId),
+    10000,
+    `${lwcId} panel to open`,
+  );
+}
+
+/**
+ * A menu item of another panel opens a panel by posting runVsCodeCommand: asserts the command
+ * is registered and that, the panel being open already, it is brought back, not opened twice.
+ * @param panel the panel already open, which posts the message like a menu item would
+ */
+export async function assertShowCommandBringsPanelBack(
+  panelManager: any,
+  panel: any,
+  lwcId: string,
+  showCommand: string,
+): Promise<void> {
+  const commands = await vscode.commands.getCommands(true);
+  assert.ok(commands.includes(showCommand), `${showCommand} is not registered`);
+  panel.simulateWebviewMessage({
+    type: "runVsCodeCommand",
+    data: { command: showCommand },
+  });
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  assert.strictEqual(panelManager.getPanel(lwcId), panel, "the same panel");
+}
+
 /** Records the messages the extension sends to the webview of a panel. */
 export function recordSentMessages(panel: any): any[] {
   const sent: any[] = [];

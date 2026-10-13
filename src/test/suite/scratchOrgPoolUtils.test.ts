@@ -1,6 +1,5 @@
 import * as assert from "assert";
-import * as fs from "fs";
-import * as path from "path";
+import { DOCSITE_URL, PANEL_DOC_URLS } from "../../constants";
 import { PROVIDER_ENV_VAR_NAMES } from "../../utils/envFileCredentials";
 import {
   SCRATCH_ORG_POOL_COUNTS_CACHE_KEY,
@@ -15,8 +14,9 @@ import {
 } from "../../utils/scratchOrgPoolUtils";
 import {
   LOCALES,
-  REPO_ROOT,
   assertKeysTranslated,
+  assertPanelCommandWired,
+  collectComponentI18nKeys,
   extractFunction,
   loadLocale,
   readModuleFile,
@@ -598,17 +598,7 @@ suite("Scratch Org Pool panel", () => {
 
   test("every label of the panel is translated in the 9 locales", () => {
     const js = readModuleFile("scratchOrgPool", "scratchOrgPool.js");
-    const html = readModuleFile("scratchOrgPool", "scratchOrgPool.html");
-    const keys = new Set<string>();
-    for (const [, key] of html.matchAll(/\{i18n\.(\w+)\}/g)) {
-      keys.add(key);
-    }
-    for (const [, key] of js.matchAll(/this\.i18n\.(\w+)/g)) {
-      keys.add(key);
-    }
-    for (const [, key] of js.matchAll(/this\.t\(\s*"(\w+)"/g)) {
-      keys.add(key);
-    }
+    const keys = collectComponentI18nKeys("scratchOrgPool");
     for (const [, key] of js.matchAll(/"(scratchOrgPool\w+)"/g)) {
       keys.add(key);
     }
@@ -680,44 +670,20 @@ suite("Scratch Org Pool panel", () => {
   });
 
   test("the panel command is declared, registered and has its icon", () => {
-    const packageJson = JSON.parse(
-      fs.readFileSync(path.join(REPO_ROOT, "package.json"), "utf8"),
-    );
-    assert.ok(
-      packageJson.contributes.commands.some(
-        (command: any) =>
-          command.command === "vscode-sfdx-hardis.showScratchOrgPool",
-      ),
-    );
-    assert.ok(
-      readSourceFile("commands.ts").includes(
-        "registerShowScratchOrgPool(this)",
-      ),
-    );
-    assert.ok(
-      readSourceFile("utils/themeUtils.ts").includes(
-        '"vscode-sfdx-hardis.showScratchOrgPool"',
-      ),
-    );
-    assert.ok(
-      readSourceFile("hardis-commands-provider.ts").includes(
-        'command: "vscode-sfdx-hardis.showScratchOrgPool"',
-      ),
-    );
-    assert.ok(
-      readSourceFile("webviews/lwc-ui/index.js").includes(
-        '"s-scratch-org-pool": () => import("s/scratchOrgPool")',
-      ),
-    );
+    assertPanelCommandWired({
+      commandId: "vscode-sfdx-hardis.showScratchOrgPool",
+      registerCall: "registerShowScratchOrgPool(this)",
+      lwcId: "s-scratch-org-pool",
+      module: "scratchOrgPool",
+    });
     assert.ok(
       readSourceFile("webviews/lwc-ui-panel.ts").includes(
         '"s-scratch-org-pool": t("scratchOrgPoolTitle")',
       ),
     );
-    assert.ok(
-      readSourceFile("constants.ts").includes(
-        '"s-scratch-org-pool": DOCSITE_URL + "/salesforce-devops-setup-scratch-org-pool/"',
-      ),
+    assert.strictEqual(
+      PANEL_DOC_URLS["s-scratch-org-pool"],
+      DOCSITE_URL + "/salesforce-devops-setup-scratch-org-pool/",
     );
   });
 

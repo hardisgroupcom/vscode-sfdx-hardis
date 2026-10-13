@@ -1,7 +1,13 @@
 import * as assert from "assert";
-import * as vscode from "vscode";
 import { RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION } from "../../constants";
-import { activateExtension, readMockLog, waitFor } from "./uiTestUtils";
+import {
+  activateExtension,
+  assertShowCommandBringsPanelBack,
+  openFreshPanel,
+  readMockLog,
+  waitFor,
+  waitForPanelLoaded,
+} from "./uiTestUtils";
 
 /**
  * UI integration tests of the DORA metrics panel, against the mocked sf CLI that
@@ -61,24 +67,11 @@ suite("DORA metrics panel UI tests", function () {
     label: string,
     accept: (state: any) => boolean = () => true,
   ): Promise<any> {
-    return waitFor(
-      () => {
-        const state = panel.getInitializationData();
-        return state && state.loading === false && accept(state) ? state : null;
-      },
-      40000,
-      label,
-    );
+    return waitForPanelLoaded(panel, label, accept);
   }
 
   async function openPanel(args?: any): Promise<any> {
-    panelManager.disposePanel(LWC_ID);
-    await vscode.commands.executeCommand(SHOW_COMMAND, args);
-    panel = await waitFor(
-      () => panelManager.getPanel(LWC_ID),
-      10000,
-      "DORA metrics panel to open",
-    );
+    panel = await openFreshPanel(panelManager, LWC_ID, SHOW_COMMAND, args);
     // What the panel shows before sfdx-hardis answers
     return { ...panel.getInitializationData() };
   }
@@ -266,18 +259,15 @@ suite("DORA metrics panel UI tests", function () {
   });
 
   test("the command of the DevOps Pipeline menu and of the commands tree is registered", async function () {
-    const commands = await vscode.commands.getCommands(true);
-    assert.ok(commands.includes(SHOW_COMMAND));
     await openPanel({ period: 90 });
-    const opened = panel;
     await waitForLoaded("the report", (data) => !!data.report);
     // The menu item posts runVsCodeCommand: the panel already open is brought back
-    panel.simulateWebviewMessage({
-      type: "runVsCodeCommand",
-      data: { command: SHOW_COMMAND },
-    });
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    assert.strictEqual(panelManager.getPanel(LWC_ID), opened, "the same panel");
+    await assertShowCommandBringsPanelBack(
+      panelManager,
+      panel,
+      LWC_ID,
+      SHOW_COMMAND,
+    );
     await waitForLoaded("the report", (data) => !!data.report);
   });
 });

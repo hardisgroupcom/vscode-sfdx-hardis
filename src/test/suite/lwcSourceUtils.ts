@@ -73,6 +73,74 @@ export function assertKeysTranslated(keys: Iterable<string>): void {
 }
 
 /**
+ * The i18n keys a component names in its template (`{i18n.key}`) and in its code
+ * (`this.i18n.key`, `this.t("key")`). A suite adds the keys its component composes
+ * in another way (a map of label keys, a prefix), then checks they are translated.
+ * @param module component folder name, which is also the name of its files (ex: "doraMetrics")
+ */
+export function collectComponentI18nKeys(module: string): Set<string> {
+  const js = readModuleFile(module, `${module}.js`);
+  const html = readModuleFile(module, `${module}.html`);
+  const keys = new Set<string>();
+  for (const [, key] of html.matchAll(/\{i18n\.(\w+)\}/g)) {
+    keys.add(key);
+  }
+  for (const [, key] of js.matchAll(/this\.i18n\.(\w+)/g)) {
+    keys.add(key);
+  }
+  for (const [, key] of js.matchAll(/this\.t\(\s*"(\w+)"/g)) {
+    keys.add(key);
+  }
+  return keys;
+}
+
+/**
+ * Asserts that the command opening an LWC panel is wired everywhere it must be: declared in
+ * package.json, registered, given an icon, listed in the commands tree, and its component
+ * known to the webview bootstrap.
+ */
+export function assertPanelCommandWired(panel: {
+  /** ex: "vscode-sfdx-hardis.showDoraMetrics" */
+  commandId: string;
+  /** The call in commands.ts, ex: "registerShowDoraMetrics(this)" */
+  registerCall: string;
+  /** ex: "s-dora-metrics" */
+  lwcId: string;
+  /** Component folder name, ex: "doraMetrics" */
+  module: string;
+}): void {
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.join(REPO_ROOT, "package.json"), "utf8"),
+  );
+  assert.ok(
+    packageJson.contributes.commands.some(
+      (command: any) => command.command === panel.commandId,
+    ),
+    `${panel.commandId} is not declared in package.json`,
+  );
+  assert.ok(
+    readSourceFile("commands.ts").includes(panel.registerCall),
+    `${panel.registerCall} is not called in commands.ts`,
+  );
+  assert.ok(
+    readSourceFile("utils/themeUtils.ts").includes(`"${panel.commandId}"`),
+    `${panel.commandId} has no icon`,
+  );
+  assert.ok(
+    readSourceFile("hardis-commands-provider.ts").includes(
+      `command: "${panel.commandId}"`,
+    ),
+    `${panel.commandId} is not in the commands tree`,
+  );
+  assert.ok(
+    readSourceFile("webviews/lwc-ui/index.js").includes(
+      `"${panel.lwcId}": () => import("s/${panel.module}")`,
+    ),
+    `${panel.lwcId} is not known to the webview bootstrap`,
+  );
+}
+
+/**
  * Lifts one member out of an LWC component source, so its logic can be run in the
  * extension test host, where the component itself cannot be instantiated.
  * @param source the component source, read with readModuleFile

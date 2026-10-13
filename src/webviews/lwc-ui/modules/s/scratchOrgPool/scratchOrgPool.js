@@ -346,6 +346,7 @@ export default class ScratchOrgPool extends SharedMixin(LightningElement) {
 
   // --- State ---
 
+  // jscpd:ignore-start
   applyState(data) {
     if (Object.prototype.hasOwnProperty.call(data, "loading")) {
       this.loading = data.loading === true;
@@ -362,6 +363,7 @@ export default class ScratchOrgPool extends SharedMixin(LightningElement) {
     if (Object.prototype.hasOwnProperty.call(data, "pool")) {
       this.pool = data.pool || null;
     }
+    // jscpd:ignore-end
     // The cards depend on the loading state too: Reset waits for the fresh answer
     if (
       Object.prototype.hasOwnProperty.call(data, "pool") ||

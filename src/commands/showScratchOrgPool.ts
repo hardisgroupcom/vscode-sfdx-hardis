@@ -1,3 +1,4 @@
+// jscpd:ignore-start
 import * as vscode from "vscode";
 import { Commands } from "../commands";
 import { LwcPanelManager } from "../lwc-panel-manager";
@@ -9,6 +10,7 @@ import { RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION } from "../constants";
 import { CacheManager } from "../utils/cache-manager";
 import { SecretsManager } from "../utils/secretsManager";
 import { onCommandCompleted } from "../utils/commandCompletionEvents";
+// jscpd:ignore-end
 import {
   collectProviderCredentialEnvVarsWithStatus,
   storePoolEncryptionKey,

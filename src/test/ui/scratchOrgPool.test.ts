@@ -1,9 +1,15 @@
 import * as assert from "assert";
-import * as vscode from "vscode";
 import { RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION } from "../../constants";
 import { CacheManager } from "../../utils/cache-manager";
 import { SCRATCH_ORG_POOL_COUNTS_CACHE_KEY } from "../../utils/scratchOrgPoolUtils";
-import { activateExtension, readMockLog, waitFor } from "./uiTestUtils";
+import {
+  activateExtension,
+  assertShowCommandBringsPanelBack,
+  openFreshPanel,
+  readMockLog,
+  waitFor,
+  waitForPanelLoaded,
+} from "./uiTestUtils";
 
 /**
  * UI integration tests of the Scratch Org Pool panel, against the mocked sf CLI that
@@ -47,28 +53,11 @@ suite("Scratch Org Pool panel UI tests", function () {
   });
 
   /** The state of the panel once sfdx-hardis answered */
-  async function waitForLoaded(
-    label: string,
-    accept: (state: any) => boolean = () => true,
-  ): Promise<any> {
-    return waitFor(
-      () => {
-        const state = panel.getInitializationData();
-        return state && state.loading === false && accept(state) ? state : null;
-      },
-      40000,
-      label,
-    );
-  }
+  const waitForLoaded = (label: string, accept?: (state: any) => boolean) =>
+    waitForPanelLoaded(panel, label, accept);
 
   async function openPanel(): Promise<any> {
-    panelManager.disposePanel(LWC_ID);
-    await vscode.commands.executeCommand(SHOW_COMMAND);
-    panel = await waitFor(
-      () => panelManager.getPanel(LWC_ID),
-      10000,
-      "Scratch Org Pool panel to open",
-    );
+    panel = await openFreshPanel(panelManager, LWC_ID, SHOW_COMMAND);
     // What the panel shows before sfdx-hardis answers
     return { ...panel.getInitializationData() };
   }
@@ -337,18 +326,15 @@ suite("Scratch Org Pool panel UI tests", function () {
   });
 
   test("the command of the DevOps Pipeline menu, the commands tree and the status view is registered", async function () {
-    const commands = await vscode.commands.getCommands(true);
-    assert.ok(commands.includes(SHOW_COMMAND));
     await openPanel();
-    const opened = panel;
     await waitForLoaded("the pool", (data) => !!data.pool);
     // The menu item posts runVsCodeCommand: the panel already open is brought back
-    panel.simulateWebviewMessage({
-      type: "runVsCodeCommand",
-      data: { command: SHOW_COMMAND },
-    });
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    assert.strictEqual(panelManager.getPanel(LWC_ID), opened, "the same panel");
+    await assertShowCommandBringsPanelBack(
+      panelManager,
+      panel,
+      LWC_ID,
+      SHOW_COMMAND,
+    );
     await waitForLoaded("the pool", (data) => !!data.pool);
   });
 });

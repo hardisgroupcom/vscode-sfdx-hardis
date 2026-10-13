@@ -17,9 +17,10 @@ import {
   LOCALES,
   REPO_ROOT,
   assertKeysTranslated,
+  assertPanelCommandWired,
+  collectComponentI18nKeys,
   loadLocale,
   readModuleFile,
-  readSourceFile,
 } from "./lwcSourceUtils";
 
 /**
@@ -491,17 +492,7 @@ suite("DORA metrics panel", () => {
 
   test("every label of the panel is translated in the 9 locales", () => {
     const js = readModuleFile("doraMetrics", "doraMetrics.js");
-    const html = readModuleFile("doraMetrics", "doraMetrics.html");
-    const keys = new Set<string>();
-    for (const [, key] of html.matchAll(/\{i18n\.(\w+)\}/g)) {
-      keys.add(key);
-    }
-    for (const [, key] of js.matchAll(/this\.i18n\.(\w+)/g)) {
-      keys.add(key);
-    }
-    for (const [, key] of js.matchAll(/this\.t\(\s*"(\w+)"/g)) {
-      keys.add(key);
-    }
+    const keys = collectComponentI18nKeys("doraMetrics");
     for (const [, key] of js.matchAll(/(?:labelKey|unitKey): "(\w+)"/g)) {
       keys.add(key);
     }
@@ -550,32 +541,11 @@ suite("DORA metrics panel", () => {
   });
 
   test("the panel command is declared, registered and has its icon", () => {
-    const packageJson = JSON.parse(
-      fs.readFileSync(path.join(REPO_ROOT, "package.json"), "utf8"),
-    );
-    assert.ok(
-      packageJson.contributes.commands.some(
-        (command: any) =>
-          command.command === "vscode-sfdx-hardis.showDoraMetrics",
-      ),
-    );
-    assert.ok(
-      readSourceFile("commands.ts").includes("registerShowDoraMetrics(this)"),
-    );
-    assert.ok(
-      readSourceFile("utils/themeUtils.ts").includes(
-        '"vscode-sfdx-hardis.showDoraMetrics"',
-      ),
-    );
-    assert.ok(
-      readSourceFile("hardis-commands-provider.ts").includes(
-        'command: "vscode-sfdx-hardis.showDoraMetrics"',
-      ),
-    );
-    assert.ok(
-      readSourceFile("webviews/lwc-ui/index.js").includes(
-        '"s-dora-metrics": () => import("s/doraMetrics")',
-      ),
-    );
+    assertPanelCommandWired({
+      commandId: "vscode-sfdx-hardis.showDoraMetrics",
+      registerCall: "registerShowDoraMetrics(this)",
+      lwcId: "s-dora-metrics",
+      module: "doraMetrics",
+    });
   });
 });

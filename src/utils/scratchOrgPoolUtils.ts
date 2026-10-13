@@ -20,10 +20,7 @@ export const SCRATCH_ORG_POOL_COUNTS_TTL_MS = 1000 * 60 * 15;
 // cliTooOld: the installed sfdx-hardis does not describe the pool
 // other: anything else, with the message of sfdx-hardis
 export type ScratchOrgPoolErrorKind =
-  | "noGitProvider"
-  | "noPool"
-  | "cliTooOld"
-  | "other";
+  "noGitProvider" | "noPool" | "cliTooOld" | "other";
 
 export interface ScratchOrgPoolPanelError {
   kind: ScratchOrgPoolErrorKind;
@@ -31,10 +28,7 @@ export interface ScratchOrgPoolPanelError {
 }
 
 export type ScratchOrgPoolKeyStatus =
-  | "ok"
-  | "missing"
-  | "mismatch"
-  | "notNeeded";
+  "ok" | "missing" | "mismatch" | "notNeeded";
 
 export interface ScratchOrgPoolLimit {
   used: number;
@@ -73,8 +67,7 @@ export interface ScratchOrgPoolView {
 }
 
 export type ScratchOrgPoolOutcome =
-  | { pool: ScratchOrgPoolView }
-  | { error: ScratchOrgPoolPanelError };
+  { pool: ScratchOrgPoolView } | { error: ScratchOrgPoolPanelError };
 
 const KEY_STATUSES: ScratchOrgPoolKeyStatus[] = [
   "ok",

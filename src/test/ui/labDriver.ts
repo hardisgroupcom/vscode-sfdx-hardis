@@ -175,19 +175,14 @@ function answerFor(prompt: ShownPrompt, rule: LabAnswer): unknown {
   }
   const pattern = new RegExp(rule.choice, "i");
   const matches = prompt.choices.filter((choice) => pattern.test(choice.title));
-  if (prompt.type === "multiselect") {
-    assert.ok(
-      matches.length > 0,
-      `No choice matching /${rule.choice}/ in "${prompt.message}". ` +
-        `The panel offered: ${prompt.choices.map((c) => c.title).join(" | ")}`,
-    );
-    return matches.map((choice) => choice.value);
-  }
   assert.ok(
     matches.length > 0,
     `No choice matching /${rule.choice}/ in "${prompt.message}". ` +
       `The panel offered: ${prompt.choices.map((c) => c.title).join(" | ")}`,
   );
+  if (prompt.type === "multiselect") {
+    return matches.map((choice) => choice.value);
+  }
   return matches[0].value;
 }
 

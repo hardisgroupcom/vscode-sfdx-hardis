@@ -32,7 +32,8 @@ export const PANEL_DOC_URLS: Record<string, string> = {
   "s-data-workbench": DOCSITE_URL + "/vscode-extension-data-workbench/",
   "s-files-workbench": DOCSITE_URL + "/vscode-extension-files-workbench/",
   "s-dora-metrics": DOCSITE_URL + "/hardis/doc/salesforce-devops-dora-report/",
-  "s-scratch-org-pool": DOCSITE_URL + "/salesforce-devops-setup-scratch-org-pool/",
+  "s-scratch-org-pool":
+    DOCSITE_URL + "/salesforce-devops-setup-scratch-org-pool/",
 };
 export const SFDX_HARDIS_REPOSITORY_URL =
   "https://github.com/hardisgroupcom/sfdx-hardis";
