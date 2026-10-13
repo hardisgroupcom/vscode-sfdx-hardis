@@ -1717,6 +1717,14 @@ suite("Documentation screenshots", function () {
     await waitFor(() => asked("conflict"), 30000, "conflict prompt");
     await sleep(1500);
     await cleanChrome();
+    // A long candidate list leaves the panel scrolled up, and the four answers
+    // below the fold: turn the wheel down to the question, then park the
+    // pointer on the header so that no answer is drawn hovered
+    for (let step = 0; step < 6; step++) {
+      await click(1100, 500, { scroll: -30 });
+    }
+    await click(1100, 70, { scroll: -1 });
+    await sleep(1000);
     await capture("promotion-create-conflict");
     panel.simulateWebviewMessage({
       type: "submit",
