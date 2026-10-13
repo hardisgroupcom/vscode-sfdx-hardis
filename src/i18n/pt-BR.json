@@ -2336,6 +2336,7 @@
   "scratchOrgPoolCreate": "Configurar o pool de scratch orgs",
   "scratchOrgPoolCreateDesc": "Escolha onde o pool é armazenado e quantas scratch orgs ele contém.",
   "scratchOrgPoolCreatedColumn": "Criada",
+  "scratchOrgPoolCredentialsTimeout": "Não foi possível ler a tempo as credenciais do provedor git, então o pool não foi lido. Tente novamente.",
   "scratchOrgPoolDateColumn": "Data",
   "scratchOrgPoolDaysLeftColumn": "Dias restantes",
   "scratchOrgPoolDevHubActive": "Scratch orgs ativas: {{used}} / {{max}}",

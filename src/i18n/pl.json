@@ -2336,6 +2336,7 @@
   "scratchOrgPoolCreate": "Skonfiguruj pulę scratch orgów",
   "scratchOrgPoolCreateDesc": "Wybór miejsca przechowywania puli i liczby scratch orgów, które zawiera.",
   "scratchOrgPoolCreatedColumn": "Utworzono",
+  "scratchOrgPoolCredentialsTimeout": "Nie udało się odczytać na czas poświadczeń dostawcy git, dlatego pula nie została odczytana. Należy spróbować ponownie.",
   "scratchOrgPoolDateColumn": "Data",
   "scratchOrgPoolDaysLeftColumn": "Pozostało dni",
   "scratchOrgPoolDevHubActive": "Aktywne scratch orgi: {{used}} / {{max}}",

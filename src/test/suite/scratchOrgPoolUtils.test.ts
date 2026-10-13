@@ -1,8 +1,9 @@
 import * as assert from "assert";
 import * as fs from "fs";
 import * as path from "path";
+import { PROVIDER_ENV_VAR_NAMES } from "../../utils/envFileCredentials";
 import {
-  POOL_ENCRYPTION_KEY_ENV_VAR,
+  SCRATCH_ORG_POOL_COUNTS_CACHE_KEY,
   buildScratchOrgPoolViewCommand,
   isScratchOrgPoolCommand,
   isScratchOrgPoolConfigured,
@@ -16,6 +17,7 @@ import {
   LOCALES,
   REPO_ROOT,
   assertKeysTranslated,
+  extractFunction,
   loadLocale,
   readModuleFile,
   readSourceFile,
@@ -37,6 +39,7 @@ const KEYS_OUTSIDE_THE_COMPONENT = [
   "scratchOrgPoolKeyInputPrompt",
   "scratchOrgPoolKeyStored",
   "scratchOrgPoolKeyNotStored",
+  "scratchOrgPoolCredentialsTimeout",
 ];
 // Keys of the scratch org pool authentication command, older than the panel
 const KEYS_OF_OTHER_FEATURES = [
@@ -56,7 +59,6 @@ function samplePool(): any {
       {
         alias: "pool-1",
         username: "pool-1@acme.scratch",
-        instanceUrl: "https://acme-1.scratch.my.salesforce.com",
         createdDate: "2026-10-10T08:00:00.000Z",
         expirationDate: "2026-10-17",
         daysLeft: 4,
@@ -253,6 +255,8 @@ suite("Scratch Org Pool panel", () => {
     pool.orgs[0].authFileJson = { accessToken: "secret-token" };
     pool.orgs[0].scratchOrgSfdxAuthUrl = "force://secret-url";
     pool.orgs[0].password = "secret-password";
+    // The address of a scratch org is not drawn: it stays in the extension
+    pool.orgs[0].instanceUrl = "https://secret-1.scratch.my.salesforce.com";
     pool.history[0].payload = "secret-payload";
     pool.failures[0].stack = "secret-stack";
     pool.lastRefresh.token = "secret-refresh";
@@ -306,7 +310,6 @@ suite("Scratch Org Pool panel", () => {
         {
           alias: "",
           username: "pool-1@acme.scratch",
-          instanceUrl: "",
           createdDate: "",
           expirationDate: "",
           daysLeft: null,
@@ -367,14 +370,9 @@ suite("Scratch Org Pool panel", () => {
   });
 
   test("the encryption key is read from the secrets, the environment and .env, and given to the commands", () => {
-    assert.strictEqual(
-      POOL_ENCRYPTION_KEY_ENV_VAR,
+    assert.deepStrictEqual(PROVIDER_ENV_VAR_NAMES.poolEncryptionKey, [
       "SFDX_HARDIS_POOL_ENCRYPTION_KEY",
-    );
-    const envFile = readSourceFile("utils/envFileCredentials.ts");
-    assert.ok(
-      envFile.includes(`poolEncryptionKey: ["${POOL_ENCRYPTION_KEY_ENV_VAR}"]`),
-    );
+    ]);
     const credentials = readSourceFile("utils/providerCredentials.ts");
     // Never printed in a terminal command line
     assert.ok(
@@ -383,14 +381,161 @@ suite("Scratch Org Pool panel", () => {
           credentials.indexOf("SECRET_ENV_KEYS = new Set(["),
           credentials.indexOf("]);", credentials.indexOf("SECRET_ENV_KEYS")),
         )
-        .includes(`"${POOL_ENCRYPTION_KEY_ENV_VAR}"`),
+        .includes("...PROVIDER_ENV_VAR_NAMES.poolEncryptionKey"),
     );
     assert.ok(
       credentials.includes(
-        `env.${POOL_ENCRYPTION_KEY_ENV_VAR} = poolEncryptionKey;`,
+        "env[PROVIDER_ENV_VAR_NAMES.poolEncryptionKey[0]] = poolEncryptionKey;",
       ),
     );
-    assert.ok(credentials.includes("PROVIDER_ENV_VAR_NAMES.poolEncryptionKey"));
+    // The name of the variable is written once, where the provider variables are declared
+    for (const file of [
+      "utils/providerCredentials.ts",
+      "utils/scratchOrgPoolUtils.ts",
+      "commands/showScratchOrgPool.ts",
+    ]) {
+      assert.ok(
+        !readSourceFile(file).includes("SFDX_HARDIS_POOL_ENCRYPTION_KEY"),
+        `the name of the variable is written again in ${file}`,
+      );
+    }
+  });
+
+  test("a day without a time is shown as it is in every time zone, a moment in the local one", () => {
+    const formatPoolDate: (
+      value: unknown,
+      locale: string,
+      withTime: boolean,
+    ) => string = new Function(
+      `${extractFunction(
+        readModuleFile("scratchOrgPool", "scratchOrgPool.js"),
+        "formatPoolDate",
+      )}; return formatPoolDate;`,
+    )();
+    const zoneBefore = process.env.TZ;
+    try {
+      for (const zone of ["America/Los_Angeles", "UTC", "Pacific/Auckland"]) {
+        process.env.TZ = zone;
+        assert.strictEqual(
+          formatPoolDate("2026-10-24", "en", false),
+          "Oct 24, 2026",
+          `expiration date in ${zone}`,
+        );
+        assert.strictEqual(
+          formatPoolDate("2026-10-24", "en", true),
+          "Oct 24, 2026",
+          `a day has no time in ${zone}`,
+        );
+      }
+      // A moment is the local one: the evening of the 23rd in Los Angeles
+      process.env.TZ = "America/Los_Angeles";
+      assert.strictEqual(
+        formatPoolDate("2026-10-24T03:12:00.000Z", "en", false),
+        "Oct 23, 2026",
+      );
+      assert.ok(
+        formatPoolDate("2026-10-24T03:12:00.000Z", "en", true).startsWith(
+          "Oct 23, 2026, 8:12",
+        ),
+      );
+    } finally {
+      if (zoneBefore === undefined) {
+        delete process.env.TZ;
+      } else {
+        process.env.TZ = zoneBefore;
+      }
+    }
+    assert.strictEqual(formatPoolDate("", "en", false), "");
+    assert.strictEqual(formatPoolDate("not a date", "en", true), "");
+    assert.strictEqual(formatPoolDate(undefined, "en", true), "");
+  });
+
+  test("a reading never takes the answer of a run started earlier, and one reload at most waits", () => {
+    const command = readSourceFile("commands/showScratchOrgPool.ts");
+    const utils = readSourceFile("utils.ts");
+    assert.ok(command.includes("shareInFlightRun: false"));
+    assert.ok(utils.includes("if (options.shareInFlightRun === false) {"));
+    // The latest reading only is drawn, and a change during a reading starts another one
+    assert.ok(command.includes("loadId !== current.loadCounter"));
+    assert.ok(command.includes("current.reloadWanted = true;"));
+    assert.ok(
+      command.indexOf("if (current.reloadWanted) {") <
+        command.indexOf("pushState(current, changes);"),
+    );
+    // A secret the panel stores itself starts one reading, not two
+    assert.strictEqual(
+      (command.match(/current\.changingSecret = true;/g) || []).length,
+      2,
+    );
+    assert.ok(command.includes("!current.changingSecret &&"));
+  });
+
+  test("credentials not read in time are a retryable error, not a missing connection", () => {
+    const command = readSourceFile("commands/showScratchOrgPool.ts");
+    const credentials = readSourceFile("utils/providerCredentials.ts");
+    assert.ok(credentials.includes("return { env: {}, timedOut: true };"));
+    assert.strictEqual(
+      (command.match(/await collectCredentials\(\)/g) || []).length,
+      2,
+      "the collection is tried twice",
+    );
+    assert.ok(
+      command.includes(
+        'error: { kind: "other", message: t("scratchOrgPoolCredentialsTimeout") }',
+      ),
+    );
+  });
+
+  test("a pool that no longer exists is forgotten, and Reset waits for the fresh answer", () => {
+    const command = readSourceFile("commands/showScratchOrgPool.ts");
+    assert.ok(
+      command.includes('await CacheManager.delete("project", cacheKey);'),
+    );
+    const js = readModuleFile("scratchOrgPool", "scratchOrgPool.js");
+    const html = readModuleFile("scratchOrgPool", "scratchOrgPool.html");
+    assert.ok(js.includes("const resetDisabled = this.loading;"));
+    assert.ok(js.includes("this.showResetModal = !this.loading;"));
+    assert.ok(js.includes('"hardis-card disabled"'));
+    assert.ok(html.includes("class={card.cardClass}"));
+    assert.ok(html.includes("aria-disabled={card.ariaDisabled}"));
+  });
+
+  test("the pool line of the status view follows the panel and the pool commands", () => {
+    assert.strictEqual(SCRATCH_ORG_POOL_COUNTS_CACHE_KEY, "scratchPoolCounts");
+    const command = readSourceFile("commands/showScratchOrgPool.ts");
+    const statusProvider = readSourceFile("hardis-status-provider.ts");
+    assert.ok(command.includes("void updateScratchPoolStatus({"));
+    assert.ok(command.includes("void updateScratchPoolStatus(null);"));
+    assert.ok(
+      statusProvider.includes("export async function updateScratchPoolStatus("),
+    );
+    assert.ok(
+      statusProvider.includes("if (generation !== SCRATCH_POOL_GENERATION) {"),
+    );
+  });
+
+  test("the end of a command is told to the panels in every userInput mode, and when the CLI dies", () => {
+    const server = readSourceFile("hardis-websocket-server.ts");
+    const closeClient = server.indexOf('data.event === "closeClient"');
+    assert.ok(closeClient > -1);
+    // Before the early return of the modes without a command panel
+    const ended = server.indexOf("this.commandEnded(ws, String(", closeClient);
+    const earlyReturn = server.indexOf(
+      'this.config.get("userInput") !== "ui-lwc"',
+      closeClient,
+    );
+    assert.ok(ended > -1 && ended < earlyReturn);
+    const initClient = server.indexOf('data.event === "initClient"');
+    assert.ok(
+      server.indexOf("this.runningCommands.set(ws,", initClient) <
+        server.indexOf('this.config.get("userInput") !== "ui-lwc"', initClient),
+    );
+    assert.ok(server.includes('ws.on("close", () => {'));
+    assert.strictEqual(
+      (server.match(/emitCommandCompleted\(/g) || []).length,
+      1,
+      "told once per command",
+    );
   });
 
   test("the key is asked by VS Code in a password box, and never goes through the webview", () => {

@@ -223,7 +223,7 @@
         <div class="hardis-group-label pool-section">{i18n.scratchOrgPoolActionsTitle}</div>
         <div class="hardis-card-grid">
           <template for:each={view.actionCards} for:item="card">
-            <div key={card.key} class="hardis-card clickable" role="button" tabindex="0" data-action={card.key} onclick={handleAction} onkeydown={handleCardKeydown}>
+            <div key={card.key} class={card.cardClass} role="button" tabindex={card.tabIndex} aria-disabled={card.ariaDisabled} data-action={card.key} onclick={handleAction} onkeydown={handleCardKeydown}>
               <div class="hardis-card-head">
                 <div class={card.tileClass}>
                   <lightning-icon icon-name={card.icon} size="x-small"></lightning-icon>

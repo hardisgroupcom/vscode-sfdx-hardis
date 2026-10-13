@@ -2336,6 +2336,7 @@
   "scratchOrgPoolCreate": "De scratch org pool configureren",
   "scratchOrgPoolCreateDesc": "Kies waar de pool wordt opgeslagen en hoeveel scratch orgs erin zitten.",
   "scratchOrgPoolCreatedColumn": "Aangemaakt",
+  "scratchOrgPoolCredentialsTimeout": "De inloggegevens van de git-provider konden niet op tijd worden gelezen, dus de pool is niet gelezen. Probeer het opnieuw.",
   "scratchOrgPoolDateColumn": "Datum",
   "scratchOrgPoolDaysLeftColumn": "Dagen over",
   "scratchOrgPoolDevHubActive": "Actieve scratch orgs: {{used}} / {{max}}",

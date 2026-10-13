@@ -1,6 +1,8 @@
 import * as assert from "assert";
 import * as vscode from "vscode";
 import { RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION } from "../../constants";
+import { CacheManager } from "../../utils/cache-manager";
+import { SCRATCH_ORG_POOL_COUNTS_CACHE_KEY } from "../../utils/scratchOrgPoolUtils";
 import { activateExtension, readMockLog, waitFor } from "./uiTestUtils";
 
 /**
@@ -150,6 +152,8 @@ suite("Scratch Org Pool panel UI tests", function () {
       pool.orgs.map((org: any) => org.daysLeft),
       [12, 19, 23, 27],
     );
+    // What the panel does not draw stays in the extension
+    assert.ok(!("instanceUrl" in pool.orgs[0]));
     // The last scratch orgs taken, the failed creation and what the status cards show
     assert.strictEqual(pool.history.length, 6);
     assert.strictEqual(pool.history[0].by, "github-actions[bot]");
@@ -194,6 +198,56 @@ suite("Scratch Org Pool panel UI tests", function () {
     assert.strictEqual(viewCalls().length, before + 1);
   });
 
+  test("a reading asked during a reading runs after it, once, and its answer is the one drawn", async function () {
+    await openPanel();
+    await waitForLoaded("the pool", (data) => !!data.pool);
+    const before = viewCalls().length;
+    // The answer of the first reading must not be drawn: the pool changed meanwhile
+    process.env.SF_MOCK_POOL = "noGitProvider";
+    process.env.SF_MOCK_POOL_DELAY_MS = "3000";
+    panel.simulateWebviewMessage({ type: "loadScratchOrgPool", data: {} });
+    await waitFor(
+      () => viewCalls().length > before,
+      20000,
+      "the first reading to start",
+    );
+    delete process.env.SF_MOCK_POOL;
+    delete process.env.SF_MOCK_POOL_DELAY_MS;
+    // Three requests while it runs: one reading waits, not three
+    for (let request = 0; request < 3; request++) {
+      panel.simulateWebviewMessage({ type: "loadScratchOrgPool", data: {} });
+    }
+    assert.strictEqual(panel.getInitializationData().loading, true);
+    const state = await waitForLoaded("the second reading");
+    assert.strictEqual(state.error, null, "the older answer was not drawn");
+    assert.strictEqual(state.pool.available, 4);
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    assert.strictEqual(viewCalls().length, before + 2);
+  });
+
+  test("the pool line of the status view gets the counts the panel reads", async function () {
+    await openPanel();
+    await waitForLoaded("the pool", (data) => !!data.pool);
+    await waitFor(
+      () => CacheManager.get<any>("project", SCRATCH_ORG_POOL_COUNTS_CACHE_KEY),
+      5000,
+      "the counts of the status view",
+    );
+    assert.deepStrictEqual(
+      CacheManager.get<any>("project", SCRATCH_ORG_POOL_COUNTS_CACHE_KEY),
+      { available: 4, max: 5 },
+    );
+    // A project that lost its pool loses its line
+    process.env.SF_MOCK_POOL = "noPool";
+    await reload("no pool");
+    await waitFor(
+      () =>
+        !CacheManager.get<any>("project", SCRATCH_ORG_POOL_COUNTS_CACHE_KEY),
+      5000,
+      "the counts of the status view to be forgotten",
+    );
+  });
+
   test("a git provider that cannot be read asks to connect, and keeps the last pool on screen", async function () {
     await openPanel();
     await waitForLoaded("the pool", (data) => !!data.pool);
@@ -216,6 +270,12 @@ suite("Scratch Org Pool panel UI tests", function () {
     const state = await reload("no pool");
     assert.strictEqual(state.error.kind, "noPool");
     assert.strictEqual(state.pool, null);
+    // The pool kept from the last reading is forgotten: opened again, the panel shows none
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    const opening = await openPanel();
+    assert.strictEqual(opening.loading, true);
+    assert.strictEqual(opening.pool, null, "no pool from an earlier reading");
+    await waitForLoaded("no pool again");
   });
 
   test("an sfdx-hardis that answers the pool storage asks to be upgraded, and its credentials go nowhere", async function () {

@@ -926,9 +926,14 @@ async function main() {
   // The dates are fixed, like the ones of the DORA report, so a capture never changes.
   // SF_MOCK_POOL=noGitProvider simulates a git provider that cannot be read, =noPool a
   // project without a pool, =old an sfdx-hardis that answers the pool storage instead of
-  // describing the pool, =error a command that fails.
+  // describing the pool, =error a command that fails. SF_MOCK_POOL_DELAY_MS makes the
+  // answer wait, for the tests that change something while the pool is read.
   if (first === "hardis:scratch:pool:view" && args.includes("--json")) {
     const variant = process.env.SF_MOCK_POOL || "";
+    const delayMs = parseInt(process.env.SF_MOCK_POOL_DELAY_MS || "0", 10);
+    if (delayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
     if (variant === "error") {
       console.log(
         JSON.stringify({

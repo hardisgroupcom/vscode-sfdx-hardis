@@ -23,6 +23,8 @@ import { loadProjectSfdxHardisConfig } from "./utils/sfdx-hardis-config-utils";
 import { CacheManager } from "./utils/cache-manager";
 import { emitOrgsChanged } from "./utils/orgChangeEvents";
 import {
+  SCRATCH_ORG_POOL_COUNTS_CACHE_KEY,
+  SCRATCH_ORG_POOL_COUNTS_TTL_MS,
   buildScratchOrgPoolViewCommand,
   readScratchOrgPoolCounts,
 } from "./utils/scratchOrgPoolUtils";
@@ -31,8 +33,35 @@ import {
 let SCRATCH_POOL_LOADING = false;
 // Module-level flag: true once the scratch-pool result has been inserted into the tree
 let SCRATCH_POOL_LOADED = false;
-// Available and maximum number of scratch orgs of the pool, as last read
-const SCRATCH_POOL_COUNTS_CACHE_KEY = "scratchPoolCounts";
+// Bumped each time the counts are known to have changed: a background fetch started before
+// that never writes its older counts
+let SCRATCH_POOL_GENERATION = 0;
+
+/**
+ * The pool line of the status view shows counts read up to 15 minutes ago. Called when they
+ * are known to have changed.
+ * @param counts the counts just read (the Scratch Org Pool panel read the pool): the line shows
+ *   them at once. Without them (a command changed the pool, or the pool could not be read) the
+ *   line is read again from sfdx-hardis.
+ */
+export async function updateScratchPoolStatus(
+  counts: { available: number; max: number } | null,
+): Promise<void> {
+  SCRATCH_POOL_GENERATION++;
+  if (counts) {
+    await CacheManager.set(
+      "project",
+      SCRATCH_ORG_POOL_COUNTS_CACHE_KEY,
+      counts,
+      SCRATCH_ORG_POOL_COUNTS_TTL_MS,
+    );
+    SCRATCH_POOL_LOADED = true;
+  } else {
+    await CacheManager.delete("project", SCRATCH_ORG_POOL_COUNTS_CACHE_KEY);
+    SCRATCH_POOL_LOADED = false;
+  }
+  vscode.commands.executeCommand("vscode-sfdx-hardis.refreshStatusView", true);
+}
 
 const GIT_FETCH_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const GIT_FETCH_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes (CacheManager TTL)
@@ -331,7 +360,7 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
             const poolCounts = CacheManager.get<{
               available: number;
               max: number;
-            }>("project", SCRATCH_POOL_COUNTS_CACHE_KEY);
+            }>("project", SCRATCH_ORG_POOL_COUNTS_CACHE_KEY);
             if (poolCounts) {
               // A click opens the Scratch Org Pool panel
               items.push({
@@ -348,6 +377,7 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
           } else if (!SCRATCH_POOL_LOADING) {
             // Start background fetch; do not block first paint
             SCRATCH_POOL_LOADING = true;
+            const generation = SCRATCH_POOL_GENERATION;
             void (async () => {
               try {
                 // A pool stored in the git provider is read with its token. Heavy
@@ -365,17 +395,22 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
                 // Only the two counts are kept: the answer of an older sfdx-hardis
                 // holds the credentials of the pool
                 const poolCounts = readScratchOrgPoolCounts(poolViewRes);
+                if (generation !== SCRATCH_POOL_GENERATION) {
+                  // The pool changed while it was read: the refresh below reads it again,
+                  // or shows the counts the panel wrote meanwhile
+                  return;
+                }
                 if (poolCounts) {
                   await CacheManager.set(
                     "project",
-                    SCRATCH_POOL_COUNTS_CACHE_KEY,
+                    SCRATCH_ORG_POOL_COUNTS_CACHE_KEY,
                     poolCounts,
-                    1000 * 60 * 15,
+                    SCRATCH_ORG_POOL_COUNTS_TTL_MS,
                   );
                 } else {
                   await CacheManager.delete(
                     "project",
-                    SCRATCH_POOL_COUNTS_CACHE_KEY,
+                    SCRATCH_ORG_POOL_COUNTS_CACHE_KEY,
                   );
                 }
                 // The whole answer used to be kept under this key
@@ -385,7 +420,9 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
                 Logger.log(
                   "[vscode-sfdx-hardis] scratch pool view failed: " + String(e),
                 );
-                SCRATCH_POOL_LOADED = true;
+                if (generation === SCRATCH_POOL_GENERATION) {
+                  SCRATCH_POOL_LOADED = true;
+                }
               } finally {
                 SCRATCH_POOL_LOADING = false;
                 vscode.commands.executeCommand(

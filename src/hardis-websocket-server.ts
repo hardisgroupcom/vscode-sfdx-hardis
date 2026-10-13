@@ -30,6 +30,8 @@ export class LocalWebSocketServer {
   private server: http.Server;
   private wss: WebSocketServer;
   private clients: any = {};
+  // Command of each connection that said initClient and has not ended yet
+  private runningCommands = new Map<any, string>();
   private config: vscode.WorkspaceConfiguration;
   private readyPromise: Promise<void> | null = null;
 
@@ -95,7 +97,24 @@ export class LocalWebSocketServer {
       ws.on("message", (data: any) => {
         this.receiveMessage(ws, JSON.parse(data));
       });
+      // A CLI that died, or was cancelled, closes its connection without saying closeClient
+      ws.on("close", () => {
+        this.commandEnded(ws, "error");
+      });
     });
+  }
+
+  /**
+   * Tells the panels that the command of a connection ended, once: at its closeClient message,
+   * or when its connection closes without one.
+   */
+  private commandEnded(ws: any, status: string) {
+    const command = this.runningCommands.get(ws);
+    if (command === undefined) {
+      return;
+    }
+    this.runningCommands.delete(ws);
+    emitCommandCompleted(command, status);
   }
 
   /**
@@ -147,6 +166,10 @@ export class LocalWebSocketServer {
     }
     // Command initialization
     if (data.event === "initClient") {
+      // Which command this connection belongs to, to tell the panels when it ends
+      if (typeof data.context?.command === "string") {
+        this.runningCommands.set(ws, data.context.command);
+      }
       // Ignore if not lwc UI
       if (this.config.get("userInput") !== "ui-lwc") {
         await this.sendCommandReady(ws);
@@ -279,18 +302,13 @@ export class LocalWebSocketServer {
     }
     // Command end
     if (data.event === "closeClient" || data.event === "clientClose") {
+      // The panels whose data this command changed read it again, whatever the userInput mode
+      this.commandEnded(ws, String(data?.status || "success"));
       // Ignore if not lwc UI
       if (this.config.get("userInput") !== "ui-lwc") {
         return;
       }
       const clientData = this.clients[data.context?.id];
-      // The panels whose data this command changed read it again
-      if (typeof clientData?.context?.command === "string") {
-        emitCommandCompleted(
-          clientData.context.command,
-          String(data?.status || "success"),
-        );
-      }
       /* jscpd:ignore-start */
       if (clientData?.panel) {
         // Mark command as completed in the panel

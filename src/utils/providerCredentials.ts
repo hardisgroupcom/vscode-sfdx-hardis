@@ -187,7 +187,7 @@ export const SECRET_ENV_KEYS = new Set([
   "SERVICENOW_USERNAME",
   "SERVICENOW_PASSWORD",
   "AHA_API_KEY",
-  "SFDX_HARDIS_POOL_ENCRYPTION_KEY",
+  ...PROVIDER_ENV_VAR_NAMES.poolEncryptionKey,
 ]);
 
 // In-memory cache of collected credentials: they are re-read from secret
@@ -277,6 +277,18 @@ onEnvFileChanged(invalidateProviderCredentialEnvCache);
 export async function collectProviderCredentialEnvVars(): Promise<
   Record<string, string>
 > {
+  return (await collectProviderCredentialEnvVarsWithStatus()).env;
+}
+
+/**
+ * Same as collectProviderCredentialEnvVars, telling whether the collection timed out. A caller
+ * that would take an answer without credentials for a real state (not connected, key missing)
+ * uses it to tell "no credentials" from "credentials not read in time".
+ */
+export async function collectProviderCredentialEnvVarsWithStatus(): Promise<{
+  env: Record<string, string>;
+  timedOut: boolean;
+}> {
   if (credentialEnvCache) {
     if (Date.now() >= credentialEnvCache.expiresAt) {
       // Stale: serve it right away (tokens rarely change, and any secret
@@ -284,7 +296,7 @@ export async function collectProviderCredentialEnvVars(): Promise<
       // the command launch never waits on git/ticketing providers
       void refreshProviderCredentialEnvCache();
     }
-    return { ...credentialEnvCache.value };
+    return { env: { ...credentialEnvCache.value }, timedOut: false };
   }
   const generation = cacheGeneration;
   const collectPromise = collectProviderCredentialEnvVarsNow();
@@ -305,10 +317,10 @@ export async function collectProviderCredentialEnvVars(): Promise<
         storeCredentialEnvCache(value, generation);
       })
       .catch(() => {});
-    return {};
+    return { env: {}, timedOut: true };
   }
   storeCredentialEnvCache(collected, generation);
-  return { ...collected };
+  return { env: { ...collected }, timedOut: false };
 }
 
 /**
@@ -416,7 +428,7 @@ async function collectProviderCredentialEnvVarsNow(): Promise<
       PROVIDER_ENV_VAR_NAMES.poolEncryptionKey,
     );
     if (poolEncryptionKey) {
-      env.SFDX_HARDIS_POOL_ENCRYPTION_KEY = poolEncryptionKey;
+      env[PROVIDER_ENV_VAR_NAMES.poolEncryptionKey[0]] = poolEncryptionKey;
     }
   } catch (e) {
     Logger.log(

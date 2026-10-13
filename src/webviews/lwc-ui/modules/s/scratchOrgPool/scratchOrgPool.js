@@ -305,7 +305,8 @@ export default class ScratchOrgPool extends SharedMixin(LightningElement) {
     } else if (action === "refill") {
       this.runCommand(REFILL_COMMAND);
     } else if (action === "reset") {
-      this.showResetModal = true;
+      // Never on a pool read earlier: it may be another pool by now, or no pool at all
+      this.showResetModal = !this.loading;
     } else if (action === "setKey") {
       this.requestEncryptionKey();
     } else if (action === "createPool") {
@@ -326,7 +327,9 @@ export default class ScratchOrgPool extends SharedMixin(LightningElement) {
 
   handleResetConfirm() {
     this.showResetModal = false;
-    this.runCommand(RESET_COMMAND);
+    if (!this.loading) {
+      this.runCommand(RESET_COMMAND);
+    }
   }
 
   handleHistoryRowAction(event) {
@@ -358,6 +361,15 @@ export default class ScratchOrgPool extends SharedMixin(LightningElement) {
     }
     if (Object.prototype.hasOwnProperty.call(data, "pool")) {
       this.pool = data.pool || null;
+    }
+    // The cards depend on the loading state too: Reset waits for the fresh answer
+    if (
+      Object.prototype.hasOwnProperty.call(data, "pool") ||
+      Object.prototype.hasOwnProperty.call(data, "loading")
+    ) {
+      if (this.loading) {
+        this.showResetModal = false;
+      }
       this.rebuildView();
     }
   }
@@ -532,6 +544,8 @@ export default class ScratchOrgPool extends SharedMixin(LightningElement) {
   }
 
   buildActionCards(pool) {
+    // While the pool on screen is the last one kept, the card that deletes it is off
+    const resetDisabled = this.loading;
     const cards = [
       {
         key: "take",
@@ -555,6 +569,7 @@ export default class ScratchOrgPool extends SharedMixin(LightningElement) {
         icon: "utility:delete",
         title: this.i18n.scratchOrgPoolReset,
         description: this.i18n.scratchOrgPoolResetDesc,
+        disabled: resetDisabled,
       },
     ];
     if (KEY_STATES[pool.keyStatus]) {
@@ -566,7 +581,14 @@ export default class ScratchOrgPool extends SharedMixin(LightningElement) {
         description: this.i18n.scratchOrgPoolSetKeyDesc,
       });
     }
-    return cards;
+    return cards.map((card) => ({
+      ...card,
+      cardClass: card.disabled
+        ? "hardis-card disabled"
+        : "hardis-card clickable",
+      tabIndex: card.disabled ? "-1" : "0",
+      ariaDisabled: card.disabled ? "true" : "false",
+    }));
   }
 
   // --- Opening links: only http(s) addresses leave the panel ---
@@ -584,25 +606,37 @@ export default class ScratchOrgPool extends SharedMixin(LightningElement) {
   // --- Formatting ---
 
   formatDate(value) {
-    return this.formatWith(value, { dateStyle: "medium" });
+    return formatPoolDate(value, this.locale, false);
   }
 
   formatDateTime(value) {
-    return this.formatWith(value, { dateStyle: "medium", timeStyle: "short" });
+    return formatPoolDate(value, this.locale, true);
   }
+}
 
-  formatWith(value, options) {
-    const time = Date.parse(value || "");
-    if (!Number.isFinite(time)) {
-      return "";
-    }
-    try {
-      return new Intl.DateTimeFormat(this.locale, options).format(
-        new Date(time),
-      );
-    } catch (e) {
-      return new Date(time).toISOString().slice(0, 10);
-    }
+// A date of the pool in the language of the panel. A day without a time ("2026-10-24", the
+// expiration of a scratch org) is that day everywhere: it is written as it is, where reading
+// it as a moment would show the day before west of UTC. A moment is written in the time zone
+// of the user, with its time when withTime is true.
+function formatPoolDate(value, locale, withTime) {
+  const text = typeof value === "string" ? value.trim() : "";
+  const day = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
+  const time = day
+    ? Date.UTC(Number(day[1]), Number(day[2]) - 1, Number(day[3]))
+    : Date.parse(text);
+  if (!Number.isFinite(time)) {
+    return "";
+  }
+  const options = { dateStyle: "medium" };
+  if (day) {
+    options.timeZone = "UTC";
+  } else if (withTime) {
+    options.timeStyle = "short";
+  }
+  try {
+    return new Intl.DateTimeFormat(locale, options).format(new Date(time));
+  } catch (e) {
+    return new Date(time).toISOString().slice(0, 10);
   }
 }
 

@@ -2336,6 +2336,7 @@
   "scratchOrgPoolCreate": "Scratch Org-Pool konfigurieren",
   "scratchOrgPoolCreateDesc": "Wählen Sie, wo der Pool gespeichert wird und wie viele Scratch Orgs er enthält.",
   "scratchOrgPoolCreatedColumn": "Erstellt",
+  "scratchOrgPoolCredentialsTimeout": "Die Anmeldedaten des Git-Providers konnten nicht rechtzeitig gelesen werden, daher wurde der Pool nicht gelesen. Versuchen Sie es erneut.",
   "scratchOrgPoolDateColumn": "Datum",
   "scratchOrgPoolDaysLeftColumn": "Verbleibende Tage",
   "scratchOrgPoolDevHubActive": "Aktive Scratch Orgs: {{used}} / {{max}}",

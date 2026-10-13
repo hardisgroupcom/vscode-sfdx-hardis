@@ -2336,6 +2336,7 @@
   "scratchOrgPoolCreate": "スクラッチ組織プールを設定",
   "scratchOrgPoolCreateDesc": "プールの保存先と、保持するスクラッチ組織の数を選択します。",
   "scratchOrgPoolCreatedColumn": "作成日",
+  "scratchOrgPoolCredentialsTimeout": "git プロバイダーの認証情報を時間内に読み取れなかったため、プールを読み取っていません。もう一度お試しください。",
   "scratchOrgPoolDateColumn": "日時",
   "scratchOrgPoolDaysLeftColumn": "残り日数",
   "scratchOrgPoolDevHubActive": "有効なスクラッチ組織: {{used}} / {{max}}",

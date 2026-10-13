@@ -10,8 +10,10 @@ runs in the unit tests as is.
 import { stripAnsiCodes } from "./ansiColors";
 import { safeWebUrl } from "./doraReportUtils";
 
-// Variable sfdx-hardis reads the key that encrypts the scratch orgs of the pool from
-export const POOL_ENCRYPTION_KEY_ENV_VAR = "SFDX_HARDIS_POOL_ENCRYPTION_KEY";
+// Where the status view keeps the available and maximum number of scratch orgs of the pool,
+// and for how long. The panel writes there too when it reads the pool.
+export const SCRATCH_ORG_POOL_COUNTS_CACHE_KEY = "scratchPoolCounts";
+export const SCRATCH_ORG_POOL_COUNTS_TTL_MS = 1000 * 60 * 15;
 
 // noGitProvider: the git provider that stores the pool cannot be read
 // noPool: the project has no scratch org pool yet
@@ -50,7 +52,6 @@ export interface ScratchOrgPoolView {
   orgs: Array<{
     alias: string;
     username: string;
-    instanceUrl: string;
     createdDate: string;
     expirationDate: string;
     daysLeft: number | null;
@@ -196,7 +197,6 @@ export function sanitizeScratchOrgPool(pool: any): ScratchOrgPoolView {
     orgs: asObjects(pool?.orgs).map((org) => ({
       alias: cleanText(org.alias),
       username: cleanText(org.username),
-      instanceUrl: safeWebUrl(org.instanceUrl),
       createdDate: cleanText(org.createdDate, 50),
       expirationDate: cleanText(org.expirationDate, 50),
       daysLeft:
