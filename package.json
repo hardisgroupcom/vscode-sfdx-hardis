@@ -401,6 +401,11 @@
         "icon": "$(graph)"
       },
       {
+        "command": "vscode-sfdx-hardis.showScratchOrgPool",
+        "title": "SFDX Hardis: Scratch Org Pool",
+        "icon": "$(radio-tower)"
+      },
+      {
         "command": "vscode-sfdx-hardis.showSetup",
         "title": "SFDX Hardis: Setup",
         "icon": "$(tools)"

@@ -31,6 +31,8 @@ export const PROVIDER_ENV_VAR_NAMES = {
   serviceNowUsername: ["SERVICENOW_USERNAME"],
   serviceNowPassword: ["SERVICENOW_PASSWORD"],
   ahaApiKey: ["AHA_API_KEY"],
+  // Key that encrypts the scratch orgs of a pool stored in the git provider
+  poolEncryptionKey: ["SFDX_HARDIS_POOL_ENCRYPTION_KEY"],
 } as const;
 
 /**

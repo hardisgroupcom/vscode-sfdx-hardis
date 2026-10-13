@@ -285,6 +285,12 @@ export interface ExecCommandOptions {
   // command. Pass false for commands whose answer changes between two clicks
   // (ex: a Refresh button): the command runs again, in-flight runs are still shared.
   reuseRecentResult?: boolean;
+  // A caller issuing a command already running waits for that run and gets its answer, even
+  // with reuseRecentResult false. Pass false when the answer of a run started earlier is not
+  // good enough: the environment (ex: credentials) is not part of what identifies a run, and
+  // what the command reads may have changed since that run started. The command then runs on
+  // its own: it joins no other run, and no other caller is given its answer.
+  shareInFlightRun?: boolean;
   // Extra environment variables of the child process (ex: provider credentials).
   // Secrets go here, never on the command line
   env?: Record<string, string>;
@@ -771,7 +777,14 @@ export async function execCommand(
     }
   }
   try {
-    if (
+    if (options.shareInFlightRun === false) {
+      Logger.log("[vscode-sfdx-hardis][command] " + command);
+      commandResult = await execInProcessOrShell(
+        command,
+        execOptions,
+        options.lowPriority ?? isLowPriorityCommand(command),
+      );
+    } else if (
       COMMANDS_RESULTS[command] &&
       !(options.reuseRecentResult === false && COMMANDS_RESULTS[command].result)
     ) {
@@ -810,7 +823,9 @@ export async function execCommand(
       console.timeEnd(command);
     }
   } catch (e: any) {
-    console.timeEnd(command);
+    if (options.shareInFlightRun !== false) {
+      console.timeEnd(command);
+    }
     // Display error in red if not json
     if (!command.includes("--json") || options.fail === true) {
       if (options.fail === true) {

@@ -1,0 +1,107 @@
+{
+  "storageService": "gitProvider",
+  "dashboardUrl": "https://github.com/mycompany/mycompany-crm/issues/42",
+  "available": 4,
+  "max": 5,
+  "canTake": true,
+  "keyStatus": "ok",
+  "orgs": [
+    {
+      "alias": "PO-x7CI-main_20260924_0312",
+      "username": "deploy.user@hardis-scratch-po-x7ci-main-20260924-0312.com",
+      "instanceUrl": "https://mycompany-crm-po-x7ci-0924.scratch.my.salesforce.com",
+      "createdDate": "2026-09-24T03:12:41.000Z",
+      "expirationDate": "2026-10-24",
+      "daysLeft": 12
+    },
+    {
+      "alias": "PO-x7CI-main_20261001_0312",
+      "username": "deploy.user@hardis-scratch-po-x7ci-main-20261001-0312.com",
+      "instanceUrl": "https://mycompany-crm-po-x7ci-1001.scratch.my.salesforce.com",
+      "createdDate": "2026-10-01T03:12:27.000Z",
+      "expirationDate": "2026-10-31",
+      "daysLeft": 19
+    },
+    {
+      "alias": "PO-x7CI-main_20261005_0313",
+      "username": "deploy.user@hardis-scratch-po-x7ci-main-20261005-0313.com",
+      "instanceUrl": "https://mycompany-crm-po-x7ci-1005.scratch.my.salesforce.com",
+      "createdDate": "2026-10-05T03:13:02.000Z",
+      "expirationDate": "2026-11-04",
+      "daysLeft": 23
+    },
+    {
+      "alias": "PO-x7CI-main_20261009_0312",
+      "username": "deploy.user@hardis-scratch-po-x7ci-main-20261009-0312.com",
+      "instanceUrl": "https://mycompany-crm-po-x7ci-1009.scratch.my.salesforce.com",
+      "createdDate": "2026-10-09T03:12:55.000Z",
+      "expirationDate": "2026-11-08",
+      "daysLeft": 27
+    }
+  ],
+  "history": [
+    {
+      "date": "2026-10-11T16:42:18.000Z",
+      "by": "github-actions[bot]",
+      "branch": "features/dev/add-case-priority",
+      "pullRequest": "#128",
+      "jobUrl": "https://github.com/mycompany/mycompany-crm/actions/runs/38104412075",
+      "alias": "PO-x7CI-main_20261008_0312"
+    },
+    {
+      "date": "2026-10-10T09:05:47.000Z",
+      "by": "nadia.ferreira",
+      "branch": "features/dev/invoice-approval-flow",
+      "pullRequest": "",
+      "jobUrl": "",
+      "alias": "PO-x7CI-main_20261007_0312"
+    },
+    {
+      "date": "2026-10-09T14:21:03.000Z",
+      "by": "github-actions[bot]",
+      "branch": "features/dev/invoice-approval-flow",
+      "pullRequest": "#127",
+      "jobUrl": "https://github.com/mycompany/mycompany-crm/actions/runs/38097730412",
+      "alias": "PO-x7CI-main_20261006_0312"
+    },
+    {
+      "date": "2026-10-08T10:37:29.000Z",
+      "by": "sam.dubois",
+      "branch": "features/dev/territory-assignment-batch",
+      "pullRequest": "",
+      "jobUrl": "",
+      "alias": "PO-x7CI-main_20261004_0312"
+    },
+    {
+      "date": "2026-10-07T15:58:11.000Z",
+      "by": "github-actions[bot]",
+      "branch": "fix/CRM-1101-invoice-rounding",
+      "pullRequest": "#126",
+      "jobUrl": "https://github.com/mycompany/mycompany-crm/actions/runs/38085561938",
+      "alias": "PO-x7CI-main_20261003_0312"
+    },
+    {
+      "date": "2026-10-06T08:12:54.000Z",
+      "by": "github-actions[bot]",
+      "branch": "features/dev/quote-pdf-template",
+      "pullRequest": "#124",
+      "jobUrl": "https://github.com/mycompany/mycompany-crm/actions/runs/38071248860",
+      "alias": "PO-x7CI-main_20261002_0312"
+    }
+  ],
+  "failures": [
+    {
+      "date": "2026-10-08T03:14:36.000Z",
+      "error": "The daily scratch org limit of the Dev Hub is reached",
+      "jobUrl": "https://github.com/mycompany/mycompany-crm/actions/runs/38090114527"
+    }
+  ],
+  "lastRefresh": {
+    "date": "2026-10-12T03:12:48.000Z",
+    "jobUrl": "https://github.com/mycompany/mycompany-crm/actions/runs/38107960233"
+  },
+  "devHubLimits": {
+    "activeScratchOrgs": { "used": 9, "max": 40 },
+    "dailyScratchOrgs": { "used": 6, "max": 80 }
+  }
+}

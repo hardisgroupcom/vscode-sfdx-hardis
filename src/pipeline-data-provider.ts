@@ -11,6 +11,7 @@ import {
 } from "./utils/orgConfigUtils";
 import { PromotionBranchConfig } from "./utils/pipeline/promotionBranchUtils";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
+import { isScratchOrgPoolConfigured } from "./utils/scratchOrgPoolUtils";
 import { PullRequest } from "./utils/gitProviders/types";
 import { GitProvider } from "./utils/gitProviders/gitProvider";
 import { t } from "./i18n/i18n";
@@ -48,6 +49,8 @@ export interface PipelineData {
   featureBranchGroups: FeatureBranchGroup[];
   // Promotion branches switch of the project (sfdx-hardis enablePromotionBranches)
   promotionBranches?: PromotionBranchConfig;
+  // The project has a scratch org pool (poolConfig.storageService): the menu shows its panel
+  scratchOrgPoolEnabled?: boolean;
 }
 
 export class PipelineDataProvider {
@@ -142,6 +145,7 @@ export class PipelineDataProvider {
         warnings: this.warnings,
         featureBranchGroups,
         promotionBranches: promotionBranchConfig,
+        scratchOrgPoolEnabled: isScratchOrgPoolConfigured(projectConfig),
       };
     } catch (error: any) {
       vscode.window.showErrorMessage(

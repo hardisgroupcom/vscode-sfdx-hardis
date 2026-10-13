@@ -2011,6 +2011,20 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     });
   }
 
+  // The Scratch Org Pool panel, for a project that has a pool (poolConfig.storageService)
+  get showScratchOrgPool() {
+    return this.pipelineData?.scratchOrgPoolEnabled === true;
+  }
+
+  handleShowScratchOrgPool() {
+    window.sendMessageToVSCode({
+      type: "runVsCodeCommand",
+      data: {
+        command: "vscode-sfdx-hardis.showScratchOrgPool",
+      },
+    });
+  }
+
   // Promotion branches (sfdx-hardis enablePromotionBranches): a major branch with a merge
   // target can be promoted story by story with hardis:project:promotion:create, the only
   // supported way to assemble a promotion branch

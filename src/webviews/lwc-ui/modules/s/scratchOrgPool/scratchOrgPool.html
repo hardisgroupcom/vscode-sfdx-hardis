@@ -1,0 +1,260 @@
+<template>
+  <div class="slds-p-around_x-small blue-back">
+    <div class="hardis-page-head">
+      <div class="hardis-tile featured cyan">
+        <lightning-icon icon-name="utility:database" size="medium"></lightning-icon>
+      </div>
+      <div class="hardis-page-head-text">
+        <h1 class="hardis-page-title">{i18n.scratchOrgPoolTitle}</h1>
+        <p class="hardis-page-subtitle">{subtitle}</p>
+      </div>
+      <div class="hardis-page-head-actions">
+        <lightning-button
+          variant="neutral"
+          label={i18n.refreshLabel}
+          icon-name="utility:refresh"
+          disabled={refreshDisabled}
+          onclick={handleRefresh}
+        ></lightning-button>
+        <template lwc:if={hasDashboard}>
+          <lightning-button
+            variant="neutral"
+            label={i18n.scratchOrgPoolOpenDashboard}
+            icon-name="utility:new_window"
+            onclick={handleOpenDashboard}
+          ></lightning-button>
+        </template>
+        <lightning-button-icon
+          icon-name="utility:help"
+          variant="border-filled"
+          alternative-text={i18n.documentation}
+          title={i18n.documentation}
+          onclick={handleOpenPanelDoc}
+        ></lightning-button-icon>
+      </div>
+    </div>
+
+    <!-- First reading: nothing to show yet -->
+    <template lwc:if={showLoading}>
+      <div class="hardis-panel-body">
+        <div class="pool-loading" role="status">
+          <!-- lightning-spinner centers itself in its closest positioned parent: this box -->
+          <div class="pool-loading-spinner">
+            <lightning-spinner alternative-text={i18n.scratchOrgPoolLoading} size="small" variant="brand"></lightning-spinner>
+          </div>
+          <p class="pool-loading-text muted">{i18n.scratchOrgPoolLoading}</p>
+        </div>
+      </div>
+    </template>
+
+    <!-- The last result stays on screen while the pool is read again -->
+    <template lwc:if={isRefreshing}>
+      <div class="hardis-note pool-refreshing" role="status">
+        <div class="pool-refreshing-spinner">
+          <lightning-spinner alternative-text={refreshingText} size="x-small" variant="brand"></lightning-spinner>
+        </div>
+        <p>{refreshingText}</p>
+      </div>
+    </template>
+
+    <template lwc:if={showNoGitProvider}>
+      <div class="hardis-panel-body pool-state">
+        <div class="hardis-empty">
+          <div class="hardis-tile featured amber">
+            <lightning-icon icon-name="utility:key" size="small"></lightning-icon>
+          </div>
+          <h3 class="hardis-empty-title">{i18n.scratchOrgPoolNoGitProviderTitle}</h3>
+          <p class="hardis-empty-desc">{i18n.scratchOrgPoolNoGitProviderDesc}</p>
+          <template lwc:if={hasErrorMessage}>
+            <div class="hardis-note warning pool-error-message">
+              <p>{errorMessage}</p>
+            </div>
+          </template>
+          <div class="hardis-empty-actions">
+            <lightning-button variant="neutral" class="hardis-btn-tinted-blue" label={i18n.connectToGit} onclick={handleConnectToGit}></lightning-button>
+            <lightning-button variant="neutral" icon-name="utility:refresh" label={i18n.tryAgainLabel} onclick={handleRetry}></lightning-button>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- No pool yet: one card, which runs the command that configures it -->
+    <template lwc:if={showNoPool}>
+      <div class="hardis-panel-body pool-state">
+        <div class="hardis-group-label">{i18n.scratchOrgPoolNoPoolTitle}</div>
+        <p class="hardis-group-desc">{i18n.scratchOrgPoolNoPoolDesc}</p>
+        <div class="hardis-card-grid">
+          <div class="hardis-card clickable" role="button" tabindex="0" data-action="createPool" onclick={handleAction} onkeydown={handleCardKeydown}>
+            <div class="hardis-card-head">
+              <div class="hardis-tile small cyan">
+                <lightning-icon icon-name="utility:settings" size="x-small"></lightning-icon>
+              </div>
+              <h3 class="hardis-card-title">{i18n.scratchOrgPoolCreate}</h3>
+            </div>
+            <p class="hardis-card-desc">{i18n.scratchOrgPoolCreateDesc}</p>
+            <div class="hardis-card-arrow">→</div>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template lwc:if={showCliTooOld}>
+      <div class="hardis-panel-body pool-state">
+        <div class="hardis-empty">
+          <div class="hardis-tile featured amber">
+            <lightning-icon icon-name="utility:upload" size="small"></lightning-icon>
+          </div>
+          <h3 class="hardis-empty-title">{i18n.scratchOrgPoolOldCliTitle}</h3>
+          <p class="hardis-empty-desc">{cliTooOldDescription}</p>
+          <div class="hardis-empty-actions">
+            <lightning-button variant="neutral" class="hardis-btn-tinted-blue" label={i18n.openSetup} onclick={handleOpenSetup}></lightning-button>
+            <lightning-button variant="neutral" icon-name="utility:refresh" label={i18n.tryAgainLabel} onclick={handleRetry}></lightning-button>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- Any other failure: the message of sfdx-hardis -->
+    <template lwc:if={showOtherError}>
+      <div class="hardis-panel-body pool-state">
+        <div class="hardis-empty">
+          <div class="hardis-tile featured red">
+            <lightning-icon icon-name="utility:warning" size="small"></lightning-icon>
+          </div>
+          <h3 class="hardis-empty-title">{i18n.scratchOrgPoolErrorTitle}</h3>
+          <template lwc:if={hasErrorMessage}>
+            <div class="hardis-note error pool-error-message" role="alert">
+              <p>{errorMessage}</p>
+            </div>
+          </template>
+          <div class="hardis-empty-actions">
+            <lightning-button variant="neutral" class="hardis-btn-tinted-blue" icon-name="utility:refresh" label={i18n.tryAgainLabel} onclick={handleRetry}></lightning-button>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template lwc:if={hasPool}>
+      <div class="hardis-status-grid pool-status">
+        <template for:each={view.statusCards} for:item="card">
+          <div key={card.key} class={card.cardClass}>
+            <div class={card.tileClass}>
+              <lightning-icon icon-name={card.icon} size="small"></lightning-icon>
+            </div>
+            <div class="hardis-status-content">
+              <h3 class="hardis-status-title">{card.title}</h3>
+              <template for:each={card.lines} for:item="line">
+                <p key={line.key} class="hardis-status-desc">{line.text}</p>
+              </template>
+            </div>
+            <template lwc:if={card.hasAction}>
+              <div class="hardis-status-actions">
+                <lightning-button variant="neutral" class={card.actionClass} label={card.actionLabel} data-action={card.action} data-url={card.actionUrl} onclick={handleStatusAction}></lightning-button>
+              </div>
+            </template>
+          </div>
+        </template>
+      </div>
+
+      <div class="hardis-panel-body">
+        <div class="hardis-group-label">{i18n.scratchOrgPoolAvailableOrgs}</div>
+        <template lwc:if={hasOrgs}>
+          <div class="pool-table">
+            <s-hardis-datatable
+              class="slds-no-row-hover"
+              key-field="key"
+              data={view.orgRows}
+              columns={orgColumns}
+              column-widths-mode="auto"
+              hide-checkbox-column
+            ></s-hardis-datatable>
+          </div>
+        </template>
+        <template lwc:else>
+          <p class="hardis-group-desc">{i18n.scratchOrgPoolNoAvailableOrgs}</p>
+        </template>
+
+        <div class="hardis-group-label pool-section">{i18n.scratchOrgPoolHistoryTitle}</div>
+        <template lwc:if={recordsHistory}>
+          <template lwc:if={hasHistory}>
+            <div class="pool-table">
+              <s-hardis-datatable
+                class="slds-no-row-hover"
+                key-field="key"
+                data={view.historyRows}
+                columns={historyColumns}
+                column-widths-mode="auto"
+                hide-checkbox-column
+                onrowaction={handleHistoryRowAction}
+              ></s-hardis-datatable>
+            </div>
+          </template>
+          <template lwc:else>
+            <p class="hardis-group-desc">{i18n.scratchOrgPoolNoHistory}</p>
+          </template>
+        </template>
+        <template lwc:else>
+          <p class="hardis-group-desc">{i18n.scratchOrgPoolNotRecorded}</p>
+        </template>
+
+        <template lwc:if={recordsHistory}>
+          <template lwc:if={hasFailures}>
+            <div class="hardis-group-label pool-section">{i18n.scratchOrgPoolFailuresTitle}</div>
+            <ul class="pool-failures">
+              <template for:each={view.failures} for:item="failure">
+                <li key={failure.key} class="hardis-note error pool-failure" role="alert">
+                  <div class="pool-failure-text">
+                    <p class="hardis-date-cell">{failure.dateLabel}</p>
+                    <p class="pool-failure-error">{failure.error}</p>
+                  </div>
+                  <template lwc:if={failure.hasJob}>
+                    <button type="button" class="hardis-textlink" data-url={failure.jobUrl} onclick={handleOpenFailureJob}>{i18n.scratchOrgPoolOpenJob}</button>
+                  </template>
+                </li>
+              </template>
+            </ul>
+          </template>
+        </template>
+        <template lwc:else>
+          <div class="hardis-group-label pool-section">{i18n.scratchOrgPoolFailuresTitle}</div>
+          <p class="hardis-group-desc">{i18n.scratchOrgPoolNotRecorded}</p>
+        </template>
+
+        <div class="hardis-group-label pool-section">{i18n.scratchOrgPoolActionsTitle}</div>
+        <div class="hardis-card-grid">
+          <template for:each={view.actionCards} for:item="card">
+            <div key={card.key} class={card.cardClass} role="button" tabindex={card.tabIndex} aria-disabled={card.ariaDisabled} data-action={card.key} onclick={handleAction} onkeydown={handleCardKeydown}>
+              <div class="hardis-card-head">
+                <div class={card.tileClass}>
+                  <lightning-icon icon-name={card.icon} size="x-small"></lightning-icon>
+                </div>
+                <h3 class="hardis-card-title">{card.title}</h3>
+              </div>
+              <p class="hardis-card-desc">{card.description}</p>
+              <div class="hardis-card-arrow">→</div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </template>
+
+    <!-- Resetting the pool deletes its scratch orgs: confirmed before the command runs -->
+    <template lwc:if={showResetModal}>
+      <section role="dialog" tabindex="-1" aria-modal="true" class="slds-modal slds-fade-in-open">
+        <div class="slds-modal__container">
+          <header class="slds-modal__header">
+            <h2 class="slds-modal__title slds-hyphenate">{i18n.scratchOrgPoolReset}</h2>
+          </header>
+          <div class="slds-modal__content slds-p-around_medium">
+            <p>{i18n.scratchOrgPoolResetConfirm}</p>
+          </div>
+          <footer class="slds-modal__footer">
+            <lightning-button variant="neutral" label={i18n.cancelLabel} onclick={handleResetCancel}></lightning-button>
+            <lightning-button variant="neutral" class="hardis-btn-tinted-red" icon-name="utility:delete" label={i18n.scratchOrgPoolReset} onclick={handleResetConfirm}></lightning-button>
+          </footer>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+  </div>
+</template>

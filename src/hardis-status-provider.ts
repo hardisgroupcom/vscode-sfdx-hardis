@@ -22,11 +22,46 @@ import { ThemeUtils } from "./utils/themeUtils";
 import { loadProjectSfdxHardisConfig } from "./utils/sfdx-hardis-config-utils";
 import { CacheManager } from "./utils/cache-manager";
 import { emitOrgsChanged } from "./utils/orgChangeEvents";
+import {
+  SCRATCH_ORG_POOL_COUNTS_CACHE_KEY,
+  SCRATCH_ORG_POOL_COUNTS_TTL_MS,
+  buildScratchOrgPoolViewCommand,
+  readScratchOrgPoolCounts,
+} from "./utils/scratchOrgPoolUtils";
 
 // Module-level flag: true while the background scratch-pool fetch is in flight
 let SCRATCH_POOL_LOADING = false;
 // Module-level flag: true once the scratch-pool result has been inserted into the tree
 let SCRATCH_POOL_LOADED = false;
+// Bumped each time the counts are known to have changed: a background fetch started before
+// that never writes its older counts
+let SCRATCH_POOL_GENERATION = 0;
+
+/**
+ * The pool line of the status view shows counts read up to 15 minutes ago. Called when they
+ * are known to have changed.
+ * @param counts the counts just read (the Scratch Org Pool panel read the pool): the line shows
+ *   them at once. Without them (a command changed the pool, or the pool could not be read) the
+ *   line is read again from sfdx-hardis.
+ */
+export async function updateScratchPoolStatus(
+  counts: { available: number; max: number } | null,
+): Promise<void> {
+  SCRATCH_POOL_GENERATION++;
+  if (counts) {
+    await CacheManager.set(
+      "project",
+      SCRATCH_ORG_POOL_COUNTS_CACHE_KEY,
+      counts,
+      SCRATCH_ORG_POOL_COUNTS_TTL_MS,
+    );
+    SCRATCH_POOL_LOADED = true;
+  } else {
+    await CacheManager.delete("project", SCRATCH_ORG_POOL_COUNTS_CACHE_KEY);
+    SCRATCH_POOL_LOADED = false;
+  }
+  vscode.commands.executeCommand("vscode-sfdx-hardis.refreshStatusView", true);
+}
 
 const GIT_FETCH_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const GIT_FETCH_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes (CacheManager TTL)
@@ -322,47 +357,72 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
         if (config?.poolConfig) {
           if (SCRATCH_POOL_LOADED) {
             // Background fetch already completed — read the cached result
-            const cachedPoolRes = CacheManager.get<any>(
-              "project",
-              "scratchPoolView",
-            );
-            if (
-              cachedPoolRes?.status === 0 &&
-              (cachedPoolRes?.result?.availableScratchOrgs ||
-                cachedPoolRes?.result?.availableScratchOrgs === 0)
-            ) {
+            const poolCounts = CacheManager.get<{
+              available: number;
+              max: number;
+            }>("project", SCRATCH_ORG_POOL_COUNTS_CACHE_KEY);
+            if (poolCounts) {
+              // A click opens the Scratch Org Pool panel
               items.push({
                 id: "scratch-org-pool-view",
                 label: t("poolAvailable", {
-                  available: cachedPoolRes.result.availableScratchOrgs,
-                  max: cachedPoolRes.result.maxScratchOrgs,
+                  available: poolCounts.available,
+                  max: poolCounts.max,
                 }),
                 tooltip: t("poolTooltip"),
-                command: "sf hardis:scratch:pool:view",
+                command: "vscode-sfdx-hardis.showScratchOrgPool",
                 iconId: "org:pool",
               });
             }
           } else if (!SCRATCH_POOL_LOADING) {
             // Start background fetch; do not block first paint
             SCRATCH_POOL_LOADING = true;
+            const generation = SCRATCH_POOL_GENERATION;
             void (async () => {
               try {
+                // A pool stored in the git provider is read with its token. Heavy
+                // module: loaded here, in the background, not with the status view
+                const { collectProviderCredentialEnvVars } =
+                  await import("./utils/providerCredentials");
                 const poolViewRes = await execSfdxJson(
-                  "sf hardis:scratch:pool:view",
-                  { output: false, fail: false },
+                  buildScratchOrgPoolViewCommand(),
+                  {
+                    output: false,
+                    fail: false,
+                    env: await collectProviderCredentialEnvVars(),
+                  },
                 );
-                await CacheManager.set(
-                  "project",
-                  "scratchPoolView",
-                  poolViewRes,
-                  1000 * 60 * 15,
-                );
+                // Only the two counts are kept: the answer of an older sfdx-hardis
+                // holds the credentials of the pool
+                const poolCounts = readScratchOrgPoolCounts(poolViewRes);
+                if (generation !== SCRATCH_POOL_GENERATION) {
+                  // The pool changed while it was read: the refresh below reads it again,
+                  // or shows the counts the panel wrote meanwhile
+                  return;
+                }
+                if (poolCounts) {
+                  await CacheManager.set(
+                    "project",
+                    SCRATCH_ORG_POOL_COUNTS_CACHE_KEY,
+                    poolCounts,
+                    SCRATCH_ORG_POOL_COUNTS_TTL_MS,
+                  );
+                } else {
+                  await CacheManager.delete(
+                    "project",
+                    SCRATCH_ORG_POOL_COUNTS_CACHE_KEY,
+                  );
+                }
+                // The whole answer used to be kept under this key
+                await CacheManager.delete("project", "scratchPoolView");
                 SCRATCH_POOL_LOADED = true;
               } catch (e) {
                 Logger.log(
                   "[vscode-sfdx-hardis] scratch pool view failed: " + String(e),
                 );
-                SCRATCH_POOL_LOADED = true;
+                if (generation === SCRATCH_POOL_GENERATION) {
+                  SCRATCH_POOL_LOADED = true;
+                }
               } finally {
                 SCRATCH_POOL_LOADING = false;
                 vscode.commands.executeCommand(

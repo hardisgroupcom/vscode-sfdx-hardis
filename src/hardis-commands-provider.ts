@@ -965,6 +965,14 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             command: "sf hardis:scratch:pool:create",
           },
           {
+            id: "vscode-sfdx-hardis.showScratchOrgPool",
+            label: t("scratchOrgPoolTitle"),
+            tooltip: t("scratchOrgPoolTooltip"),
+            command: "vscode-sfdx-hardis.showScratchOrgPool",
+            requiresProject: true,
+            helpUrl: DOCSITE_URL + "/salesforce-devops-setup-scratch-org-pool/",
+          },
+          {
             id: "org:configure:generic-prompt",
             label: t("configureGenericPrompt"),
             tooltip: t("configureGenericPromptTooltip"),

@@ -440,6 +440,10 @@ export class ThemeUtils {
         hardis: "gauge.svg",
       },
       "scratch:pool:create": { vscode: "gear", hardis: "pool.svg" },
+      "vscode-sfdx-hardis.showScratchOrgPool": {
+        vscode: "radio-tower",
+        hardis: "pool.svg",
+      },
       "org:configure:generic-prompt": {
         vscode: "sparkle",
         hardis: "configure.svg",

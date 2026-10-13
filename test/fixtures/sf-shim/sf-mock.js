@@ -921,6 +921,106 @@ async function main() {
     return 0;
   }
 
+  // Scratch Org Pool panel: a pool stored in the git provider, 4 scratch orgs available of 5,
+  // with the last scratch orgs taken, one failed creation and the limits of the Dev Hub.
+  // The dates are fixed, like the ones of the DORA report, so a capture never changes.
+  // SF_MOCK_POOL=noGitProvider simulates a git provider that cannot be read, =noPool a
+  // project without a pool, =old an sfdx-hardis that answers the pool storage instead of
+  // describing the pool, =error a command that fails. SF_MOCK_POOL_DELAY_MS makes the
+  // answer wait, for the tests that change something while the pool is read.
+  if (first === "hardis:scratch:pool:view" && args.includes("--json")) {
+    const variant = process.env.SF_MOCK_POOL || "";
+    const delayMs = parseInt(process.env.SF_MOCK_POOL_DELAY_MS || "0", 10);
+    if (delayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+    if (variant === "error") {
+      console.log(
+        JSON.stringify({
+          name: "SfError",
+          message: "The project configuration cannot be read",
+          status: 1,
+          stack: "",
+        }),
+      );
+      return 1;
+    }
+    if (variant === "noPool") {
+      outputJsonIfRequested(
+        {
+          status: 0,
+          result: {
+            status: 1,
+            outputString: "Scratch org pool configuration to create",
+            errorKind: "noPool",
+          },
+        },
+        "",
+      );
+      return 0;
+    }
+    if (variant === "noGitProvider") {
+      outputJsonIfRequested(
+        {
+          status: 0,
+          result: {
+            status: 1,
+            outputString: "Scratch org pool storage can not be reached",
+            errorKind: "noGitProvider",
+            errorMessage:
+              "No git provider token found to read the scratch org pool",
+            storageService: "gitProvider",
+          },
+        },
+        "",
+      );
+      return 0;
+    }
+    if (variant === "old") {
+      // What sfdx-hardis answered before the panel: the storage itself, credentials included
+      outputJsonIfRequested(
+        {
+          status: 0,
+          result: {
+            status: 0,
+            outputString: "Viewed scratch org pool",
+            poolStorage: {
+              scratchOrgs: [
+                {
+                  scratchOrgUsername: "deploy.user@hardis-scratch-old.com",
+                  authFileJson: { accessToken: "mock-pool-credential" },
+                },
+              ],
+            },
+            availableScratchOrgs: 1,
+            maxScratchOrgs: 5,
+          },
+        },
+        "",
+      );
+      return 0;
+    }
+    const pool = JSON.parse(
+      fs.readFileSync(path.join(__dirname, "scratch-org-pool.json"), "utf8"),
+    );
+    outputJsonIfRequested(
+      {
+        status: 0,
+        result: {
+          status: 0,
+          outputString: "Viewed scratch org pool",
+          pool,
+          storageService: pool.storageService,
+          dashboardUrl: pool.dashboardUrl,
+          availableScratchOrgs: pool.available,
+          maxScratchOrgs: pool.max,
+        },
+      },
+      "",
+    );
+    return 0;
+  }
+
   // Backpromote panel: plan, prepare, run, confirm and reset answer plan documents
   if (
     first === "hardis:work:backpromote" &&

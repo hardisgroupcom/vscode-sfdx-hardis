@@ -6,6 +6,8 @@ import type { AhaProvider } from "./ticketProviders/ticketProviderAha";
 import { SecretsManager, SecretSource } from "./secretsManager";
 import { onEnvFileChanged, PROVIDER_ENV_VAR_NAMES } from "./envFileCredentials";
 import { getConfig, isPipelineConfigured } from "./pipeline/sfdxHardisConfig";
+import { poolEncryptionKeySecretName } from "./scratchOrgPoolUtils";
+import { getWorkspaceRoot } from "../utils";
 import { Logger } from "../logger";
 import { t } from "../i18n/i18n";
 
@@ -185,6 +187,7 @@ export const SECRET_ENV_KEYS = new Set([
   "SERVICENOW_USERNAME",
   "SERVICENOW_PASSWORD",
   "AHA_API_KEY",
+  ...PROVIDER_ENV_VAR_NAMES.poolEncryptionKey,
 ]);
 
 // In-memory cache of collected credentials: they are re-read from secret
@@ -274,6 +277,18 @@ onEnvFileChanged(invalidateProviderCredentialEnvCache);
 export async function collectProviderCredentialEnvVars(): Promise<
   Record<string, string>
 > {
+  return (await collectProviderCredentialEnvVarsWithStatus()).env;
+}
+
+/**
+ * Same as collectProviderCredentialEnvVars, telling whether the collection timed out. A caller
+ * that would take an answer without credentials for a real state (not connected, key missing)
+ * uses it to tell "no credentials" from "credentials not read in time".
+ */
+export async function collectProviderCredentialEnvVarsWithStatus(): Promise<{
+  env: Record<string, string>;
+  timedOut: boolean;
+}> {
   if (credentialEnvCache) {
     if (Date.now() >= credentialEnvCache.expiresAt) {
       // Stale: serve it right away (tokens rarely change, and any secret
@@ -281,7 +296,7 @@ export async function collectProviderCredentialEnvVars(): Promise<
       // the command launch never waits on git/ticketing providers
       void refreshProviderCredentialEnvCache();
     }
-    return { ...credentialEnvCache.value };
+    return { env: { ...credentialEnvCache.value }, timedOut: false };
   }
   const generation = cacheGeneration;
   const collectPromise = collectProviderCredentialEnvVarsNow();
@@ -302,10 +317,20 @@ export async function collectProviderCredentialEnvVars(): Promise<
         storeCredentialEnvCache(value, generation);
       })
       .catch(() => {});
-    return {};
+    return { env: {}, timedOut: true };
   }
   storeCredentialEnvCache(collected, generation);
-  return { ...collected };
+  return { env: { ...collected }, timedOut: false };
+}
+
+/**
+ * Stores the encryption key of the scratch org pool of this repository in the VS Code secret
+ * storage. Every sf hardis command launched afterwards receives it.
+ *
+ * SECURITY: the key is a secret, it is never logged nor sent to a webview.
+ */
+export async function storePoolEncryptionKey(value: string): Promise<void> {
+  await SecretsManager.setSecret(await getPoolEncryptionKeySecretName(), value);
 }
 
 async function collectProviderCredentialEnvVarsNow(): Promise<
@@ -393,6 +418,21 @@ async function collectProviderCredentialEnvVarsNow(): Promise<
   } catch (e) {
     Logger.log(
       `Could not collect git provider credentials: ${e instanceof Error ? e.message : String(e)}`,
+    );
+  }
+
+  // --- Encryption key of the scratch org pool ---
+  try {
+    const poolEncryptionKey = await SecretsManager.getSecret(
+      await getPoolEncryptionKeySecretName(),
+      PROVIDER_ENV_VAR_NAMES.poolEncryptionKey,
+    );
+    if (poolEncryptionKey) {
+      env[PROVIDER_ENV_VAR_NAMES.poolEncryptionKey[0]] = poolEncryptionKey;
+    }
+  } catch (e) {
+    Logger.log(
+      `Could not collect the scratch org pool encryption key: ${e instanceof Error ? e.message : String(e)}`,
     );
   }
 
@@ -488,4 +528,14 @@ async function collectProviderCredentialEnvVarsNow(): Promise<
   }
 
   return env;
+}
+
+// One key per repository: named after its git remote, or after its folder when it has none
+async function getPoolEncryptionKeySecretName(): Promise<string> {
+  const repoInfo = await GitProvider.detectRepoInfo();
+  return poolEncryptionKeySecretName(
+    repoInfo
+      ? `${repoInfo.host}/${repoInfo.owner}/${repoInfo.repo}`
+      : getWorkspaceRoot(),
+  );
 }

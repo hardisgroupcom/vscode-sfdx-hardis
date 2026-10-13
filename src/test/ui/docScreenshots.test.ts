@@ -4314,4 +4314,93 @@ suite("Documentation screenshots", function () {
     await click(130, 362); // STATUS: expand
     await click(130, 664); // DEPENDENCIES: expand
   });
+
+  // Scratch Org Pool panel, from the pool the mocked sf CLI describes (4 scratch orgs
+  // available of 5, stored in the git provider). The fixture project has no poolConfig:
+  // the panel is opened by its command. The second capture is taken two zoom levels out,
+  // so the whole panel fits, down to its action cards.
+  test("scratch org pool", async function () {
+    if (!shouldTake("scratch-org-pool")) {
+      this.skip();
+    }
+    const poolReady = (initData: any) =>
+      initData.loading === false && !!initData.pool;
+    await shootPanel(panelManager, {
+      name: "scratch-org-pool",
+      command: "vscode-sfdx-hardis.showScratchOrgPool",
+      lwcId: "s-scratch-org-pool",
+      ready: poolReady,
+      settleMs: 3000,
+      force: true,
+    });
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await sleep(800);
+    try {
+      await shootPanel(panelManager, {
+        name: "scratch-org-pool-full",
+        command: "vscode-sfdx-hardis.showScratchOrgPool",
+        lwcId: "s-scratch-org-pool",
+        ready: poolReady,
+        settleMs: 3000,
+        force: true,
+      });
+    } finally {
+      await vscode.commands.executeCommand("workbench.action.zoomIn");
+      await vscode.commands.executeCommand("workbench.action.zoomIn");
+      await sleep(800);
+    }
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+  });
+
+  // The settings menu of the DevOps Pipeline with its Scratch Org Pool entry, which only a
+  // project with a pool shows. The fixture project has none, and must keep none for every
+  // other capture: the pool is declared in the copy of the project for this capture only,
+  // and removed right after. It is the last test for the same reason.
+  test("scratch org pool: entry of the pipeline settings menu", async function () {
+    if (!shouldTake("scratch-org-pool-menu")) {
+      this.skip();
+    }
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!workspaceRoot) {
+      throw new Error("No workspace folder to declare a scratch org pool in");
+    }
+    const configFile = path.join(workspaceRoot, ".sfdx-hardis.yml");
+    const configBefore = fs.existsSync(configFile)
+      ? fs.readFileSync(configFile, "utf8")
+      : null;
+    const poolConfig = [
+      "poolConfig:",
+      "  storageService: gitProvider",
+      "  maxScratchOrgsNumber: 5",
+      "",
+    ].join(os.EOL);
+    fs.writeFileSync(
+      configFile,
+      configBefore ? configBefore.trimEnd() + os.EOL + poolConfig : poolConfig,
+    );
+    try {
+      // Same name as the final capture, which replaces this one: no other capture is written
+      await shootPanel(panelManager, {
+        name: "scratch-org-pool-menu",
+        command: "vscode-sfdx-hardis.showPipeline",
+        lwcId: "s-pipeline",
+        ready: (data) =>
+          pipelineFullyLoaded(data) &&
+          data.pipelineData?.scratchOrgPoolEnabled === true,
+        settleMs: 9000,
+        force: true,
+      });
+      await click(1580, 104); // gear menu of the header
+      await sleep(2500);
+      await captureStable("scratch-org-pool-menu");
+    } finally {
+      if (configBefore === null) {
+        fs.rmSync(configFile, { force: true });
+      } else {
+        fs.writeFileSync(configFile, configBefore);
+      }
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    }
+  });
 });
