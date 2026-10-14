@@ -198,7 +198,11 @@ export async function openOrgFromCommand(
   const url: string | undefined = result?.result?.url;
   if (!url) {
     const reason = t("orgOpenNoLink");
-    return { ok: false, reason, result: { ...result, status: 1, message: reason } };
+    return {
+      ok: false,
+      reason,
+      result: { ...result, status: 1, message: reason },
+    };
   }
   await vscode.env.openExternal(vscode.Uri.parse(url));
   return { ok: true, reason: null, result };

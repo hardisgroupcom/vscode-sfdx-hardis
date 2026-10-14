@@ -32,6 +32,9 @@ suite("orgUtils open org Test Suite", () => {
       withUrlOnly("sf org open -r --target-org acme"),
       "sf org open -r --target-org acme",
     );
-    assert.strictEqual(withUrlOnly("  sf org open  "), "sf org open --url-only");
+    assert.strictEqual(
+      withUrlOnly("  sf org open  "),
+      "sf org open --url-only",
+    );
   });
 });
