@@ -65,49 +65,62 @@ export function createSoqlSchema(username: string | null): SoqlSchema {
   };
 }
 
-// Standard relationships whose object is not their name
-const STANDARD_PARENT_TARGETS: Record<string, string> = {
-  owner: "User",
-  createdby: "User",
-  lastmodifiedby: "User",
-  manager: "User",
-  delegatedapprover: "User",
-  reportsto: "Contact",
-  convertedaccount: "Account",
-  convertedcontact: "Contact",
-  convertedopportunity: "Opportunity",
-  pricebook2: "Pricebook2",
-  product2: "Product2",
-  recordtype: "RecordType",
-  profile: "Profile",
-  userrole: "UserRole",
-};
+// Standard relationships whose object is not their name. Written as Salesforce names them,
+// looked up in lower case: SOQL ignores case
+const STANDARD_PARENT_TARGETS: Record<string, string> = byLowerCaseName({
+  Owner: "User",
+  CreatedBy: "User",
+  LastModifiedBy: "User",
+  Manager: "User",
+  DelegatedApprover: "User",
+  ReportsTo: "Contact",
+  ConvertedAccount: "Account",
+  ConvertedContact: "Contact",
+  ConvertedOpportunity: "Opportunity",
+  Pricebook2: "Pricebook2",
+  Product2: "Product2",
+  RecordType: "RecordType",
+  Profile: "Profile",
+  UserRole: "UserRole",
+});
 
-const STANDARD_CHILD_RELATIONSHIPS: Record<string, string> = {
-  contacts: "Contact",
-  opportunities: "Opportunity",
-  cases: "Case",
-  childaccounts: "Account",
-  opportunitylineitems: "OpportunityLineItem",
-  opportunitycontactroles: "OpportunityContactRole",
-  accountcontactrelations: "AccountContactRelation",
-  tasks: "Task",
-  events: "Event",
-  activityhistories: "ActivityHistory",
-  openactivities: "OpenActivity",
-  attachments: "Attachment",
-  notes: "Note",
-  assets: "Asset",
-  contracts: "Contract",
-  orders: "Order",
-  orderitems: "OrderItem",
-  quotes: "Quote",
-  quotelineitems: "QuoteLineItem",
-  casecomments: "CaseComment",
-  feeds: "FeedItem",
-  histories: "FieldHistory",
-  users: "User",
-};
+const STANDARD_CHILD_RELATIONSHIPS: Record<string, string> = byLowerCaseName({
+  Contacts: "Contact",
+  Opportunities: "Opportunity",
+  Cases: "Case",
+  ChildAccounts: "Account",
+  OpportunityLineItems: "OpportunityLineItem",
+  OpportunityContactRoles: "OpportunityContactRole",
+  AccountContactRelations: "AccountContactRelation",
+  Tasks: "Task",
+  Events: "Event",
+  ActivityHistories: "ActivityHistory",
+  OpenActivities: "OpenActivity",
+  Attachments: "Attachment",
+  Notes: "Note",
+  Assets: "Asset",
+  Contracts: "Contract",
+  Orders: "Order",
+  OrderItems: "OrderItem",
+  Quotes: "Quote",
+  QuoteLineItems: "QuoteLineItem",
+  CaseComments: "CaseComment",
+  Feeds: "FeedItem",
+  Histories: "FieldHistory",
+  Users: "User",
+});
+
+const SELF_RELATIONSHIPS = new Set(
+  ["Parent", "MasterRecord"].map((name) => name.toLowerCase()),
+);
+
+function byLowerCaseName(
+  names: Record<string, string>,
+): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(names).map(([name, value]) => [name.toLowerCase(), value]),
+  );
+}
 
 function standardParentTarget(
   objectName: string,
@@ -115,7 +128,7 @@ function standardParentTarget(
 ): string | null {
   const name = relationshipName.toLowerCase();
   // Parent and MasterRecord point to the same object: Account.Parent is an Account
-  if (name === "parent" || name === "masterrecord") {
+  if (SELF_RELATIONSHIPS.has(name)) {
     return objectName;
   }
   return STANDARD_PARENT_TARGETS[name] || null;

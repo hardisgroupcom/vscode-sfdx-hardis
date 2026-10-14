@@ -50,7 +50,7 @@ export interface SoqlRange {
 }
 
 interface Token {
-  type: "ident" | "string" | "number" | "punct";
+  type: "ident" | "string" | "number" | "symbol";
   value: string;
   start: number;
   end: number;
@@ -415,7 +415,7 @@ function tokenize(text: string, start: number, end: number): Token[] {
       type = "string";
       tokenEnd = Math.min(skipString(text, i) + 1, end);
     } else {
-      type = "punct";
+      type = "symbol";
       tokenEnd = i + 1;
     }
     const value = text.slice(i, tokenEnd);
