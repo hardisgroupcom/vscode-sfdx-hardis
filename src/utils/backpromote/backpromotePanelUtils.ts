@@ -1768,10 +1768,12 @@ export function getBackpromoteErrorMessage(result: any): string {
 }
 
 /**
- * Short name of the target sandbox for the panel: the `sandboxName` of the plan, else the
- * short host of its instance URL (the label of the status bar badge), else its username.
- * A scratch org has no sandbox name, and sfdx-hardis puts its org id there: its alias is
- * the name its owner knows it by.
+ * Name of the target org for the panel, the same one sfdx-hardis writes in the Backpromotes
+ * comments (deriveOrgLabel): the sandbox part of its instance URL (`dev1` for
+ * `mycompany--dev1.sandbox.my.salesforce.com`), else its alias (a scratch org has a random host,
+ * its alias is the name its owner knows it by), else the short host of that URL (a Developer
+ * Edition with its own domain), else its username. Never the org id sfdx-hardis puts in the
+ * `sandboxName` of a scratch org.
  */
 export function getTargetOrgDisplayName(
   targetOrg: Partial<BackpromotePlan["targetOrg"]> | null | undefined,
@@ -1779,17 +1781,18 @@ export function getTargetOrgDisplayName(
   if (!targetOrg) {
     return "";
   }
-  if (targetOrg.orgType === "scratch" && targetOrg.alias) {
+  const host = shortenOrgHost(targetOrg.instanceUrl || "");
+  const doubleDash = host.indexOf("--");
+  if (doubleDash > 0 && doubleDash < host.length - 2) {
+    return host.substring(doubleDash + 2);
+  }
+  if (targetOrg.alias) {
     return targetOrg.alias;
   }
-  if (targetOrg.sandboxName) {
-    return targetOrg.sandboxName;
-  }
-  const host = shortenOrgHost(targetOrg.instanceUrl || "");
   if (host && !["login", "test", "www"].includes(host)) {
     return host;
   }
-  return targetOrg.alias || targetOrg.username || "";
+  return targetOrg.username || "";
 }
 
 // ---------------------------------------------------------------------------
