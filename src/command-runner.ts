@@ -31,7 +31,11 @@ import {
   stripAnsi,
 } from "./utils";
 import { Logger } from "./logger";
-import { isOrgOpenCommand, openOrgFromCommand } from "./utils/orgUtils";
+import {
+  isOrgOpenCommand,
+  openOrgFromCommand,
+  showOrgOpenFailure,
+} from "./utils/orgUtils";
 import {
   collectProviderCredentialEnvVars,
   SECRET_ENV_KEYS,
@@ -248,14 +252,17 @@ export class CommandRunner {
 
     // ── Open an org ──────────────────────────────────────────────────────────
     // The Status tree and the menus open an org with `sf org open`. VS Code opens
-    // the link itself: in a browser-hosted VS Code (Agentforce Vibes) the CLI
-    // runs in container mode and opens nothing, it only prints the link.
+    // the link itself, in background and terminal mode alike: in a browser-hosted
+    // VS Code (Agentforce Vibes) the CLI runs in container mode and opens nothing,
+    // it only prints the link. A command chained with a shell operator, or asking
+    // for a given browser, is not intercepted: it follows the regular path below.
     if (isOrgOpenCommand(trimmedCommand)) {
-      const opened = await openOrgFromCommand(trimmedCommand, t("openingOrg"));
+      this.sendCommandTelemetry(trimmedCommand);
+      const opened = await openOrgFromCommand(trimmedCommand, t("openingOrg"), {
+        env: extraEnv,
+      });
       if (!opened.ok) {
-        vscode.window.showErrorMessage(
-          t("failedToOpenOrg", { error: opened.reason }),
-        );
+        showOrgOpenFailure(opened);
       }
       return;
     }
@@ -627,13 +634,7 @@ export class CommandRunner {
     }
     this.allowNextDuplicateCommand = false;
     /* jscpd:ignore-end */
-    // Telemetry: Send only the 2 first portions of the command
-    if (this.commandsInstance.reporter) {
-      const truncatedCommand = cmd.split(" ").slice(0, 2).join(" ");
-      this.commandsInstance.reporter.sendTelemetryEvent("command", {
-        command: truncatedCommand,
-      });
-    }
+    this.sendCommandTelemetry(cmd);
     // Register as active
     if (type === "background" && process) {
       this.activeCommands.set(cmd, { type, process });
@@ -641,6 +642,16 @@ export class CommandRunner {
       this.activeCommands.set(cmd, { type, sentToTerminal: true });
     }
     return cmd;
+  }
+
+  // Telemetry: send only the 2 first portions of the command
+  sendCommandTelemetry(command: string) {
+    if (this.commandsInstance?.reporter) {
+      const truncatedCommand = command.split(" ").slice(0, 2).join(" ");
+      this.commandsInstance.reporter.sendTelemetryEvent("command", {
+        command: truncatedCommand,
+      });
+    }
   }
 
   showDuplicateCommandWarning() {

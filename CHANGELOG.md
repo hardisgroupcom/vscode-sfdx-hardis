@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Orgs Manager, Status section and DevOps Pipeline: Open opens the org in a tab of your browser when VS Code runs in a browser (Agentforce Vibes), instead of nothing
+- Orgs Manager, Status section and DevOps Pipeline: the Open button opens the org in a browser tab when the Salesforce CLI runs in container mode (Agentforce Vibes, a dev container), instead of doing nothing. VS Code opens the link itself, in terminal mode too, and says so when the link could not be opened
 - Training screenshots: the `uat` window of the promotion branches lab holds the seven Pull Requests a learner has at that step
 - Backpromote panel and Pull Request window: a developer org is named by the sandbox part of its instance URL or by its alias, like the Backpromotes comment of sfdx-hardis, never by an org id
 

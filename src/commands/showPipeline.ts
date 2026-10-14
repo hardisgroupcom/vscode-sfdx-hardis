@@ -33,7 +33,11 @@ import { t } from "../i18n/i18n";
 import path from "path";
 import * as fs from "fs";
 import { createSimpleGit } from "../utils/simpleGitInstance";
-import { listAllOrgs, openOrgFromCommand } from "../utils/orgUtils";
+import {
+  listAllOrgs,
+  openOrgFromCommand,
+  showOrgOpenFailure,
+} from "../utils/orgUtils";
 import { getChildBranchNames } from "../utils/orgConfigUtils";
 import { readSfdxHardisConfig } from "../utils/sfdx-hardis-config-utils";
 import {
@@ -954,9 +958,7 @@ export function registerShowPipeline(commands: Commands) {
                   return;
                 }
               }
-              vscode.window.showErrorMessage(
-                t("failedToOpenOrg", { error: opened.reason }),
-              );
+              showOrgOpenFailure(opened);
             }
           } else if (instanceUrl) {
             try {

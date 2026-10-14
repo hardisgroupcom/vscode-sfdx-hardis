@@ -1955,6 +1955,7 @@
   "orgMonitoringNotPresentCiCdDescription": "このワークスペースは CI/CD / DevOps リポジトリのようです (manifest/package.xml が見つかりました)。ここに組織モニタリングがインストールされていなくても正常です。",
   "orgMonitoringWorkbench": "組織モニタリングワークベンチ",
   "orgMonitoringWorkbenchTooltip": "すべての監視ツールと診断機能を 1 か所に集約した 組織モニタリングワークベンチを開きます",
+  "orgOpenLinkNotOpened": "VS Code が組織のリンクを開きませんでした",
   "orgOpenNoLink": "Salesforce CLI から組織を開くためのリンクが返されませんでした",
   "orgOperations": "組織操作",
   "orgsManager": "組織マネージャー",

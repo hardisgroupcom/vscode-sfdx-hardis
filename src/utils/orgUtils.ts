@@ -1,5 +1,9 @@
 import * as vscode from "vscode";
-import { execSfdxJson, execSfdxJsonWithProgress } from "../utils";
+import {
+  ExecCommandOptions,
+  execSfdxJson,
+  execSfdxJsonWithProgress,
+} from "../utils";
 import { t } from "../i18n/i18n";
 import { CacheManager } from "./cache-manager";
 import { getInternalCommandFailureReason } from "./internalCommandUtils";
@@ -165,27 +169,75 @@ export async function forgetOrgs(orgUsernames: string[]) {
   return { successUsernames, errorUsernames };
 }
 
+export type OrgOpenOutcome = {
+  ok: boolean;
+  reason: string | null;
+  result: any;
+};
+
+// What openOrgFromCommand needs from the outside, replaceable in tests
+export type OrgOpenRunners = {
+  exec: (
+    command: string,
+    options: ExecCommandOptions,
+    progressMessage: string,
+  ) => Promise<any>;
+  open: (url: string) => Thenable<boolean>;
+};
+
+const defaultOrgOpenRunners: OrgOpenRunners = {
+  exec: execSfdxJsonWithProgress,
+  open: (url) => vscode.env.openExternal(vscode.Uri.parse(url)),
+};
+
+/**
+ * Whether a command is a `sf org open` command that VS Code can open itself: with or without
+ * --target-org and --path, but not with a browser choice (--browser, --private: the CLI refuses
+ * them with --url-only), and not chained with a shell operator (the regular command path blocks
+ * those).
+ */
+export function isOrgOpenCommand(command: string): boolean {
+  const trimmed = command.trim();
+  return (
+    /^sf org open(\s|$)/.test(trimmed) &&
+    !/(^|\s)(--browser|-b|--private)(\s|=|$)/.test(trimmed) &&
+    !trimmed.includes("&&") &&
+    !trimmed.includes("||")
+  );
+}
+
 /**
  * Open an org in the user's browser from a `sf org open ...` command (its --target-org and --path
  * flags are kept).
  * `sf org open` opens nothing where the Salesforce CLI runs in container mode (SF_CONTAINER_MODE:
  * Agentforce Vibes, a dev container): it prints the login link and exits 0, so a click on Open
  * ended with nothing. The link is asked with --url-only and opened by VS Code itself, which in a
- * browser-hosted VS Code opens a tab of the user's browser.
+ * browser-hosted VS Code opens a tab of the user's browser. The link holds a one-time code, so
+ * every call runs the CLI again: two clicks never share a link.
  * @param command The `sf org open ...` command a panel or a tree would have run
  * @param progressMessage Shown while the link is fetched
- * @returns ok: the link was opened; reason: why it was not; result: what the CLI returned, with a
- * status above 0 when it failed, for the callers that report it like any other command
+ * @param options env: extra environment variables of the CLI run; runners: for tests
+ * @returns ok: the link was opened; reason: why it was not (never empty); result: what the CLI
+ * returned, with a status above 0 when it failed, for the callers that report it like any other
+ * command
  */
 export async function openOrgFromCommand(
   command: string,
   progressMessage: string,
-): Promise<{ ok: boolean; reason: string | null; result: any }> {
+  options: { env?: Record<string, string>; runners?: OrgOpenRunners } = {},
+): Promise<OrgOpenOutcome> {
+  const runners = options.runners || defaultOrgOpenRunners;
   let result: any;
   try {
-    result = await execSfdxJsonWithProgress(
+    result = await runners.exec(
       withUrlOnly(command),
-      { fail: false, output: false, reuseRecentResult: false },
+      {
+        fail: false,
+        output: false,
+        reuseRecentResult: false,
+        shareInFlightRun: false,
+        env: options.env,
+      },
       progressMessage,
     );
   } catch (error: any) {
@@ -193,24 +245,25 @@ export async function openOrgFromCommand(
   }
   const failureReason = getInternalCommandFailureReason(result);
   if (failureReason !== null) {
-    return { ok: false, reason: failureReason, result };
+    return failedOrgOpen(result, failureReason || t("orgOpenNoLink"));
   }
   const url: string | undefined = result?.result?.url;
   if (!url) {
-    const reason = t("orgOpenNoLink");
-    return {
-      ok: false,
-      reason,
-      result: { ...result, status: 1, message: reason },
-    };
+    return failedOrgOpen(result, t("orgOpenNoLink"));
   }
-  await vscode.env.openExternal(vscode.Uri.parse(url));
+  // VS Code may refuse the link, for example when the user cancels the confirmation a
+  // browser-hosted VS Code shows before opening an external website
+  let opened: boolean;
+  try {
+    opened = (await runners.open(url)) === true;
+  } catch (error: any) {
+    const message = error?.message || String(error);
+    return failedOrgOpen(result, `${t("orgOpenLinkNotOpened")}: ${message}`);
+  }
+  if (!opened) {
+    return failedOrgOpen(result, t("orgOpenLinkNotOpened"));
+  }
   return { ok: true, reason: null, result };
-}
-
-/** Whether a command string is a `sf org open` command, with or without flags */
-export function isOrgOpenCommand(command: string): boolean {
-  return /^sf org open(\s|$)/.test(command.trim());
 }
 
 /** The same `sf org open` command, asking for the link instead of opening a browser */
@@ -220,4 +273,21 @@ export function withUrlOnly(command: string): string {
     return trimmed;
   }
   return `${trimmed} --url-only`;
+}
+
+/** Tells the user why Open did nothing */
+export function showOrgOpenFailure(outcome: OrgOpenOutcome): void {
+  vscode.window.showErrorMessage(
+    t("failedToOpenOrg", { error: outcome.reason }),
+  );
+}
+
+// A failed outcome whose result reads as a failed command for the panels (status above 0)
+function failedOrgOpen(result: any, reason: string): OrgOpenOutcome {
+  const status = Number(result?.status) > 0 ? result.status : 1;
+  return {
+    ok: false,
+    reason,
+    result: { ...(result || {}), status, message: result?.message || reason },
+  };
 }

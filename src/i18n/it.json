@@ -1955,6 +1955,7 @@
   "orgMonitoringNotPresentCiCdDescription": "Questo workspace sembra essere un repository CI/CD / DevOps (manifest/package.xml trovato). È normale che il monitoraggio org non sia installato qui.",
   "orgMonitoringWorkbench": "Workbench monitoraggio org",
   "orgMonitoringWorkbenchTooltip": "Apri il workbench completo di monitoraggio org con tutti gli strumenti di monitoraggio e diagnostica in un unico posto",
+  "orgOpenLinkNotOpened": "VS Code non ha aperto il link dell'org",
   "orgOpenNoLink": "La Salesforce CLI non ha restituito alcun link per aprire l'org",
   "orgOperations": "Operazioni org",
   "orgsManager": "Gestore org",
