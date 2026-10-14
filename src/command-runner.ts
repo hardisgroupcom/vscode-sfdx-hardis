@@ -31,6 +31,7 @@ import {
   stripAnsi,
 } from "./utils";
 import { Logger } from "./logger";
+import { isOrgOpenCommand, openOrgFromCommand } from "./utils/orgUtils";
 import {
   collectProviderCredentialEnvVars,
   SECRET_ENV_KEYS,
@@ -244,6 +245,20 @@ export class CommandRunner {
     const isNpmInstallSf = trimmedCommand.startsWith(
       "npm install @salesforce/",
     );
+
+    // ── Open an org ──────────────────────────────────────────────────────────
+    // The Status tree and the menus open an org with `sf org open`. VS Code opens
+    // the link itself: in a browser-hosted VS Code (Agentforce Vibes) the CLI
+    // runs in container mode and opens nothing, it only prints the link.
+    if (isOrgOpenCommand(trimmedCommand)) {
+      const opened = await openOrgFromCommand(trimmedCommand, t("openingOrg"));
+      if (!opened.ok) {
+        vscode.window.showErrorMessage(
+          t("failedToOpenOrg", { error: opened.reason }),
+        );
+      }
+      return;
+    }
 
     // Auto-inject provider credentials for sf hardis commands so the CLI
     // can authenticate with the same git/ticketing providers as the extension.

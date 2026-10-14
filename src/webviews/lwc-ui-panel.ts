@@ -10,6 +10,7 @@ import { getAllTranslations, getCurrentLocale, t } from "../i18n/i18n";
 import { DOCSITE_URL, PANEL_DOC_URLS } from "../constants";
 import type { ExecuteCommandOptions } from "../command-runner";
 import { getInternalCommandFailureReason } from "../utils/internalCommandUtils";
+import { isOrgOpenCommand, openOrgFromCommand } from "../utils/orgUtils";
 
 type MessageListener = (messageType: string, data: any) => void;
 type ImagePathMap = Record<string, string[]>;
@@ -635,7 +636,10 @@ export class LwcUiPanel {
     // for 20 seconds is never reused here. A second click on Open used to do nothing.
     const execOptions = { reuseRecentResult: false };
     try {
-      if (data.command.includes("--json")) {
+      if (isOrgOpenCommand(command)) {
+        // VS Code opens the link itself: `sf org open` opens nothing in a browser-hosted VS Code
+        result = (await openOrgFromCommand(command, progressMessage)).result;
+      } else if (data.command.includes("--json")) {
         result = await execSfdxJsonWithProgress(
           command,
           execOptions,

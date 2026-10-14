@@ -1955,6 +1955,7 @@
   "orgMonitoringNotPresentCiCdDescription": "This workspace appears to be a CI/CD / DevOps repository (manifest/package.xml found). It's normal for org monitoring not to be installed here.",
   "orgMonitoringWorkbench": "Org Monitoring Workbench",
   "orgMonitoringWorkbenchTooltip": "Open the comprehensive Org Monitoring workbench with all monitoring tools and diagnostics in one place",
+  "orgOpenNoLink": "The Salesforce CLI returned no link to open the org",
   "orgOperations": "Org Operations",
   "orgsManager": "Orgs Manager",
   "orgsManagerDescription": "Manage your Salesforce orgs, connect to new ones, switch environments, and refresh your sandboxes.",

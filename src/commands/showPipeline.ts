@@ -25,11 +25,7 @@ import {
   getCachedCustomFunctions,
   refreshCustomFunctionsCache,
 } from "../utils/customFunctionsUtils";
-import {
-  execCommandWithProgress,
-  execSfdxJson,
-  getWorkspaceRoot,
-} from "../utils";
+import { execSfdxJson, getWorkspaceRoot } from "../utils";
 import { collectProviderCredentialEnvVars } from "../utils/providerCredentials";
 import { connectGitProvider } from "../utils/gitProviders/connectGitProvider";
 import { isSafeJobUrl } from "../utils/pullRequestUrlUtils";
@@ -37,7 +33,7 @@ import { t } from "../i18n/i18n";
 import path from "path";
 import * as fs from "fs";
 import { createSimpleGit } from "../utils/simpleGitInstance";
-import { listAllOrgs } from "../utils/orgUtils";
+import { listAllOrgs, openOrgFromCommand } from "../utils/orgUtils";
 import { getChildBranchNames } from "../utils/orgConfigUtils";
 import { readSfdxHardisConfig } from "../utils/sfdx-hardis-config-utils";
 import {
@@ -942,13 +938,9 @@ export function registerShowPipeline(commands: Commands) {
               : alias
                 ? t("openingOrgNamed", { name: alias })
                 : t("openingOrg");
-            try {
-              await execCommandWithProgress(
-                command,
-                { fail: true, output: true, spinner: true },
-                progressLabel,
-              );
-            } catch (error: any) {
+            // VS Code opens the link itself: `sf org open` opens nothing in a browser-hosted VS Code
+            const opened = await openOrgFromCommand(command, progressLabel);
+            if (!opened.ok) {
               if (instanceUrl) {
                 try {
                   await vscode.env.openExternal(vscode.Uri.parse(instanceUrl));
@@ -963,7 +955,7 @@ export function registerShowPipeline(commands: Commands) {
                 }
               }
               vscode.window.showErrorMessage(
-                t("failedToOpenOrg", { error: error?.message || error }),
+                t("failedToOpenOrg", { error: opened.reason }),
               );
             }
           } else if (instanceUrl) {
