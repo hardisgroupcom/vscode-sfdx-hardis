@@ -1310,7 +1310,8 @@ suite("backpromotePanelUtils", () => {
     assert.strictEqual(
       getTargetOrgDisplayName({
         alias: "helios-dev",
-        instanceUrl: "https://power-ability-1234-dev-ed.scratch.my.salesforce.com",
+        instanceUrl:
+          "https://power-ability-1234-dev-ed.scratch.my.salesforce.com",
         sandboxName: "00d000000000000001",
         orgType: "scratch",
         username: USERNAME,
@@ -1319,7 +1320,8 @@ suite("backpromotePanelUtils", () => {
     );
     assert.strictEqual(
       getTargetOrgDisplayName({
-        instanceUrl: "https://power-ability-1234-dev-ed.scratch.my.salesforce.com",
+        instanceUrl:
+          "https://power-ability-1234-dev-ed.scratch.my.salesforce.com",
         sandboxName: "00d000000000000001",
         orgType: "scratch",
         username: USERNAME,
