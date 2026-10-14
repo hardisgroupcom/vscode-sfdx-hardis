@@ -371,6 +371,11 @@
         "icon": "$(references)"
       },
       {
+        "command": "vscode-sfdx-hardis.findSoqlFieldDependencies",
+        "title": "SFDX Hardis: Find where this SOQL field is used",
+        "icon": "$(references)"
+      },
+      {
         "command": "vscode-sfdx-hardis.openExternal",
         "title": "SFDX Hardis: Open external url",
         "icon": "$(link-external)"
@@ -729,6 +734,11 @@
           "command": "vscode-sfdx-hardis.findMetadataUses",
           "when": "resourceFilename =~ /(-meta\\.xml|\\.(cls|trigger|page|component))$/ || resourcePath =~ /[\\/\\\\](lwc|aura)[\\/\\\\][^\\/\\\\]+[\\/\\\\][^\\/\\\\]+$/",
           "group": "z_sfdxhardis@26"
+        },
+        {
+          "command": "vscode-sfdx-hardis.findSoqlFieldDependencies",
+          "when": "editorHasSelection && (editorLangId =~ /^(apex|soql|apex-anon)$/ || resourceFilename =~ /\\.(cls|trigger|soql|apex)$/)",
+          "group": "z_sfdxhardis@27"
         }
       ],
       "view/item/context": [

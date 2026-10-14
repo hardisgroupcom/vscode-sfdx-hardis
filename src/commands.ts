@@ -29,6 +29,7 @@ import {
 } from "./commands/runAnonymousApex";
 import { registerShowMetadataRetriever } from "./commands/showMetadataRetriever";
 import { registerShowMetadataDependencies } from "./commands/showMetadataDependencies";
+import { registerFindSoqlFieldDependencies } from "./commands/findSoqlFieldDependencies";
 import { registerShowPackageXml } from "./commands/packageXml";
 import { registerGitMergeDriverToggle } from "./commands/gitMergeDriver";
 import { registerShowDocumentationWorkbench } from "./commands/showDocumentationWorkbench";
@@ -108,6 +109,7 @@ export class Commands {
     registerDisplayLogDebugOnly(this);
     registerShowMetadataRetriever(this);
     registerShowMetadataDependencies(this);
+    registerFindSoqlFieldDependencies(this);
     registerShowPackageXml(this);
     registerShowDocumentationWorkbench(this);
     registerShowBackpromote(this);
