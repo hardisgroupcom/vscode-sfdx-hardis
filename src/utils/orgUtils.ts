@@ -1,5 +1,8 @@
-import { execSfdxJson } from "../utils";
+import * as vscode from "vscode";
+import { execSfdxJson, execSfdxJsonWithProgress } from "../utils";
+import { t } from "../i18n/i18n";
 import { CacheManager } from "./cache-manager";
+import { getInternalCommandFailureReason } from "./internalCommandUtils";
 
 export type SalesforceOrg = {
   username?: string;
@@ -160,4 +163,61 @@ export async function forgetOrgs(orgUsernames: string[]) {
     }
   });
   return { successUsernames, errorUsernames };
+}
+
+/**
+ * Open an org in the user's browser from a `sf org open ...` command (its --target-org and --path
+ * flags are kept).
+ * `sf org open` opens nothing where the Salesforce CLI runs in container mode (SF_CONTAINER_MODE:
+ * Agentforce Vibes, a dev container): it prints the login link and exits 0, so a click on Open
+ * ended with nothing. The link is asked with --url-only and opened by VS Code itself, which in a
+ * browser-hosted VS Code opens a tab of the user's browser.
+ * @param command The `sf org open ...` command a panel or a tree would have run
+ * @param progressMessage Shown while the link is fetched
+ * @returns ok: the link was opened; reason: why it was not; result: what the CLI returned, with a
+ * status above 0 when it failed, for the callers that report it like any other command
+ */
+export async function openOrgFromCommand(
+  command: string,
+  progressMessage: string,
+): Promise<{ ok: boolean; reason: string | null; result: any }> {
+  let result: any;
+  try {
+    result = await execSfdxJsonWithProgress(
+      withUrlOnly(command),
+      { fail: false, output: false, reuseRecentResult: false },
+      progressMessage,
+    );
+  } catch (error: any) {
+    result = { status: 1, message: error?.message || String(error) };
+  }
+  const failureReason = getInternalCommandFailureReason(result);
+  if (failureReason !== null) {
+    return { ok: false, reason: failureReason, result };
+  }
+  const url: string | undefined = result?.result?.url;
+  if (!url) {
+    const reason = t("orgOpenNoLink");
+    return {
+      ok: false,
+      reason,
+      result: { ...result, status: 1, message: reason },
+    };
+  }
+  await vscode.env.openExternal(vscode.Uri.parse(url));
+  return { ok: true, reason: null, result };
+}
+
+/** Whether a command string is a `sf org open` command, with or without flags */
+export function isOrgOpenCommand(command: string): boolean {
+  return /^sf org open(\s|$)/.test(command.trim());
+}
+
+/** The same `sf org open` command, asking for the link instead of opening a browser */
+export function withUrlOnly(command: string): string {
+  const trimmed = command.trim();
+  if (/(^|\s)(--url-only|-r)(\s|$)/.test(trimmed)) {
+    return trimmed;
+  }
+  return `${trimmed} --url-only`;
 }
