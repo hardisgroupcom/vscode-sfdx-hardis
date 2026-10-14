@@ -4651,7 +4651,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         const display = this._actionStatusDisplay(status, null);
         lines.push({
           key: `sandbox-${bp.sandboxName}-${bp.orgId}`,
-          name: bp.sandboxName,
+          // The label the org is shown by (its instance URL); rows written by an older CLI only have the key
+          name: bp.orgLabel || bp.sandboxName,
           statusLabel: display.label,
           pillClass: "hardis-pill " + display.pillClass,
           date: (bp.date || "").substring(0, 10),
