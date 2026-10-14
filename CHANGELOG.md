@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Training screenshots: the `uat` window of the promotion branches lab holds the seven Pull Requests a learner has at that step
+- Backpromote panel and Pull Request window: a developer org is named by the sandbox part of its instance URL or by its alias, like the Backpromotes comment of sfdx-hardis, never by an org id
 
 ## [8.14.0] 2026-10-13
 

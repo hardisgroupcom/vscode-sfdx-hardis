@@ -1304,7 +1304,28 @@ suite("backpromotePanelUtils", () => {
     assert.strictEqual(getBackpromoteErrorMessage(null), "");
   });
 
-  test("getTargetOrgDisplayName names a scratch org by its alias, not the org id sfdx-hardis gives it", () => {
+  test("getTargetOrgDisplayName never shows the org id sfdx-hardis gives a scratch org as sandbox name", () => {
+    // The same name as the Backpromotes comment: the sandbox part of the URL, else the alias (a
+    // scratch org has a random host), else the host
+    assert.strictEqual(
+      getTargetOrgDisplayName({
+        alias: "helios-dev",
+        instanceUrl: "https://power-ability-1234-dev-ed.scratch.my.salesforce.com",
+        sandboxName: "00d000000000000001",
+        orgType: "scratch",
+        username: USERNAME,
+      }),
+      "helios-dev",
+    );
+    assert.strictEqual(
+      getTargetOrgDisplayName({
+        instanceUrl: "https://power-ability-1234-dev-ed.scratch.my.salesforce.com",
+        sandboxName: "00d000000000000001",
+        orgType: "scratch",
+        username: USERNAME,
+      }),
+      "power-ability-1234-dev-ed",
+    );
     assert.strictEqual(
       getTargetOrgDisplayName({
         alias: "helios-dev",
@@ -1320,18 +1341,18 @@ suite("backpromotePanelUtils", () => {
         orgType: "scratch",
         username: USERNAME,
       }),
-      "00d000000000000001",
+      USERNAME,
     );
   });
 
-  test("getTargetOrgDisplayName prefers the sandbox name, then the short host of the status bar", () => {
+  test("getTargetOrgDisplayName reads the sandbox part of the instance URL, then its short host", () => {
     assert.strictEqual(getTargetOrgDisplayName(loadPlan().targetOrg), "dev1");
     assert.strictEqual(
       getTargetOrgDisplayName({
         instanceUrl: "https://mycompany--dev-sam.sandbox.my.salesforce.com",
         username: USERNAME,
       }),
-      "mycompany--dev-sam",
+      "dev-sam",
     );
     assert.strictEqual(
       getTargetOrgDisplayName({
