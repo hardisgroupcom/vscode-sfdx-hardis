@@ -9,7 +9,10 @@ import type TelemetryReporter from "@vscode/extension-telemetry";
 import { CommandRunner, ExecuteCommandOptions } from "./command-runner";
 import { runSalesforceCliMcpServer } from "./utils/mcpUtils";
 import { SetupHelper } from "./utils/setupUtils";
-import { registerShowWelcome } from "./commands/showWelcome";
+import {
+  registerShowWelcome,
+  registerWelcomeStatusBarItem,
+} from "./commands/showWelcome";
 import { registerShowOrgsManager } from "./commands/showOrgsManager";
 import { registerShowPipeline } from "./commands/showPipeline";
 import { registerShowSetup } from "./commands/showSetup";
@@ -96,6 +99,7 @@ export class Commands {
     registerOpenKeyFile(this);
     registerShowPipeline(this);
     registerShowWelcome(this);
+    registerWelcomeStatusBarItem(this);
     registerShowSetup(this);
     registerShowPipelineConfig(this);
     registerShowInstalledPackages(this);

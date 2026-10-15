@@ -23,6 +23,7 @@ import { SecretsManager } from "./utils/secretsManager";
 import { watchEnvFile } from "./utils/envFileCredentials";
 import { getExtensionConfigSections } from "./utils/extensionConfigUtils";
 import { startEventLoopMonitor } from "./utils/eventLoopMonitor";
+import { refreshWelcomeStatusBarItem } from "./commands/showWelcome";
 import {
   setLinkedPluginPreloadScript,
   setNodeCompileCacheDir,
@@ -281,6 +282,12 @@ export function activate(context: vscode.ExtensionContext) {
       ) {
         hardisColors.init();
       }
+      // Show / Hide the Cloudity status bar icon
+      if (
+        event.affectsConfiguration("vsCodeSfdxHardis.showWelcomeStatusBarItem")
+      ) {
+        refreshWelcomeStatusBarItem();
+      }
       // Enable / Disable start MCP Server at startup
       if (
         event.affectsConfiguration(
@@ -292,6 +299,7 @@ export function activate(context: vscode.ExtensionContext) {
       // Re-initialize i18n when language setting changes
       if (event.affectsConfiguration("vsCodeSfdxHardis.lang")) {
         reinitI18n();
+        refreshWelcomeStatusBarItem();
         // Refresh tree views to show translated labels
         vscode.commands.executeCommand(
           "vscode-sfdx-hardis.refreshCommandsView",

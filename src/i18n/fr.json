@@ -2681,6 +2681,7 @@
   "welcomeQuickStartLabel": "Démarrage rapide",
   "welcomeRateOnMarketplace": "Noter sur la Marketplace",
   "welcomeStarOnGitHub": "Mettre une étoile sur GitHub",
+  "welcomeStatusBarTooltip": "SFDX Hardis par Cloudity - ouvrir la page d'accueil",
   "welcomeSubtitle": "Votre boîte à outils Salesforce complète, par",
   "welcomeTitle": "Bienvenue dans VS Code SFDX Hardis",
   "welcomeWhatsNew": "Voir les nouveautés",

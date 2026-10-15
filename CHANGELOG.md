@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Find where a SOQL field is used: select a field in a SOQL query (inline Apex query, query string or `.soql` file), right-click and choose **SFDX Hardis: Find where this SOQL field is used** to open the Metadata Dependencies panel on that field. Relationship paths (`Account.Owner.Badge__c`), aliases and child relationship subqueries are followed to the right object; selecting the object after `FROM` looks up the object
+- A Cloudity icon in the status bar opens the Welcome page. Hide it with the "Show Welcome Status Bar Item" setting, in the extension Settings panel
 
 ## [8.14.1] 2026-10-15
 
