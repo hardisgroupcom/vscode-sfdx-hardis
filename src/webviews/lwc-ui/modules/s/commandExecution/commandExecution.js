@@ -90,6 +90,10 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
   @track hasError = false;
   @track startTime = null;
   @track endTime = null;
+  // Bumped every second while the command runs, so the header duration
+  // re-renders even when no log line arrives
+  @track durationTick = 0;
+  durationTimer = null;
   @track currentSubCommands = [];
   @track isWaitingForAnswer = false;
   @track latestQuestionId = null;
@@ -367,6 +371,7 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     ) {
       window.commandExecutionComponent = null;
     }
+    this.stopDurationTimer();
     // Remove embedded prompt listeners if any
     if (this.embeddedPromptListener) {
       this.removeEventListener("promptsubmit", this.embeddedPromptListener);
@@ -806,6 +811,11 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     // Pending panels open before the CLI has connected: show a "Starting"
     // status until the websocket initializeCommand message re-initializes
     this.isStarting = context.pending === true;
+    // A panel is re-initialized several times for the same run (click-time
+    // pending init, then the "initialize" and "initializeCommand" messages
+    // sent when the CLI connects): keep counting from the click, and only
+    // restart the duration at 0s once the previous run has completed
+    const keepStartTime = this.startTime && !this.isCompleted;
 
     // Handle details mode initialization
     if (data.vsCodeSfdxHardisConfiguration) {
@@ -848,8 +858,9 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     this.isCompleted = false;
     this.hasError = false;
     this.isWaitingForAnswer = false;
-    this.startTime = new Date();
+    this.startTime = keepStartTime ? this.startTime : new Date();
     this.endTime = null;
+    this.startDurationTimer();
     this.currentSubCommands = [];
 
     // Add initial "Started" action log ("Starting" while the CLI boots)
@@ -1661,6 +1672,7 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
 
     this.isCompleted = true;
     this.endTime = new Date();
+    this.stopDurationTimer();
 
     if (this.currentSection) {
       this.currentSection.endTime = this.endTime;
@@ -1781,9 +1793,26 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     return TILE_ICON_BY_FAMILY[this.commandFamily] || "utility:prompt";
   }
 
-  get commandDuration() {
-    if (!this.startTime) return "";
+  startDurationTimer() {
+    this.stopDurationTimer();
+    this.durationTimer = setInterval(() => {
+      this.durationTick++;
+    }, 1000);
+  }
 
+  stopDurationTimer() {
+    if (this.durationTimer) {
+      clearInterval(this.durationTimer);
+      this.durationTimer = null;
+    }
+  }
+
+  get commandDuration() {
+    if (!this.startTime) {
+      return "";
+    }
+    // Read the tick so the getter re-evaluates every second while running
+    void this.durationTick;
     const endTime = this.endTime || new Date();
     return this.calculateDuration(this.startTime, endTime);
   }

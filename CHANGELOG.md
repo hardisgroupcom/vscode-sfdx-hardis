@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Command panel: the duration in the header counts up every second while the command runs, instead of staying at 0s until the next log line, and no longer restarts at 0s when the CLI connects.
+
 ## [8.14.1] 2026-10-15
 
 - Orgs Manager, Status section and DevOps Pipeline: the Open button opens the org in a browser tab when the Salesforce CLI runs in container mode (Agentforce Vibes, a dev container), instead of doing nothing. VS Code opens the link itself, in terminal mode too, and says so when the link could not be opened
