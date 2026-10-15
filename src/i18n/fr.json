@@ -1955,6 +1955,8 @@
   "orgMonitoringNotPresentCiCdDescription": "Cet projet semble être un dépôt CI/CD / DevOps (manifest/package.xml trouvé). Il est normal que le monitoring d'org ne soit pas installé ici.",
   "orgMonitoringWorkbench": "Monitoring d'org",
   "orgMonitoringWorkbenchTooltip": "Ouvrir le gestionnaire complet de surveillance de l'org avec tous les outils de surveillance et diagnostics en un seul endroit",
+  "orgOpenLinkNotOpened": "VS Code n'a pas ouvert le lien de l'org",
+  "orgOpenNoLink": "La CLI Salesforce n'a renvoyé aucun lien pour ouvrir l'org",
   "orgOperations": "Opérations sur l'org",
   "orgsManager": "Gestionnaire d'orgs",
   "orgsManagerDescription": "Gérez vos orgs Salesforce, connectez-vous à de nouvelles, changez d'environnement et actualisez vos sandbox.",
