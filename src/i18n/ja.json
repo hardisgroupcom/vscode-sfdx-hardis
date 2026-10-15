@@ -2498,6 +2498,7 @@
   "soqlFieldFindObject": "{{object}} の使用箇所を検索",
   "soqlFieldNoQuery": "使用箇所を検索するには、SOQL クエリ内の項目を選択してください",
   "soqlFieldNotAField": "\"{{text}}\" は SOQL クエリの項目ではありません。Name や Account.Status__c などの項目名を選択してください",
+  "soqlFieldPolymorphicRelationship": "{{object}} のリレーション {{relationship}} は複数のオブジェクトを参照できます。その項目を持つオブジェクトに対するクエリで項目を選択してください",
   "soqlFieldReadingObject": "{{object}} の項目を読み込んでいます",
   "soqlFieldStandardField": "{{name}} は標準項目です。Salesforce の依存関係データにはカスタム項目のみが含まれます",
   "soqlFieldTypeofNotSupported": "\"{{text}}\" は TYPEOF 句の中にあります。その外側の項目を選択してください",

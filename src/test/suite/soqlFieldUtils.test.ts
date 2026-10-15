@@ -2,15 +2,15 @@ import * as assert from "assert";
 import {
   findSoqlQueryRange,
   resolveSoqlSelection,
+  SoqlParentRelationship,
   SoqlResolveError,
   SoqlSchema,
 } from "../../utils/soqlFieldUtils";
 
-// A small org: Contact -> Account -> User, Account has Contacts and Invoices__r
-const PARENTS: Record<
-  string,
-  Record<string, { field: string; target: string }>
-> = {
+// A small org: Contact -> Account -> User, Account has Contacts and Invoices__r,
+// Task.What can point to several objects
+const PARENTS: Record<string, Record<string, SoqlParentRelationship>> = {
+  task: { what: { field: "WhatId", target: null, polymorphic: true } },
   contact: {
     account: { field: "AccountId", target: "Account" },
     owner: { field: "OwnerId", target: "User" },
@@ -202,6 +202,60 @@ suite("Field selected in a SOQL query", () => {
     );
   });
 
+  test("reads the strings of a query held in an Apex string", async () => {
+    assert.deepStrictEqual(
+      await resolve(
+        "Database.query('SELECT Id FROM Account WHERE Name = \\'Acme\\' AND |Status__c| = true');",
+      ),
+      field("Account.Status__c"),
+    );
+  });
+
+  test("follows a query split over concatenated strings", async () => {
+    const query =
+      "String q = 'SELECT Id, |Status__c| ' +\n  'FROM Account ' +\n  'WHERE Industry = null';";
+    assert.deepStrictEqual(await resolve(query), field("Account.Status__c"));
+    assert.deepStrictEqual(
+      await resolve(
+        "String q = 'SELECT Id ' +\n  'FROM Contact ' +\n  'WHERE |Level__c| = null';",
+      ),
+      field("Contact.Level__c"),
+    );
+  });
+
+  test("uses the name right before the end of the query", async () => {
+    assert.deepStrictEqual(
+      await resolve("[SELECT Id FROM Account ORDER BY Status__c|];"),
+      field("Account.Status__c"),
+    );
+  });
+
+  test("leaves out a comma or a parenthesis caught in the selection", async () => {
+    assert.deepStrictEqual(
+      await resolve("[SELECT |Status__c,| Industry FROM Account]"),
+      field("Account.Status__c"),
+    );
+    assert.deepStrictEqual(
+      await resolve(
+        "[SELECT Id, (SELECT Id FROM Contacts ORDER BY |Level__c)|, Industry FROM Account]",
+      ),
+      field("Contact.Level__c"),
+    );
+  });
+
+  test("does not take a custom field starting like a date literal for one", async () => {
+    assert.deepStrictEqual(
+      await resolve("[SELECT |Next_Step__c| FROM Account]"),
+      field("Account.Next_Step__c"),
+    );
+    assert.deepStrictEqual(
+      await resolve(
+        "[SELECT Id FROM Account WHERE |Last_Contacted__c| = null]",
+      ),
+      field("Account.Last_Contacted__c"),
+    );
+  });
+
   test("tells a standard field from a custom one", async () => {
     assert.deepStrictEqual(
       await resolve("[SELECT |Industry| FROM Account]"),
@@ -249,6 +303,10 @@ suite("Field selected in a SOQL query", () => {
     assert.strictEqual(
       await resolveError("[SELECT Unknown__r.|Code__c| FROM Account]"),
       "unresolvedRelationship",
+    );
+    assert.strictEqual(
+      await resolveError("[SELECT What.|Status__c| FROM Task]"),
+      "polymorphicRelationship",
     );
   });
 

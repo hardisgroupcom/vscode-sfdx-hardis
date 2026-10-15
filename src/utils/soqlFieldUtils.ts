@@ -4,11 +4,12 @@
 // the exact case of a name) go through SoqlSchema, which the command implements.
 
 export interface SoqlSchema {
-  // Lookup field behind a parent relationship: Account on Contact is AccountId, pointing to Account
+  // Lookup field behind a parent relationship: Account on Contact is AccountId, pointing to Account.
+  // polymorphic: the relationship can point to several objects (What on Task), none can be followed
   parentRelationship(
     objectName: string,
     relationshipName: string,
-  ): Promise<{ field: string; target: string | null } | null>;
+  ): Promise<SoqlParentRelationship | null>;
   // Object of a child relationship: Contacts on Account is Contact
   childRelationship(
     objectName: string,
@@ -17,6 +18,12 @@ export interface SoqlSchema {
   // API name with its exact case (SOQL ignores case, the dependency lookup does not), null if unknown
   objectName(name: string): Promise<string | null>;
   fieldName(objectName: string, fieldName: string): Promise<string | null>;
+}
+
+export interface SoqlParentRelationship {
+  field: string;
+  target: string | null;
+  polymorphic?: boolean;
 }
 
 export type SoqlSelectionTarget =
@@ -32,7 +39,11 @@ export type SoqlSelectionTarget =
   | { kind: "object"; objectName: string };
 
 export type SoqlResolveErrorCode =
-  "noQuery" | "notAField" | "unsupportedTypeof" | "unresolvedRelationship";
+  | "noQuery"
+  | "notAField"
+  | "unsupportedTypeof"
+  | "unresolvedRelationship"
+  | "polymorphicRelationship";
 
 export class SoqlResolveError extends Error {
   constructor(
@@ -148,38 +159,8 @@ const SOQL_WORDS = new Set([
 // LAST_N_DAYS, THIS_FISCAL_QUARTER, NEXT_WEEK...
 const DATE_LITERAL = /^(last|this|next)_\w+$|^n_\w+_ago$/i;
 
-/**
- * Range of the SOQL query around an offset of a document: an inline Apex query between
- * brackets, a query in an Apex or JavaScript string, or a query alone in a .soql file.
- */
-export function findSoqlQueryRange(
-  text: string,
-  offset: number,
-): SoqlRange | null {
-  const selectPattern = /\bselect\b/gi;
-  const starts: number[] = [];
-  let match: RegExpExecArray | null;
-  while ((match = selectPattern.exec(text)) !== null) {
-    if (match.index > offset) {
-      break;
-    }
-    starts.push(match.index);
-  }
-  // The nearest SELECT before the offset that does not open a subquery starts the query
-  for (let i = starts.length - 1; i >= 0; i--) {
-    const start = starts[i];
-    const opener = previousNonSpaceCharacter(text, start);
-    if (opener === "(") {
-      continue;
-    }
-    const end = scanQueryEnd(text, start, opener);
-    if (offset < end || (offset === end && end === text.length)) {
-      return { start, end };
-    }
-    return null;
-  }
-  return null;
-}
+// The + between two strings of a query split over several lines: 'SELECT Id ' + 'FROM Account'
+const STRING_JOINT = /\s*\+\s*/y;
 
 /**
  * The field (or object) the selection points at in the query around it.
@@ -192,13 +173,13 @@ export async function resolveSoqlSelection(
   selectionEnd: number,
   schema: SoqlSchema,
 ): Promise<SoqlSelectionTarget> {
-  // Spaces and dots around the selection are not part of the name
+  // Spaces, dots, commas and parentheses around the selection are not part of the name
   let start = Math.min(selectionStart, selectionEnd);
   let end = Math.max(selectionStart, selectionEnd);
-  while (start < end && /[\s.]/.test(text[start])) {
+  while (start < end && /[\s.,();]/.test(text[start])) {
     start++;
   }
-  while (end > start && /[\s.]/.test(text[end - 1])) {
+  while (end > start && /[\s.,();]/.test(text[end - 1])) {
     end--;
   }
   const selectedText = text.slice(start, end);
@@ -207,7 +188,11 @@ export async function resolveSoqlSelection(
   if (!range || end > range.end) {
     throw new SoqlResolveError("noQuery");
   }
-  const tokens = tokenize(text, range.start, range.end);
+  const tokens = tokenize(
+    joinStringFragments(text, range),
+    range.start,
+    range.end,
+  );
   const tokenIndex = findSelectedToken(tokens, start, end);
   if (tokenIndex < 0) {
     throw new SoqlResolveError("notAField", { text: selectedText });
@@ -257,7 +242,7 @@ export async function resolveSoqlSelection(
   if (
     segments.length === 1 &&
     (SOQL_WORDS.has(segments[0].toLowerCase()) ||
-      DATE_LITERAL.test(segments[0]) ||
+      isDateLiteral(segments[0]) ||
       aggregateAliases(tokens, scope).has(segments[0].toLowerCase()))
   ) {
     throw notAField();
@@ -290,6 +275,12 @@ export async function resolveSoqlSelection(
       currentObject,
       segments[i],
     );
+    if (relationship?.polymorphic) {
+      throw new SoqlResolveError("polymorphicRelationship", {
+        object: currentObject,
+        relationship: segments[i],
+      });
+    }
     if (!relationship?.target) {
       throw new SoqlResolveError("unresolvedRelationship", {
         object: currentObject,
@@ -322,6 +313,41 @@ export async function resolveSoqlSelection(
   };
 }
 
+/**
+ * Range of the SOQL query around an offset of a document: an inline Apex query between
+ * brackets, a query in an Apex or JavaScript string (concatenated strings included),
+ * or a query alone in a .soql file.
+ */
+export function findSoqlQueryRange(
+  text: string,
+  offset: number,
+): SoqlRange | null {
+  const selectPattern = /\bselect\b/gi;
+  const starts: number[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = selectPattern.exec(text)) !== null) {
+    if (match.index > offset) {
+      break;
+    }
+    starts.push(match.index);
+  }
+  // The nearest SELECT before the offset that does not open a subquery starts the query
+  for (let i = starts.length - 1; i >= 0; i--) {
+    const start = starts[i];
+    const opener = previousNonSpaceCharacter(text, start);
+    if (opener === "(") {
+      continue;
+    }
+    const end = scanQueryEnd(text, start, opener);
+    // The end itself is kept: a cursor right after the last name of [SELECT Id FROM Account|]
+    if (offset <= end) {
+      return { start, end };
+    }
+    return null;
+  }
+  return null;
+}
+
 // The lookup field of a relationship, by the Salesforce naming rules: Account -> AccountId, Invoice__r -> Invoice__c
 export function relationshipFieldName(relationshipName: string): string {
   if (/__r$/i.test(relationshipName)) {
@@ -352,6 +378,13 @@ function scanQueryEnd(text: string, start: number, opener: string): number {
     }
     if (inString) {
       if (character === opener) {
+        STRING_JOINT.lastIndex = i + 1;
+        const joint = STRING_JOINT.exec(text);
+        if (joint && text[i + 1 + joint[0].length] === opener) {
+          // The query goes on in the next string
+          i += joint[0].length + 1;
+          continue;
+        }
         return i;
       }
       continue;
@@ -386,6 +419,23 @@ function skipString(text: string, index: number): number {
   return text.length;
 }
 
+// A query split over concatenated strings: the quotes and + between them become spaces,
+// so the offsets of the text stay the same
+function joinStringFragments(text: string, range: SoqlRange): string {
+  const opener = previousNonSpaceCharacter(text, range.start);
+  if (opener !== "'" && opener !== '"') {
+    return text;
+  }
+  const joint = new RegExp(`(?<!\\\\)${opener}\\s*\\+\\s*${opener}`, "g");
+  return (
+    text.slice(0, range.start) +
+    text
+      .slice(range.start, range.end)
+      .replace(joint, (found) => " ".repeat(found.length)) +
+    text.slice(range.end)
+  );
+}
+
 function tokenize(text: string, start: number, end: number): Token[] {
   const tokens: Token[] = [];
   let depth = 0;
@@ -411,6 +461,11 @@ function tokenize(text: string, start: number, end: number): Token[] {
       while (tokenEnd < end && /[\w\-:.+]/.test(text[tokenEnd])) {
         tokenEnd++;
       }
+    } else if (character === "\\" && text[i + 1] === "'") {
+      // A string of a query held in an Apex string: Name = \'Acme\'
+      type = "string";
+      const close = text.indexOf("\\'", i + 2);
+      tokenEnd = close < 0 ? end : Math.min(close + 2, end);
     } else if (character === "'") {
       type = "string";
       tokenEnd = Math.min(skipString(text, i) + 1, end);
@@ -555,6 +610,11 @@ function isInTypeof(tokens: Token[], scope: Scope, index: number): boolean {
     }
   }
   return open;
+}
+
+// A date literal never holds a double underscore: Next_Step__c is a custom field
+function isDateLiteral(name: string): boolean {
+  return DATE_LITERAL.test(name) && !name.includes("__");
 }
 
 // Names given to aggregates: COUNT(Id) total

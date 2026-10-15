@@ -5,52 +5,33 @@ import { execSfdxJson, getWorkspaceRoot } from "../utils";
 import { Logger } from "../logger";
 import { t } from "../i18n/i18n";
 import { GLOB_IGNORE_PATTERNS } from "./projectUtils";
-import { SoqlSchema, relationshipFieldName } from "./soqlFieldUtils";
-import { quote } from "../commands/showMetadataDependencies";
+import { mapWithConcurrency } from "./concurrency";
+import { quote } from "./shellQuote";
+import {
+  SoqlParentRelationship,
+  SoqlSchema,
+  relationshipFieldName,
+} from "./soqlFieldUtils";
 
 // Answers the schema questions of a SOQL query: the fields of the project first (no org call),
-// then the describe of the object in the org, then the Salesforce naming rules.
+// then the describe of the object in the org, then, without an org, the standard relationships
+// and the Salesforce naming rules.
 export function createSoqlSchema(username: string | null): SoqlSchema {
   const project = new ProjectFields();
   const org = new OrgDescribes(username);
   return {
     async parentRelationship(objectName, relationshipName) {
-      const local = await project.parentRelationship(
-        objectName,
-        relationshipName,
+      return (
+        (await project.parentRelationship(objectName, relationshipName)) ||
+        (await org.parentRelationship(objectName, relationshipName)) ||
+        offlineParentRelationship(objectName, relationshipName)
       );
-      if (local) {
-        return local;
-      }
-      const standardTarget = standardParentTarget(objectName, relationshipName);
-      if (standardTarget) {
-        return {
-          field: relationshipFieldName(relationshipName),
-          target: standardTarget,
-        };
-      }
-      const described = await org.parentRelationship(
-        objectName,
-        relationshipName,
-      );
-      if (described) {
-        return described;
-      }
-      // Without the org, a standard relationship is usually named after its object (Account, Contact)
-      if (!/__r$/i.test(relationshipName)) {
-        return {
-          field: relationshipFieldName(relationshipName),
-          target: relationshipName,
-        };
-      }
-      return null;
     },
     async childRelationship(objectName, relationshipName) {
       return (
         (await project.childRelationship(objectName, relationshipName)) ||
-        STANDARD_CHILD_RELATIONSHIPS[relationshipName.toLowerCase()] ||
         (await org.childRelationship(objectName, relationshipName)) ||
-        guessChildObject(relationshipName)
+        offlineChildObject(objectName, relationshipName)
       );
     },
     async objectName(name) {
@@ -84,6 +65,17 @@ const STANDARD_PARENT_TARGETS: Record<string, string> = byLowerCaseName({
   UserRole: "UserRole",
 });
 
+// Relationships that can point to several objects: only TYPEOF can read their fields
+const POLYMORPHIC_RELATIONSHIPS = new Set(
+  ["What", "Who", "RelatedTo"].map((name) => name.toLowerCase()),
+);
+
+// Objects whose Parent is an object of the same type (Account.Parent is an Account).
+// Elsewhere Parent points to another object (EmailMessage: Case) or to several (Attachment)
+const SELF_PARENT_OBJECTS = new Set(
+  ["Account", "Asset", "Campaign", "Case"].map((name) => name.toLowerCase()),
+);
+
 const STANDARD_CHILD_RELATIONSHIPS: Record<string, string> = byLowerCaseName({
   Contacts: "Contact",
   Opportunities: "Opportunity",
@@ -105,14 +97,15 @@ const STANDARD_CHILD_RELATIONSHIPS: Record<string, string> = byLowerCaseName({
   Quotes: "Quote",
   QuoteLineItems: "QuoteLineItem",
   CaseComments: "CaseComment",
-  Feeds: "FeedItem",
-  Histories: "FieldHistory",
   Users: "User",
 });
 
-const SELF_RELATIONSHIPS = new Set(
-  ["Parent", "MasterRecord"].map((name) => name.toLowerCase()),
-);
+// Child objects named after their parent: Account has AccountFeed and AccountHistory,
+// Invoice__c has Invoice__Feed and Invoice__History
+const SUFFIXED_CHILD_RELATIONSHIPS: Record<string, string> = byLowerCaseName({
+  Feeds: "Feed",
+  Histories: "History",
+});
 
 function byLowerCaseName(
   names: Record<string, string>,
@@ -122,16 +115,51 @@ function byLowerCaseName(
   );
 }
 
-function standardParentTarget(
+// Without the org: the standard relationships, else a relationship named after its object
+function offlineParentRelationship(
+  objectName: string,
+  relationshipName: string,
+): SoqlParentRelationship | null {
+  const name = relationshipName.toLowerCase();
+  const field = relationshipFieldName(relationshipName);
+  if (POLYMORPHIC_RELATIONSHIPS.has(name)) {
+    return { field, target: null, polymorphic: true };
+  }
+  if (
+    name === "masterrecord" ||
+    (name === "parent" && SELF_PARENT_OBJECTS.has(objectName.toLowerCase()))
+  ) {
+    return { field, target: objectName };
+  }
+  // The Parent of another object is only known by the org
+  if (name === "parent") {
+    return null;
+  }
+  const target = STANDARD_PARENT_TARGETS[name];
+  if (target) {
+    return { field, target };
+  }
+  // A standard relationship is usually named after its object (Account, Contact)
+  if (!/__r$/i.test(relationshipName)) {
+    return { field, target: relationshipName };
+  }
+  return null;
+}
+
+function offlineChildObject(
   objectName: string,
   relationshipName: string,
 ): string | null {
   const name = relationshipName.toLowerCase();
-  // Parent and MasterRecord point to the same object: Account.Parent is an Account
-  if (SELF_RELATIONSHIPS.has(name)) {
-    return objectName;
+  const suffix = SUFFIXED_CHILD_RELATIONSHIPS[name];
+  if (suffix) {
+    return /__c$/i.test(objectName)
+      ? objectName.replace(/__c$/i, `__${suffix}`)
+      : `${objectName}${suffix}`;
   }
-  return STANDARD_PARENT_TARGETS[name] || null;
+  return (
+    STANDARD_CHILD_RELATIONSHIPS[name] || guessChildObject(relationshipName)
+  );
 }
 
 // Opportunities -> Opportunity, Invoices__r stays unknown: its object is not in its name
@@ -157,6 +185,7 @@ class ProjectFields {
     Map<string, { name: string; files: string[] }>
   > | null = null;
   private fieldsByObject = new Map<string, Promise<FieldInfo[]>>();
+  private childObjects: Promise<Map<string, string>> | null = null;
 
   async objectName(name: string): Promise<string | null> {
     const objects = await this.listFiles();
@@ -177,7 +206,7 @@ class ProjectFields {
   async parentRelationship(
     objectName: string,
     relationshipName: string,
-  ): Promise<{ field: string; target: string | null } | null> {
+  ): Promise<SoqlParentRelationship | null> {
     // The relationship of a lookup is named after its field (Account__c -> Account__r):
     // the relationshipName of the XML file is the name of the child relationship, on the other side
     const lookupField = relationshipFieldName(relationshipName).toLowerCase();
@@ -197,22 +226,38 @@ class ProjectFields {
     if (!/__r$/i.test(relationshipName)) {
       return null;
     }
-    const relationship = relationshipName.replace(/__r$/i, "").toLowerCase();
-    const parent = objectName.toLowerCase();
-    const objects = await this.listFiles();
-    for (const [key, entry] of objects) {
-      const fields = await this.fields(key);
-      if (
-        fields.some(
-          (field) =>
-            field.relationshipName?.toLowerCase() === relationship &&
-            field.referenceTo?.toLowerCase() === parent,
-        )
-      ) {
-        return entry.name;
-      }
+    const relationship = relationshipName.replace(/__r$/i, "");
+    const children = await this.childRelationships();
+    return children.get(childKey(objectName, relationship)) || null;
+  }
+
+  // Child objects by parent object and relationship name, read once from all the objects of the project
+  private childRelationships(): Promise<Map<string, string>> {
+    if (!this.childObjects) {
+      this.childObjects = (async () => {
+        const children = new Map<string, string>();
+        const objects = [...(await this.listFiles())];
+        await mapWithConcurrency(
+          objects,
+          async ([key, entry]) => {
+            for (const field of await this.fields(key)) {
+              if (field.relationshipName && field.referenceTo) {
+                const childOf = childKey(
+                  field.referenceTo,
+                  field.relationshipName,
+                );
+                if (!children.has(childOf)) {
+                  children.set(childOf, entry.name);
+                }
+              }
+            }
+          },
+          8,
+        );
+        return children;
+      })();
     }
-    return null;
+    return this.childObjects;
   }
 
   private listFiles(): Promise<Map<string, { name: string; files: string[] }>> {
@@ -265,6 +310,10 @@ class ProjectFields {
   }
 }
 
+function childKey(parentObject: string, relationshipName: string): string {
+  return `${parentObject.toLowerCase()}|${relationshipName.toLowerCase()}`;
+}
+
 function xmlValue(xml: string, tag: string): string | null {
   const match = new RegExp(`<${tag}>\\s*([^<]+?)\\s*</${tag}>`).exec(xml);
   return match ? match[1] : null;
@@ -294,7 +343,7 @@ class OrgDescribes {
   async parentRelationship(
     objectName: string,
     relationshipName: string,
-  ): Promise<{ field: string; target: string | null } | null> {
+  ): Promise<SoqlParentRelationship | null> {
     const lower = relationshipName.toLowerCase();
     const fields: any[] = (await this.describe(objectName))?.fields || [];
     const field = fields.find(
@@ -303,12 +352,18 @@ class OrgDescribes {
     if (!field) {
       return null;
     }
-    // A polymorphic relationship (Owner: User or Group) is read as its usual object
     const targets: string[] = Array.isArray(field.referenceTo)
       ? field.referenceTo
       : [];
-    const target = targets.includes("User") ? "User" : targets[0] || null;
-    return { field: field.name, target };
+    // Owner (User or Group) is read as a User; any other relationship to several objects
+    // (What on Task) can not be followed
+    if (targets.includes("User")) {
+      return { field: field.name, target: "User" };
+    }
+    if (targets.length > 1) {
+      return { field: field.name, target: null, polymorphic: true };
+    }
+    return { field: field.name, target: targets[0] || null };
   }
 
   async childRelationship(

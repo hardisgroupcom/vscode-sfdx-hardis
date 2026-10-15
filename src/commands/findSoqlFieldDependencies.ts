@@ -86,6 +86,11 @@ function resolveErrorMessage(error: any): string {
         object: error.details.object || "",
         relationship: error.details.relationship || "",
       });
+    case "polymorphicRelationship":
+      return t("soqlFieldPolymorphicRelationship", {
+        object: error.details.object || "",
+        relationship: error.details.relationship || "",
+      });
     default:
       return t("soqlFieldNoQuery");
   }

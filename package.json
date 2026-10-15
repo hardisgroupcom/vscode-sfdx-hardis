@@ -737,7 +737,7 @@
         },
         {
           "command": "vscode-sfdx-hardis.findSoqlFieldDependencies",
-          "when": "editorHasSelection && (editorLangId =~ /^(apex|soql|apex-anon)$/ || resourceFilename =~ /\\.(cls|trigger|soql|apex)$/)",
+          "when": "editorLangId =~ /^(apex|soql|apex-anon)$/ || resourceFilename =~ /\\.(cls|trigger|soql|apex)$/",
           "group": "z_sfdxhardis@27"
         }
       ],

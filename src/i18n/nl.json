@@ -2498,6 +2498,7 @@
   "soqlFieldFindObject": "Zoeken waar {{object}} wordt gebruikt",
   "soqlFieldNoQuery": "Selecteer een veld in een SOQL-query om te zoeken waar het wordt gebruikt",
   "soqlFieldNotAField": "\"{{text}}\" is geen veld van de SOQL-query: selecteer een veldnaam, zoals Name of Account.Status__c",
+  "soqlFieldPolymorphicRelationship": "De relatie {{relationship}} van {{object}} kan naar meerdere objecten verwijzen: selecteer het veld in een query op het object waar het bij hoort",
   "soqlFieldReadingObject": "Velden van {{object}} lezen",
   "soqlFieldStandardField": "{{name}} is een standaardveld: de afhankelijkheidsgegevens van Salesforce bevatten alleen aangepaste velden",
   "soqlFieldTypeofNotSupported": "\"{{text}}\" staat in een TYPEOF-clausule: selecteer een veld daarbuiten",

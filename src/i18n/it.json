@@ -2498,6 +2498,7 @@
   "soqlFieldFindObject": "Trova dove è usato {{object}}",
   "soqlFieldNoQuery": "Seleziona un campo in una query SOQL per trovare dove è usato",
   "soqlFieldNotAField": "\"{{text}}\" non è un campo della query SOQL: seleziona un nome di campo, come Name o Account.Status__c",
+  "soqlFieldPolymorphicRelationship": "La relazione {{relationship}} di {{object}} può puntare a più oggetti: seleziona il campo in una query sull'oggetto che lo contiene",
   "soqlFieldReadingObject": "Lettura dei campi di {{object}}",
   "soqlFieldStandardField": "{{name}} è un campo standard: i dati delle dipendenze Salesforce contengono solo i campi personalizzati",
   "soqlFieldTypeofNotSupported": "\"{{text}}\" è in una clausola TYPEOF: seleziona un campo fuori da essa",

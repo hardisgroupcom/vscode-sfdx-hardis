@@ -2498,6 +2498,7 @@
   "soqlFieldFindObject": "Znajdź miejsca użycia {{object}}",
   "soqlFieldNoQuery": "Zaznacz pole w zapytaniu SOQL, aby znaleźć miejsca jego użycia",
   "soqlFieldNotAField": "\"{{text}}\" nie jest polem zapytania SOQL: zaznacz nazwę pola, np. Name lub Account.Status__c",
+  "soqlFieldPolymorphicRelationship": "Relacja {{relationship}} obiektu {{object}} może wskazywać na kilka obiektów: zaznacz pole w zapytaniu na obiekcie, do którego należy",
   "soqlFieldReadingObject": "Odczytywanie pól obiektu {{object}}",
   "soqlFieldStandardField": "{{name}} jest polem standardowym: dane zależności Salesforce zawierają tylko pola niestandardowe",
   "soqlFieldTypeofNotSupported": "\"{{text}}\" znajduje się w klauzuli TYPEOF: zaznacz pole poza nią",
