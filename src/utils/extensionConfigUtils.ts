@@ -25,6 +25,7 @@ export const sectionDefs = [
     description: "UI and theming options.",
     keys: [
       "vsCodeSfdxHardis.showWelcomeAtStartup",
+      "vsCodeSfdxHardis.showWelcomeStatusBarItem",
       "vsCodeSfdxHardis.theme.colorTheme",
       "vsCodeSfdxHardis.theme.menuIconType",
       "vsCodeSfdxHardis.theme.emojisInSections",
