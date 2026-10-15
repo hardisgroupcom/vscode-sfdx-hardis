@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- With several VS Code windows open, an sf hardis command typed in the integrated terminal shows its UI in the window of that terminal, instead of in the first window opened. Terminals opened before the extension started need to be reopened once.
 - Command panel: the duration in the header counts up every second while the command runs, instead of staying at 0s until the next log line, and no longer restarts at 0s when the CLI connects.
 
 ## [8.14.1] 2026-10-15

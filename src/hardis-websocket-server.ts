@@ -66,10 +66,18 @@ export class LocalWebSocketServer {
   }
 
   private async startServer(): Promise<void> {
-    let port = DEFAULT_PORT;
-    if (port === 2702) {
-      // Define random port if not forced by the user with env var SFDX_HARDIS_WEBSOCKET_PORT
-      port = await findAvailablePort(2702, 2784);
+    // Define random port if not forced by the user with env var SFDX_HARDIS_WEBSOCKET_PORT.
+    // A forced port can be inherited from the integrated terminal of another
+    // window (VS Code launched with `code` from it): when it is busy, take any
+    // free port instead of failing to start.
+    const port =
+      DEFAULT_PORT === 2702
+        ? await findAvailablePort(2702, 2784)
+        : await findAvailablePort(DEFAULT_PORT, DEFAULT_PORT);
+    if (port !== DEFAULT_PORT && DEFAULT_PORT !== 2702) {
+      Logger.log(
+        `Port ${DEFAULT_PORT} from SFDX_HARDIS_WEBSOCKET_PORT is busy, using ${port}`,
+      );
     }
     this.listen();
     //start our server
@@ -79,10 +87,28 @@ export class LocalWebSocketServer {
       this.server.listen(port, () => {
         this.websocketHostPort = `localhost:${port}`;
         Logger.log(`Data stream server started on port ${port}`);
+        this.exposePortToTerminals(port);
         console.timeEnd("WebSocketServer_listen");
         resolve();
       });
     });
+  }
+
+  /**
+   * sf hardis commands typed in an integrated terminal have no --websocket
+   * flag: the CLI connects to SFDX_HARDIS_WEBSOCKET_PORT, or 2702. Injecting
+   * this window's port into its own terminals makes their commands show their
+   * UI in this window, not in whichever window owns 2702. Not persistent: a
+   * port restored from a previous session could belong to another window.
+   */
+  private exposePortToTerminals(port: number) {
+    const envCollection = this.context?.environmentVariableCollection;
+    if (!envCollection) {
+      return;
+    }
+    envCollection.persistent = false;
+    envCollection.description = t("websocketPortTerminalEnvDescription");
+    envCollection.replace("SFDX_HARDIS_WEBSOCKET_PORT", String(port));
   }
 
   static sendMessage(data: any) {
@@ -893,6 +919,9 @@ export class LocalWebSocketServer {
 
       this.wss.close();
       this.server.close();
+      this.context?.environmentVariableCollection?.delete(
+        "SFDX_HARDIS_WEBSOCKET_PORT",
+      );
       globalWss = null;
     } catch {
       Logger.log("[sfdx-hardis] Error while closing WebSocket Server");
