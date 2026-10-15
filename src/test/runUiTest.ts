@@ -464,6 +464,8 @@ async function main() {
     "vsCodeSfdxHardis.disableGitBashCheck": true,
     "vsCodeSfdxHardis.orgColorMode": "off",
     "vsCodeSfdxHardis.showOrgStatusBarItem": false,
+    // Keeps the status bar of the documentation screenshots unchanged
+    "vsCodeSfdxHardis.showWelcomeStatusBarItem": false,
     "vsCodeSfdxHardis.userInput": "ui-lwc",
     "vsCodeSfdxHardis.userInputCommandLineIfLWC": "background",
     "telemetry.telemetryLevel": "off",

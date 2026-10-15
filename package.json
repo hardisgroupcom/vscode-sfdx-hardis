@@ -155,6 +155,11 @@
           "default": true,
           "description": "Display the type of the selected default org (PROD, MAJOR, SANDBOX, SCRATCH, DEV ORG) in the VS Code status bar"
         },
+        "vsCodeSfdxHardis.showWelcomeStatusBarItem": {
+          "type": "boolean",
+          "default": true,
+          "description": "Display a Cloudity icon in the VS Code status bar, that opens the SFDX Hardis Welcome page when clicked"
+        },
         "vsCodeSfdxHardis.colorUpdateLocation": {
           "type": "string",
           "default": "Workspace",
@@ -536,6 +541,15 @@
         "icon": "$(refresh)"
       }
     ],
+    "icons": {
+      "cloudity-logo": {
+        "description": "Cloudity logo",
+        "default": {
+          "fontPath": "resources/sfdx-hardis-icons.woff",
+          "fontCharacter": "\\E001"
+        }
+      }
+    },
     "viewsContainers": {
       "activitybar": [
         {

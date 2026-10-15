@@ -191,6 +191,39 @@ export function registerShowWelcome(command: Commands) {
   command.disposables.push(disposable);
 }
 
+let welcomeStatusBarItem: vscode.StatusBarItem | undefined;
+
+// Cloudity icon in the status bar, opening the Welcome page when clicked.
+// The glyph comes from the icon font declared in package.json (contributes.icons)
+export function registerWelcomeStatusBarItem(command: Commands) {
+  welcomeStatusBarItem = vscode.window.createStatusBarItem(
+    "sfdxHardis.welcome",
+    vscode.StatusBarAlignment.Left,
+    // Just left of the default org badge (priority 200, see hardis-colors.ts)
+    201,
+  );
+  welcomeStatusBarItem.name = "SFDX Hardis: Welcome";
+  welcomeStatusBarItem.text = "$(cloudity-logo)";
+  welcomeStatusBarItem.command = "vscode-sfdx-hardis.showWelcome";
+  command.disposables.push(welcomeStatusBarItem);
+  refreshWelcomeStatusBarItem();
+}
+
+// Called again when vsCodeSfdxHardis.showWelcomeStatusBarItem or the language changes
+export function refreshWelcomeStatusBarItem() {
+  if (!welcomeStatusBarItem) {
+    return;
+  }
+  welcomeStatusBarItem.tooltip = t("welcomeStatusBarTooltip");
+  const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+  if (config.get<boolean>("showWelcomeStatusBarItem", true)) {
+    welcomeStatusBarItem.show();
+  }
+  else {
+    welcomeStatusBarItem.hide();
+  }
+}
+
 // The insertion position declared by customCommandsPosition travels with each
 // menu, so the Welcome page places custom menus above or below the built-in
 // cards the way the Commands tree does
