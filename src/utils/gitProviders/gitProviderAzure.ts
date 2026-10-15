@@ -29,6 +29,7 @@ import {
 import { SecretsManager, SecretSource } from "../secretsManager";
 import { PROVIDER_ENV_VAR_NAMES } from "../envFileCredentials";
 import { BuildApi } from "azure-devops-node-api/BuildApi";
+import { BearerCredentialHandler } from "azure-devops-node-api/handlers/bearertoken";
 import { t } from "../../i18n/i18n";
 import {
   promptForToken,
@@ -63,6 +64,9 @@ export class GitProviderAzure extends GitProvider {
   connection: azdev.WebApi | null = null;
   gitApi: GitApi | null = null;
   buildApi: BuildApi | null = null;
+  // Set when connected through the VS Code Microsoft session: its token expires after about an
+  // hour, and refreshCredentials() swaps the fresh one into this handler, shared by every API client
+  private oauthHandler: BearerCredentialHandler | null = null;
 
   describeGitProvider(): ProviderDescription {
     return {
@@ -91,6 +95,7 @@ export class GitProviderAzure extends GitProvider {
     // so remember the explicit disconnect to prevent initialize() from silently
     // re-connecting from the still-present session.
     await SecretsManager.setSecret(this.hostKey + "_DISCONNECTED", "true");
+    this.oauthHandler = null;
     this.connection = null;
     this.gitApi = null;
     this.buildApi = null;
@@ -183,6 +188,8 @@ export class GitProviderAzure extends GitProvider {
     const pat = resolvedPat?.value;
     const credentialSource: SecretSource | undefined = resolvedPat?.source;
     let authHandler: any;
+    this.oauthHandler = null;
+    this.usesPersonalAccessToken = !!pat;
     if (pat) {
       authHandler = azdev.getPersonalAccessTokenHandler(pat);
     } else {
@@ -195,6 +202,8 @@ export class GitProviderAzure extends GitProvider {
         return;
       }
       authHandler = await this.getOAuthHandler();
+      this.oauthHandler = authHandler;
+      this.lastTriedOAuthToken = authHandler?.token || null;
     }
 
     if (!authHandler || !this.repoInfo) {
@@ -243,16 +252,89 @@ export class GitProviderAzure extends GitProvider {
     }
   }
 
-  private async getOAuthHandler(): Promise<any | null> {
-    const session = await vscode.authentication.getSession(
-      "microsoft",
-      [GitProviderAzure.AZURE_DEVOPS_SCOPE],
-      { createIfNone: false },
-    );
+  /**
+   * The provider instance lives as long as the window, and the Microsoft session token it was
+   * built with expires after about an hour. Every call then failed with 401 and was answered with
+   * an empty list, while the provider still looked connected: with several windows open, only the
+   * one initialized last showed Azure DevOps data. The current token is read again here (VS Code
+   * renews it silently) and swapped into the handler all the API clients share.
+   *
+   * A window that started before the Microsoft session was available initialized as not
+   * connected and stayed so: it is initialized again once a session it has not tried yet is there.
+   *
+   * Called on every getInstance(): checked at most once a minute, and concurrent calls share one
+   * check.
+   */
+  private static readonly CREDENTIALS_CHECK_INTERVAL_MS = 60 * 1000;
+  private credentialsCheckedAt = 0;
+  private credentialsCheck: Promise<void> | null = null;
+  private lastTriedOAuthToken: string | null = null;
+  private usesPersonalAccessToken = false;
 
-    return session?.accessToken
-      ? azdev.getBearerHandler(session.accessToken)
-      : null;
+  async refreshCredentials(): Promise<void> {
+    if (this.credentialsCheck) {
+      return this.credentialsCheck;
+    }
+    if (
+      Date.now() - this.credentialsCheckedAt <
+      GitProviderAzure.CREDENTIALS_CHECK_INTERVAL_MS
+    ) {
+      return;
+    }
+    this.credentialsCheck = this.checkCredentials().finally(() => {
+      this.credentialsCheckedAt = Date.now();
+      this.credentialsCheck = null;
+    });
+    return this.credentialsCheck;
+  }
+
+  private async checkCredentials(): Promise<void> {
+    if (this.oauthHandler && this.isActive) {
+      const accessToken = await this.getOAuthAccessToken();
+      if (accessToken && accessToken !== this.oauthHandler.token) {
+        Logger.log("Azure DevOps: Microsoft session token renewed");
+        this.oauthHandler.token = accessToken;
+        this.resetPullRequestBuildIndex();
+      }
+      return;
+    }
+    // A PAT does not expire under the window, and a rejected one waits for the user
+    if (this.isActive || this.usesPersonalAccessToken) {
+      return;
+    }
+    const disconnected = await SecretsManager.getSecret(
+      this.hostKey + "_DISCONNECTED",
+    );
+    if (disconnected) {
+      return;
+    }
+    const accessToken = await this.getOAuthAccessToken();
+    // A session that already failed is not retried: initialize() would show its failure guidance again
+    if (accessToken && accessToken !== this.lastTriedOAuthToken) {
+      this.lastTriedOAuthToken = accessToken;
+      await this.initialize();
+    }
+  }
+
+  private async getOAuthHandler(): Promise<BearerCredentialHandler | null> {
+    const accessToken = await this.getOAuthAccessToken();
+    return accessToken ? new BearerCredentialHandler(accessToken) : null;
+  }
+
+  private async getOAuthAccessToken(): Promise<string | null> {
+    try {
+      const session = await vscode.authentication.getSession(
+        "microsoft",
+        [GitProviderAzure.AZURE_DEVOPS_SCOPE],
+        { createIfNone: false },
+      );
+      return session?.accessToken || null;
+    } catch (e: any) {
+      Logger.log(
+        `Unable to read the Microsoft session for Azure DevOps: ${e?.message || String(e)}`,
+      );
+      return null;
+    }
   }
 
   private buildOrganizationUrl(): string | null {
