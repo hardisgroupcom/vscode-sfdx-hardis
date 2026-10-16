@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Contributors: the MegaLinter skills and agents for Claude Code come from the MegaLinter plugin, enabled in `.claude/settings.json`, instead of copies in `.claude/`
 - Backpromote panel: Back no longer offers to merge the parent branch into a branch whose Pull Request was merged and deleted, a merge that could only end in conflicts
 - A Cloudity icon in the status bar opens the Welcome page. Hide it with the "Show Welcome Status Bar Item" setting, in the extension Settings panel
 
