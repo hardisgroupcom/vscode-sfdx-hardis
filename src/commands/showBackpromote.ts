@@ -65,6 +65,7 @@ import {
   backpromoteSessionKey,
   resumableBackpromoteSession,
   readCheckedOutBranch,
+  isBranchGoneOnRemote,
   shouldOfferParentMerge,
 } from "../utils/backpromote/backpromotePanelUtils";
 
@@ -1641,9 +1642,23 @@ async function backToBranch(current: BackpromotePanelState): Promise<void> {
       checkout.originalBranch,
       plan.parentBranch,
       parentAlreadyMerged,
-      await isOriginalBranchGone(git, checkout.originalBranch),
     )
   ) {
+    return;
+  }
+  // Asked of the remote only when the merge would be offered otherwise
+  let originalBranchGone = false;
+  try {
+    originalBranchGone = await isBranchGoneOnRemote(
+      (args) => git.raw(args),
+      checkout.originalBranch,
+    );
+  } catch (e: any) {
+    Logger.log(
+      `[Backpromote] could not read ${checkout.originalBranch} on the remote, the merge is still offered: ${String(e?.message || e)}`,
+    );
+  }
+  if (originalBranchGone) {
     return;
   }
   const mergeLabel = t("backpromoteMergeParentButton", {
@@ -1698,34 +1713,6 @@ async function checkoutOriginalBranch(
     Logger.log(
       `[Backpromote] git checkout ${branch} reported an error after switching to it, continuing: ${String(e?.message || e)}`,
     );
-  }
-}
-
-/**
- * Whether the branch was pushed (it tracks a remote) and that remote no longer has it, which is
- * what a merged Pull Request whose branch was deleted leaves. A branch that was never pushed, or a
- * remote that cannot be read, counts as not gone, so the merge is still offered.
- */
-async function isOriginalBranchGone(
-  git: SimpleGit,
-  branch: string,
-): Promise<boolean> {
-  try {
-    const remote = (
-      await git.raw(["config", "--get", `branch.${branch}.remote`])
-    ).trim();
-    if (!remote || remote === ".") {
-      return false;
-    }
-    const heads = await git.raw([
-      "ls-remote",
-      "--heads",
-      remote,
-      `refs/heads/${branch}`,
-    ]);
-    return heads.trim() === "";
-  } catch {
-    return false;
   }
 }
 
