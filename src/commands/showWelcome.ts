@@ -218,8 +218,7 @@ export function refreshWelcomeStatusBarItem() {
   const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
   if (config.get<boolean>("showWelcomeStatusBarItem", true)) {
     welcomeStatusBarItem.show();
-  }
-  else {
+  } else {
     welcomeStatusBarItem.hide();
   }
 }

@@ -65,6 +65,7 @@ import {
   backpromoteSessionKey,
   resumableBackpromoteSession,
   readCheckedOutBranch,
+  isBranchGoneOnRemote,
   shouldOfferParentMerge,
 } from "../utils/backpromote/backpromotePanelUtils";
 
@@ -1643,6 +1644,21 @@ async function backToBranch(current: BackpromotePanelState): Promise<void> {
       parentAlreadyMerged,
     )
   ) {
+    return;
+  }
+  // Asked of the remote only when the merge would be offered otherwise
+  let originalBranchGone = false;
+  try {
+    originalBranchGone = await isBranchGoneOnRemote(
+      (args) => git.raw(args),
+      checkout.originalBranch,
+    );
+  } catch (e: any) {
+    Logger.log(
+      `[Backpromote] could not read ${checkout.originalBranch} on the remote, the merge is still offered: ${String(e?.message || e)}`,
+    );
+  }
+  if (originalBranchGone) {
     return;
   }
   const mergeLabel = t("backpromoteMergeParentButton", {
