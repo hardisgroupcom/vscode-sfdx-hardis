@@ -1416,6 +1416,17 @@ suite("backpromotePanelUtils", () => {
     assert.strictEqual(shouldOfferParentMerge("", "integration", false), false);
   });
 
+  test("shouldOfferParentMerge: never into a branch whose Pull Request was merged and deleted", () => {
+    assert.strictEqual(
+      shouldOfferParentMerge("features/US-1-x", "integration", false, true),
+      false,
+    );
+    assert.strictEqual(
+      shouldOfferParentMerge("features/US-1-x", "integration", false, false),
+      true,
+    );
+  });
+
   test("every label of the panel is translated in the 9 locales", () => {
     const sources = [
       readModuleFile("backpromote", "backpromote.html"),
