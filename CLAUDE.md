@@ -275,6 +275,7 @@ git status --porcelain doc-screenshots # must be empty
   - `mega-linter.yml` - MegaLinter comprehensive code analysis
   - `deploy-preview.yml` / `deploy-RELEASE.yml` - Extension publishing
 - **MegaLinter** config in `.mega-linter.yml` - CSS/HTML disabled, Prettier for JS/TS style
+- MegaLinter skills and agents (`megalinter:megalinter-check`, `megalinter:megalinter-fix`...) come from the MegaLinter Claude Code plugin enabled in `.claude/settings.json`. Never copy them into `.claude/`; update them with `claude plugin update megalinter@megalinter`.
 
 ## Key Patterns
 
