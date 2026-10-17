@@ -2,8 +2,8 @@ import * as assert from "assert";
 import {
   buildMetadataDepsCommand,
   lastResultKey,
-  quote,
 } from "../../commands/showMetadataDependencies";
+import { quote } from "../../utils/shellQuote";
 
 suite("Metadata Dependencies command line", () => {
   test("quotes values for cmd.exe on Windows", () => {
