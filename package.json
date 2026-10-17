@@ -155,6 +155,11 @@
           "default": true,
           "description": "Display the type of the selected default org (PROD, MAJOR, SANDBOX, SCRATCH, DEV ORG) in the VS Code status bar"
         },
+        "vsCodeSfdxHardis.showWelcomeStatusBarItem": {
+          "type": "boolean",
+          "default": true,
+          "description": "Display a Cloudity icon in the VS Code status bar, that opens the SFDX Hardis Welcome page when clicked"
+        },
         "vsCodeSfdxHardis.colorUpdateLocation": {
           "type": "string",
           "default": "Workspace",
@@ -371,6 +376,11 @@
         "icon": "$(references)"
       },
       {
+        "command": "vscode-sfdx-hardis.findSoqlFieldDependencies",
+        "title": "SFDX Hardis: Find where this SOQL field is used",
+        "icon": "$(references)"
+      },
+      {
         "command": "vscode-sfdx-hardis.openExternal",
         "title": "SFDX Hardis: Open external url",
         "icon": "$(link-external)"
@@ -536,6 +546,15 @@
         "icon": "$(refresh)"
       }
     ],
+    "icons": {
+      "cloudity-logo": {
+        "description": "Cloudity logo",
+        "default": {
+          "fontPath": "resources/sfdx-hardis-icons.woff",
+          "fontCharacter": "\\E001"
+        }
+      }
+    },
     "viewsContainers": {
       "activitybar": [
         {
@@ -729,6 +748,11 @@
           "command": "vscode-sfdx-hardis.findMetadataUses",
           "when": "resourceFilename =~ /(-meta\\.xml|\\.(cls|trigger|page|component))$/ || resourcePath =~ /[\\/\\\\](lwc|aura)[\\/\\\\][^\\/\\\\]+[\\/\\\\][^\\/\\\\]+$/",
           "group": "z_sfdxhardis@26"
+        },
+        {
+          "command": "vscode-sfdx-hardis.findSoqlFieldDependencies",
+          "when": "editorLangId =~ /^(apex|soql|apex-anon)$/ || resourceFilename =~ /\\.(cls|trigger|soql|apex)$/",
+          "group": "z_sfdxhardis@27"
         }
       ],
       "view/item/context": [

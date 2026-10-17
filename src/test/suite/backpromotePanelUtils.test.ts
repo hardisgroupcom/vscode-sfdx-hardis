@@ -1,5 +1,7 @@
 import * as assert from "assert";
+import { execFileSync } from "child_process";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 import {
   REPO_ROOT,
@@ -45,6 +47,7 @@ import {
   planMergeAll,
   quoteCommandValue,
   recoverJsonCommandResult,
+  isBranchGoneOnRemote,
   shouldOfferParentMerge,
 } from "../../utils/backpromote/backpromotePanelUtils";
 import {
@@ -1414,6 +1417,52 @@ suite("backpromotePanelUtils", () => {
       false,
     );
     assert.strictEqual(shouldOfferParentMerge("", "integration", false), false);
+  });
+
+  test("isBranchGoneOnRemote: a pushed branch whose upstream the remote no longer has", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "hardis-branch-gone-"));
+    const run = (cwd: string, args: string[]) =>
+      execFileSync("git", args, { cwd, encoding: "utf8" });
+    try {
+      const remote = path.join(root, "remote.git");
+      const clone = path.join(root, "clone");
+      run(root, ["init", "--bare", "-q", remote]);
+      run(root, ["clone", "-q", remote, clone]);
+      run(clone, ["config", "user.email", "test@example.com"]);
+      run(clone, ["config", "user.name", "test"]);
+      run(clone, ["commit", "-q", "--allow-empty", "-m", "first"]);
+      // Pushed under another name than the local one: the upstream decides
+      run(clone, ["checkout", "-q", "-b", "my-story"]);
+      run(clone, ["push", "-q", "-u", "origin", "my-story:features/US-1-x"]);
+      run(clone, ["checkout", "-q", "-b", "never-pushed"]);
+      const gitRaw = async (args: string[]) => run(clone, args);
+
+      assert.strictEqual(await isBranchGoneOnRemote(gitRaw, "my-story"), false);
+      assert.strictEqual(
+        await isBranchGoneOnRemote(gitRaw, "never-pushed"),
+        false,
+      );
+      run(clone, ["push", "-q", "origin", "--delete", "features/US-1-x"]);
+      assert.strictEqual(await isBranchGoneOnRemote(gitRaw, "my-story"), true);
+    } finally {
+      // Windows can keep a git file locked a moment after the last command: a leftover folder
+      // in the temp directory is not a test failure
+      try {
+        fs.rmSync(root, { recursive: true, force: true, maxRetries: 5 });
+      } catch {
+        // ignored
+      }
+    }
+  });
+
+  test("isBranchGoneOnRemote: a remote that does not answer in time is not gone", async () => {
+    const gitRaw = (args: string[]) =>
+      args[0] === "config"
+        ? Promise.resolve(
+            args[2].endsWith(".remote") ? "origin\n" : "refs/heads/x\n",
+          )
+        : new Promise<string>(() => undefined);
+    assert.strictEqual(await isBranchGoneOnRemote(gitRaw, "x", 50), false);
   });
 
   test("every label of the panel is translated in the 9 locales", () => {

@@ -9,7 +9,10 @@ import type TelemetryReporter from "@vscode/extension-telemetry";
 import { CommandRunner, ExecuteCommandOptions } from "./command-runner";
 import { runSalesforceCliMcpServer } from "./utils/mcpUtils";
 import { SetupHelper } from "./utils/setupUtils";
-import { registerShowWelcome } from "./commands/showWelcome";
+import {
+  registerShowWelcome,
+  registerWelcomeStatusBarItem,
+} from "./commands/showWelcome";
 import { registerShowOrgsManager } from "./commands/showOrgsManager";
 import { registerShowPipeline } from "./commands/showPipeline";
 import { registerShowSetup } from "./commands/showSetup";
@@ -29,6 +32,7 @@ import {
 } from "./commands/runAnonymousApex";
 import { registerShowMetadataRetriever } from "./commands/showMetadataRetriever";
 import { registerShowMetadataDependencies } from "./commands/showMetadataDependencies";
+import { registerFindSoqlFieldDependencies } from "./commands/findSoqlFieldDependencies";
 import { registerShowPackageXml } from "./commands/packageXml";
 import { registerGitMergeDriverToggle } from "./commands/gitMergeDriver";
 import { registerShowDocumentationWorkbench } from "./commands/showDocumentationWorkbench";
@@ -95,6 +99,7 @@ export class Commands {
     registerOpenKeyFile(this);
     registerShowPipeline(this);
     registerShowWelcome(this);
+    registerWelcomeStatusBarItem(this);
     registerShowSetup(this);
     registerShowPipelineConfig(this);
     registerShowInstalledPackages(this);
@@ -108,6 +113,7 @@ export class Commands {
     registerDisplayLogDebugOnly(this);
     registerShowMetadataRetriever(this);
     registerShowMetadataDependencies(this);
+    registerFindSoqlFieldDependencies(this);
     registerShowPackageXml(this);
     registerShowDocumentationWorkbench(this);
     registerShowBackpromote(this);

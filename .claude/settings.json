@@ -1,5 +1,14 @@
 {
+  "extraKnownMarketplaces": {
+    "megalinter": {
+      "source": {
+        "source": "github",
+        "repo": "oxsecurity/megalinter"
+      }
+    }
+  },
   "enabledPlugins": {
-    "frontend-design@claude-plugins-official": true
+    "frontend-design@claude-plugins-official": true,
+    "megalinter@megalinter": true
   }
 }

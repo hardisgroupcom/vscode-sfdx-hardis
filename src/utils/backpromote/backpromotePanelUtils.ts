@@ -1904,3 +1904,42 @@ export function shouldOfferParentMerge(
   }
   return originalBranch !== parentBranch && !parentAlreadyMerged;
 }
+
+/**
+ * Whether the branch was pushed (it tracks a remote) and the remote no longer has its upstream,
+ * which is what a merged Pull Request whose branch was deleted leaves. "Back to my branch" then
+ * offers no merge of the parent branch: the work is finished, and the merge would only replay the
+ * squash of that work against itself, as conflicts. The upstream is read from
+ * the branch configuration, so a local branch named differently from its remote one is handled.
+ * A branch that was never pushed, a remote that cannot be read, or no answer within the timeout
+ * counts as not gone: the merge is then still offered.
+ */
+export async function isBranchGoneOnRemote(
+  gitRaw: (args: string[]) => Promise<string>,
+  branch: string,
+  timeoutMs = 10000,
+): Promise<boolean> {
+  const readConfig = (key: string) =>
+    gitRaw(["config", "--get", `branch.${branch}.${key}`]).then(
+      (out) => out.trim(),
+      () => "",
+    );
+  const remote = await readConfig("remote");
+  const upstream = await readConfig("merge");
+  if (!remote || remote === "." || !upstream.startsWith("refs/heads/")) {
+    return false;
+  }
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<null>((resolve) => {
+    timer = setTimeout(() => resolve(null), timeoutMs);
+  });
+  try {
+    const heads = await Promise.race([
+      gitRaw(["ls-remote", "--heads", remote, upstream]),
+      timeout,
+    ]);
+    return heads !== null && heads.trim() === "";
+  } finally {
+    clearTimeout(timer);
+  }
+}
