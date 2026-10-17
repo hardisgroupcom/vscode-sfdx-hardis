@@ -16,7 +16,7 @@
           <template if:true={commandDuration}>
             <span class="hardis-chip" title={commandDurationLabel}>
               <lightning-icon icon-name="utility:clock" size="xx-small"></lightning-icon>
-              {commandDuration}
+              <span class="hardis-duration-value" lwc:dom="manual"></span>
             </span>
           </template>
           <template if:true={targetOrgUsername}>

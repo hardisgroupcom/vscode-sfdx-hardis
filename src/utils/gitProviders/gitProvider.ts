@@ -69,7 +69,22 @@ export class GitProvider {
       this.noProviderDetected = false;
       this.instancePromise = null;
     }
+    // buildInstance() sets this.instance before its initialize() is over:
+    // wait for it instead of starting a second initialization through
+    // refreshCredentials()
+    if (this.instancePromise && reset !== true) {
+      return this.instancePromise;
+    }
     if (this.instance && reset !== true) {
+      // A cached instance is always usable: a failed check keeps the
+      // credentials it already has
+      try {
+        await this.instance.refreshCredentials();
+      } catch (e: any) {
+        Logger.log(
+          `Unable to refresh git provider credentials: ${e?.message || String(e)}`,
+        );
+      }
       return this.instance;
     }
     if (this.noProviderDetected && reset !== true) {
@@ -362,6 +377,16 @@ export class GitProvider {
     Logger.log(
       `initialize not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
     );
+  }
+
+  /**
+   * Brings short-lived credentials up to date, called by getInstance() each time it hands out the
+   * cached instance. The instance lives as long as the window, so a token read once at
+   * initialize() can expire under it. Must stay cheap: no-op for the providers whose credentials
+   * do not expire.
+   */
+  async refreshCredentials(): Promise<void> {
+    return;
   }
 
   async getJobsForBranchLatestCommit(

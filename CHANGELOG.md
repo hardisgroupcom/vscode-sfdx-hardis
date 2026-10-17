@@ -6,6 +6,10 @@
 - Contributors: the MegaLinter skills and agents for Claude Code come from the MegaLinter plugin, enabled in `.claude/settings.json`, instead of copies in `.claude/`
 - Backpromote panel: Back no longer offers to merge the parent branch into a branch whose Pull Request was merged and deleted, a merge that could only end in conflicts
 - A Cloudity icon in the status bar opens the Welcome page. Hide it with the "Show Welcome Status Bar Item" setting, in the extension Settings panel
+- With several VS Code windows open, an sf hardis command typed in the integrated terminal shows its UI in the window of that terminal, instead of in the first window opened. Terminals opened before the extension started need to be reopened once.
+- Command panel: the duration in the header counts up every second while the command runs, instead of staying at 0s until the next log line, and no longer restarts at 0s when the CLI connects.
+- SF Merge Driver status bar item: in a git worktree, it shows the merge driver as enabled once enabled, and a click disables it, instead of always showing it disabled.
+- DevOps Pipeline with Azure DevOps connected through the Microsoft account: the Pull Requests and builds keep showing after the session token expires (about an hour), instead of disappearing while still showing as connected. With several VS Code windows open, every window shows them, not only the one opened last. A window opened before the Microsoft session was available connects once it is.
 
 ## [8.14.1] 2026-10-15
 

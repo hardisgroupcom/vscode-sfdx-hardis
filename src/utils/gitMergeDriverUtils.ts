@@ -37,7 +37,27 @@ function getGitInfoAttributesPath(workspaceRoot: string): string | null {
   if (!gitDir) {
     return null;
   }
-  return path.join(gitDir, "info", "attributes");
+  return path.join(getGitCommonDirPath(gitDir), "info", "attributes");
+}
+
+// A linked worktree has its own git dir (.git/worktrees/<name>), but git reads
+// info/attributes from the shared common dir, where sf-git-merge-driver writes it.
+function getGitCommonDirPath(gitDir: string): string {
+  const commonDirFile = path.join(gitDir, "commondir");
+  try {
+    if (!fs.existsSync(commonDirFile)) {
+      return gitDir;
+    }
+    const rawCommonDir = fs.readFileSync(commonDirFile, "utf8").trim();
+    if (!rawCommonDir) {
+      return gitDir;
+    }
+    return path.isAbsolute(rawCommonDir)
+      ? rawCommonDir
+      : path.resolve(gitDir, rawCommonDir);
+  } catch {
+    return gitDir;
+  }
 }
 
 export async function isMergeDriverEnabled(

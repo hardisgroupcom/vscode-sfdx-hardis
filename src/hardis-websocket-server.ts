@@ -22,6 +22,12 @@ import {
 } from "./utils/pendingCommandPanels";
 
 const DEFAULT_PORT = parseInt(process.env.SFDX_HARDIS_WEBSOCKET_PORT || "2702");
+// Set next to SFDX_HARDIS_WEBSOCKET_PORT in the integrated terminals of a
+// window: tells a port injected by a window apart from a port forced by the user
+const PORT_FROM_VSCODE_ENV_VAR = "SFDX_HARDIS_WEBSOCKET_PORT_FROM_VSCODE";
+// Leaves the background exit handler of command-runner, which runs 3 seconds
+// after the process ends and shows its stderr, the first chance to end the panel
+const ORPHAN_PANEL_COMPLETION_DELAY_MS = 5000;
 let globalWss: LocalWebSocketServer | null;
 
 export class LocalWebSocketServer {
@@ -34,6 +40,9 @@ export class LocalWebSocketServer {
   private runningCommands = new Map<any, string>();
   private config: vscode.WorkspaceConfiguration;
   private readyPromise: Promise<void> | null = null;
+  // Value of SFDX_HARDIS_WEBSOCKET_PORT in the extension host before
+  // exposePortToTerminals() replaced it, restored at dispose (null: not replaced)
+  private inheritedPortEnv: string | undefined | null = null;
 
   constructor(context: vscode.ExtensionContext) {
     console.time("WebSocketServer_init");
@@ -66,11 +75,16 @@ export class LocalWebSocketServer {
   }
 
   private async startServer(): Promise<void> {
-    let port = DEFAULT_PORT;
-    if (port === 2702) {
-      // Define random port if not forced by the user with env var SFDX_HARDIS_WEBSOCKET_PORT
-      port = await findAvailablePort(2702, 2784);
-    }
+    // Define random port if not forced by the user with env var SFDX_HARDIS_WEBSOCKET_PORT.
+    // A port injected into the integrated terminal of another window (VS Code
+    // launched with `code` from it) is that window's port: pick our own. A
+    // port the user forced is used as is, and a busy one fails loudly, since
+    // CLIs outside VS Code (Docker, WSL) can only reach that one.
+    const portForcedByUser =
+      DEFAULT_PORT !== 2702 && process.env[PORT_FROM_VSCODE_ENV_VAR] !== "true";
+    const port = portForcedByUser
+      ? DEFAULT_PORT
+      : await findAvailablePort(2702, 2784);
     this.listen();
     //start our server
     console.time("WebSocketServer_listen");
@@ -79,10 +93,33 @@ export class LocalWebSocketServer {
       this.server.listen(port, () => {
         this.websocketHostPort = `localhost:${port}`;
         Logger.log(`Data stream server started on port ${port}`);
+        this.exposePortToTerminals(port);
         console.timeEnd("WebSocketServer_listen");
         resolve();
       });
     });
+  }
+
+  /**
+   * sf hardis commands typed in an integrated terminal have no --websocket
+   * flag: the CLI connects to SFDX_HARDIS_WEBSOCKET_PORT, or 2702. Injecting
+   * this window's port into its own terminals makes their commands show their
+   * UI in this window, not in whichever window owns 2702. Not persistent: a
+   * port restored from a previous session could belong to another window.
+   */
+  private exposePortToTerminals(port: number) {
+    // Processes the extension spawns without --websocket inherit the
+    // extension host env, which can hold the port of another window
+    this.inheritedPortEnv = process.env.SFDX_HARDIS_WEBSOCKET_PORT;
+    process.env.SFDX_HARDIS_WEBSOCKET_PORT = String(port);
+    const envCollection = this.context?.environmentVariableCollection;
+    if (!envCollection) {
+      return;
+    }
+    envCollection.persistent = false;
+    envCollection.description = t("websocketPortTerminalEnvDescription");
+    envCollection.replace("SFDX_HARDIS_WEBSOCKET_PORT", String(port));
+    envCollection.replace(PORT_FROM_VSCODE_ENV_VAR, "true");
   }
 
   static sendMessage(data: any) {
@@ -100,8 +137,36 @@ export class LocalWebSocketServer {
       // A CLI that died, or was cancelled, closes its connection without saying closeClient
       ws.on("close", () => {
         this.commandEnded(ws, "error");
+        this.completeOrphanPanels(ws);
       });
     });
+  }
+
+  /**
+   * A CLI killed with Ctrl+C, or that crashed, closes its connection without
+   * closeClient: its panel never got completeCommand and kept running, its
+   * duration counting up forever.
+   */
+  private completeOrphanPanels(ws: any) {
+    const contextIds = Object.keys(this.clients).filter(
+      (contextId) => this.clients[contextId]?.ws === ws,
+    );
+    if (contextIds.length === 0) {
+      return;
+    }
+    setTimeout(() => {
+      for (const contextId of contextIds) {
+        const clientData = this.clients[contextId];
+        // closeClient arrived late, or the CLI reconnected under the same id
+        if (!clientData || clientData.ws !== ws) {
+          continue;
+        }
+        delete this.clients[contextId];
+        if (clientData.panel?.commandStatus === "running") {
+          this.completeClientPanel(clientData, { status: "error" });
+        }
+      }
+    }, ORPHAN_PANEL_COMPLETION_DELAY_MS);
   }
 
   /**
@@ -311,36 +376,12 @@ export class LocalWebSocketServer {
       const clientData = this.clients[data.context?.id];
       /* jscpd:ignore-start */
       if (clientData?.panel) {
-        // Mark command as completed in the panel
-        const success = data?.status !== "aborted" && data?.status !== "error";
-        clientData.panel.commandStatus =
-          data?.status === "aborted"
-            ? "aborted"
-            : data?.status === "error"
-              ? "error"
-              : "completed";
-        const message: any = {
-          type: "completeCommand",
-          data: { success: success, status: data?.status },
-        };
-        if (data?.error) {
-          message.data.error = data.error;
-        }
-        clientData.panel.sendMessage(message);
-
-        // Update panel title to show completion
-        const commandName = clientData.context.command || "SFDX Hardis Command";
-        const completionTitle =
-          data?.status === "aborted"
-            ? t("commandTitleAborted", { commandName })
-            : data?.status === "error"
-              ? t("commandTitleError", { commandName })
-              : t("commandTitleCompleted", { commandName });
-
-        clientData.panel.updateTitle(completionTitle);
+        const success = this.completeClientPanel(clientData, data);
 
         // Auto-close panel if command is in autoclose list and completed successfully
         if (success) {
+          const commandName =
+            clientData.context.command || "SFDX Hardis Command";
           // Extract core command without arguments
           const coreCommand = this.extractCoreCommand(commandName);
           // Refresh config to get the latest autoclose commands list
@@ -881,6 +922,41 @@ export class LocalWebSocketServer {
     });
   }
 
+  /**
+   * Marks the command of a panel as ended: status, completeCommand message and
+   * tab title. Returns whether it succeeded.
+   */
+  private completeClientPanel(
+    clientData: any,
+    data: { status?: string; error?: any },
+  ): boolean {
+    const success = data?.status !== "aborted" && data?.status !== "error";
+    clientData.panel.commandStatus =
+      data?.status === "aborted"
+        ? "aborted"
+        : data?.status === "error"
+          ? "error"
+          : "completed";
+    const message: any = {
+      type: "completeCommand",
+      data: { success: success, status: data?.status },
+    };
+    if (data?.error) {
+      message.data.error = data.error;
+    }
+    clientData.panel.sendMessage(message);
+
+    const commandName = clientData.context.command || "SFDX Hardis Command";
+    const completionTitle =
+      data?.status === "aborted"
+        ? t("commandTitleAborted", { commandName })
+        : data?.status === "error"
+          ? t("commandTitleError", { commandName })
+          : t("commandTitleCompleted", { commandName });
+    clientData.panel.updateTitle(completionTitle);
+    return success;
+  }
+
   async sendResponse(ws: any, data: any) {
     ws.send(JSON.stringify(data));
   }
@@ -893,6 +969,17 @@ export class LocalWebSocketServer {
 
       this.wss.close();
       this.server.close();
+      this.context?.environmentVariableCollection?.delete(
+        "SFDX_HARDIS_WEBSOCKET_PORT",
+      );
+      this.context?.environmentVariableCollection?.delete(
+        PORT_FROM_VSCODE_ENV_VAR,
+      );
+      if (this.inheritedPortEnv === undefined) {
+        delete process.env.SFDX_HARDIS_WEBSOCKET_PORT;
+      } else if (this.inheritedPortEnv !== null) {
+        process.env.SFDX_HARDIS_WEBSOCKET_PORT = this.inheritedPortEnv;
+      }
       globalWss = null;
     } catch {
       Logger.log("[sfdx-hardis] Error while closing WebSocket Server");

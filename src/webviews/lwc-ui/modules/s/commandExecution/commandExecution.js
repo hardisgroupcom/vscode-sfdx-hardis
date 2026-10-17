@@ -90,6 +90,9 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
   @track hasError = false;
   @track startTime = null;
   @track endTime = null;
+  // Repaints the header duration every second while the command runs, even
+  // when no log line arrives
+  durationTimer = null;
   @track currentSubCommands = [];
   @track isWaitingForAnswer = false;
   @track latestQuestionId = null;
@@ -344,6 +347,7 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
   }
 
   renderedCallback() {
+    this.paintDuration();
     if (
       !this.readyMessageSent &&
       window &&
@@ -367,6 +371,7 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     ) {
       window.commandExecutionComponent = null;
     }
+    this.stopDurationTimer();
     // Remove embedded prompt listeners if any
     if (this.embeddedPromptListener) {
       this.removeEventListener("promptsubmit", this.embeddedPromptListener);
@@ -798,7 +803,11 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     let context = data.context ? data.context : data;
     // Run again replays a command in this same panel: a context with another
     // id is another run, and nothing of the previous run may leak into it
-    if (this.isNewRun(context)) {
+    const newRun = this.isNewRun(context);
+    // A CLI that ignores SFDX_HARDIS_COMMAND_CONTEXT_ID adopts the click-time
+    // panel under its own id: same run, even though the id changed
+    const adoptsPendingRun = this.commandContext?.pending === true;
+    if (newRun) {
       this.resetRunState();
     }
     this.commandContext = context;
@@ -806,6 +815,13 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     // Pending panels open before the CLI has connected: show a "Starting"
     // status until the websocket initializeCommand message re-initializes
     this.isStarting = context.pending === true;
+    // A panel is re-initialized several times for the same run (click-time
+    // pending init, then the "initialize" and "initializeCommand" messages
+    // sent when the CLI connects): keep counting from the click, and only
+    // restart the duration at 0s for another run, or once the previous run
+    // has completed
+    const keepStartTime =
+      this.startTime && !this.isCompleted && (!newRun || adoptsPendingRun);
 
     // Handle details mode initialization
     if (data.vsCodeSfdxHardisConfiguration) {
@@ -848,8 +864,9 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     this.isCompleted = false;
     this.hasError = false;
     this.isWaitingForAnswer = false;
-    this.startTime = new Date();
+    this.startTime = keepStartTime ? this.startTime : new Date();
     this.endTime = null;
+    this.startDurationTimer();
     this.currentSubCommands = [];
 
     // Add initial "Started" action log ("Starting" while the CLI boots)
@@ -1661,6 +1678,7 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
 
     this.isCompleted = true;
     this.endTime = new Date();
+    this.stopDurationTimer();
 
     if (this.currentSection) {
       this.currentSection.endTime = this.endTime;
@@ -1781,11 +1799,36 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     return TILE_ICON_BY_FAMILY[this.commandFamily] || "utility:prompt";
   }
 
-  get commandDuration() {
-    if (!this.startTime) return "";
+  // Only the duration text is repainted: changing a tracked field every
+  // second would re-render the whole template, every log line included
+  startDurationTimer() {
+    this.stopDurationTimer();
+    this.durationTimer = setInterval(() => {
+      this.paintDuration();
+    }, 1000);
+  }
 
+  stopDurationTimer() {
+    if (this.durationTimer) {
+      clearInterval(this.durationTimer);
+      this.durationTimer = null;
+    }
+  }
+
+  get commandDuration() {
+    if (!this.startTime) {
+      return "";
+    }
     const endTime = this.endTime || new Date();
     return this.calculateDuration(this.startTime, endTime);
+  }
+
+  // The duration value is a lwc:dom="manual" node, written only here
+  paintDuration() {
+    const durationNode = this.template.querySelector(".hardis-duration-value");
+    if (durationNode) {
+      durationNode.textContent = this.commandDuration;
+    }
   }
 
   get commandDurationLabel() {

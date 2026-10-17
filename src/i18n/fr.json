@@ -2655,6 +2655,7 @@
   "waitForCurrentCommand": "🦙 Attendez que la commande en cours soit terminée avant d'en lancer une nouvelle 😇",
   "waitingForYourAnswer": "En attente de votre réponse",
   "warnings": "Avertissements",
+  "websocketPortTerminalEnvDescription": "Permet aux commandes sf hardis lancées dans ce terminal d'afficher leur interface dans cette fenêtre VS Code",
   "websocketServerUnableToStart": "Le serveur WebSocket local n'a pas pu démarrer.\nLes demandes utilisateur seront dans le terminal.",
   "welcome": "Page d'accueil",
   "welcomeCloudityCard": "sfdx-hardis est conçu et maintenu par Cloudity. Besoin de conseils d'experts ou de support professionnel sur vos projets Salesforce ? Nos experts sont là pour vous aider.",
