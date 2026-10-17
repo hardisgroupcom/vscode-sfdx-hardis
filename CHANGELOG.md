@@ -3,6 +3,8 @@
 ## Unreleased
 
 - Find where a SOQL field is used: right-click a field in a SOQL query (Apex, query string or `.soql` file) and choose **SFDX Hardis: Find where this SOQL field is used** to open the Metadata Dependencies panel on that field. Relationship paths, aliases and subqueries are followed to the right object
+- Contributors: the MegaLinter skills and agents for Claude Code come from the MegaLinter plugin, enabled in `.claude/settings.json`, instead of copies in `.claude/`
+- Backpromote panel: Back no longer offers to merge the parent branch into a branch whose Pull Request was merged and deleted, a merge that could only end in conflicts
 - A Cloudity icon in the status bar opens the Welcome page. Hide it with the "Show Welcome Status Bar Item" setting, in the extension Settings panel
 
 ## [8.14.1] 2026-10-15
