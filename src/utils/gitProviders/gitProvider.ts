@@ -69,8 +69,22 @@ export class GitProvider {
       this.noProviderDetected = false;
       this.instancePromise = null;
     }
+    // buildInstance() sets this.instance before its initialize() is over:
+    // wait for it instead of starting a second initialization through
+    // refreshCredentials()
+    if (this.instancePromise && reset !== true) {
+      return this.instancePromise;
+    }
     if (this.instance && reset !== true) {
-      await this.instance.refreshCredentials();
+      // A cached instance is always usable: a failed check keeps the
+      // credentials it already has
+      try {
+        await this.instance.refreshCredentials();
+      } catch (e: any) {
+        Logger.log(
+          `Unable to refresh git provider credentials: ${e?.message || String(e)}`,
+        );
+      }
       return this.instance;
     }
     if (this.noProviderDetected && reset !== true) {

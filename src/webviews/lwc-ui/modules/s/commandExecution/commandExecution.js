@@ -90,9 +90,8 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
   @track hasError = false;
   @track startTime = null;
   @track endTime = null;
-  // Bumped every second while the command runs, so the header duration
-  // re-renders even when no log line arrives
-  @track durationTick = 0;
+  // Repaints the header duration every second while the command runs, even
+  // when no log line arrives
   durationTimer = null;
   @track currentSubCommands = [];
   @track isWaitingForAnswer = false;
@@ -348,6 +347,7 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
   }
 
   renderedCallback() {
+    this.paintDuration();
     if (
       !this.readyMessageSent &&
       window &&
@@ -803,7 +803,11 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     let context = data.context ? data.context : data;
     // Run again replays a command in this same panel: a context with another
     // id is another run, and nothing of the previous run may leak into it
-    if (this.isNewRun(context)) {
+    const newRun = this.isNewRun(context);
+    // A CLI that ignores SFDX_HARDIS_COMMAND_CONTEXT_ID adopts the click-time
+    // panel under its own id: same run, even though the id changed
+    const adoptsPendingRun = this.commandContext?.pending === true;
+    if (newRun) {
       this.resetRunState();
     }
     this.commandContext = context;
@@ -814,8 +818,10 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     // A panel is re-initialized several times for the same run (click-time
     // pending init, then the "initialize" and "initializeCommand" messages
     // sent when the CLI connects): keep counting from the click, and only
-    // restart the duration at 0s once the previous run has completed
-    const keepStartTime = this.startTime && !this.isCompleted;
+    // restart the duration at 0s for another run, or once the previous run
+    // has completed
+    const keepStartTime =
+      this.startTime && !this.isCompleted && (!newRun || adoptsPendingRun);
 
     // Handle details mode initialization
     if (data.vsCodeSfdxHardisConfiguration) {
@@ -1793,10 +1799,12 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     return TILE_ICON_BY_FAMILY[this.commandFamily] || "utility:prompt";
   }
 
+  // Only the duration text is repainted: changing a tracked field every
+  // second would re-render the whole template, every log line included
   startDurationTimer() {
     this.stopDurationTimer();
     this.durationTimer = setInterval(() => {
-      this.durationTick++;
+      this.paintDuration();
     }, 1000);
   }
 
@@ -1811,10 +1819,16 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     if (!this.startTime) {
       return "";
     }
-    // Read the tick so the getter re-evaluates every second while running
-    void this.durationTick;
     const endTime = this.endTime || new Date();
     return this.calculateDuration(this.startTime, endTime);
+  }
+
+  // The duration value is a lwc:dom="manual" node, written only here
+  paintDuration() {
+    const durationNode = this.template.querySelector(".hardis-duration-value");
+    if (durationNode) {
+      durationNode.textContent = this.commandDuration;
+    }
   }
 
   get commandDurationLabel() {

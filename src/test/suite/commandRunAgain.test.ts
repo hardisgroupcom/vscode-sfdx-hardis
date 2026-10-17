@@ -53,7 +53,7 @@ suite("Command Runner Run again contract", () => {
   test("a new run clears what the previous run left in the tab", () => {
     assert.match(
       componentSource,
-      /if \(this\.isNewRun\(context\)\) \{\s*this\.resetRunState\(\);\s*\}\s*this\.commandContext = context;/,
+      /const newRun = this\.isNewRun\(context\);[\s\S]*?if \(newRun\) \{\s*this\.resetRunState\(\);\s*\}\s*this\.commandContext = context;/,
       "initializeCommand must reset the run state before taking the new context",
     );
     const start = componentSource.indexOf("resetRunState() {");
