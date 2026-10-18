@@ -1530,13 +1530,27 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
     } else if (type === "returnCommunities") {
       this.handleReturnCommunities(data);
     } else if (type === "customFunctionsLoaded") {
-      // First read of the catalog, done in the background: an open editor stays open
-      this.customFunctions = data.customFunctions || [];
-      this.customFunctionsLoading = false;
+      // Read in the background: an open editor stays open
+      this.setCustomFunctions(data.customFunctions);
     } else if (type === "customFunctionsRefreshed") {
-      this.customFunctions = data.customFunctions || [];
-      this.customFunctionsLoading = false;
+      this.setCustomFunctions(data.customFunctions);
       this.handleCloseCustomFunctionModal();
+    }
+  }
+
+  // Cancel and Save of a section run initialize(this.initData) again: the catalog is stored
+  // there too, else they would bring back the spinner and the empty list of the first open
+  setCustomFunctions(customFunctions) {
+    this.customFunctions = Array.isArray(customFunctions)
+      ? customFunctions
+      : [];
+    this.customFunctionsLoading = false;
+    if (this.initData) {
+      this.initData = {
+        ...this.initData,
+        customFunctions: this.customFunctions,
+        customFunctionsLoading: false,
+      };
     }
   }
 
@@ -1627,6 +1641,9 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
 
   handleRefreshCustomFunctions() {
     this.customFunctionsLoading = true;
+    if (this.initData) {
+      this.initData = { ...this.initData, customFunctionsLoading: true };
+    }
     window.sendMessageToVSCode({ type: "refreshCustomFunctions", data: {} });
   }
 

@@ -2,6 +2,7 @@ import * as assert from "assert";
 import * as utils from "../../utils";
 import {
   buildFunctionCommandFlags,
+  clearCustomFunctionsCache,
   getCachedCustomFunctions,
   loadCheckedCustomFunctions,
   quote,
@@ -176,7 +177,10 @@ suite("customFunctionsUtils", () => {
     const originalExecSfdxJson = utilsModule.execSfdxJson;
     let commands: string[] = [];
 
+    const originalDateNow = Date.now;
+
     setup(() => {
+      clearCustomFunctionsCache();
       commands = [];
       utilsModule.execSfdxJson = async (command: string) => {
         commands.push(command);
@@ -199,6 +203,8 @@ suite("customFunctionsUtils", () => {
 
     teardown(() => {
       utilsModule.execSfdxJson = originalExecSfdxJson;
+      Date.now = originalDateNow;
+      clearCustomFunctionsCache();
     });
 
     test("a catalog read without the runtime check is not offered to Pipeline Settings", async () => {
@@ -228,6 +234,17 @@ suite("customFunctionsUtils", () => {
       await loadCheckedCustomFunctions();
       await loadCheckedCustomFunctions();
       assert.strictEqual(commands.length, 2);
+    });
+
+    test("an expired checked catalog is replaced by the read of the DevOps Pipeline", async () => {
+      await loadCheckedCustomFunctions();
+      const now = originalDateNow();
+      Date.now = () => now + 31 * 60 * 1000;
+      assert.strictEqual(getCachedCustomFunctions(), null);
+      await refreshCustomFunctionsCache();
+      const cached = getCachedCustomFunctions();
+      assert.strictEqual(cached?.length, 1);
+      assert.strictEqual(cached?.[0].runtimeAvailable, undefined);
     });
   });
 });

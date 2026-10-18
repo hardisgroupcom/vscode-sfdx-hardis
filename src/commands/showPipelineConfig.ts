@@ -34,7 +34,8 @@ export function registerShowPipelineConfig(commands: Commands) {
       // Custom functions are deployment action types, so the editor of this panel needs the
       // catalog, with runtimes checked so the Functions tab can flag a missing interpreter.
       // Listing them costs a whole sfdx-hardis start (several seconds): the panel never waits
-      // for it. A catalog already checked for the current configuration is used at once, else
+      // for it. A catalog already checked for the current configuration is shown at once and
+      // checked again in the background (an interpreter may have been installed since), else
       // the tab shows a spinner until the background load sends it.
       const cachedCustomFunctions = getCachedCustomFunctions({
         withRuntimes: true,
@@ -105,16 +106,33 @@ export function registerShowPipelineConfig(commands: Commands) {
           : t("globalPipelineSettings"),
       );
 
-      if (customFunctionsLoading) {
-        void loadCheckedCustomFunctions().then((functions) => {
-          customFunctions = functions;
-          customFunctionsLoading = false;
-          panel.sendMessage({
-            type: "customFunctionsLoaded",
-            data: { customFunctions },
-          });
+      // Each read of the catalog gets a number and only the latest one updates the panel: a
+      // background read started before a save never replaces the list the save reloaded. The
+      // result also goes into the initialization data, which a webview still booting receives
+      // once ready (a message posted before is dropped) and a branch switch sends again.
+      let latestCatalogRead = 0;
+      const readCatalog = async (
+        messageType: "customFunctionsLoaded" | "customFunctionsRefreshed",
+        showLoading: boolean,
+      ): Promise<void> => {
+        const catalogRead = ++latestCatalogRead;
+        if (showLoading) {
+          customFunctionsLoading = true;
+          panel.mergeInitializationData({ customFunctionsLoading });
+        }
+        const functions = await loadCheckedCustomFunctions();
+        if (catalogRead !== latestCatalogRead) {
+          return;
+        }
+        customFunctions = functions;
+        customFunctionsLoading = false;
+        panel.mergeInitializationData({
+          customFunctions,
+          customFunctionsLoading,
         });
-      }
+        panel.sendMessage({ type: messageType, data: { customFunctions } });
+      };
+      void readCatalog("customFunctionsLoaded", customFunctionsLoading);
 
       // Register message handlers
       panel.onMessage(async (type, data) => {
@@ -183,12 +201,7 @@ export function registerShowPipelineConfig(commands: Commands) {
               : t("customFunctionUpdated", { id: data.customFunction.id }),
           );
           if (saved) {
-            customFunctions = await loadCheckedCustomFunctions();
-            customFunctionsLoading = false;
-            panel.sendMessage({
-              type: "customFunctionsRefreshed",
-              data: { customFunctions },
-            });
+            await readCatalog("customFunctionsRefreshed", true);
           }
         } else if (type === "deleteCustomFunction") {
           const usedByActions = data.force === true;
@@ -200,20 +213,10 @@ export function registerShowPipelineConfig(commands: Commands) {
             t("customFunctionDeleted", { id: data.functionId }),
           );
           if (deleted) {
-            customFunctions = await loadCheckedCustomFunctions();
-            customFunctionsLoading = false;
-            panel.sendMessage({
-              type: "customFunctionsRefreshed",
-              data: { customFunctions },
-            });
+            await readCatalog("customFunctionsRefreshed", true);
           }
         } else if (type === "refreshCustomFunctions") {
-          customFunctions = await loadCheckedCustomFunctions();
-          customFunctionsLoading = false;
-          panel.sendMessage({
-            type: "customFunctionsRefreshed",
-            data: { customFunctions },
-          });
+          await readCatalog("customFunctionsRefreshed", true);
         } else {
           // Lazy-loaded lists of the deployment action editor
           await handleDeploymentActionPickerMessage(panel, type, data);

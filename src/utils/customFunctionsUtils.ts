@@ -121,17 +121,7 @@ export function refreshCustomFunctionsCache(): Promise<
     const signature = configSignature();
     catalogRefresh = listCustomFunctions()
       .then((functions) => {
-        // A catalog read with the runtime check meanwhile holds more: it stays
-        if (!(
-          catalogCache?.runtimesChecked && catalogCache.signature === signature
-        )) {
-          catalogCache = {
-            signature,
-            at: Date.now(),
-            functions,
-            runtimesChecked: false,
-          };
-        }
+        storeCatalog(signature, functions, false);
         return functions;
       })
       .finally(() => {
@@ -156,12 +146,7 @@ export function loadCheckedCustomFunctions(): Promise<
   const load = {
     signature,
     promise: listCustomFunctions({ checkRuntimes: true }).then((functions) => {
-      catalogCache = {
-        signature,
-        at: Date.now(),
-        functions,
-        runtimesChecked: true,
-      };
+      storeCatalog(signature, functions, true);
       return functions;
     }),
   };
@@ -172,6 +157,15 @@ export function loadCheckedCustomFunctions(): Promise<
     }
   });
   return load.promise;
+}
+
+/**
+ * Forget the catalog read during this session. The next read starts the CLI again.
+ */
+export function clearCustomFunctionsCache(): void {
+  catalogCache = null;
+  catalogRefresh = null;
+  checkedCatalogLoad = null;
 }
 
 /**
@@ -310,4 +304,27 @@ export async function runFunctionCommand(
     );
     return false;
   }
+}
+
+// Remember a catalog read for the configuration file in the state given by signature
+function storeCatalog(
+  signature: string,
+  functions: CustomFunctionDefinition[],
+  runtimesChecked: boolean,
+): void {
+  // The file changed while the CLI was reading it: the answer is already outdated, and the
+  // entry stored meanwhile for the current file is worth more
+  if (signature !== configSignature()) {
+    return;
+  }
+  // A catalog read with the runtime check holds more: it stays while it is fresh
+  if (
+    !runtimesChecked &&
+    catalogCache?.runtimesChecked &&
+    catalogCache.signature === signature &&
+    Date.now() - catalogCache.at < CATALOG_TTL_MS
+  ) {
+    return;
+  }
+  catalogCache = { signature, at: Date.now(), functions, runtimesChecked };
 }
