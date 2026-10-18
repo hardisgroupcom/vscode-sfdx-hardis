@@ -262,6 +262,11 @@ export default class ReplacementRuleEditor extends SharedMixin(
     }));
   }
 
+  // Removing one user permission from a Profile is the most common removal: the example shows it
+  get xmlPathPlaceholder() {
+    return this.isRemove ? "Profile/userPermissions[name=ViewSetup]" : "NamedCredential/endpoint";
+  }
+
   get isSingleValue() {
     return this.draft.valueMode === "value";
   }

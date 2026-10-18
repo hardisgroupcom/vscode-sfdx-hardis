@@ -2502,6 +2502,7 @@
   "replacementRulesXmlPathField": "Element",
   "replacementRulesXmlPathHelp": "Pad vanaf het root-element. //name komt overeen op elke diepte, alerts[fullName=Escalation_Alert] kiest één item uit een lijst.",
   "replacementRulesXmlPathRequired": "Vul het pad van het XML-element in.",
+  "replacementRulesXmlPathTooltip": "Pad van de elementen vanaf het hoofdelement van het bestand, zonder namespace. Eén gebruikersmachtiging uit een Profile verwijderen: Profile/userPermissions[name=ViewSetup] (PermissionSet/userPermissions[name=ViewSetup] voor een Permission Set). De toegang tot één veld verwijderen: Profile/fieldPermissions[field=Account.Secret__c]. Het endpoint van een Named Credential instellen: NamedCredential/endpoint. De afzender van één e-mailwaarschuwing instellen: Workflow/alerts[fullName=Escalation_Alert]/senderAddress. Eén uitgesloten knop van een layout verwijderen: Layout/excludeButtons[.=Submit]. [kind=waarde] kiest het item waarvan het kind deze waarde heeft, [.=waarde] het element met deze waarde. //naam vindt het element op elke diepte, Flow/screens//fields op elke diepte onder screens, * elk element: Flow/*/group.",
   "repoLabel": "Repo: {{name}}",
   "reportFilesActions": "Acties",
   "reportFilesDocs": "Docs",

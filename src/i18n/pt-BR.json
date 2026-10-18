@@ -2502,6 +2502,7 @@
   "replacementRulesXmlPathField": "Elemento",
   "replacementRulesXmlPathHelp": "Caminho a partir do elemento raiz. //name corresponde em qualquer profundidade, alerts[fullName=Escalation_Alert] escolhe um item de uma lista.",
   "replacementRulesXmlPathRequired": "Informe o caminho do elemento XML.",
+  "replacementRulesXmlPathTooltip": "Caminho dos elementos a partir do elemento raiz do arquivo, sem namespace. Remover uma permissão de usuário de um perfil: Profile/userPermissions[name=ViewSetup] (PermissionSet/userPermissions[name=ViewSetup] para um conjunto de permissões). Remover o acesso a um campo: Profile/fieldPermissions[field=Account.Secret__c]. Definir o endpoint de uma Named Credential: NamedCredential/endpoint. Definir o remetente de um alerta de e-mail: Workflow/alerts[fullName=Escalation_Alert]/senderAddress. Remover um botão excluído de um layout: Layout/excludeButtons[.=Submit]. [filho=valor] escolhe o item cujo filho tem esse valor, [.=valor] o elemento que contém esse valor. //nome encontra o elemento em qualquer profundidade, Flow/screens//fields em qualquer profundidade abaixo de screens, * qualquer elemento: Flow/*/group.",
   "repoLabel": "Repositório: {{name}}",
   "reportFilesActions": "Ações",
   "reportFilesDocs": "Documentos",

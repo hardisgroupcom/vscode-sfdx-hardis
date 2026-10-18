@@ -2502,6 +2502,7 @@
   "replacementRulesXmlPathField": "Element",
   "replacementRulesXmlPathHelp": "Pfad ab dem Stammelement. //name trifft in jeder Tiefe zu, alerts[fullName=Escalation_Alert] wählt einen Eintrag einer Liste aus.",
   "replacementRulesXmlPathRequired": "Geben Sie den Pfad des XML-Elements ein.",
+  "replacementRulesXmlPathTooltip": "Pfad der Elemente ab dem Wurzelelement der Datei, ohne Namespace. Eine Benutzerberechtigung aus einem Profil entfernen: Profile/userPermissions[name=ViewSetup] (PermissionSet/userPermissions[name=ViewSetup] für einen Berechtigungssatz). Den Zugriff auf ein Feld entfernen: Profile/fieldPermissions[field=Account.Secret__c]. Den Endpunkt einer Named Credential festlegen: NamedCredential/endpoint. Den Absender einer E-Mail-Benachrichtigung festlegen: Workflow/alerts[fullName=Escalation_Alert]/senderAddress. Eine ausgeschlossene Schaltfläche eines Layouts entfernen: Layout/excludeButtons[.=Submit]. [kind=wert] wählt den Eintrag, dessen Kindelement diesen Wert hat, [.=wert] das Element mit diesem Wert. //name passt in jeder Tiefe, Flow/screens//fields in jeder Tiefe unter screens, * passt auf jedes Element: Flow/*/group.",
   "repoLabel": "Repo: {{name}}",
   "reportFilesActions": "Aktionen",
   "reportFilesDocs": "Docs",

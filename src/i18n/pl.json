@@ -2502,6 +2502,7 @@
   "replacementRulesXmlPathField": "Element",
   "replacementRulesXmlPathHelp": "Ścieżka od elementu głównego. //name pasuje na dowolnej głębokości, alerts[fullName=Escalation_Alert] wybiera jeden element listy.",
   "replacementRulesXmlPathRequired": "Należy podać ścieżkę elementu XML.",
+  "replacementRulesXmlPathTooltip": "Ścieżka elementów od elementu głównego pliku, bez przestrzeni nazw. Usunięcie jednego uprawnienia użytkownika z Profile: Profile/userPermissions[name=ViewSetup] (PermissionSet/userPermissions[name=ViewSetup] dla Permission Set). Usunięcie dostępu do jednego pola: Profile/fieldPermissions[field=Account.Secret__c]. Ustawienie endpointu Named Credential: NamedCredential/endpoint. Ustawienie nadawcy jednego alertu e-mail: Workflow/alerts[fullName=Escalation_Alert]/senderAddress. Usunięcie jednego wykluczonego przycisku z układu: Layout/excludeButtons[.=Submit]. [dziecko=wartość] wybiera element, którego element podrzędny ma tę wartość, [.=wartość] element zawierający tę wartość. //nazwa pasuje na dowolnej głębokości, Flow/screens//fields na dowolnej głębokości pod screens, * dowolny element: Flow/*/group.",
   "repoLabel": "Repozytorium: {{name}}",
   "reportFilesActions": "Akcje",
   "reportFilesDocs": "Dokumenty",

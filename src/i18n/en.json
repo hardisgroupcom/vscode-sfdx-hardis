@@ -2502,6 +2502,7 @@
   "replacementRulesXmlPathField": "Element",
   "replacementRulesXmlPathHelp": "Path from the root element. //name matches at any depth, alerts[fullName=Escalation_Alert] picks one item of a list.",
   "replacementRulesXmlPathRequired": "Enter the path of the XML element.",
+  "replacementRulesXmlPathTooltip": "Path of elements from the root element of the file, without namespace. Remove one user permission from a Profile: Profile/userPermissions[name=ViewSetup] (PermissionSet/userPermissions[name=ViewSetup] for a Permission Set). Remove the access to one field: Profile/fieldPermissions[field=Account.Secret__c]. Set the endpoint of a Named Credential: NamedCredential/endpoint. Set the sender of one email alert: Workflow/alerts[fullName=Escalation_Alert]/senderAddress. Remove one excluded button of a layout: Layout/excludeButtons[.=Submit]. [child=value] picks the item whose child has this value, [.=value] the element holding this value. //name matches at any depth, Flow/screens//fields at any depth below screens, * any element: Flow/*/group.",
   "repoLabel": "Repo: {{name}}",
   "reportFilesActions": "Actions",
   "reportFilesDocs": "Docs",

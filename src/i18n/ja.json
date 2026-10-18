@@ -2502,6 +2502,7 @@
   "replacementRulesXmlPathField": "要素",
   "replacementRulesXmlPathHelp": "ルート要素からのパスです。//name は任意の深さで一致し、alerts[fullName=Escalation_Alert] はリストの 1 項目を選択します。",
   "replacementRulesXmlPathRequired": "XML 要素のパスを入力してください。",
+  "replacementRulesXmlPathTooltip": "ファイルのルート要素からの要素のパスです (名前空間なし)。プロファイルから 1 つのユーザー権限を削除: Profile/userPermissions[name=ViewSetup] (権限セットの場合は PermissionSet/userPermissions[name=ViewSetup])。1 つの項目へのアクセスを削除: Profile/fieldPermissions[field=Account.Secret__c]。指定ログイン情報のエンドポイントを設定: NamedCredential/endpoint。1 つのメールアラートの送信者を設定: Workflow/alerts[fullName=Escalation_Alert]/senderAddress。ページレイアウトの除外ボタンを 1 つ削除: Layout/excludeButtons[.=Submit]。[子=値] は子要素がその値を持つ項目を、[.=値] はその値を持つ要素を選択します。//名前 は任意の階層で一致し、Flow/screens//fields は screens の下の任意の階層、* は任意の要素に一致します: Flow/*/group。",
   "repoLabel": "リポジトリ: {{name}}",
   "reportFilesActions": "アクション",
   "reportFilesDocs": "ドキュメント",

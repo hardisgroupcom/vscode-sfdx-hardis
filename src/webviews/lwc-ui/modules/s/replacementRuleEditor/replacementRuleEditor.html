@@ -132,7 +132,8 @@
                   value={draft.xmlPath}
                   data-field="xmlPath"
                   onchange={handleFieldChange}
-                  placeholder="NamedCredential/endpoint"
+                  placeholder={xmlPathPlaceholder}
+                  field-level-help={i18n.replacementRulesXmlPathTooltip}
                 ></lightning-input>
                 <p class="hardis-field-help rre-help">{i18n.replacementRulesXmlPathHelp}</p>
               </div>
