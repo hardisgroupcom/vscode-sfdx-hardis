@@ -96,7 +96,7 @@ suite("Replacement Rules panel UI tests", function () {
     const state = await waitForLoaded("the rules", (data) => !!data.data);
     assert.strictEqual(state.error, null);
     const data = state.data;
-    assert.strictEqual(data.definitions.length, 8);
+    assert.strictEqual(data.definitions.length, 9);
     assert.deepStrictEqual(
       data.majorBranches.map((branch: any) => branch.branchName),
       ["integration", "uat", "preprod", "main"],
