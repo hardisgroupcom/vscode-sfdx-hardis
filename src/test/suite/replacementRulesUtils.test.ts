@@ -19,8 +19,8 @@ import {
   sanitizeReplacementList,
 } from "../../utils/replacementRulesUtils";
 import {
-  LOCALES,
   REPO_ROOT,
+  assertFeatureKeysUsedAndClean,
   assertKeysTranslated,
   assertPanelCommandWired,
   collectComponentI18nKeys,
@@ -444,32 +444,16 @@ suite("Replacement Rules panel", () => {
     }
     assertKeysTranslated(keys);
     assertKeysTranslated(KEYS_OUTSIDE_THE_COMPONENTS);
-    const used = new Set([...keys, ...KEYS_OUTSIDE_THE_COMPONENTS]);
-    const placeholders = (text: string) =>
-      (text.match(/\{\{\w+\}\}/g) || []).sort().join(",");
-    const english = loadLocale("en");
-    for (const locale of LOCALES) {
-      const translations = loadLocale(locale);
-      for (const [key, value] of Object.entries(translations)) {
-        if (
-          !key.startsWith("replacementRules") &&
-          key !== "menuConfigureReplacementRules"
-        ) {
-          continue;
-        }
-        assert.ok(used.has(key), `unused i18n key ${key} in ${locale}.json`);
-        assert.ok(
-          !value.includes(String.fromCharCode(0x2014)),
-          `em-dash in ${key} (${locale})`,
-        );
-        assert.strictEqual(
-          placeholders(value),
-          placeholders(english[key]),
-          `placeholders of ${key} in ${locale}.json`,
-        );
-      }
-    }
-    assert.strictEqual(english.replacementRulesTitle, "Replacement Rules");
+    assertFeatureKeysUsedAndClean(
+      (key) =>
+        key.startsWith("replacementRules") ||
+        key === "menuConfigureReplacementRules",
+      new Set([...keys, ...KEYS_OUTSIDE_THE_COMPONENTS]),
+    );
+    assert.strictEqual(
+      loadLocale("en").replacementRulesTitle,
+      "Replacement Rules",
+    );
   });
 
   test("the DevOps Pipeline settings menu always opens the panel", () => {

@@ -9,7 +9,12 @@ failure apart and keeps only the documented fields of the answers. No vscode imp
 in the unit tests as is.
 */
 
-import { stripAnsiCodes } from "./ansiColors";
+import {
+  asAnswerCount,
+  asAnswerObjects,
+  cleanAnswerText,
+  failedCommandMessage,
+} from "./cliAnswerUtils";
 import { safeWebUrl } from "./doraReportUtils";
 import { quote } from "./shellQuote";
 
@@ -360,42 +365,20 @@ export function normalizeReplacementRuleDraft(draft: any): ReplacementRule {
 export function readReplacementListOutcome(
   result: any,
 ): ReplacementRulesOutcome {
-  if (isReplacementCommandUnknown(result)) {
-    return { error: { kind: "cliTooOld", message: "" } };
-  }
-  const answer = result?.result;
-  if (
-    result?.status === 0 &&
-    answer &&
-    typeof answer === "object" &&
-    Array.isArray(answer.definitions)
-  ) {
-    return { view: sanitizeReplacementList(answer) };
-  }
-  return {
-    error: { kind: "other", message: replacementErrorMessage(result) },
-  };
+  const read = readReplacementAnswer(result, "definitions");
+  return "error" in read
+    ? read
+    : { view: sanitizeReplacementList(read.answer) };
 }
 
 /** What the answer of sf hardis:project:replacement:preview --json means for the panel */
 export function readReplacementPreviewOutcome(
   result: any,
 ): ReplacementPreviewOutcome {
-  if (isReplacementCommandUnknown(result)) {
-    return { error: { kind: "cliTooOld", message: "" } };
-  }
-  const answer = result?.result;
-  if (
-    result?.status === 0 &&
-    answer &&
-    typeof answer === "object" &&
-    Array.isArray(answer.results)
-  ) {
-    return { preview: sanitizeReplacementPreview(answer) };
-  }
-  return {
-    error: { kind: "other", message: replacementErrorMessage(result) },
-  };
+  const read = readReplacementAnswer(result, "results");
+  return "error" in read
+    ? read
+    : { preview: sanitizeReplacementPreview(read.answer) };
 }
 
 /**
@@ -474,25 +457,25 @@ export function sanitizeReplacementList(answer: any): ReplacementRulesView {
     layers: {
       project: {
         file: cleanText(layers.project?.file) || "config/.sfdx-hardis.yml",
-        count: asCount(layers.project?.count),
+        count: asAnswerCount(layers.project?.count),
       },
       branches: asObjects(layers.branches).map((branch) => ({
         branch: cleanText(branch.branch, 200),
         file: cleanText(branch.file),
-        count: asCount(branch.count),
+        count: asAnswerCount(branch.count),
       })),
       issue: {
         available: issue.available === true,
         number: asNumberOrNull(issue.number),
         url: safeWebUrl(issue.url),
         error: cleanText(issue.error, MAX_ERROR_LENGTH),
-        count: asCount(issue.count),
+        count: asAnswerCount(issue.count),
       },
     },
     majorBranches: asObjects(answer?.majorBranches)
       .map((branch) => ({
         branchName: cleanText(branch.branchName, 200),
-        level: asCount(branch.level),
+        level: asAnswerCount(branch.level),
       }))
       .filter((branch) => branch.branchName !== ""),
     secretsProvider: cleanText(answer?.secretsProvider, 50) || "ciVariables",
@@ -524,7 +507,7 @@ export function sanitizeReplacementPreview(
       status: PREVIEW_STATUSES.includes(result.status)
         ? result.status
         : "unchanged",
-      count: asCount(result.count),
+      count: asAnswerCount(result.count),
       detail: cleanText(result.detail),
     })),
     warnings: asObjects(answer?.warnings).map((warning) => ({
@@ -535,27 +518,42 @@ export function sanitizeReplacementPreview(
     appliedRules: asObjects(answer?.appliedRules).map((rule) => ({
       id: cleanText(rule.id, 200),
       origins: asOrigins(rule.origins),
-      files: asCount(rule.files),
+      files: asAnswerCount(rule.files),
     })),
   };
 }
 
 /** Message of a failed --json command, as sfdx-hardis wrote it */
 export function replacementErrorMessage(result: any): string {
-  if (typeof result?.message === "string" && result.message.trim() !== "") {
-    return cleanText(result.message, MAX_ERROR_LENGTH);
+  return failedCommandMessage(result, MAX_ERROR_LENGTH, [
+    result?.result?.message,
+  ]);
+}
+
+/**
+ * The answer of a replacement --json command when it worked and holds its list, else the error
+ * to show: an sfdx-hardis without the command, or the message of the failure.
+ * @param listKey the list a working answer always holds (ex: "definitions")
+ */
+function readReplacementAnswer(
+  result: any,
+  listKey: string,
+): { answer: any } | { error: ReplacementRulesPanelError } {
+  if (isReplacementCommandUnknown(result)) {
+    return { error: { kind: "cliTooOld", message: "" } };
   }
+  const answer = result?.result;
   if (
-    typeof result?.result?.message === "string" &&
-    result.result.message.trim() !== ""
+    result?.status === 0 &&
+    answer &&
+    typeof answer === "object" &&
+    Array.isArray(answer[listKey])
   ) {
-    return cleanText(result.result.message, MAX_ERROR_LENGTH);
+    return { answer };
   }
-  const stderr = String(result?.stderr || "").trim();
-  if (stderr !== "" && !stderr.startsWith("{")) {
-    return cleanText(stderr, MAX_ERROR_LENGTH);
-  }
-  return "";
+  return {
+    error: { kind: "other", message: replacementErrorMessage(result) },
+  };
 }
 
 function sanitizeStoredRule(rule: any): ReplacementRule {
@@ -640,9 +638,7 @@ function asOrigins(value: unknown): ReplacementRuleOrigin[] {
 }
 
 function asObjects(value: unknown): any[] {
-  return (Array.isArray(value) ? value : [])
-    .filter((item) => item && typeof item === "object")
-    .slice(0, MAX_ROWS);
+  return asAnswerObjects(value, MAX_ROWS);
 }
 
 function asStringList(value: unknown): string[] {
@@ -664,17 +660,10 @@ function asStringMap(value: any): Record<string, string> {
   return map;
 }
 
-function asCount(value: unknown): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
-}
-
 function asNumberOrNull(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 function cleanText(value: unknown, maxLength = MAX_TEXT_LENGTH): string {
-  if (typeof value !== "string") {
-    return "";
-  }
-  return stripAnsiCodes(value.trim()).slice(0, maxLength);
+  return cleanAnswerText(value, maxLength);
 }

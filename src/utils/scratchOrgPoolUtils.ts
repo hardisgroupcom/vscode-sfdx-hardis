@@ -7,7 +7,12 @@ apart and keeps only the documented fields in what goes to the webview. No vscod
 runs in the unit tests as is.
 */
 
-import { stripAnsiCodes } from "./ansiColors";
+import {
+  asAnswerCount,
+  asAnswerObjects,
+  cleanAnswerText,
+  failedCommandMessage,
+} from "./cliAnswerUtils";
 import { safeWebUrl } from "./doraReportUtils";
 
 // Where the status view keeps the available and maximum number of scratch orgs of the pool,
@@ -20,7 +25,10 @@ export const SCRATCH_ORG_POOL_COUNTS_TTL_MS = 1000 * 60 * 15;
 // cliTooOld: the installed sfdx-hardis does not describe the pool
 // other: anything else, with the message of sfdx-hardis
 export type ScratchOrgPoolErrorKind =
-  "noGitProvider" | "noPool" | "cliTooOld" | "other";
+  | "noGitProvider"
+  | "noPool"
+  | "cliTooOld"
+  | "other";
 
 export interface ScratchOrgPoolPanelError {
   kind: ScratchOrgPoolErrorKind;
@@ -28,7 +36,10 @@ export interface ScratchOrgPoolPanelError {
 }
 
 export type ScratchOrgPoolKeyStatus =
-  "ok" | "missing" | "mismatch" | "notNeeded";
+  | "ok"
+  | "missing"
+  | "mismatch"
+  | "notNeeded";
 
 export interface ScratchOrgPoolLimit {
   used: number;
@@ -67,7 +78,8 @@ export interface ScratchOrgPoolView {
 }
 
 export type ScratchOrgPoolOutcome =
-  { pool: ScratchOrgPoolView } | { error: ScratchOrgPoolPanelError };
+  | { pool: ScratchOrgPoolView }
+  | { error: ScratchOrgPoolPanelError };
 
 const KEY_STATUSES: ScratchOrgPoolKeyStatus[] = [
   "ok",
@@ -141,7 +153,7 @@ export function readScratchOrgPoolCounts(
   if (typeof available !== "number" || !Number.isFinite(available)) {
     return null;
   }
-  return { available, max: asCount(answer.maxScratchOrgs) };
+  return { available, max: asAnswerCount(answer.maxScratchOrgs) };
 }
 
 /**
@@ -183,8 +195,8 @@ export function sanitizeScratchOrgPool(pool: any): ScratchOrgPoolView {
   return {
     storageService: cleanText(pool?.storageService, 50),
     dashboardUrl: safeWebUrl(pool?.dashboardUrl) || null,
-    available: asCount(pool?.available),
-    max: asCount(pool?.max),
+    available: asAnswerCount(pool?.available),
+    max: asAnswerCount(pool?.max),
     canTake: pool?.canTake === true,
     keyStatus,
     orgs: asObjects(pool?.orgs).map((org) => ({
@@ -223,14 +235,7 @@ export function sanitizeScratchOrgPool(pool: any): ScratchOrgPoolView {
 
 /** Message of a failed --json command, as sfdx-hardis wrote it */
 export function scratchOrgPoolErrorMessage(result: any): string {
-  if (typeof result?.message === "string" && result.message.trim() !== "") {
-    return cleanText(result.message, MAX_ERROR_LENGTH);
-  }
-  const stderr = String(result?.stderr || "").trim();
-  if (stderr !== "" && !stderr.startsWith("{")) {
-    return cleanText(stderr, MAX_ERROR_LENGTH);
-  }
-  return "";
+  return failedCommandMessage(result, MAX_ERROR_LENGTH);
 }
 
 function sanitizeDevHubLimits(limits: any): ScratchOrgPoolView["devHubLimits"] {
@@ -244,22 +249,13 @@ function sanitizeDevHubLimits(limits: any): ScratchOrgPoolView["devHubLimits"] {
 }
 
 function sanitizeLimit(limit: any): ScratchOrgPoolLimit {
-  return { used: asCount(limit?.used), max: asCount(limit?.max) };
+  return { used: asAnswerCount(limit?.used), max: asAnswerCount(limit?.max) };
 }
 
 function asObjects(value: unknown): any[] {
-  return (Array.isArray(value) ? value : [])
-    .filter((item) => item && typeof item === "object")
-    .slice(0, MAX_ROWS);
-}
-
-function asCount(value: unknown): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+  return asAnswerObjects(value, MAX_ROWS);
 }
 
 function cleanText(value: unknown, maxLength = MAX_TEXT_LENGTH): string {
-  if (typeof value !== "string") {
-    return "";
-  }
-  return stripAnsiCodes(value.trim()).slice(0, maxLength);
+  return cleanAnswerText(value, maxLength);
 }

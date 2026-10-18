@@ -249,7 +249,7 @@ export default class ReplacementRuleEditor extends SharedMixin(
       { mode: "value", labelKey: "replacementRulesValueSame" },
       { mode: "values", labelKey: "replacementRulesValuePerOrg" },
     );
-    // sfdx-hardis never reads a secret from the issue: its rules reach the deployments unreviewed
+    // sfdx-hardis never reads a secret from the issue: its rules reach the deployments without review
     if (this.storeLayer !== "issue") {
       modes.push({ mode: "secret", labelKey: "replacementRulesValueSecret" });
     }

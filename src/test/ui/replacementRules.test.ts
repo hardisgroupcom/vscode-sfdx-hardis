@@ -35,6 +35,7 @@ function ruleFilesLogged(): any[] {
   );
 }
 
+/* jscpd:ignore-start */
 suite("Replacement Rules panel UI tests", function () {
   let panelManager: any;
   let panel: any;
@@ -60,6 +61,7 @@ suite("Replacement Rules panel UI tests", function () {
     panel = await openFreshPanel(panelManager, LWC_ID, SHOW_COMMAND);
     return { ...panel.getInitializationData() };
   }
+  /* jscpd:ignore-end */
 
   async function openLoaded(): Promise<any> {
     await openPanel();

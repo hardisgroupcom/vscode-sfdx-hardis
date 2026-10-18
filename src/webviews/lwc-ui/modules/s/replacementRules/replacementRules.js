@@ -307,28 +307,7 @@ export default class ReplacementRules extends SharedMixin(LightningElement) {
 
   get ruleColumns() {
     return [
-      {
-        label: this.i18n.replacementRulesColumnOn,
-        fieldName: "stateLabel",
-        type: "statusPill",
-        initialWidth: 90,
-        typeAttributes: {
-          label: { fieldName: "stateLabel" },
-          pillClass: { fieldName: "statePillClass" },
-        },
-      },
-      {
-        label: this.i18n.replacementRulesColumnRule,
-        fieldName: "id",
-        type: "branchChip",
-        initialWidth: 220,
-      },
-      {
-        label: this.i18n.replacementRulesColumnDescription,
-        fieldName: "description",
-        type: "text",
-        wrapText: true,
-      },
+      ...this.ruleIdentityColumns(220),
       {
         label: this.i18n.replacementRulesColumnAction,
         fieldName: "typeLabel",
@@ -383,6 +362,34 @@ export default class ReplacementRules extends SharedMixin(LightningElement) {
       {
         type: "action",
         typeAttributes: { rowActions: this.getRuleRowActions.bind(this) },
+      },
+    ];
+  }
+
+  // The first columns of the rules and built-in rules tables: on or off, name, description
+  ruleIdentityColumns(ruleColumnWidth) {
+    return [
+      {
+        label: this.i18n.replacementRulesColumnOn,
+        fieldName: "stateLabel",
+        type: "statusPill",
+        initialWidth: 90,
+        typeAttributes: {
+          label: { fieldName: "stateLabel" },
+          pillClass: { fieldName: "statePillClass" },
+        },
+      },
+      {
+        label: this.i18n.replacementRulesColumnRule,
+        fieldName: "id",
+        type: "branchChip",
+        initialWidth: ruleColumnWidth,
+      },
+      {
+        label: this.i18n.replacementRulesColumnDescription,
+        fieldName: "description",
+        type: "text",
+        wrapText: true,
       },
     ];
   }
@@ -691,28 +698,7 @@ export default class ReplacementRules extends SharedMixin(LightningElement) {
 
   get builtInColumns() {
     return [
-      {
-        label: this.i18n.replacementRulesColumnOn,
-        fieldName: "stateLabel",
-        type: "statusPill",
-        initialWidth: 90,
-        typeAttributes: {
-          label: { fieldName: "stateLabel" },
-          pillClass: { fieldName: "statePillClass" },
-        },
-      },
-      {
-        label: this.i18n.replacementRulesColumnRule,
-        fieldName: "id",
-        type: "branchChip",
-        initialWidth: 260,
-      },
-      {
-        label: this.i18n.replacementRulesColumnDescription,
-        fieldName: "description",
-        type: "text",
-        wrapText: true,
-      },
+      ...this.ruleIdentityColumns(260),
       {
         label: this.i18n.replacementRulesColumnElements,
         fieldName: "elementsLabel",
