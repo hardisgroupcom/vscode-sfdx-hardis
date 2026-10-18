@@ -440,6 +440,10 @@ export class ThemeUtils {
         hardis: "gauge.svg",
       },
       "scratch:pool:create": { vscode: "gear", hardis: "pool.svg" },
+      "vscode-sfdx-hardis.showOrgInit": {
+        vscode: "rocket",
+        hardis: "configure.svg",
+      },
       "vscode-sfdx-hardis.showScratchOrgPool": {
         vscode: "radio-tower",
         hardis: "pool.svg",

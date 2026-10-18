@@ -80,6 +80,8 @@
               </div>
             </div>
 
+            <!-- An org initialization step has no deployment phase nor context -->
+            <template if:true={isDeploymentMode}>
             <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
               <div class="slds-form-element">
                 <label class="slds-form-element__label hardis-label-inline">
@@ -123,8 +125,74 @@
                 ></lightning-combobox>
               </div>
             </div>
+            </template>
+
+            <!-- Org initialization step: the org types it runs on -->
+            <template if:true={isOrgInitMode}>
+              <div class="slds-col slds-size_2-of-3 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <lightning-checkbox-group
+                    label={i18n.orgInitOrgTypesLabel}
+                    options={orgTypeOptions}
+                    value={selectedOrgTypes}
+                    onchange={handleOrgTypesChange}
+                    disabled={isOrgTypesDisabled}
+                  ></lightning-checkbox-group>
+                </div>
+              </div>
+            </template>
 
             <!-- Type-specific fields -->
+            <template if:true={showInstallPackagesNote}>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <div class="hardis-note">
+                  <span>{i18n.orgInitInstallPackagesNote}</span>
+                  <template if:true={isEditMode}>
+                    <lightning-button
+                      variant="neutral"
+                      class="slds-m-left_small"
+                      label={i18n.orgInitOpenInstalledPackages}
+                      onclick={handleOpenInstalledPackages}
+                    ></lightning-button>
+                  </template>
+                </div>
+              </div>
+            </template>
+
+            <template if:true={showDeploySourcesNote}>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <div class="hardis-note">
+                  <span>{i18n.orgInitDeploySourcesNote}</span>
+                </div>
+              </div>
+            </template>
+
+            <template if:true={showPermissionSetsField}>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <template if:true={hasPermissionSetOptions}>
+                    <lightning-dual-listbox
+                      label={i18n.orgInitPermissionSetsLabel}
+                      source-label={permissionSetsSourceColumnLabel}
+                      selected-label={permissionSetsSelectedColumnLabel}
+                      options={permissionSetOptions}
+                      value={selectedPermissionSets}
+                      onchange={handlePermissionSetsChange}
+                      disabled={isViewMode}
+                    ></lightning-dual-listbox>
+                  </template>
+                  <lightning-input
+                    class="slds-m-top_x-small"
+                    label={i18n.orgInitPermissionSetsTyped}
+                    field-level-help={i18n.orgInitPermissionSetsTypedHelp}
+                    value={permissionSetsText}
+                    onblur={handlePermissionSetsTextChange}
+                    disabled={isViewMode}
+                  ></lightning-input>
+                </div>
+              </div>
+            </template>
+
             <template if:true={showCommandField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
@@ -590,6 +658,47 @@
               </div>
             </template>
 
+            <template if:true={isOrgInitMode}>
+              <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <div style="display:flex;align-items:center;gap:0.25rem;margin-bottom:0.25rem;">
+                    <span class="slds-form-element__label">{i18n.orgInitRunAtPoolFillLabel}</span>
+                    <s-multiline-helptext content={i18n.orgInitRunAtPoolFillHelp} class="slds-icon-text-info"></s-multiline-helptext>
+                  </div>
+                  <lightning-input
+                    type="toggle"
+                    label={i18n.orgInitRunAtPoolFillLabel}
+                    checked={stepRunAtPoolFill}
+                    data-field="runAtPoolFill"
+                    onchange={handleCheckboxChange}
+                    disabled={isViewMode}
+                    variant="label-hidden"
+                    message-toggle-active=""
+                    message-toggle-inactive=""
+                  ></lightning-input>
+                </div>
+              </div>
+              <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <div style="display:flex;align-items:center;gap:0.25rem;margin-bottom:0.25rem;">
+                    <span class="slds-form-element__label">{i18n.orgInitEnabledLabel}</span>
+                    <s-multiline-helptext content={i18n.orgInitEnabledHelp} class="slds-icon-text-info"></s-multiline-helptext>
+                  </div>
+                  <lightning-input
+                    type="toggle"
+                    label={i18n.orgInitEnabledLabel}
+                    checked={stepEnabled}
+                    data-field="enabled"
+                    onchange={handleCheckboxChange}
+                    disabled={isViewMode}
+                    variant="label-hidden"
+                    message-toggle-active=""
+                    message-toggle-inactive=""
+                  ></lightning-input>
+                </div>
+              </div>
+            </template>
+
             <template if:true={showRunOnlyOnceByOrgField}>
               <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
                 <div class="slds-form-element">
@@ -648,6 +757,7 @@
             </template>
 
             <!-- Restrict the action to some target orgs -->
+            <template if:true={isDeploymentMode}>
             <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
               <div class="slds-form-element">
                 <label class="slds-form-element__label hardis-label-inline">
@@ -682,6 +792,7 @@
                   </div>
                 </div>
               </div>
+            </template>
             </template>
           </div>
         </div>

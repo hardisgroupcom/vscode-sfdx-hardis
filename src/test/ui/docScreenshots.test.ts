@@ -3072,6 +3072,15 @@ suite("Documentation screenshots", function () {
     });
   });
 
+  test("org initialization", async function () {
+    await shootPanel(panelManager, {
+      name: "org-initialization",
+      command: "vscode-sfdx-hardis.showOrgInit",
+      lwcId: "s-org-init",
+      settleMs: 4000,
+    });
+  });
+
   // ---------------------------------------------------------------------
   // VS Code user guides (sfdx-hardis docs/vscode-extension-*.md): the panel
   // states a guide walks through that no other capture shows, mostly an open

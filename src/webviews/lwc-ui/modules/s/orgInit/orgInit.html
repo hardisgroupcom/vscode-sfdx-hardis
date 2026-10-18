@@ -1,0 +1,209 @@
+<template>
+  <div class="slds-scope slds-p-around_medium">
+    <div class="hardis-page-head">
+      <div class="hardis-tile featured teal">
+        <lightning-icon icon-name="utility:setup" size="medium"></lightning-icon>
+      </div>
+      <div class="hardis-page-head-text">
+        <h1 class="hardis-page-title">{i18n.orgInitPanelTitle}</h1>
+        <p class="hardis-page-subtitle">{i18n.orgInitPanelSubtitle}</p>
+      </div>
+      <div class="hardis-page-head-actions">
+        <lightning-button icon-name="utility:refresh" label={i18n.refreshLabel} onclick={handleRefresh}></lightning-button>
+        <lightning-button-icon
+          icon-name="utility:help_doc_ext"
+          alternative-text={i18n.documentation}
+          title={i18n.documentation}
+          onclick={handleOpenPanelDoc}
+        ></lightning-button-icon>
+      </div>
+    </div>
+
+    <template if:true={isLoadingState}>
+      <div class="slds-is-relative slds-p-vertical_large slds-text-align_center">
+        <lightning-spinner alternative-text={i18n.loadingLabel} size="medium"></lightning-spinner>
+      </div>
+    </template>
+    <template if:true={hasError}>
+      <div class="slds-text-align_center slds-p-around_large">
+        <p>{i18n.featureLoadFailed}</p>
+        <p class="slds-text-color_weak slds-text-body_small slds-m-top_small">{loadError}</p>
+        <div class="slds-m-top_medium"><lightning-button label={i18n.tryAgainLabel} onclick={handleRetry}></lightning-button></div>
+      </div>
+    </template>
+    <template if:true={isReady}>
+      <div class="hardis-panel-body">
+        <lightning-tabset>
+          <!-- Steps -->
+          <lightning-tab label={i18n.orgInitStepsTab} value="steps">
+            <template if:true={isLegacySource}>
+              <div class="hardis-note warning slds-m-bottom_small" role="note">
+                <lightning-icon icon-name="utility:info" size="small" class="slds-m-right_small"></lightning-icon>
+                <span>{legacyBanner}</span>
+              </div>
+            </template>
+            <template if:true={hasDefinitionErrors}>
+              <div class="hardis-note error slds-m-bottom_small" role="alert">
+                <lightning-icon icon-name="utility:error" size="small" class="slds-m-right_small"></lightning-icon>
+                <div>
+                  <p>{i18n.orgInitDefinitionErrors}</p>
+                  <ul class="slds-list_dotted">
+                    <template for:each={definitionErrors} for:item="error">
+                      <li key={error.key}>{error.text}</li>
+                    </template>
+                  </ul>
+                </div>
+              </div>
+            </template>
+
+            <div class="org-init-toolbar slds-m-bottom_small">
+              <lightning-button class="hardis-btn-tinted-blue" variant="neutral" icon-name="utility:add" label={i18n.orgInitAddStep} onclick={handleAddStep}></lightning-button>
+              <lightning-button class="hardis-btn-tinted-green" variant="neutral" icon-name="utility:save" label={saveStepsLabel} disabled={saveStepsDisabled} onclick={handleSaveSteps}></lightning-button>
+              <lightning-button variant="neutral" icon-name="utility:package" label={i18n.orgInitOpenInstalledPackages} onclick={handleOpenInstalledPackages}></lightning-button>
+            </div>
+
+            <template if:true={hasSteps}>
+              <s-hardis-datatable
+                key-field="id"
+                data={stepRows}
+                columns={stepColumns}
+                selected-rows={selectedStepIds}
+                onrowaction={handleStepRowAction}
+                onrowselection={handleStepSelection}
+                class="slds-m-bottom_medium"
+              ></s-hardis-datatable>
+            </template>
+            <template if:false={hasSteps}>
+              <p class="slds-text-color_weak slds-m-vertical_medium">{i18n.orgInitNoSteps}</p>
+            </template>
+
+            <!-- Run now -->
+            <div class="hardis-group-label slds-m-top_medium">{i18n.orgInitRunNowTitle}</div>
+            <p class="hardis-group-desc">{runNowHint}</p>
+            <template if:true={hasOrgs}>
+              <div class="org-init-run">
+                <lightning-combobox
+                  class="org-init-run-org"
+                  label={i18n.orgInitTargetOrg}
+                  options={orgs}
+                  value={targetOrg}
+                  onchange={handleTargetOrgChange}
+                ></lightning-combobox>
+                <lightning-button class="hardis-btn-tinted-blue" variant="neutral" icon-name="utility:play" label={runNowLabel} disabled={runNowDisabled} onclick={handleRunNow}></lightning-button>
+              </div>
+            </template>
+            <template if:false={hasOrgs}>
+              <p class="slds-text-color_weak">{i18n.orgInitNoOrg}</p>
+            </template>
+          </lightning-tab>
+
+          <!-- Scratch org definition -->
+          <lightning-tab label={i18n.orgInitScratchDefTab} value="scratchDef">
+            <p class="hardis-group-desc slds-m-bottom_small">{i18n.orgInitScratchDefIntro} <span class="hardis-chip">{scratchDefPath}</span></p>
+            <template if:false={scratchDefExists}>
+              <div class="hardis-note slds-m-bottom_small" role="note">
+                <span>{i18n.orgInitScratchDefMissing}</span>
+              </div>
+            </template>
+            <template if:true={hasScratchDefIssues}>
+              <div class="hardis-note error slds-m-bottom_small" role="alert">
+                <lightning-icon icon-name="utility:error" size="small" class="slds-m-right_small"></lightning-icon>
+                <ul class="slds-list_dotted">
+                  <template for:each={allScratchDefIssues} for:item="issue">
+                    <li key={issue.key}>{issue.text}</li>
+                  </template>
+                </ul>
+              </div>
+            </template>
+
+            <template if:true={hasScratchDefWarnings}>
+              <div class="hardis-note warning slds-m-bottom_small" role="note">
+                <lightning-icon icon-name="utility:warning" size="small" class="slds-m-right_small"></lightning-icon>
+                <div>
+                  <p>{i18n.orgInitScratchDefWarnings}</p>
+                  <ul class="slds-list_dotted">
+                    <template for:each={allScratchDefWarnings} for:item="warning">
+                      <li key={warning.key}>{warning.text}</li>
+                    </template>
+                  </ul>
+                </div>
+              </div>
+            </template>
+
+            <div class="org-init-toolbar slds-m-bottom_small">
+              <lightning-button class="hardis-btn-tinted-green" variant="neutral" icon-name="utility:save" label={saveScratchDefLabel} disabled={saveScratchDefDisabled} onclick={handleSaveScratchDef}></lightning-button>
+              <lightning-button variant="neutral" icon-name="utility:code_playground" label={rawModeLabel} onclick={handleToggleRawMode}></lightning-button>
+            </div>
+
+            <template if:true={isFormMode}>
+              <div class="slds-grid slds-wrap slds-gutters_small">
+                <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                  <lightning-input label={i18n.orgInitOrgName} value={scratchDef.orgName} data-field="orgName" onchange={handleScratchDefFieldChange}></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-4 slds-m-bottom_small">
+                  <lightning-combobox label={i18n.orgInitEdition} options={editionOptions} value={scratchDef.edition} data-field="edition" onchange={handleScratchDefFieldChange}></lightning-combobox>
+                </div>
+                <div class="slds-col slds-size_1-of-4 slds-m-bottom_small">
+                  <lightning-input type="number" min="1" max="30" label={i18n.orgInitDuration} field-level-help={i18n.orgInitDurationHelp} value={scratchOrgDuration} onchange={handleDurationChange}></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-4 slds-m-bottom_small">
+                  <lightning-input label={i18n.orgInitLanguage} value={scratchDef.language} data-field="language" onchange={handleScratchDefFieldChange}></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-4 slds-m-bottom_small">
+                  <lightning-input label={i18n.orgInitCountry} value={scratchDef.country} data-field="country" onchange={handleScratchDefFieldChange}></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-4 slds-m-bottom_small">
+                  <lightning-combobox label={i18n.orgInitRelease} options={releaseOptions} value={scratchDefRelease} data-field="release" onchange={handleScratchDefFieldChange}></lightning-combobox>
+                </div>
+                <div class="slds-col slds-size_1-of-4 slds-m-bottom_small org-init-toggle">
+                  <lightning-input type="toggle" label={i18n.orgInitHasSampleData} checked={hasSampleData} data-field="hasSampleData" onchange={handleScratchDefFieldChange} message-toggle-active="" message-toggle-inactive=""></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                  <lightning-input label={i18n.orgInitDescription} value={scratchDef.description} data-field="description" onchange={handleScratchDefFieldChange}></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                  <lightning-textarea class="hardis-code-textarea org-init-features" label={i18n.orgInitFeatures} field-level-help={knownFeaturesHint} value={featuresText} onchange={handleFeaturesChange}></lightning-textarea>
+                </div>
+                <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                  <lightning-textarea class="hardis-code-textarea org-init-settings" label={i18n.orgInitSettings} field-level-help={i18n.orgInitSettingsHelp} value={settingsText} onchange={handleSettingsChange}></lightning-textarea>
+                </div>
+              </div>
+            </template>
+            <template if:false={isFormMode}>
+              <lightning-textarea class="hardis-code-textarea org-init-raw" label={i18n.orgInitRawJson} value={rawScratchDefText} onchange={handleRawScratchDefChange}></lightning-textarea>
+            </template>
+          </lightning-tab>
+        </lightning-tabset>
+      </div>
+    </template>
+
+    <!-- Step editor: the deployment action editor, in org initialization mode -->
+    <template if:true={showStepModal}>
+      <s-deployment-action
+        mode="orgInit"
+        action={currentStep}
+        is-edit-mode={stepModalEditMode}
+        apex-scripts={apexScripts}
+        sfdmu-workspaces={sfdmuWorkspaces}
+        permission-sets={permissionSets}
+        org-init-step-types={stepTypes}
+        custom-functions={customFunctions}
+        schedulable-classes={schedulableClasses}
+        project-only-schedulable-classes={projectOnlySchedulableClasses}
+        schedulable-classes-loading={schedulableClassesLoading}
+        batchable-classes={batchableClasses}
+        project-only-batchable-classes={projectOnlyBatchableClasses}
+        batchable-classes-loading={batchableClassesLoading}
+        communities={communities}
+        communities-loading={communitiesLoading}
+        parent-translations={translations}
+        onclose={handleCloseStepModal}
+        onsave={handleSaveStep}
+        onopeninstalledpackages={handleOpenInstalledPackages}
+        onloadschedulableclasses={handleLoadSchedulableClasses}
+        onloadbatchableclasses={handleLoadBatchableClasses}
+        onloadcommunities={handleLoadCommunities}
+      ></s-deployment-action>
+    </template>
+  </div>
+</template>

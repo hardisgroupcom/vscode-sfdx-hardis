@@ -2792,3 +2792,12 @@ lightning-helptext::part(icon) {
   line-height: 1.4;
   white-space: normal;
 }
+
+/* JSON and one-value-per-line editors (Org Initialization scratch org definition): editor-style
+   monospace text. Lives here because a component stylesheet cannot reach the textarea inside
+   lightning-textarea. */
+.hardis-code-textarea textarea {
+  font-family: ui-monospace, "Cascadia Code", Consolas, Menlo, monospace;
+  font-size: 0.8rem;
+  min-height: 14rem;
+}

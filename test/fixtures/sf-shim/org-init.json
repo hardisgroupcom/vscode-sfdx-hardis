@@ -1,0 +1,76 @@
+{
+  "source": "legacy",
+  "legacyKeys": ["initPermissionSets", "scratchOrgInitApexScripts"],
+  "steps": [
+    {
+      "id": "legacy-install-packages",
+      "label": "Install packages",
+      "type": "install-packages",
+      "orgTypes": ["scratch"],
+      "enabled": true,
+      "allowFailure": false,
+      "runAtPoolFill": true
+    },
+    {
+      "id": "legacy-deploy-sources",
+      "label": "Deploy project sources",
+      "type": "deploy-sources",
+      "orgTypes": ["scratch"],
+      "enabled": true,
+      "allowFailure": false,
+      "runAtPoolFill": true
+    },
+    {
+      "id": "legacy-permission-sets",
+      "label": "Assign permission sets",
+      "type": "assign-permission-sets",
+      "parameters": { "permissionSets": ["MyCompany_Sales_Admin"] },
+      "orgTypes": ["scratch", "sandbox"],
+      "enabled": true,
+      "allowFailure": true,
+      "runAtPoolFill": true
+    },
+    {
+      "id": "legacy-scratch-apex-1",
+      "label": "Run init-scratch.apex",
+      "type": "apex",
+      "parameters": { "apexScript": "scripts/apex/init-scratch.apex" },
+      "orgTypes": ["scratch"],
+      "enabled": true,
+      "allowFailure": false,
+      "runAtPoolFill": true
+    }
+  ],
+  "definitionErrors": [],
+  "stepTypes": [
+    { "type": "install-packages", "orgTypes": ["scratch", "sandbox"] },
+    { "type": "deploy-sources", "orgTypes": ["scratch"] },
+    { "type": "assign-permission-sets", "orgTypes": ["scratch", "sandbox"] },
+    { "type": "apex", "orgTypes": ["scratch", "sandbox"] },
+    { "type": "data", "orgTypes": ["scratch", "sandbox"] },
+    { "type": "command", "orgTypes": ["scratch", "sandbox"] },
+    { "type": "run-batch", "orgTypes": ["scratch", "sandbox"] },
+    { "type": "schedule-batch", "orgTypes": ["scratch", "sandbox"] },
+    { "type": "publish-community", "orgTypes": ["scratch", "sandbox"] }
+  ],
+  "scratchDef": {
+    "path": "config/project-scratch-def.json",
+    "exists": true,
+    "content": {
+      "orgName": "MyCompany CRM",
+      "edition": "Developer",
+      "hasSampleData": false,
+      "features": ["EnableSetPasswordInApi", "MaxApexCodeSize:20"],
+      "settings": {
+        "lightningExperienceSettings": { "enableS1DesktopEnabled": true }
+      }
+    },
+    "issues": []
+  },
+  "scratchOrgDuration": 7,
+  "scratchDefHints": {
+    "editions": ["Developer", "Enterprise", "Group", "Professional"],
+    "features": ["EnableSetPasswordInApi", "MaxApexCodeSize:<value>", "PersonAccounts"],
+    "settingsNames": ["lightningExperienceSettings", "mobileSettings"]
+  }
+}
