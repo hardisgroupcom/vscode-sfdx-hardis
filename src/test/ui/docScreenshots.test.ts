@@ -98,6 +98,9 @@ const TITLE_BAR_HEIGHT = 38;
 // Width of the activity bar + side bar in a capture: recordings crop it out
 // (must match SIDE_BAR_WIDTH in scripts/build-doc-images.py)
 const SIDE_BAR_WIDTH = 435;
+// SFDX_HARDIS_SCREENSHOTS_NARROW=1000: after each capture, the horizontal scrollbar check also
+// runs with the panel narrowed to that many CSS pixels, as on a laptop screen
+const NARROW_WIDTH = Number(process.env.SFDX_HARDIS_SCREENSHOTS_NARROW || 0);
 
 // The window of the run, driven through its debugging port (src/test/ui/cdpWindow.ts): no real
 // mouse, no foreground window, the same pixels on every machine
@@ -127,8 +130,96 @@ async function capture(
     });
     console.log(`      [shot] ${file} ${size.width}x${size.height}`);
     recordGate(name);
+    await recordHorizontalScrollbars(name);
   } catch (error: any) {
     console.log(`      [shot] ${name}: FAILED ${error?.message || error}`);
+  }
+}
+
+// Captures showing a horizontal scrollbar, by capture name. A panel never opens with one: the
+// last test of the suite fails when any capture of the run had one
+const horizontalScrollbars = new Map<string, string[]>();
+
+/**
+ * Records the visible elements of the panel shown that scroll horizontally (a table wider than
+ * its box, a page wider than the panel). The last capture of a name decides.
+ */
+async function recordHorizontalScrollbars(name: string): Promise<void> {
+  await recordHorizontalScrollbarsAt(name, 0);
+  if (NARROW_WIDTH > 0) {
+    await recordHorizontalScrollbarsAt(
+      `${name} @${NARROW_WIDTH}px`,
+      NARROW_WIDTH,
+    );
+  }
+}
+
+async function recordHorizontalScrollbarsAt(
+  name: string,
+  width: number,
+): Promise<void> {
+  if (width > 0) {
+    try {
+      await inWebview(
+        `panelDocument.body.style.maxWidth = "${width}px"; return true;`,
+      );
+    } catch {
+      return;
+    }
+    // Tables measure their box again on resize
+    await sleep(1500);
+  }
+  let offenders: string[] | null = null;
+  try {
+    offenders = await inWebview(`
+      // A webview kept in a background tab still answers, with the size of its hidden frame
+      const view = panelDocument.defaultView;
+      if (panelDocument.visibilityState === "hidden" || !view || view.innerWidth < 400) {
+        return null;
+      }
+      const found = [];
+      const describe = (element) => {
+        const owner = element.closest("[data-id], lightning-datatable, s-hardis-datatable") || element;
+        const label = owner.tagName.toLowerCase() + (owner.className ? "." + String(owner.className).split(" ").filter(Boolean).slice(0, 2).join(".") : "");
+        return label;
+      };
+      for (const element of deepAll(panelDocument, "*")) {
+        const overflowX = getComputedStyle(element).overflowX;
+        if (overflowX !== "auto" && overflowX !== "scroll") {
+          continue;
+        }
+        const rect = element.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) {
+          continue;
+        }
+        if (element.scrollWidth > element.clientWidth + 1) {
+          found.push(describe(element) + " (" + element.scrollWidth + "px in " + element.clientWidth + "px)");
+        }
+      }
+      const page = panelDocument.scrollingElement;
+      if (page && page.scrollWidth > page.clientWidth + 1) {
+        found.push("page (" + page.scrollWidth + "px in " + page.clientWidth + "px)");
+      }
+      return found;
+    `);
+  } catch {
+    // No webview shown (a capture of the side bar or of an editor)
+  }
+  if (width > 0) {
+    try {
+      await inWebview(`panelDocument.body.style.maxWidth = ""; return true;`);
+    } catch {
+      // The panel was closed meanwhile
+    }
+    await sleep(800);
+  }
+  if (offenders && offenders.length > 0) {
+    horizontalScrollbars.set(name, offenders);
+    console.log(
+      `      [shot] ${name}: HORIZONTAL SCROLLBAR ${offenders.join(", ")}`,
+    );
+  } else {
+    horizontalScrollbars.delete(name);
   }
 }
 
@@ -1124,7 +1215,7 @@ suite("Documentation screenshots", function () {
       settleMs: 9000,
       force: true,
     });
-    await click(1580, 104); // gear menu of the header
+    await click(1622, 104); // gear menu of the header
     await sleep(2500);
     await captureStable("pipeline-settings-menu");
     // A click elsewhere does not close a lightning menu: the panel is opened again
@@ -1136,7 +1227,7 @@ suite("Documentation screenshots", function () {
       settleMs: 9000,
       force: true,
     });
-    await click(1632, 104); // "Deployment packages" menu
+    await click(1675, 104); // "Deployment packages" menu
     await sleep(2500);
     await captureStable("pipeline-packages-menu");
     await shootPanel(panelManager, {
@@ -3081,6 +3172,63 @@ suite("Documentation screenshots", function () {
     });
   });
 
+  // Replacement Rules panel, from the rules the mocked sf CLI lists (project, uat branch file
+  // and issue #128, built-in rules), on its Rules tab
+  test("replacement rules", async function () {
+    await shootPanel(panelManager, {
+      name: "replacement-rules",
+      command: "vscode-sfdx-hardis.showReplacementRules",
+      lwcId: "s-replacement-rules",
+      ready: (initData: any) => initData.loading === false && !!initData.data,
+      settleMs: 3000,
+    });
+  });
+
+  // Other tabs of the Replacement Rules panel, and the rule editor open on a user permission
+  // removal. Coordinates are those of the 1920x982 capture of the "replacement rules" shot
+  test("replacement rules tabs and editor", async function () {
+    if (!shouldTake("replacement-rules-tabs")) {
+      this.skip();
+    }
+    const panel = {
+      command: "vscode-sfdx-hardis.showReplacementRules",
+      lwcId: "s-replacement-rules",
+      ready: (initData: any) => initData.loading === false && !!initData.data,
+      settleMs: 3000,
+      force: true,
+    };
+    await shootPanel(panelManager, {
+      ...panel,
+      name: "replacement-rules-values",
+      clicks: [{ x: 717, y: 245 }],
+    });
+    await shootPanel(panelManager, {
+      ...panel,
+      name: "replacement-rules-builtin",
+      clicks: [{ x: 895, y: 245 }],
+    });
+    await shootPanel(panelManager, {
+      ...panel,
+      name: "replacement-rules-preview",
+      settleMs: 5000,
+      clicks: [
+        { x: 1050, y: 245 },
+        { x: 630, y: 346 },
+        { x: 534, y: 526 },
+        { x: 886, y: 347 },
+      ],
+    });
+    await shootPanel(panelManager, {
+      ...panel,
+      name: "replacement-rules-editor",
+      clicks: [
+        { x: 1832, y: 439 },
+        { x: 1752, y: 480 },
+      ],
+    });
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+  });
+
   // ---------------------------------------------------------------------
   // VS Code user guides (sfdx-hardis docs/vscode-extension-*.md): the panel
   // states a guide walks through that no other capture shows, mostly an open
@@ -3482,7 +3630,7 @@ suite("Documentation screenshots", function () {
     // page, and a posted wheel never reaches the webview's scroller. Hiding the
     // feature branches is what actually shrinks the diagram, and it is a real
     // control a reader can find, right in the header.
-    await click(1515, 104); // "Show feature branches" toggle
+    await click(1555, 104); // "Show feature branches" toggle
     await sleep(2500);
     // Two levels out on top of that, so the whole row of cards fits rather than
     // being cut off at the bottom edge
@@ -3498,7 +3646,7 @@ suite("Documentation screenshots", function () {
     await vscode.commands.executeCommand("workbench.action.zoomIn");
     await vscode.commands.executeCommand("workbench.action.zoomIn");
     await sleep(1200);
-    await click(1515, 104); // put the toggle back for the captures that follow
+    await click(1555, 104); // put the toggle back for the captures that follow
     await sleep(1500);
   });
 
@@ -4408,7 +4556,7 @@ suite("Documentation screenshots", function () {
         settleMs: 9000,
         force: true,
       });
-      await click(1580, 104); // gear menu of the header
+      await click(1622, 104); // gear menu of the header
       await sleep(2500);
       await captureStable("scratch-org-pool-menu");
     } finally {
@@ -4418,6 +4566,18 @@ suite("Documentation screenshots", function () {
         fs.writeFileSync(configFile, configBefore);
       }
       await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    }
+  });
+
+  // Runs last: a panel never opens with a horizontal scrollbar, in VS Code or in a screenshot
+  test("no capture shows a horizontal scrollbar", function () {
+    const lines = [...horizontalScrollbars.entries()].map(
+      ([name, offenders]) => `${name}: ${offenders.join(", ")}`,
+    );
+    if (lines.length > 0) {
+      throw new Error(
+        `Horizontal scrollbar in ${lines.length} capture(s):${os.EOL}${lines.join(os.EOL)}`,
+      );
     }
   });
 });

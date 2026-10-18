@@ -133,7 +133,6 @@
 .toggle-wrapper {
     display: flex;
     align-items: center;
-    margin-top: 0.6rem;
 }
 
 /* The header toggle stays on one line: in a flex row the toggle shrank before anything else,

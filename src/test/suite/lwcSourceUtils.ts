@@ -73,6 +73,38 @@ export function assertKeysTranslated(keys: Iterable<string>): void {
 }
 
 /**
+ * Asserts that every key of a feature in the 9 locale files is used, holds no em-dash, and has
+ * the placeholders of its English text.
+ * @param isFeatureKey tells whether a key belongs to the feature (ex: a prefix check)
+ * @param used the keys the feature uses
+ */
+export function assertFeatureKeysUsedAndClean(
+  isFeatureKey: (key: string) => boolean,
+  used: Set<string>,
+): void {
+  const placeholders = (text: string) =>
+    (text.match(/\{\{\w+\}\}/g) || []).sort().join(",");
+  const english = loadLocale("en");
+  for (const locale of LOCALES) {
+    for (const [key, value] of Object.entries(loadLocale(locale))) {
+      if (!isFeatureKey(key)) {
+        continue;
+      }
+      assert.ok(used.has(key), `unused i18n key ${key} in ${locale}.json`);
+      assert.ok(
+        !value.includes(String.fromCharCode(0x2014)),
+        `em-dash in ${key} (${locale})`,
+      );
+      assert.strictEqual(
+        placeholders(value),
+        placeholders(english[key]),
+        `placeholders of ${key} in ${locale}.json`,
+      );
+    }
+  }
+}
+
+/**
  * The i18n keys a component names in its template (`{i18n.key}`) and in its code
  * (`this.i18n.key`, `this.t("key")`). A suite adds the keys its component composes
  * in another way (a map of label keys, a prefix), then checks they are translated.

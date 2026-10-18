@@ -1,3 +1,4 @@
+// jscpd:ignore-start
 import * as vscode from "vscode";
 import { Commands } from "../commands";
 import { LwcPanelManager } from "../lwc-panel-manager";
@@ -10,6 +11,7 @@ import { CacheManager } from "../utils/cache-manager";
 import { SecretsManager } from "../utils/secretsManager";
 import { collectProviderCredentialEnvVars } from "../utils/providerCredentials";
 import { hasGitProviderToken } from "../utils/backpromote/backpromotePanelUtils";
+// jscpd:ignore-end
 import {
   DORA_DEFAULT_PERIOD,
   DORA_PERIODS,

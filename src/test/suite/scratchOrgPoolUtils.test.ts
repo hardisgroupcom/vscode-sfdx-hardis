@@ -13,7 +13,7 @@ import {
   scratchOrgPoolCacheKey,
 } from "../../utils/scratchOrgPoolUtils";
 import {
-  LOCALES,
+  assertFeatureKeysUsedAndClean,
   assertKeysTranslated,
   assertPanelCommandWired,
   collectComponentI18nKeys,
@@ -606,31 +606,14 @@ suite("Scratch Org Pool panel", () => {
     assertKeysTranslated(keys);
     assertKeysTranslated(KEYS_OUTSIDE_THE_COMPONENT);
     // Every key of the panel in en.json is used, and holds no em-dash
-    const used = new Set([
-      ...keys,
-      ...KEYS_OUTSIDE_THE_COMPONENT,
-      ...KEYS_OF_OTHER_FEATURES,
-    ]);
-    const placeholders = (text: string) =>
-      (text.match(/\{\{\w+\}\}/g) || []).sort().join(",");
-    for (const locale of LOCALES) {
-      const translations = loadLocale(locale);
-      for (const [key, value] of Object.entries(translations)) {
-        if (!key.startsWith("scratchOrgPool")) {
-          continue;
-        }
-        assert.ok(used.has(key), `unused i18n key ${key} in ${locale}.json`);
-        assert.ok(
-          !value.includes(String.fromCharCode(0x2014)),
-          `em-dash in ${key} (${locale})`,
-        );
-        assert.strictEqual(
-          placeholders(value),
-          placeholders(loadLocale("en")[key]),
-          `placeholders of ${key} in ${locale}.json`,
-        );
-      }
-    }
+    assertFeatureKeysUsedAndClean(
+      (key) => key.startsWith("scratchOrgPool"),
+      new Set([
+        ...keys,
+        ...KEYS_OUTSIDE_THE_COMPONENT,
+        ...KEYS_OF_OTHER_FEATURES,
+      ]),
+    );
     for (const key of KEYS_OUTSIDE_THE_COMPONENT.slice(1)) {
       assert.ok(
         readSourceFile("commands/showScratchOrgPool.ts").includes(

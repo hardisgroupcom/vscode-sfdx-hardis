@@ -34,6 +34,7 @@ function viewCalls(): any[] {
   return callsOf("hardis:scratch:pool:view");
 }
 
+/* jscpd:ignore-start */
 suite("Scratch Org Pool panel UI tests", function () {
   let panelManager: any;
   let panel: any;
@@ -61,6 +62,7 @@ suite("Scratch Org Pool panel UI tests", function () {
     // What the panel shows before sfdx-hardis answers
     return { ...panel.getInitializationData() };
   }
+  /* jscpd:ignore-end */
 
   /**
    * Sends the request of the Refresh button and waits for the answer. The handler puts the

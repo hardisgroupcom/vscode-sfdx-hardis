@@ -614,6 +614,14 @@ lightning-helptext::part(icon) {
   font-size: 0.8rem;
 }
 
+/* DevOps Pipeline header: the plain icon buttons get the width of the two menu
+   buttons next to them (icon + chevron), so the five buttons of the group are the
+   same size. Lives here because synthetic-shadow scoping keeps the component's
+   stylesheet out of lightning-button-icon. */
+.slds-scope .pipeline-head-icon-button .slds-button_icon {
+  width: 2.75rem;
+}
+
 /* "+ PR" call-to-action chip emitted by branchStrategyMermaidBuilder.ts in
    the DevOps Pipeline diagram (the class is composed in TypeScript — do not
    delete as unused based on an HTML-only search). */
