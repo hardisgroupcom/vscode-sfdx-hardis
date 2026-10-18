@@ -1,7 +1,12 @@
 import * as assert from "assert";
+import * as utils from "../../utils";
 import {
   buildFunctionCommandFlags,
+  clearCustomFunctionsCache,
+  getCachedCustomFunctions,
+  loadCheckedCustomFunctions,
   quote,
+  refreshCustomFunctionsCache,
   serializeInputs,
   serializeOutputs,
 } from "../../utils/customFunctionsUtils";
@@ -162,6 +167,84 @@ suite("customFunctionsUtils", () => {
         "create",
       );
       assert.ok(flags.includes('--label "Say \\"hello\\""'));
+    });
+  });
+
+  // Pipeline Settings opens without waiting for the CLI: it reuses a catalog read with the
+  // runtime check, and the DevOps Pipeline reuses the catalog Pipeline Settings read
+  suite("catalog cache", () => {
+    const utilsModule = utils as any;
+    const originalExecSfdxJson = utilsModule.execSfdxJson;
+    let commands: string[] = [];
+
+    const originalDateNow = Date.now;
+
+    setup(() => {
+      clearCustomFunctionsCache();
+      commands = [];
+      utilsModule.execSfdxJson = async (command: string) => {
+        commands.push(command);
+        const checked = command.includes("--check-runtimes");
+        return {
+          status: 0,
+          result: {
+            customFunctions: [
+              {
+                id: "notify",
+                runtime: "node",
+                script: "scripts/notify.js",
+                ...(checked ? { runtimeAvailable: true } : {}),
+              },
+            ],
+          },
+        };
+      };
+    });
+
+    teardown(() => {
+      utilsModule.execSfdxJson = originalExecSfdxJson;
+      Date.now = originalDateNow;
+      clearCustomFunctionsCache();
+    });
+
+    test("a catalog read without the runtime check is not offered to Pipeline Settings", async () => {
+      await refreshCustomFunctionsCache();
+      assert.strictEqual(
+        getCachedCustomFunctions({ withRuntimes: true }),
+        null,
+      );
+      assert.strictEqual(getCachedCustomFunctions()?.length, 1);
+    });
+
+    test("loads made at the same time start the CLI once, and fill the cache", async () => {
+      const [first, second] = await Promise.all([
+        loadCheckedCustomFunctions(),
+        loadCheckedCustomFunctions(),
+      ]);
+      assert.strictEqual(commands.length, 1);
+      assert.ok(commands[0].includes("--check-runtimes"));
+      assert.strictEqual(first, second);
+      const cached = getCachedCustomFunctions({ withRuntimes: true });
+      assert.strictEqual(cached?.[0].runtimeAvailable, true);
+      // The DevOps Pipeline reads the same catalog
+      assert.strictEqual(getCachedCustomFunctions(), cached);
+    });
+
+    test("a load after the previous one ended reads the catalog again", async () => {
+      await loadCheckedCustomFunctions();
+      await loadCheckedCustomFunctions();
+      assert.strictEqual(commands.length, 2);
+    });
+
+    test("an expired checked catalog is replaced by the read of the DevOps Pipeline", async () => {
+      await loadCheckedCustomFunctions();
+      const now = originalDateNow();
+      Date.now = () => now + 31 * 60 * 1000;
+      assert.strictEqual(getCachedCustomFunctions(), null);
+      await refreshCustomFunctionsCache();
+      const cached = getCachedCustomFunctions();
+      assert.strictEqual(cached?.length, 1);
+      assert.strictEqual(cached?.[0].runtimeAvailable, undefined);
     });
   });
 });

@@ -36,6 +36,12 @@
               <span>{validationError}</span>
             </div>
           </template>
+          <!-- A custom function action has no form nor checks until the catalog is there -->
+          <template if:true={customFunctionsLoading}>
+            <div class="hardis-note slds-m-bottom_medium" role="status">
+              {i18n.loadingCustomFunctions}
+            </div>
+          </template>
           <div class="slds-grid slds-wrap slds-gutters">
             <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
               <div class="slds-form-element">
@@ -820,6 +826,7 @@
             <lightning-button class="hardis-btn-tinted-blue"
               variant="neutral"
               label={i18n.saveLabel}
+              disabled={customFunctionsLoading}
               onclick={handleSave}
             ></lightning-button>
           </template>

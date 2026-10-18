@@ -79,6 +79,8 @@ export interface SfdxHardisConfigEditorInput {
   projectSfdmuWorkspaces?: Array<{ label: string; value: string }>;
   // Custom functions of the project: deployment action types backed by a project script
   customFunctions?: CustomFunctionDefinition[];
+  // True while the catalog is read in the background: the Functions tab shows a spinner
+  customFunctionsLoading?: boolean;
 }
 
 export interface SfdxHardisConfigEditorSaveData {

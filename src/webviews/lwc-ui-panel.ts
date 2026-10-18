@@ -32,7 +32,12 @@ export class LwcUiPanel {
    * panel title to know whether a command is still running.
    */
   public commandStatus:
-    "pending" | "running" | "completed" | "error" | "aborted" | null = null;
+    | "pending"
+    | "running"
+    | "completed"
+    | "error"
+    | "aborted"
+    | null = null;
 
   /**
    * Provisional context id of the background run a command-execution panel
@@ -341,6 +346,19 @@ export class LwcUiPanel {
       type: "state",
       data: this.initializationData,
     });
+  }
+
+  /**
+   * Merges fields into the initialization data without posting anything. A webview that has
+   * not booted yet drops the messages posted to it: data that arrives meanwhile must also be
+   * part of what it receives once it is ready.
+   * @param patch The fields to change
+   */
+  public mergeInitializationData(patch: any): void {
+    if (this._isDisposed || !this.initializationData) {
+      return;
+    }
+    this.initializationData = { ...this.initializationData, ...patch };
   }
 
   /**
@@ -939,8 +957,9 @@ export class LwcUiPanel {
         return;
       }
       // Heavy module: loaded on demand, not with every panel
-      const gitProviderModule =
-        await import("../utils/gitProviders/gitProvider");
+      const gitProviderModule = await import(
+        "../utils/gitProviders/gitProvider"
+      );
       const gitProvider = await gitProviderModule.GitProvider.getInstance();
       const prNumber = gitProvider?.isActive
         ? parsePullRequestNumberFromUrl(url, gitProvider.repoInfo?.webUrl)
