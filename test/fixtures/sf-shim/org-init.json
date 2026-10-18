@@ -70,7 +70,11 @@
   "scratchOrgDuration": 7,
   "scratchDefHints": {
     "editions": ["Developer", "Enterprise", "Group", "Professional"],
-    "features": ["EnableSetPasswordInApi", "MaxApexCodeSize:<value>", "PersonAccounts"],
+    "features": [
+      "EnableSetPasswordInApi",
+      "MaxApexCodeSize:<value>",
+      "PersonAccounts"
+    ],
     "settingsNames": ["lightningExperienceSettings", "mobileSettings"]
   }
 }
