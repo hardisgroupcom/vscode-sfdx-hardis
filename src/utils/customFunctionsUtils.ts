@@ -122,12 +122,9 @@ export function refreshCustomFunctionsCache(): Promise<
     catalogRefresh = listCustomFunctions()
       .then((functions) => {
         // A catalog read with the runtime check meanwhile holds more: it stays
-        if (
-          !(
-            catalogCache?.runtimesChecked &&
-            catalogCache.signature === signature
-          )
-        ) {
+        if (!(
+          catalogCache?.runtimesChecked && catalogCache.signature === signature
+        )) {
           catalogCache = {
             signature,
             at: Date.now(),
