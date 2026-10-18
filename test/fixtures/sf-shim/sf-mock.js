@@ -969,6 +969,60 @@ async function main() {
           ),
       };
     }
+    // The options that read an org: the Dev Hub values, settings, and the features of an org shape.
+    // SF_MOCK_ORG_INIT_NO_ORG=true answers as a project with no Dev Hub and no default org.
+    const needsOrg =
+      args.includes("--org-values") ||
+      args.includes("--import-settings") ||
+      args.includes("--import-features-from-shape");
+    if (needsOrg && process.env.SF_MOCK_ORG_INIT_NO_ORG === "true") {
+      console.log(
+        JSON.stringify({
+          name: "SfError",
+          message:
+            "No org to read from: pass --source-org, or set a default Dev Hub or a default org.",
+          status: 1,
+          stack: "",
+        }),
+      );
+      return 1;
+    }
+    if (args.includes("--org-values")) {
+      payload.orgValues = {
+        orgUsername: "devhub@mycompany.com",
+        languages: [
+          { value: "en_US", label: "English" },
+          { value: "fr", label: "French" },
+          { value: "de", label: "German" },
+        ],
+        countries: [
+          { value: "FR", label: "France" },
+          { value: "DE", label: "Germany" },
+          { value: "US", label: "United States" },
+        ],
+        releases: {
+          current: { version: "68.0", label: "Winter '27" },
+          previous: { version: "67.0", label: "Summer '26" },
+          preview: { version: "69.0", label: "Spring '27" },
+        },
+      };
+    }
+    const importSettingsIndex = args.indexOf("--import-settings");
+    if (importSettingsIndex >= 0) {
+      const names = String(args[importSettingsIndex + 1] || "").split(",");
+      const settings = {};
+      for (const name of names) {
+        settings[name] = { enableMockSetting: true, mockLimit: 5 };
+      }
+      payload.importedSettings = { settings, errors: [] };
+    }
+    if (args.includes("--import-features-from-shape")) {
+      payload.importedShape = {
+        shapeId: "3SR000000000001",
+        features: ["PersonAccounts", "MaxApexCodeSize:40", "MockShapeFeature"],
+        settings: null,
+      };
+    }
     outputJsonIfRequested({ status: 0, result: payload }, "");
     return 0;
   }

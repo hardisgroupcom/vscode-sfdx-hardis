@@ -3,7 +3,11 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { Commands } from "../commands";
-import { execSfdxJson, getWorkspaceRoot } from "../utils";
+import {
+  execSfdxJson,
+  execSfdxJsonWithProgress,
+  getWorkspaceRoot,
+} from "../utils";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { Logger } from "../logger";
 import { t } from "../i18n/i18n";
@@ -40,6 +44,8 @@ export function registerShowOrgInit(commands: Commands) {
           const data = await loadOrgInitPanelData();
           lastConfig = data.config;
           panel.sendInitializationData({ loading: false, ...data });
+          // Languages, countries and releases need an org: they follow, the form works without them
+          void loadAndPushOrgValues(panel);
         } catch (e: any) {
           Logger.log(
             "[vscode-sfdx-hardis] Org Initialization init failed: " +
@@ -78,6 +84,10 @@ export function registerShowOrgInit(commands: Commands) {
           });
         } else if (type === "saveScratchDef") {
           await saveScratchDef(panel, configHelper, data);
+        } else if (type === "importScratchDefSettings") {
+          await importScratchDefSettings(panel, data);
+        } else if (type === "importScratchDefFeatures") {
+          await importScratchDefFeatures(panel, data);
         } else if (type === "runOrgInit") {
           const stepIds: string[] = Array.isArray(data.stepIds)
             ? data.stepIds
@@ -123,14 +133,19 @@ async function loadOrgInitPanelData(): Promise<Record<string, any>> {
     apexScripts,
     sfdmuWorkspaces,
     permissionSets,
-    orgs,
+    connectedOrgs,
     customFunctions,
   ] = await Promise.all([
-    execSfdxJson("sf hardis:config:org-init --json"),
+    // Not a result of the last 20 seconds: a Refresh or the reload after a save reads the file again
+    execSfdxJson("sf hardis:config:org-init --json", {
+      fail: false,
+      output: false,
+      reuseRecentResult: false,
+    }),
     listProjectApexScripts(),
     listProjectDataWorkspaces(),
     listProjectPermissionSets(),
-    listOrgsToInitialize(),
+    listConnectedOrgs(),
     listCustomFunctions(),
   ]);
   if (!configRes?.result || configRes.status !== 0) {
@@ -146,25 +161,106 @@ async function loadOrgInitPanelData(): Promise<Record<string, any>> {
     sfdmuWorkspaces,
     permissionSets,
     customFunctions,
-    orgs,
+    orgs: listOrgsToInitialize(connectedOrgs),
+    sourceOrgs: listImportSourceOrgs(connectedOrgs),
   };
 }
 
-// Scratch orgs and sandboxes: hardis:org:init refuses production orgs
-async function listOrgsToInitialize(): Promise<any[]> {
+// Read from the default Dev Hub, else the default org. Without one, the form keeps text inputs.
+async function loadAndPushOrgValues(panel: {
+  sendMessage: (message: any) => void;
+}): Promise<void> {
+  try {
+    const res = await execSfdxJson(
+      "sf hardis:config:org-init --org-values --agent --json",
+      { fail: false, output: false, reuseRecentResult: false },
+    );
+    panel.sendMessage({
+      type: "scratchDefOrgValues",
+      data: {
+        orgValues: res?.status === 0 ? res?.result?.orgValues || null : null,
+      },
+    });
+  } catch (e: any) {
+    Logger.log(
+      "[vscode-sfdx-hardis] Org Initialization: no org values: " +
+        (e?.message || e),
+    );
+    panel.sendMessage({
+      type: "scratchDefOrgValues",
+      data: { orgValues: null },
+    });
+  }
+}
+
+async function importScratchDefSettings(
+  panel: { sendMessage: (message: any) => void },
+  data: any,
+): Promise<void> {
+  const sourceOrg = String(data?.sourceOrg || "");
+  const settingsNames: string[] = Array.isArray(data?.settingsNames)
+    ? data.settingsNames.map(String)
+    : [];
+  const unsafe = [sourceOrg, ...settingsNames].filter(
+    (value) => !SAFE_COMMAND_ARGUMENT.test(value),
+  );
+  if (settingsNames.length === 0 || unsafe.length > 0) {
+    panel.sendMessage({
+      type: "scratchDefImportDone",
+      data: {
+        error: t("orgInitInvalidRunArguments", { values: unsafe.join(", ") }),
+      },
+    });
+    return;
+  }
+  const res = await execSfdxJsonWithProgress(
+    `sf hardis:config:org-init --import-settings ${settingsNames.join(",")} --source-org ${sourceOrg} --agent --json`,
+    { fail: false, output: false, reuseRecentResult: false },
+    t("orgInitImportingSettings", { org: sourceOrg }),
+  );
+  panel.sendMessage({
+    type: "scratchDefImportDone",
+    data:
+      res?.status === 0
+        ? {
+            settings: res.result?.importedSettings?.settings || {},
+            errors: res.result?.importedSettings?.errors || [],
+          }
+        : { error: res?.message || res?.errorMessage || "" },
+  });
+}
+
+// Creating an org shape takes minutes: the progress notification stays until it is active
+async function importScratchDefFeatures(
+  panel: { sendMessage: (message: any) => void },
+  data: any,
+): Promise<void> {
+  const sourceOrg = String(data?.sourceOrg || "");
+  if (!SAFE_COMMAND_ARGUMENT.test(sourceOrg)) {
+    panel.sendMessage({
+      type: "scratchDefImportDone",
+      data: { error: t("orgInitInvalidRunArguments", { values: sourceOrg }) },
+    });
+    return;
+  }
+  const res = await execSfdxJsonWithProgress(
+    `sf hardis:config:org-init --import-features-from-shape --source-org ${sourceOrg} --agent --json`,
+    { fail: false, output: false, reuseRecentResult: false },
+    t("orgInitImportingFeatures", { org: sourceOrg }),
+  );
+  panel.sendMessage({
+    type: "scratchDefImportDone",
+    data:
+      res?.status === 0
+        ? { features: res.result?.importedShape?.features || [] }
+        : { error: res?.message || res?.errorMessage || "" },
+  });
+}
+
+async function listConnectedOrgs(): Promise<any[]> {
   try {
     // Not from the cache: the org to initialize is often the one created a minute ago
-    const orgs = await listAllOrgs(false, false, true);
-    return orgs
-      .filter((org) => org.orgType === "scratch" || org.orgType === "sandbox")
-      .map((org) => ({
-        label:
-          (org.alias ? `${org.alias} (${org.username})` : org.username) +
-          (org.isDefaultUsername ? ` - ${t("orgInitDefaultOrg")}` : ""),
-        value: org.username,
-        orgType: org.orgType,
-        isDefault: org.isDefaultUsername,
-      }));
+    return await listAllOrgs(false, false, true);
   } catch (e: any) {
     Logger.log(
       "[vscode-sfdx-hardis] Org Initialization: unable to list orgs: " +
@@ -172,6 +268,29 @@ async function listOrgsToInitialize(): Promise<any[]> {
     );
     return [];
   }
+}
+
+// Scratch orgs and sandboxes: hardis:org:init refuses production orgs
+function listOrgsToInitialize(orgs: any[]): any[] {
+  return orgs
+    .filter((org) => org.orgType === "scratch" || org.orgType === "sandbox")
+    .map((org) => ({
+      label:
+        (org.alias ? `${org.alias} (${org.username})` : org.username) +
+        (org.isDefaultUsername ? ` - ${t("orgInitDefaultOrg")}` : ""),
+      value: org.username,
+      orgType: org.orgType,
+      isDefault: org.isDefaultUsername,
+    }));
+}
+
+// Any connected org can give its settings, production included: nothing is written in it
+// (an org shape is a record the org keeps)
+function listImportSourceOrgs(orgs: any[]): any[] {
+  return orgs.map((org) => ({
+    label: org.alias ? `${org.alias} (${org.username})` : org.username,
+    value: org.username,
+  }));
 }
 
 // Writes the definition to a temporary file and lets the CLI validate it, as scratch:create would.

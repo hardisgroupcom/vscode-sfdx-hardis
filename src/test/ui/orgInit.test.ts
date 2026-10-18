@@ -179,6 +179,117 @@ suite("Org Initialization panel UI tests", function () {
     assert.strictEqual(after, before, "the file is unchanged");
   });
 
+  test("the languages, countries and releases of the Dev Hub follow the panel data", async function () {
+    await openLoadedPanel();
+    const sent = recordSentMessages(panel);
+    panel.simulateWebviewMessage({ type: "refresh" });
+    const answer = await waitFor(
+      () => sent.find((message) => message.type === "scratchDefOrgValues"),
+      30000,
+      "the org values",
+    );
+    assert.strictEqual(answer.data.orgValues.releases.current.version, "68.0");
+    assert.strictEqual(
+      answer.data.orgValues.releases.preview.label,
+      "Spring '27",
+    );
+    assert.ok(answer.data.orgValues.languages.length > 0);
+    const call = callsOf("hardis:config:org-init")
+      .filter((entry) => entry.args.includes("--org-values"))
+      .pop();
+    assert.ok(call, "the org values come from the CLI");
+    assert.ok(call.args.includes("--agent"));
+  });
+
+  test("without a Dev Hub nor a default org, the form keeps its text inputs", async function () {
+    process.env.SF_MOCK_ORG_INIT_NO_ORG = "true";
+    try {
+      await openLoadedPanel();
+      const sent = recordSentMessages(panel);
+      // A call of the previous test can still be running, and identical calls share their answer:
+      // refresh until an answer of this test arrives
+      let answer: any = null;
+      for (let attempt = 0; attempt < 4 && !answer; attempt++) {
+        sent.length = 0;
+        panel.simulateWebviewMessage({ type: "refresh" });
+        const received = await waitFor(
+          () => sent.find((message) => message.type === "scratchDefOrgValues"),
+          30000,
+          "the org values answer",
+        );
+        answer = received.data.orgValues === null ? received : null;
+      }
+      assert.ok(answer, "no org: the panel gets no org values");
+    } finally {
+      delete process.env.SF_MOCK_ORG_INIT_NO_ORG;
+    }
+  });
+
+  test("settings are imported from an org with the CLI", async function () {
+    await openLoadedPanel();
+    const sent = recordSentMessages(panel);
+    panel.simulateWebviewMessage({
+      type: "importScratchDefSettings",
+      data: {
+        sourceOrg: "prod@mycompany.com",
+        settingsNames: ["mobileSettings", "lightningExperienceSettings"],
+      },
+    });
+    const answer = await waitFor(
+      () => sent.find((message) => message.type === "scratchDefImportDone"),
+      30000,
+      "the settings import",
+    );
+    assert.deepStrictEqual(Object.keys(answer.data.settings), [
+      "mobileSettings",
+      "lightningExperienceSettings",
+    ]);
+    const commandLine = callsOf("hardis:config:org-init")
+      .filter((entry) => entry.args.includes("--import-settings"))
+      .pop()
+      .args.join(" ");
+    assert.ok(
+      commandLine.includes(
+        "--import-settings mobileSettings,lightningExperienceSettings",
+      ),
+      commandLine,
+    );
+    assert.ok(
+      commandLine.includes("--source-org prod@mycompany.com"),
+      commandLine,
+    );
+  });
+
+  test("features are imported from an org shape, and an unsafe org name is refused", async function () {
+    await openLoadedPanel();
+    const sent = recordSentMessages(panel);
+    panel.simulateWebviewMessage({
+      type: "importScratchDefFeatures",
+      data: { sourceOrg: "prod@mycompany.com" },
+    });
+    const answer = await waitFor(
+      () => sent.find((message) => message.type === "scratchDefImportDone"),
+      30000,
+      "the features import",
+    );
+    assert.ok(answer.data.features.includes("MaxApexCodeSize:40"));
+    sent.length = 0;
+    panel.simulateWebviewMessage({
+      type: "importScratchDefFeatures",
+      data: { sourceOrg: "x;echo hacked" },
+    });
+    const refused = await waitFor(
+      () => sent.find((message) => message.type === "scratchDefImportDone"),
+      10000,
+      "the refusal",
+    );
+    assert.ok(refused.data.error, "an error is answered");
+    const hacked = callsOf("hardis:config:org-init").filter((call) =>
+      call.args.join(" ").includes("hacked"),
+    );
+    assert.strictEqual(hacked.length, 0, "the CLI must not run");
+  });
+
   test("Run now runs sf hardis:org:init with the selected steps and the org", async function () {
     await openLoadedPanel();
     const knownCalls = callsOf("hardis:org:init").length;

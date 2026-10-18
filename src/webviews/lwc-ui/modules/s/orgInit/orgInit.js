@@ -23,6 +23,9 @@ const SCRATCH_DEF_FORM_FIELDS = [
   "settings",
 ];
 
+// Features that take a number are listed by Salesforce CLI as "Name:<value>"
+const VALUE_FEATURE_SUFFIX = ":<value>";
+
 export default class OrgInit extends SharedMixin(LightningElement) {
   // Loading state of the SharedMixin contract: the panel opens on its spinner, before the CLI answers
   @track loading = true;
@@ -56,7 +59,21 @@ export default class OrgInit extends SharedMixin(LightningElement) {
 
   // Scratch org definition editor
   @track scratchDef = {};
-  @track featuresText = "";
+  // Options of the features list: the known ones, or the literal value of a feature Salesforce CLI does not know
+  @track selectedFeatures = [];
+  // Number of each selected "Name:<value>" feature, by name
+  @track featureValues = {};
+  @track customFeatures = [];
+  // Languages, countries and releases of the default Dev Hub (or default org), null until it answers
+  @track orgValues = null;
+  // Import of settings or features from an org: null, "settings" or "features"
+  @track importMode = null;
+  @track sourceOrgs = [];
+  @track importSourceOrg = "";
+  @track importSettingsNames = [];
+  @track importError = "";
+  @track importNotes = [];
+  @track importing = false;
   @track settingsText = "";
   @track rawScratchDefText = "";
   @track scratchOrgDuration = "";
@@ -86,6 +103,7 @@ export default class OrgInit extends SharedMixin(LightningElement) {
     this.permissionSets = data.permissionSets || [];
     this.customFunctions = data.customFunctions || [];
     this.orgs = data.orgs || [];
+    this.sourceOrgs = data.sourceOrgs || [];
     const defaultOrg = this.orgs.find((org) => org.isDefault);
     if (!this.orgs.find((org) => org.value === this.targetOrg)) {
       this.targetOrg = defaultOrg ? defaultOrg.value : "";
@@ -112,6 +130,12 @@ export default class OrgInit extends SharedMixin(LightningElement) {
         this.scratchDefIssues = [];
         this.scratchDefWarnings = data?.warnings || [];
         this.scratchDefDirty = false;
+        break;
+      case "scratchDefOrgValues":
+        this.orgValues = data?.orgValues || null;
+        break;
+      case "scratchDefImportDone":
+        this._applyImport(data || {});
         break;
       case "orgInitStepsSaveFailed":
         // The steps stay unsaved: Save is offered again
@@ -501,12 +525,69 @@ export default class OrgInit extends SharedMixin(LightningElement) {
     return values.map((edition) => ({ label: edition, value: edition }));
   }
 
+  // With the Dev Hub API versions, each choice names its release: Same as the Dev Hub (Winter '27, API 68.0)
   get releaseOptions() {
+    const releases = this.orgValues?.releases || {};
+    const option = (value, key, release) => ({
+      value,
+      label: release?.version
+        ? this.t(`${key}Version`, {
+            release: release.label
+              ? `${release.label}, API ${release.version}`
+              : `API ${release.version}`,
+          })
+        : this.t(key),
+    });
     return [
-      { label: this.t("orgInitReleaseCurrent"), value: "" },
-      { label: this.t("orgInitReleasePreview"), value: "preview" },
-      { label: this.t("orgInitReleasePrevious"), value: "previous" },
+      option("", "orgInitReleaseCurrent", releases.current),
+      option("preview", "orgInitReleasePreview", releases.preview),
+      option("previous", "orgInitReleasePrevious", releases.previous),
     ];
+  }
+
+  get hasLanguageOptions() {
+    return (this.orgValues?.languages || []).length > 0;
+  }
+
+  get hasCountryOptions() {
+    return (this.orgValues?.countries || []).length > 0;
+  }
+
+  get languageOptions() {
+    return this._localeOptions(
+      this.orgValues?.languages,
+      this.scratchDef.language,
+    );
+  }
+
+  get countryOptions() {
+    return this._localeOptions(
+      this.orgValues?.countries,
+      this.scratchDef.country,
+    );
+  }
+
+  get scratchDefLanguage() {
+    return this.scratchDef.language || "";
+  }
+
+  get scratchDefCountry() {
+    return this.scratchDef.country || "";
+  }
+
+  // Empty means the value of the Dev Hub. A value the org does not list stays selectable.
+  _localeOptions(values, current) {
+    const options = [{ label: this.t("orgInitSameAsDevHub"), value: "" }];
+    for (const value of values || []) {
+      options.push({
+        label: `${value.label} (${value.value})`,
+        value: value.value,
+      });
+    }
+    if (current && !options.find((option) => option.value === current)) {
+      options.push({ label: current, value: current });
+    }
+    return options;
   }
 
   get scratchDefRelease() {
@@ -525,6 +606,10 @@ export default class OrgInit extends SharedMixin(LightningElement) {
     return this.rawMode
       ? this.t("orgInitShowForm")
       : this.t("orgInitShowRawJson");
+  }
+
+  get rawModeIcon() {
+    return this.rawMode ? "utility:form" : "utility:edit";
   }
 
   get allScratchDefIssues() {
@@ -567,11 +652,297 @@ export default class OrgInit extends SharedMixin(LightningElement) {
     return this.t("orgInitFeaturesHint", { count });
   }
 
+  get featureOptions() {
+    const known = (this.config?.scratchDefHints?.features || []).map(
+      (feature) => ({
+        value: feature,
+        label: feature.endsWith(VALUE_FEATURE_SUFFIX)
+          ? this.t("orgInitFeatureWithNumber", {
+              name: feature.slice(0, -VALUE_FEATURE_SUFFIX.length),
+            })
+          : feature,
+      }),
+    );
+    const custom = this.customFeatures.map((feature) => ({
+      value: feature,
+      label: feature,
+    }));
+    return [...custom, ...known];
+  }
+
+  // Getters, never {i18n.x}, on the dual listbox labels
+  get featuresSourceLabel() {
+    return this.t("availableLabel");
+  }
+
+  get featuresSelectedLabel() {
+    return this.t("orgInitFeaturesSelected");
+  }
+
+  get settingsNamesSourceLabel() {
+    return this.t("availableLabel");
+  }
+
+  get settingsNamesSelectedLabel() {
+    return this.t("orgInitSettingsToImport");
+  }
+
+  get numberFeatures() {
+    return this.selectedFeatures
+      .filter((feature) => feature.endsWith(VALUE_FEATURE_SUFFIX))
+      .map((feature) => {
+        const name = feature.slice(0, -VALUE_FEATURE_SUFFIX.length);
+        return { name, value: this.featureValues[name] || "" };
+      });
+  }
+
+  get hasNumberFeatures() {
+    return this.numberFeatures.length > 0;
+  }
+
+  get settingsNameOptions() {
+    return (this.config?.scratchDefHints?.settingsNames || []).map((name) => ({
+      label: name,
+      value: name,
+    }));
+  }
+
+  get isImportSettings() {
+    return this.importMode === "settings";
+  }
+
+  get showImportBox() {
+    return this.importMode !== null;
+  }
+
+  get importTitle() {
+    return this.importMode === "settings"
+      ? this.t("orgInitImportSettingsTitle")
+      : this.t("orgInitImportFeaturesTitle");
+  }
+
+  get importHint() {
+    return this.importMode === "settings"
+      ? this.t("orgInitImportSettingsHint")
+      : this.t("orgInitImportFeaturesHint");
+  }
+
+  get importDisabled() {
+    return (
+      this.importing ||
+      !this.importSourceOrg ||
+      (this.importMode === "settings" && this.importSettingsNames.length === 0)
+    );
+  }
+
+  get importButtonLabel() {
+    return this.importing
+      ? this.t("orgInitImporting")
+      : this.t("orgInitImport");
+  }
+
+  get hasImportNotes() {
+    return this.importNotes.length > 0;
+  }
+
+  get importNoteItems() {
+    return this.importNotes.map((text, index) => ({
+      key: `note-${index}`,
+      text,
+    }));
+  }
+
+  handleOpenFeaturesDoc() {
+    this._openExternal(this.config?.scratchDefHints?.featuresDocUrl);
+  }
+
+  handleOpenSettingsDoc() {
+    this._openExternal(this.config?.scratchDefHints?.settingsDocUrl);
+  }
+
+  _openExternal(url) {
+    if (url) {
+      window.sendMessageToVSCode({ type: "openExternal", data: { url } });
+    }
+  }
+
+  handleShowImportSettings() {
+    this._openImport("settings");
+    // The settings already in the definition are the ones to refresh, by default
+    const built = this._buildScratchDefContent();
+    const known = this.config?.scratchDefHints?.settingsNames || [];
+    this.importSettingsNames = Object.keys(
+      built.content?.settings || {},
+    ).filter((name) => known.includes(name));
+  }
+
+  handleShowImportFeatures() {
+    this._openImport("features");
+  }
+
+  _openImport(mode) {
+    this.importMode = mode;
+    this.importError = "";
+    this.importNotes = [];
+    if (!this.sourceOrgs.find((org) => org.value === this.importSourceOrg)) {
+      const devHub = this.sourceOrgs.find(
+        (org) => org.value === this.orgValues?.orgUsername,
+      );
+      this.importSourceOrg = devHub ? devHub.value : "";
+    }
+  }
+
+  handleCancelImport() {
+    this.importMode = null;
+    this.importing = false;
+  }
+
+  handleImportSourceOrgChange(event) {
+    this.importSourceOrg = event.detail.value;
+  }
+
+  handleImportSettingsNamesChange(event) {
+    this.importSettingsNames = event.detail.value || [];
+  }
+
+  handleRunImport() {
+    this.importing = true;
+    this.importError = "";
+    this.importNotes = [];
+    window.sendMessageToVSCode({
+      type:
+        this.importMode === "settings"
+          ? "importScratchDefSettings"
+          : "importScratchDefFeatures",
+      data: {
+        sourceOrg: this.importSourceOrg,
+        settingsNames: [...this.importSettingsNames],
+      },
+    });
+  }
+
+  // Imported values are merged: an imported settings type replaces the one of the definition,
+  // imported features are added to the selected ones
+  _applyImport(data) {
+    this.importing = false;
+    if (!this.importMode) {
+      return;
+    }
+    if (data.error) {
+      this.importError = data.error;
+      return;
+    }
+    if (this.importMode === "settings") {
+      const built = this._buildScratchDefContent();
+      const settings = {
+        ...(built.content?.settings || {}),
+        ...(data.settings || {}),
+      };
+      this.settingsText = JSON.stringify(settings, null, 2);
+      this.importNotes = [
+        this.t("orgInitSettingsImported", {
+          count: Object.keys(data.settings || {}).length,
+        }),
+        ...(data.errors || []),
+      ];
+    } else {
+      const current = this._buildFeatureList().features;
+      const currentNames = current.map((feature) =>
+        feature.split(":")[0].toLowerCase(),
+      );
+      const added = (data.features || []).filter(
+        (feature) =>
+          !currentNames.includes(String(feature).split(":")[0].toLowerCase()),
+      );
+      this._setFeaturesFromList([...current, ...added]);
+      this.importNotes = [
+        this.t("orgInitFeaturesImported", { count: added.length }),
+      ];
+    }
+    this.importMode = null;
+    this._onScratchDefChanged();
+  }
+
+  handleFeaturesSelectionChange(event) {
+    this.selectedFeatures = event.detail.value || [];
+    this._onScratchDefChanged();
+  }
+
+  handleFeatureValueChange(event) {
+    this.featureValues = {
+      ...this.featureValues,
+      [event.target.dataset.name]: event.target.value || "",
+    };
+    this._onScratchDefChanged();
+  }
+
+  // Maps the features of the definition to the options of the list, and their numbers aside
+  _setFeaturesFromList(features) {
+    const known = this.config?.scratchDefHints?.features || [];
+    const byLowerName = new Map(
+      known.map((feature) => [feature.toLowerCase(), feature]),
+    );
+    const selected = [];
+    const values = {};
+    const custom = [];
+    for (const rawFeature of features || []) {
+      const feature = String(rawFeature).trim();
+      if (!feature) {
+        continue;
+      }
+      const separator = feature.indexOf(":");
+      const name = separator >= 0 ? feature.substring(0, separator) : feature;
+      const plain = byLowerName.get(feature.toLowerCase());
+      const withValue =
+        separator >= 0
+          ? byLowerName.get(
+              `${name.toLowerCase()}${VALUE_FEATURE_SUFFIX.toLowerCase()}`,
+            )
+          : undefined;
+      if (plain) {
+        if (!selected.includes(plain)) {
+          selected.push(plain);
+        }
+      } else if (withValue) {
+        if (!selected.includes(withValue)) {
+          selected.push(withValue);
+          values[withValue.slice(0, -VALUE_FEATURE_SUFFIX.length)] =
+            feature.substring(separator + 1);
+        }
+      } else if (!selected.includes(feature)) {
+        custom.push(feature);
+        selected.push(feature);
+      }
+    }
+    this.selectedFeatures = selected;
+    this.featureValues = values;
+    this.customFeatures = custom;
+  }
+
+  _buildFeatureList() {
+    const features = [];
+    const issues = [];
+    for (const feature of this.selectedFeatures) {
+      if (!feature.endsWith(VALUE_FEATURE_SUFFIX)) {
+        features.push(feature);
+        continue;
+      }
+      const name = feature.slice(0, -VALUE_FEATURE_SUFFIX.length);
+      const value = String(this.featureValues[name] ?? "").trim();
+      if (/^[0-9]+$/.test(value)) {
+        features.push(`${name}:${value}`);
+      } else {
+        issues.push(this.t("orgInitFeatureNumberMissing", { name }));
+      }
+    }
+    return { features, issues };
+  }
+
   _loadScratchDef(config) {
     const content = config?.scratchDef?.content;
     this.scratchDef =
       content && typeof content === "object" ? { ...content } : {};
-    this.featuresText = (this.scratchDef.features || []).join("\n");
+    this._setFeaturesFromList(this.scratchDef.features || []);
     this.settingsText = this.scratchDef.settings
       ? JSON.stringify(this.scratchDef.settings, null, 2)
       : "";
@@ -606,11 +977,6 @@ export default class OrgInit extends SharedMixin(LightningElement) {
     this._onScratchDefChanged();
   }
 
-  handleFeaturesChange(event) {
-    this.featuresText = event.target.value || "";
-    this._onScratchDefChanged();
-  }
-
   handleSettingsChange(event) {
     this.settingsText = event.target.value || "";
     this._onScratchDefChanged();
@@ -636,7 +1002,7 @@ export default class OrgInit extends SharedMixin(LightningElement) {
     }
     if (this.rawMode) {
       this.scratchDef = { ...built.content };
-      this.featuresText = (built.content.features || []).join("\n");
+      this._setFeaturesFromList(built.content.features || []);
       this.settingsText = built.content.settings
         ? JSON.stringify(built.content.settings, null, 2)
         : "";
@@ -766,10 +1132,7 @@ export default class OrgInit extends SharedMixin(LightningElement) {
     if (this.scratchDef.hasSampleData === true) {
       content.hasSampleData = true;
     }
-    const features = (this.featuresText || "")
-      .split(/\r?\n/)
-      .map((feature) => feature.trim())
-      .filter(Boolean);
+    const { features, issues } = this._buildFeatureList();
     if (features.length > 0) {
       content.features = features;
     }
@@ -796,6 +1159,7 @@ export default class OrgInit extends SharedMixin(LightningElement) {
         };
       }
     }
-    return { content, issues: [] };
+    // A missing number blocks the save, not the switch to the raw JSON
+    return { content, issues };
   }
 }

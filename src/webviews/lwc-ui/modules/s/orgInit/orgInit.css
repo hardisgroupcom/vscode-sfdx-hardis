@@ -15,9 +15,21 @@
   min-width: 20rem;
 }
 
+/* Same height as the inputs of the row, so the toggle sits on their line */
 .org-init-toggle {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
+  min-height: 2rem;
+}
+
+/* Field label on the left, its documentation and import buttons on the right */
+.org-init-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 /* Room for the spinner, which is positioned inside its block */

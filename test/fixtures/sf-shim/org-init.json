@@ -75,6 +75,11 @@
       "MaxApexCodeSize:<value>",
       "PersonAccounts"
     ],
-    "settingsNames": ["lightningExperienceSettings", "mobileSettings"]
+    "settingsNames": ["lightningExperienceSettings", "mobileSettings"],
+    "settingsDocUrls": {
+      "lightningExperienceSettings": "https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_lightningexperiencesettings.htm"
+    },
+    "featuresDocUrl": "https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_def_file_config_values.htm",
+    "settingsDocUrl": "https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_settings.htm"
   }
 }
