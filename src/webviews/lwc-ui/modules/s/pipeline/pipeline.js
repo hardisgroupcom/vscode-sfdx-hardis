@@ -2001,7 +2001,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     });
   }
 
-  // The DORA metrics panel: it exports the report from its own menu
+  // The Org Initialization panel: the steps that set up new scratch orgs and sandboxes
   handleShowOrgInit() {
     window.sendMessageToVSCode({
       type: "runVsCodeCommand",
@@ -2011,6 +2011,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     });
   }
 
+  // The DORA metrics panel: it exports the report from its own menu
   handleShowDoraMetrics() {
     window.sendMessageToVSCode({
       type: "runVsCodeCommand",

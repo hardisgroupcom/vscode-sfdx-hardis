@@ -943,6 +943,29 @@ async function main() {
     const payload = JSON.parse(
       fs.readFileSync(path.join(__dirname, "org-init.json"), "utf8"),
     );
+    // The org shape levels, read from the workspace files as the CLI does, so a save shows
+    const readShape = (file) => {
+      if (!fs.existsSync(file)) {
+        return null;
+      }
+      const match = /^scratchOrgShape:\s*['"]?([^'"\r\n]+)/m.exec(
+        fs.readFileSync(file, "utf8"),
+      );
+      return match ? match[1].trim() : null;
+    };
+    payload.scratchOrgShapes.global = readShape(
+      path.join(process.cwd(), "config", ".sfdx-hardis.yml"),
+    );
+    for (const branch of payload.scratchOrgShapes.majorBranches) {
+      payload.scratchOrgShapes.branches[branch] = readShape(
+        path.join(
+          process.cwd(),
+          "config",
+          "branches",
+          `.sfdx-hardis.${branch}.yml`,
+        ),
+      );
+    }
     const validateIndex = args.indexOf("--validate-scratch-def");
     if (validateIndex >= 0) {
       const defFile = String(args[validateIndex + 1] || "").replace(

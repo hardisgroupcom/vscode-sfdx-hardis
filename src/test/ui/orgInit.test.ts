@@ -105,6 +105,15 @@ suite("Org Initialization panel UI tests", function () {
     const before = fs.existsSync(configFile)
       ? fs.readFileSync(configFile, "utf8")
       : null;
+    const branchFile = path.join(
+      workspaceRoot(),
+      "config",
+      "branches",
+      ".sfdx-hardis.uat.yml",
+    );
+    const branchBefore = fs.existsSync(branchFile)
+      ? fs.readFileSync(branchFile, "utf8")
+      : null;
     try {
       // The older settings the first save replaces
       const config = readProjectConfig();
@@ -112,6 +121,12 @@ suite("Org Initialization panel UI tests", function () {
       config.scratchOrgInitApexScripts = ["scripts/apex/init-scratch.apex"];
       fs.mkdirSync(path.dirname(configFile), { recursive: true });
       fs.writeFileSync(configFile, yaml.dump(config), "utf8");
+      fs.mkdirSync(path.dirname(branchFile), { recursive: true });
+      fs.writeFileSync(
+        branchFile,
+        yaml.dump({ initPermissionSets: ["PS_Branch"], keepMe: true }),
+        "utf8",
+      );
 
       const state = await openLoadedPanel();
       const steps = state.config.steps.map((step: any) => ({ ...step }));
@@ -135,11 +150,24 @@ suite("Org Initialization panel UI tests", function () {
         !("scratchOrgInitApexScripts" in saved),
         "scratchOrgInitApexScripts removed",
       );
+      const branchConfig = yaml.load(
+        fs.readFileSync(branchFile, "utf8"),
+      ) as any;
+      assert.ok(
+        !("initPermissionSets" in branchConfig),
+        "initPermissionSets removed from the branch config too",
+      );
+      assert.strictEqual(branchConfig.keepMe, true);
     } finally {
       if (before === null) {
         fs.rmSync(configFile, { force: true });
       } else {
         fs.writeFileSync(configFile, before, "utf8");
+      }
+      if (branchBefore === null) {
+        fs.rmSync(branchFile, { force: true });
+      } else {
+        fs.writeFileSync(branchFile, branchBefore, "utf8");
       }
     }
   });
@@ -186,8 +214,33 @@ suite("Org Initialization panel UI tests", function () {
         ? (yaml.load(fs.readFileSync(files[3], "utf8")) as any) || {}
         : {};
       assert.strictEqual(main.scratchOrgShape, undefined);
+      // The panel read the saved files again: a second save that goes back is written too
+      await waitFor(
+        () => panel.getInitializationData()?.config?.scratchOrgShapes?.global,
+        30000,
+        "the reload after the save",
+      );
+      sent.length = 0;
+      panel.simulateWebviewMessage({
+        type: "saveScratchDef",
+        data: {
+          content: { orgName: "Shape", edition: "Developer", features: [] },
+          scratchOrgDuration: "7",
+          scratchOrgShape: "",
+          scratchOrgShapes: {
+            global: null,
+            branches: { integration: "none", main: null },
+          },
+        },
+      });
+      await waitFor(
+        () => sent.find((message) => message.type === "scratchDefSaved"),
+        30000,
+        "the second save",
+      );
+      assert.strictEqual(readProjectConfig().scratchOrgShape, undefined);
       const validation = callsOf("hardis:config:org-init")
-        .filter((entry) => entry.args.includes("--validate-scratch-def"))
+        .filter((entry) => entry.args.includes("00D5g000004Z0bXEAS"))
         .pop();
       assert.ok(
         validation.args

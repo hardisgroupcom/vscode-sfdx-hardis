@@ -620,12 +620,16 @@ export class SfdxHardisConfigHelper {
     branchName: string,
     values: SfdxHardisConfig,
   ): Promise<void> {
-    const branchPath = path.join(
+    // The CLI reads .yml and .yaml: write the file that exists, .yml for a new one
+    const branchFileBase = path.join(
       this.workspaceRoot,
       "config",
       "branches",
-      `.sfdx-hardis.${branchName.replace("/", "__")}.yml`,
+      `.sfdx-hardis.${branchName.replace("/", "__")}`,
     );
+    const branchPath = (await pathExists(`${branchFileBase}.yaml`))
+      ? `${branchFileBase}.yaml`
+      : `${branchFileBase}.yml`;
     const existingBranchConfig: SfdxHardisConfig = (await pathExists(
       branchPath,
     ))
@@ -640,6 +644,46 @@ export class SfdxHardisConfigHelper {
       dumpRepositoryYaml(existingBranchConfig),
       "utf8",
     );
+  }
+
+  /**
+   * Removes keys from every branch and user config file (config/branches, config/user) that holds
+   * them: the CLI merges these files over the project config, so a key left there still counts.
+   */
+  async removeKeysFromBranchAndUserConfigs(keys: string[]): Promise<void> {
+    if (keys.length === 0) {
+      return;
+    }
+    for (const folder of ["branches", "user"]) {
+      const dir = path.join(this.workspaceRoot, "config", folder);
+      if (!(await pathExists(dir))) {
+        continue;
+      }
+      const files = (await fs.promises.readdir(dir)).filter(
+        (file) =>
+          file.startsWith(".sfdx-hardis.") &&
+          (file.endsWith(".yml") || file.endsWith(".yaml")),
+      );
+      for (const file of files) {
+        const filePath = path.join(dir, file);
+        const content =
+          (yaml.load(
+            await fs.promises.readFile(filePath, "utf8"),
+          ) as SfdxHardisConfig) || {};
+        const present = keys.filter((key) => key in content);
+        if (present.length === 0) {
+          continue;
+        }
+        for (const key of present) {
+          delete content[key];
+        }
+        await fs.promises.writeFile(
+          filePath,
+          dumpRepositoryYaml(content),
+          "utf8",
+        );
+      }
+    }
   }
 
   /**
