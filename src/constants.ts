@@ -35,7 +35,8 @@ export const PANEL_DOC_URLS: Record<string, string> = {
   "s-scratch-org-pool":
     DOCSITE_URL + "/salesforce-devops-setup-scratch-org-pool/",
   "s-org-init": DOCSITE_URL + "/salesforce-devops-org-initialization/",
-  "s-replacement-rules": DOCSITE_URL + "/salesforce-devops-config-replacement-rules/",
+  "s-replacement-rules":
+    DOCSITE_URL + "/salesforce-devops-config-replacement-rules/",
 };
 export const SFDX_HARDIS_REPOSITORY_URL =
   "https://github.com/hardisgroupcom/sfdx-hardis";

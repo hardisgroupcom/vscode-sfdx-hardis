@@ -134,8 +134,7 @@ export interface ReplacementRulesPanelError {
 }
 
 export type ReplacementRulesOutcome =
-  | { view: ReplacementRulesView }
-  | { error: ReplacementRulesPanelError };
+  { view: ReplacementRulesView } | { error: ReplacementRulesPanelError };
 
 export type ReplacementPreviewStatus =
   | "changed"
@@ -179,8 +178,7 @@ export interface ReplacementPreviewView {
 }
 
 export type ReplacementPreviewOutcome =
-  | { preview: ReplacementPreviewView }
-  | { error: ReplacementRulesPanelError };
+  { preview: ReplacementPreviewView } | { error: ReplacementRulesPanelError };
 
 /** One change of a rule, as sfdx-hardis makes it */
 export interface ReplacementWriteOperation {

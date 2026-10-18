@@ -365,9 +365,8 @@ async function runPreview(
 /** Connects to the git provider, so that sfdx-hardis can read the issue, then reads again */
 async function connectToGit(current: ReplacementRulesSession): Promise<void> {
   // Heavy module: loaded when the button is clicked, not with the panel
-  const { connectGitProvider } = await import(
-    "../utils/gitProviders/connectGitProvider"
-  );
+  const { connectGitProvider } =
+    await import("../utils/gitProviders/connectGitProvider");
   if (
     (await connectGitProvider()) &&
     session === current &&

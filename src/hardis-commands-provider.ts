@@ -328,7 +328,8 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             tooltip: t("replacementRulesTooltip"),
             command: "vscode-sfdx-hardis.showReplacementRules",
             requiresProject: true,
-            helpUrl: DOCSITE_URL + "/salesforce-devops-config-replacement-rules/",
+            helpUrl:
+              DOCSITE_URL + "/salesforce-devops-config-replacement-rules/",
           },
         ],
       },
