@@ -43,6 +43,22 @@ export function isBuiltInActionType(type: string): boolean {
   return (BUILT_IN_ACTION_TYPES as string[]).includes(type);
 }
 
+/**
+ * Built-in types of an org initialization step (orgInitSteps). install-packages, deploy-sources
+ * and assign-permission-sets only exist there: the deployment action editor never offers them.
+ */
+export const ORG_INIT_ACTION_TYPES = [
+  "install-packages",
+  "deploy-sources",
+  "assign-permission-sets",
+  "apex",
+  "data",
+  "command",
+  "run-batch",
+  "schedule-batch",
+  "publish-community",
+];
+
 export interface PrePostCommand {
   id: string;
   label: string;
@@ -697,6 +713,37 @@ function normalizePrePostCommandToSave(
   delete commandToSave.result;
   delete commandToSave.when;
   return commandToSave;
+}
+
+/**
+ * Names of the permission sets and permission set groups of the project sources, offered by the
+ * assign-permission-sets org initialization step. Not cached: a permission set added a minute
+ * ago must be listed.
+ */
+export async function listProjectPermissionSets(): Promise<string[]> {
+  const workspaceRoot = getWorkspaceRoot();
+  if (!workspaceRoot) {
+    return [];
+  }
+  const packageDirs = await listSfdxProjectPackageDirectories();
+  const pkgDirs =
+    Array.isArray(packageDirs) && packageDirs.length > 0 ? packageDirs : ["."];
+  const patterns = pkgDirs.flatMap((pkgDir) => {
+    const normalized = normalizeGlobBase(String(pkgDir || "."));
+    const base = normalized ? `${normalized}/**` : "**";
+    return [
+      `${base}/*.permissionset-meta.xml`,
+      `${base}/*.permissionsetgroup-meta.xml`,
+    ];
+  });
+  const uris = await vscode.workspace.findFiles(
+    new vscode.RelativePattern(workspaceRoot, `{${patterns.join(",")}}`),
+    GLOB_IGNORE_PATTERNS,
+  );
+  const names = uris.map((uri) =>
+    path.basename(uri.fsPath).replace(/\.permissionset(group)?-meta\.xml$/, ""),
+  );
+  return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
 }
 
 export async function listProjectApexScripts(): Promise<

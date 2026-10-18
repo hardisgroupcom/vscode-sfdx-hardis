@@ -8,6 +8,23 @@ import { getEffectiveActionContext } from "s/deploymentActionUtils";
 
 export default class DeploymentAction extends SharedMixin(LightningElement) {
   @api action = null;
+  // "deployment": a deployment action (commandsPreDeploy / commandsPostDeploy).
+  // "orgInit": an org initialization step (orgInitSteps), edited from the Org Initialization panel.
+  _mode = "deployment";
+
+  @api
+  set mode(val) {
+    this._mode = val === "orgInit" ? "orgInit" : "deployment";
+    if (this.translations) {
+      this._initOptions();
+    }
+  }
+  get mode() {
+    return this._mode;
+  }
+
+  // Permission sets of the project, offered by the assign-permission-sets step type
+  @api permissionSets = [];
   // Hides the Edit button: actions aggregated from several Pull Requests
   // (branch modal, Pull Request between major branches) are not editable here
   @api readOnly = false;
@@ -118,6 +135,9 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   }
 
   _buildTypeOptions() {
+    if (this.isOrgInitMode) {
+      return this._buildOrgInitTypeOptions();
+    }
     const options = [
       { label: this.t("commandType"), value: "command" },
       { label: this.t("dataType"), value: "data" },
@@ -152,6 +172,46 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       });
     }
     return options;
+  }
+
+  // install-packages, deploy-sources and assign-permission-sets only exist in org initialization
+  // steps, and the deployment-only types (manual, remove-packagexml-items) are left out
+  _buildOrgInitTypeOptions() {
+    const options = [
+      { label: this.t("installPackagesType"), value: "install-packages" },
+      { label: this.t("deploySourcesType"), value: "deploy-sources" },
+      {
+        label: this.t("assignPermissionSetsType"),
+        value: "assign-permission-sets",
+      },
+      { label: this.t("apexType"), value: "apex" },
+      { label: this.t("dataType"), value: "data" },
+      { label: this.t("commandType"), value: "command" },
+      { label: this.t("runBatchType"), value: "run-batch" },
+      { label: this.t("scheduleBatchType"), value: "schedule-batch" },
+      { label: this.t("publishCommunityType"), value: "publish-community" },
+    ];
+    // A function bound to a deployment phase expects a deployment around it
+    for (const customFunction of this.customFunctions) {
+      if (customFunction.when) {
+        continue;
+      }
+      options.push({
+        label: this.t("customFunctionTypeLabel", {
+          label: customFunction.label || customFunction.id,
+        }),
+        value: customFunction.id,
+      });
+    }
+    return options;
+  }
+
+  get isOrgInitMode() {
+    return this._mode === "orgInit";
+  }
+
+  get isDeploymentMode() {
+    return this._mode !== "orgInit";
   }
 
   /** The custom function definition backing the type currently selected, if any. */
@@ -265,6 +325,10 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     this.contextOptions = this._getContextOptions(type, currentWhen);
     const allowedContext = this.contextOptions.map((option) => option.value);
 
+    // An org initialization step has no deployment phase nor context
+    if (this.isEditMode && this.isOrgInitMode) {
+      return;
+    }
     if (this.isEditMode) {
       const nextAction = { ...this.editedAction };
 
@@ -484,6 +548,11 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   }
 
   get modalTitle() {
+    if (this.isOrgInitMode) {
+      return this.isEditMode
+        ? this.t("orgInitEditStep")
+        : this.t("orgInitStepDetails");
+    }
     if (this.isEditMode) {
       return this.t("editDeploymentAction");
     }
@@ -951,16 +1020,143 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   }
 
   get showCustomUsernameField() {
+    if (this.isOrgInitMode) {
+      return false;
+    }
     const type = this.displayedAction?.type;
     // 'manual' and 'remove-packagexml-items' do not run a command against the org
     return type !== "manual" && type !== "remove-packagexml-items";
   }
 
   get showRunOnlyOnceByOrgField() {
+    if (this.isOrgInitMode) {
+      return false;
+    }
     const type = this.displayedAction?.type;
     // 'remove-packagexml-items' only filters the current deployment's package.xml,
     // so it must run every time (runOnlyOnceByOrg has no effect for it)
     return type !== "remove-packagexml-items";
+  }
+
+  // Org initialization steps only
+  get showPermissionSetsField() {
+    return (
+      this.isOrgInitMode &&
+      this.displayedAction?.type === "assign-permission-sets"
+    );
+  }
+
+  get showInstallPackagesNote() {
+    return (
+      this.isOrgInitMode && this.displayedAction?.type === "install-packages"
+    );
+  }
+
+  get showDeploySourcesNote() {
+    return (
+      this.isOrgInitMode && this.displayedAction?.type === "deploy-sources"
+    );
+  }
+
+  get orgTypeOptions() {
+    return [
+      { label: this.t("orgInitOrgTypeScratch"), value: "scratch" },
+      { label: this.t("orgInitOrgTypeSandbox"), value: "sandbox" },
+    ];
+  }
+
+  get selectedOrgTypes() {
+    const orgTypes = this.displayedAction?.orgTypes;
+    return Array.isArray(orgTypes) && orgTypes.length > 0
+      ? orgTypes
+      : ["scratch", "sandbox"];
+  }
+
+  // A sandbox gets its metadata from a backpromote: deploy-sources only runs on scratch orgs
+  get isOrgTypesDisabled() {
+    return this.isViewMode || this.displayedAction?.type === "deploy-sources";
+  }
+
+  get stepEnabled() {
+    return this.displayedAction?.enabled !== false;
+  }
+
+  get stepRunAtPoolFill() {
+    return this.displayedAction?.runAtPoolFill !== false;
+  }
+
+  get selectedPermissionSets() {
+    const value = this.displayedAction?.parameters?.permissionSets;
+    if (Array.isArray(value)) {
+      return value;
+    }
+    return typeof value === "string" && value
+      ? value
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean)
+      : [];
+  }
+
+  // Project permission sets, plus the selected ones the project does not hold (a managed package
+  // permission set): hiding them would drop them from the step at the next save
+  get permissionSetOptions() {
+    const names = new Set(
+      (this.permissionSets || []).map((item) => item?.value || item),
+    );
+    this.selectedPermissionSets.forEach((name) => names.add(name));
+    return [...names].sort().map((name) => ({ label: name, value: name }));
+  }
+
+  get hasPermissionSetOptions() {
+    return this.permissionSetOptions.length > 0;
+  }
+
+  get permissionSetsSourceColumnLabel() {
+    return this.t("orgInitPermissionSetsAvailable");
+  }
+
+  get permissionSetsSelectedColumnLabel() {
+    return this.t("orgInitPermissionSetsSelected");
+  }
+
+  get permissionSetsText() {
+    return this.selectedPermissionSets.join(", ");
+  }
+
+  handleOrgTypesChange(event) {
+    const value = event.detail.value || [];
+    this.editedAction = { ...this.editedAction, orgTypes: [...value] };
+    this.validationError = "";
+  }
+
+  handlePermissionSetsChange(event) {
+    const value = event.detail.value || [];
+    this._setPermissionSets([...value]);
+  }
+
+  // Names typed by hand, for a permission set the project sources do not hold
+  handlePermissionSetsTextChange(event) {
+    const value = (event.target.value || "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+    this._setPermissionSets(value);
+  }
+
+  _setPermissionSets(permissionSets) {
+    this.editedAction = {
+      ...this.editedAction,
+      parameters: {
+        ...(this.editedAction.parameters || {}),
+        permissionSets,
+      },
+    };
+    this.validationError = "";
+  }
+
+  handleOpenInstalledPackages() {
+    this.dispatchEvent(new CustomEvent("openinstalledpackages"));
   }
 
   get hasApexScriptSelected() {
@@ -1061,6 +1257,9 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   // Set by sf hardis:project:action:update --move-to-pr when a failed action is
   // moved to a fix Pull Request: shown, never edited here
   get hasMovedFrom() {
+    if (this.isOrgInitMode) {
+      return false;
+    }
     return !!this.displayedAction?.movedFrom;
   }
 
@@ -1088,6 +1287,22 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     // Set default type to "command" if not set
     if (!this.editedAction.type) {
       this.editedAction.type = "command";
+    }
+    if (this.isOrgInitMode) {
+      // Same defaults as the CLI: enabled, both org types, runs at pool fill, stops on failure
+      this.editedAction.enabled = this.editedAction.enabled !== false;
+      this.editedAction.runAtPoolFill =
+        this.editedAction.runAtPoolFill !== false;
+      this.editedAction.allowFailure = this.editedAction.allowFailure === true;
+      const orgTypes = this.editedAction.orgTypes;
+      this.editedAction.orgTypes =
+        Array.isArray(orgTypes) && orgTypes.length > 0
+          ? [...orgTypes]
+          : ["scratch", "sandbox"];
+      if (this.editedAction.type === "deploy-sources") {
+        this.editedAction.orgTypes = ["scratch"];
+      }
+      return;
     }
     this.editedAction.runOnlyOnceByOrg =
       this.editedAction.runOnlyOnceByOrg ?? true;
@@ -1174,6 +1389,9 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
         this._buildInitialParametersForType(newType);
     }
     this._applyCustomFunctionDefaults(newType);
+    if (this.isOrgInitMode && newType === "deploy-sources") {
+      this.editedAction.orgTypes = ["scratch"];
+    }
     this._updateWhenAndContextOptions(newType);
     this._requestSchedulableClassesIfNeeded(newType);
     this._requestBatchableClassesIfNeeded(newType);
@@ -1326,6 +1544,14 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       return;
     }
 
+    if (this.isOrgInitMode) {
+      const orgInitError = this._getOrgInitValidationError();
+      if (orgInitError) {
+        this.validationError = orgInitError;
+        return;
+      }
+    }
+
     this.validationError = "";
     this._normalizeRunBatchParameters();
     // A new action is created with an empty id: give it one here, because the id
@@ -1334,6 +1560,10 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     // as a new action instead of updating it
     if (!this.editedAction.id) {
       this.editedAction.id = this._generateActionId();
+    }
+    if (this.isOrgInitMode) {
+      this._dispatchOrgInitStepSave();
+      return;
     }
     // Always write an explicit value: dropping it when unset/false would let the
     // sfdx-hardis CLI default (true) silently take over, contradicting a toggle
@@ -1385,6 +1615,48 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     );
   }
 
+  _getOrgInitValidationError() {
+    if ((this.editedAction.orgTypes || []).length === 0) {
+      return this.t("orgInitNoOrgTypeSelected");
+    }
+    if (
+      this.editedAction.type === "assign-permission-sets" &&
+      this.selectedPermissionSets.length === 0
+    ) {
+      return this.t("orgInitNoPermissionSetSelected");
+    }
+    return "";
+  }
+
+  // An org initialization step keeps only the fields the CLI accepts in orgInitSteps
+  _dispatchOrgInitStepSave() {
+    const step = { ...this.editedAction };
+    [
+      "when",
+      "context",
+      "runOnlyOnceByOrg",
+      "includeTargetBranches",
+      "excludeTargetBranches",
+      "customUsername",
+      "movedFrom",
+      "skipIfError",
+    ].forEach((key) => delete step[key]);
+    if (step.type === "deploy-sources") {
+      step.orgTypes = ["scratch"];
+    }
+    if (step.type !== "command") {
+      delete step.command;
+    }
+    if (step.parameters && Object.keys(step.parameters).length === 0) {
+      delete step.parameters;
+    }
+    this.dispatchEvent(
+      new CustomEvent("save", {
+        detail: { action: step, originalAction: this._originalAction },
+      }),
+    );
+  }
+
   _validateRequiredFields() {
     const requiredFieldPaths = this._getRequiredFieldPaths();
     const missingFieldPaths = requiredFieldPaths.filter((fieldPath) => {
@@ -1415,7 +1687,9 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   }
 
   _getRequiredFieldPaths() {
-    const requiredFields = ["label", "type", "when", "context"];
+    const requiredFields = this.isOrgInitMode
+      ? ["label", "type"]
+      : ["label", "type", "when", "context"];
     const currentType = this.editedAction?.type || "command";
 
     if (currentType === "command") {
