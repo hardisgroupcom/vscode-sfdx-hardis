@@ -87,6 +87,7 @@ const lwcModules = {
   "s-backpromote": () => import("s/backpromote"),
   "s-dora-metrics": () => import("s/doraMetrics"),
   "s-scratch-org-pool": () => import("s/scratchOrgPool"),
+  "s-replacement-rules": () => import("s/replacementRules"),
   "s-org-init": () => import("s/orgInit"),
   "s-files-workbench": () => import("s/filesWorkbench"),
   "s-documentation-workbench": () => import("s/documentationWorkbench"),

@@ -1,0 +1,269 @@
+<template>
+  <div class="slds-scope slds-theme_default">
+    <section
+      role="dialog"
+      tabindex="-1"
+      aria-modal="true"
+      aria-labelledby="replacement-rule-modal-heading"
+      class="slds-modal slds-fade-in-open slds-modal_large"
+    >
+      <div class="slds-modal__container">
+        <div class="modal-accent-strip"></div>
+        <header class="slds-modal__header">
+          <button
+            class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+            title={i18n.closeLabel}
+            onclick={handleClose}
+          >
+            <lightning-icon icon-name="utility:close" size="small" alternative-text={i18n.closeLabel}></lightning-icon>
+            <span class="slds-assistive-text">{i18n.closeLabel}</span>
+          </button>
+          <h2 id="replacement-rule-modal-heading" class="slds-modal__title slds-hyphenate">{modalTitle}</h2>
+        </header>
+
+        <div class="slds-modal__content slds-p-around_medium">
+          <template lwc:if={hasError}>
+            <div class="hardis-note error rre-block rre-message" role="alert">
+              <p>{shownError}</p>
+            </div>
+          </template>
+          <template lwc:if={isOverride}>
+            <div class="hardis-note rre-block">
+              <p>{overrideNote}</p>
+            </div>
+          </template>
+
+          <!-- What the rule does -->
+          <div class="hardis-group-label">{i18n.replacementRulesWhatItDoes}</div>
+          <div class="hardis-card-grid rre-block">
+            <template for:each={typeCards} for:item="card">
+              <div
+                key={card.type}
+                class={card.cardClass}
+                role="button"
+                tabindex="0"
+                aria-pressed={card.ariaPressed}
+                data-type={card.type}
+                onclick={handleTypeClick}
+                onkeydown={handleTypeKeydown}
+              >
+                <div class="hardis-card-head">
+                  <div class={card.tileClass}>
+                    <lightning-icon icon-name={card.icon} size="x-small"></lightning-icon>
+                  </div>
+                  <h3 class="hardis-card-title">{card.title}</h3>
+                </div>
+                <p class="hardis-card-desc">{card.description}</p>
+              </div>
+            </template>
+          </div>
+
+          <div class="slds-grid slds-wrap slds-gutters">
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+              <lightning-input
+                label={i18n.replacementRulesIdField}
+                value={draft.id}
+                data-field="id"
+                onchange={handleFieldChange}
+                disabled={isIdReadOnly}
+                field-level-help={i18n.replacementRulesIdHelp}
+                placeholder="payment-api-endpoint"
+                required
+              ></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+              <lightning-combobox
+                label={i18n.replacementRulesStoredInField}
+                value={draft.store}
+                options={storeOptions}
+                data-field="store"
+                onchange={handleFieldChange}
+              ></lightning-combobox>
+              <p class="hardis-field-help rre-help">{storeHelp}</p>
+            </div>
+
+            <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+              <lightning-input
+                label={i18n.replacementRulesDescriptionField}
+                value={draft.description}
+                data-field="description"
+                onchange={handleFieldChange}
+                placeholder={i18n.replacementRulesDescriptionPlaceholder}
+              ></lightning-input>
+            </div>
+
+            <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+              <lightning-textarea
+               
+                label={i18n.replacementRulesFilesField}
+                value={draft.filesText}
+                data-field="filesText"
+                onchange={handleFieldChange}
+                field-level-help={i18n.replacementRulesFilesHelp}
+                placeholder="**/namedCredentials/*.namedCredential-meta.xml"
+              ></lightning-textarea>
+            </div>
+
+            <template lwc:if={isText}>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <lightning-input
+                 
+                  label={i18n.replacementRulesFindField}
+                  value={draft.find}
+                  data-field="find"
+                  onchange={handleFieldChange}
+                  placeholder="https://pay-[a-z]+\.example\.com"
+                ></lightning-input>
+                <lightning-input
+                  class="slds-m-top_x-small"
+                  type="checkbox"
+                  label={i18n.replacementRulesRegexField}
+                  checked={draft.regex}
+                  data-field="regex"
+                  onchange={handleFieldChange}
+                ></lightning-input>
+              </div>
+            </template>
+            <template lwc:else>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <lightning-input
+                 
+                  label={i18n.replacementRulesXmlPathField}
+                  value={draft.xmlPath}
+                  data-field="xmlPath"
+                  onchange={handleFieldChange}
+                  placeholder="NamedCredential/endpoint"
+                ></lightning-input>
+                <p class="hardis-field-help rre-help">{i18n.replacementRulesXmlPathHelp}</p>
+              </div>
+            </template>
+
+            <!-- Value written: the same for every org, one per org, or read from a CI/CD variable -->
+            <template lwc:if={showValue}>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <div class="hardis-group-label">{i18n.replacementRulesValueField}</div>
+                <span class="hardis-segmented rre-block" role="group" aria-label={i18n.replacementRulesValueField}>
+                  <template for:each={valueModes} for:item="mode">
+                    <button
+                      key={mode.mode}
+                      type="button"
+                      class={mode.segClass}
+                      aria-pressed={mode.ariaPressed}
+                      data-mode={mode.mode}
+                      onclick={handleValueModeClick}
+                    >{mode.label}</button>
+                  </template>
+                </span>
+
+                <template lwc:if={isSingleValue}>
+                  <lightning-input
+                   
+                    label={i18n.replacementRulesValueField}
+                    variant="label-hidden"
+                    value={draft.value}
+                    data-field="value"
+                    onchange={handleFieldChange}
+                    placeholder={i18n.replacementRulesValueField}
+                  ></lightning-input>
+                </template>
+
+                <template lwc:if={isPerOrg}>
+                  <div class="rre-org-grid">
+                    <template for:each={orgValueRows} for:item="row">
+                      <lightning-input
+                        key={row.key}
+                       
+                        label={row.label}
+                        value={row.value}
+                        placeholder={row.placeholder}
+                        data-target={row.target}
+                        onchange={handleOrgValueChange}
+                      ></lightning-input>
+                    </template>
+                  </div>
+                  <p class="hardis-field-help rre-help">{i18n.replacementRulesPerOrgHelp}</p>
+                </template>
+
+                <template lwc:if={isSecret}>
+                  <lightning-input
+                   
+                    label={i18n.replacementRulesSecretField}
+                    value={draft.secret}
+                    data-field="secret"
+                    onchange={handleFieldChange}
+                    placeholder="PAYMENT_API_PASSWORD"
+                  ></lightning-input>
+                  <p class="hardis-field-help rre-help">{i18n.replacementRulesSecretHelp}</p>
+                  <template lwc:if={hasSecretLookupRows}>
+                    <div class="hardis-prop-grid rre-block">
+                      <template for:each={secretLookupRows} for:item="lookup">
+                        <div key={lookup.key} class="hardis-prop">
+                          <div class="hardis-prop-key">{lookup.target}</div>
+                          <div class="hardis-prop-value mono">{lookup.variables}</div>
+                        </div>
+                      </template>
+                    </div>
+                  </template>
+                  <template lwc:else>
+                    <p class="hardis-field-help rre-help">{i18n.replacementRulesSecretLookupHelp}</p>
+                  </template>
+                </template>
+              </div>
+            </template>
+
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+              <lightning-combobox
+                label={i18n.replacementRulesOrgsField}
+                value={draft.orgsMode}
+                options={orgsModeOptions}
+                data-field="orgsMode"
+                onchange={handleFieldChange}
+              ></lightning-combobox>
+            </div>
+            <template lwc:if={showOrgsPicker}>
+              <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                <lightning-checkbox-group
+                  label={i18n.replacementRulesOrgsField}
+                  variant="label-hidden"
+                  options={orgOptions}
+                  value={draft.orgs}
+                  onchange={handleOrgsChange}
+                ></lightning-checkbox-group>
+              </div>
+            </template>
+
+            <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+              <lightning-input
+                type="checkbox"
+                label={i18n.replacementRulesRequiredField}
+                checked={draft.required}
+                data-field="required"
+                onchange={handleFieldChange}
+              ></lightning-input>
+            </div>
+          </div>
+        </div>
+
+        <footer class="slds-modal__footer rre-footer">
+          <div class="rre-command" title={i18n.replacementRulesCommandTitle}>
+            <template for:each={commandLines} for:item="line">
+              <code key={line.key}>{line.text}</code>
+            </template>
+          </div>
+          <div class="rre-footer-actions">
+            <lightning-button variant="neutral" label={i18n.cancelLabel} onclick={handleClose} disabled={saving}></lightning-button>
+            <lightning-button
+              variant="neutral"
+              class="hardis-btn-tinted-blue"
+              label={saveLabel}
+              icon-name="utility:save"
+              disabled={saving}
+              onclick={handleSave}
+            ></lightning-button>
+          </div>
+        </footer>
+      </div>
+    </section>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+  </div>
+</template>
