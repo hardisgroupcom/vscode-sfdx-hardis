@@ -3081,6 +3081,18 @@ suite("Documentation screenshots", function () {
     });
   });
 
+  // Replacement Rules panel, from the rules the mocked sf CLI lists (project, uat branch file
+  // and issue #128, built-in rules), on its Rules tab
+  test("replacement rules", async function () {
+    await shootPanel(panelManager, {
+      name: "replacement-rules",
+      command: "vscode-sfdx-hardis.showReplacementRules",
+      lwcId: "s-replacement-rules",
+      ready: (initData: any) => initData.loading === false && !!initData.data,
+      settleMs: 3000,
+    });
+  });
+
   // ---------------------------------------------------------------------
   // VS Code user guides (sfdx-hardis docs/vscode-extension-*.md): the panel
   // states a guide walks through that no other capture shows, mostly an open

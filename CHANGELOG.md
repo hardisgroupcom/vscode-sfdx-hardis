@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- New Replacement Rules panel to edit the values, secrets and XML removals applied to metadata before each deployment, opened from the settings menu of the DevOps Pipeline (requires sfdx-hardis 8.20.0)
 - New Org Initialization panel: order, enable and edit the steps that set up new scratch orgs and sandboxes, run them on an existing org, and edit the scratch org definition with validation before saving, values listed from the Dev Hub, and settings or features imported from an org (requires sfdx-hardis 8.19.0). It opens from the settings menu of the DevOps Pipeline, whose entries now read Configure Pipeline Settings, Add or Reconnect a Major Org, Configure Org Initialization and Generate DORA Metrics
 - Find where a SOQL field is used: right-click a field in a SOQL query (Apex, query string or `.soql` file) and choose **SFDX Hardis: Find where this SOQL field is used** to open the Metadata Dependencies panel on that field. Relationship paths, aliases and subqueries are followed to the right object
 - Contributors: the MegaLinter skills and agents for Claude Code come from the MegaLinter plugin, enabled in `.claude/settings.json`, instead of copies in `.claude/`

@@ -421,6 +421,11 @@
         "icon": "$(radio-tower)"
       },
       {
+        "command": "vscode-sfdx-hardis.showReplacementRules",
+        "title": "SFDX Hardis: Replacement Rules",
+        "icon": "$(replace-all)"
+      },
+      {
         "command": "vscode-sfdx-hardis.showSetup",
         "title": "SFDX Hardis: Setup",
         "icon": "$(tools)"

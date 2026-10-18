@@ -1153,6 +1153,11 @@ async function main() {
     return 0;
   }
 
+  // Replacement Rules panel: list, preview, create, update and delete
+  if (first.startsWith("hardis:project:replacement:")) {
+    return await answerReplacementRules(first);
+  }
+
   // Backpromote panel: plan, prepare, run, confirm and reset answer plan documents
   if (
     first === "hardis:work:backpromote" &&
@@ -1172,6 +1177,94 @@ async function main() {
   // Any other sf command: succeed silently
   outputJsonIfRequested({ status: 0, result: {} }, "OK");
   return 0;
+}
+
+/**
+ * `sf hardis:project:replacement:*` of the Replacement Rules panel, from
+ * test/fixtures/sf-shim/replacement-rules.json: list answers its "list" block (rules of the
+ * project, of the uat branch file and of issue #128, built-in rules), preview its "preview" block
+ * of the --target-branch (uat when the branch has none of its own, "default" without the flag).
+ * create, update and delete answer a success, and log the rule of --rule-file (event
+ * "replacementRuleFile"), so that a test can read what the panel wrote: the file itself is
+ * removed by the extension once the command ends.
+ * SF_MOCK_REPLACEMENT=old simulates an sfdx-hardis without the replacement rules commands,
+ * =error a list that fails, =writeError a create, update or delete that fails.
+ * SF_MOCK_REPLACEMENT_DELAY_MS makes every answer wait.
+ */
+async function answerReplacementRules(command) {
+  const variant = process.env.SF_MOCK_REPLACEMENT || "";
+  const delayMs = parseInt(process.env.SF_MOCK_REPLACEMENT_DELAY_MS || "0", 10);
+  if (delayMs > 0) {
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+  const action = command.slice("hardis:project:replacement:".length);
+  const failWith = (message, name = "SfError", exitCode = 1) => {
+    console.log(JSON.stringify({ name, message, status: exitCode, stack: "" }));
+    return exitCode;
+  };
+  if (variant === "old") {
+    return failWith(
+      `Command ${command} not found.`,
+      "CommandNotFoundError",
+      127,
+    );
+  }
+  const fixture = JSON.parse(
+    fs.readFileSync(path.join(__dirname, "replacement-rules.json"), "utf8"),
+  );
+  const flag = (name) =>
+    args.includes(name) ? args[args.indexOf(name) + 1] : undefined;
+  if (action === "list") {
+    if (variant === "error") {
+      return failWith("The project configuration cannot be read");
+    }
+    outputJsonIfRequested({ status: 0, result: fixture.list }, "");
+    return 0;
+  }
+  if (action === "preview") {
+    const targetBranch = flag("--target-branch");
+    const preview = JSON.parse(
+      JSON.stringify(
+        fixture.preview[targetBranch || "default"] || fixture.preview.uat,
+      ),
+    );
+    if (targetBranch && !fixture.preview[targetBranch]) {
+      preview.target.targetBranch = targetBranch;
+      preview.target.label = targetBranch;
+    }
+    outputJsonIfRequested({ status: 0, result: preview }, "");
+    return 0;
+  }
+  if (["create", "update", "delete"].includes(action)) {
+    if (variant === "writeError") {
+      return failWith("Rule payment-api-endpoint: xmlPath is required");
+    }
+    const ruleFile = flag("--rule-file");
+    let rule = null;
+    if (ruleFile) {
+      try {
+        rule = JSON.parse(fs.readFileSync(ruleFile, "utf8"));
+      } catch (e) {
+        return failWith(`Rule file ${ruleFile} cannot be read: ${e.message}`);
+      }
+      logInvocation({ event: "replacementRuleFile", rule });
+    }
+    const id = flag("--id") || (rule && rule.id) || "";
+    const layer = flag("--layer") || "project";
+    outputJsonIfRequested(
+      {
+        status: 0,
+        result: {
+          outputString: `Replacement rule ${id} ${action}d in the ${layer}`,
+          id,
+          layer,
+        },
+      },
+      "",
+    );
+    return 0;
+  }
+  return failWith(`Command ${command} not found.`, "CommandNotFoundError", 127);
 }
 
 /**
