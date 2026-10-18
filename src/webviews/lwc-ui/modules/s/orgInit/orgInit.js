@@ -4,20 +4,10 @@
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
-import { getHashedPillClass } from "s/pillUtils";
-
-// Labels of the built-in step types, as i18n keys
-const STEP_TYPE_LABEL_KEYS = {
-  "install-packages": "installPackagesType",
-  "deploy-sources": "deploySourcesType",
-  "assign-permission-sets": "assignPermissionSetsType",
-  apex: "apexType",
-  data: "dataType",
-  command: "commandType",
-  "run-batch": "runBatchType",
-  "schedule-batch": "scheduleBatchType",
-  "publish-community": "publishCommunityType",
-};
+import {
+  getOrgInitStepTypeLabel,
+  getOrgInitStepTypePillClass,
+} from "s/deploymentActionUtils";
 
 // Top-level fields of the scratch org definition shown in the form: the other ones (template,
 // username, adminEmail...) are kept as they are when the file is saved
@@ -44,6 +34,8 @@ export default class OrgInit extends SharedMixin(LightningElement) {
   @track orgs = [];
   @track targetOrg = "";
   stepsDirty = false;
+  // A save was sent and the extension has not answered yet
+  stepsSaving = false;
 
   // Step editor (s-deployment-action in orgInit mode)
   @track showStepModal = false;
@@ -65,8 +57,11 @@ export default class OrgInit extends SharedMixin(LightningElement) {
   @track settingsText = "";
   @track rawScratchDefText = "";
   @track scratchOrgDuration = "";
+  // Issues block the save, warnings do not (a value Salesforce knows and the bundled schema does not)
   @track scratchDefIssues = [];
+  @track scratchDefWarnings = [];
   @track localScratchDefIssues = [];
+  @track localScratchDefWarnings = [];
   rawMode = false;
   scratchDefSaving = false;
   scratchDefDirty = false;
@@ -81,6 +76,7 @@ export default class OrgInit extends SharedMixin(LightningElement) {
     this.config = data.config;
     this.steps = (data.config.steps || []).map((step) => ({ ...step }));
     this.stepsDirty = false;
+    this.stepsSaving = false;
     this.selectedStepIds = [];
     this.apexScripts = data.apexScripts || [];
     this.sfdmuWorkspaces = data.sfdmuWorkspaces || [];
@@ -91,7 +87,10 @@ export default class OrgInit extends SharedMixin(LightningElement) {
     if (!this.orgs.find((org) => org.value === this.targetOrg)) {
       this.targetOrg = defaultOrg ? defaultOrg.value : "";
     }
-    this._loadScratchDef(data.config);
+    // A reload after a steps save or a Refresh must not drop what is being typed in the other tab
+    if (!this.scratchDefDirty) {
+      this._loadScratchDef(data.config);
+    }
   }
 
   @api
@@ -103,11 +102,17 @@ export default class OrgInit extends SharedMixin(LightningElement) {
       case "scratchDefValidated":
         this.scratchDefSaving = false;
         this.scratchDefIssues = data?.issues || [];
+        this.scratchDefWarnings = data?.warnings || [];
         break;
       case "scratchDefSaved":
         this.scratchDefSaving = false;
         this.scratchDefIssues = [];
+        this.scratchDefWarnings = data?.warnings || [];
         this.scratchDefDirty = false;
+        break;
+      case "orgInitStepsSaveFailed":
+        // The steps stay unsaved: Save is offered again
+        this.stepsSaving = false;
         break;
       case "returnSchedulableClasses":
         this.schedulableClasses = data?.values || [];
@@ -147,6 +152,11 @@ export default class OrgInit extends SharedMixin(LightningElement) {
 
   // ---------------------------------------------------------------- Steps tab
 
+  // Built-in step types offered by the editor, as the CLI lists them
+  get stepTypes() {
+    return this.config?.stepTypes || [];
+  }
+
   get isLegacySource() {
     return this.config?.source === "legacy";
   }
@@ -178,7 +188,7 @@ export default class OrgInit extends SharedMixin(LightningElement) {
   }
 
   get saveStepsDisabled() {
-    return !this.canSaveSteps;
+    return !this.canSaveSteps || this.stepsSaving;
   }
 
   get saveStepsLabel() {
@@ -258,8 +268,12 @@ export default class OrgInit extends SharedMixin(LightningElement) {
         id: step.id,
         order: index + 1,
         label: step.label,
-        typeLabel: this._getStepTypeLabel(step.type),
-        typePillClass: getHashedPillClass(step.type || "command"),
+        typeLabel: getOrgInitStepTypeLabel(
+          step.type || "command",
+          (key, params) => this.t(key, params),
+          this.customFunctions,
+        ),
+        typePillClass: getOrgInitStepTypePillClass(step.type || "command"),
         orgTypesLabel: orgTypes
           .map((orgType) =>
             orgType === "scratch"
@@ -310,19 +324,6 @@ export default class OrgInit extends SharedMixin(LightningElement) {
         iconName: "utility:delete",
       },
     ]);
-  }
-
-  _getStepTypeLabel(type) {
-    const labelKey = STEP_TYPE_LABEL_KEYS[type || "command"];
-    if (labelKey) {
-      return this.t(labelKey);
-    }
-    const customFunction = this.customFunctions.find((fn) => fn.id === type);
-    return customFunction
-      ? this.t("customFunctionTypeLabel", {
-          label: customFunction.label || customFunction.id,
-        })
-      : type;
   }
 
   handleStepRowAction(event) {
@@ -416,7 +417,8 @@ export default class OrgInit extends SharedMixin(LightningElement) {
       type: "saveOrgInitSteps",
       data: { steps: JSON.parse(JSON.stringify(this.steps)) },
     });
-    this.stepsDirty = false;
+    // stepsDirty is cleared by the reload that follows a successful save, never before
+    this.stepsSaving = true;
   }
 
   handleOpenInstalledPackages() {
@@ -448,7 +450,9 @@ export default class OrgInit extends SharedMixin(LightningElement) {
   }
 
   get runNowDisabled() {
-    return !this.targetOrg || this.stepsDirty || !this.hasSteps;
+    return (
+      !this.targetOrg || this.stepsDirty || this.stepsSaving || !this.hasSteps
+    );
   }
 
   get runNowLabel() {
@@ -530,6 +534,17 @@ export default class OrgInit extends SharedMixin(LightningElement) {
     return this.allScratchDefIssues.length > 0;
   }
 
+  get allScratchDefWarnings() {
+    const warnings = [
+      ...new Set([...this.localScratchDefWarnings, ...this.scratchDefWarnings]),
+    ];
+    return warnings.map((text, index) => ({ key: `warning-${index}`, text }));
+  }
+
+  get hasScratchDefWarnings() {
+    return this.allScratchDefWarnings.length > 0;
+  }
+
   get saveScratchDefDisabled() {
     return (
       this.scratchDefSaving ||
@@ -564,7 +579,9 @@ export default class OrgInit extends SharedMixin(LightningElement) {
         ? String(config.scratchOrgDuration)
         : "";
     this.scratchDefIssues = config?.scratchDef?.issues || [];
+    this.scratchDefWarnings = config?.scratchDef?.warnings || [];
     this.localScratchDefIssues = [];
+    this.localScratchDefWarnings = [];
     this.scratchDefDirty = false;
   }
 
@@ -609,16 +626,19 @@ export default class OrgInit extends SharedMixin(LightningElement) {
   handleToggleRawMode() {
     // Switching keeps what was typed: the form and the raw text describe the same definition
     const built = this._buildScratchDefContent();
-    if (built.content) {
-      if (this.rawMode) {
-        this.scratchDef = { ...built.content };
-        this.featuresText = (built.content.features || []).join("\n");
-        this.settingsText = built.content.settings
-          ? JSON.stringify(built.content.settings, null, 2)
-          : "";
-      } else {
-        this.rawScratchDefText = JSON.stringify(built.content, null, 2);
-      }
+    if (!built.content) {
+      // The other side would show stale content and overwrite these edits later
+      this.localScratchDefIssues = built.issues;
+      return;
+    }
+    if (this.rawMode) {
+      this.scratchDef = { ...built.content };
+      this.featuresText = (built.content.features || []).join("\n");
+      this.settingsText = built.content.settings
+        ? JSON.stringify(built.content.settings, null, 2)
+        : "";
+    } else {
+      this.rawScratchDefText = JSON.stringify(built.content, null, 2);
     }
     this.rawMode = !this.rawMode;
     this._checkScratchDefLocally();
@@ -644,6 +664,7 @@ export default class OrgInit extends SharedMixin(LightningElement) {
     this.scratchDefDirty = true;
     // The CLI issues were about the saved file: they come back at the next validation
     this.scratchDefIssues = [];
+    this.scratchDefWarnings = [];
     this._checkScratchDefLocally();
   }
 
@@ -651,9 +672,9 @@ export default class OrgInit extends SharedMixin(LightningElement) {
   _checkScratchDefLocally() {
     const built = this._buildScratchDefContent();
     const issues = [...built.issues];
-    if (built.content) {
-      issues.push(...this._checkKnownValues(built.content));
-    }
+    this.localScratchDefWarnings = built.content
+      ? this._checkKnownValues(built.content)
+      : [];
     const duration = this.scratchOrgDuration;
     if (duration !== "" && !/^([1-9]|[12][0-9]|30)$/.test(String(duration))) {
       issues.push(this.t("orgInitDurationInvalid"));
@@ -664,19 +685,23 @@ export default class OrgInit extends SharedMixin(LightningElement) {
   _checkKnownValues(content) {
     const hints = this.config?.scratchDefHints || {};
     const issues = [];
-    const settingsNames = hints.settingsNames || [];
+    const settingsNames = (hints.settingsNames || []).map((name) =>
+      name.toLowerCase(),
+    );
     if (
       content.settings &&
       typeof content.settings === "object" &&
       settingsNames.length > 0
     ) {
       for (const name of Object.keys(content.settings)) {
-        if (!settingsNames.includes(name)) {
+        if (!settingsNames.includes(name.toLowerCase())) {
           issues.push(this.t("orgInitUnknownSettings", { name }));
         }
       }
     }
-    const features = hints.features || [];
+    const features = (hints.features || []).map((feature) =>
+      feature.toLowerCase(),
+    );
     if (Array.isArray(content.features) && features.length > 0) {
       for (const feature of content.features) {
         if (!this._isKnownFeature(String(feature), features)) {
@@ -687,12 +712,14 @@ export default class OrgInit extends SharedMixin(LightningElement) {
     return issues;
   }
 
-  // Known features are plain names, or "Name:<value>" for the ones that take a number
+  // Known features are plain names, or "Name:<value>" for the ones that take a number.
+  // Salesforce does not care about the case, so neither does this check.
   _isKnownFeature(feature, features) {
-    if (features.includes(feature)) {
+    const lowerFeature = feature.toLowerCase();
+    if (features.includes(lowerFeature)) {
       return true;
     }
-    const name = feature.split(":")[0];
+    const name = lowerFeature.split(":")[0];
     return features.includes(`${name}:<value>`);
   }
 

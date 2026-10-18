@@ -43,22 +43,6 @@ export function isBuiltInActionType(type: string): boolean {
   return (BUILT_IN_ACTION_TYPES as string[]).includes(type);
 }
 
-/**
- * Built-in types of an org initialization step (orgInitSteps). install-packages, deploy-sources
- * and assign-permission-sets only exist there: the deployment action editor never offers them.
- */
-export const ORG_INIT_ACTION_TYPES = [
-  "install-packages",
-  "deploy-sources",
-  "assign-permission-sets",
-  "apex",
-  "data",
-  "command",
-  "run-batch",
-  "schedule-batch",
-  "publish-community",
-];
-
 export interface PrePostCommand {
   id: string;
   label: string;

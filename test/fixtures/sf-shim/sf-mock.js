@@ -951,11 +951,17 @@ async function main() {
       );
       const content = JSON.parse(fs.readFileSync(defFile, "utf8"));
       const known = payload.scratchDefHints.settingsNames;
+      // As in the CLI: a wrong type blocks, an unknown settings name is only a warning
       payload.scratchDef = {
         path: defFile,
         exists: true,
         content,
-        issues: Object.keys(content.settings || {})
+        issues:
+          content.hasSampleData !== undefined &&
+          typeof content.hasSampleData !== "boolean"
+            ? ["hasSampleData: Invalid input: expected boolean"]
+            : [],
+        warnings: Object.keys(content.settings || {})
           .filter((name) => !known.includes(name))
           .map(
             (name) =>

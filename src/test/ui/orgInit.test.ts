@@ -158,7 +158,7 @@ suite("Org Initialization panel UI tests", function () {
     panel.simulateWebviewMessage({
       type: "saveScratchDef",
       data: {
-        content: { edition: "Developer", settings: { notARealSettings: {} } },
+        content: { edition: "Developer", hasSampleData: "yes" },
         scratchOrgDuration: "7",
       },
     });
@@ -169,7 +169,7 @@ suite("Org Initialization panel UI tests", function () {
     );
     assert.ok(
       answer.data.issues.some((issue: string) =>
-        issue.startsWith("settings.notARealSettings"),
+        issue.startsWith("hasSampleData"),
       ),
       JSON.stringify(answer.data.issues),
     );
@@ -206,6 +206,23 @@ suite("Org Initialization panel UI tests", function () {
       commandLine.includes("--target-org dev-sandbox@mycompany.com"),
       commandLine,
     );
+  });
+
+  test("Run now refuses a step id that could change the command line", async function () {
+    await openLoadedPanel();
+    panel.simulateWebviewMessage({
+      type: "runOrgInit",
+      data: {
+        stepIds: ["x;echo hacked"],
+        targetOrg: "dev-sandbox@mycompany.com",
+      },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    // The runs of the other tests are logged too: what matters is that this id never ran
+    const hacked = callsOf("hardis:org:init").filter((call) =>
+      call.args.join(" ").includes("hacked"),
+    );
+    assert.strictEqual(hacked.length, 0, "sf hardis:org:init must not run");
   });
 
   test("the command brings the open panel back instead of opening a second one", async function () {

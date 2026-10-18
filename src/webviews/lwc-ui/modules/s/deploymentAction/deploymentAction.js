@@ -4,7 +4,10 @@
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
-import { getEffectiveActionContext } from "s/deploymentActionUtils";
+import {
+  getEffectiveActionContext,
+  getOrgInitStepTypeOptions,
+} from "s/deploymentActionUtils";
 
 export default class DeploymentAction extends SharedMixin(LightningElement) {
   @api action = null;
@@ -25,6 +28,19 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
 
   // Permission sets of the project, offered by the assign-permission-sets step type
   @api permissionSets = [];
+  // Built-in org initialization step types, as returned by the CLI ({ type, orgTypes })
+  _orgInitStepTypes = [];
+
+  @api
+  set orgInitStepTypes(val) {
+    this._orgInitStepTypes = Array.isArray(val) ? val : [];
+    if (this.translations) {
+      this._initOptions();
+    }
+  }
+  get orgInitStepTypes() {
+    return this._orgInitStepTypes;
+  }
   // Hides the Edit button: actions aggregated from several Pull Requests
   // (branch modal, Pull Request between major branches) are not editable here
   @api readOnly = false;
@@ -174,36 +190,13 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     return options;
   }
 
-  // install-packages, deploy-sources and assign-permission-sets only exist in org initialization
-  // steps, and the deployment-only types (manual, remove-packagexml-items) are left out
+  // Org initialization step types come from the CLI (stepTypes of sf hardis:config:org-init)
   _buildOrgInitTypeOptions() {
-    const options = [
-      { label: this.t("installPackagesType"), value: "install-packages" },
-      { label: this.t("deploySourcesType"), value: "deploy-sources" },
-      {
-        label: this.t("assignPermissionSetsType"),
-        value: "assign-permission-sets",
-      },
-      { label: this.t("apexType"), value: "apex" },
-      { label: this.t("dataType"), value: "data" },
-      { label: this.t("commandType"), value: "command" },
-      { label: this.t("runBatchType"), value: "run-batch" },
-      { label: this.t("scheduleBatchType"), value: "schedule-batch" },
-      { label: this.t("publishCommunityType"), value: "publish-community" },
-    ];
-    // A function bound to a deployment phase expects a deployment around it
-    for (const customFunction of this.customFunctions) {
-      if (customFunction.when) {
-        continue;
-      }
-      options.push({
-        label: this.t("customFunctionTypeLabel", {
-          label: customFunction.label || customFunction.id,
-        }),
-        value: customFunction.id,
-      });
-    }
-    return options;
+    return getOrgInitStepTypeOptions(
+      this.orgInitStepTypes,
+      (key, params) => this.t(key, params),
+      this.customFunctions,
+    );
   }
 
   get isOrgInitMode() {
@@ -1088,7 +1081,10 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   get selectedPermissionSets() {
     const value = this.displayedAction?.parameters?.permissionSets;
     if (Array.isArray(value)) {
-      return value;
+      // The CLI also accepts { name: X } entries, the format of the older initPermissionSets
+      return value
+        .map((item) => String(item?.name || item || "").trim())
+        .filter(Boolean);
     }
     return typeof value === "string" && value
       ? value

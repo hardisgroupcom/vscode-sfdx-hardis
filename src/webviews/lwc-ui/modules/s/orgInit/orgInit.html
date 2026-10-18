@@ -116,6 +116,20 @@
               </div>
             </template>
 
+            <template if:true={hasScratchDefWarnings}>
+              <div class="hardis-note warning slds-m-bottom_small" role="note">
+                <lightning-icon icon-name="utility:warning" size="small" class="slds-m-right_small"></lightning-icon>
+                <div>
+                  <p>{i18n.orgInitScratchDefWarnings}</p>
+                  <ul class="slds-list_dotted">
+                    <template for:each={allScratchDefWarnings} for:item="warning">
+                      <li key={warning.key}>{warning.text}</li>
+                    </template>
+                  </ul>
+                </div>
+              </div>
+            </template>
+
             <div class="org-init-toolbar slds-m-bottom_small">
               <lightning-button class="hardis-btn-tinted-green" variant="neutral" icon-name="utility:save" label={saveScratchDefLabel} disabled={saveScratchDefDisabled} onclick={handleSaveScratchDef}></lightning-button>
               <lightning-button variant="neutral" icon-name="utility:code_playground" label={rawModeLabel} onclick={handleToggleRawMode}></lightning-button>
@@ -172,6 +186,7 @@
         apex-scripts={apexScripts}
         sfdmu-workspaces={sfdmuWorkspaces}
         permission-sets={permissionSets}
+        org-init-step-types={stepTypes}
         custom-functions={customFunctions}
         schedulable-classes={schedulableClasses}
         project-only-schedulable-classes={projectOnlySchedulableClasses}
