@@ -280,7 +280,7 @@ export default class OrgInit extends SharedMixin(LightningElement) {
         label: this.t("orgInitColumnOrgTypes"),
         fieldName: "orgTypesLabel",
         type: "text",
-        initialWidth: 210,
+        wrapText: true,
       },
       {
         label: this.t("orgInitColumnPoolFill"),
