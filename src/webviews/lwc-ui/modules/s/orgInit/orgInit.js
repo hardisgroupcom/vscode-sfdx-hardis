@@ -24,6 +24,9 @@ const SCRATCH_DEF_FORM_FIELDS = [
 ];
 
 export default class OrgInit extends SharedMixin(LightningElement) {
+  // Loading state of the SharedMixin contract: the panel opens on its spinner, before the CLI answers
+  @track loading = true;
+  @track loadError = null;
   @track config = null;
   @track steps = [];
   @track selectedStepIds = [];

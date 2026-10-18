@@ -1976,6 +1976,7 @@
   "orgInitLanguage": "Taal",
   "orgInitLegacyBanner": "Deze stappen zijn opgebouwd uit de oudere instellingen van het project. Sla ze op om orgInitSteps te schrijven: vanaf dan is deze lijst de enige definitie.",
   "orgInitLegacyBannerWithKeys": "Deze stappen zijn opgebouwd uit de oudere instellingen van het project ({{keys}}). Sla ze op om orgInitSteps te schrijven en deze instellingen te verwijderen: vanaf dan is deze lijst de enige definitie.",
+  "orgInitLoading": "De org-initialisatieconfiguratie van het project wordt gelezen...",
   "orgInitNoOrg": "Er is geen scratch org of sandbox verbonden. Verbind er een om de stappen erop uit te voeren.",
   "orgInitNoOrgTypeSelected": "Selecteer minstens één org-type.",
   "orgInitNoPermissionSetSelected": "Selecteer of typ minstens één machtigingenset.",

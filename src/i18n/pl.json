@@ -1976,6 +1976,7 @@
   "orgInitLanguage": "Język",
   "orgInitLegacyBanner": "Te kroki zostały zbudowane na podstawie starszych ustawień projektu. Po ich zapisaniu powstaje orgInitSteps: od tej chwili ta lista jest jedyną definicją.",
   "orgInitLegacyBannerWithKeys": "Te kroki zostały zbudowane na podstawie starszych ustawień projektu ({{keys}}). Po ich zapisaniu powstaje orgInitSteps, a te ustawienia zostają usunięte: od tej chwili ta lista jest jedyną definicją.",
+  "orgInitLoading": "Odczytywanie konfiguracji inicjalizacji orgów projektu...",
   "orgInitNoOrg": "Nie połączono żadnego scratch orga ani sandboxa. Aby uruchomić na nim kroki, należy połączyć jeden z nich.",
   "orgInitNoOrgTypeSelected": "Należy wybrać co najmniej jeden typ orga.",
   "orgInitNoPermissionSetSelected": "Należy wybrać lub wpisać co najmniej jeden zestaw uprawnień.",

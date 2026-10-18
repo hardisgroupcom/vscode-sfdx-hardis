@@ -20,8 +20,11 @@
     </div>
 
     <template if:true={isLoadingState}>
-      <div class="slds-is-relative slds-p-vertical_large slds-text-align_center">
-        <lightning-spinner alternative-text={i18n.loadingLabel} size="medium"></lightning-spinner>
+      <div class="hardis-panel-body">
+        <div class="org-init-loading slds-is-relative slds-text-align_center">
+          <lightning-spinner alternative-text={i18n.loadingLabel} size="medium"></lightning-spinner>
+        </div>
+        <p class="slds-text-align_center slds-text-body_small slds-text-color_weak">{i18n.orgInitLoading}</p>
       </div>
     </template>
     <template if:true={hasError}>

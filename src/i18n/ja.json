@@ -1976,6 +1976,7 @@
   "orgInitLanguage": "言語",
   "orgInitLegacyBanner": "これらのステップは、プロジェクトの以前の設定から作成されています。保存すると orgInitSteps が書き込まれ、以降はこのリストが唯一の定義になります。",
   "orgInitLegacyBannerWithKeys": "これらのステップは、プロジェクトの以前の設定（{{keys}}）から作成されています。保存すると orgInitSteps が書き込まれ、これらの設定は削除されます。以降はこのリストが唯一の定義になります。",
+  "orgInitLoading": "プロジェクトの組織初期化設定を読み込んでいます...",
   "orgInitNoOrg": "スクラッチ組織も sandbox も接続されていません。ステップを実行するには、いずれかに接続してください。",
   "orgInitNoOrgTypeSelected": "組織の種類を 1 つ以上選択してください。",
   "orgInitNoPermissionSetSelected": "権限セットを 1 つ以上選択または入力してください。",

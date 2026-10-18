@@ -1976,6 +1976,7 @@
   "orgInitLanguage": "Idioma",
   "orgInitLegacyBanner": "Estas etapas foram montadas a partir das configurações antigas do projeto. Salve-as para gravar orgInitSteps: a partir daí, esta lista é a única definição.",
   "orgInitLegacyBannerWithKeys": "Estas etapas foram montadas a partir das configurações antigas do projeto ({{keys}}). Salve-as para gravar orgInitSteps e remover essas configurações: a partir daí, esta lista é a única definição.",
+  "orgInitLoading": "Lendo a configuração de inicialização de orgs do projeto...",
   "orgInitNoOrg": "Nenhuma scratch org ou sandbox está conectada. Conecte uma para executar as etapas nela.",
   "orgInitNoOrgTypeSelected": "Selecione pelo menos um tipo de org.",
   "orgInitNoPermissionSetSelected": "Selecione ou digite pelo menos um permission set.",

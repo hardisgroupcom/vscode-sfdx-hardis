@@ -19,3 +19,8 @@
   display: flex;
   align-items: flex-end;
 }
+
+/* Room for the spinner, which is positioned inside its block */
+.org-init-loading {
+  min-height: 6rem;
+}

@@ -1976,6 +1976,7 @@
   "orgInitLanguage": "Idioma",
   "orgInitLegacyBanner": "Estos pasos se han creado a partir de la configuración antigua del proyecto. Guárdelos para escribir orgInitSteps: a partir de entonces, esta lista será la única definición.",
   "orgInitLegacyBannerWithKeys": "Estos pasos se han creado a partir de la configuración antigua del proyecto ({{keys}}). Guárdelos para escribir orgInitSteps y eliminar esa configuración: a partir de entonces, esta lista será la única definición.",
+  "orgInitLoading": "Leyendo la configuración de inicialización de orgs del proyecto...",
   "orgInitNoOrg": "No hay ninguna scratch org ni sandbox conectada. Conecte una para ejecutar los pasos en ella.",
   "orgInitNoOrgTypeSelected": "Seleccione al menos un tipo de org.",
   "orgInitNoPermissionSetSelected": "Seleccione o escriba al menos un permission set.",

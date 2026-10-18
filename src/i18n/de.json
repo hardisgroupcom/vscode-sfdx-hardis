@@ -1976,6 +1976,7 @@
   "orgInitLanguage": "Sprache",
   "orgInitLegacyBanner": "Diese Schritte wurden aus den älteren Einstellungen des Projekts erstellt. Speichern Sie sie, um orgInitSteps zu schreiben: Ab dann ist diese Liste die einzige Definition.",
   "orgInitLegacyBannerWithKeys": "Diese Schritte wurden aus den älteren Einstellungen des Projekts ({{keys}}) erstellt. Speichern Sie sie, um orgInitSteps zu schreiben und diese Einstellungen zu entfernen: Ab dann ist diese Liste die einzige Definition.",
+  "orgInitLoading": "Die Org-Initialisierungskonfiguration des Projekts wird gelesen...",
   "orgInitNoOrg": "Es ist keine Scratch Org oder Sandbox verbunden. Verbinden Sie eine, um die Schritte darauf auszuführen.",
   "orgInitNoOrgTypeSelected": "Wählen Sie mindestens einen Org-Typ aus.",
   "orgInitNoPermissionSetSelected": "Wählen Sie mindestens ein Permission Set aus oder geben Sie eines ein.",

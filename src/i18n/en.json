@@ -1976,6 +1976,7 @@
   "orgInitLanguage": "Language",
   "orgInitLegacyBanner": "These steps are built from the older settings of the project. Save them to write orgInitSteps: from then on, this list is the only definition.",
   "orgInitLegacyBannerWithKeys": "These steps are built from the older settings of the project ({{keys}}). Save them to write orgInitSteps and remove these settings: from then on, this list is the only definition.",
+  "orgInitLoading": "Reading the org initialization configuration of the project...",
   "orgInitNoOrg": "No scratch org or sandbox is connected. Connect one to run the steps on it.",
   "orgInitNoOrgTypeSelected": "Select at least one org type.",
   "orgInitNoPermissionSetSelected": "Select or type at least one permission set.",
