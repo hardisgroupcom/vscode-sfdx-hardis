@@ -179,6 +179,35 @@ suite("Org Initialization panel UI tests", function () {
     assert.strictEqual(after, before, "the file is unchanged");
   });
 
+  test("a Refresh keeps the content on screen under a spinner", async function () {
+    await openLoadedPanel();
+    const sent = recordSentMessages(panel);
+    const pushed: any[] = [];
+    const originalPush = panel.sendInitializationData.bind(panel);
+    panel.sendInitializationData = (data: any) => {
+      pushed.push(data);
+      originalPush(data);
+    };
+    try {
+      panel.simulateWebviewMessage({ type: "refresh" });
+      await waitFor(
+        () => pushed.find((data) => !!data.config),
+        30000,
+        "the reloaded data",
+      );
+    } finally {
+      panel.sendInitializationData = originalPush;
+    }
+    assert.ok(
+      sent.some((message) => message.type === "orgInitReloading"),
+      "the panel is told to show its spinner over the content",
+    );
+    assert.ok(
+      !pushed.some((data) => data.loading === true),
+      "the panel never goes back to its loading state",
+    );
+  });
+
   test("the languages, countries and releases of the Dev Hub follow the panel data", async function () {
     await openLoadedPanel();
     const sent = recordSentMessages(panel);

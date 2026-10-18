@@ -38,8 +38,15 @@ export function registerShowOrgInit(commands: Commands) {
       // Last answer of the CLI: its legacyKeys are the older keys the first save removes
       let lastConfig: any = null;
 
-      const loadAndPush = async () => {
-        panel.sendInitializationData({ loading: true });
+      // keepContent: a Refresh or the reload after a save keeps the panel on screen, under a
+      // spinner, instead of going back to the loading state
+      const loadAndPush = async (keepContent = false) => {
+        const reloading = keepContent && lastConfig !== null;
+        if (reloading) {
+          panel.sendMessage({ type: "orgInitReloading", data: {} });
+        } else {
+          panel.sendInitializationData({ loading: true });
+        }
         try {
           const data = await loadOrgInitPanelData();
           lastConfig = data.config;
@@ -51,6 +58,12 @@ export function registerShowOrgInit(commands: Commands) {
             "[vscode-sfdx-hardis] Org Initialization init failed: " +
               (e?.message || e),
           );
+          if (reloading) {
+            // What is on screen stays usable: the error is shown aside
+            panel.sendMessage({ type: "orgInitReloadFailed", data: {} });
+            vscode.window.showErrorMessage(String(e?.message || e));
+            return;
+          }
           panel.sendInitializationData({
             loading: false,
             loadError: String(e?.message || e),
@@ -59,8 +72,10 @@ export function registerShowOrgInit(commands: Commands) {
       };
 
       panel.onMessage(async (type: string, data: any) => {
-        if (type === "retryInit" || type === "refresh") {
+        if (type === "retryInit") {
           await loadAndPush();
+        } else if (type === "refresh") {
+          await loadAndPush(true);
         } else if (type === "saveOrgInitSteps") {
           try {
             // The steps replace the older keys the CLI built them from: a single definition is left
@@ -70,7 +85,7 @@ export function registerShowOrgInit(commands: Commands) {
             }
             await configHelper.writeGlobalConfigValues(values);
             vscode.window.showInformationMessage(t("orgInitStepsSaved"));
-            await loadAndPush();
+            await loadAndPush(true);
           } catch (e: any) {
             panel.sendMessage({ type: "orgInitStepsSaveFailed", data: {} });
             vscode.window.showErrorMessage(

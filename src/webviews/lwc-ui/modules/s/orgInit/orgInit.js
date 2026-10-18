@@ -41,7 +41,9 @@ export default class OrgInit extends SharedMixin(LightningElement) {
   @track targetOrg = "";
   stepsDirty = false;
   // A save was sent and the extension has not answered yet
-  stepsSaving = false;
+  @track stepsSaving = false;
+  // A Refresh or the reload after a save: the content stays, the spinner covers it
+  @track reloading = false;
 
   // Step editor (s-deployment-action in orgInit mode)
   @track showStepModal = false;
@@ -83,7 +85,7 @@ export default class OrgInit extends SharedMixin(LightningElement) {
   @track localScratchDefIssues = [];
   @track localScratchDefWarnings = [];
   rawMode = false;
-  scratchDefSaving = false;
+  @track scratchDefSaving = false;
   scratchDefDirty = false;
 
   @api
@@ -94,6 +96,7 @@ export default class OrgInit extends SharedMixin(LightningElement) {
       return;
     }
     this.config = data.config;
+    this.reloading = false;
     this.steps = (data.config.steps || []).map((step) => ({ ...step }));
     this.stepsDirty = false;
     this.stepsSaving = false;
@@ -130,6 +133,13 @@ export default class OrgInit extends SharedMixin(LightningElement) {
         this.scratchDefIssues = [];
         this.scratchDefWarnings = data?.warnings || [];
         this.scratchDefDirty = false;
+        break;
+      case "orgInitReloading":
+        this.reloading = true;
+        break;
+      case "orgInitReloadFailed":
+        this.reloading = false;
+        this.stepsSaving = false;
         break;
       case "scratchDefOrgValues":
         this.orgValues = data?.orgValues || null;
@@ -174,7 +184,12 @@ export default class OrgInit extends SharedMixin(LightningElement) {
   }
 
   handleRefresh() {
+    this.reloading = true;
     window.sendMessageToVSCode({ type: "refresh" });
+  }
+
+  get showBusyOverlay() {
+    return this.reloading || this.stepsSaving || this.scratchDefSaving;
   }
 
   // ---------------------------------------------------------------- Steps tab

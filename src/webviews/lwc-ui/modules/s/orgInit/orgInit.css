@@ -36,3 +36,9 @@
 .org-init-loading {
   min-height: 6rem;
 }
+
+/* The org combobox opens its list past the bottom of the dialog */
+.org-init-import-content {
+  overflow: visible;
+  min-height: 8rem;
+}

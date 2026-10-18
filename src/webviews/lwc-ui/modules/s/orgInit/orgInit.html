@@ -35,7 +35,11 @@
       </div>
     </template>
     <template if:true={isReady}>
-      <div class="hardis-panel-body">
+      <!-- A save or a Refresh keeps the content on screen, under the spinner -->
+      <div class="hardis-panel-body slds-is-relative">
+        <template if:true={showBusyOverlay}>
+          <lightning-spinner alternative-text={i18n.loadingLabel} size="medium"></lightning-spinner>
+        </template>
         <lightning-tabset>
           <!-- Steps -->
           <lightning-tab label={i18n.orgInitStepsTab} value="steps">
@@ -194,38 +198,6 @@
                   </div>
                 </template>
 
-                <!-- Import from an org: the settings with the Metadata API, the features through an org shape -->
-                <template if:true={showImportBox}>
-                  <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
-                    <div class="hardis-card org-init-import">
-                      <div class="hardis-group-label">{importTitle}</div>
-                      <p class="hardis-group-desc">{importHint}</p>
-                      <lightning-combobox class="org-init-run-org slds-m-bottom_small" label={i18n.orgInitImportSourceOrg} options={sourceOrgs} value={importSourceOrg} onchange={handleImportSourceOrgChange}></lightning-combobox>
-                      <template if:true={isImportSettings}>
-                        <lightning-dual-listbox
-                          class="slds-m-bottom_small"
-                          label={i18n.orgInitSettingsToImport}
-                          source-label={settingsNamesSourceLabel}
-                          selected-label={settingsNamesSelectedLabel}
-                          options={settingsNameOptions}
-                          value={importSettingsNames}
-                          onchange={handleImportSettingsNamesChange}
-                        ></lightning-dual-listbox>
-                      </template>
-                      <template if:true={importError}>
-                        <div class="hardis-note error slds-m-bottom_small" role="alert">
-                          <lightning-icon icon-name="utility:error" size="small" class="slds-m-right_small"></lightning-icon>
-                          <span>{importError}</span>
-                        </div>
-                      </template>
-                      <div class="org-init-toolbar">
-                        <lightning-button class="hardis-btn-tinted-blue" variant="neutral" icon-name="utility:download" label={importButtonLabel} disabled={importDisabled} onclick={handleRunImport}></lightning-button>
-                        <lightning-button variant="neutral" label={i18n.cancel} onclick={handleCancelImport}></lightning-button>
-                      </div>
-                    </div>
-                  </div>
-                </template>
-
                 <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                   <div class="org-init-section-head">
                     <span class="slds-form-element__label">{i18n.orgInitFeatures}</span>
@@ -274,6 +246,46 @@
           </lightning-tab>
         </lightning-tabset>
       </div>
+    </template>
+
+    <!-- Import from an org: the settings with the Metadata API, the features through an org shape -->
+    <template if:true={showImportBox}>
+      <section role="dialog" tabindex="-1" aria-modal="true" aria-busy={importing} class="slds-modal slds-fade-in-open">
+        <div class="slds-modal__container">
+          <header class="slds-modal__header">
+            <h2 class="slds-modal__title slds-hyphenate">{importTitle}</h2>
+          </header>
+          <div class="slds-modal__content slds-p-around_medium slds-is-relative org-init-import-content">
+            <template if:true={importing}>
+              <lightning-spinner alternative-text={i18n.loadingLabel} size="medium"></lightning-spinner>
+            </template>
+            <p class="hardis-group-desc">{importHint}</p>
+            <lightning-combobox class="slds-m-bottom_small" label={i18n.orgInitImportSourceOrg} options={sourceOrgs} value={importSourceOrg} onchange={handleImportSourceOrgChange}></lightning-combobox>
+            <template if:true={isImportSettings}>
+              <lightning-dual-listbox
+                class="slds-m-bottom_small"
+                label={i18n.orgInitSettingsToImport}
+                source-label={settingsNamesSourceLabel}
+                selected-label={settingsNamesSelectedLabel}
+                options={settingsNameOptions}
+                value={importSettingsNames}
+                onchange={handleImportSettingsNamesChange}
+              ></lightning-dual-listbox>
+            </template>
+            <template if:true={importError}>
+              <div class="hardis-note error" role="alert">
+                <lightning-icon icon-name="utility:error" size="small" class="slds-m-right_small"></lightning-icon>
+                <span>{importError}</span>
+              </div>
+            </template>
+          </div>
+          <footer class="slds-modal__footer">
+            <lightning-button variant="neutral" label={i18n.cancel} onclick={handleCancelImport}></lightning-button>
+            <lightning-button class="hardis-btn-tinted-blue" variant="neutral" icon-name="utility:download" label={importButtonLabel} disabled={importDisabled} onclick={handleRunImport}></lightning-button>
+          </footer>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open"></div>
     </template>
 
     <!-- Step editor: the deployment action editor, in org initialization mode -->
