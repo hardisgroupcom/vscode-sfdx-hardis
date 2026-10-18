@@ -35,7 +35,7 @@
   "activeUsersCrmWeeklyDescription": "Detectar usuarios CRM que han estado activos en los últimos 7 días",
   "activeUsersExperienceMonthly": "Usuarios Portal activos (30 días)",
   "activeUsersExperienceMonthlyDescription": "Detectar usuarios de Experience/Portal activos en el último mes",
-  "addConfigureOrg": "Añadir/Configurar una org",
+  "addConfigureOrg": "Añadir o volver a conectar una org principal",
   "addCustomCommand": "Añadir comando personalizado",
   "addCustomFunction": "Añadir una función personalizada",
   "addLabel": "Añadir",

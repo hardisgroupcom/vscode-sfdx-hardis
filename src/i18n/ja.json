@@ -35,7 +35,7 @@
   "activeUsersCrmWeeklyDescription": "過去7日間にアクティブだった CRM ユーザーを検出",
   "activeUsersExperienceMonthly": "アクティブなポータルユーザー（30日間）",
   "activeUsersExperienceMonthlyDescription": "過去1か月間にアクティブだった Experience/Portal ユーザーを検出",
-  "addConfigureOrg": "組織を追加/設定",
+  "addConfigureOrg": "主要組織を追加または再接続",
   "addCustomCommand": "カスタムコマンドを追加",
   "addCustomFunction": "カスタム関数を追加",
   "addLabel": "追加",

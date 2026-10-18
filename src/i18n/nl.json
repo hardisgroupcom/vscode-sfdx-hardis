@@ -35,7 +35,7 @@
   "activeUsersCrmWeeklyDescription": "Detecteer CRM-gebruikers die de afgelopen 7 dagen actief waren",
   "activeUsersExperienceMonthly": "Actieve Portal-gebruikers (30 dagen)",
   "activeUsersExperienceMonthlyDescription": "Detecteer Experience/Portal-gebruikers die de afgelopen maand actief waren",
-  "addConfigureOrg": "Org toevoegen/configureren",
+  "addConfigureOrg": "Hoofd-org toevoegen of opnieuw verbinden",
   "addCustomCommand": "Aangepaste opdracht toevoegen",
   "addCustomFunction": "Een aangepaste functie toevoegen",
   "addLabel": "Toevoegen",
