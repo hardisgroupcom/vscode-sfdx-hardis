@@ -98,6 +98,9 @@ const TITLE_BAR_HEIGHT = 38;
 // Width of the activity bar + side bar in a capture: recordings crop it out
 // (must match SIDE_BAR_WIDTH in scripts/build-doc-images.py)
 const SIDE_BAR_WIDTH = 435;
+// SFDX_HARDIS_SCREENSHOTS_NARROW=1000: after each capture, the horizontal scrollbar check also
+// runs with the panel narrowed to that many CSS pixels, as on a laptop screen
+const NARROW_WIDTH = Number(process.env.SFDX_HARDIS_SCREENSHOTS_NARROW || 0);
 
 // The window of the run, driven through its debugging port (src/test/ui/cdpWindow.ts): no real
 // mouse, no foreground window, the same pixels on every machine
@@ -127,8 +130,96 @@ async function capture(
     });
     console.log(`      [shot] ${file} ${size.width}x${size.height}`);
     recordGate(name);
+    await recordHorizontalScrollbars(name);
   } catch (error: any) {
     console.log(`      [shot] ${name}: FAILED ${error?.message || error}`);
+  }
+}
+
+// Captures showing a horizontal scrollbar, by capture name. A panel never opens with one: the
+// last test of the suite fails when any capture of the run had one
+const horizontalScrollbars = new Map<string, string[]>();
+
+/**
+ * Records the visible elements of the panel shown that scroll horizontally (a table wider than
+ * its box, a page wider than the panel). The last capture of a name decides.
+ */
+async function recordHorizontalScrollbars(name: string): Promise<void> {
+  await recordHorizontalScrollbarsAt(name, 0);
+  if (NARROW_WIDTH > 0) {
+    await recordHorizontalScrollbarsAt(
+      `${name} @${NARROW_WIDTH}px`,
+      NARROW_WIDTH,
+    );
+  }
+}
+
+async function recordHorizontalScrollbarsAt(
+  name: string,
+  width: number,
+): Promise<void> {
+  if (width > 0) {
+    try {
+      await inWebview(
+        `panelDocument.body.style.maxWidth = "${width}px"; return true;`,
+      );
+    } catch {
+      return;
+    }
+    // Tables measure their box again on resize
+    await sleep(1500);
+  }
+  let offenders: string[] | null = null;
+  try {
+    offenders = await inWebview(`
+      // A webview kept in a background tab still answers, with the size of its hidden frame
+      const view = panelDocument.defaultView;
+      if (panelDocument.visibilityState === "hidden" || !view || view.innerWidth < 400) {
+        return null;
+      }
+      const found = [];
+      const describe = (element) => {
+        const owner = element.closest("[data-id], lightning-datatable, s-hardis-datatable") || element;
+        const label = owner.tagName.toLowerCase() + (owner.className ? "." + String(owner.className).split(" ").filter(Boolean).slice(0, 2).join(".") : "");
+        return label;
+      };
+      for (const element of deepAll(panelDocument, "*")) {
+        const overflowX = getComputedStyle(element).overflowX;
+        if (overflowX !== "auto" && overflowX !== "scroll") {
+          continue;
+        }
+        const rect = element.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) {
+          continue;
+        }
+        if (element.scrollWidth > element.clientWidth + 1) {
+          found.push(describe(element) + " (" + element.scrollWidth + "px in " + element.clientWidth + "px)");
+        }
+      }
+      const page = panelDocument.scrollingElement;
+      if (page && page.scrollWidth > page.clientWidth + 1) {
+        found.push("page (" + page.scrollWidth + "px in " + page.clientWidth + "px)");
+      }
+      return found;
+    `);
+  } catch {
+    // No webview shown (a capture of the side bar or of an editor)
+  }
+  if (width > 0) {
+    try {
+      await inWebview(`panelDocument.body.style.maxWidth = ""; return true;`);
+    } catch {
+      // The panel was closed meanwhile
+    }
+    await sleep(800);
+  }
+  if (offenders && offenders.length > 0) {
+    horizontalScrollbars.set(name, offenders);
+    console.log(
+      `      [shot] ${name}: HORIZONTAL SCROLLBAR ${offenders.join(", ")}`,
+    );
+  } else {
+    horizontalScrollbars.delete(name);
   }
 }
 
@@ -4475,6 +4566,18 @@ suite("Documentation screenshots", function () {
         fs.writeFileSync(configFile, configBefore);
       }
       await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    }
+  });
+
+  // Runs last: a panel never opens with a horizontal scrollbar, in VS Code or in a screenshot
+  test("no capture shows a horizontal scrollbar", function () {
+    const lines = [...horizontalScrollbars.entries()].map(
+      ([name, offenders]) => `${name}: ${offenders.join(", ")}`,
+    );
+    if (lines.length > 0) {
+      throw new Error(
+        `Horizontal scrollbar in ${lines.length} capture(s):${os.EOL}${lines.join(os.EOL)}`,
+      );
     }
   });
 });
