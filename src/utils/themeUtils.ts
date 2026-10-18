@@ -448,6 +448,10 @@ export class ThemeUtils {
         vscode: "radio-tower",
         hardis: "pool.svg",
       },
+      "vscode-sfdx-hardis.showReplacementRules": {
+        vscode: "replace-all",
+        hardis: "configure.svg",
+      },
       "org:configure:generic-prompt": {
         vscode: "sparkle",
         hardis: "configure.svg",

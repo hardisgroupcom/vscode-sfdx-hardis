@@ -215,6 +215,7 @@ export class LwcUiPanel {
       "s-org-manager": t("orgsManager"),
       "s-org-monitoring": t("orgMonitoringWorkbench"),
       "s-scratch-org-pool": t("scratchOrgPoolTitle"),
+      "s-replacement-rules": t("replacementRulesTitle"),
       "s-package-xml": t("packageXml"),
       "s-pipeline": t("devOpsPipeline"),
       "s-pipeline-config": t("pipelineConfig"),

@@ -1,0 +1,43 @@
+/* Layout only: modal, cards, notes and fields come from SLDS and resources/global-theme.css. */
+
+.rre-block {
+  margin-bottom: 0.8rem;
+}
+
+.rre-message {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.rre-help {
+  margin-top: 0.25rem;
+}
+
+.rre-org-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 0.4rem 1rem;
+}
+
+/* The command the panel runs, then the buttons: the command wraps, the buttons never do */
+.rre-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  text-align: left;
+}
+
+.rre-command {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.rre-footer-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}

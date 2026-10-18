@@ -1,0 +1,353 @@
+<template>
+  <div class="slds-p-around_x-small blue-back">
+    <div class="hardis-page-head">
+      <div class="hardis-tile featured teal">
+        <lightning-icon icon-name="utility:replace" size="medium"></lightning-icon>
+      </div>
+      <div class="hardis-page-head-text">
+        <h1 class="hardis-page-title">{i18n.replacementRulesTitle}</h1>
+        <p class="hardis-page-subtitle">{i18n.replacementRulesSubtitle}</p>
+      </div>
+      <div class="hardis-page-head-actions">
+        <lightning-button
+          variant="neutral"
+          label={i18n.refreshLabel}
+          icon-name="utility:refresh"
+          disabled={refreshDisabled}
+          onclick={handleRefresh}
+        ></lightning-button>
+        <lightning-button-icon
+          icon-name="utility:help"
+          variant="border-filled"
+          alternative-text={i18n.documentation}
+          title={i18n.documentation}
+          onclick={handleOpenPanelDoc}
+        ></lightning-button-icon>
+        <lightning-button
+          variant="neutral"
+          class="hardis-btn-tinted-blue"
+          label={i18n.replacementRulesNewRule}
+          icon-name="utility:add"
+          disabled={newRuleDisabled}
+          onclick={handleNewRule}
+        ></lightning-button>
+      </div>
+    </div>
+
+    <!-- First reading: nothing to show yet -->
+    <template lwc:if={showLoading}>
+      <div class="hardis-panel-body">
+        <div class="rr-loading" role="status">
+          <!-- lightning-spinner centers itself in its closest positioned parent: this box -->
+          <div class="rr-loading-spinner">
+            <lightning-spinner alternative-text={i18n.replacementRulesLoading} size="small" variant="brand"></lightning-spinner>
+          </div>
+          <p class="muted">{i18n.replacementRulesLoading}</p>
+        </div>
+      </div>
+    </template>
+
+    <!-- The last rules read stay on screen while sfdx-hardis reads them again -->
+    <template lwc:if={isRefreshing}>
+      <div class="hardis-note rr-refreshing" role="status">
+        <div class="rr-refreshing-spinner">
+          <lightning-spinner alternative-text={i18n.replacementRulesLoading} size="x-small" variant="brand"></lightning-spinner>
+        </div>
+        <p>{i18n.replacementRulesLoading}</p>
+      </div>
+    </template>
+
+    <template lwc:if={showCliTooOld}>
+      <div class="hardis-panel-body rr-state">
+        <div class="hardis-empty">
+          <div class="hardis-tile featured amber">
+            <lightning-icon icon-name="utility:upload" size="small"></lightning-icon>
+          </div>
+          <h3 class="hardis-empty-title">{i18n.replacementRulesOldCliTitle}</h3>
+          <p class="hardis-empty-desc">{cliTooOldDescription}</p>
+          <div class="hardis-empty-actions">
+            <lightning-button variant="neutral" class="hardis-btn-tinted-blue" label={i18n.openSetup} onclick={handleOpenSetup}></lightning-button>
+            <lightning-button variant="neutral" icon-name="utility:refresh" label={i18n.tryAgainLabel} onclick={handleRetry}></lightning-button>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- Any other failure: the message of sfdx-hardis -->
+    <template lwc:if={showErrorState}>
+      <div class="hardis-panel-body rr-state">
+        <div class="hardis-empty">
+          <div class="hardis-tile featured red">
+            <lightning-icon icon-name="utility:warning" size="small"></lightning-icon>
+          </div>
+          <h3 class="hardis-empty-title">{i18n.replacementRulesErrorTitle}</h3>
+          <div class="hardis-note error rr-message" role="alert">
+            <p>{errorMessage}</p>
+          </div>
+          <div class="hardis-empty-actions">
+            <lightning-button variant="neutral" class="hardis-btn-tinted-blue" icon-name="utility:refresh" label={i18n.tryAgainLabel} onclick={handleRetry}></lightning-button>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template lwc:if={showErrorNote}>
+      <div class="hardis-note error rr-state rr-message" role="alert">
+        <p>{errorMessage}</p>
+      </div>
+    </template>
+
+    <template lwc:if={showContent}>
+      <!-- Where the rules come from -->
+      <div class="hardis-status-grid rr-status">
+        <template for:each={statusCards} for:item="card">
+          <div key={card.key} class={card.cardClass}>
+            <div class={card.tileClass}>
+              <lightning-icon icon-name={card.icon} size="small"></lightning-icon>
+            </div>
+            <div class="hardis-status-content">
+              <h3 class="hardis-status-title">
+                {card.title}
+                <template lwc:if={card.hasMeta}>
+                  <span class="hardis-status-meta">{card.meta}</span>
+                </template>
+              </h3>
+              <p class="hardis-status-desc">{card.desc}</p>
+            </div>
+            <template lwc:if={card.hasAction}>
+              <div class="hardis-status-actions">
+                <lightning-button variant="neutral" class={card.actionClass} label={card.actionLabel} data-action={card.action} data-url={card.actionUrl} onclick={handleStatusAction}></lightning-button>
+              </div>
+            </template>
+          </div>
+        </template>
+      </div>
+
+      <template lwc:if={hasInvalidRules}>
+        <div class="hardis-note warning rr-state" role="alert">
+          <div>
+            <p><strong>{i18n.replacementRulesInvalidRulesTitle}</strong></p>
+            <ul class="rr-list">
+              <template for:each={invalidRules} for:item="item">
+                <li key={item.key}>{item.text}</li>
+              </template>
+            </ul>
+          </div>
+        </div>
+      </template>
+
+      <div class="hardis-panel-body">
+        <lightning-tabset active-tab-value={activeTab}>
+          <!-- Rules of the project, of the branch files and of the issue -->
+          <lightning-tab label={rulesTabLabel} value="rules" icon-name="utility:rules" onactive={handleTabActive}>
+            <div class="hardis-action-row rr-toolbar">
+              <div class="hardis-action-row-main">
+                <lightning-input
+                  type="search"
+                  class="rr-filter"
+                  variant="label-hidden"
+                  label={i18n.replacementRulesFilter}
+                  placeholder={i18n.replacementRulesFilter}
+                  value={filterText}
+                  onchange={handleFilterChange}
+                ></lightning-input>
+                <lightning-combobox
+                  class="rr-layer-filter"
+                  variant="label-hidden"
+                  label={i18n.replacementRulesColumnStoredIn}
+                  value={layerFilter}
+                  options={layerFilterOptions}
+                  onchange={handleLayerFilterChange}
+                ></lightning-combobox>
+              </div>
+            </div>
+            <template lwc:if={hasRuleRows}>
+              <div class="rr-table">
+                <s-hardis-datatable
+                  class="slds-no-row-hover"
+                  key-field="key"
+                  data={ruleRows}
+                  columns={ruleColumns}
+                  column-widths-mode="auto"
+                  hide-checkbox-column
+                  wrap-text-max-lines="3"
+                  onrowaction={handleRuleRowAction}
+                ></s-hardis-datatable>
+              </div>
+            </template>
+            <template lwc:elseif={hasDefinitions}>
+              <p class="hardis-group-desc">{i18n.replacementRulesNoMatch}</p>
+            </template>
+            <template lwc:else>
+              <div class="hardis-empty">
+                <div class="hardis-tile featured teal">
+                  <lightning-icon icon-name="utility:replace" size="small"></lightning-icon>
+                </div>
+                <h3 class="hardis-empty-title">{i18n.replacementRulesEmptyTitle}</h3>
+                <p class="hardis-empty-desc">{i18n.replacementRulesEmptyDesc}</p>
+                <div class="hardis-empty-actions">
+                  <lightning-button variant="neutral" class="hardis-btn-tinted-blue" icon-name="utility:add" label={i18n.replacementRulesNewRule} onclick={handleNewRule}></lightning-button>
+                </div>
+              </div>
+            </template>
+          </lightning-tab>
+
+          <!-- The value each org gets, as sfdx-hardis resolves it -->
+          <lightning-tab label={i18n.replacementRulesTabValues} value="values" icon-name="utility:table" onactive={handleTabActive}>
+            <p class="hardis-group-desc">{i18n.replacementRulesValuesDesc}</p>
+            <template lwc:if={hasMatrixRows}>
+              <div class="rr-table">
+                <s-hardis-datatable
+                  class="slds-no-row-hover"
+                  key-field="key"
+                  data={matrixRows}
+                  columns={matrixColumns}
+                  column-widths-mode="auto"
+                  hide-checkbox-column
+                  wrap-text-max-lines="3"
+                  onrowaction={handleMatrixRowAction}
+                ></s-hardis-datatable>
+              </div>
+              <div class="hardis-legend rr-legend">
+                <span class="hardis-legend-item"><span class="hardis-pill hardis-hue-teal">{i18n.replacementRulesLegendDefault}</span></span>
+                <span class="hardis-legend-item"><span class="hardis-pill hardis-hue-slate">{i18n.replacementRulesLegendNotApplied}</span></span>
+                <span class="hardis-legend-item"><span class="hardis-pill hardis-hue-amber">{i18n.replacementRulesLegendSecret}</span></span>
+              </div>
+            </template>
+            <template lwc:else>
+              <p class="hardis-group-desc">{i18n.replacementRulesNoValues}</p>
+            </template>
+          </lightning-tab>
+
+          <!-- Elements removed when the deployment API version of the target org does not know them -->
+          <lightning-tab label={builtInTabLabel} value="builtin" icon-name="utility:shield" onactive={handleTabActive}>
+            <p class="hardis-group-desc">{i18n.replacementRulesBuiltInDesc}</p>
+            <div class="rr-table">
+              <s-hardis-datatable
+                class="slds-no-row-hover"
+                key-field="key"
+                data={builtInRows}
+                columns={builtInColumns}
+                column-widths-mode="auto"
+                hide-checkbox-column
+                wrap-text-max-lines="3"
+                onrowaction={handleBuiltInRowAction}
+              ></s-hardis-datatable>
+            </div>
+          </lightning-tab>
+
+          <!-- What the rules would change on the local files, for one target -->
+          <lightning-tab label={i18n.replacementRulesTabPreview} value="preview" icon-name="utility:preview" onactive={handleTabActive}>
+            <div class="hardis-action-row rr-toolbar">
+              <div class="hardis-action-row-main">
+                <lightning-combobox
+                  class="rr-preview-target"
+                  label={i18n.replacementRulesDeployTo}
+                  value={previewTargetValue}
+                  options={previewTargetOptions}
+                  onchange={handlePreviewTargetChange}
+                ></lightning-combobox>
+                <lightning-button
+                  class="hardis-btn-tinted-blue rr-preview-run"
+                  variant="neutral"
+                  icon-name="utility:play"
+                  label={i18n.replacementRulesRunPreview}
+                  disabled={previewRunDisabled}
+                  onclick={handleRunPreview}
+                ></lightning-button>
+              </div>
+            </div>
+            <p class="rr-command"><code>{previewCommand}</code></p>
+
+            <template lwc:if={showPreviewIntro}>
+              <p class="hardis-group-desc">{i18n.replacementRulesPreviewIntro}</p>
+            </template>
+            <template lwc:if={previewRunning}>
+              <div class="rr-loading" role="status">
+                <div class="rr-loading-spinner">
+                  <lightning-spinner alternative-text={i18n.replacementRulesPreviewRunning} size="small" variant="brand"></lightning-spinner>
+                </div>
+                <p class="muted">{i18n.replacementRulesPreviewRunning}</p>
+              </div>
+            </template>
+            <template lwc:if={showPreviewCliTooOld}>
+              <div class="hardis-note warning rr-message" role="alert">
+                <p>{cliTooOldDescription}</p>
+              </div>
+            </template>
+            <template lwc:if={showPreviewError}>
+              <div class="hardis-note error rr-message" role="alert">
+                <p>{previewErrorMessage}</p>
+              </div>
+            </template>
+            <template lwc:if={hasPreviewResult}>
+              <div class="hardis-group-label">{previewTargetText}</div>
+              <p class="hardis-group-desc">{previewSummary}</p>
+              <template lwc:if={hasPreviewWarnings}>
+                <div class="hardis-note warning rr-state" role="alert">
+                  <ul class="rr-list">
+                    <template for:each={previewWarnings} for:item="warning">
+                      <li key={warning.key}>{warning.text}</li>
+                    </template>
+                  </ul>
+                </div>
+              </template>
+              <template lwc:if={hasPreviewRows}>
+                <div class="rr-table">
+                  <s-hardis-datatable
+                    class="slds-no-row-hover"
+                    key-field="key"
+                    data={previewRows}
+                    columns={previewColumns}
+                    column-widths-mode="auto"
+                    hide-checkbox-column
+                    wrap-text-max-lines="3"
+                  ></s-hardis-datatable>
+                </div>
+              </template>
+              <template lwc:else>
+                <p class="hardis-group-desc">{i18n.replacementRulesPreviewNothing}</p>
+              </template>
+              <p class="hardis-group-desc rr-preview-foot">{i18n.replacementRulesPreviewFoot}</p>
+            </template>
+          </lightning-tab>
+        </lightning-tabset>
+      </div>
+    </template>
+
+    <template lwc:if={showEditor}>
+      <s-replacement-rule-editor
+        definition={editorDefinition}
+        is-create={editorIsCreate}
+        inherited-type={editorInheritedType}
+        major-branches={majorBranchNames}
+        issue-available={issueAvailable}
+        issue-number={issueNumber}
+        secret-lookups={secretLookups}
+        saving={editorBusy}
+        error-message={editorError}
+        onclose={handleEditorClose}
+        onsave={handleEditorSave}
+      ></s-replacement-rule-editor>
+    </template>
+
+    <!-- Deleting a rule is confirmed before the command runs -->
+    <template lwc:if={showDeleteModal}>
+      <section role="dialog" tabindex="-1" aria-modal="true" class="slds-modal slds-fade-in-open">
+        <div class="slds-modal__container">
+          <header class="slds-modal__header">
+            <h2 class="slds-modal__title slds-hyphenate">{i18n.replacementRulesDeleteTitle}</h2>
+          </header>
+          <div class="slds-modal__content slds-p-around_medium">
+            <p>{deleteConfirmText}</p>
+          </div>
+          <footer class="slds-modal__footer">
+            <lightning-button variant="neutral" label={i18n.cancelLabel} onclick={handleDeleteCancel}></lightning-button>
+            <lightning-button variant="neutral" class="hardis-btn-tinted-red" icon-name="utility:delete" label={i18n.deleteLabel} onclick={handleDeleteConfirm}></lightning-button>
+          </footer>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+  </div>
+</template>
