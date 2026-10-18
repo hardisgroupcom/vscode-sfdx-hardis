@@ -412,7 +412,7 @@
       },
       {
         "command": "vscode-sfdx-hardis.showOrgInit",
-        "title": "SFDX Hardis: Org Initialization",
+        "title": "SFDX Hardis: Org Initialization (Beta)",
         "icon": "$(rocket)"
       },
       {
@@ -422,7 +422,7 @@
       },
       {
         "command": "vscode-sfdx-hardis.showReplacementRules",
-        "title": "SFDX Hardis: Replacement Rules",
+        "title": "SFDX Hardis: Replacement Rules (Beta)",
         "icon": "$(replace-all)"
       },
       {

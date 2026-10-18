@@ -166,8 +166,12 @@
                 <s-hardis-datatable
                   class="slds-no-row-hover"
                   key-field="key"
-                  data={ruleRows}
-                  columns={ruleColumns}
+                  data={sortedRuleRows}
+                  columns={sortableRuleColumns}
+                  sorted-by={sorts.rules.fieldName}
+                  sorted-direction={sorts.rules.direction}
+                  data-table="rules"
+                  onsort={handleTableSort}
                   column-widths-mode="auto"
                   hide-checkbox-column
                   wrap-text-max-lines="3"
@@ -200,8 +204,12 @@
                 <s-hardis-datatable
                   class="slds-no-row-hover"
                   key-field="key"
-                  data={matrixRows}
-                  columns={matrixColumns}
+                  data={sortedMatrixRows}
+                  columns={sortableMatrixColumns}
+                  sorted-by={sorts.values.fieldName}
+                  sorted-direction={sorts.values.direction}
+                  data-table="values"
+                  onsort={handleTableSort}
                   column-widths-mode="auto"
                   hide-checkbox-column
                   wrap-text-max-lines="3"
@@ -226,8 +234,12 @@
               <s-hardis-datatable
                 class="slds-no-row-hover"
                 key-field="key"
-                data={builtInRows}
-                columns={builtInColumns}
+                data={sortedBuiltInRows}
+                columns={sortableBuiltInColumns}
+                sorted-by={sorts.builtin.fieldName}
+                sorted-direction={sorts.builtin.direction}
+                data-table="builtin"
+                onsort={handleTableSort}
                 column-widths-mode="auto"
                 hide-checkbox-column
                 wrap-text-max-lines="3"
@@ -297,8 +309,12 @@
                   <s-hardis-datatable
                     class="slds-no-row-hover"
                     key-field="key"
-                    data={previewRows}
-                    columns={previewColumns}
+                    data={sortedPreviewRows}
+                    columns={sortablePreviewColumns}
+                    sorted-by={sorts.preview.fieldName}
+                    sorted-direction={sorts.preview.direction}
+                    data-table="preview"
+                    onsort={handleTableSort}
                     column-widths-mode="auto"
                     hide-checkbox-column
                     wrap-text-max-lines="3"

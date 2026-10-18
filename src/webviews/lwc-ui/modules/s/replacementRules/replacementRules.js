@@ -6,6 +6,7 @@
 import { LightningElement, api } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
 import { getPillClass } from "s/pillUtils";
+import { makeColumnsSortable, sortDatatableRows, sortStateFromEvent } from "s/datatableSortUtils";
 
 /**
  * Replacement Rules panel.
@@ -305,14 +306,64 @@ export default class ReplacementRules extends SharedMixin(LightningElement) {
     ];
   }
 
+  // --- Sorting: a click on a column header sorts the table, a second click reverses it ---
+
+  // Column and direction of each table, kept while the panel is open
+  sorts = {
+    rules: { fieldName: null, direction: "asc" },
+    values: { fieldName: null, direction: "asc" },
+    builtin: { fieldName: null, direction: "asc" },
+    preview: { fieldName: null, direction: "asc" },
+  };
+
+  handleTableSort(event) {
+    const table = event.currentTarget?.dataset?.table;
+    if (!table || !this.sorts[table]) {
+      return;
+    }
+    this.sorts = { ...this.sorts, [table]: sortStateFromEvent(event) };
+  }
+
+  get sortableRuleColumns() {
+    return makeColumnsSortable(this.ruleColumns);
+  }
+
+  get sortedRuleRows() {
+    return sortDatatableRows(this.ruleRows, this.sorts.rules.fieldName, this.sorts.rules.direction);
+  }
+
+  get sortableMatrixColumns() {
+    return makeColumnsSortable(this.matrixColumns);
+  }
+
+  get sortedMatrixRows() {
+    return sortDatatableRows(this.matrixRows, this.sorts.values.fieldName, this.sorts.values.direction);
+  }
+
+  get sortableBuiltInColumns() {
+    return makeColumnsSortable(this.builtInColumns);
+  }
+
+  get sortedBuiltInRows() {
+    return sortDatatableRows(this.builtInRows, this.sorts.builtin.fieldName, this.sorts.builtin.direction);
+  }
+
+  get sortablePreviewColumns() {
+    return makeColumnsSortable(this.previewColumns);
+  }
+
+  get sortedPreviewRows() {
+    return sortDatatableRows(this.previewRows, this.sorts.preview.fieldName, this.sorts.preview.direction);
+  }
+
   get ruleColumns() {
     return [
-      ...this.ruleIdentityColumns(220),
+      ...this.ruleIdentityColumns(170),
       {
         label: this.i18n.replacementRulesColumnAction,
         fieldName: "typeLabel",
         type: "typePill",
-        initialWidth: 170,
+        initialWidth: 130,
         typeAttributes: {
           label: { fieldName: "typeLabel" },
           pillClass: { fieldName: "typePillClass" },
@@ -335,7 +386,7 @@ export default class ReplacementRules extends SharedMixin(LightningElement) {
         label: this.i18n.replacementRulesColumnValue,
         fieldName: "valueLabel",
         type: "typePill",
-        initialWidth: 190,
+        initialWidth: 145,
         typeAttributes: {
           label: { fieldName: "valueLabel" },
           pillClass: { fieldName: "valuePillClass" },
@@ -346,7 +397,7 @@ export default class ReplacementRules extends SharedMixin(LightningElement) {
         label: this.i18n.replacementRulesColumnStoredIn,
         fieldName: "layerLabel",
         type: "typePill",
-        initialWidth: 150,
+        initialWidth: 115,
         typeAttributes: {
           label: { fieldName: "layerLabel" },
           pillClass: { fieldName: "layerPillClass" },
@@ -357,7 +408,8 @@ export default class ReplacementRules extends SharedMixin(LightningElement) {
         label: this.i18n.replacementRulesColumnOrgs,
         fieldName: "orgsLabel",
         type: "text",
-        initialWidth: 140,
+        initialWidth: 85,
+        wrapText: true,
       },
       {
         type: "action",
@@ -367,13 +419,13 @@ export default class ReplacementRules extends SharedMixin(LightningElement) {
   }
 
   // The first columns of the rules and built-in rules tables: on or off, name, description
-  ruleIdentityColumns(ruleColumnWidth) {
+  ruleIdentityColumns(ruleColumnWidth, descriptionWidth) {
     return [
       {
         label: this.i18n.replacementRulesColumnOn,
         fieldName: "stateLabel",
         type: "statusPill",
-        initialWidth: 90,
+        initialWidth: 85,
         typeAttributes: {
           label: { fieldName: "stateLabel" },
           pillClass: { fieldName: "statePillClass" },
@@ -390,6 +442,7 @@ export default class ReplacementRules extends SharedMixin(LightningElement) {
         fieldName: "description",
         type: "text",
         wrapText: true,
+        ...(descriptionWidth ? { initialWidth: descriptionWidth } : {}),
       },
     ];
   }

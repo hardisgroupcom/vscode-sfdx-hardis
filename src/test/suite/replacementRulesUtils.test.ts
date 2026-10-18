@@ -17,6 +17,7 @@ import {
   readReplacementListOutcome,
   readReplacementPreviewOutcome,
   sanitizeReplacementList,
+  describeWriteRequest,
 } from "../../utils/replacementRulesUtils";
 import {
   REPO_ROOT,
@@ -64,6 +65,33 @@ function fixture(): any {
 }
 
 suite("Replacement Rules panel", () => {
+  test("the progress title says what is saved and where", () => {
+    const layers: any = { project: { file: "config/.sfdx-hardis.yml", count: 1 }, branches: [{ branch: "uat", file: "config/branches/.sfdx-hardis.uat.yml", count: 1 }], issue: { available: true, number: 128, url: "", error: "", count: 0 } };
+    assert.deepStrictEqual(describeWriteRequest([{ action: "create", layer: "project", rule: { id: "x" } }], layers), { key: "replacementRulesSavingIn", vars: { id: "x" }, place: "config/.sfdx-hardis.yml" });
+    assert.deepStrictEqual(describeWriteRequest([{ action: "update", layer: "branch", branch: "uat", id: "x" }], layers), { key: "replacementRulesSavingIn", vars: { id: "x" }, place: "config/branches/.sfdx-hardis.uat.yml" });
+    assert.deepStrictEqual(describeWriteRequest([{ action: "update", layer: "issue", id: "x", enabled: false }], layers), { key: "replacementRulesTurningOffIn", vars: { id: "x" }, placeKey: "replacementRulesPlaceIssueNumber", placeVars: { number: "128" } });
+    assert.strictEqual(describeWriteRequest([{ action: "create", layer: "issue", rule: { id: "x" } }, { action: "delete", layer: "project", id: "x" }], layers).key, "replacementRulesMovingTo");
+    assert.strictEqual(describeWriteRequest([{ action: "delete", layer: "project", id: "x" }], null).key, "replacementRulesDeletingFrom");
+  });
+
+  test("a click on a column header sorts every table of the panel", async () => {
+    const modulePath = path.resolve(__dirname, "../../../src/webviews/lwc-ui/modules/s/datatableSortUtils/datatableSortUtils.js");
+    const sortUtils: any = await import(`data:text/javascript,${encodeURIComponent(fs.readFileSync(modulePath, "utf8"))}`);
+    const rows = [{ id: "b", api: "68.0" }, { id: "a", api: "" }, { id: "c", api: "9.0" }];
+    assert.deepStrictEqual(sortUtils.sortDatatableRows(rows, "api", "asc").map((row: any) => row.id), ["c", "b", "a"]);
+    assert.deepStrictEqual(sortUtils.sortDatatableRows(rows, "api", "desc").map((row: any) => row.id), ["b", "c", "a"]);
+    assert.deepStrictEqual(sortUtils.sortDatatableRows(rows, null, "asc"), rows);
+    const columns = sortUtils.makeColumnsSortable([{ fieldName: "id" }, { type: "action" }]);
+    assert.strictEqual(columns[0].sortable, true);
+    assert.strictEqual(columns[1].sortable, undefined);
+    assert.deepStrictEqual(sortUtils.sortStateFromEvent({ detail: { fieldName: "id", sortDirection: "desc" } }), { fieldName: "id", direction: "desc" });
+    const html = fs.readFileSync(path.resolve(__dirname, "../../../src/webviews/lwc-ui/modules/s/replacementRules/replacementRules.html"), "utf8");
+    for (const table of ["rules", "values", "builtin", "preview"]) {
+      assert.ok(html.includes(`sorted-by={sorts.${table}.fieldName}`), `table ${table} is sortable`);
+    }
+    assert.strictEqual((html.match(/onsort=\{handleTableSort\}/g) || []).length, 4);
+  });
+
   test("the rules are read with the list command, and previewed for one target", () => {
     assert.strictEqual(
       buildReplacementListCommand(),
@@ -452,7 +480,7 @@ suite("Replacement Rules panel", () => {
     );
     assert.strictEqual(
       loadLocale("en").replacementRulesTitle,
-      "Replacement Rules",
+      "Replacement Rules (Beta)",
     );
   });
 

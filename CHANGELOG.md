@@ -2,8 +2,8 @@
 
 ## Unreleased
 
-- New Replacement Rules panel to edit the values, secrets and XML removals applied to metadata before each deployment, opened from the settings menu of the DevOps Pipeline (requires sfdx-hardis 8.20.0)
-- New Org Initialization panel to order, enable and edit the steps that set up new scratch orgs and sandboxes, opened from the settings menu of the DevOps Pipeline (requires sfdx-hardis 8.19.0)
+- New Replacement Rules panel (Beta) to edit the values, secrets and XML removals applied to metadata before each deployment, with sortable tables, opened from the settings menu of the DevOps Pipeline (requires sfdx-hardis 8.20.0)
+- New Org Initialization panel (Beta) to order, enable and edit the steps that set up new scratch orgs and sandboxes, opened from the settings menu of the DevOps Pipeline (requires sfdx-hardis 8.19.0)
 - Find where a SOQL field is used: right-click a field in a SOQL query (Apex, query string or `.soql` file) and choose **SFDX Hardis: Find where this SOQL field is used** to open the Metadata Dependencies panel on that field. Relationship paths, aliases and subqueries are followed to the right object
 - Contributors: the MegaLinter skills and agents for Claude Code come from the MegaLinter plugin, enabled in `.claude/settings.json`, instead of copies in `.claude/`
 - Backpromote panel: Back no longer offers to merge the parent branch into a branch whose Pull Request was merged and deleted, a merge that could only end in conflicts

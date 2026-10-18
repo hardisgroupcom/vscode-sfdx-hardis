@@ -22,6 +22,7 @@ import {
   buildReplacementPreviewCommand,
   buildReplacementWriteCommand,
   checkReplacementWriteOperation,
+  describeWriteRequest,
   isReplacementCommandUnknown,
   isSafeReplacementBranch,
   isValidReplacementRuleId,
@@ -213,7 +214,7 @@ async function runWriteRequest(
     outcome = await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
-        title: t("replacementRulesSaving"),
+        title: writeRequestTitle(request, current.state.data),
         cancellable: false,
       },
       () => runOperations(request.operations, env),
@@ -235,6 +236,20 @@ async function runWriteRequest(
   }
   // Even a failure can have changed a layer (the create of a move that worked)
   requestLoad(current);
+}
+
+// "Saving the rule x in config/.sfdx-hardis.yml...": the title says what is written, and where
+function writeRequestTitle(
+  request: ReplacementWriteRequest,
+  view: ReplacementRulesView | null,
+): string {
+  const description = describeWriteRequest(request.operations, view?.layers);
+  const place = (description as any).place
+    ? String((description as any).place)
+    : description.placeKey
+      ? t(description.placeKey, description.placeVars)
+      : "";
+  return t(description.key, { ...description.vars, place });
 }
 
 // Why the request cannot run, already translated, or null

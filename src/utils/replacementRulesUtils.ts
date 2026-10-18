@@ -665,3 +665,48 @@ function asNumberOrNull(value: unknown): number | null {
 function cleanText(value: unknown, maxLength = MAX_TEXT_LENGTH): string {
   return cleanAnswerText(value, maxLength);
 }
+
+/**
+ * Title of the progress notification of a change: what is written, and where (the project
+ * file, a branch file, or the issue of the git provider), as an i18n key and its variables.
+ */
+export function describeWriteRequest(
+  operations: Array<ReplacementWriteOperation & { rule?: any }>,
+  layers?: ReplacementRulesView["layers"] | null,
+): { key: string; vars: Record<string, string>; placeKey?: string; placeVars?: Record<string, string> } {
+  const first = operations[0];
+  const id = String(first?.id || first?.rule?.id || "");
+  const place = describeWritePlace(first, layers);
+  if (typeof first?.enabled === "boolean") {
+    return { key: first.enabled ? "replacementRulesTurningOnIn" : "replacementRulesTurningOffIn", vars: { id }, ...place };
+  }
+  if (first?.action === "delete") {
+    return { key: "replacementRulesDeletingFrom", vars: { id }, ...place };
+  }
+  if (operations.length > 1) {
+    return { key: "replacementRulesMovingTo", vars: { id }, ...place };
+  }
+  return { key: "replacementRulesSavingIn", vars: { id }, ...place };
+}
+
+// The place of an operation: a file path shown as is, or the issue, translated by the caller
+function describeWritePlace(
+  operation: ReplacementWriteOperation | undefined,
+  layers?: ReplacementRulesView["layers"] | null,
+): { placeKey?: string; placeVars?: Record<string, string>; vars?: never } & { place?: string } {
+  if (!operation) {
+    return {};
+  }
+  if (operation.layer === "issue") {
+    const issueNumber = layers?.issue?.number;
+    return issueNumber
+      ? { placeKey: "replacementRulesPlaceIssueNumber", placeVars: { number: String(issueNumber) } }
+      : { placeKey: "replacementRulesPlaceIssue", placeVars: {} };
+  }
+  if (operation.layer === "branch") {
+    const branch = String(operation.branch || "");
+    const known = (layers?.branches || []).find((item) => item.branch === branch.replace(/\//g, "__"));
+    return { place: known?.file || `config/branches/.sfdx-hardis.${branch.replace(/\//g, "__")}.yml` };
+  }
+  return { place: layers?.project?.file || "config/.sfdx-hardis.yml" };
+}
