@@ -498,5 +498,1509 @@
         "sizeBytes": 9231
       }
     ]
+  },
+  "orgInit": {
+    "source": "orgInitSteps",
+    "legacyKeys": [],
+    "steps": [
+      {
+        "id": "deploy-sources",
+        "label": "Deploy project sources",
+        "type": "deploy-sources",
+        "orgTypes": [
+          "scratch"
+        ],
+        "enabled": true,
+        "allowFailure": false,
+        "runAtPoolFill": true
+      },
+      {
+        "id": "assign-permission-sets",
+        "label": "Assign the Helios Delivery permission sets",
+        "type": "assign-permission-sets",
+        "parameters": {
+          "permissionSets": [
+            "Helios_Delivery_Crew",
+            "Helios_Delivery_Manager"
+          ]
+        },
+        "orgTypes": [
+          "scratch",
+          "sandbox"
+        ],
+        "enabled": true,
+        "allowFailure": true,
+        "runAtPoolFill": true
+      },
+      {
+        "id": "load-baseline",
+        "label": "Load the Helios baseline records",
+        "type": "data",
+        "parameters": {
+          "sfdmuProject": "HeliosBaseline"
+        },
+        "orgTypes": [
+          "scratch"
+        ],
+        "enabled": true,
+        "allowFailure": false,
+        "runAtPoolFill": true
+      },
+      {
+        "id": "load-crew-reference-data",
+        "label": "Load the crew reference data",
+        "type": "data",
+        "parameters": {
+          "sfdmuProject": "HeliosCrewRefData"
+        },
+        "orgTypes": [
+          "scratch",
+          "sandbox"
+        ],
+        "enabled": true,
+        "allowFailure": false,
+        "runAtPoolFill": false
+      }
+    ],
+    "definitionErrors": [],
+    "stepTypes": [
+      {
+        "type": "install-packages",
+        "orgTypes": [
+          "scratch",
+          "sandbox"
+        ]
+      },
+      {
+        "type": "deploy-sources",
+        "orgTypes": [
+          "scratch"
+        ]
+      },
+      {
+        "type": "assign-permission-sets",
+        "orgTypes": [
+          "scratch",
+          "sandbox"
+        ]
+      },
+      {
+        "type": "apex",
+        "orgTypes": [
+          "scratch",
+          "sandbox"
+        ]
+      },
+      {
+        "type": "data",
+        "orgTypes": [
+          "scratch",
+          "sandbox"
+        ]
+      },
+      {
+        "type": "command",
+        "orgTypes": [
+          "scratch",
+          "sandbox"
+        ]
+      },
+      {
+        "type": "run-batch",
+        "orgTypes": [
+          "scratch",
+          "sandbox"
+        ]
+      },
+      {
+        "type": "schedule-batch",
+        "orgTypes": [
+          "scratch",
+          "sandbox"
+        ]
+      },
+      {
+        "type": "publish-community",
+        "orgTypes": [
+          "scratch",
+          "sandbox"
+        ]
+      }
+    ],
+    "scratchDef": {
+      "path": "config/project-scratch-def.json",
+      "exists": true,
+      "content": {
+        "orgName": "Helios Energy",
+        "edition": "Developer",
+        "language": "en_US",
+        "hasSampleData": false,
+        "features": [],
+        "settings": {
+          "lightningExperienceSettings": {
+            "enableS1DesktopEnabled": true
+          },
+          "mobileSettings": {
+            "enableS1EncryptedStoragePref2": false
+          },
+          "fieldServiceSettings": {
+            "fieldServiceOrgPref": false
+          },
+          "workDotComSettings": {
+            "enableWorkThanksPref": false
+          }
+        }
+      },
+      "issues": []
+    },
+    "scratchOrgDuration": 30,
+    "scratchOrgShape": null,
+    "scratchOrgMajorBranch": "integration",
+    "scratchOrgShapes": {
+      "global": null,
+      "branches": {
+        "integration": null,
+        "uat": null,
+        "preprod": null,
+        "main": null
+      },
+      "majorBranches": [
+        "integration",
+        "uat",
+        "preprod",
+        "main"
+      ]
+    },
+    "scratchDefHints": {
+      "editions": [
+        "Developer",
+        "Enterprise",
+        "Group",
+        "Professional"
+      ],
+      "features": [
+        "EnableSetPasswordInApi",
+        "MaxApexCodeSize:<value>",
+        "PersonAccounts"
+      ],
+      "settingsNames": [
+        "lightningExperienceSettings",
+        "mobileSettings"
+      ],
+      "settingsDocUrls": {
+        "lightningExperienceSettings": "https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_lightningexperiencesettings.htm"
+      },
+      "featuresDocUrl": "https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_def_file_config_values.htm",
+      "settingsDocUrl": "https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_settings.htm"
+    }
+  },
+  "scratchOrgPool": {
+    "storageService": "gitProvider",
+    "dashboardUrl": "https://github.com/hardisgroupcom/sfdx-hardis-training/issues/7",
+    "available": 4,
+    "max": 5,
+    "canTake": true,
+    "keyStatus": "ok",
+    "orgs": [
+      {
+        "alias": "PO-h3Lx-integration_20260918_0312",
+        "username": "helios.deploy+po-h3lx-20260918@heliostraining.invalid",
+        "instanceUrl": "https://helios-po-h3lx-0918-dev-ed.scratch.my.salesforce.com",
+        "createdDate": "2026-09-18T03:12:41.000Z",
+        "expirationDate": "2026-10-18",
+        "daysLeft": 23
+      },
+      {
+        "alias": "PO-h3Lx-integration_20260921_0312",
+        "username": "helios.deploy+po-h3lx-20260921@heliostraining.invalid",
+        "instanceUrl": "https://helios-po-h3lx-0921-dev-ed.scratch.my.salesforce.com",
+        "createdDate": "2026-09-21T03:12:41.000Z",
+        "expirationDate": "2026-10-21",
+        "daysLeft": 26
+      },
+      {
+        "alias": "PO-h3Lx-integration_20260923_0312",
+        "username": "helios.deploy+po-h3lx-20260923@heliostraining.invalid",
+        "instanceUrl": "https://helios-po-h3lx-0923-dev-ed.scratch.my.salesforce.com",
+        "createdDate": "2026-09-23T03:12:41.000Z",
+        "expirationDate": "2026-10-23",
+        "daysLeft": 28
+      },
+      {
+        "alias": "PO-h3Lx-integration_20260925_0312",
+        "username": "helios.deploy+po-h3lx-20260925@heliostraining.invalid",
+        "instanceUrl": "https://helios-po-h3lx-0925-dev-ed.scratch.my.salesforce.com",
+        "createdDate": "2026-09-25T03:12:41.000Z",
+        "expirationDate": "2026-10-25",
+        "daysLeft": 30
+      }
+    ],
+    "history": [
+      {
+        "date": "2026-09-24T14:15:00.000Z",
+        "by": "mariia-pyvovarchuk",
+        "branch": "training/mate-us-019-quote-pdf",
+        "pullRequest": "",
+        "jobUrl": "",
+        "alias": "PO-h3Lx-integration_20260917_0312"
+      },
+      {
+        "date": "2026-09-22T09:15:00.000Z",
+        "by": "github-actions[bot]",
+        "branch": "training/mate-us-020-apex-refactor",
+        "pullRequest": "#3",
+        "jobUrl": "https://github.com/hardisgroupcom/sfdx-hardis-training/actions/runs/18110452071",
+        "alias": "PO-h3Lx-integration_20260916_0312"
+      },
+      {
+        "date": "2026-09-19T10:15:00.000Z",
+        "by": "victor-squeeker",
+        "branch": "features/US-024-crew-size-required",
+        "pullRequest": "",
+        "jobUrl": "",
+        "alias": "PO-h3Lx-integration_20260915_0312"
+      }
+    ],
+    "failures": [],
+    "lastRefresh": {
+      "date": "2026-09-25T03:12:48.000Z",
+      "jobUrl": "https://github.com/hardisgroupcom/sfdx-hardis-training/actions/runs/18110987345"
+    },
+    "devHubLimits": {
+      "activeScratchOrgs": {
+        "used": 8,
+        "max": 40
+      },
+      "dailyScratchOrgs": {
+        "used": 2,
+        "max": 80
+      }
+    }
+  },
+  "replacementRules": {
+    "list": {
+      "outputString": "2 replacement rules (2 in project), 8 built-in rules",
+      "definitions": [
+        {
+          "layer": "project",
+          "file": "config/.sfdx-hardis.yml",
+          "rule": {
+            "id": "warehouse-url",
+            "description": "Each org books panel batches with its own warehouse system",
+            "type": "xml-value",
+            "files": "**/remoteSiteSettings/Helios_Warehouse.remoteSite-meta.xml",
+            "xmlPath": "RemoteSiteSetting/url",
+            "values": {
+              "integration": "https://warehouse-int.helios.invalid",
+              "uat": "https://warehouse-uat.helios.invalid",
+              "preprod": "https://warehouse-preprod.helios.invalid",
+              "main": "https://warehouse.helios.invalid",
+              "default": "https://warehouse-dev.helios.invalid"
+            },
+            "required": true
+          },
+          "overrides": []
+        },
+        {
+          "layer": "project",
+          "file": "config/.sfdx-hardis.yml",
+          "rule": {
+            "id": "remove-view-setup-in-production",
+            "description": "Crew members see Setup in the sandboxes only",
+            "type": "xml-remove",
+            "files": "**/profiles/Helios Crew.profile-meta.xml",
+            "xmlPath": "Profile/userPermissions[name=ViewSetup]",
+            "includeTargetBranches": [
+              "main"
+            ]
+          },
+          "overrides": []
+        }
+      ],
+      "effective": {
+        "integration": [
+          {
+            "id": "warehouse-url",
+            "description": "Each org books panel batches with its own warehouse system",
+            "type": "xml-value",
+            "files": "**/remoteSiteSettings/Helios_Warehouse.remoteSite-meta.xml",
+            "xmlPath": "RemoteSiteSetting/url",
+            "values": {
+              "integration": "https://warehouse-int.helios.invalid",
+              "uat": "https://warehouse-uat.helios.invalid",
+              "preprod": "https://warehouse-preprod.helios.invalid",
+              "main": "https://warehouse.helios.invalid",
+              "default": "https://warehouse-dev.helios.invalid"
+            },
+            "required": true,
+            "enabled": true,
+            "origins": [
+              "project"
+            ],
+            "builtIn": false,
+            "applies": true,
+            "resolved": {
+              "source": "branch",
+              "value": "https://warehouse-int.helios.invalid"
+            }
+          },
+          {
+            "id": "remove-view-setup-in-production",
+            "description": "Crew members see Setup in the sandboxes only",
+            "type": "xml-remove",
+            "files": "**/profiles/Helios Crew.profile-meta.xml",
+            "xmlPath": "Profile/userPermissions[name=ViewSetup]",
+            "includeTargetBranches": [
+              "main"
+            ],
+            "enabled": true,
+            "origins": [
+              "project"
+            ],
+            "builtIn": false,
+            "applies": false,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-ends",
+            "description": "End elements saved by Flow Builder from Winter '27, and the connectors pointing to them (the flow ends the same way)",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/ends",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-groups",
+            "description": "Canvas groups of Flow elements, visual only",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/groups",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-schedule-day-of-month",
+            "description": "Day of month of a scheduled flow (monthly schedules)",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/start/schedule/dayOfMonthToRun",
+            "enabled": false,
+            "origins": [
+              "builtin",
+              "issue"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-screen-field-style",
+            "description": "Width and alignment of screen fields, visual only",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/screens//fields/styleProperties",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-choice-icon",
+            "description": "Icon of a choice, visual only",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/choices/choiceIcon",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-agent-accesses",
+            "description": "Agentforce agent access, no agent exists in older orgs",
+            "type": "xml-remove",
+            "files": [
+              "**/*.profile-meta.xml",
+              "**/*.permissionset-meta.xml"
+            ],
+            "xmlPath": "Profile/agentAccesses",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-aura-static-resource-pref",
+            "description": "Release update setting no longer accepted by Salesforce",
+            "type": "xml-remove",
+            "files": [
+              "**/LightningExperience.settings-meta.xml"
+            ],
+            "xmlPath": "LightningExperienceSettings/enableAuraSecStaticResCRUCPref",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-get-records-limit",
+            "description": "Row limit of a Get Records element. Without it, Get Records returns every row: off by default, a warning names the flow instead",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/recordLookups/limit",
+            "enabled": false,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          }
+        ],
+        "uat": [
+          {
+            "id": "warehouse-url",
+            "description": "Each org books panel batches with its own warehouse system",
+            "type": "xml-value",
+            "files": "**/remoteSiteSettings/Helios_Warehouse.remoteSite-meta.xml",
+            "xmlPath": "RemoteSiteSetting/url",
+            "values": {
+              "integration": "https://warehouse-int.helios.invalid",
+              "uat": "https://warehouse-uat.helios.invalid",
+              "preprod": "https://warehouse-preprod.helios.invalid",
+              "main": "https://warehouse.helios.invalid",
+              "default": "https://warehouse-dev.helios.invalid"
+            },
+            "required": true,
+            "enabled": true,
+            "origins": [
+              "project"
+            ],
+            "builtIn": false,
+            "applies": true,
+            "resolved": {
+              "source": "branch",
+              "value": "https://warehouse-uat.helios.invalid"
+            }
+          },
+          {
+            "id": "remove-view-setup-in-production",
+            "description": "Crew members see Setup in the sandboxes only",
+            "type": "xml-remove",
+            "files": "**/profiles/Helios Crew.profile-meta.xml",
+            "xmlPath": "Profile/userPermissions[name=ViewSetup]",
+            "includeTargetBranches": [
+              "main"
+            ],
+            "enabled": true,
+            "origins": [
+              "project"
+            ],
+            "builtIn": false,
+            "applies": false,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-ends",
+            "description": "End elements saved by Flow Builder from Winter '27, and the connectors pointing to them (the flow ends the same way)",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/ends",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-groups",
+            "description": "Canvas groups of Flow elements, visual only",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/groups",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-schedule-day-of-month",
+            "description": "Day of month of a scheduled flow (monthly schedules)",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/start/schedule/dayOfMonthToRun",
+            "enabled": false,
+            "origins": [
+              "builtin",
+              "issue"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-screen-field-style",
+            "description": "Width and alignment of screen fields, visual only",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/screens//fields/styleProperties",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-choice-icon",
+            "description": "Icon of a choice, visual only",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/choices/choiceIcon",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-agent-accesses",
+            "description": "Agentforce agent access, no agent exists in older orgs",
+            "type": "xml-remove",
+            "files": [
+              "**/*.profile-meta.xml",
+              "**/*.permissionset-meta.xml"
+            ],
+            "xmlPath": "Profile/agentAccesses",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-aura-static-resource-pref",
+            "description": "Release update setting no longer accepted by Salesforce",
+            "type": "xml-remove",
+            "files": [
+              "**/LightningExperience.settings-meta.xml"
+            ],
+            "xmlPath": "LightningExperienceSettings/enableAuraSecStaticResCRUCPref",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-get-records-limit",
+            "description": "Row limit of a Get Records element. Without it, Get Records returns every row: off by default, a warning names the flow instead",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/recordLookups/limit",
+            "enabled": false,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          }
+        ],
+        "preprod": [
+          {
+            "id": "warehouse-url",
+            "description": "Each org books panel batches with its own warehouse system",
+            "type": "xml-value",
+            "files": "**/remoteSiteSettings/Helios_Warehouse.remoteSite-meta.xml",
+            "xmlPath": "RemoteSiteSetting/url",
+            "values": {
+              "integration": "https://warehouse-int.helios.invalid",
+              "uat": "https://warehouse-uat.helios.invalid",
+              "preprod": "https://warehouse-preprod.helios.invalid",
+              "main": "https://warehouse.helios.invalid",
+              "default": "https://warehouse-dev.helios.invalid"
+            },
+            "required": true,
+            "enabled": true,
+            "origins": [
+              "project"
+            ],
+            "builtIn": false,
+            "applies": true,
+            "resolved": {
+              "source": "branch",
+              "value": "https://warehouse-preprod.helios.invalid"
+            }
+          },
+          {
+            "id": "remove-view-setup-in-production",
+            "description": "Crew members see Setup in the sandboxes only",
+            "type": "xml-remove",
+            "files": "**/profiles/Helios Crew.profile-meta.xml",
+            "xmlPath": "Profile/userPermissions[name=ViewSetup]",
+            "includeTargetBranches": [
+              "main"
+            ],
+            "enabled": true,
+            "origins": [
+              "project"
+            ],
+            "builtIn": false,
+            "applies": false,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-ends",
+            "description": "End elements saved by Flow Builder from Winter '27, and the connectors pointing to them (the flow ends the same way)",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/ends",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-groups",
+            "description": "Canvas groups of Flow elements, visual only",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/groups",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-schedule-day-of-month",
+            "description": "Day of month of a scheduled flow (monthly schedules)",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/start/schedule/dayOfMonthToRun",
+            "enabled": false,
+            "origins": [
+              "builtin",
+              "issue"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-screen-field-style",
+            "description": "Width and alignment of screen fields, visual only",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/screens//fields/styleProperties",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-choice-icon",
+            "description": "Icon of a choice, visual only",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/choices/choiceIcon",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-agent-accesses",
+            "description": "Agentforce agent access, no agent exists in older orgs",
+            "type": "xml-remove",
+            "files": [
+              "**/*.profile-meta.xml",
+              "**/*.permissionset-meta.xml"
+            ],
+            "xmlPath": "Profile/agentAccesses",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-aura-static-resource-pref",
+            "description": "Release update setting no longer accepted by Salesforce",
+            "type": "xml-remove",
+            "files": [
+              "**/LightningExperience.settings-meta.xml"
+            ],
+            "xmlPath": "LightningExperienceSettings/enableAuraSecStaticResCRUCPref",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-get-records-limit",
+            "description": "Row limit of a Get Records element. Without it, Get Records returns every row: off by default, a warning names the flow instead",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/recordLookups/limit",
+            "enabled": false,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          }
+        ],
+        "main": [
+          {
+            "id": "warehouse-url",
+            "description": "Each org books panel batches with its own warehouse system",
+            "type": "xml-value",
+            "files": "**/remoteSiteSettings/Helios_Warehouse.remoteSite-meta.xml",
+            "xmlPath": "RemoteSiteSetting/url",
+            "values": {
+              "integration": "https://warehouse-int.helios.invalid",
+              "uat": "https://warehouse-uat.helios.invalid",
+              "preprod": "https://warehouse-preprod.helios.invalid",
+              "main": "https://warehouse.helios.invalid",
+              "default": "https://warehouse-dev.helios.invalid"
+            },
+            "required": true,
+            "enabled": true,
+            "origins": [
+              "project"
+            ],
+            "builtIn": false,
+            "applies": true,
+            "resolved": {
+              "source": "branch",
+              "value": "https://warehouse.helios.invalid"
+            }
+          },
+          {
+            "id": "remove-view-setup-in-production",
+            "description": "Crew members see Setup in the sandboxes only",
+            "type": "xml-remove",
+            "files": "**/profiles/Helios Crew.profile-meta.xml",
+            "xmlPath": "Profile/userPermissions[name=ViewSetup]",
+            "includeTargetBranches": [
+              "main"
+            ],
+            "enabled": true,
+            "origins": [
+              "project"
+            ],
+            "builtIn": false,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-ends",
+            "description": "End elements saved by Flow Builder from Winter '27, and the connectors pointing to them (the flow ends the same way)",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/ends",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-groups",
+            "description": "Canvas groups of Flow elements, visual only",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/groups",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-schedule-day-of-month",
+            "description": "Day of month of a scheduled flow (monthly schedules)",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/start/schedule/dayOfMonthToRun",
+            "enabled": false,
+            "origins": [
+              "builtin",
+              "issue"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-screen-field-style",
+            "description": "Width and alignment of screen fields, visual only",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/screens//fields/styleProperties",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-choice-icon",
+            "description": "Icon of a choice, visual only",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/choices/choiceIcon",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-agent-accesses",
+            "description": "Agentforce agent access, no agent exists in older orgs",
+            "type": "xml-remove",
+            "files": [
+              "**/*.profile-meta.xml",
+              "**/*.permissionset-meta.xml"
+            ],
+            "xmlPath": "Profile/agentAccesses",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-aura-static-resource-pref",
+            "description": "Release update setting no longer accepted by Salesforce",
+            "type": "xml-remove",
+            "files": [
+              "**/LightningExperience.settings-meta.xml"
+            ],
+            "xmlPath": "LightningExperienceSettings/enableAuraSecStaticResCRUCPref",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-get-records-limit",
+            "description": "Row limit of a Get Records element. Without it, Get Records returns every row: off by default, a warning names the flow instead",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/recordLookups/limit",
+            "enabled": false,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          }
+        ],
+        "default": [
+          {
+            "id": "warehouse-url",
+            "description": "Each org books panel batches with its own warehouse system",
+            "type": "xml-value",
+            "files": "**/remoteSiteSettings/Helios_Warehouse.remoteSite-meta.xml",
+            "xmlPath": "RemoteSiteSetting/url",
+            "values": {
+              "integration": "https://warehouse-int.helios.invalid",
+              "uat": "https://warehouse-uat.helios.invalid",
+              "preprod": "https://warehouse-preprod.helios.invalid",
+              "main": "https://warehouse.helios.invalid",
+              "default": "https://warehouse-dev.helios.invalid"
+            },
+            "required": true,
+            "enabled": true,
+            "origins": [
+              "project"
+            ],
+            "builtIn": false,
+            "applies": true,
+            "resolved": {
+              "source": "branch",
+              "value": "https://warehouse-dev.helios.invalid"
+            }
+          },
+          {
+            "id": "remove-view-setup-in-production",
+            "description": "Crew members see Setup in the sandboxes only",
+            "type": "xml-remove",
+            "files": "**/profiles/Helios Crew.profile-meta.xml",
+            "xmlPath": "Profile/userPermissions[name=ViewSetup]",
+            "includeTargetBranches": [
+              "main"
+            ],
+            "enabled": true,
+            "origins": [
+              "project"
+            ],
+            "builtIn": false,
+            "applies": false,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-ends",
+            "description": "End elements saved by Flow Builder from Winter '27, and the connectors pointing to them (the flow ends the same way)",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/ends",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-groups",
+            "description": "Canvas groups of Flow elements, visual only",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/groups",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-schedule-day-of-month",
+            "description": "Day of month of a scheduled flow (monthly schedules)",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/start/schedule/dayOfMonthToRun",
+            "enabled": false,
+            "origins": [
+              "builtin",
+              "issue"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-screen-field-style",
+            "description": "Width and alignment of screen fields, visual only",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/screens//fields/styleProperties",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-choice-icon",
+            "description": "Icon of a choice, visual only",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/choices/choiceIcon",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-agent-accesses",
+            "description": "Agentforce agent access, no agent exists in older orgs",
+            "type": "xml-remove",
+            "files": [
+              "**/*.profile-meta.xml",
+              "**/*.permissionset-meta.xml"
+            ],
+            "xmlPath": "Profile/agentAccesses",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-aura-static-resource-pref",
+            "description": "Release update setting no longer accepted by Salesforce",
+            "type": "xml-remove",
+            "files": [
+              "**/LightningExperience.settings-meta.xml"
+            ],
+            "xmlPath": "LightningExperienceSettings/enableAuraSecStaticResCRUCPref",
+            "enabled": true,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          },
+          {
+            "id": "builtin-flow-get-records-limit",
+            "description": "Row limit of a Get Records element. Without it, Get Records returns every row: off by default, a warning names the flow instead",
+            "type": "xml-remove",
+            "files": [
+              "**/*.flow-meta.xml"
+            ],
+            "xmlPath": "Flow/recordLookups/limit",
+            "enabled": false,
+            "origins": [
+              "builtin"
+            ],
+            "builtIn": true,
+            "applies": true,
+            "resolved": {
+              "source": "none"
+            }
+          }
+        ]
+      },
+      "builtInRules": [
+        {
+          "id": "builtin-flow-ends",
+          "description": "End elements saved by Flow Builder from Winter '27, and the connectors pointing to them (the flow ends the same way)",
+          "files": [
+            "**/*.flow-meta.xml"
+          ],
+          "xmlPaths": [
+            "Flow/ends"
+          ],
+          "introducedIn": 68,
+          "defaultEnabled": true,
+          "source": "Winter '27 release notes (End elements saved to metadata)",
+          "enabled": true,
+          "overriddenIn": []
+        },
+        {
+          "id": "builtin-flow-groups",
+          "description": "Canvas groups of Flow elements, visual only",
+          "files": [
+            "**/*.flow-meta.xml"
+          ],
+          "xmlPaths": [
+            "Flow/groups",
+            "Flow/*/group"
+          ],
+          "introducedIn": 68,
+          "defaultEnabled": true,
+          "source": "Metadata API Developer Guide v68 (Flow, FlowNode)",
+          "enabled": true,
+          "overriddenIn": []
+        },
+        {
+          "id": "builtin-flow-schedule-day-of-month",
+          "description": "Day of month of a scheduled flow (monthly schedules)",
+          "files": [
+            "**/*.flow-meta.xml"
+          ],
+          "xmlPaths": [
+            "Flow/start/schedule/dayOfMonthToRun"
+          ],
+          "introducedIn": 66,
+          "defaultEnabled": true,
+          "source": "Metadata API Developer Guide v66 (FlowSchedule)",
+          "enabled": false,
+          "overriddenIn": [
+            {
+              "layer": "issue"
+            }
+          ]
+        },
+        {
+          "id": "builtin-flow-screen-field-style",
+          "description": "Width and alignment of screen fields, visual only",
+          "files": [
+            "**/*.flow-meta.xml"
+          ],
+          "xmlPaths": [
+            "Flow/screens//fields/styleProperties"
+          ],
+          "introducedIn": 64,
+          "defaultEnabled": true,
+          "source": "Metadata API Developer Guide v64 (FlowScreenField)",
+          "enabled": true,
+          "overriddenIn": []
+        },
+        {
+          "id": "builtin-flow-choice-icon",
+          "description": "Icon of a choice, visual only",
+          "files": [
+            "**/*.flow-meta.xml"
+          ],
+          "xmlPaths": [
+            "Flow/choices/choiceIcon"
+          ],
+          "introducedIn": 64,
+          "defaultEnabled": true,
+          "source": "Metadata API Developer Guide v64 (FlowChoice)",
+          "enabled": true,
+          "overriddenIn": []
+        },
+        {
+          "id": "builtin-agent-accesses",
+          "description": "Agentforce agent access, no agent exists in older orgs",
+          "files": [
+            "**/*.profile-meta.xml",
+            "**/*.permissionset-meta.xml"
+          ],
+          "xmlPaths": [
+            "Profile/agentAccesses",
+            "PermissionSet/agentAccesses"
+          ],
+          "introducedIn": 63,
+          "defaultEnabled": true,
+          "source": "Metadata API Developer Guide v63 (Profile, PermissionSet)",
+          "enabled": true,
+          "overriddenIn": []
+        },
+        {
+          "id": "builtin-aura-static-resource-pref",
+          "description": "Release update setting no longer accepted by Salesforce",
+          "files": [
+            "**/LightningExperience.settings-meta.xml"
+          ],
+          "xmlPaths": [
+            "LightningExperienceSettings/enableAuraSecStaticResCRUCPref"
+          ],
+          "removedIn": 68,
+          "defaultEnabled": true,
+          "source": "Metadata API Developer Guide v68 (LightningExperienceSettings)",
+          "enabled": true,
+          "overriddenIn": []
+        },
+        {
+          "id": "builtin-flow-get-records-limit",
+          "description": "Row limit of a Get Records element. Without it, Get Records returns every row: off by default, a warning names the flow instead",
+          "files": [
+            "**/*.flow-meta.xml"
+          ],
+          "xmlPaths": [
+            "Flow/recordLookups/limit"
+          ],
+          "introducedIn": 63,
+          "defaultEnabled": false,
+          "warnWhenDisabled": true,
+          "source": "Metadata API Developer Guide v63 (FlowRecordLookup)",
+          "enabled": false,
+          "overriddenIn": []
+        }
+      ],
+      "layers": {
+        "project": {
+          "file": "config/.sfdx-hardis.yml",
+          "count": 2
+        },
+        "branches": [],
+        "issue": {
+          "available": true,
+          "number": 0,
+          "url": "",
+          "count": 0
+        }
+      },
+      "majorBranches": [
+        {
+          "branchName": "integration",
+          "level": 40
+        },
+        {
+          "branchName": "uat",
+          "level": 50
+        },
+        {
+          "branchName": "preprod",
+          "level": 60
+        },
+        {
+          "branchName": "main",
+          "level": 100
+        }
+      ],
+      "secretsProvider": "ciVariables",
+      "secretLookups": {},
+      "issues": []
+    },
+    "preview": {
+      "uat": {
+        "target": {
+          "targetBranch": "uat",
+          "label": "uat",
+          "apiVersion": 68
+        },
+        "results": [
+          {
+            "file": "force-app/main/default/remoteSiteSettings/Helios_Warehouse.remoteSite-meta.xml",
+            "ruleId": "warehouse-url",
+            "origins": [
+              "project"
+            ],
+            "status": "changed",
+            "count": 1
+          }
+        ],
+        "warnings": [],
+        "appliedRules": [
+          {
+            "id": "warehouse-url",
+            "origins": [
+              "project"
+            ],
+            "files": 1
+          }
+        ]
+      },
+      "main": {
+        "target": {
+          "targetBranch": "main",
+          "label": "main",
+          "apiVersion": 68
+        },
+        "results": [
+          {
+            "file": "force-app/main/default/remoteSiteSettings/Helios_Warehouse.remoteSite-meta.xml",
+            "ruleId": "warehouse-url",
+            "origins": [
+              "project"
+            ],
+            "status": "changed",
+            "count": 1
+          }
+        ],
+        "warnings": [],
+        "appliedRules": [
+          {
+            "id": "warehouse-url",
+            "origins": [
+              "project"
+            ],
+            "files": 1
+          }
+        ]
+      }
+    }
   }
 }

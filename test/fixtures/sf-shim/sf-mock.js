@@ -940,8 +940,12 @@ async function main() {
     if (orgInitDelayMs > 0) {
       await new Promise((resolve) => setTimeout(resolve, orgInitDelayMs));
     }
-    const payload = JSON.parse(
-      fs.readFileSync(path.join(__dirname, "org-init.json"), "utf8"),
+    // A universe overlay (the training's Helios project) can replace the whole answer
+    const payload = universeValue(
+      "orgInit",
+      JSON.parse(
+        fs.readFileSync(path.join(__dirname, "org-init.json"), "utf8"),
+      ),
     );
     // The org shape levels, read from the workspace files as the CLI does, so a save shows
     const readShape = (file) => {
@@ -1132,8 +1136,12 @@ async function main() {
       );
       return 0;
     }
-    const pool = JSON.parse(
-      fs.readFileSync(path.join(__dirname, "scratch-org-pool.json"), "utf8"),
+    // A universe overlay (the training's Helios project) can replace the whole pool
+    const pool = universeValue(
+      "scratchOrgPool",
+      JSON.parse(
+        fs.readFileSync(path.join(__dirname, "scratch-org-pool.json"), "utf8"),
+      ),
     );
     outputJsonIfRequested(
       {
@@ -1209,8 +1217,12 @@ async function answerReplacementRules(command) {
       127,
     );
   }
-  const fixture = JSON.parse(
-    fs.readFileSync(path.join(__dirname, "replacement-rules.json"), "utf8"),
+  // A universe overlay (the training's Helios project) can replace the whole fixture
+  const fixture = universeValue(
+    "replacementRules",
+    JSON.parse(
+      fs.readFileSync(path.join(__dirname, "replacement-rules.json"), "utf8"),
+    ),
   );
   const flag = (name) =>
     args.includes(name) ? args[args.indexOf(name) + 1] : undefined;

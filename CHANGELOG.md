@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Contributors: the screenshot mock takes the Org Initialization, Scratch Org Pool and Replacement Rules data from the universe overlay, so the training screenshots show its own project
+
 ## [8.15.0] 2026-10-19
 
 - New **Replacement Rules panel** (Beta) to edit the values, secrets and XML removals applied to metadata before each deployment, with sortable tables, opened from the settings menu of the DevOps Pipeline (requires sfdx-hardis 8.19.0)
