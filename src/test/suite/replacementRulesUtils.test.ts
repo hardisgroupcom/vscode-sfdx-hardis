@@ -64,6 +64,19 @@ function fixture(): any {
   );
 }
 
+/**
+ * The LWC webview bundle cannot be executed in this test host, but s/datatableSortUtils
+ * is made of pure functions without any import: its source is evaluated here.
+ */
+function loadDatatableSortUtils(): any {
+  const source = readModuleFile("datatableSortUtils", "datatableSortUtils.js");
+  assert.ok(!/^import /m.test(source), "the module must stay free of imports");
+  const body =
+    source.replace(/^export /gm, "") +
+    "\nreturn { makeColumnsSortable, sortDatatableRows, sortStateFromEvent };";
+  return new Function(body)();
+}
+
 suite("Replacement Rules panel", () => {
   test("the progress title says what is saved and where", () => {
     const layers: any = { project: { file: "config/.sfdx-hardis.yml", count: 1 }, branches: [{ branch: "uat", file: "config/branches/.sfdx-hardis.uat.yml", count: 1 }], issue: { available: true, number: 128, url: "", error: "", count: 0 } };
@@ -74,9 +87,8 @@ suite("Replacement Rules panel", () => {
     assert.strictEqual(describeWriteRequest([{ action: "delete", layer: "project", id: "x" }], null).key, "replacementRulesDeletingFrom");
   });
 
-  test("a click on a column header sorts every table of the panel", async () => {
-    const modulePath = path.resolve(__dirname, "../../../src/webviews/lwc-ui/modules/s/datatableSortUtils/datatableSortUtils.js");
-    const sortUtils: any = await import(`data:text/javascript,${encodeURIComponent(fs.readFileSync(modulePath, "utf8"))}`);
+  test("a click on a column header sorts every table of the panel", () => {
+    const sortUtils = loadDatatableSortUtils();
     const rows = [{ id: "b", api: "68.0" }, { id: "a", api: "" }, { id: "c", api: "9.0" }];
     assert.deepStrictEqual(sortUtils.sortDatatableRows(rows, "api", "asc").map((row: any) => row.id), ["c", "b", "a"]);
     assert.deepStrictEqual(sortUtils.sortDatatableRows(rows, "api", "desc").map((row: any) => row.id), ["b", "c", "a"]);
@@ -273,7 +285,7 @@ suite("Replacement Rules panel", () => {
     });
     assert.ok("view" in outcome);
     const view = outcome.view;
-    assert.strictEqual(view.definitions.length, 8);
+    assert.strictEqual(view.definitions.length, 9);
     assert.deepStrictEqual(
       view.majorBranches.map((branch) => branch.branchName),
       ["integration", "uat", "preprod", "main"],
@@ -309,11 +321,14 @@ suite("Replacement Rules panel", () => {
 
   test("a secret value sfdx-hardis would answer by mistake, an unsafe link and unknown fields are dropped", () => {
     const list = fixture().list;
-    list.effective.uat[1].resolved.value = "s3cr3t";
+    const passwordIndex = list.effective.uat.findIndex(
+      (rule: any) => rule.id === "payment-api-password",
+    );
+    list.effective.uat[passwordIndex].resolved.value = "s3cr3t";
     list.layers.issue.url = "javascript:alert(1)";
     list.definitions[0].rule.extra = "dropped";
     const view = sanitizeReplacementList(list);
-    assert.strictEqual(view.effective.uat[1].resolved.value, "");
+    assert.strictEqual(view.effective.uat[passwordIndex].resolved.value, "");
     assert.ok(!JSON.stringify(view).includes("s3cr3t"));
     assert.strictEqual(view.layers.issue.url, "");
     assert.ok(!("extra" in view.definitions[0].rule));

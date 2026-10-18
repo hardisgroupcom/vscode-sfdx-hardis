@@ -420,6 +420,7 @@
     "onrowaction",
     "onrowselection",
     "onsave",
+    "onsort",
     "ontextchange",
     "openinstalledpackages",
     "OPENVSX",
