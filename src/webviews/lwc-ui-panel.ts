@@ -344,6 +344,19 @@ export class LwcUiPanel {
   }
 
   /**
+   * Merges fields into the initialization data without posting anything. A webview that has
+   * not booted yet drops the messages posted to it: data that arrives meanwhile must also be
+   * part of what it receives once it is ready.
+   * @param patch The fields to change
+   */
+  public mergeInitializationData(patch: any): void {
+    if (this._isDisposed || !this.initializationData) {
+      return;
+    }
+    this.initializationData = { ...this.initializationData, ...patch };
+  }
+
+  /**
    * Send a message to the webview
    * @param message The message to send
    */

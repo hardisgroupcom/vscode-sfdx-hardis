@@ -62,6 +62,8 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
   @track projectApexScripts = [];
   // Custom functions of the project, used as deployment action types
   @track customFunctions = [];
+  // True while the extension reads the catalog in the background
+  @track customFunctionsLoading = false;
   @track projectSfdmuWorkspaces = [];
   @track projectSchedulableClasses = [];
   @track projectOnlySchedulableClasses = [];
@@ -634,6 +636,8 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
       this.customFunctions = Array.isArray(this.initData.customFunctions)
         ? this.initData.customFunctions
         : [];
+      this.customFunctionsLoading =
+        this.initData.customFunctionsLoading === true;
       this.projectSfdmuWorkspaces = Array.isArray(
         this.initData.projectSfdmuWorkspaces,
       )
@@ -1525,9 +1529,28 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
       this.handleReturnBatchableClasses(data);
     } else if (type === "returnCommunities") {
       this.handleReturnCommunities(data);
+    } else if (type === "customFunctionsLoaded") {
+      // Read in the background: an open editor stays open
+      this.setCustomFunctions(data.customFunctions);
     } else if (type === "customFunctionsRefreshed") {
-      this.customFunctions = data.customFunctions || [];
+      this.setCustomFunctions(data.customFunctions);
       this.handleCloseCustomFunctionModal();
+    }
+  }
+
+  // Cancel and Save of a section run initialize(this.initData) again: the catalog is stored
+  // there too, else they would bring back the spinner and the empty list of the first open
+  setCustomFunctions(customFunctions) {
+    this.customFunctions = Array.isArray(customFunctions)
+      ? customFunctions
+      : [];
+    this.customFunctionsLoading = false;
+    if (this.initData) {
+      this.initData = {
+        ...this.initData,
+        customFunctions: this.customFunctions,
+        customFunctionsLoading: false,
+      };
     }
   }
 
@@ -1535,6 +1558,14 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
 
   get hasCustomFunctions() {
     return this.customFunctions.length > 0;
+  }
+
+  get showCustomFunctionsEmpty() {
+    return !this.customFunctionsLoading && !this.hasCustomFunctions;
+  }
+
+  get showCustomFunctionCards() {
+    return !this.customFunctionsLoading && this.hasCustomFunctions;
   }
 
   get customFunctionCards() {
@@ -1609,6 +1640,10 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
   }
 
   handleRefreshCustomFunctions() {
+    this.customFunctionsLoading = true;
+    if (this.initData) {
+      this.initData = { ...this.initData, customFunctionsLoading: true };
+    }
     window.sendMessageToVSCode({ type: "refreshCustomFunctions", data: {} });
   }
 

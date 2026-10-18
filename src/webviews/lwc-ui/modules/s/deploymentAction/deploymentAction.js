@@ -122,6 +122,9 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   // Batchable classes found in the project sources and not in the default org
   @api projectOnlyBatchableClasses = [];
   @api communitiesLoading = false;
+  // True while the panel reads the custom functions catalog: Save waits for it, so the inputs
+  // of a custom function action are checked against its contract
+  @api customFunctionsLoading = false;
   @track editedAction = {};
   @track validationError = "";
   // Snapshot of the action as it was BEFORE the current edit (label/type/command/
