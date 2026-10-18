@@ -98,28 +98,18 @@
     </template>
 
     <template lwc:if={showContent}>
-      <!-- Where the rules come from -->
-      <div class="hardis-status-grid rr-status">
-        <template for:each={statusCards} for:item="card">
-          <div key={card.key} class={card.cardClass}>
-            <div class={card.tileClass}>
-              <lightning-icon icon-name={card.icon} size="small"></lightning-icon>
-            </div>
-            <div class="hardis-status-content">
-              <h3 class="hardis-status-title">
-                {card.title}
-                <template lwc:if={card.hasMeta}>
-                  <span class="hardis-status-meta">{card.meta}</span>
-                </template>
-              </h3>
-              <p class="hardis-status-desc">{card.desc}</p>
-            </div>
-            <template lwc:if={card.hasAction}>
-              <div class="hardis-status-actions">
-                <lightning-button variant="neutral" class={card.actionClass} label={card.actionLabel} data-action={card.action} data-url={card.actionUrl} onclick={handleStatusAction}></lightning-button>
-              </div>
+      <!-- Where the rules come from: one line, details in the tooltips -->
+      <div class="rr-sources" role="list">
+        <template for:each={sourceChips} for:item="chip">
+          <span key={chip.key} class="rr-source" role="listitem">
+            <span class={chip.pillClass} title={chip.tooltip}>
+              <lightning-icon class="hardis-pill-icon" icon-name={chip.icon} size="xx-small"></lightning-icon>
+              <span>{chip.label}</span>
+            </span>
+            <template lwc:if={chip.hasAction}>
+              <button class="slds-button rr-source-action" data-action={chip.action} data-url={chip.actionUrl} title={chip.tooltip} onclick={handleStatusAction}>{chip.actionLabel}</button>
             </template>
-          </div>
+          </span>
         </template>
       </div>
 

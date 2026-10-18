@@ -1124,7 +1124,7 @@ suite("Documentation screenshots", function () {
       settleMs: 9000,
       force: true,
     });
-    await click(1660, 104); // gear menu of the header
+    await click(1622, 104); // gear menu of the header
     await sleep(2500);
     await captureStable("pipeline-settings-menu");
     // A click elsewhere does not close a lightning menu: the panel is opened again
@@ -1136,7 +1136,7 @@ suite("Documentation screenshots", function () {
       settleMs: 9000,
       force: true,
     });
-    await click(1718, 104); // "Deployment packages" menu
+    await click(1675, 104); // "Deployment packages" menu
     await sleep(2500);
     await captureStable("pipeline-packages-menu");
     await shootPanel(panelManager, {
@@ -3109,30 +3109,30 @@ suite("Documentation screenshots", function () {
     await shootPanel(panelManager, {
       ...panel,
       name: "replacement-rules-values",
-      clicks: [{ x: 717, y: 421 }],
+      clicks: [{ x: 717, y: 245 }],
     });
     await shootPanel(panelManager, {
       ...panel,
       name: "replacement-rules-builtin",
-      clicks: [{ x: 895, y: 421 }],
+      clicks: [{ x: 895, y: 245 }],
     });
     await shootPanel(panelManager, {
       ...panel,
       name: "replacement-rules-preview",
       settleMs: 5000,
       clicks: [
-        { x: 1050, y: 421 },
-        { x: 630, y: 522 },
-        { x: 534, y: 702 },
-        { x: 886, y: 523 },
+        { x: 1050, y: 245 },
+        { x: 630, y: 346 },
+        { x: 534, y: 526 },
+        { x: 886, y: 347 },
       ],
     });
     await shootPanel(panelManager, {
       ...panel,
       name: "replacement-rules-editor",
       clicks: [
-        { x: 1832, y: 615 },
-        { x: 1752, y: 656 },
+        { x: 1832, y: 439 },
+        { x: 1752, y: 480 },
       ],
     });
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
@@ -3539,7 +3539,7 @@ suite("Documentation screenshots", function () {
     // page, and a posted wheel never reaches the webview's scroller. Hiding the
     // feature branches is what actually shrinks the diagram, and it is a real
     // control a reader can find, right in the header.
-    await click(1600, 104); // "Show feature branches" toggle
+    await click(1555, 104); // "Show feature branches" toggle
     await sleep(2500);
     // Two levels out on top of that, so the whole row of cards fits rather than
     // being cut off at the bottom edge
@@ -3555,7 +3555,7 @@ suite("Documentation screenshots", function () {
     await vscode.commands.executeCommand("workbench.action.zoomIn");
     await vscode.commands.executeCommand("workbench.action.zoomIn");
     await sleep(1200);
-    await click(1600, 104); // put the toggle back for the captures that follow
+    await click(1555, 104); // put the toggle back for the captures that follow
     await sleep(1500);
   });
 
@@ -4465,7 +4465,7 @@ suite("Documentation screenshots", function () {
         settleMs: 9000,
         force: true,
       });
-      await click(1660, 104); // gear menu of the header
+      await click(1622, 104); // gear menu of the header
       await sleep(2500);
       await captureStable("scratch-org-pool-menu");
     } finally {

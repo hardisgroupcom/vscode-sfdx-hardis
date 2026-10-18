@@ -41,6 +41,7 @@
                 <lightning-button-group>
                     <lightning-button-menu
                         alternative-text={i18n.pipelineConfig}
+                        title={i18n.pipelineConfig}
                         icon-name="utility:settings"
                         variant="border-filled"
                         menu-alignment="right"
@@ -86,6 +87,7 @@
                     </lightning-button-menu>
                     <lightning-button-menu
                         alternative-text={i18n.deploymentPackages}
+                        title={i18n.deploymentPackages}
                         icon-name="utility:package_org"
                         variant="border-filled"
                         menu-alignment="right"
@@ -111,6 +113,7 @@
                     </lightning-button-menu>
                     <template if:true={gitAuthenticated}>
                         <lightning-button-icon
+                            class="pipeline-head-icon-button"
                             icon-name="utility:search"
                             variant="border-filled"
                             alternative-text={i18n.pullRequestsExplorer}
@@ -119,6 +122,7 @@
                         ></lightning-button-icon>
                     </template>
                     <lightning-button-icon
+                        class="pipeline-head-icon-button"
                         icon-name="utility:refresh"
                         variant="border-filled"
                         alternative-text={i18n.refreshPipelineData}
@@ -126,6 +130,7 @@
                         onclick={handleRefresh}
                     ></lightning-button-icon>
                     <lightning-button-icon
+                        class="pipeline-head-icon-button"
                         icon-name="utility:help"
                         variant="border-filled"
                         alternative-text={i18n.documentation}

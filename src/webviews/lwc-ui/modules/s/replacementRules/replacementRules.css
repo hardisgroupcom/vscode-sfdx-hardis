@@ -37,8 +37,28 @@
   overflow-wrap: anywhere;
 }
 
-.rr-status {
-  margin-bottom: 0.9rem;
+/* Where the rules come from: a single wrapping line of pills above the tabs */
+.rr-sources {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 1rem;
+  margin: 0 0 0.8rem 0.25rem;
+}
+
+.rr-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.rr-source-pill {
+  cursor: default;
+}
+
+.rr-source-action {
+  font-size: 0.75rem;
+  line-height: 1.5;
 }
 
 .rr-list {

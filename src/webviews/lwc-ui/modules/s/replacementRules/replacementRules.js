@@ -167,7 +167,9 @@ export default class ReplacementRules extends SharedMixin(LightningElement) {
 
   // --- Status cards ---
 
-  get statusCards() {
+  // One compact line above the tabs: where the rules come from. The details are tooltips, so
+  // the rules table keeps the height of the panel
+  get sourceChips() {
     if (!this.data) {
       return [];
     }
@@ -175,27 +177,19 @@ export default class ReplacementRules extends SharedMixin(LightningElement) {
     const branchesWithRules = layers.branches.filter(
       (branch) => branch.count > 0,
     );
-    const cards = [
+    const chips = [
       {
         key: "project",
-        cardClass: "hardis-status-card info",
-        tileClass: "hardis-tile slate",
+        hue: "slate",
         icon: "utility:file",
-        title: this.i18n.replacementRulesLayerProject,
-        meta: layers.project.file,
-        desc: this.t("replacementRulesRuleCount", {
-          count: layers.project.count,
-        }),
-        hasAction: false,
+        label: `${this.i18n.replacementRulesLayerProject} · ${this.t("replacementRulesRuleCount", { count: layers.project.count })}`,
+        tooltip: layers.project.file,
       },
       {
         key: "branches",
-        cardClass: "hardis-status-card info",
-        tileClass: "hardis-tile violet",
+        hue: "violet",
         icon: "utility:hierarchy",
-        title: this.i18n.replacementRulesBranchFilesTitle,
-        meta: "config/branches/",
-        desc:
+        label: `${this.i18n.replacementRulesBranchFilesTitle} · ${
           branchesWithRules.length > 0
             ? branchesWithRules
                 .map((branch) =>
@@ -205,55 +199,51 @@ export default class ReplacementRules extends SharedMixin(LightningElement) {
                   }),
                 )
                 .join(", ")
-            : this.i18n.replacementRulesNoBranchRules,
-        hasAction: false,
+            : this.i18n.replacementRulesNoBranchRules
+        }`,
+        tooltip: "config/branches/",
       },
-      this.buildIssueCard(layers.issue),
+      this.buildIssueChip(layers.issue),
       {
         key: "secrets",
-        cardClass: "hardis-status-card ok",
-        tileClass: "hardis-tile green",
+        hue: "green",
         icon: "utility:lock",
-        title: this.i18n.replacementRulesSecretsTitle,
-        meta: "",
-        desc: this.i18n.replacementRulesSecretsDesc,
-        hasAction: false,
+        label: this.i18n.replacementRulesSecretsTitle,
+        tooltip: this.i18n.replacementRulesSecretsDesc,
       },
     ];
-    return cards.map((card) => ({ ...card, hasMeta: !!card.meta }));
+    return chips.map((chip) => ({
+      ...chip,
+      pillClass: `hardis-pill hardis-hue-${chip.hue} rr-source-pill`,
+      hasAction: !!chip.action,
+    }));
   }
 
-  buildIssueCard(issue) {
+  buildIssueChip(issue) {
     if (!issue.available) {
       return {
         key: "issue",
-        cardClass: "hardis-status-card warning",
-        tileClass: "hardis-tile amber",
-        icon: "utility:comments",
-        title: this.i18n.replacementRulesLayerIssue,
-        meta: "",
-        desc: issue.error || this.i18n.replacementRulesIssueUnavailable,
-        hasAction: true,
+        hue: "amber",
+        icon: "utility:warning",
+        label: this.i18n.replacementRulesLayerIssue,
+        tooltip: issue.error || this.i18n.replacementRulesIssueUnavailable,
         action: "connectToGit",
         actionLabel: this.i18n.connectToGit,
-        actionClass: "hardis-btn-tinted-amber",
       };
     }
     return {
       key: "issue",
-      cardClass: "hardis-status-card info",
-      tileClass: "hardis-tile amber",
+      hue: "amber",
       icon: "utility:comments",
-      title: this.issueLabel,
-      meta: "",
-      desc: issue.number
+      label: issue.number
+        ? `${this.issueLabel} · ${this.t("replacementRulesRuleCount", { count: issue.count })}`
+        : this.issueLabel,
+      tooltip: issue.number
         ? this.t("replacementRulesIssueCount", { count: issue.count })
         : this.i18n.replacementRulesIssueNotCreated,
-      hasAction: !!issue.url,
-      action: "openIssue",
+      action: issue.url ? "openIssue" : "",
       actionUrl: issue.url,
       actionLabel: this.i18n.replacementRulesOpenIssue,
-      actionClass: "",
     };
   }
 
