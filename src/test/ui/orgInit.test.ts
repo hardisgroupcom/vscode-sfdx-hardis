@@ -144,6 +144,68 @@ suite("Org Initialization panel UI tests", function () {
     }
   });
 
+  test("the org shape is saved by level: global, and the major branches that override it", async function () {
+    const root = workspaceRoot();
+    const files = [
+      path.join(root, "config", "project-scratch-def.json"),
+      path.join(root, "config", ".sfdx-hardis.yml"),
+      path.join(root, "config", "branches", ".sfdx-hardis.integration.yml"),
+      path.join(root, "config", "branches", ".sfdx-hardis.main.yml"),
+    ];
+    const before = files.map((file) =>
+      fs.existsSync(file) ? fs.readFileSync(file, "utf8") : null,
+    );
+    try {
+      await openLoadedPanel();
+      const sent = recordSentMessages(panel);
+      panel.simulateWebviewMessage({
+        type: "saveScratchDef",
+        data: {
+          content: { orgName: "Shape", features: [] },
+          scratchOrgDuration: "7",
+          scratchOrgShape: "00D5g000004Z0bXEAS",
+          scratchOrgShapes: {
+            global: "00D5g000004Z0bXEAS",
+            branches: { integration: "none", main: null },
+          },
+        },
+      });
+      await waitFor(
+        () => sent.find((message) => message.type === "scratchDefSaved"),
+        30000,
+        "the save",
+      );
+      assert.strictEqual(
+        readProjectConfig().scratchOrgShape,
+        "00D5g000004Z0bXEAS",
+      );
+      const integration = yaml.load(fs.readFileSync(files[2], "utf8")) as any;
+      assert.strictEqual(integration.scratchOrgShape, "none");
+      // main inherits the global value: nothing is written for it
+      const main = fs.existsSync(files[3])
+        ? (yaml.load(fs.readFileSync(files[3], "utf8")) as any) || {}
+        : {};
+      assert.strictEqual(main.scratchOrgShape, undefined);
+      const validation = callsOf("hardis:config:org-init")
+        .filter((entry) => entry.args.includes("--validate-scratch-def"))
+        .pop();
+      assert.ok(
+        validation.args
+          .join(" ")
+          .includes("--scratch-org-shape 00D5g000004Z0bXEAS"),
+        validation.args.join(" "),
+      );
+    } finally {
+      files.forEach((file, index) => {
+        if (before[index] === null) {
+          fs.rmSync(file, { force: true });
+        } else {
+          fs.writeFileSync(file, before[index] as string, "utf8");
+        }
+      });
+    }
+  });
+
   test("an invalid scratch org definition is not written", async function () {
     await openLoadedPanel();
     const sent = recordSentMessages(panel);

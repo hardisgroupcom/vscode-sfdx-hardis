@@ -68,6 +68,13 @@
     "issues": []
   },
   "scratchOrgDuration": 7,
+  "scratchOrgShape": null,
+  "scratchOrgMajorBranch": "integration",
+  "scratchOrgShapes": {
+    "global": null,
+    "branches": { "integration": null, "main": null },
+    "majorBranches": ["integration", "main"]
+  },
   "scratchDefHints": {
     "editions": ["Developer", "Enterprise", "Group", "Professional"],
     "features": [

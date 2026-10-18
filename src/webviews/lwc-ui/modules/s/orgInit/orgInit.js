@@ -23,6 +23,10 @@ const SCRATCH_DEF_FORM_FIELDS = [
   "settings",
 ];
 
+// scratchOrgShape of a branch with no org shape, and the choice that inherits the global value
+const SHAPE_NONE = "none";
+const INHERIT_VALUE = "__inherit__";
+
 // Features that take a number are listed by Salesforce CLI as "Name:<value>"
 const VALUE_FEATURE_SUFFIX = ":<value>";
 
@@ -68,6 +72,11 @@ export default class OrgInit extends SharedMixin(LightningElement) {
   @track customFeatures = [];
   // Languages, countries and releases of the default Dev Hub (or default org), null until it answers
   @track orgValues = null;
+  // Org shape the scratch orgs are created from, by level like Pipeline Settings: global, then each
+  // major branch (undefined inherits the global value, "none" turns it off). And the active shapes.
+  @track shapeLevels = { global: null, branches: {} };
+  @track shapeScope = "global";
+  @track orgShapes = [];
   // Import of settings or features from an org: null, "settings" or "features"
   @track importMode = null;
   @track sourceOrgs = [];
@@ -140,6 +149,9 @@ export default class OrgInit extends SharedMixin(LightningElement) {
       case "orgInitReloadFailed":
         this.reloading = false;
         this.stepsSaving = false;
+        break;
+      case "scratchDefOrgShapes":
+        this.orgShapes = data?.orgShapes || [];
         break;
       case "scratchDefOrgValues":
         this.orgValues = data?.orgValues || null;
@@ -537,7 +549,140 @@ export default class OrgInit extends SharedMixin(LightningElement) {
       current && !editions.includes(current)
         ? [current, ...editions]
         : editions;
-    return values.map((edition) => ({ label: edition, value: edition }));
+    const options = values.map((edition) => ({
+      label: edition,
+      value: edition,
+    }));
+    // Every major branch uses an org shape, which gives the edition: the definition can have none
+    return this._effectiveShapes().every(Boolean)
+      ? [{ label: this.t("orgInitEditionFromShape"), value: "" }, ...options]
+      : options;
+  }
+
+  get scratchDefEdition() {
+    return this.scratchDef.edition || "";
+  }
+
+  get majorBranches() {
+    return this.config?.scratchOrgShapes?.majorBranches || [];
+  }
+
+  // Global, then only the major branches: developmentBranch and availableTargetBranches
+  get shapeScopeOptions() {
+    return [
+      { label: this.t("globalSettings"), value: "global" },
+      ...this.majorBranches.map((branch) => ({
+        label: this.t("branchLabel", { branch }),
+        value: `branch:${branch}`,
+      })),
+    ];
+  }
+
+  get isShapeBranchScope() {
+    return this.shapeScope.startsWith("branch:");
+  }
+
+  get shapeScopeBranch() {
+    return this.isShapeBranchScope ? this.shapeScope.substring(7) : null;
+  }
+
+  // The value of the selected level: "" none, "__inherit__" same as global (branches only)
+  get scopeShapeValue() {
+    if (!this.isShapeBranchScope) {
+      return this.shapeLevels.global || "";
+    }
+    const value = this.shapeLevels.branches[this.shapeScopeBranch];
+    return value === undefined || value === null
+      ? INHERIT_VALUE
+      : value === SHAPE_NONE
+        ? ""
+        : value;
+  }
+
+  get isScopeShapeInherited() {
+    return this.isShapeBranchScope && this.scopeShapeValue === INHERIT_VALUE;
+  }
+
+  get orgShapeOptions() {
+    const options = [];
+    if (this.isShapeBranchScope) {
+      options.push({
+        label: this.t("orgInitShapeSameAsGlobal", {
+          value: this._shapeLabel(this.shapeLevels.global),
+        }),
+        value: INHERIT_VALUE,
+      });
+    }
+    options.push({ label: this.t("orgInitNoOrgShape"), value: "" });
+    for (const shape of this.orgShapes) {
+      options.push({
+        label: this._shapeLabel(shape.orgId),
+        value: shape.orgId,
+      });
+    }
+    // A saved org id no connected org lists stays selectable
+    const saved = [
+      this.shapeLevels.global,
+      ...Object.values(this.shapeLevels.branches),
+    ].filter((value) => value && value !== SHAPE_NONE);
+    for (const value of saved) {
+      if (!options.find((option) => option.value === value)) {
+        options.push({ label: value, value });
+      }
+    }
+    return options;
+  }
+
+  get orgShapeHelp() {
+    return this.isShapeBranchScope
+      ? this.t("orgInitOrgShapeHelpBranch", { branch: this.shapeScopeBranch })
+      : this.t("orgInitOrgShapeHelpGlobal");
+  }
+
+  handleShapeScopeChange(event) {
+    this.shapeScope = event.detail.value || "global";
+  }
+
+  handleOrgShapeChange(event) {
+    const value = event.detail.value || "";
+    if (this.isShapeBranchScope) {
+      const branches = { ...this.shapeLevels.branches };
+      branches[this.shapeScopeBranch] =
+        value === INHERIT_VALUE ? null : value === "" ? SHAPE_NONE : value;
+      this.shapeLevels = { ...this.shapeLevels, branches };
+    } else {
+      this.shapeLevels = { ...this.shapeLevels, global: value || null };
+    }
+    this._onScratchDefChanged();
+  }
+
+  _shapeLabel(orgId) {
+    if (!orgId) {
+      return this.t("orgInitNoOrgShapeShort");
+    }
+    const shape = this.orgShapes.find((one) => one.orgId === orgId);
+    const name = shape ? shape.alias || shape.username : "";
+    return name ? `${name} (${orgId})` : orgId;
+  }
+
+  // The org shape each major branch ends up with (null: none), or the global one without branches
+  _effectiveShapes() {
+    if (this.majorBranches.length === 0) {
+      return [this.shapeLevels.global || null];
+    }
+    return this.majorBranches.map((branch) => {
+      const value = this.shapeLevels.branches[branch];
+      if (value === SHAPE_NONE) {
+        return null;
+      }
+      return value || this.shapeLevels.global || null;
+    });
+  }
+
+  // The definition is checked against the strictest level: one branch without org shape needs an edition
+  _validationShape() {
+    const shapes = this._effectiveShapes();
+    return shapes.every(Boolean) ? shapes[0] : "";
   }
 
   // With the Dev Hub API versions, each choice names its release: Same as the Dev Hub (Winter '27, API 68.0)
@@ -967,6 +1112,17 @@ export default class OrgInit extends SharedMixin(LightningElement) {
       config?.scratchOrgDuration !== undefined
         ? String(config.scratchOrgDuration)
         : "";
+    const levels = config?.scratchOrgShapes || {};
+    this.shapeLevels = {
+      global: levels.global || null,
+      branches: { ...(levels.branches || {}) },
+    };
+    if (
+      this.shapeScope !== "global" &&
+      !this.majorBranches.includes(this.shapeScope.substring(7))
+    ) {
+      this.shapeScope = "global";
+    }
     this.scratchDefIssues = config?.scratchDef?.issues || [];
     this.scratchDefWarnings = config?.scratchDef?.warnings || [];
     this.localScratchDefIssues = [];
@@ -1040,6 +1196,8 @@ export default class OrgInit extends SharedMixin(LightningElement) {
       data: {
         content: built.content,
         scratchOrgDuration: this.scratchOrgDuration,
+        scratchOrgShape: this._validationShape(),
+        scratchOrgShapes: JSON.parse(JSON.stringify(this.shapeLevels)),
       },
     });
   }

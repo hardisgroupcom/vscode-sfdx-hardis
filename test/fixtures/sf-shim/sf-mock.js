@@ -1016,6 +1016,16 @@ async function main() {
       }
       payload.importedSettings = { settings, errors: [] };
     }
+    if (args.includes("--list-org-shapes")) {
+      payload.orgShapes = [
+        {
+          orgId: "00D5g000004Z0bXEAS",
+          username: "prod@mycompany.com",
+          alias: "prod",
+          createdDate: "2026-10-01T08:00:00.000+0000",
+        },
+      ];
+    }
     if (args.includes("--import-features-from-shape")) {
       payload.importedShape = {
         shapeId: "3SR000000000001",

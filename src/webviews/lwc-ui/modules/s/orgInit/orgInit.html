@@ -148,7 +148,7 @@
                   <lightning-input label={i18n.orgInitOrgName} value={scratchDef.orgName} data-field="orgName" onchange={handleScratchDefFieldChange}></lightning-input>
                 </div>
                 <div class="slds-col slds-size_1-of-4 slds-m-bottom_small">
-                  <lightning-combobox label={i18n.orgInitEdition} options={editionOptions} value={scratchDef.edition} data-field="edition" onchange={handleScratchDefFieldChange}></lightning-combobox>
+                  <lightning-combobox label={i18n.orgInitEdition} options={editionOptions} value={scratchDefEdition} data-field="edition" onchange={handleScratchDefFieldChange}></lightning-combobox>
                 </div>
                 <div class="slds-col slds-size_1-of-4 slds-m-bottom_small">
                   <lightning-input type="number" min="1" max="30" label={i18n.orgInitDuration} field-level-help={i18n.orgInitDurationHelp} value={scratchOrgDuration} onchange={handleDurationChange}></lightning-input>
@@ -185,6 +185,19 @@
                 <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                   <lightning-input label={i18n.orgInitDescription} value={scratchDef.description} data-field="description" onchange={handleScratchDefFieldChange}></lightning-input>
                 </div>
+                <!-- Org shape by level, like Pipeline Settings: global, then each major branch -->
+                <div class="slds-col slds-size_1-of-4 slds-m-bottom_small">
+                  <lightning-combobox label={i18n.configurationScope} options={shapeScopeOptions} value={shapeScope} onchange={handleShapeScopeChange}></lightning-combobox>
+                </div>
+                <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                  <lightning-combobox label={i18n.orgInitOrgShape} field-level-help={orgShapeHelp} options={orgShapeOptions} value={scopeShapeValue} onchange={handleOrgShapeChange}></lightning-combobox>
+                </div>
+                <div class="slds-col slds-size_1-of-4 slds-m-bottom_small org-init-toggle org-init-inherited">
+                  <template if:true={isScopeShapeInherited}>
+                    <span class="hardis-chip" title={i18n.inheritedFromGlobalConfig}>{i18n.inherited}</span>
+                  </template>
+                </div>
+
                 <template if:true={hasImportNotes}>
                   <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                     <div class="hardis-note slds-m-bottom_small" role="note">

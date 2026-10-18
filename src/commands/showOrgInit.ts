@@ -53,6 +53,7 @@ export function registerShowOrgInit(commands: Commands) {
           panel.sendInitializationData({ loading: false, ...data });
           // Languages, countries and releases need an org: they follow, the form works without them
           void loadAndPushOrgValues(panel);
+          void loadAndPushOrgShapes(panel);
         } catch (e: any) {
           Logger.log(
             "[vscode-sfdx-hardis] Org Initialization init failed: " +
@@ -95,10 +96,10 @@ export function registerShowOrgInit(commands: Commands) {
         } else if (type === "validateScratchDef") {
           panel.sendMessage({
             type: "scratchDefValidated",
-            data: await validateScratchDef(data.content),
+            data: await validateScratchDef(data.content, data.scratchOrgShape),
           });
         } else if (type === "saveScratchDef") {
-          await saveScratchDef(panel, configHelper, data);
+          await saveScratchDef(panel, configHelper, data, lastConfig);
         } else if (type === "importScratchDefSettings") {
           await importScratchDefSettings(panel, data);
         } else if (type === "importScratchDefFeatures") {
@@ -208,6 +209,30 @@ async function loadAndPushOrgValues(panel: {
   }
 }
 
+// Active org shapes of the connected orgs, for the org shape the scratch orgs are created from
+async function loadAndPushOrgShapes(panel: {
+  sendMessage: (message: any) => void;
+}): Promise<void> {
+  try {
+    const res = await execSfdxJson(
+      "sf hardis:config:org-init --list-org-shapes --agent --json",
+      { fail: false, output: false, reuseRecentResult: false },
+    );
+    panel.sendMessage({
+      type: "scratchDefOrgShapes",
+      data: {
+        orgShapes: res?.status === 0 ? res?.result?.orgShapes || [] : [],
+      },
+    });
+  } catch (e: any) {
+    Logger.log(
+      "[vscode-sfdx-hardis] Org Initialization: no org shapes: " +
+        (e?.message || e),
+    );
+    panel.sendMessage({ type: "scratchDefOrgShapes", data: { orgShapes: [] } });
+  }
+}
+
 async function importScratchDefSettings(
   panel: { sendMessage: (message: any) => void },
   data: any,
@@ -310,8 +335,10 @@ function listImportSourceOrgs(orgs: any[]): any[] {
 
 // Writes the definition to a temporary file and lets the CLI validate it, as scratch:create would.
 // Never throws: a failure to validate is returned as an issue, so the panel always gets an answer.
+// scratchOrgShape: the org shape picked on screen ("" for none), undefined to use the saved one
 async function validateScratchDef(
   content: any,
+  scratchOrgShape?: string,
 ): Promise<{ issues: string[]; warnings: string[] }> {
   let tmpDir = "";
   try {
@@ -324,8 +351,14 @@ async function validateScratchDef(
       JSON.stringify(content, null, 2),
       "utf8",
     );
+    const shapeArgument =
+      scratchOrgShape === undefined
+        ? ""
+        : SAFE_COMMAND_ARGUMENT.test(scratchOrgShape)
+          ? ` --scratch-org-shape ${scratchOrgShape}`
+          : " --scratch-org-shape none";
     const res = await execSfdxJson(
-      `sf hardis:config:org-init --validate-scratch-def "${tmpFile}" --json`,
+      `sf hardis:config:org-init --validate-scratch-def "${tmpFile}"${shapeArgument} --json`,
     );
     if (!res?.result) {
       return {
@@ -353,12 +386,43 @@ async function validateScratchDef(
   }
 }
 
+// The org shape by level: the project config, then the config of each major branch (null removes
+// the key, so the branch inherits the global value; "none" turns the org shape off for it).
+// Only the levels that changed are written.
+async function saveScratchOrgShapes(
+  configHelper: SfdxHardisConfigHelper,
+  levels: any,
+  lastConfig: any,
+): Promise<void> {
+  if (!levels) {
+    return;
+  }
+  const saved = lastConfig?.scratchOrgShapes || {};
+  if ((levels.global || null) !== (saved.global || null)) {
+    await configHelper.writeGlobalConfigValues({
+      scratchOrgShape: levels.global || null,
+    });
+  }
+  for (const branch of saved.majorBranches || []) {
+    const value = levels.branches?.[branch] || null;
+    if (value !== (saved.branches?.[branch] || null)) {
+      await configHelper.writeBranchConfigValues(branch, {
+        scratchOrgShape: value,
+      });
+    }
+  }
+}
+
 async function saveScratchDef(
   panel: { sendMessage: (message: any) => void },
   configHelper: SfdxHardisConfigHelper,
   data: any,
+  lastConfig: any,
 ): Promise<void> {
-  const validation = await validateScratchDef(data.content);
+  const validation = await validateScratchDef(
+    data.content,
+    data.scratchOrgShape,
+  );
   if (validation.issues.length > 0) {
     panel.sendMessage({ type: "scratchDefValidated", data: validation });
     vscode.window.showWarningMessage(t("orgInitScratchDefNotSaved"));
@@ -383,6 +447,7 @@ async function saveScratchDef(
           ? duration
           : null,
     });
+    await saveScratchOrgShapes(configHelper, data.scratchOrgShapes, lastConfig);
     panel.sendMessage({
       type: "scratchDefSaved",
       data: { issues: [], warnings: validation.warnings },

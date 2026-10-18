@@ -612,6 +612,37 @@ export class SfdxHardisConfigHelper {
   }
 
   /**
+   * Write some keys of the config file of a branch (config/branches/.sfdx-hardis.<branch>.yml), as
+   * they are. A null or undefined value removes the key. The file name follows the CLI: the first
+   * "/" of the branch name becomes "__".
+   */
+  async writeBranchConfigValues(
+    branchName: string,
+    values: SfdxHardisConfig,
+  ): Promise<void> {
+    const branchPath = path.join(
+      this.workspaceRoot,
+      "config",
+      "branches",
+      `.sfdx-hardis.${branchName.replace("/", "__")}.yml`,
+    );
+    const existingBranchConfig: SfdxHardisConfig = (await pathExists(
+      branchPath,
+    ))
+      ? (yaml.load(
+          await fs.promises.readFile(branchPath, "utf8"),
+        ) as SfdxHardisConfig) || {}
+      : {};
+    applyEditedValues(existingBranchConfig, values);
+    await fs.promises.mkdir(path.dirname(branchPath), { recursive: true });
+    await fs.promises.writeFile(
+      branchPath,
+      dumpRepositoryYaml(existingBranchConfig),
+      "utf8",
+    );
+  }
+
+  /**
    * Checks if both .sfdx-hardis.yml (root) and config/.sfdx-hardis.yml exist.
    * If so, prompts the user to merge config/ into root and delete config/.sfdx-hardis.yml.
    */
