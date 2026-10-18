@@ -12,7 +12,8 @@ import {
 import { handleDeploymentActionPickerMessage } from "../utils/pipeline/deploymentActionPickers";
 import {
   buildFunctionCommandFlags,
-  listCustomFunctions,
+  getCachedCustomFunctions,
+  loadCheckedCustomFunctions,
   quote,
   runFunctionCommand,
 } from "../utils/customFunctionsUtils";
@@ -30,47 +31,66 @@ export function registerShowPipelineConfig(commands: Commands) {
       const sfdxHardisConfigHelper =
         SfdxHardisConfigHelper.getInstance(workspaceRoot);
 
-      // Load available branches from major orgs
-      const majorOrgs = await listMajorOrgs();
-      const availableBranches = majorOrgs.map((org) => org.branchName);
-
-      const projectHardisConfig = await readSfdxHardisConfig();
-      const enableDeploymentApexTestClasses =
-        projectHardisConfig?.enableDeploymentApexTestClasses === true;
-
-      const availableApexTestClasses = enableDeploymentApexTestClasses
-        ? await listProjectApexTestClasses()
-        : [];
-
-      // Lists proposed by the deployment action editor, which the deployment
-      // actions of this panel open just like the DevOps Pipeline panel does
-      const projectApexScripts = await listProjectApexScripts();
-      const projectSfdmuWorkspaces = await listProjectDataWorkspaces();
-
       // Custom functions are deployment action types, so the editor of this panel needs the
-      // catalog. Runtimes are checked here so the Functions tab can flag a missing interpreter.
-      let customFunctions = await listCustomFunctions({ checkRuntimes: true });
+      // catalog, with runtimes checked so the Functions tab can flag a missing interpreter.
+      // Listing them costs a whole sfdx-hardis start (several seconds): the panel never waits
+      // for it. A catalog already checked for the current configuration is used at once, else
+      // the tab shows a spinner until the background load sends it.
+      const cachedCustomFunctions = getCachedCustomFunctions({
+        withRuntimes: true,
+      });
+      let customFunctions = cachedCustomFunctions ?? [];
+      let customFunctionsLoading = cachedCustomFunctions === null;
 
-      // Show progress while loading config editor input
-      const configEditorInput = await vscode.window.withProgress(
+      // The notification shows as soon as the menu is clicked, and covers every step
+      const {
+        configEditorInput,
+        availableBranches,
+        availableApexTestClasses,
+        projectApexScripts,
+        projectSfdmuWorkspaces,
+      } = await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
-          title: branchName
-            ? `Loading pipeline settings for ${branchName}...`
-            : "Loading global pipeline settings...",
+          title: loadingTitle(branchName),
           cancellable: false,
         },
         async () => {
-          const input = await sfdxHardisConfigHelper.getEditorInput(branchName);
-          // Add available branches to the input
-          input.availableBranches = availableBranches;
-          input.availableApexTestClasses = availableApexTestClasses;
-          input.projectApexScripts = projectApexScripts;
-          input.projectSfdmuWorkspaces = projectSfdmuWorkspaces;
-          input.customFunctions = customFunctions;
-          return input;
+          // Local reads only: they run together
+          const [
+            input,
+            majorOrgs,
+            apexTestClasses,
+            apexScripts,
+            sfdmuWorkspaces,
+          ] = await Promise.all([
+            sfdxHardisConfigHelper.getEditorInput(branchName),
+            listMajorOrgs(),
+            readSfdxHardisConfig().then((projectHardisConfig) =>
+              projectHardisConfig?.enableDeploymentApexTestClasses === true
+                ? listProjectApexTestClasses()
+                : [],
+            ),
+            // Lists proposed by the deployment action editor, which the deployment
+            // actions of this panel open just like the DevOps Pipeline panel does
+            listProjectApexScripts(),
+            listProjectDataWorkspaces(),
+          ]);
+          return {
+            configEditorInput: input,
+            availableBranches: majorOrgs.map((org) => org.branchName),
+            availableApexTestClasses: apexTestClasses,
+            projectApexScripts: apexScripts,
+            projectSfdmuWorkspaces: sfdmuWorkspaces,
+          };
         },
       );
+      configEditorInput.availableBranches = availableBranches;
+      configEditorInput.availableApexTestClasses = availableApexTestClasses;
+      configEditorInput.projectApexScripts = projectApexScripts;
+      configEditorInput.projectSfdmuWorkspaces = projectSfdmuWorkspaces;
+      configEditorInput.customFunctions = customFunctions;
+      configEditorInput.customFunctionsLoading = customFunctionsLoading;
 
       const panel = LwcPanelManager.getInstance().getOrCreatePanel(
         "s-pipeline-config",
@@ -84,6 +104,17 @@ export function registerShowPipelineConfig(commands: Commands) {
           ? t("pipelineSettingsBranch", { branchName })
           : t("globalPipelineSettings"),
       );
+
+      if (customFunctionsLoading) {
+        void loadCheckedCustomFunctions().then((functions) => {
+          customFunctions = functions;
+          customFunctionsLoading = false;
+          panel.sendMessage({
+            type: "customFunctionsLoaded",
+            data: { customFunctions },
+          });
+        });
+      }
 
       // Register message handlers
       panel.onMessage(async (type, data) => {
@@ -105,9 +136,7 @@ export function registerShowPipelineConfig(commands: Commands) {
             const newConfigEditorInput = await vscode.window.withProgress(
               {
                 location: vscode.ProgressLocation.Notification,
-                title: newBranchName
-                  ? `Loading pipeline settings for ${newBranchName}...`
-                  : "Loading global pipeline settings...",
+                title: loadingTitle(newBranchName),
                 cancellable: false,
               },
               async () => {
@@ -118,7 +147,9 @@ export function registerShowPipelineConfig(commands: Commands) {
                 input.availableApexTestClasses = availableApexTestClasses;
                 input.projectApexScripts = projectApexScripts;
                 input.projectSfdmuWorkspaces = projectSfdmuWorkspaces;
+                // Current state: the background load may still be running
                 input.customFunctions = customFunctions;
+                input.customFunctionsLoading = customFunctionsLoading;
                 return input;
               },
             );
@@ -152,9 +183,8 @@ export function registerShowPipelineConfig(commands: Commands) {
               : t("customFunctionUpdated", { id: data.customFunction.id }),
           );
           if (saved) {
-            customFunctions = await listCustomFunctions({
-              checkRuntimes: true,
-            });
+            customFunctions = await loadCheckedCustomFunctions();
+            customFunctionsLoading = false;
             panel.sendMessage({
               type: "customFunctionsRefreshed",
               data: { customFunctions },
@@ -170,16 +200,16 @@ export function registerShowPipelineConfig(commands: Commands) {
             t("customFunctionDeleted", { id: data.functionId }),
           );
           if (deleted) {
-            customFunctions = await listCustomFunctions({
-              checkRuntimes: true,
-            });
+            customFunctions = await loadCheckedCustomFunctions();
+            customFunctionsLoading = false;
             panel.sendMessage({
               type: "customFunctionsRefreshed",
               data: { customFunctions },
             });
           }
         } else if (type === "refreshCustomFunctions") {
-          customFunctions = await listCustomFunctions({ checkRuntimes: true });
+          customFunctions = await loadCheckedCustomFunctions();
+          customFunctionsLoading = false;
           panel.sendMessage({
             type: "customFunctionsRefreshed",
             data: { customFunctions },
@@ -192,4 +222,10 @@ export function registerShowPipelineConfig(commands: Commands) {
     },
   );
   commands.disposables.push(disposable);
+}
+
+function loadingTitle(branchName: string | null): string {
+  return branchName
+    ? t("loadingPipelineSettingsForBranch", { branchName })
+    : t("loadingGlobalPipelineSettings");
 }

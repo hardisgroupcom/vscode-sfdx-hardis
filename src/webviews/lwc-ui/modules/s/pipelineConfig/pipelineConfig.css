@@ -27,3 +27,24 @@ lightning-datatable {
 /* The read-only value classes (.hardis-field-value, .hardis-not-set,
    .hardis-field-default, .hardis-url-link) live in global-theme.css so every
    configuration panel renders a value the same way. */
+
+/* Custom Functions tab while the catalog is read in the background */
+.pipeline-config-functions-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 2.5rem 1rem;
+}
+
+.pipeline-config-functions-loading-spinner {
+  position: relative;
+  width: 2rem;
+  height: 2rem;
+}
+
+.pipeline-config-functions-loading-text {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--slds-g-color-neutral-base-50);
+}

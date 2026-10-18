@@ -439,20 +439,32 @@
                       class="hardis-btn-tinted-blue"
                       variant="neutral"
                       label={i18n.addCustomFunction}
+                      disabled={customFunctionsLoading}
                       onclick={handleAddCustomFunction}
                     ></lightning-button>
                     <lightning-button
                       variant="neutral"
                       label={i18n.refreshLabel}
+                      disabled={customFunctionsLoading}
                       onclick={handleRefreshCustomFunctions}
                     ></lightning-button>
                   </div>
 
-                  <template if:false={hasCustomFunctions}>
+                  <template if:true={customFunctionsLoading}>
+                    <div class="pipeline-config-functions-loading" role="status">
+                      <!-- lightning-spinner centers itself in its closest positioned parent: this box -->
+                      <div class="pipeline-config-functions-loading-spinner">
+                        <lightning-spinner alternative-text={i18n.loadingCustomFunctions} size="small" variant="brand"></lightning-spinner>
+                      </div>
+                      <p class="pipeline-config-functions-loading-text">{i18n.loadingCustomFunctions}</p>
+                    </div>
+                  </template>
+
+                  <template if:true={showCustomFunctionsEmpty}>
                     <div class="hardis-note">{i18n.noCustomFunctionYet}</div>
                   </template>
 
-                  <template if:true={hasCustomFunctions}>
+                  <template if:true={showCustomFunctionCards}>
                     <div class="hardis-card-grid">
                       <template for:each={customFunctionCards} for:item="fn">
                         <div key={fn.id} class="hardis-card">

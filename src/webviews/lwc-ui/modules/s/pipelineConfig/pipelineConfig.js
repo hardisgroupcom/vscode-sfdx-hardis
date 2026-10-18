@@ -62,6 +62,8 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
   @track projectApexScripts = [];
   // Custom functions of the project, used as deployment action types
   @track customFunctions = [];
+  // True while the extension reads the catalog in the background
+  @track customFunctionsLoading = false;
   @track projectSfdmuWorkspaces = [];
   @track projectSchedulableClasses = [];
   @track projectOnlySchedulableClasses = [];
@@ -634,6 +636,8 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
       this.customFunctions = Array.isArray(this.initData.customFunctions)
         ? this.initData.customFunctions
         : [];
+      this.customFunctionsLoading =
+        this.initData.customFunctionsLoading === true;
       this.projectSfdmuWorkspaces = Array.isArray(
         this.initData.projectSfdmuWorkspaces,
       )
@@ -1525,8 +1529,13 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
       this.handleReturnBatchableClasses(data);
     } else if (type === "returnCommunities") {
       this.handleReturnCommunities(data);
+    } else if (type === "customFunctionsLoaded") {
+      // First read of the catalog, done in the background: an open editor stays open
+      this.customFunctions = data.customFunctions || [];
+      this.customFunctionsLoading = false;
     } else if (type === "customFunctionsRefreshed") {
       this.customFunctions = data.customFunctions || [];
+      this.customFunctionsLoading = false;
       this.handleCloseCustomFunctionModal();
     }
   }
@@ -1535,6 +1544,14 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
 
   get hasCustomFunctions() {
     return this.customFunctions.length > 0;
+  }
+
+  get showCustomFunctionsEmpty() {
+    return !this.customFunctionsLoading && !this.hasCustomFunctions;
+  }
+
+  get showCustomFunctionCards() {
+    return !this.customFunctionsLoading && this.hasCustomFunctions;
   }
 
   get customFunctionCards() {
@@ -1609,6 +1626,7 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
   }
 
   handleRefreshCustomFunctions() {
+    this.customFunctionsLoading = true;
     window.sendMessageToVSCode({ type: "refreshCustomFunctions", data: {} });
   }
 

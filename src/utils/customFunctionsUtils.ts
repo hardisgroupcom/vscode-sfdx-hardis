@@ -70,8 +70,14 @@ let catalogCache: {
   signature: string;
   at: number;
   functions: CustomFunctionDefinition[];
+  // True when each function carries runtimeAvailable (read with --check-runtimes)
+  runtimesChecked: boolean;
 } | null = null;
 let catalogRefresh: Promise<CustomFunctionDefinition[]> | null = null;
+let checkedCatalogLoad: {
+  signature: string;
+  promise: Promise<CustomFunctionDefinition[]>;
+} | null = null;
 
 // The catalog is declared in config/.sfdx-hardis.yml: while that file does not change, the
 // answer of the CLI does not either
@@ -89,11 +95,15 @@ function configSignature(): string {
  * The catalog of custom functions when it is already known for the current configuration file,
  * else null. Never starts the CLI: listing the functions costs a whole sfdx-hardis start, which
  * the DevOps Pipeline must not wait for to show its Pull Requests.
+ * With withRuntimes, only a catalog read with the runtime check is returned.
  */
-export function getCachedCustomFunctions(): CustomFunctionDefinition[] | null {
+export function getCachedCustomFunctions(
+  options: { withRuntimes?: boolean } = {},
+): CustomFunctionDefinition[] | null {
   if (
     catalogCache &&
     catalogCache.signature === configSignature() &&
+    (!options.withRuntimes || catalogCache.runtimesChecked) &&
     Date.now() - catalogCache.at < CATALOG_TTL_MS
   ) {
     return catalogCache.functions;
@@ -111,7 +121,20 @@ export function refreshCustomFunctionsCache(): Promise<
     const signature = configSignature();
     catalogRefresh = listCustomFunctions()
       .then((functions) => {
-        catalogCache = { signature, at: Date.now(), functions };
+        // A catalog read with the runtime check meanwhile holds more: it stays
+        if (
+          !(
+            catalogCache?.runtimesChecked &&
+            catalogCache.signature === signature
+          )
+        ) {
+          catalogCache = {
+            signature,
+            at: Date.now(),
+            functions,
+            runtimesChecked: false,
+          };
+        }
         return functions;
       })
       .finally(() => {
@@ -119,6 +142,39 @@ export function refreshCustomFunctionsCache(): Promise<
       });
   }
   return catalogRefresh;
+}
+
+/**
+ * Read the catalog with the runtime check and remember it, so the DevOps Pipeline reuses it.
+ * Calls made while one is running for the same configuration file share it. A call started
+ * before the file changed (a save, a delete) is never reused: the next one reads it again.
+ */
+export function loadCheckedCustomFunctions(): Promise<
+  CustomFunctionDefinition[]
+> {
+  const signature = configSignature();
+  if (checkedCatalogLoad && checkedCatalogLoad.signature === signature) {
+    return checkedCatalogLoad.promise;
+  }
+  const load = {
+    signature,
+    promise: listCustomFunctions({ checkRuntimes: true }).then((functions) => {
+      catalogCache = {
+        signature,
+        at: Date.now(),
+        functions,
+        runtimesChecked: true,
+      };
+      return functions;
+    }),
+  };
+  checkedCatalogLoad = load;
+  void load.promise.finally(() => {
+    if (checkedCatalogLoad === load) {
+      checkedCatalogLoad = null;
+    }
+  });
+  return load.promise;
 }
 
 /**
