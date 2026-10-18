@@ -1042,7 +1042,7 @@ async function main() {
     if (args.includes("--list-org-shapes")) {
       payload.orgShapes = [
         {
-          orgId: "00D5g000004Z0bXEAS",
+          orgId: "00D0000000ShapeOrg",
           username: "prod@mycompany.com",
           alias: "prod",
           createdDate: "2026-10-01T08:00:00.000+0000",

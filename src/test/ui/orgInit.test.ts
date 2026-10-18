@@ -191,9 +191,9 @@ suite("Org Initialization panel UI tests", function () {
         data: {
           content: { orgName: "Shape", features: [] },
           scratchOrgDuration: "7",
-          scratchOrgShape: "00D5g000004Z0bXEAS",
+          scratchOrgShape: "00D0000000ShapeOrg",
           scratchOrgShapes: {
-            global: "00D5g000004Z0bXEAS",
+            global: "00D0000000ShapeOrg",
             branches: { integration: "none", main: null },
           },
         },
@@ -205,7 +205,7 @@ suite("Org Initialization panel UI tests", function () {
       );
       assert.strictEqual(
         readProjectConfig().scratchOrgShape,
-        "00D5g000004Z0bXEAS",
+        "00D0000000ShapeOrg",
       );
       const integration = yaml.load(fs.readFileSync(files[2], "utf8")) as any;
       assert.strictEqual(integration.scratchOrgShape, "none");
@@ -240,12 +240,12 @@ suite("Org Initialization panel UI tests", function () {
       );
       assert.strictEqual(readProjectConfig().scratchOrgShape, undefined);
       const validation = callsOf("hardis:config:org-init")
-        .filter((entry) => entry.args.includes("00D5g000004Z0bXEAS"))
+        .filter((entry) => entry.args.includes("00D0000000ShapeOrg"))
         .pop();
       assert.ok(
         validation.args
           .join(" ")
-          .includes("--scratch-org-shape 00D5g000004Z0bXEAS"),
+          .includes("--scratch-org-shape 00D0000000ShapeOrg"),
         validation.args.join(" "),
       );
     } finally {
