@@ -6,9 +6,7 @@ import { newAzureProviderStub } from "./azureProviderStub";
 
 // What getOAuthSession() answers: a session, no session, or a read failure
 type SessionRead =
-  | { id: string; accessToken: string }
-  | null
-  | { failed: true };
+  { id: string; accessToken: string } | null | { failed: true };
 
 // The provider instance lives as long as the window, and the Microsoft session token it was built
 // with expires after about an hour: every call then failed with 401 and was answered with an empty

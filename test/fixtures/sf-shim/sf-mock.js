@@ -928,6 +928,138 @@ async function main() {
   // project without a pool, =old an sfdx-hardis that answers the pool storage instead of
   // describing the pool, =error a command that fails. SF_MOCK_POOL_DELAY_MS makes the
   // answer wait, for the tests that change something while the pool is read.
+  // `sf hardis:config:org-init --json`: the org initialization steps of the project, built from
+  // its older settings (test/fixtures/sf-shim/org-init.json). With --validate-scratch-def, the
+  // definition of that file is validated: an unknown settings name is an issue, as in the CLI.
+  if (first === "hardis:config:org-init" && args.includes("--json")) {
+    // SF_MOCK_ORG_INIT_DELAY_MS makes the answer wait, so a test sees the loading state
+    const orgInitDelayMs = parseInt(
+      process.env.SF_MOCK_ORG_INIT_DELAY_MS || "0",
+      10,
+    );
+    if (orgInitDelayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, orgInitDelayMs));
+    }
+    const payload = JSON.parse(
+      fs.readFileSync(path.join(__dirname, "org-init.json"), "utf8"),
+    );
+    // The org shape levels, read from the workspace files as the CLI does, so a save shows
+    const readShape = (file) => {
+      if (!fs.existsSync(file)) {
+        return null;
+      }
+      const match = /^scratchOrgShape:\s*['"]?([^'"\r\n]+)/m.exec(
+        fs.readFileSync(file, "utf8"),
+      );
+      return match ? match[1].trim() : null;
+    };
+    payload.scratchOrgShapes.global = readShape(
+      path.join(process.cwd(), "config", ".sfdx-hardis.yml"),
+    );
+    for (const branch of payload.scratchOrgShapes.majorBranches) {
+      payload.scratchOrgShapes.branches[branch] = readShape(
+        path.join(
+          process.cwd(),
+          "config",
+          "branches",
+          `.sfdx-hardis.${branch}.yml`,
+        ),
+      );
+    }
+    const validateIndex = args.indexOf("--validate-scratch-def");
+    if (validateIndex >= 0) {
+      const defFile = String(args[validateIndex + 1] || "").replace(
+        /^"|"$/g,
+        "",
+      );
+      const content = JSON.parse(fs.readFileSync(defFile, "utf8"));
+      const known = payload.scratchDefHints.settingsNames;
+      // As in the CLI: a wrong type blocks, an unknown settings name is only a warning
+      payload.scratchDef = {
+        path: defFile,
+        exists: true,
+        content,
+        issues:
+          content.hasSampleData !== undefined &&
+          typeof content.hasSampleData !== "boolean"
+            ? ["hasSampleData: Invalid input: expected boolean"]
+            : [],
+        warnings: Object.keys(content.settings || {})
+          .filter((name) => !known.includes(name))
+          .map(
+            (name) =>
+              `settings.${name}: unknown settings name for Salesforce CLI`,
+          ),
+      };
+    }
+    // The options that read an org: the Dev Hub values, settings, and the features of an org shape.
+    // SF_MOCK_ORG_INIT_NO_ORG=true answers as a project with no Dev Hub and no default org.
+    const needsOrg =
+      args.includes("--org-values") ||
+      args.includes("--import-settings") ||
+      args.includes("--import-features-from-shape");
+    if (needsOrg && process.env.SF_MOCK_ORG_INIT_NO_ORG === "true") {
+      console.log(
+        JSON.stringify({
+          name: "SfError",
+          message:
+            "No org to read from: pass --source-org, or set a default Dev Hub or a default org.",
+          status: 1,
+          stack: "",
+        }),
+      );
+      return 1;
+    }
+    if (args.includes("--org-values")) {
+      payload.orgValues = {
+        orgUsername: "devhub@mycompany.com",
+        languages: [
+          { value: "en_US", label: "English" },
+          { value: "fr", label: "French" },
+          { value: "de", label: "German" },
+        ],
+        countries: [
+          { value: "FR", label: "France" },
+          { value: "DE", label: "Germany" },
+          { value: "US", label: "United States" },
+        ],
+        releases: {
+          current: { version: "68.0", label: "Winter '27" },
+          previous: { version: "67.0", label: "Summer '26" },
+          preview: { version: "69.0", label: "Spring '27" },
+        },
+      };
+    }
+    const importSettingsIndex = args.indexOf("--import-settings");
+    if (importSettingsIndex >= 0) {
+      const names = String(args[importSettingsIndex + 1] || "").split(",");
+      const settings = {};
+      for (const name of names) {
+        settings[name] = { enableMockSetting: true, mockLimit: 5 };
+      }
+      payload.importedSettings = { settings, errors: [] };
+    }
+    if (args.includes("--list-org-shapes")) {
+      payload.orgShapes = [
+        {
+          orgId: "00D0000000ShapeOrg",
+          username: "prod@mycompany.com",
+          alias: "prod",
+          createdDate: "2026-10-01T08:00:00.000+0000",
+        },
+      ];
+    }
+    if (args.includes("--import-features-from-shape")) {
+      payload.importedShape = {
+        shapeId: "3SR000000000001",
+        features: ["PersonAccounts", "MaxApexCodeSize:40", "MockShapeFeature"],
+        settings: null,
+      };
+    }
+    outputJsonIfRequested({ status: 0, result: payload }, "");
+    return 0;
+  }
+
   if (first === "hardis:scratch:pool:view" && args.includes("--json")) {
     const variant = process.env.SF_MOCK_POOL || "";
     const delayMs = parseInt(process.env.SF_MOCK_POOL_DELAY_MS || "0", 10);

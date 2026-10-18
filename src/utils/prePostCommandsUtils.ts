@@ -526,26 +526,7 @@ const APEX_TEST_READ_BATCH_SIZE = 60;
 async function listProjectApexClassNames(
   matches: (content: string) => boolean,
 ): Promise<string[]> {
-  const workspaceRoot = getWorkspaceRoot();
-  if (!workspaceRoot) {
-    return [];
-  }
-
-  const packageDirs = await listSfdxProjectPackageDirectories();
-  const pkgDirs =
-    Array.isArray(packageDirs) && packageDirs.length > 0 ? packageDirs : ["."];
-
-  const patterns = pkgDirs.map((pkgDir) => {
-    const normalized = normalizeGlobBase(String(pkgDir || "."));
-    return normalized ? `${normalized}/**/classes/*.cls` : `**/classes/*.cls`;
-  });
-  const combinedPattern =
-    patterns.length > 1 ? `{${patterns.join(",")}}` : patterns[0];
-
-  const uris = await vscode.workspace.findFiles(
-    new vscode.RelativePattern(workspaceRoot, combinedPattern),
-    GLOB_IGNORE_PATTERNS,
-  );
+  const uris = await findPackageDirectoriesFiles(["**/classes/*.cls"]);
   const files = Array.from(new Set(uris.map((uri) => uri.fsPath)));
 
   const found: string[] = [];
@@ -699,6 +680,22 @@ function normalizePrePostCommandToSave(
   return commandToSave;
 }
 
+/**
+ * Names of the permission sets and permission set groups of the project sources, offered by the
+ * assign-permission-sets org initialization step. Not cached: a permission set added a minute
+ * ago must be listed.
+ */
+export async function listProjectPermissionSets(): Promise<string[]> {
+  const uris = await findPackageDirectoriesFiles([
+    "**/*.permissionset-meta.xml",
+    "**/*.permissionsetgroup-meta.xml",
+  ]);
+  const names = uris.map((uri) =>
+    path.basename(uri.fsPath).replace(/\.permissionset(group)?-meta\.xml$/, ""),
+  );
+  return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
+}
+
 export async function listProjectApexScripts(): Promise<
   { label: string; value: string }[]
 > {
@@ -756,4 +753,28 @@ export async function listProjectDataWorkspaces(): Promise<
     }
   }
   return options;
+}
+
+// Files matching the globs inside every package directory of sfdx-project.json
+// (the workspace root when there is none)
+async function findPackageDirectoriesFiles(
+  globs: string[],
+): Promise<vscode.Uri[]> {
+  const workspaceRoot = getWorkspaceRoot();
+  if (!workspaceRoot) {
+    return [];
+  }
+  const packageDirs = await listSfdxProjectPackageDirectories();
+  const pkgDirs =
+    Array.isArray(packageDirs) && packageDirs.length > 0 ? packageDirs : ["."];
+  const patterns = pkgDirs.flatMap((pkgDir) => {
+    const normalized = normalizeGlobBase(String(pkgDir || "."));
+    return globs.map((glob) => (normalized ? `${normalized}/${glob}` : glob));
+  });
+  const combinedPattern =
+    patterns.length > 1 ? `{${patterns.join(",")}}` : patterns[0];
+  return vscode.workspace.findFiles(
+    new vscode.RelativePattern(workspaceRoot, combinedPattern),
+    GLOB_IGNORE_PATTERNS,
+  );
 }

@@ -18,6 +18,7 @@ import { registerShowPipeline } from "./commands/showPipeline";
 import { registerShowSetup } from "./commands/showSetup";
 import { registerShowPipelineConfig } from "./commands/showPipelineConfig";
 import { registerShowInstalledPackages } from "./commands/showInstalledPackages";
+import { registerShowOrgInit } from "./commands/showOrgInit";
 import { registerShowOrgMonitoring } from "./commands/showOrgMonitoring";
 import { registerShowMonitoringConfig } from "./commands/showMonitoringConfig";
 import { registerShowFilesWorkbench } from "./commands/showFilesWorkbench";
@@ -103,6 +104,7 @@ export class Commands {
     registerShowSetup(this);
     registerShowPipelineConfig(this);
     registerShowInstalledPackages(this);
+    registerShowOrgInit(this);
     registerShowOrgsManager(this);
     registerShowOrgMonitoring(this);
     registerShowMonitoringConfig(this);

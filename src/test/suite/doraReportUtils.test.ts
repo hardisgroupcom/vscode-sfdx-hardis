@@ -526,7 +526,7 @@ suite("DORA metrics panel", () => {
   test("the DevOps Pipeline menu opens the panel instead of running the report", () => {
     const html = readModuleFile("pipeline", "pipeline.html");
     const js = readModuleFile("pipeline", "pipeline.js");
-    assert.ok(html.includes("label={i18n.doraMetrics}"));
+    assert.ok(html.includes("label={i18n.menuGenerateDoraMetrics}"));
     assert.ok(html.includes("onclick={handleShowDoraMetrics}"));
     assert.ok(js.includes('command: "vscode-sfdx-hardis.showDoraMetrics"'));
     assert.ok(!js.includes('command: "sf hardis:doc:dora-report"'));

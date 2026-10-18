@@ -102,8 +102,6 @@ export class SfdxHardisConfigHelper {
     { name: "devHubAlias", scopes: ["global"] },
     { name: "devHubInstanceUrl", scopes: ["global"] },
     { name: "devHubUsername", scopes: ["global"] },
-    { name: "initPermissionSets", scopes: ["global"] },
-    { name: "scratchOrgInitApexScripts", scopes: ["global"] },
     { name: "dataPackages", scopes: ["global"] },
     { name: "packageNoOverwritePath", scopes: ["branch"] },
     { name: "useDeltaDeployment", scopes: ["global"] },
@@ -118,7 +116,6 @@ export class SfdxHardisConfigHelper {
     { name: "availableTargetBranches", scopes: ["global"] },
     { name: "availableTargetBranchesLabels", scopes: ["global"] },
     { name: "sharedDevSandboxes", scopes: ["global"] },
-    { name: "offerSandboxInit", scopes: ["global"] },
     { name: "newTaskNameRegex", scopes: ["global"] },
     { name: "newTaskNameRegexExample", scopes: ["global"] },
     { name: "installPackagesDuringCheckDeploy", scopes: ["global"] },
@@ -206,7 +203,6 @@ export class SfdxHardisConfigHelper {
         "availableProjects",
         "allowedOrgTypes",
         "sharedDevSandboxes",
-        "offerSandboxInit",
         "newTaskNameRegex",
         "newTaskNameRegexExample",
       ],
@@ -256,13 +252,7 @@ export class SfdxHardisConfigHelper {
       label: "devHub",
       description: "",
       iconName: "utility:connected_apps",
-      keys: [
-        "devHubAlias",
-        "devHubInstanceUrl",
-        "devHubUsername",
-        "initPermissionSets",
-        "scratchOrgInitApexScripts",
-      ],
+      keys: ["devHubAlias", "devHubInstanceUrl", "devHubUsername"],
     },
     {
       label: "securityPrivacy",
@@ -542,7 +532,6 @@ export class SfdxHardisConfigHelper {
     const globalPath = path.join(this.workspaceRoot, "config/.sfdx-hardis.yml");
     // If root .sfdx-hardis.yml exists it has priority; write global config there
     const rootConfigExists = await pathExists(rootConfigPath);
-    const effectiveGlobalPath = rootConfigExists ? rootConfigPath : globalPath;
     if (data.isBranch && data.branchName) {
       const branchPath = path.join(
         this.workspaceRoot,
@@ -608,28 +597,89 @@ export class SfdxHardisConfigHelper {
           globalOnly[key] = configWithProperTypes[key];
         }
       }
-      await fs.promises.mkdir(path.dirname(effectiveGlobalPath), {
-        recursive: true,
-      });
-      // Merge with existing global config (root file if present, otherwise config/)
-      if (await pathExists(effectiveGlobalPath)) {
-        const existingGlobalConfig: SfdxHardisConfig =
+      await this.writeGlobalConfigFile(globalOnly);
+    }
+  }
+
+  /**
+   * Write some keys of the project config file as they are, without the type conversion of the
+   * settings editor: for values the editor does not handle (lists of objects such as
+   * orgInitSteps). A null or undefined value removes the key.
+   */
+  async writeGlobalConfigValues(values: SfdxHardisConfig): Promise<void> {
+    await this.checkDuplicateConfigFiles();
+    await this.writeGlobalConfigFile(values);
+  }
+
+  /**
+   * Write some keys of the config file of a branch (config/branches/.sfdx-hardis.<branch>.yml), as
+   * they are. A null or undefined value removes the key. The file name follows the CLI: the first
+   * "/" of the branch name becomes "__".
+   */
+  async writeBranchConfigValues(
+    branchName: string,
+    values: SfdxHardisConfig,
+  ): Promise<void> {
+    // The CLI reads .yml and .yaml: write the file that exists, .yml for a new one
+    const branchFileBase = path.join(
+      this.workspaceRoot,
+      "config",
+      "branches",
+      `.sfdx-hardis.${branchName.replace("/", "__")}`,
+    );
+    const branchPath = (await pathExists(`${branchFileBase}.yaml`))
+      ? `${branchFileBase}.yaml`
+      : `${branchFileBase}.yml`;
+    const existingBranchConfig: SfdxHardisConfig = (await pathExists(
+      branchPath,
+    ))
+      ? (yaml.load(
+          await fs.promises.readFile(branchPath, "utf8"),
+        ) as SfdxHardisConfig) || {}
+      : {};
+    applyEditedValues(existingBranchConfig, values);
+    await fs.promises.mkdir(path.dirname(branchPath), { recursive: true });
+    await fs.promises.writeFile(
+      branchPath,
+      dumpRepositoryYaml(existingBranchConfig),
+      "utf8",
+    );
+  }
+
+  /**
+   * Removes keys from every branch and user config file (config/branches, config/user) that holds
+   * them: the CLI merges these files over the project config, so a key left there still counts.
+   */
+  async removeKeysFromBranchAndUserConfigs(keys: string[]): Promise<void> {
+    if (keys.length === 0) {
+      return;
+    }
+    for (const folder of ["branches", "user"]) {
+      const dir = path.join(this.workspaceRoot, "config", folder);
+      if (!(await pathExists(dir))) {
+        continue;
+      }
+      const files = (await fs.promises.readdir(dir)).filter(
+        (file) =>
+          file.startsWith(".sfdx-hardis.") &&
+          (file.endsWith(".yml") || file.endsWith(".yaml")),
+      );
+      for (const file of files) {
+        const filePath = path.join(dir, file);
+        const content =
           (yaml.load(
-            await fs.promises.readFile(effectiveGlobalPath, "utf8"),
+            await fs.promises.readFile(filePath, "utf8"),
           ) as SfdxHardisConfig) || {};
-        applyEditedValues(existingGlobalConfig, globalOnly);
+        const present = keys.filter((key) => key in content);
+        if (present.length === 0) {
+          continue;
+        }
+        for (const key of present) {
+          delete content[key];
+        }
         await fs.promises.writeFile(
-          effectiveGlobalPath,
-          dumpRepositoryYaml(existingGlobalConfig),
-          "utf8",
-        );
-      } else {
-        // If no existing global config, just write the new one
-        const newGlobalConfig: SfdxHardisConfig = {};
-        applyEditedValues(newGlobalConfig, globalOnly);
-        await fs.promises.writeFile(
-          effectiveGlobalPath,
-          dumpRepositoryYaml(newGlobalConfig),
+          filePath,
+          dumpRepositoryYaml(content),
           "utf8",
         );
       }
@@ -737,5 +787,32 @@ export class SfdxHardisConfigHelper {
     }
 
     return converted;
+  }
+
+  // Writes the values into the project config file (root .sfdx-hardis.yml when it exists)
+  private async writeGlobalConfigFile(values: SfdxHardisConfig): Promise<void> {
+    const rootConfigPath = path.join(this.workspaceRoot, ".sfdx-hardis.yml");
+    const globalPath = path.join(this.workspaceRoot, "config/.sfdx-hardis.yml");
+    // If root .sfdx-hardis.yml exists it has priority; write global config there
+    const effectiveGlobalPath = (await pathExists(rootConfigPath))
+      ? rootConfigPath
+      : globalPath;
+    await fs.promises.mkdir(path.dirname(effectiveGlobalPath), {
+      recursive: true,
+    });
+    // Merge with existing global config (root file if present, otherwise config/)
+    const existingGlobalConfig: SfdxHardisConfig = (await pathExists(
+      effectiveGlobalPath,
+    ))
+      ? (yaml.load(
+          await fs.promises.readFile(effectiveGlobalPath, "utf8"),
+        ) as SfdxHardisConfig) || {}
+      : {};
+    applyEditedValues(existingGlobalConfig, values);
+    await fs.promises.writeFile(
+      effectiveGlobalPath,
+      dumpRepositoryYaml(existingGlobalConfig),
+      "utf8",
+    );
   }
 }

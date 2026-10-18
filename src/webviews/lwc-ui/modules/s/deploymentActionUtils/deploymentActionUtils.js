@@ -65,6 +65,63 @@ const CONTEXT_LABEL_KEY_BY_CODE = {
   "process-deployment-only": "processDeploymentOnly",
 };
 
+// Org initialization step types (orgInitSteps) that are not deployment action types
+const ORG_INIT_TYPE_LABEL_KEY_BY_CODE = {
+  "install-packages": "installPackagesType",
+  "deploy-sources": "deploySourcesType",
+  "assign-permission-sets": "assignPermissionSetsType",
+};
+
+const ORG_INIT_TYPE_HUE_BY_CODE = {
+  "install-packages": "cyan",
+  "deploy-sources": "indigo",
+  "assign-permission-sets": "pink",
+};
+
+/** Label of an org initialization step type: its own types, then the deployment action ones. */
+export function getOrgInitStepTypeLabel(typeCode, t, customFunctions = []) {
+  const labelKey = ORG_INIT_TYPE_LABEL_KEY_BY_CODE[typeCode];
+  if (labelKey) {
+    return t(labelKey);
+  }
+  const customFunction = (customFunctions || []).find(
+    (fn) => fn.id === typeCode,
+  );
+  if (customFunction) {
+    return t("customFunctionTypeLabel", {
+      label: customFunction.label || customFunction.id,
+    });
+  }
+  return getActionTypeLabel(typeCode, t, customFunctions);
+}
+
+export function getOrgInitStepTypePillClass(typeCode) {
+  const hue = ORG_INIT_TYPE_HUE_BY_CODE[typeCode];
+  return hue ? getPillClass(hue) : getActionTypePillClass(typeCode);
+}
+
+/**
+ * Types offered for an org initialization step. The built-in ones come from the CLI
+ * (sf hardis:config:org-init --json, stepTypes), the custom functions without a deployment phase
+ * are added after them.
+ */
+export function getOrgInitStepTypeOptions(stepTypes, t, customFunctions = []) {
+  const options = (stepTypes || []).map((stepType) => ({
+    label: getOrgInitStepTypeLabel(stepType.type, t, customFunctions),
+    value: stepType.type,
+  }));
+  // A function bound to a deployment phase expects a deployment around it
+  for (const customFunction of customFunctions || []) {
+    if (!customFunction.when) {
+      options.push({
+        label: getOrgInitStepTypeLabel(customFunction.id, t, customFunctions),
+        value: customFunction.id,
+      });
+    }
+  }
+  return options;
+}
+
 // t: the SharedMixin translate function of the calling component.
 // customFunctions: the project custom function catalog, so a type that is a function id is
 // labelled with the function label instead of falling back to "unknown".

@@ -1,0 +1,44 @@
+.org-init-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.org-init-run {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.org-init-run-org {
+  min-width: 20rem;
+}
+
+/* Same height as the inputs of the row, so the toggle sits on their line */
+.org-init-toggle {
+  display: flex;
+  align-items: center;
+  min-height: 2rem;
+}
+
+/* Field label on the left, its documentation and import buttons on the right */
+.org-init-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Room for the spinner, which is positioned inside its block */
+.org-init-loading {
+  min-height: 6rem;
+}
+
+/* The org combobox opens its list past the bottom of the dialog */
+.org-init-import-content {
+  overflow: visible;
+  min-height: 8rem;
+}
