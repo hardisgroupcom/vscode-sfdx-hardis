@@ -2011,6 +2011,16 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     });
   }
 
+  // The Replacement Rules panel: values, secrets and XML removals applied before each deployment
+  handleShowReplacementRules() {
+    window.sendMessageToVSCode({
+      type: "runVsCodeCommand",
+      data: {
+        command: "vscode-sfdx-hardis.showReplacementRules",
+      },
+    });
+  }
+
   // The DORA metrics panel: it exports the report from its own menu
   handleShowDoraMetrics() {
     window.sendMessageToVSCode({

@@ -322,6 +322,15 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             requiresProject: true,
             helpUrl: DOCSITE_URL + "/hardis/doc/salesforce-devops-dora-report/",
           },
+          {
+            id: "vscode-sfdx-hardis.showReplacementRules",
+            label: t("replacementRulesTitle"),
+            tooltip: t("replacementRulesTooltip"),
+            command: "vscode-sfdx-hardis.showReplacementRules",
+            requiresProject: true,
+            helpUrl:
+              DOCSITE_URL + "/salesforce-devops-config-replacement-rules/",
+          },
         ],
       },
       {

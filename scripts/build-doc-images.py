@@ -59,6 +59,11 @@ PANEL_SHOTS = {
     "command-runner.png": "command-runner-question",
     "installed-packages.png": "installed-packages",
     "org-initialization.png": "org-initialization",
+    "replacement-rules-panel.png": "replacement-rules",
+    "replacement-rules-values.png": "replacement-rules-values",
+    "replacement-rules-builtin.png": "replacement-rules-builtin",
+    "replacement-rules-preview.png": "replacement-rules-preview",
+    "replacement-rules-editor.png": "replacement-rules-editor",
     # Scratch Org Pool panel (whole window, like the DORA metrics images): at the zoom of the
     # other captures, then two zoom levels out so the whole panel fits, and the entry of the
     # DevOps Pipeline settings menu that opens it
@@ -101,6 +106,11 @@ WEBVIEW_ONLY = {
     "command-runner.png",
     "installed-packages.png",
     "org-initialization.png",
+    "replacement-rules-panel.png",
+    "replacement-rules-values.png",
+    "replacement-rules-builtin.png",
+    "replacement-rules-preview.png",
+    "replacement-rules-editor.png",
     "pipeline-config.png",
     "promotion-pipeline.png",
     "promotion-settings.png",

@@ -3081,6 +3081,38 @@ suite("Documentation screenshots", function () {
     });
   });
 
+  // Replacement Rules panel, from the rules the mocked sf CLI lists (project, uat branch file
+  // and issue #128, built-in rules), on its Rules tab
+  test("replacement rules", async function () {
+    await shootPanel(panelManager, {
+      name: "replacement-rules",
+      command: "vscode-sfdx-hardis.showReplacementRules",
+      lwcId: "s-replacement-rules",
+      ready: (initData: any) => initData.loading === false && !!initData.data,
+      settleMs: 3000,
+    });
+  });
+
+  // Other tabs of the Replacement Rules panel, and the rule editor open on a user permission
+  // removal. Coordinates are those of the 1920x982 capture of the "replacement rules" shot
+  test("replacement rules tabs and editor", async function () {
+    if (!shouldTake("replacement-rules-tabs")) {
+      this.skip();
+    }
+    const panel = {
+      command: "vscode-sfdx-hardis.showReplacementRules",
+      lwcId: "s-replacement-rules",
+      ready: (initData: any) => initData.loading === false && !!initData.data,
+      settleMs: 3000,
+      force: true,
+    };
+    await shootPanel(panelManager, { ...panel, name: "replacement-rules-values", clicks: [{ x: 717, y: 421 }] });
+    await shootPanel(panelManager, { ...panel, name: "replacement-rules-builtin", clicks: [{ x: 895, y: 421 }] });
+    await shootPanel(panelManager, { ...panel, name: "replacement-rules-preview", settleMs: 5000, clicks: [{ x: 1050, y: 421 }, { x: 630, y: 522 }, { x: 534, y: 702 }, { x: 886, y: 523 }] });
+    await shootPanel(panelManager, { ...panel, name: "replacement-rules-editor", clicks: [{ x: 1832, y: 615 }, { x: 1752, y: 656 }] });
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+  });
+
   // ---------------------------------------------------------------------
   // VS Code user guides (sfdx-hardis docs/vscode-extension-*.md): the panel
   // states a guide walks through that no other capture shows, mostly an open

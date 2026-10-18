@@ -412,13 +412,18 @@
       },
       {
         "command": "vscode-sfdx-hardis.showOrgInit",
-        "title": "SFDX Hardis: Org Initialization",
+        "title": "SFDX Hardis: Org Initialization (Beta)",
         "icon": "$(rocket)"
       },
       {
         "command": "vscode-sfdx-hardis.showScratchOrgPool",
         "title": "SFDX Hardis: Scratch Org Pool",
         "icon": "$(radio-tower)"
+      },
+      {
+        "command": "vscode-sfdx-hardis.showReplacementRules",
+        "title": "SFDX Hardis: Replacement Rules (Beta)",
+        "icon": "$(replace-all)"
       },
       {
         "command": "vscode-sfdx-hardis.showSetup",
