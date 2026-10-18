@@ -130,7 +130,7 @@ async function loadOrgInitPanelData(): Promise<Record<string, any>> {
     listProjectApexScripts(),
     listProjectDataWorkspaces(),
     listProjectPermissionSets(),
-    listInitializableOrgs(),
+    listOrgsToInitialize(),
     listCustomFunctions(),
   ]);
   if (!configRes?.result || configRes.status !== 0) {
@@ -151,7 +151,7 @@ async function loadOrgInitPanelData(): Promise<Record<string, any>> {
 }
 
 // Scratch orgs and sandboxes: hardis:org:init refuses production orgs
-async function listInitializableOrgs(): Promise<any[]> {
+async function listOrgsToInitialize(): Promise<any[]> {
   try {
     // Not from the cache: the org to initialize is often the one created a minute ago
     const orgs = await listAllOrgs(false, false, true);
