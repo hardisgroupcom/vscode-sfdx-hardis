@@ -3106,10 +3106,35 @@ suite("Documentation screenshots", function () {
       settleMs: 3000,
       force: true,
     };
-    await shootPanel(panelManager, { ...panel, name: "replacement-rules-values", clicks: [{ x: 717, y: 421 }] });
-    await shootPanel(panelManager, { ...panel, name: "replacement-rules-builtin", clicks: [{ x: 895, y: 421 }] });
-    await shootPanel(panelManager, { ...panel, name: "replacement-rules-preview", settleMs: 5000, clicks: [{ x: 1050, y: 421 }, { x: 630, y: 522 }, { x: 534, y: 702 }, { x: 886, y: 523 }] });
-    await shootPanel(panelManager, { ...panel, name: "replacement-rules-editor", clicks: [{ x: 1832, y: 615 }, { x: 1752, y: 656 }] });
+    await shootPanel(panelManager, {
+      ...panel,
+      name: "replacement-rules-values",
+      clicks: [{ x: 717, y: 421 }],
+    });
+    await shootPanel(panelManager, {
+      ...panel,
+      name: "replacement-rules-builtin",
+      clicks: [{ x: 895, y: 421 }],
+    });
+    await shootPanel(panelManager, {
+      ...panel,
+      name: "replacement-rules-preview",
+      settleMs: 5000,
+      clicks: [
+        { x: 1050, y: 421 },
+        { x: 630, y: 522 },
+        { x: 534, y: 702 },
+        { x: 886, y: 523 },
+      ],
+    });
+    await shootPanel(panelManager, {
+      ...panel,
+      name: "replacement-rules-editor",
+      clicks: [
+        { x: 1832, y: 615 },
+        { x: 1752, y: 656 },
+      ],
+    });
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
   });
 

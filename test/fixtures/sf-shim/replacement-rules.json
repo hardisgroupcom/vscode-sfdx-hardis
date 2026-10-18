@@ -11,9 +11,7 @@
           "type": "xml-remove",
           "files": "**/profiles/*.profile-meta.xml",
           "xmlPath": "Profile/userPermissions[name=ViewSetup]",
-          "includeTargetBranches": [
-            "main"
-          ]
+          "includeTargetBranches": ["main"]
         },
         "overrides": []
       },
@@ -111,9 +109,7 @@
           "type": "xml-remove",
           "files": "**/layouts/Case-*.layout-meta.xml",
           "xmlPath": "Layout/platformActionList",
-          "includeTargetBranches": [
-            "uat"
-          ]
+          "includeTargetBranches": ["uat"]
         },
         "overrides": []
       },
@@ -127,9 +123,7 @@
             "main": "site.admin@example.com"
           }
         },
-        "overrides": [
-          "project"
-        ]
+        "overrides": ["project"]
       },
       {
         "layer": "issue",
@@ -137,9 +131,7 @@
           "id": "builtin-flow-schedule-day-of-month",
           "enabled": false
         },
-        "overrides": [
-          "builtin"
-        ]
+        "overrides": ["builtin"]
       }
     ],
     "effective": {
@@ -150,13 +142,9 @@
           "type": "xml-remove",
           "files": "**/profiles/*.profile-meta.xml",
           "xmlPath": "Profile/userPermissions[name=ViewSetup]",
-          "includeTargetBranches": [
-            "main"
-          ],
+          "includeTargetBranches": ["main"],
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": false,
           "resolved": {
@@ -178,9 +166,7 @@
           },
           "required": true,
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": true,
           "resolved": {
@@ -197,9 +183,7 @@
           "secret": "PAYMENT_API_PASSWORD",
           "required": true,
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": true,
           "resolved": {
@@ -221,9 +205,7 @@
             "default": "support-test@example.com"
           },
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": true,
           "resolved": {
@@ -245,9 +227,7 @@
             "main": "https://pay.example.com"
           },
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": true,
           "resolved": {
@@ -267,10 +247,7 @@
             "main": "site.admin@example.com"
           },
           "enabled": true,
-          "origins": [
-            "project",
-            "issue"
-          ],
+          "origins": ["project", "issue"],
           "builtIn": false,
           "applies": true,
           "resolved": {
@@ -281,14 +258,10 @@
           "id": "builtin-flow-ends",
           "description": "End elements saved by Flow Builder from Winter '27, and the connectors pointing to them (the flow ends the same way)",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/ends",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -299,14 +272,10 @@
           "id": "builtin-flow-groups",
           "description": "Canvas groups of Flow elements, visual only",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/groups",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -317,15 +286,10 @@
           "id": "builtin-flow-schedule-day-of-month",
           "description": "Day of month of a scheduled flow (monthly schedules)",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/start/schedule/dayOfMonthToRun",
           "enabled": false,
-          "origins": [
-            "builtin",
-            "issue"
-          ],
+          "origins": ["builtin", "issue"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -336,14 +300,10 @@
           "id": "builtin-flow-screen-field-style",
           "description": "Width and alignment of screen fields, visual only",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/screens//fields/styleProperties",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -354,14 +314,10 @@
           "id": "builtin-flow-choice-icon",
           "description": "Icon of a choice, visual only",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/choices/choiceIcon",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -372,15 +328,10 @@
           "id": "builtin-agent-accesses",
           "description": "Agentforce agent access, no agent exists in older orgs",
           "type": "xml-remove",
-          "files": [
-            "**/*.profile-meta.xml",
-            "**/*.permissionset-meta.xml"
-          ],
+          "files": ["**/*.profile-meta.xml", "**/*.permissionset-meta.xml"],
           "xmlPath": "Profile/agentAccesses",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -391,14 +342,10 @@
           "id": "builtin-aura-static-resource-pref",
           "description": "Release update setting no longer accepted by Salesforce",
           "type": "xml-remove",
-          "files": [
-            "**/LightningExperience.settings-meta.xml"
-          ],
+          "files": ["**/LightningExperience.settings-meta.xml"],
           "xmlPath": "LightningExperienceSettings/enableAuraSecStaticResCRUCPref",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -409,14 +356,10 @@
           "id": "builtin-flow-get-records-limit",
           "description": "Row limit of a Get Records element. Without it, Get Records returns every row: off by default, a warning names the flow instead",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/recordLookups/limit",
           "enabled": false,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -431,13 +374,9 @@
           "type": "xml-remove",
           "files": "**/profiles/*.profile-meta.xml",
           "xmlPath": "Profile/userPermissions[name=ViewSetup]",
-          "includeTargetBranches": [
-            "main"
-          ],
+          "includeTargetBranches": ["main"],
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": false,
           "resolved": {
@@ -459,9 +398,7 @@
           },
           "required": true,
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": true,
           "resolved": {
@@ -478,17 +415,12 @@
           "secret": "PAYMENT_API_PASSWORD",
           "required": true,
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": true,
           "resolved": {
             "source": "secret",
-            "variables": [
-              "PAYMENT_API_PASSWORD_UAT",
-              "PAYMENT_API_PASSWORD"
-            ]
+            "variables": ["PAYMENT_API_PASSWORD_UAT", "PAYMENT_API_PASSWORD"]
           }
         },
         {
@@ -502,9 +434,7 @@
             "default": "support-test@example.com"
           },
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": true,
           "resolved": {
@@ -526,9 +456,7 @@
             "main": "https://pay.example.com"
           },
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": true,
           "resolved": {
@@ -548,10 +476,7 @@
             "main": "site.admin@example.com"
           },
           "enabled": true,
-          "origins": [
-            "project",
-            "issue"
-          ],
+          "origins": ["project", "issue"],
           "builtIn": false,
           "applies": true,
           "resolved": {
@@ -565,13 +490,9 @@
           "type": "xml-remove",
           "files": "**/layouts/Case-*.layout-meta.xml",
           "xmlPath": "Layout/platformActionList",
-          "includeTargetBranches": [
-            "uat"
-          ],
+          "includeTargetBranches": ["uat"],
           "enabled": true,
-          "origins": [
-            "branch"
-          ],
+          "origins": ["branch"],
           "builtIn": false,
           "applies": true,
           "resolved": {
@@ -582,14 +503,10 @@
           "id": "builtin-flow-ends",
           "description": "End elements saved by Flow Builder from Winter '27, and the connectors pointing to them (the flow ends the same way)",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/ends",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -600,14 +517,10 @@
           "id": "builtin-flow-groups",
           "description": "Canvas groups of Flow elements, visual only",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/groups",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -618,15 +531,10 @@
           "id": "builtin-flow-schedule-day-of-month",
           "description": "Day of month of a scheduled flow (monthly schedules)",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/start/schedule/dayOfMonthToRun",
           "enabled": false,
-          "origins": [
-            "builtin",
-            "issue"
-          ],
+          "origins": ["builtin", "issue"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -637,14 +545,10 @@
           "id": "builtin-flow-screen-field-style",
           "description": "Width and alignment of screen fields, visual only",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/screens//fields/styleProperties",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -655,14 +559,10 @@
           "id": "builtin-flow-choice-icon",
           "description": "Icon of a choice, visual only",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/choices/choiceIcon",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -673,15 +573,10 @@
           "id": "builtin-agent-accesses",
           "description": "Agentforce agent access, no agent exists in older orgs",
           "type": "xml-remove",
-          "files": [
-            "**/*.profile-meta.xml",
-            "**/*.permissionset-meta.xml"
-          ],
+          "files": ["**/*.profile-meta.xml", "**/*.permissionset-meta.xml"],
           "xmlPath": "Profile/agentAccesses",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -692,14 +587,10 @@
           "id": "builtin-aura-static-resource-pref",
           "description": "Release update setting no longer accepted by Salesforce",
           "type": "xml-remove",
-          "files": [
-            "**/LightningExperience.settings-meta.xml"
-          ],
+          "files": ["**/LightningExperience.settings-meta.xml"],
           "xmlPath": "LightningExperienceSettings/enableAuraSecStaticResCRUCPref",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -710,14 +601,10 @@
           "id": "builtin-flow-get-records-limit",
           "description": "Row limit of a Get Records element. Without it, Get Records returns every row: off by default, a warning names the flow instead",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/recordLookups/limit",
           "enabled": false,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -732,13 +619,9 @@
           "type": "xml-remove",
           "files": "**/profiles/*.profile-meta.xml",
           "xmlPath": "Profile/userPermissions[name=ViewSetup]",
-          "includeTargetBranches": [
-            "main"
-          ],
+          "includeTargetBranches": ["main"],
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": false,
           "resolved": {
@@ -760,9 +643,7 @@
           },
           "required": true,
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": true,
           "resolved": {
@@ -779,9 +660,7 @@
           "secret": "PAYMENT_API_PASSWORD",
           "required": true,
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": true,
           "resolved": {
@@ -803,9 +682,7 @@
             "default": "support-test@example.com"
           },
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": true,
           "resolved": {
@@ -827,9 +704,7 @@
             "main": "https://pay.example.com"
           },
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": true,
           "resolved": {
@@ -849,10 +724,7 @@
             "main": "site.admin@example.com"
           },
           "enabled": true,
-          "origins": [
-            "project",
-            "issue"
-          ],
+          "origins": ["project", "issue"],
           "builtIn": false,
           "applies": true,
           "resolved": {
@@ -864,14 +736,10 @@
           "id": "builtin-flow-ends",
           "description": "End elements saved by Flow Builder from Winter '27, and the connectors pointing to them (the flow ends the same way)",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/ends",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -882,14 +750,10 @@
           "id": "builtin-flow-groups",
           "description": "Canvas groups of Flow elements, visual only",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/groups",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -900,15 +764,10 @@
           "id": "builtin-flow-schedule-day-of-month",
           "description": "Day of month of a scheduled flow (monthly schedules)",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/start/schedule/dayOfMonthToRun",
           "enabled": false,
-          "origins": [
-            "builtin",
-            "issue"
-          ],
+          "origins": ["builtin", "issue"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -919,14 +778,10 @@
           "id": "builtin-flow-screen-field-style",
           "description": "Width and alignment of screen fields, visual only",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/screens//fields/styleProperties",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -937,14 +792,10 @@
           "id": "builtin-flow-choice-icon",
           "description": "Icon of a choice, visual only",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/choices/choiceIcon",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -955,15 +806,10 @@
           "id": "builtin-agent-accesses",
           "description": "Agentforce agent access, no agent exists in older orgs",
           "type": "xml-remove",
-          "files": [
-            "**/*.profile-meta.xml",
-            "**/*.permissionset-meta.xml"
-          ],
+          "files": ["**/*.profile-meta.xml", "**/*.permissionset-meta.xml"],
           "xmlPath": "Profile/agentAccesses",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -974,14 +820,10 @@
           "id": "builtin-aura-static-resource-pref",
           "description": "Release update setting no longer accepted by Salesforce",
           "type": "xml-remove",
-          "files": [
-            "**/LightningExperience.settings-meta.xml"
-          ],
+          "files": ["**/LightningExperience.settings-meta.xml"],
           "xmlPath": "LightningExperienceSettings/enableAuraSecStaticResCRUCPref",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -992,14 +834,10 @@
           "id": "builtin-flow-get-records-limit",
           "description": "Row limit of a Get Records element. Without it, Get Records returns every row: off by default, a warning names the flow instead",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/recordLookups/limit",
           "enabled": false,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -1014,13 +852,9 @@
           "type": "xml-remove",
           "files": "**/profiles/*.profile-meta.xml",
           "xmlPath": "Profile/userPermissions[name=ViewSetup]",
-          "includeTargetBranches": [
-            "main"
-          ],
+          "includeTargetBranches": ["main"],
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": true,
           "resolved": {
@@ -1042,9 +876,7 @@
           },
           "required": true,
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": true,
           "resolved": {
@@ -1061,17 +893,12 @@
           "secret": "PAYMENT_API_PASSWORD",
           "required": true,
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": true,
           "resolved": {
             "source": "secret",
-            "variables": [
-              "PAYMENT_API_PASSWORD_MAIN",
-              "PAYMENT_API_PASSWORD"
-            ]
+            "variables": ["PAYMENT_API_PASSWORD_MAIN", "PAYMENT_API_PASSWORD"]
           }
         },
         {
@@ -1085,9 +912,7 @@
             "default": "support-test@example.com"
           },
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": true,
           "resolved": {
@@ -1109,9 +934,7 @@
             "main": "https://pay.example.com"
           },
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": true,
           "resolved": {
@@ -1131,10 +954,7 @@
             "main": "site.admin@example.com"
           },
           "enabled": true,
-          "origins": [
-            "project",
-            "issue"
-          ],
+          "origins": ["project", "issue"],
           "builtIn": false,
           "applies": true,
           "resolved": {
@@ -1146,14 +966,10 @@
           "id": "builtin-flow-ends",
           "description": "End elements saved by Flow Builder from Winter '27, and the connectors pointing to them (the flow ends the same way)",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/ends",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -1164,14 +980,10 @@
           "id": "builtin-flow-groups",
           "description": "Canvas groups of Flow elements, visual only",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/groups",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -1182,15 +994,10 @@
           "id": "builtin-flow-schedule-day-of-month",
           "description": "Day of month of a scheduled flow (monthly schedules)",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/start/schedule/dayOfMonthToRun",
           "enabled": false,
-          "origins": [
-            "builtin",
-            "issue"
-          ],
+          "origins": ["builtin", "issue"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -1201,14 +1008,10 @@
           "id": "builtin-flow-screen-field-style",
           "description": "Width and alignment of screen fields, visual only",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/screens//fields/styleProperties",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -1219,14 +1022,10 @@
           "id": "builtin-flow-choice-icon",
           "description": "Icon of a choice, visual only",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/choices/choiceIcon",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -1237,15 +1036,10 @@
           "id": "builtin-agent-accesses",
           "description": "Agentforce agent access, no agent exists in older orgs",
           "type": "xml-remove",
-          "files": [
-            "**/*.profile-meta.xml",
-            "**/*.permissionset-meta.xml"
-          ],
+          "files": ["**/*.profile-meta.xml", "**/*.permissionset-meta.xml"],
           "xmlPath": "Profile/agentAccesses",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -1256,14 +1050,10 @@
           "id": "builtin-aura-static-resource-pref",
           "description": "Release update setting no longer accepted by Salesforce",
           "type": "xml-remove",
-          "files": [
-            "**/LightningExperience.settings-meta.xml"
-          ],
+          "files": ["**/LightningExperience.settings-meta.xml"],
           "xmlPath": "LightningExperienceSettings/enableAuraSecStaticResCRUCPref",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -1274,14 +1064,10 @@
           "id": "builtin-flow-get-records-limit",
           "description": "Row limit of a Get Records element. Without it, Get Records returns every row: off by default, a warning names the flow instead",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/recordLookups/limit",
           "enabled": false,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -1296,13 +1082,9 @@
           "type": "xml-remove",
           "files": "**/profiles/*.profile-meta.xml",
           "xmlPath": "Profile/userPermissions[name=ViewSetup]",
-          "includeTargetBranches": [
-            "main"
-          ],
+          "includeTargetBranches": ["main"],
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": false,
           "resolved": {
@@ -1324,9 +1106,7 @@
           },
           "required": true,
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": true,
           "resolved": {
@@ -1343,16 +1123,12 @@
           "secret": "PAYMENT_API_PASSWORD",
           "required": true,
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": true,
           "resolved": {
             "source": "secret",
-            "variables": [
-              "PAYMENT_API_PASSWORD"
-            ]
+            "variables": ["PAYMENT_API_PASSWORD"]
           }
         },
         {
@@ -1366,9 +1142,7 @@
             "default": "support-test@example.com"
           },
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": true,
           "resolved": {
@@ -1390,9 +1164,7 @@
             "main": "https://pay.example.com"
           },
           "enabled": true,
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "builtIn": false,
           "applies": true,
           "resolved": {
@@ -1411,10 +1183,7 @@
             "main": "site.admin@example.com"
           },
           "enabled": true,
-          "origins": [
-            "project",
-            "issue"
-          ],
+          "origins": ["project", "issue"],
           "builtIn": false,
           "applies": true,
           "resolved": {
@@ -1425,14 +1194,10 @@
           "id": "builtin-flow-ends",
           "description": "End elements saved by Flow Builder from Winter '27, and the connectors pointing to them (the flow ends the same way)",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/ends",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -1443,14 +1208,10 @@
           "id": "builtin-flow-groups",
           "description": "Canvas groups of Flow elements, visual only",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/groups",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -1461,15 +1222,10 @@
           "id": "builtin-flow-schedule-day-of-month",
           "description": "Day of month of a scheduled flow (monthly schedules)",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/start/schedule/dayOfMonthToRun",
           "enabled": false,
-          "origins": [
-            "builtin",
-            "issue"
-          ],
+          "origins": ["builtin", "issue"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -1480,14 +1236,10 @@
           "id": "builtin-flow-screen-field-style",
           "description": "Width and alignment of screen fields, visual only",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/screens//fields/styleProperties",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -1498,14 +1250,10 @@
           "id": "builtin-flow-choice-icon",
           "description": "Icon of a choice, visual only",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/choices/choiceIcon",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -1516,15 +1264,10 @@
           "id": "builtin-agent-accesses",
           "description": "Agentforce agent access, no agent exists in older orgs",
           "type": "xml-remove",
-          "files": [
-            "**/*.profile-meta.xml",
-            "**/*.permissionset-meta.xml"
-          ],
+          "files": ["**/*.profile-meta.xml", "**/*.permissionset-meta.xml"],
           "xmlPath": "Profile/agentAccesses",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -1535,14 +1278,10 @@
           "id": "builtin-aura-static-resource-pref",
           "description": "Release update setting no longer accepted by Salesforce",
           "type": "xml-remove",
-          "files": [
-            "**/LightningExperience.settings-meta.xml"
-          ],
+          "files": ["**/LightningExperience.settings-meta.xml"],
           "xmlPath": "LightningExperienceSettings/enableAuraSecStaticResCRUCPref",
           "enabled": true,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -1553,14 +1292,10 @@
           "id": "builtin-flow-get-records-limit",
           "description": "Row limit of a Get Records element. Without it, Get Records returns every row: off by default, a warning names the flow instead",
           "type": "xml-remove",
-          "files": [
-            "**/*.flow-meta.xml"
-          ],
+          "files": ["**/*.flow-meta.xml"],
           "xmlPath": "Flow/recordLookups/limit",
           "enabled": false,
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "builtIn": true,
           "applies": true,
           "resolved": {
@@ -1573,12 +1308,8 @@
       {
         "id": "builtin-flow-ends",
         "description": "End elements saved by Flow Builder from Winter '27, and the connectors pointing to them (the flow ends the same way)",
-        "files": [
-          "**/*.flow-meta.xml"
-        ],
-        "xmlPaths": [
-          "Flow/ends"
-        ],
+        "files": ["**/*.flow-meta.xml"],
+        "xmlPaths": ["Flow/ends"],
         "introducedIn": 68,
         "defaultEnabled": true,
         "source": "Winter '27 release notes (End elements saved to metadata)",
@@ -1588,13 +1319,8 @@
       {
         "id": "builtin-flow-groups",
         "description": "Canvas groups of Flow elements, visual only",
-        "files": [
-          "**/*.flow-meta.xml"
-        ],
-        "xmlPaths": [
-          "Flow/groups",
-          "Flow/*/group"
-        ],
+        "files": ["**/*.flow-meta.xml"],
+        "xmlPaths": ["Flow/groups", "Flow/*/group"],
         "introducedIn": 68,
         "defaultEnabled": true,
         "source": "Metadata API Developer Guide v68 (Flow, FlowNode)",
@@ -1604,12 +1330,8 @@
       {
         "id": "builtin-flow-schedule-day-of-month",
         "description": "Day of month of a scheduled flow (monthly schedules)",
-        "files": [
-          "**/*.flow-meta.xml"
-        ],
-        "xmlPaths": [
-          "Flow/start/schedule/dayOfMonthToRun"
-        ],
+        "files": ["**/*.flow-meta.xml"],
+        "xmlPaths": ["Flow/start/schedule/dayOfMonthToRun"],
         "introducedIn": 66,
         "defaultEnabled": true,
         "source": "Metadata API Developer Guide v66 (FlowSchedule)",
@@ -1623,12 +1345,8 @@
       {
         "id": "builtin-flow-screen-field-style",
         "description": "Width and alignment of screen fields, visual only",
-        "files": [
-          "**/*.flow-meta.xml"
-        ],
-        "xmlPaths": [
-          "Flow/screens//fields/styleProperties"
-        ],
+        "files": ["**/*.flow-meta.xml"],
+        "xmlPaths": ["Flow/screens//fields/styleProperties"],
         "introducedIn": 64,
         "defaultEnabled": true,
         "source": "Metadata API Developer Guide v64 (FlowScreenField)",
@@ -1638,12 +1356,8 @@
       {
         "id": "builtin-flow-choice-icon",
         "description": "Icon of a choice, visual only",
-        "files": [
-          "**/*.flow-meta.xml"
-        ],
-        "xmlPaths": [
-          "Flow/choices/choiceIcon"
-        ],
+        "files": ["**/*.flow-meta.xml"],
+        "xmlPaths": ["Flow/choices/choiceIcon"],
         "introducedIn": 64,
         "defaultEnabled": true,
         "source": "Metadata API Developer Guide v64 (FlowChoice)",
@@ -1653,14 +1367,8 @@
       {
         "id": "builtin-agent-accesses",
         "description": "Agentforce agent access, no agent exists in older orgs",
-        "files": [
-          "**/*.profile-meta.xml",
-          "**/*.permissionset-meta.xml"
-        ],
-        "xmlPaths": [
-          "Profile/agentAccesses",
-          "PermissionSet/agentAccesses"
-        ],
+        "files": ["**/*.profile-meta.xml", "**/*.permissionset-meta.xml"],
+        "xmlPaths": ["Profile/agentAccesses", "PermissionSet/agentAccesses"],
         "introducedIn": 63,
         "defaultEnabled": true,
         "source": "Metadata API Developer Guide v63 (Profile, PermissionSet)",
@@ -1670,9 +1378,7 @@
       {
         "id": "builtin-aura-static-resource-pref",
         "description": "Release update setting no longer accepted by Salesforce",
-        "files": [
-          "**/LightningExperience.settings-meta.xml"
-        ],
+        "files": ["**/LightningExperience.settings-meta.xml"],
         "xmlPaths": [
           "LightningExperienceSettings/enableAuraSecStaticResCRUCPref"
         ],
@@ -1685,12 +1391,8 @@
       {
         "id": "builtin-flow-get-records-limit",
         "description": "Row limit of a Get Records element. Without it, Get Records returns every row: off by default, a warning names the flow instead",
-        "files": [
-          "**/*.flow-meta.xml"
-        ],
-        "xmlPaths": [
-          "Flow/recordLookups/limit"
-        ],
+        "files": ["**/*.flow-meta.xml"],
+        "xmlPaths": ["Flow/recordLookups/limit"],
         "introducedIn": 63,
         "defaultEnabled": false,
         "warnWhenDisabled": true,
@@ -1748,30 +1450,19 @@
         },
         {
           "target": "uat",
-          "variables": [
-            "PAYMENT_API_PASSWORD_UAT",
-            "PAYMENT_API_PASSWORD"
-          ]
+          "variables": ["PAYMENT_API_PASSWORD_UAT", "PAYMENT_API_PASSWORD"]
         },
         {
           "target": "preprod",
-          "variables": [
-            "PAYMENT_API_PASSWORD_PREPROD",
-            "PAYMENT_API_PASSWORD"
-          ]
+          "variables": ["PAYMENT_API_PASSWORD_PREPROD", "PAYMENT_API_PASSWORD"]
         },
         {
           "target": "main",
-          "variables": [
-            "PAYMENT_API_PASSWORD_MAIN",
-            "PAYMENT_API_PASSWORD"
-          ]
+          "variables": ["PAYMENT_API_PASSWORD_MAIN", "PAYMENT_API_PASSWORD"]
         },
         {
           "target": "default",
-          "variables": [
-            "PAYMENT_API_PASSWORD"
-          ]
+          "variables": ["PAYMENT_API_PASSWORD"]
         }
       ]
     },
@@ -1788,18 +1479,14 @@
         {
           "file": "force-app/main/default/namedCredentials/Payment_API.namedCredential-meta.xml",
           "ruleId": "payment-api-endpoint",
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "status": "changed",
           "count": 1
         },
         {
           "file": "force-app/main/default/namedCredentials/Payment_API.namedCredential-meta.xml",
           "ruleId": "payment-api-password",
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "status": "secret-missing",
           "count": 0,
           "detail": "PAYMENT_API_PASSWORD_UAT and PAYMENT_API_PASSWORD are not set on this computer"
@@ -1807,9 +1494,7 @@
         {
           "file": "force-app/main/default/workflows/Case.workflow-meta.xml",
           "ruleId": "escalation-alert-sender",
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "status": "changed",
           "count": 1,
           "detail": "default value"
@@ -1817,38 +1502,28 @@
         {
           "file": "force-app/main/default/classes/PaymentService.cls",
           "ruleId": "apex-payment-host",
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "status": "changed",
           "count": 2
         },
         {
           "file": "force-app/main/default/layouts/Case-Case Layout.layout-meta.xml",
           "ruleId": "uat-hide-case-actions",
-          "origins": [
-            "branch"
-          ],
+          "origins": ["branch"],
           "status": "changed",
           "count": 1
         },
         {
           "file": "force-app/main/default/sites/Partners.site-meta.xml",
           "ruleId": "partner-site-admin",
-          "origins": [
-            "project",
-            "issue"
-          ],
+          "origins": ["project", "issue"],
           "status": "unchanged",
           "count": 0
         },
         {
           "file": "force-app/main/default/flows/Case_Escalation.flow-meta.xml",
           "ruleId": "builtin-flow-schedule-day-of-month",
-          "origins": [
-            "builtin",
-            "issue"
-          ],
+          "origins": ["builtin", "issue"],
           "status": "disabled",
           "count": 1
         }
@@ -1863,30 +1538,22 @@
       "appliedRules": [
         {
           "id": "payment-api-endpoint",
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "files": 1
         },
         {
           "id": "escalation-alert-sender",
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "files": 1
         },
         {
           "id": "apex-payment-host",
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "files": 1
         },
         {
           "id": "uat-hide-case-actions",
-          "origins": [
-            "branch"
-          ],
+          "origins": ["branch"],
           "files": 1
         }
       ]
@@ -1901,18 +1568,14 @@
         {
           "file": "force-app/main/default/namedCredentials/Payment_API.namedCredential-meta.xml",
           "ruleId": "payment-api-endpoint",
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "status": "changed",
           "count": 1
         },
         {
           "file": "force-app/main/default/namedCredentials/Payment_API.namedCredential-meta.xml",
           "ruleId": "payment-api-password",
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "status": "secret-missing",
           "count": 0,
           "detail": "PAYMENT_API_PASSWORD_MAIN and PAYMENT_API_PASSWORD are not set on this computer"
@@ -1920,37 +1583,28 @@
         {
           "file": "force-app/main/default/workflows/Case.workflow-meta.xml",
           "ruleId": "escalation-alert-sender",
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "status": "changed",
           "count": 1
         },
         {
           "file": "force-app/main/default/classes/PaymentService.cls",
           "ruleId": "apex-payment-host",
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "status": "changed",
           "count": 2
         },
         {
           "file": "force-app/main/default/sites/Partners.site-meta.xml",
           "ruleId": "partner-site-admin",
-          "origins": [
-            "project",
-            "issue"
-          ],
+          "origins": ["project", "issue"],
           "status": "changed",
           "count": 1
         },
         {
           "file": "force-app/main/default/flows/Case_Escalation.flow-meta.xml",
           "ruleId": "builtin-flow-ends",
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "status": "changed",
           "count": 2,
           "detail": "2 End elements and their connectors removed (API 67.0)"
@@ -1958,18 +1612,14 @@
         {
           "file": "force-app/main/default/flows/Case_Escalation.flow-meta.xml",
           "ruleId": "builtin-flow-groups",
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "status": "changed",
           "count": 1
         },
         {
           "file": "force-app/main/default/flows/Account_Enrichment.flow-meta.xml",
           "ruleId": "builtin-flow-get-records-limit",
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "status": "risky-element",
           "count": 1,
           "detail": "The deployment fails on this element: turn on builtin-flow-get-records-limit to remove it"
@@ -1977,9 +1627,7 @@
         {
           "file": "force-app/main/default/profiles/Custom%3A Sales Profile.profile-meta.xml",
           "ruleId": "remove-view-setup-in-production",
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "status": "changed",
           "count": 1,
           "detail": "1 elements removed"
@@ -2000,52 +1648,37 @@
       "appliedRules": [
         {
           "id": "payment-api-endpoint",
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "files": 1
         },
         {
           "id": "escalation-alert-sender",
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "files": 1
         },
         {
           "id": "apex-payment-host",
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "files": 1
         },
         {
           "id": "partner-site-admin",
-          "origins": [
-            "project",
-            "issue"
-          ],
+          "origins": ["project", "issue"],
           "files": 1
         },
         {
           "id": "builtin-flow-ends",
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "files": 1
         },
         {
           "id": "builtin-flow-groups",
-          "origins": [
-            "builtin"
-          ],
+          "origins": ["builtin"],
           "files": 1
         },
         {
           "id": "remove-view-setup-in-production",
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "files": 1
         }
       ]
@@ -2060,9 +1693,7 @@
         {
           "file": "force-app/main/default/namedCredentials/Payment_API.namedCredential-meta.xml",
           "ruleId": "payment-api-endpoint",
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "status": "changed",
           "count": 1,
           "detail": "default value"
@@ -2070,9 +1701,7 @@
         {
           "file": "force-app/main/default/namedCredentials/Payment_API.namedCredential-meta.xml",
           "ruleId": "payment-api-password",
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "status": "secret-missing",
           "count": 0,
           "detail": "PAYMENT_API_PASSWORD is not set on this computer"
@@ -2080,9 +1709,7 @@
         {
           "file": "force-app/main/default/workflows/Case.workflow-meta.xml",
           "ruleId": "escalation-alert-sender",
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "status": "changed",
           "count": 1,
           "detail": "default value"
@@ -2090,9 +1717,7 @@
         {
           "file": "force-app/main/default/classes/PaymentService.cls",
           "ruleId": "apex-payment-host",
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "status": "no-value",
           "count": 0
         }
@@ -2106,16 +1731,12 @@
       "appliedRules": [
         {
           "id": "payment-api-endpoint",
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "files": 1
         },
         {
           "id": "escalation-alert-sender",
-          "origins": [
-            "project"
-          ],
+          "origins": ["project"],
           "files": 1
         }
       ]

@@ -6,7 +6,11 @@
 import { LightningElement, api } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
 import { getPillClass } from "s/pillUtils";
-import { makeColumnsSortable, sortDatatableRows, sortStateFromEvent } from "s/datatableSortUtils";
+import {
+  makeColumnsSortable,
+  sortDatatableRows,
+  sortStateFromEvent,
+} from "s/datatableSortUtils";
 
 /**
  * Replacement Rules panel.
@@ -329,7 +333,11 @@ export default class ReplacementRules extends SharedMixin(LightningElement) {
   }
 
   get sortedRuleRows() {
-    return sortDatatableRows(this.ruleRows, this.sorts.rules.fieldName, this.sorts.rules.direction);
+    return sortDatatableRows(
+      this.ruleRows,
+      this.sorts.rules.fieldName,
+      this.sorts.rules.direction,
+    );
   }
 
   get sortableMatrixColumns() {
@@ -337,7 +345,11 @@ export default class ReplacementRules extends SharedMixin(LightningElement) {
   }
 
   get sortedMatrixRows() {
-    return sortDatatableRows(this.matrixRows, this.sorts.values.fieldName, this.sorts.values.direction);
+    return sortDatatableRows(
+      this.matrixRows,
+      this.sorts.values.fieldName,
+      this.sorts.values.direction,
+    );
   }
 
   get sortableBuiltInColumns() {
@@ -345,7 +357,11 @@ export default class ReplacementRules extends SharedMixin(LightningElement) {
   }
 
   get sortedBuiltInRows() {
-    return sortDatatableRows(this.builtInRows, this.sorts.builtin.fieldName, this.sorts.builtin.direction);
+    return sortDatatableRows(
+      this.builtInRows,
+      this.sorts.builtin.fieldName,
+      this.sorts.builtin.direction,
+    );
   }
 
   get sortablePreviewColumns() {
@@ -353,7 +369,11 @@ export default class ReplacementRules extends SharedMixin(LightningElement) {
   }
 
   get sortedPreviewRows() {
-    return sortDatatableRows(this.previewRows, this.sorts.preview.fieldName, this.sorts.preview.direction);
+    return sortDatatableRows(
+      this.previewRows,
+      this.sorts.preview.fieldName,
+      this.sorts.preview.direction,
+    );
   }
 
   get ruleColumns() {

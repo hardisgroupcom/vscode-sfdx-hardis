@@ -17,7 +17,10 @@
 /** The columns with a value made sortable. Action and button columns stay as they are. */
 export function makeColumnsSortable(columns) {
   return (columns || []).map((column) =>
-    column && column.fieldName && column.type !== "action" && column.type !== "button"
+    column &&
+    column.fieldName &&
+    column.type !== "action" &&
+    column.type !== "button"
       ? { ...column, sortable: true }
       : column,
   );
@@ -43,14 +46,23 @@ export function sortDatatableRows(rows, fieldName, direction) {
     if (textB === "") {
       return -1;
     }
-    return factor * textA.localeCompare(textB, undefined, { numeric: true, sensitivity: "base" });
+    return (
+      factor *
+      textA.localeCompare(textB, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      })
+    );
   });
 }
 
 /** The sort of a table after its "sort" event */
 export function sortStateFromEvent(event) {
   const detail = (event && event.detail) || {};
-  return { fieldName: detail.fieldName || null, direction: detail.sortDirection === "desc" ? "desc" : "asc" };
+  return {
+    fieldName: detail.fieldName || null,
+    direction: detail.sortDirection === "desc" ? "desc" : "asc",
+  };
 }
 
 function cellText(row, fieldName) {

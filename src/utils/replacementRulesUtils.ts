@@ -673,12 +673,23 @@ function cleanText(value: unknown, maxLength = MAX_TEXT_LENGTH): string {
 export function describeWriteRequest(
   operations: Array<ReplacementWriteOperation & { rule?: any }>,
   layers?: ReplacementRulesView["layers"] | null,
-): { key: string; vars: Record<string, string>; placeKey?: string; placeVars?: Record<string, string> } {
+): {
+  key: string;
+  vars: Record<string, string>;
+  placeKey?: string;
+  placeVars?: Record<string, string>;
+} {
   const first = operations[0];
   const id = String(first?.id || first?.rule?.id || "");
   const place = describeWritePlace(first, layers);
   if (typeof first?.enabled === "boolean") {
-    return { key: first.enabled ? "replacementRulesTurningOnIn" : "replacementRulesTurningOffIn", vars: { id }, ...place };
+    return {
+      key: first.enabled
+        ? "replacementRulesTurningOnIn"
+        : "replacementRulesTurningOffIn",
+      vars: { id },
+      ...place,
+    };
   }
   if (first?.action === "delete") {
     return { key: "replacementRulesDeletingFrom", vars: { id }, ...place };
@@ -693,20 +704,31 @@ export function describeWriteRequest(
 function describeWritePlace(
   operation: ReplacementWriteOperation | undefined,
   layers?: ReplacementRulesView["layers"] | null,
-): { placeKey?: string; placeVars?: Record<string, string>; vars?: never } & { place?: string } {
+): { placeKey?: string; placeVars?: Record<string, string>; vars?: never } & {
+  place?: string;
+} {
   if (!operation) {
     return {};
   }
   if (operation.layer === "issue") {
     const issueNumber = layers?.issue?.number;
     return issueNumber
-      ? { placeKey: "replacementRulesPlaceIssueNumber", placeVars: { number: String(issueNumber) } }
+      ? {
+          placeKey: "replacementRulesPlaceIssueNumber",
+          placeVars: { number: String(issueNumber) },
+        }
       : { placeKey: "replacementRulesPlaceIssue", placeVars: {} };
   }
   if (operation.layer === "branch") {
     const branch = String(operation.branch || "");
-    const known = (layers?.branches || []).find((item) => item.branch === branch.replace(/\//g, "__"));
-    return { place: known?.file || `config/branches/.sfdx-hardis.${branch.replace(/\//g, "__")}.yml` };
+    const known = (layers?.branches || []).find(
+      (item) => item.branch === branch.replace(/\//g, "__"),
+    );
+    return {
+      place:
+        known?.file ||
+        `config/branches/.sfdx-hardis.${branch.replace(/\//g, "__")}.yml`,
+    };
   }
   return { place: layers?.project?.file || "config/.sfdx-hardis.yml" };
 }
