@@ -2448,6 +2448,7 @@
   "replacementRulesSecretHelp": "NAZWA tajnej zmiennej CI/CD, nigdy jej wartość. Maskowana w każdym logu joba. Gdy jej brakuje, reguła jest pomijana z ostrzeżeniem w komentarzu Pull Request.",
   "replacementRulesSecretInvalid": "Sekret musi być nazwą zmiennej CI/CD: tylko litery, cyfry i _.",
   "replacementRulesSecretLookupHelp": "Dla głównego branch sfdx-hardis odczytuje najpierw NAME_<BRANCH>, a potem NAME. Sandboxy deweloperskie i scratch orgi odczytują NAME.",
+  "replacementRulesSecretNotInIssue": "Reguła zapisana w zgłoszeniu nie może używać sekretu: sekrety pochodzą wyłącznie z plików konfiguracyjnych repozytorium.",
   "replacementRulesSecretsDesc": "Odczytywane ze zmiennych CI/CD. Wyświetlane są tu tylko ich nazwy.",
   "replacementRulesSecretsTitle": "Sekrety",
   "replacementRulesStatusChanged": "Zmieniono",

@@ -2448,6 +2448,7 @@
   "replacementRulesSecretHelp": "De NAAM van een geheime CI/CD-variabele, nooit de waarde. Gemaskeerd in elke log van de job. Als hij ontbreekt, wordt de regel overgeslagen met een waarschuwing in de Pull Request-opmerking.",
   "replacementRulesSecretInvalid": "Het secret moet de naam van een CI/CD-variabele zijn: alleen letters, cijfers en _.",
   "replacementRulesSecretLookupHelp": "Voor een major branch leest sfdx-hardis eerst NAME_<BRANCH>, dan NAME. Dev sandboxes en scratch orgs lezen NAME.",
+  "replacementRulesSecretNotInIssue": "Een regel in de issue kan geen secret gebruiken: secrets komen alleen uit de configuratiebestanden van de repository.",
   "replacementRulesSecretsDesc": "Gelezen uit CI/CD-variabelen. Hier worden alleen hun namen getoond.",
   "replacementRulesSecretsTitle": "Secrets",
   "replacementRulesStatusChanged": "Gewijzigd",

@@ -248,8 +248,11 @@ export default class ReplacementRuleEditor extends SharedMixin(
     modes.push(
       { mode: "value", labelKey: "replacementRulesValueSame" },
       { mode: "values", labelKey: "replacementRulesValuePerOrg" },
-      { mode: "secret", labelKey: "replacementRulesValueSecret" },
     );
+    // sfdx-hardis never reads a secret from the issue: its rules reach the deployments unreviewed
+    if (this.storeLayer !== "issue") {
+      modes.push({ mode: "secret", labelKey: "replacementRulesValueSecret" });
+    }
     return modes.map((item) => ({
       ...item,
       label: this.i18n[item.labelKey],
@@ -475,6 +478,13 @@ export default class ReplacementRuleEditor extends SharedMixin(
     }
     if (this.storeLayer === "branch" && !this.storeBranch) {
       return this.i18n.replacementRulesInvalidBranch;
+    }
+    if (
+      draft.valueMode === "secret" &&
+      !this.isRemove &&
+      this.storeLayer === "issue"
+    ) {
+      return this.i18n.replacementRulesSecretNotInIssue;
     }
     if (
       draft.valueMode === "secret" &&

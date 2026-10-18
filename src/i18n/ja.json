@@ -2448,6 +2448,7 @@
   "replacementRulesSecretHelp": "CI/CD のシークレット変数の「名前」です。値は入力しないでください。ジョブのすべてのログでマスクされます。変数がない場合、ルールはスキップされ、Pull Request のコメントに警告が表示されます。",
   "replacementRulesSecretInvalid": "シークレットには CI/CD 変数の名前を指定してください: 英字、数字、_ のみ使用できます。",
   "replacementRulesSecretLookupHelp": "メジャー branch の場合、sfdx-hardis はまず NAME_<BRANCH> を読み取り、次に NAME を読み取ります。開発用 sandbox とスクラッチ組織は NAME を読み取ります。",
+  "replacementRulesSecretNotInIssue": "issue に保存されたルールではシークレットを使用できません。シークレットはリポジトリの設定ファイルからのみ取得されます。",
   "replacementRulesSecretsDesc": "CI/CD 変数から読み取ります。ここには名前のみ表示されます。",
   "replacementRulesSecretsTitle": "シークレット",
   "replacementRulesStatusChanged": "変更あり",

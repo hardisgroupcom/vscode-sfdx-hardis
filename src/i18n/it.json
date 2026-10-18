@@ -2448,6 +2448,7 @@
   "replacementRulesSecretHelp": "Il NOME di una variabile secret CI/CD, mai il suo valore. Mascherato in tutti i log del job. Se manca, la regola viene ignorata con un avviso nel commento della Pull Request.",
   "replacementRulesSecretInvalid": "Il secret deve essere il nome di una variabile CI/CD: solo lettere, cifre e _.",
   "replacementRulesSecretLookupHelp": "Per un branch principale, sfdx-hardis legge prima NAME_<BRANCH>, poi NAME. Le sandbox di sviluppo e le scratch org leggono NAME.",
+  "replacementRulesSecretNotInIssue": "Una regola salvata nella issue non può usare un secret: i secret provengono solo dai file di configurazione del repository.",
   "replacementRulesSecretsDesc": "Letti da variabili CI/CD. Qui vengono mostrati solo i loro nomi.",
   "replacementRulesSecretsTitle": "Secret",
   "replacementRulesStatusChanged": "Modificato",
