@@ -100,7 +100,7 @@
 .pkgxml-type-body {
     margin-top: 0.65rem;
     padding-top: 0.65rem;
-    border-top: 1px solid var(--slds-g-color-neutral-base-95);
+    border-top: 1px solid var(--slds-g-color-border-base-1);
 }
 
 /* Members grid inside an expanded type card */

@@ -2252,6 +2252,7 @@
   "prStateMerged": "Merged",
   "prStateOpen": "Open",
   "prViewActionsFromBranch": "Read from {{branch}}. Check out that branch to make changes.",
+  "prViewActionsFromBranchToRetry": "Read from {{branch}}. Check out that branch to retry, move or edit these actions.",
   "prViewActionsUnreadable": "The deployment actions and test classes of this {{prLabel}} cannot be read from here: its branch is not in this repository.",
   "prViewAlreadyDoneIn": "Already done in {{orgs}}: a changed action does not run again there.",
   "prViewBackTo": "Back to {{label}}",

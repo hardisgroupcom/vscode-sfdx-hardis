@@ -273,7 +273,7 @@
 }
 
 .welcome-quick-step + .welcome-quick-step {
-    border-left: 1px solid var(--slds-g-color-neutral-base-95);
+    border-left: 1px solid var(--slds-g-color-border-base-1);
 }
 
 .welcome-quick-num {
@@ -320,7 +320,7 @@
     align-items: center;
     padding: 0 0.45rem;
     border: none;
-    border-left: 1px solid var(--slds-g-color-neutral-base-95);
+    border-left: 1px solid var(--slds-g-color-border-base-1);
     background: none;
     cursor: pointer;
     color: var(--slds-g-color-neutral-base-50);
@@ -501,12 +501,12 @@
 
     .welcome-quick-step + .welcome-quick-step {
         border-left: 0;
-        border-top: 1px solid var(--slds-g-color-neutral-base-95);
+        border-top: 1px solid var(--slds-g-color-border-base-1);
     }
 
     .welcome-quick-toggle {
         border-left: 0;
-        border-top: 1px solid var(--slds-g-color-neutral-base-95);
+        border-top: 1px solid var(--slds-g-color-border-base-1);
         padding: 0.3rem 0;
         justify-content: center;
     }

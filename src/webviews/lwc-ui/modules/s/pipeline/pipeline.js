@@ -3335,13 +3335,27 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return !this.modalActionsFromBranch;
   }
 
+  // Any window whose rows were read from another branch than the checked out one: those rows
+  // lose Retry, Move and Mark as done in another org, so the tab says why
+  get showActionsFromBranchNote() {
+    return (
+      this.modalActionsFromBranch ||
+      (this.modalActions || []).some((row) => row.outOfCheckout)
+    );
+  }
+
+  // The Deployment Actions tab names what checking out unlocks, since Retry is hidden until then
   get actionsFromBranchNote() {
-    const pr = this.modalPullRequests[0];
-    return pr?.deploymentActionsSource === "unreadable"
-      ? this.t("prViewActionsUnreadable", { prLabel: this.prLabel })
-      : this.t("prViewActionsFromBranch", {
-          branch: pr?.deploymentActionsBranch || "",
-        });
+    if (this.modalActionsFromBranch) {
+      return this._fromBranchNote("prViewActionsFromBranchToRetry");
+    }
+    return this.t("prViewActionsFromBranchToRetry", {
+      branch: this.modalBranchName,
+    });
+  }
+
+  get apexTestsFromBranchNote() {
+    return this._fromBranchNote("prViewActionsFromBranch");
   }
 
   // Shown while the test classes of such a Pull Request are being edited, never while reading
@@ -5940,6 +5954,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
     // Use the shared sorting method
     return this._sortActions(actionRows);
+  }
+
+  _fromBranchNote(fromBranchKey) {
+    const pr = this.modalPullRequests[0];
+    return pr?.deploymentActionsSource === "unreadable"
+      ? this.t("prViewActionsUnreadable", { prLabel: this.prLabel })
+      : this.t(fromBranchKey, {
+          branch: pr?.deploymentActionsBranch || "",
+        });
   }
 
   _getActionWhenLabel(whenCode) {
