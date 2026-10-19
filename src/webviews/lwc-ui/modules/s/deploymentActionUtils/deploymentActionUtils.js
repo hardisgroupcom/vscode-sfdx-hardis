@@ -17,6 +17,7 @@ const TYPE_LABEL_KEY_BY_CODE = {
   "run-batch": "runBatchType",
   "publish-community": "publishCommunityType",
   "remove-packagexml-items": "removePackageXmlItemsType",
+  "user-access-policy": "userAccessPolicyType",
   manual: "manualType",
 };
 
@@ -28,6 +29,7 @@ const TYPE_ICON_BY_CODE = {
   "run-batch": "utility:play",
   "publish-community": "utility:world",
   "remove-packagexml-items": "utility:filterList",
+  "user-access-policy": "utility:user_role",
   manual: "utility:task",
 };
 
@@ -41,6 +43,7 @@ const TYPE_HUE_BY_CODE = {
   "run-batch": "purple",
   "publish-community": "green",
   "remove-packagexml-items": "pink",
+  "user-access-policy": "red",
   manual: "slate",
 };
 
@@ -168,6 +171,11 @@ export function getActionWhenPillClass(whenCode) {
 // in actionUtils.ts): a manual step to do before the deployment has to be done before the merge,
 // so the validation job lists it whatever context its file holds.
 export function getEffectiveActionContext(action, when) {
+  // A batch run and a User Access Policy activation are deployment-only actions, whatever their
+  // context holds, as in the CLI
+  if (action?.type === "run-batch" || action?.type === "user-access-policy") {
+    return "process-deployment-only";
+  }
   if (action?.type === "manual" && (when || action?.when) === "pre-deploy") {
     return "all";
   }

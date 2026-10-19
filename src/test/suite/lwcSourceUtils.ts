@@ -73,6 +73,23 @@ export function assertKeysTranslated(keys: Iterable<string>): void {
 }
 
 /**
+ * Asserts that every label of a deployment action type is used by the action editor
+ * (deploymentAction component) and translated in the 9 locales.
+ * @param keys the i18n keys of the editor of that action type
+ */
+export function assertDeploymentActionLabelsTranslated(keys: string[]): void {
+  const js = readModuleFile("deploymentAction", "deploymentAction.js");
+  const html = readModuleFile("deploymentAction", "deploymentAction.html");
+  for (const key of keys) {
+    assert.ok(
+      js.includes(`"${key}"`) || html.includes(`i18n.${key}}`),
+      `${key} is not used by the editor`,
+    );
+  }
+  assertKeysTranslated(keys);
+}
+
+/**
  * Asserts that every key of a feature in the 9 locale files is used, holds no em-dash, and has
  * the placeholders of its English text.
  * @param isFeatureKey tells whether a key belongs to the feature (ex: a prefix check)

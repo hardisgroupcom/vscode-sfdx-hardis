@@ -84,6 +84,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track batchableClassesRequestId = null;
   @track projectCommunities = [];
   @track communitiesLoading = false;
+  @track projectUserAccessPolicies = [];
+  @track userAccessPoliciesLoading = false;
   @track communitiesRequestId = null;
   _refreshTimer = null;
   // When the git provider was last asked whether the current branch has a Pull Request
@@ -1792,6 +1794,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       case "returnCommunities":
         this.handleReturnCommunities(data);
         break;
+      case "returnUserAccessPolicies":
+        this.handleReturnUserAccessPolicies(data);
+        break;
       case "returnGoLives":
         this.handleReturnGoLives(data);
         break;
@@ -1877,6 +1882,30 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
     this.projectCommunities = Array.isArray(data?.values) ? data.values : [];
     this.communitiesLoading = false;
+  }
+
+  handleLoadUserAccessPolicies() {
+    this.userAccessPoliciesLoading = true;
+    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    this.userAccessPoliciesRequestId = requestId;
+    window.sendMessageToVSCode({
+      type: "loadUserAccessPolicies",
+      data: { requestId },
+    });
+  }
+
+  handleReturnUserAccessPolicies(data) {
+    if (
+      this.userAccessPoliciesRequestId &&
+      data?.requestId &&
+      data.requestId !== this.userAccessPoliciesRequestId
+    ) {
+      return;
+    }
+    this.projectUserAccessPolicies = Array.isArray(data?.values)
+      ? data.values
+      : [];
+    this.userAccessPoliciesLoading = false;
   }
 
   handleShowInstalledPackages() {

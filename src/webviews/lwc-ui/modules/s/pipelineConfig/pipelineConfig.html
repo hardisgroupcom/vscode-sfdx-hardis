@@ -536,12 +536,15 @@
           batchable-classes-loading={batchableClassesLoading}
           communities={projectCommunities}
           communities-loading={communitiesLoading}
+          user-access-policies={projectUserAccessPolicies}
+          user-access-policies-loading={userAccessPoliciesLoading}
           major-branches={availableBranches}
           parent-translations={translations}
           onclose={handleCloseDeploymentActionModal}
           onloadschedulableclasses={handleLoadSchedulableClasses}
           onloadbatchableclasses={handleLoadBatchableClasses}
           onloadcommunities={handleLoadCommunities}
+          onloaduseraccesspolicies={handleLoadUserAccessPolicies}
           onsave={handleSaveDeploymentActionItem}
       ></s-deployment-action>
     </template>
