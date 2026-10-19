@@ -73,11 +73,14 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
   @track batchableClassesLoading = false;
   @track projectCommunities = [];
   @track communitiesLoading = false;
+  @track projectUserAccessPolicies = [];
+  @track userAccessPoliciesLoading = false;
   _deploymentActionKey = null; // commandsPreDeploy | commandsPostDeploy
   _deploymentActionEditIndex = -1;
   _schedulableClassesRequestId = null;
   _batchableClassesRequestId = null;
   _communitiesRequestId = null;
+  _userAccessPoliciesRequestId = null;
   _apexTestsFieldOriginal = [];
   initData = {};
 
@@ -1074,6 +1077,30 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
     this.communitiesLoading = false;
   }
 
+  handleLoadUserAccessPolicies() {
+    this.userAccessPoliciesLoading = true;
+    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    this._userAccessPoliciesRequestId = requestId;
+    window.sendMessageToVSCode({
+      type: "loadUserAccessPolicies",
+      data: { requestId },
+    });
+  }
+
+  handleReturnUserAccessPolicies(data) {
+    if (
+      this._userAccessPoliciesRequestId &&
+      data?.requestId &&
+      data.requestId !== this._userAccessPoliciesRequestId
+    ) {
+      return;
+    }
+    this.projectUserAccessPolicies = Array.isArray(data?.values)
+      ? data.values
+      : [];
+    this.userAccessPoliciesLoading = false;
+  }
+
   handleAddArrayObjectItem(event) {
     const key = event.target.dataset.key;
     if (this.deploymentActionKeys[key] !== undefined) {
@@ -1529,6 +1556,8 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
       this.handleReturnBatchableClasses(data);
     } else if (type === "returnCommunities") {
       this.handleReturnCommunities(data);
+    } else if (type === "returnUserAccessPolicies") {
+      this.handleReturnUserAccessPolicies(data);
     } else if (type === "customFunctionsLoaded") {
       // Read in the background: an open editor stays open
       this.setCustomFunctions(data.customFunctions);

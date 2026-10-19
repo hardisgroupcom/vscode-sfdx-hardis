@@ -173,6 +173,77 @@
               </div>
             </template>
 
+            <template if:true={showUserAccessPolicyFields}>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <label class="slds-form-element__label hardis-label-inline">
+                    <span>
+                      <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
+                      {i18n.userAccessPoliciesLabel}
+                    </span>
+                    <s-multiline-helptext content={i18n.userAccessPoliciesHelp} class="slds-icon-text-info"></s-multiline-helptext>
+                  </label>
+                  <template if:true={userAccessPoliciesLoading}>
+                    <p class="slds-text-color_weak">{i18n.loadingUserAccessPolicies}</p>
+                  </template>
+                  <template if:true={showNoUserAccessPolicyFound}>
+                    <p class="slds-text-color_weak">{i18n.noUserAccessPolicyFound}</p>
+                  </template>
+                  <template if:true={hasUserAccessPolicyOptions}>
+                    <lightning-dual-listbox
+                      label={i18n.userAccessPoliciesLabel}
+                      variant="label-hidden"
+                      source-label={userAccessPoliciesSourceColumnLabel}
+                      selected-label={userAccessPoliciesSelectedColumnLabel}
+                      options={userAccessPolicyOptions}
+                      value={selectedUserAccessPolicies}
+                      data-field="parameters.policies"
+                      onchange={handleUserAccessPoliciesChange}
+                      disabled={isViewMode}
+                    ></lightning-dual-listbox>
+                  </template>
+                  <lightning-input
+                    class="slds-m-top_x-small"
+                    label={i18n.userAccessPoliciesTyped}
+                    field-level-help={i18n.userAccessPoliciesTypedHelp}
+                    value={userAccessPoliciesText}
+                    onblur={handleUserAccessPoliciesTextChange}
+                    disabled={isViewMode}
+                  ></lightning-input>
+                </div>
+              </div>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <div style="display:flex;align-items:center;gap:0.25rem;">
+                    <lightning-input
+                      type="checkbox"
+                      label={i18n.activateUserAccessPoliciesLabel}
+                      checked={activateUserAccessPolicies}
+                      data-field="parameters.activate"
+                      onchange={handleActivateUserAccessPoliciesChange}
+                      disabled={isViewMode}
+                    ></lightning-input>
+                    <s-multiline-helptext content={i18n.activateUserAccessPoliciesHelp} class="slds-icon-text-info"></s-multiline-helptext>
+                  </div>
+                </div>
+              </div>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <div style="display:flex;align-items:center;gap:0.25rem;">
+                    <lightning-input
+                      type="checkbox"
+                      label={i18n.applyUserAccessPoliciesToAllLabel}
+                      checked={applyUserAccessPoliciesToAll}
+                      data-field="parameters.applyToAll"
+                      onchange={handleApplyUserAccessPoliciesToAllChange}
+                      disabled={isViewMode}
+                    ></lightning-input>
+                    <s-multiline-helptext content={i18n.applyUserAccessPoliciesToAllHelp} class="slds-icon-text-info"></s-multiline-helptext>
+                  </div>
+                </div>
+              </div>
+            </template>
+
             <template if:true={showPermissionSetsField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">

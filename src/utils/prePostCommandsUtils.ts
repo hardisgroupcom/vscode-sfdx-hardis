@@ -26,7 +26,8 @@ export type BuiltInActionType =
   | "manual"
   | "schedule-batch"
   | "run-batch"
-  | "remove-packagexml-items";
+  | "remove-packagexml-items"
+  | "user-access-policy";
 
 export const BUILT_IN_ACTION_TYPES: BuiltInActionType[] = [
   "command",
@@ -37,6 +38,7 @@ export const BUILT_IN_ACTION_TYPES: BuiltInActionType[] = [
   "schedule-batch",
   "run-batch",
   "remove-packagexml-items",
+  "user-access-policy",
 ];
 
 export function isBuiltInActionType(type: string): boolean {
@@ -66,6 +68,9 @@ export interface PrePostCommand {
     // for 'remove-packagexml-items' actions: entries "TypeName:Member1,Member2"
     // (use "*" as member to remove the whole type). A single string is also accepted.
     packageXmlItems?: string[] | string;
+    policies?: string[]; // for 'user-access-policy' actions: developer names
+    activate?: boolean; // optional for 'user-access-policy' actions, true when unset
+    applyToAll?: boolean; // optional for 'user-access-policy' actions, false when unset
     [key: string]: any;
   };
   command: string;
@@ -692,6 +697,20 @@ export async function listProjectPermissionSets(): Promise<string[]> {
   ]);
   const names = uris.map((uri) =>
     path.basename(uri.fsPath).replace(/\.permissionset(group)?-meta\.xml$/, ""),
+  );
+  return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
+}
+
+/**
+ * Developer names of the User Access Policies of the project sources, offered by the
+ * user-access-policy action type. Not cached: a policy added a minute ago must be listed.
+ */
+export async function listProjectUserAccessPolicies(): Promise<string[]> {
+  const uris = await findPackageDirectoriesFiles([
+    "**/*.useraccesspolicy-meta.xml",
+  ]);
+  const names = uris.map((uri) =>
+    path.basename(uri.fsPath).replace(/\.useraccesspolicy-meta\.xml$/, ""),
   );
   return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
 }
