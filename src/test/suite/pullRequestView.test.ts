@@ -1729,7 +1729,9 @@ suite("Pull Request view", () => {
             ${extractMember(js, "get modalActionsReadOnly()")},
             ${extractMember(js, "get showAddActionButton()")},
             ${extractMember(js, "get canEditApexTestsOfPr()")},
-            ${extractMember(js, "get actionsFromBranchNote()")}
+            ${extractMember(js, "get actionsFromBranchNote()")},
+            ${extractMember(js, "get apexTestsFromBranchNote()")},
+            ${extractMember(js, "fromBranchNote(fromBranchKey)")}
           };`,
         )();
         return Object.assign(instance, {
@@ -1762,6 +1764,10 @@ suite("Pull Request view", () => {
       assert.strictEqual(fromBranch.modalActionsReadOnly, true);
       assert.strictEqual(
         fromBranch.actionsFromBranchNote,
+        "prViewActionsFromBranchToRetry:feature/story",
+      );
+      assert.strictEqual(
+        fromBranch.apexTestsFromBranchNote,
         "prViewActionsFromBranch:feature/story",
       );
       assert.strictEqual(

@@ -271,9 +271,15 @@ async function main() {
   // uat, so the committed fixture does too, and the Level 3 captures need the
   // finished shape: a four column diagram, and a branch window that lists what
   // is waiting to be promoted rather than a go-live selector.
+  // "level3-split" is the same pipeline halfway through Lab 3.1 step 8: uat is
+  // still declared final, so the diagram draws integration -> uat and
+  // preprod -> main as two separate chains.
   // Never in lab mode: workspaceDir is then the learner's own repository, and
   // this block writes config/branches/*.yml into it and commits them.
-  if (pipelineState === "level3" && !labDriver) {
+  if (
+    (pipelineState === "level3" || pipelineState === "level3-split") &&
+    !labDriver
+  ) {
     const branchDir = path.join(workspaceDir, "config", "branches");
     fs.mkdirSync(branchDir, { recursive: true });
     const writeBranch = (
@@ -297,7 +303,12 @@ async function main() {
     writeBranch("integration", "integration", "https://test.salesforce.com", [
       "uat",
     ]);
-    writeBranch("uat", "uat", "https://test.salesforce.com", ["preprod"]);
+    writeBranch(
+      "uat",
+      "uat",
+      "https://test.salesforce.com",
+      pipelineState === "level3-split" ? [] : ["preprod"],
+    );
     writeBranch("preprod", "preprod", "https://login.salesforce.com", ["main"]);
     writeBranch("main", "prod", "https://login.salesforce.com", []);
     execSync("git add -A && git commit -m level3 --no-gpg-sign", {

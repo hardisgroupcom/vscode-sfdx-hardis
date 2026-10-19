@@ -159,7 +159,7 @@
   gap: 0.45rem;
   padding: 0.3rem 0.6rem;
   min-width: 0;
-  border-bottom: 1px solid var(--slds-g-color-neutral-base-95);
+  border-bottom: 1px solid var(--hardis-hairline);
 }
 
 .bp-item-row:last-child {

@@ -3335,11 +3335,20 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return !this.modalActionsFromBranch;
   }
 
+  // The Deployment Actions tab names what checking out unlocks, since Retry is hidden until then
   get actionsFromBranchNote() {
+    return this.fromBranchNote("prViewActionsFromBranchToRetry");
+  }
+
+  get apexTestsFromBranchNote() {
+    return this.fromBranchNote("prViewActionsFromBranch");
+  }
+
+  fromBranchNote(fromBranchKey) {
     const pr = this.modalPullRequests[0];
     return pr?.deploymentActionsSource === "unreadable"
       ? this.t("prViewActionsUnreadable", { prLabel: this.prLabel })
-      : this.t("prViewActionsFromBranch", {
+      : this.t(fromBranchKey, {
           branch: pr?.deploymentActionsBranch || "",
         });
   }
