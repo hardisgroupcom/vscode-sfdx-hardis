@@ -1117,7 +1117,7 @@ lightning-helptext::part(icon) {
   content: "";
   flex: 1;
   height: 1px;
-  background: var(--hardis-hairline);
+  background: var(--slds-g-color-border-base-1);
 }
 .hardis-group-desc {
   margin: -0.3rem 0 0.6rem;
@@ -1304,7 +1304,7 @@ lightning-helptext::part(icon) {
   align-items: center;
   gap: 1.25rem;
   padding: 0.7rem 0.15rem;
-  border-bottom: 1px solid var(--hardis-hairline);
+  border-bottom: 1px solid var(--slds-g-color-border-base-1);
 }
 .hardis-field-row:last-child {
   border-bottom: none;
@@ -2338,7 +2338,7 @@ lightning-helptext::part(icon) {
   font-family: inherit;
   background: transparent;
   border: 0;
-  border-bottom: 1px solid var(--hardis-hairline);
+  border-bottom: 1px solid var(--slds-g-color-border-base-1);
   color: var(--slds-g-color-neutral-base-15);
 }
 .hardis-option-row:last-child {
@@ -2449,7 +2449,7 @@ lightning-helptext::part(icon) {
   gap: 0.6rem;
   margin-top: 0.75rem;
   padding-top: 0.6rem;
-  border-top: 1px solid var(--hardis-hairline);
+  border-top: 1px solid var(--slds-g-color-border-base-1);
   font-size: 0.72rem;
   color: var(--slds-g-color-neutral-base-50);
   flex-wrap: wrap;

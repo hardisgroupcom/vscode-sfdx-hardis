@@ -1729,15 +1729,18 @@ suite("Pull Request view", () => {
             ${extractMember(js, "get modalActionsReadOnly()")},
             ${extractMember(js, "get showAddActionButton()")},
             ${extractMember(js, "get canEditApexTestsOfPr()")},
+            ${extractMember(js, "get showActionsFromBranchNote()")},
             ${extractMember(js, "get actionsFromBranchNote()")},
             ${extractMember(js, "get apexTestsFromBranchNote()")},
-            ${extractMember(js, "fromBranchNote(fromBranchKey)")}
+            ${extractMember(js, "_fromBranchNote(fromBranchKey)")}
           };`,
         )();
         return Object.assign(instance, {
           modalMode: "singlePR",
           modalIsMajorPr: false,
           modalActionsAggregated: false,
+          modalActions: [],
+          modalBranchName: "integration",
           prLabel: "Pull Request",
           modalPullRequests: [
             {
@@ -1775,16 +1778,34 @@ suite("Pull Request view", () => {
         "prViewActionsUnreadable:Pull Request",
       );
       assert.strictEqual(view("unreadable").showAddActionButton, false);
-      // A branch window is not concerned: its rows were already read-only
+      // A branch window is not read-only because of it: its rows were already read-only
       assert.strictEqual(
         view("branch", { modalMode: "branch" }).modalActionsFromBranch,
         false,
       );
+      // But its rows read from the branch lose Retry, so the note names the window's branch
+      const branchWindow = view("branch", {
+        modalMode: "branch",
+        modalActions: [{ outOfCheckout: false }, { outOfCheckout: true }],
+      });
+      assert.strictEqual(branchWindow.showActionsFromBranchNote, true);
+      assert.strictEqual(
+        branchWindow.actionsFromBranchNote,
+        "prViewActionsFromBranchToRetry:integration",
+      );
+      assert.strictEqual(
+        view("workingTree", {
+          modalMode: "branch",
+          modalActions: [{ outOfCheckout: false }],
+        }).showActionsFromBranchNote,
+        false,
+      );
       // The note is on both tabs, the action dialog opens read-only, and no row offers to
       // delete, or to run through sfdx-hardis an action the checked out branch does not hold
+      assert.match(html, /if:true=\{showActionsFromBranchNote\}/);
       assert.strictEqual(
         (html.match(/if:true=\{modalActionsFromBranch\}/g) || []).length,
-        2,
+        1,
       );
       assert.match(html, /read-only=\{modalActionsReadOnly\}/);
       assert.match(
