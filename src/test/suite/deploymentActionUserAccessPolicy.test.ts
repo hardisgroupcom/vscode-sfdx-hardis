@@ -7,9 +7,8 @@ import {
 } from "../../utils/prePostCommandsUtils";
 import { listUserAccessPolicies } from "../../utils/pipeline/deploymentActionPickers";
 import {
-  LOCALES,
   REPO_ROOT,
-  loadLocale,
+  assertDeploymentActionLabelsTranslated,
   readModuleFile,
 } from "./lwcSourceUtils";
 
@@ -116,16 +115,6 @@ suite("Deployment action user access policies", () => {
   });
 
   test("every label of the editor exists in every locale", () => {
-    const js = readModuleFile("deploymentAction", "deploymentAction.js");
-    const html = readModuleFile("deploymentAction", "deploymentAction.html");
-    for (const key of USER_ACCESS_POLICY_I18N_KEYS) {
-      assert.ok(
-        js.includes(`"${key}"`) || html.includes(`i18n.${key}}`),
-        `${key} is not used by the editor`,
-      );
-      for (const locale of LOCALES) {
-        assert.ok(loadLocale(locale)[key], `${key} is missing in ${locale}`);
-      }
-    }
+    assertDeploymentActionLabelsTranslated(USER_ACCESS_POLICY_I18N_KEYS);
   });
 });
