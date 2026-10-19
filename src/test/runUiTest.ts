@@ -500,7 +500,8 @@ async function main() {
   // Lab 3.1 step 8 compares this picture with the learner's own panel, which has none of the
   // feature branches of later labs: show the major branches only
   if (pipelineState === "level3-split") {
-    workspaceSettings["vsCodeSfdxHardis.pipelineDisplayFeatureBranches"] = false;
+    workspaceSettings["vsCodeSfdxHardis.pipelineDisplayFeatureBranches"] =
+      false;
   }
   if (docScreenshots) {
     // Documentation screenshots are always taken in light mode, English, with
