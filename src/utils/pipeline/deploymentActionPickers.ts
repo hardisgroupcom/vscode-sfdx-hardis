@@ -316,7 +316,8 @@ export async function listUserAccessPoliciesFromDefaultOrg(): Promise<
   if (cached && cached.expiresAt > now) {
     return cached.values;
   }
-  const query = "SELECT DeveloperName FROM UserAccessPolicy ORDER BY DeveloperName";
+  const query =
+    "SELECT DeveloperName FROM UserAccessPolicy ORDER BY DeveloperName";
   const command = `sf data query --query "${query}" --json`;
   return fetchAndCacheOrgNames(
     userAccessPoliciesByOrgCache,

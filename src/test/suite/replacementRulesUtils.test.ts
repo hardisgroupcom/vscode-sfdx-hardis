@@ -626,9 +626,9 @@ suite("Replacement Rules panel", () => {
       DOCSITE_URL + "/salesforce-devops-config-replacement-rules/",
     );
     // The panel needs sfdx-hardis 8.19.0 or a later release
-    const [major, minor] = RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION.split(".").map(
-      (part) => Number(part),
-    );
+    const [major, minor] = RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION.split(
+      ".",
+    ).map((part) => Number(part));
     assert.ok(
       major > 8 || (major === 8 && minor >= 19),
       `${RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION} is older than 8.19.0`,
