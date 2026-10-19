@@ -2252,6 +2252,7 @@
   "prStateMerged": "Merged",
   "prStateOpen": "Open",
   "prViewActionsFromBranch": "Gelezen uit {{branch}}. Check die branch uit om wijzigingen te maken.",
+  "prViewActionsFromBranchToRetry": "Gelezen uit {{branch}}. Check die branch uit om deze acties opnieuw uit te voeren, te verplaatsen of te bewerken.",
   "prViewActionsUnreadable": "De implementatieacties en testklassen van deze {{prLabel}} kunnen hier niet worden gelezen: de branch staat niet in deze repository.",
   "prViewAlreadyDoneIn": "Al uitgevoerd in {{orgs}}: een gewijzigde actie wordt daar niet opnieuw uitgevoerd.",
   "prViewBackTo": "Terug naar {{label}}",
