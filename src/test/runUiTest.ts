@@ -315,6 +315,13 @@ async function main() {
       cwd: workspaceDir,
       stdio: "pipe",
     });
+    // Halfway through Lab 3.1 the learner is on the User Story branch of step 4
+    if (pipelineState === "level3-split") {
+      execSync("git checkout -q -b features/US-050-pipeline-up-to-production", {
+        cwd: workspaceDir,
+        stdio: "pipe",
+      });
+    }
   }
 
   // Git provider fixture of the run: the promotion variant merges its overlay
@@ -489,6 +496,11 @@ async function main() {
   } else if (process.env.SFDX_HARDIS_VISUAL_THEME === "dark") {
     workspaceSettings["workbench.colorTheme"] = "Default Dark Modern";
     workspaceSettings["vsCodeSfdxHardis.theme.colorTheme"] = "dark";
+  }
+  // Lab 3.1 step 8 compares this picture with the learner's own panel, which has none of the
+  // feature branches of later labs: show the major branches only
+  if (pipelineState === "level3-split") {
+    workspaceSettings["vsCodeSfdxHardis.pipelineDisplayFeatureBranches"] = false;
   }
   if (docScreenshots) {
     // Documentation screenshots are always taken in light mode, English, with
