@@ -4,6 +4,7 @@ import {
   BATCHABLE_APEX_CLASS_REGEX,
   listProjectBatchableClasses,
   listProjectSchedulableClasses,
+  listProjectUserAccessPolicies,
 } from "../prePostCommandsUtils";
 
 /**
@@ -24,6 +25,10 @@ const batchableClassesByOrgCache = new Map<
   { expiresAt: number; values: string[] }
 >();
 const communitiesByOrgCache = new Map<
+  string,
+  { expiresAt: number; values: string[] }
+>();
+const userAccessPoliciesByOrgCache = new Map<
   string,
   { expiresAt: number; values: string[] }
 >();
@@ -299,6 +304,44 @@ export async function listCommunitiesFromDefaultOrg(): Promise<string[]> {
 }
 
 /**
+ * Developer names of the User Access Policies of the default org. An org where the feature is off
+ * answers the query with an error: nothing is listed from it.
+ */
+export async function listUserAccessPoliciesFromDefaultOrg(): Promise<
+  string[] | null
+> {
+  const orgKey = await getDefaultOrgUsername();
+  const now = Date.now();
+  const cached = userAccessPoliciesByOrgCache.get(orgKey);
+  if (cached && cached.expiresAt > now) {
+    return cached.values;
+  }
+  const query = "SELECT DeveloperName FROM UserAccessPolicy ORDER BY DeveloperName";
+  const command = `sf data query --query "${query}" --json`;
+  return fetchAndCacheOrgNames(
+    userAccessPoliciesByOrgCache,
+    orgKey,
+    now,
+    command,
+    undefined,
+    (record) => String(record?.DeveloperName || ""),
+  );
+}
+
+/**
+ * Policies of the default org and of the project sources. A policy only in the project is listed
+ * too: the deployment brings it to the target org before the action activates it.
+ */
+export async function listUserAccessPolicies(): Promise<PickerValues> {
+  // One source failing must not hide the other
+  const [orgPolicies, projectPolicies] = await Promise.all([
+    listUserAccessPoliciesFromDefaultOrg().catch(() => null),
+    listProjectUserAccessPolicies().catch(() => [] as string[]),
+  ]);
+  return mergeSchedulableClasses(orgPolicies, projectPolicies);
+}
+
+/**
  * Answers the lazy-load messages sent by the deployment action editor.
  * Returns true when the message has been handled, so that callers can keep
  * their own handling for the other message types.
@@ -323,6 +366,10 @@ export async function handleDeploymentActionPickerMessage(
     loadCommunities: {
       responseType: "returnCommunities",
       list: async () => ({ values: await listCommunitiesFromDefaultOrg() }),
+    },
+    loadUserAccessPolicies: {
+      responseType: "returnUserAccessPolicies",
+      list: listUserAccessPolicies,
     },
   };
   const picker = pickers[type];

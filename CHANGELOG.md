@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Deployment actions: new **User Access Policy** type, to activate User Access Policies after a deployment, which leaves them in Design, and optionally apply them to all users, picked from the policies of the org and the project (requires sfdx-hardis 8.20.0)
 - Contributors: the screenshot mock takes the Org Initialization, Scratch Org Pool and Replacement Rules data from the universe overlay, so the training screenshots show its own project
 
 ## [8.15.0] 2026-10-19

@@ -625,7 +625,14 @@ suite("Replacement Rules panel", () => {
       PANEL_DOC_URLS["s-replacement-rules"],
       DOCSITE_URL + "/salesforce-devops-config-replacement-rules/",
     );
-    assert.strictEqual(RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION, "8.19.0");
+    // The panel needs sfdx-hardis 8.19.0 or a later release
+    const [major, minor] = RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION.split(".").map(
+      (part) => Number(part),
+    );
+    assert.ok(
+      major > 8 || (major === 8 && minor >= 19),
+      `${RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION} is older than 8.19.0`,
+    );
   });
 
   test("the generic Pipeline Settings editor leaves the replacement rules to the panel", () => {

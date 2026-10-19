@@ -55,6 +55,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       this._requestSchedulableClassesIfNeeded(this.displayedAction?.type);
       this._requestBatchableClassesIfNeeded(this.displayedAction?.type);
       this._requestCommunitiesIfNeeded(this.displayedAction?.type);
+      this._requestUserAccessPoliciesIfNeeded(this.displayedAction?.type);
     }
   }
   get isEditMode() {
@@ -122,6 +123,19 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   // Batchable classes found in the project sources and not in the default org
   @api projectOnlyBatchableClasses = [];
   @api communitiesLoading = false;
+  _storedUserAccessPolicies = null;
+
+  @api
+  set userAccessPolicies(val) {
+    if (Array.isArray(val) && val.length > 0) {
+      this._storedUserAccessPolicies = val;
+    }
+  }
+  get userAccessPolicies() {
+    return this._storedUserAccessPolicies || [];
+  }
+
+  @api userAccessPoliciesLoading = false;
   // True while the panel reads the custom functions catalog: Save waits for it, so the inputs
   // of a custom function action are checked against its contract
   @api customFunctionsLoading = false;
@@ -142,6 +156,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   _schedulableClassesRequested = false;
   _batchableClassesRequested = false;
   _communitiesRequested = false;
+  _userAccessPoliciesRequested = false;
 
   @api
   set parentTranslations(val) {
@@ -164,6 +179,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       { label: this.t("scheduleBatchType"), value: "schedule-batch" },
       { label: this.t("runBatchType"), value: "run-batch" },
       { label: this.t("publishCommunityType"), value: "publish-community" },
+      { label: this.t("userAccessPolicyType"), value: "user-access-policy" },
       {
         label: this.t("removePackageXmlItemsType"),
         value: "remove-packagexml-items",
@@ -248,6 +264,11 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
         context: ["process-deployment-only"],
       },
       "publish-community": {
+        when: ["post-deploy"],
+        context: ["process-deployment-only"],
+      },
+      "user-access-policy": {
+        // A deployment sets the policies it contains back to Design: they are activated after it
         when: ["post-deploy"],
         context: ["process-deployment-only"],
       },
@@ -540,6 +561,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     this._requestSchedulableClassesIfNeeded(this.displayedAction?.type);
     this._requestBatchableClassesIfNeeded(this.displayedAction?.type);
     this._requestCommunitiesIfNeeded(this.displayedAction?.type);
+    this._requestUserAccessPoliciesIfNeeded(this.displayedAction?.type);
     this._updateWhenAndContextOptions(this.displayedAction?.type || "command");
   }
 
@@ -600,6 +622,115 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   get showCommunityNameField() {
     const type = this.displayedAction?.type;
     return type === "publish-community";
+  }
+
+  // --- User Access Policy -------------------------------------------------------
+
+  get showUserAccessPolicyFields() {
+    return this.displayedAction?.type === "user-access-policy";
+  }
+
+  get selectedUserAccessPolicies() {
+    const value = this.displayedAction?.parameters?.policies;
+    const names = Array.isArray(value)
+      ? value
+      : typeof value === "string"
+        ? value.split(",")
+        : [];
+    return names.map((name) => String(name || "").trim()).filter(Boolean);
+  }
+
+  // Policies of the default org and of the project, plus the selected ones neither holds:
+  // hiding them would drop them from the action at the next save
+  get userAccessPolicyOptions() {
+    const names = new Set(
+      (this.userAccessPolicies || []).map((item) => item?.value || item),
+    );
+    this.selectedUserAccessPolicies.forEach((name) => names.add(name));
+    return [...names].sort().map((name) => ({ label: name, value: name }));
+  }
+
+  get hasUserAccessPolicyOptions() {
+    return this.userAccessPolicyOptions.length > 0;
+  }
+
+  get showNoUserAccessPolicyFound() {
+    return (
+      this.isEditMode &&
+      this._userAccessPoliciesRequested &&
+      !this.userAccessPoliciesLoading &&
+      !this.hasUserAccessPolicyOptions
+    );
+  }
+
+  get userAccessPoliciesSourceColumnLabel() {
+    return this.t("userAccessPoliciesAvailable");
+  }
+
+  get userAccessPoliciesSelectedColumnLabel() {
+    return this.t("userAccessPoliciesSelected");
+  }
+
+  get userAccessPoliciesText() {
+    return this.selectedUserAccessPolicies.join(", ");
+  }
+
+  get activateUserAccessPolicies() {
+    const value = this.displayedAction?.parameters?.activate;
+    return value !== false && String(value) !== "false";
+  }
+
+  get applyUserAccessPoliciesToAll() {
+    const value = this.displayedAction?.parameters?.applyToAll;
+    return value === true || String(value) === "true";
+  }
+
+  handleUserAccessPoliciesChange(event) {
+    this._setUserAccessPolicyParameter("policies", [
+      ...(event.detail.value || []),
+    ]);
+  }
+
+  // Names typed by hand, for a policy neither the org nor the project holds yet
+  handleUserAccessPoliciesTextChange(event) {
+    const value = (event.target.value || "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+    this._setUserAccessPolicyParameter("policies", value);
+  }
+
+  handleActivateUserAccessPoliciesChange(event) {
+    this._setUserAccessPolicyParameter("activate", event.target.checked);
+  }
+
+  handleApplyUserAccessPoliciesToAllChange(event) {
+    this._setUserAccessPolicyParameter("applyToAll", event.target.checked);
+  }
+
+  _setUserAccessPolicyParameter(name, value) {
+    this.editedAction = {
+      ...this.editedAction,
+      parameters: { ...(this.editedAction.parameters || {}), [name]: value },
+    };
+    this.validationError = "";
+  }
+
+  // Same checks as sf hardis:project:action:create: at least one policy, and something to do
+  _getUserAccessPolicyValidationError() {
+    if (this.editedAction?.type !== "user-access-policy") {
+      return "";
+    }
+    if (this.selectedUserAccessPolicies.length === 0) {
+      return this.t("noUserAccessPolicySelected");
+    }
+    if (
+      !this.activateUserAccessPolicies &&
+      !this.applyUserAccessPoliciesToAll
+    ) {
+      return this.t("userAccessPolicyNothingToDo");
+    }
+    return "";
   }
 
   get showInstructionsField() {
@@ -1383,9 +1514,23 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     const touchesRunBatch =
       previousType !== newType &&
       (previousType === "run-batch" || newType === "run-batch");
-    if (leavesCustomFunction || entersCustomFunction || touchesRunBatch) {
+    const touchesUserAccessPolicy =
+      previousType !== newType &&
+      (previousType === "user-access-policy" ||
+        newType === "user-access-policy");
+    if (
+      leavesCustomFunction ||
+      entersCustomFunction ||
+      touchesRunBatch ||
+      touchesUserAccessPolicy
+    ) {
       this.editedAction.parameters =
         this._buildInitialParametersForType(newType);
+    }
+    // Each new deployment of a policy turns it off again: by default, it is activated at every
+    // deployment, as the CLI does
+    if (previousType !== newType && newType === "user-access-policy") {
+      this.editedAction.runOnlyOnceByOrg = false;
     }
     this._applyCustomFunctionDefaults(newType);
     if (this.isOrgInitMode && newType === "deploy-sources") {
@@ -1395,6 +1540,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     this._requestSchedulableClassesIfNeeded(newType);
     this._requestBatchableClassesIfNeeded(newType);
     this._requestCommunitiesIfNeeded(newType);
+    this._requestUserAccessPoliciesIfNeeded(newType);
     // Force re-render to show/hide fields by reassigning the tracked property
     this.editedAction = { ...this.editedAction };
     // Trigger reactivity by reassigning to force getter recalculation
@@ -1407,6 +1553,9 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
    * instead of empty fields the user has to retype.
    */
   _buildInitialParametersForType(type) {
+    if (type === "user-access-policy") {
+      return { policies: [], activate: true, applyToAll: false };
+    }
     const customFunction = this.customFunctions.find((fn) => fn.id === type);
     if (!customFunction) {
       return {};
@@ -1482,6 +1631,22 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     this.dispatchEvent(new CustomEvent("loadcommunities"));
   }
 
+  _requestUserAccessPoliciesIfNeeded(type) {
+    if (type !== "user-access-policy") {
+      return;
+    }
+    if (this.isViewMode) {
+      return;
+    }
+    if (this._userAccessPoliciesRequested) {
+      return;
+    }
+    // Asked each time the editor opens: a policy created in the org or in the project since the
+    // last opening must be listed
+    this._userAccessPoliciesRequested = true;
+    this.dispatchEvent(new CustomEvent("loaduseraccesspolicies"));
+  }
+
   _requestBatchableClassesIfNeeded(type) {
     if (type !== "run-batch") {
       return;
@@ -1540,6 +1705,12 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
 
     if (!this._hasValidRunBatchNumbers()) {
       this.validationError = this.t("runBatchInvalidNumbers");
+      return;
+    }
+
+    const userAccessPolicyError = this._getUserAccessPolicyValidationError();
+    if (userAccessPolicyError) {
+      this.validationError = userAccessPolicyError;
       return;
     }
 
