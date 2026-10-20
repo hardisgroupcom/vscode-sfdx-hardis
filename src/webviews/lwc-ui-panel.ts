@@ -994,8 +994,12 @@ export class LwcUiPanel {
    */
   private async handleOpenExternal(url: string): Promise<void> {
     try {
-      const uri = vscode.Uri.parse(url);
-      await vscode.env.openExternal(uri);
+      // Given a Uri, VS Code opens encodeURI(uri.toString(true)), which turns every %23 of the
+      // query into %2523: a Pull Request description sent in the link then shows "%23" where it
+      // had "#". Given the string, it opens the address exactly as written
+      // (https://github.com/microsoft/vscode/issues/85930)
+      vscode.Uri.parse(url, true);
+      await vscode.env.openExternal(url as unknown as vscode.Uri);
     } catch (error) {
       Logger.log("Error opening external URL:\n" + JSON.stringify(error));
       vscode.window.showErrorMessage(t("failedToOpenUrl", { url }));

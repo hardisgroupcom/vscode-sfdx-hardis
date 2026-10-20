@@ -1863,6 +1863,16 @@ suite("Pull Request view", () => {
       );
     });
 
+    test("a link opens as written, so a description in its query keeps its #", () => {
+      // A Uri makes VS Code open encodeURI(uri.toString(true)): %23 becomes %2523
+      const panel = readSourceFile("webviews/lwc-ui-panel.ts");
+      assert.match(panel, /openExternal\(url as unknown as vscode\.Uri\)/);
+      assert.ok(
+        !/openExternal\(uri\)/.test(panel),
+        "handleOpenExternal must hand the string to openExternal, not a parsed Uri",
+      );
+    });
+
     test("the labels of the view are translated in every locale", () => {
       const keys = new Set<string>();
       const sources = [
