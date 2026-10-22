@@ -7,6 +7,7 @@
 - Pipeline Settings: new ServiceNow setting to turn off the work notes written on the records when they are deployed
 - Dark theme: the separator lines between the sections of a panel (DORA Metrics, Pipeline Settings, Welcome...) are visible again
 - Pull Request window: when the deployment actions are read from another branch, the note says that checking it out is what shows Retry and the editing buttons
+- Welcome page: a guinea pig now lives next to "friends", and it hides a small game (needs an internet connection)
 - Contributors: the screenshot mock takes the Org Initialization, Scratch Org Pool and Replacement Rules data from the universe overlay, so the training screenshots show its own project
 
 ## [8.15.0] 2026-10-19

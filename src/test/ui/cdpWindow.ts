@@ -331,17 +331,37 @@ const DEEP_QUERY = `
  * coordinate. Every webview is asked, and the first one that answers a value wins.
  */
 export async function inWebview(expression: string): Promise<any> {
-  const port = CdpWindow.portFromEnv();
-  if (!port) {
-    throw new Error("the window was not started with a debugging port");
-  }
-  const targets: any[] = await (
-    await fetch(`http://127.0.0.1:${port}/json/list`)
-  ).json();
+  const targets = await debugTargets();
   const webviews = targets.filter((target) =>
     String(target.url || "").startsWith("vscode-webview://"),
   );
   for (const target of webviews) {
+    const value = await evaluateInTarget(
+      target.webSocketDebuggerUrl,
+      expression,
+    );
+    if (value !== null && value !== undefined) {
+      return value;
+    }
+  }
+  return null;
+}
+
+/**
+ * Evaluates an expression in a page that a panel frames from another site, like inWebview
+ * does in the webviews. Such a frame runs in a process of its own, so it is a debugging target
+ * of its own: the first target whose address contains `urlPart` and answers a value wins.
+ * Returns null when no target matches.
+ */
+export async function inFramedPage(
+  urlPart: string,
+  expression: string,
+): Promise<any> {
+  const targets = await debugTargets();
+  for (const target of targets) {
+    if (!String(target.url || "").includes(urlPart)) {
+      continue;
+    }
     const value = await evaluateInTarget(
       target.webSocketDebuggerUrl,
       expression,
@@ -399,6 +419,15 @@ export async function webviewBoxInWindow(): Promise<{
     };
   `,
   );
+}
+
+/** The debugging targets of the window: its pages, webviews and framed pages. */
+async function debugTargets(): Promise<any[]> {
+  const port = CdpWindow.portFromEnv();
+  if (!port) {
+    throw new Error("the window was not started with a debugging port");
+  }
+  return (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
 }
 
 function evaluateInTarget(url: string, expression: string): Promise<any> {

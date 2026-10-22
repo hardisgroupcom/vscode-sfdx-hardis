@@ -83,7 +83,10 @@
                                 <s-cloudity-logo class="welcome-cloudity-inline-logo"></s-cloudity-logo>
                                 <span>Cloudity</span>
                             </a>
-                            &amp;&nbsp;<a href={contributersUrl} target="_blank" rel="noopener">{i18n.friends}</a>
+                            &amp;&nbsp;<button type="button" class="guinea-egg" title={i18n.guineaRunEggHint} aria-label={i18n.guineaRunEggHint} onclick={handleGuineaEggClick} onanimationend={handleGuineaEggHopEnd}>
+                                <img src={guineaPigSrc} alt="" width="32" height="17">
+                            </button>
+                            <a href={contributersUrl} target="_blank" rel="noopener">{i18n.friends}</a>
                         </p>
                     </div>
                     <div class="welcome-version">

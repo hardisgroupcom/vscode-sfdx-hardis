@@ -203,6 +203,52 @@
     width: 28px;
 }
 
+/* The guinea pig before "friends": five clicks open Guinea Run (welcome.js) */
+.guinea-egg {
+    display: inline-flex;
+    width: 32px;
+    height: 17px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    cursor: pointer;
+    opacity: 0.85;
+}
+
+.guinea-egg img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.guinea-egg:hover,
+.guinea-egg:focus-visible {
+    opacity: 1;
+}
+
+.guinea-egg:focus-visible {
+    outline: 2px solid var(--slds-g-color-palette-cloud-blue-40);
+    outline-offset: 2px;
+}
+
+.guinea-egg-hop {
+    animation: guinea-egg-hop 0.3s ease-out;
+}
+
+@keyframes guinea-egg-hop {
+    50% {
+        transform: translateY(-5px) rotate(-8deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .guinea-egg-hop {
+        animation: none;
+    }
+}
+
 .welcome-version {
     text-align: right;
     flex-shrink: 0;

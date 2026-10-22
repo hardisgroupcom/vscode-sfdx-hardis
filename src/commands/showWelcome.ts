@@ -38,6 +38,8 @@ export const WELCOME_NAVIGATION_TARGETS: Record<string, string> = {
   documentationWorkbench: "vscode-sfdx-hardis.showDocumentationWorkbench",
   extensionConfig: "vscode-sfdx-hardis.showExtensionConfig",
   filesWorkbench: "vscode-sfdx-hardis.showFilesWorkbench",
+  // The guinea pig of the tagline, clicked five times, or the Konami code
+  guineaRun: "vscode-sfdx-hardis.openGuineaRun",
   installedPackages: "vscode-sfdx-hardis.showInstalledPackages",
   metadataRetriever: "vscode-sfdx-hardis.showMetadataRetriever",
   orgMonitoring: "vscode-sfdx-hardis.showOrgMonitoring",
@@ -132,6 +134,7 @@ export function registerShowWelcome(command: Commands) {
           flagPl: ["icons", "flag-pl.svg"],
           flagPtBR: ["icons", "flag-br.svg"],
           flagIt: ["icons", "flag-it.svg"],
+          guineaPig: ["guinea-pig-small.webp"],
           themeAuto: ["icons", "theme-auto.svg"],
           themeLight: ["icons", "theme-light.svg"],
           themeDark: ["icons", "theme-dark.svg"],

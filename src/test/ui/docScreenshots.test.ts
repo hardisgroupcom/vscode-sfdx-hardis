@@ -1,4 +1,12 @@
-import { CdpWindow, inWebview, webviewBoxInWindow } from "./cdpWindow";
+// cspell:ignore IHDR ZQSD AZERTY
+import * as assert from "assert";
+import {
+  CdpWindow,
+  inFramedPage,
+  inWebview,
+  webviewBoxInWindow,
+} from "./cdpWindow";
+import { cropPng } from "./pngCrop";
 import { execFileSync, execSync, spawnSync } from "child_process";
 import * as fs from "fs";
 import * as os from "os";
@@ -1046,6 +1054,65 @@ function trackAskedPrompts(): (promptName: string) => boolean {
       );
 }
 
+/**
+ * Saves the part of an earlier capture of the webview shown that holds a box of that webview
+ * (CSS pixels of the panel), as <OUT_DIR>/<name>.png: a closer look at one detail of a panel.
+ */
+async function saveWebviewCrop(
+  fromName: string,
+  name: string,
+  box: { left: number; top: number; right: number; bottom: number },
+): Promise<void> {
+  const source = path.join(OUT_DIR, `${fromName}.png`);
+  const webview = await webviewBoxInWindow();
+  if (!webview || !fs.existsSync(source)) {
+    console.log(`      [shot] ${name}: skipped (no capture or no webview)`);
+    return;
+  }
+  // Captures are in device pixels, the boxes in CSS pixels of the window. The width of a
+  // capture is the big-endian integer after the IHDR chunk header
+  const png = fs.readFileSync(source);
+  const scale = png.readUInt32BE(16) / webview.windowWidth;
+  const left = Math.round((webview.x + box.left) * scale);
+  const top = Math.round((webview.y + box.top) * scale) - TITLE_BAR_HEIGHT;
+  const file = path.join(OUT_DIR, `${name}.png`);
+  fs.writeFileSync(
+    file,
+    cropPng(png, {
+      left,
+      top,
+      width: Math.round((box.right - box.left) * scale),
+      height: Math.round((box.bottom - box.top) * scale),
+    }),
+  );
+  console.log(`      [shot] ${file}`);
+}
+
+/** The tabs of the Guinea Run panel (src/webviews/guineaRunPanel.ts) */
+function guineaRunTabs(): vscode.Tab[] {
+  return vscode.window.tabGroups.all
+    .flatMap((group) => group.tabs)
+    .filter(
+      (tab) =>
+        tab.input instanceof vscode.TabInputWebview &&
+        tab.label === "Guinea Run",
+    );
+}
+
+/**
+ * The state the Guinea Run panel writes on its body ("loading", "ready" or "offline") when it
+ * is one of `states`, else null.
+ */
+async function guineaRunState(states: string[]): Promise<string | null> {
+  const state = await inWebview(`
+    if (!panelDocument.getElementById("game")) {
+      return null;
+    }
+    return panelDocument.body.dataset.game || "loading";
+  `);
+  return states.includes(state) ? state : null;
+}
+
 suite("Documentation screenshots", function () {
   this.timeout(600000);
   let panelManager: any;
@@ -1148,6 +1215,155 @@ suite("Documentation screenshots", function () {
         // captures so each starts from the same page.
         clicks: [{ x: card.x, y: 470 }],
       });
+    }
+  });
+
+  // Guinea Run, the game hidden in the training site, opened from the guinea pig
+  // of the Welcome page and from the Konami code. Taken only when asked for by
+  // name: it is an easter egg, not documentation, and the game loads from the
+  // training site, or from the local copy that SFDX_HARDIS_GUINEA_RUN_SITE names
+  // (ex: http://127.0.0.1:8765).
+  test("guinea run: the guinea pig and the game panel", async function () {
+    if (!ONLY.includes("guinea-run") || !shouldTake("guinea-run")) {
+      this.skip();
+    }
+    await shootPanel(panelManager, {
+      name: "guinea-run-welcome",
+      command: "vscode-sfdx-hardis.showWelcome",
+      lwcId: "s-welcome",
+      settleMs: 3500,
+      force: true,
+    });
+    const layout = await inWebview(`
+      const egg = deepAll(panelDocument, "button.guinea-egg")[0];
+      if (!egg) {
+        return null;
+      }
+      const friends = egg.nextElementSibling;
+      const tagline = egg.parentElement.getBoundingClientRect();
+      const eggBox = egg.getBoundingClientRect();
+      const friendsBox = friends.getBoundingClientRect();
+      return {
+        title: egg.title,
+        next: friends.tagName + " " + friends.textContent.trim(),
+        imageLoaded: egg.querySelector("img").naturalWidth > 0,
+        egg: { left: eggBox.left, right: eggBox.right, top: eggBox.top, bottom: eggBox.bottom },
+        friends: { left: friendsBox.left, top: friendsBox.top, bottom: friendsBox.bottom },
+        tagline: { left: tagline.left, top: tagline.top, right: tagline.right, bottom: tagline.bottom },
+      };
+    `);
+    console.log(`      [guinea-run] welcome layout ${JSON.stringify(layout)}`);
+    assert.ok(layout, "no guinea pig on the Welcome page");
+    assert.strictEqual(layout.next, "A friends");
+    assert.strictEqual(layout.title, "Psst. Five times.");
+    assert.ok(layout.imageLoaded, "the guinea pig picture did not load");
+    // On the line of the tagline, just left of "friends"
+    assert.ok(layout.egg.right <= layout.friends.left + 1);
+    assert.ok(layout.friends.left - layout.egg.right < 12);
+    assert.ok(layout.egg.top < layout.friends.bottom);
+    assert.ok(layout.egg.bottom > layout.friends.top);
+    await saveWebviewCrop("guinea-run-welcome", "guinea-run-tagline", {
+      left: layout.tagline.left - 16,
+      top: layout.tagline.top - 16,
+      right: layout.egg.right + 120,
+      bottom: layout.tagline.bottom + 16,
+    });
+
+    // The harness sends every outbound call to a dead proxy (runUiTest.ts). The game
+    // loads Three.js from its CDN, as it does for everyone, so that host goes direct
+    const httpSettings = vscode.workspace.getConfiguration("http");
+    await httpSettings.update(
+      "noProxy",
+      ["localhost", "127.0.0.1", "cdn.jsdelivr.net"],
+      vscode.ConfigurationTarget.Global,
+    );
+
+    // Five clicks within three seconds open the game
+    await inWebview(`
+      const egg = deepAll(panelDocument, "button.guinea-egg")[0];
+      if (!egg) {
+        return null;
+      }
+      for (let i = 0; i < 5; i++) {
+        egg.click();
+      }
+      return true;
+    `);
+    await waitFor(() => guineaRunTabs().length === 1, 15000, "the game panel");
+    const state = await waitFor(
+      () => guineaRunState(["ready", "offline"]),
+      30000,
+      "the game to start",
+      500,
+    );
+    assert.strictEqual(state, "ready", "the game did not say it was ready");
+    // Its first frames
+    await sleep(4000);
+    await capture("guinea-run-panel");
+
+    // A second open shows the same panel
+    await vscode.commands.executeCommand("vscode-sfdx-hardis.openGuineaRun");
+    await sleep(1000);
+    assert.strictEqual(guineaRunTabs().length, 1);
+
+    // The game says "exit": the panel closes
+    const exitSent = await inFramedPage(
+      "guinea-run/play.html",
+      `window.parent.postMessage({ source: "guinea-run", type: "exit" }, "*"); return true;`,
+    );
+    assert.ok(exitSent, "no debugging target for the framed game page");
+    await waitFor(
+      () => guineaRunTabs().length === 0,
+      10000,
+      "the panel to close",
+    );
+
+    // The Konami code on the Welcome page, on ZQSD as an AZERTY keyboard types it
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await vscode.commands.executeCommand("vscode-sfdx-hardis.showWelcome");
+    await sleep(3000);
+    const typed = await inWebview(`
+      if (deepAll(panelDocument, "button.guinea-egg").length === 0) {
+        return null;
+      }
+      const keys = [["KeyW", "z"], ["KeyW", "z"], ["KeyS", "s"], ["KeyS", "s"], ["KeyA", "q"],
+        ["KeyD", "d"], ["KeyA", "q"], ["KeyD", "d"], ["KeyB", "b"], ["KeyQ", "a"]];
+      for (const [code, key] of keys) {
+        panelDocument.dispatchEvent(new KeyboardEvent("keydown", { code, key, bubbles: true }));
+      }
+      return true;
+    `);
+    assert.ok(typed, "the Welcome page did not get the keys");
+    await waitFor(() => guineaRunTabs().length === 1, 15000, "the game panel");
+
+    // No ready message: the panel says the game needs an internet connection
+    await vscode.window.tabGroups.close(guineaRunTabs());
+    const site = process.env.SFDX_HARDIS_GUINEA_RUN_SITE;
+    // A site that never answers: Chromium refuses to load the discard port
+    process.env.SFDX_HARDIS_GUINEA_RUN_SITE = "http://127.0.0.1:9";
+    try {
+      await vscode.commands.executeCommand("vscode-sfdx-hardis.openGuineaRun");
+      const offline = await waitFor(
+        () => guineaRunState(["offline"]),
+        30000,
+        "the offline message",
+        500,
+      );
+      assert.strictEqual(offline, "offline");
+      await sleep(800);
+      await capture("guinea-run-offline");
+    } finally {
+      if (site === undefined) {
+        delete process.env.SFDX_HARDIS_GUINEA_RUN_SITE;
+      } else {
+        process.env.SFDX_HARDIS_GUINEA_RUN_SITE = site;
+      }
+      await vscode.window.tabGroups.close(guineaRunTabs());
+      await httpSettings.update(
+        "noProxy",
+        undefined,
+        vscode.ConfigurationTarget.Global,
+      );
     }
   });
 

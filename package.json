@@ -426,6 +426,10 @@
         "icon": "$(replace-all)"
       },
       {
+        "command": "vscode-sfdx-hardis.openGuineaRun",
+        "title": "SFDX Hardis: Guinea Run"
+      },
+      {
         "command": "vscode-sfdx-hardis.showSetup",
         "title": "SFDX Hardis: Setup",
         "icon": "$(tools)"
@@ -594,6 +598,12 @@
       ]
     },
     "menus": {
+      "commandPalette": [
+        {
+          "command": "vscode-sfdx-hardis.openGuineaRun",
+          "when": "false"
+        }
+      ],
       "explorer/context": [
         {
           "command": "vscode-sfdx-hardis.simulateMetadataDeployment",
