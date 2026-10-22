@@ -41,6 +41,7 @@ import { registerShowBackpromote } from "./commands/showBackpromote";
 import { registerShowDoraMetrics } from "./commands/showDoraMetrics";
 import { registerShowScratchOrgPool } from "./commands/showScratchOrgPool";
 import { registerShowReplacementRules } from "./commands/showReplacementRules";
+import { registerOpenGuineaRun } from "./commands/openGuineaRun";
 import { t } from "./i18n/i18n";
 import { ExtraCommands } from "./utils/extraCommands";
 import { refreshAllRefreshableUis } from "./utils/uiUtils";
@@ -123,6 +124,7 @@ export class Commands {
     registerShowDoraMetrics(this);
     registerShowScratchOrgPool(this);
     registerShowReplacementRules(this);
+    registerOpenGuineaRun(this);
     this.registerSearchCommands();
   }
 

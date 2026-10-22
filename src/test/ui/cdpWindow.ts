@@ -354,6 +354,38 @@ export async function inWebview(expression: string): Promise<any> {
 }
 
 /**
+ * Evaluates an expression in a page that a panel frames from another site, like inWebview
+ * does in the webviews. Such a frame runs in a process of its own, so it is a debugging target
+ * of its own: the first target whose address contains `urlPart` and answers a value wins.
+ * Returns null when no target matches.
+ */
+export async function inFramedPage(
+  urlPart: string,
+  expression: string,
+): Promise<any> {
+  const port = CdpWindow.portFromEnv();
+  if (!port) {
+    throw new Error("the window was not started with a debugging port");
+  }
+  const targets: any[] = await (
+    await fetch(`http://127.0.0.1:${port}/json/list`)
+  ).json();
+  for (const target of targets) {
+    if (!String(target.url || "").includes(urlPart)) {
+      continue;
+    }
+    const value = await evaluateInTarget(
+      target.webSocketDebuggerUrl,
+      expression,
+    );
+    if (value !== null && value !== undefined) {
+      return value;
+    }
+  }
+  return null;
+}
+
+/**
  * Where the webview shown sits in the VS Code window, in CSS pixels of the window, with the size
  * of the window itself. It is what turns a position inside a panel into a position in a capture.
  */

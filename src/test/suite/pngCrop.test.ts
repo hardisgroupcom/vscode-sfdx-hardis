@@ -160,7 +160,7 @@ suite("PNG crop of the UI harness captures", () => {
     );
     assert.match(
       suiteSource,
-      /import \{ CdpWindow(, \w+)* \} from "\.\/cdpWindow"/,
+      /import \{\s*CdpWindow(,\s*\w+)*,?\s*\} from "\.\/cdpWindow"/,
     );
     assert.match(
       readSourceFile("test/runUiTest.ts"),

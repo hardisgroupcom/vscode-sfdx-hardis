@@ -113,6 +113,26 @@ const DEPENDENCIES_STATUS_CHECKING = {
   actionableCount: 0,
 };
 
+// Guinea Run, the game hidden in the training site, opens from this page like
+// it does on the site (easter-egg.js of sfdx-hardis-training): five clicks
+// within three seconds on the guinea pig of the tagline, or the Konami code,
+// up up down down left right left right B A. Each arrow can also be typed on
+// WASD, read by position, so ZQSD works on an AZERTY keyboard.
+const KONAMI_SEQUENCE = [
+  ["ArrowUp", "KeyW"],
+  ["ArrowUp", "KeyW"],
+  ["ArrowDown", "KeyS"],
+  ["ArrowDown", "KeyS"],
+  ["ArrowLeft", "KeyA"],
+  ["ArrowRight", "KeyD"],
+  ["ArrowLeft", "KeyA"],
+  ["ArrowRight", "KeyD"],
+  ["KeyB", "b"],
+  ["KeyA", "a"],
+];
+const GUINEA_EGG_CLICKS = 5;
+const GUINEA_EGG_WINDOW_MS = 3000;
+
 export default class Welcome extends SharedMixin(LightningElement) {
   @track isLoading = false;
   @track showWelcomeAtStartup = true;
@@ -135,13 +155,19 @@ export default class Welcome extends SharedMixin(LightningElement) {
   @track dependenciesStatus = DEPENDENCIES_STATUS_CHECKING;
   @track prerequisitesModalDismissed = false;
 
+  _konamiPosition = 0;
+  _guineaEggClicks = [];
+
   connectedCallback() {
     super.connectedCallback();
     this._boundHandleOutsideClick = this.handleOutsideClick.bind(this);
+    this._boundHandleKonamiKey = this.handleKonamiKey.bind(this);
+    document.addEventListener("keydown", this._boundHandleKonamiKey);
   }
 
   disconnectedCallback() {
     document.removeEventListener("click", this._boundHandleOutsideClick);
+    document.removeEventListener("keydown", this._boundHandleKonamiKey);
   }
 
   handleOutsideClick(event) {
@@ -702,5 +728,83 @@ export default class Welcome extends SharedMixin(LightningElement) {
         data: this.websiteUrl,
       });
     }
+  }
+
+  // ── Guinea Run (see KONAMI_SEQUENCE) ──
+
+  get guineaPigSrc() {
+    return this.getImageUrl("guineaPig");
+  }
+
+  // A native button: Enter and Space count as clicks too
+  handleGuineaEggClick(event) {
+    const now = Date.now();
+    this._guineaEggClicks = this._guineaEggClicks.filter(
+      (time) => now - time < GUINEA_EGG_WINDOW_MS,
+    );
+    this._guineaEggClicks.push(now);
+    // Restart the little hop on every click
+    const egg = event.currentTarget;
+    egg.classList.remove("guinea-egg-hop");
+    void egg.offsetWidth;
+    egg.classList.add("guinea-egg-hop");
+    if (this._guineaEggClicks.length >= GUINEA_EGG_CLICKS) {
+      this._guineaEggClicks = [];
+      this.openGuineaRun();
+    }
+  }
+
+  handleGuineaEggHopEnd(event) {
+    event.currentTarget.classList.remove("guinea-egg-hop");
+  }
+
+  handleKonamiKey(event) {
+    if (
+      event.ctrlKey ||
+      event.metaKey ||
+      event.altKey ||
+      this._isTypingIn(event)
+    ) {
+      return;
+    }
+    if (this._matchesKonamiStep(KONAMI_SEQUENCE[this._konamiPosition], event)) {
+      this._konamiPosition += 1;
+      if (this._konamiPosition === KONAMI_SEQUENCE.length) {
+        this._konamiPosition = 0;
+        this.openGuineaRun();
+      }
+      return;
+    }
+    // A wrong key may be the first one of a new attempt
+    this._konamiPosition = this._matchesKonamiStep(KONAMI_SEQUENCE[0], event)
+      ? 1
+      : 0;
+  }
+
+  openGuineaRun() {
+    window.sendMessageToVSCode({
+      type: "navigateTo",
+      data: { target: "guineaRun" },
+    });
+  }
+
+  _isTypingIn(event) {
+    // The element that really has the focus, inside the shadow trees
+    const target = event.composedPath ? event.composedPath()[0] : event.target;
+    if (!target || !target.tagName) {
+      return false;
+    }
+    const tag = target.tagName.toLowerCase();
+    return (
+      tag === "input" ||
+      tag === "textarea" ||
+      tag === "select" ||
+      target.isContentEditable === true
+    );
+  }
+
+  _matchesKonamiStep(step, event) {
+    const key = (event.key || "").toLowerCase();
+    return step.includes(event.code) || step.includes(key);
   }
 }
