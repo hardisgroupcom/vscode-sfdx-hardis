@@ -331,13 +331,7 @@ const DEEP_QUERY = `
  * coordinate. Every webview is asked, and the first one that answers a value wins.
  */
 export async function inWebview(expression: string): Promise<any> {
-  const port = CdpWindow.portFromEnv();
-  if (!port) {
-    throw new Error("the window was not started with a debugging port");
-  }
-  const targets: any[] = await (
-    await fetch(`http://127.0.0.1:${port}/json/list`)
-  ).json();
+  const targets = await debugTargets();
   const webviews = targets.filter((target) =>
     String(target.url || "").startsWith("vscode-webview://"),
   );
@@ -363,13 +357,7 @@ export async function inFramedPage(
   urlPart: string,
   expression: string,
 ): Promise<any> {
-  const port = CdpWindow.portFromEnv();
-  if (!port) {
-    throw new Error("the window was not started with a debugging port");
-  }
-  const targets: any[] = await (
-    await fetch(`http://127.0.0.1:${port}/json/list`)
-  ).json();
+  const targets = await debugTargets();
   for (const target of targets) {
     if (!String(target.url || "").includes(urlPart)) {
       continue;
@@ -431,6 +419,15 @@ export async function webviewBoxInWindow(): Promise<{
     };
   `,
   );
+}
+
+/** The debugging targets of the window: its pages, webviews and framed pages. */
+async function debugTargets(): Promise<any[]> {
+  const port = CdpWindow.portFromEnv();
+  if (!port) {
+    throw new Error("the window was not started with a debugging port");
+  }
+  return (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
 }
 
 function evaluateInTarget(url: string, expression: string): Promise<any> {

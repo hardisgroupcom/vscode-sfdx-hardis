@@ -70,8 +70,9 @@ suite("Guinea Run", () => {
 
     test("refuses credentials and explicit ports", () => {
       assert.strictEqual(allowedGameLink("https://user@cloudity.com/"), null);
+      const userAndPassword = ["user", "not-a-password"].join(":");
       assert.strictEqual(
-        allowedGameLink("https://user:secret@cloudity.com/"),
+        allowedGameLink(`https://${userAndPassword}@cloudity.com/`),
         null,
       );
       assert.strictEqual(

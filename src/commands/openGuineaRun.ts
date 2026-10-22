@@ -14,8 +14,7 @@ export function registerOpenGuineaRun(command: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.openGuineaRun",
     async () => {
-      const { openGuineaRunPanel } =
-        await import("../webviews/guineaRunPanel");
+      const { openGuineaRunPanel } = await import("../webviews/guineaRunPanel");
       openGuineaRunPanel(command.extensionUri);
     },
   );

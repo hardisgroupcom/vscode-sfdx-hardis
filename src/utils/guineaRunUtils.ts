@@ -1,3 +1,4 @@
+// cspell:ignore javascripts
 /**
  * Guinea Run is the game hidden in the training site. The extension ships none
  * of it: its panel (src/webviews/guineaRunPanel.ts) frames the game page of the

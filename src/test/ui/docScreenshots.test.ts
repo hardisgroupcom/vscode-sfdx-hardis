@@ -1,3 +1,4 @@
+// cspell:ignore IHDR ZQSD AZERTY
 import * as assert from "assert";
 import {
   CdpWindow,
@@ -1311,7 +1312,11 @@ suite("Documentation screenshots", function () {
       `window.parent.postMessage({ source: "guinea-run", type: "exit" }, "*"); return true;`,
     );
     assert.ok(exitSent, "no debugging target for the framed game page");
-    await waitFor(() => guineaRunTabs().length === 0, 10000, "the panel to close");
+    await waitFor(
+      () => guineaRunTabs().length === 0,
+      10000,
+      "the panel to close",
+    );
 
     // The Konami code on the Welcome page, on ZQSD as an AZERTY keyboard types it
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");

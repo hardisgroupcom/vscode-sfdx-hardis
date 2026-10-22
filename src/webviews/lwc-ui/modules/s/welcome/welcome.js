@@ -1,6 +1,7 @@
 /* eslint-disable */
 // LWC: ignore parsing errors for import/export, handled by LWC compiler
 // @ts-nocheck
+// cspell:ignore WASD ZQSD AZERTY
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
