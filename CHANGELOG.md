@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [8.16.0] 2026-10-19
+
 - Links opened from a panel keep their `#`: a Pull Request created from the creation link of a promotion no longer shows `%23` instead of the headings and the Pull Request numbers of its description
 - Deployment actions: new **User Access Policy** type, to activate User Access Policies after a deployment, which leaves them in Design, and optionally apply them to all users, picked from the policies of the org and the project (requires sfdx-hardis 8.20.0)
 - Pipeline Settings: new ServiceNow setting to turn off the work notes written on the records when they are deployed
