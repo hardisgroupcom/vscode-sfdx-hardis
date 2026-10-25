@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Training screenshots: the merge editor capture uses a permission set where each side adds a whole block, as in the real Lab 2.7 file
+
 ## [8.16.0] 2026-10-19
 
 - Links opened from a panel keep their `#`: a Pull Request created from the creation link of a promotion no longer shows `%23` instead of the headings and the Pull Request numbers of its description

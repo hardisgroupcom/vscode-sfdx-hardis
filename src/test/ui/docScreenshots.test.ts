@@ -3036,15 +3036,24 @@ suite("Documentation screenshots", function () {
     const relative =
       "force-app/main/default/permissionsets/Helios_Delivery_Manager.permissionset-meta.xml";
     const file = path.join(workspaceRoot!, relative);
-    const permissionSet = (field: string) =>
+    // Each side adds a whole block between the two the base already has, as on
+    // the real Helios file: the merge editor then shows a block added on each
+    // side, and taking both gives two complete blocks
+    const permissionSet = (added?: string) =>
       [
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">',
-        "    <fieldPermissions>",
-        "        <editable>true</editable>",
-        `        <field>${field}</field>`,
-        "        <readable>true</readable>",
-        "    </fieldPermissions>",
+        ...[
+          "Installation__c.Account__c",
+          ...(added ? [added] : []),
+          "Installation__c.Crew_Size__c",
+        ].flatMap((field) => [
+          "    <fieldPermissions>",
+          "        <editable>true</editable>",
+          `        <field>${field}</field>`,
+          "        <readable>true</readable>",
+          "    </fieldPermissions>",
+        ]),
         "    <hasActivationRequired>false</hasActivationRequired>",
         "    <label>Helios Delivery Manager</label>",
         "</PermissionSet>",
@@ -3084,7 +3093,7 @@ suite("Documentation screenshots", function () {
       // Detached, so that no helper branch shows in the branch picker
       git("checkout -q --detach");
       fs.mkdirSync(path.dirname(file), { recursive: true });
-      fs.writeFileSync(file, permissionSet("Installation__c.Crew_Size__c"));
+      fs.writeFileSync(file, permissionSet());
       git(`add "${relative}"`);
       git('commit -q -m "base"');
       // What Mariia merged into integration
@@ -3151,10 +3160,12 @@ suite("Documentation screenshots", function () {
       );
       await sleep(4000);
       await captureStable("git-merge-editor");
-      // Both sides accepted: the result holds the two lines
-      await click(556, 187); // "Accept Incoming" above the conflict of Incoming
+      // Both sides accepted, Incoming first as the lab clicks them: the result
+      // holds the two blocks. Commands rather than clicks, since the
+      // Accept buttons move with the file
+      await vscode.commands.executeCommand("merge.acceptAllInput1");
       await sleep(1200);
-      await click(1297, 187); // "Accept Current" above the conflict of Current
+      await vscode.commands.executeCommand("merge.acceptAllInput2");
       await sleep(1500);
       await captureStable("git-merge-editor-accepted");
     } finally {
