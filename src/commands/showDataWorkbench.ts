@@ -609,9 +609,11 @@ async function createDataWorkspace(data: any): Promise<string> {
   };
 
   const exportJsonPath = path.join(workspacePath, "export.json");
+  // The final newline keeps linters (MegaLinter's end-of-file fixers) from
+  // pushing a fix commit on the Pull Request that adds the workspace
   await fs.promises.writeFile(
     exportJsonPath,
-    JSON.stringify(exportConfig, null, 2),
+    JSON.stringify(exportConfig, null, 2) + "\n",
   );
 
   vscode.window.showInformationMessage(
@@ -669,7 +671,7 @@ async function updateDataWorkspace(data: any): Promise<string> {
 
   await fs.promises.writeFile(
     exportJsonPath,
-    JSON.stringify(exportConfig, null, 2),
+    JSON.stringify(exportConfig, null, 2) + "\n",
   );
 
   return exportJsonPath;
