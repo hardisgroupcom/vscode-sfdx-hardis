@@ -7,7 +7,7 @@ import { Logger } from "../../logger";
 import { getConfig } from "../pipeline/sfdxHardisConfig";
 import { SecretsManager, SecretSource } from "../secretsManager";
 import { PROVIDER_ENV_VAR_NAMES } from "../envFileCredentials";
-import { Version2Client, Version3Client } from "jira.js";
+import { Config, Version2Client, Version3Client } from "jira.js";
 import { t } from "../../i18n/i18n";
 import {
   promptForToken,
@@ -279,11 +279,16 @@ export class JiraProvider extends TicketProvider {
       | { basic: { email: string; apiToken: string } },
   ): Version2Client | Version3Client {
     const host = this.jiraHost.replace(/\/$/, "");
+    // jira.js types Config as one variant per authentication method
+    const config: Config =
+      "oauth2" in authConfig
+        ? { host, authentication: authConfig }
+        : { host, authentication: authConfig };
     if (this.isJiraCloud()) {
-      return new Version3Client({ host, authentication: authConfig });
+      return new Version3Client(config);
     }
     // Jira Server/Data Center only supports REST API v2
-    return new Version2Client({ host, authentication: authConfig });
+    return new Version2Client(config);
   }
 
   private async initializeClient(

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Security: bump dompurify, undici, fast-uri, serialize-javascript and jira.js (which moves zod to 4.x)
 - Training screenshots: the merge editor capture uses a permission set where each side adds a whole block, as in the real Lab 2.7 file
 
 ## [8.16.0] 2026-10-19
