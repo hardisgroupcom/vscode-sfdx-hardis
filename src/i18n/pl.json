@@ -1530,7 +1530,7 @@
   "goLiveSelectorPlaceholder": "Wybierz wdrożenie produkcyjne",
   "grafanaDashboards": "Pulpity Grafana",
   "guineaRunEggHint": "Psst. Pięć razy.",
-  "guineaRunOfflineMessage": "Gra wczytuje się ze strony szkolenia, dlatego wymaga połączenia z internetem.",
+  "guineaRunOfflineMessage": "Za pierwszym razem gra wczytuje się ze strony szkolenia, dlatego wymaga połączenia z internetem. Po wczytaniu działa także offline.",
   "guineaRunOfflineTitle": "Nie udało się wczytać Guinea Run",
   "hardisCommandNotAllowedInBackground": "Error: SFDX-Hardis command not allowed in background mode.",
   "help": "Pomoc",

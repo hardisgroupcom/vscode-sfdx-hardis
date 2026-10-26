@@ -1530,7 +1530,7 @@
   "goLiveSelectorPlaceholder": "Seleccione una puesta en producción",
   "grafanaDashboards": "Paneles de Grafana",
   "guineaRunEggHint": "Psst. Cinco veces.",
-  "guineaRunOfflineMessage": "El juego se carga desde el sitio de la formación, por lo que necesita una conexión a internet.",
+  "guineaRunOfflineMessage": "El juego se carga desde el sitio de la formación la primera vez, por lo que necesita una conexión a internet. Una vez cargado, también funciona sin conexión.",
   "guineaRunOfflineTitle": "Guinea Run no se cargó",
   "hardisCommandNotAllowedInBackground": "Error: SFDX-Hardis command not allowed in background mode.",
   "help": "Ayuda",
