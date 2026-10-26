@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Guinea Run: once loaded online, the game also plays offline, and its offline message says so
 - Security: bump dompurify, undici, fast-uri, serialize-javascript and jira.js (which moves zod to 4.x)
 - Training screenshots: the merge editor capture uses a permission set where each side adds a whole block, as in the real Lab 2.7 file
 
