@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Security: bump dompurify, undici, fast-uri, serialize-javascript and jira.js (which moves zod to 4.x)
+
 ## [8.16.0] 2026-10-19
 
 - Links opened from a panel keep their `#`: a Pull Request created from the creation link of a promotion no longer shows `%23` instead of the headings and the Pull Request numbers of its description
