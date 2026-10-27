@@ -1,12 +1,18 @@
 import * as assert from "assert";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 import { WELCOME_NAVIGATION_TARGETS } from "../../commands/showWelcome";
 import {
   allowedGameLink,
+  deleteGuineaRunSave,
+  GUINEA_RUN_SAVE_MAX_BYTES,
   GUINEA_RUN_SITE,
   guineaRunPlayUrl,
+  guineaRunSaveFile,
   guineaRunSiteOrigin,
+  readGuineaRunSave,
+  writeGuineaRunSave,
 } from "../../utils/guineaRunUtils";
 import {
   assertKeysTranslated,
@@ -128,11 +134,11 @@ suite("Guinea Run", () => {
     test("the game page in French or English, told it runs in VS Code", () => {
       assert.strictEqual(
         guineaRunPlayUrl(GUINEA_RUN_SITE, "fr"),
-        "https://sfdx-hardis-training.cloudity.com/theme/javascripts/guinea-run/play.html?lang=fr&from=vscode",
+        "https://sfdx-hardis-training.cloudity.com/theme/javascripts/guinea-run/play.html?lang=fr&from=vscode&save=host",
       );
       assert.strictEqual(
         guineaRunPlayUrl(GUINEA_RUN_SITE, "en"),
-        "https://sfdx-hardis-training.cloudity.com/theme/javascripts/guinea-run/play.html?lang=en&from=vscode",
+        "https://sfdx-hardis-training.cloudity.com/theme/javascripts/guinea-run/play.html?lang=en&from=vscode&save=host",
       );
       // The game speaks English and French only
       for (const locale of ["de", "ja", "pt-BR", ""]) {
@@ -141,6 +147,91 @@ suite("Guinea Run", () => {
           locale,
         );
       }
+    });
+  });
+
+  suite("the save every project shares", () => {
+    let home: string;
+
+    setup(() => {
+      home = fs.mkdtempSync(path.join(os.tmpdir(), "guinea-run-save-"));
+    });
+
+    teardown(() => {
+      fs.rmSync(home, { recursive: true, force: true });
+    });
+
+    test("lives in the home folder, the same for every project", () => {
+      assert.strictEqual(
+        guineaRunSaveFile(home),
+        path.join(home, ".sfdx-hardis", "guinea-run-save.json"),
+      );
+      assert.ok(
+        guineaRunSaveFile().startsWith(path.join(os.homedir(), ".sfdx-hardis")),
+      );
+    });
+
+    test("is null before the first save", async () => {
+      assert.strictEqual(
+        await readGuineaRunSave(guineaRunSaveFile(home)),
+        null,
+      );
+    });
+
+    test("is written as sent and read back the same", async () => {
+      const file = guineaRunSaveFile(home);
+      const blob = '{"v":1,"k":1,"text":"{}","sg":"abc"}';
+      assert.strictEqual(await writeGuineaRunSave(file, blob), true);
+      assert.strictEqual(await readGuineaRunSave(file), blob);
+      // A later save replaces it, and no temporary file is left
+      assert.strictEqual(await writeGuineaRunSave(file, blob + " "), true);
+      assert.strictEqual(await readGuineaRunSave(file), blob + " ");
+      assert.deepStrictEqual(fs.readdirSync(path.dirname(file)), [
+        "guinea-run-save.json",
+      ]);
+    });
+
+    test("refuses anything but a non-empty string under the size limit", async () => {
+      const file = guineaRunSaveFile(home);
+      for (const blob of [undefined, null, 42, {}, ""]) {
+        assert.strictEqual(await writeGuineaRunSave(file, blob), false);
+      }
+      assert.strictEqual(
+        await writeGuineaRunSave(
+          file,
+          "x".repeat(GUINEA_RUN_SAVE_MAX_BYTES + 1),
+        ),
+        false,
+      );
+      assert.strictEqual(fs.existsSync(file), false);
+    });
+
+    test("a file too big to be a save is not read", async () => {
+      const file = guineaRunSaveFile(home);
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, "x".repeat(GUINEA_RUN_SAVE_MAX_BYTES + 1));
+      assert.strictEqual(await readGuineaRunSave(file), null);
+    });
+
+    test("is deleted when the game refuses it, and deleting twice is fine", async () => {
+      const file = guineaRunSaveFile(home);
+      await writeGuineaRunSave(file, "saved");
+      await deleteGuineaRunSave(file);
+      assert.strictEqual(fs.existsSync(file), false);
+      await deleteGuineaRunSave(file);
+    });
+
+    test("the panel relays the save between the game and the extension", () => {
+      const panel = readSourceFile("webviews/guineaRunPanel.ts");
+      for (const type of ["loadSave", "storeSave", "clearSave"]) {
+        assert.ok(panel.includes(`"${type}"`), type);
+      }
+      // The save goes to the game's site only
+      assert.ok(
+        panel.includes(
+          'frame.contentWindow.postMessage({ source: "vscode-sfdx-hardis", type: "save", blob: blob }, GAME_ORIGIN)',
+        ),
+      );
     });
   });
 
