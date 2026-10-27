@@ -19,8 +19,9 @@
 
 - Links opened from a panel keep their `#`: a Pull Request created from the creation link of a promotion no longer shows `%23` instead of the headings and the Pull Request numbers of its description
 - Deployment actions:
-  - New **Activate Agentforce Agent** type, to activate an agent version after a deployment
+  - New **Activate Agentforce Agent** type, to activate another agent version than the deployed one. The deployed versions are activated without it
   - New **User Access Policy** type, to activate User Access Policies after a deployment, which leaves them in Design, and optionally apply them to all users, picked from the policies of the org and the project (requires sfdx-hardis 8.20.0)
+- Pipeline Settings: new **Activate deployed Agentforce agents** setting in the Deployment section, global or per branch (requires sfdx-hardis 8.20.0)
 - Pipeline Settings: new ServiceNow setting to turn off the work notes written on the records when they are deployed
 - Dark theme: the separator lines between the sections of a panel (DORA Metrics, Pipeline Settings, Welcome...) are visible again
 - Pull Request window: when the deployment actions are read from another branch, the note says that checking it out is what shows Retry and the editing buttons
