@@ -482,6 +482,46 @@
               </div>
             </template>
 
+            <template if:true={showAgentActivateFields}>
+              <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <label class="slds-form-element__label hardis-label-inline">
+                    <span>
+                      <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
+                      {i18n.agentNameLabel}
+                    </span>
+                    <s-multiline-helptext content={i18n.agentNameHelp} class="slds-icon-text-info"></s-multiline-helptext>
+                  </label>
+                  <lightning-input
+                    label={i18n.agentNameLabel}
+                    value={displayedAction.parameters.agentName}
+                    data-field="parameters.agentName"
+                    onchange={handleFieldChange}
+                    required={isEditMode}
+                    disabled={isViewMode}
+                    variant="label-hidden"
+                  ></lightning-input>
+                </div>
+              </div>
+              <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <label class="slds-form-element__label hardis-label-inline">
+                    <span>{i18n.agentVersionLabel}</span>
+                    <s-multiline-helptext content={i18n.agentVersionHelp} class="slds-icon-text-info"></s-multiline-helptext>
+                  </label>
+                  <lightning-input
+                    label={i18n.agentVersionLabel}
+                    value={displayedAction.parameters.agentVersion}
+                    data-field="parameters.agentVersion"
+                    onchange={handleFieldChange}
+                    disabled={isViewMode}
+                    variant="label-hidden"
+                    placeholder="latest"
+                  ></lightning-input>
+                </div>
+              </div>
+            </template>
+
             <template if:true={showScheduleBatchClassNameField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">

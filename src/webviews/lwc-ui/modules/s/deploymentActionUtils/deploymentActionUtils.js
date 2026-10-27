@@ -18,6 +18,7 @@ const TYPE_LABEL_KEY_BY_CODE = {
   "publish-community": "publishCommunityType",
   "remove-packagexml-items": "removePackageXmlItemsType",
   "user-access-policy": "userAccessPolicyType",
+  "agent-activate": "agentActivateType",
   manual: "manualType",
 };
 
@@ -30,6 +31,7 @@ const TYPE_ICON_BY_CODE = {
   "publish-community": "utility:world",
   "remove-packagexml-items": "utility:filterList",
   "user-access-policy": "utility:user_role",
+  "agent-activate": "utility:einstein",
   manual: "utility:task",
 };
 
@@ -44,6 +46,7 @@ const TYPE_HUE_BY_CODE = {
   "publish-community": "green",
   "remove-packagexml-items": "pink",
   "user-access-policy": "red",
+  "agent-activate": "indigo",
   manual: "slate",
 };
 
@@ -174,6 +177,10 @@ export function getEffectiveActionContext(action, when) {
   // A batch run and a User Access Policy activation are deployment-only actions, whatever their
   // context holds, as in the CLI
   if (action?.type === "run-batch" || action?.type === "user-access-policy") {
+    return "process-deployment-only";
+  }
+  // So is an agent activation: a deployment check deploys no version to activate
+  if (action?.type === "agent-activate") {
     return "process-deployment-only";
   }
   if (action?.type === "manual" && (when || action?.when) === "pre-deploy") {

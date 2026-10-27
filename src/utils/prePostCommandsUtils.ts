@@ -27,7 +27,8 @@ export type BuiltInActionType =
   | "schedule-batch"
   | "run-batch"
   | "remove-packagexml-items"
-  | "user-access-policy";
+  | "user-access-policy"
+  | "agent-activate";
 
 export const BUILT_IN_ACTION_TYPES: BuiltInActionType[] = [
   "command",
@@ -39,6 +40,7 @@ export const BUILT_IN_ACTION_TYPES: BuiltInActionType[] = [
   "run-batch",
   "remove-packagexml-items",
   "user-access-policy",
+  "agent-activate",
 ];
 
 export function isBuiltInActionType(type: string): boolean {
@@ -71,6 +73,8 @@ export interface PrePostCommand {
     policies?: string[]; // for 'user-access-policy' actions: developer names
     activate?: boolean; // optional for 'user-access-policy' actions, true when unset
     applyToAll?: boolean; // optional for 'user-access-policy' actions, false when unset
+    agentName?: string; // for 'agent-activate' actions: API name of the agent
+    agentVersion?: string; // optional for 'agent-activate' actions: version number or latest, latest when unset
     [key: string]: any;
   };
   command: string;
