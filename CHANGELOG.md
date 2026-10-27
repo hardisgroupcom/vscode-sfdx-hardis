@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [8.16.1] 2026-10-27
+
 - Guinea Run
   - Once loaded online, the game also plays offline, and its offline message says so
   - Your progress follows you in every project you open in VS Code
