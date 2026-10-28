@@ -384,7 +384,8 @@ async function completeMajorOrgsWithPromotionBranches(
 
 /**
  * A story the CLI found cherry-picked by hand into the next branch is placed like a promoted one:
- * hidden from the window it left, listed in the window it reached while it is still waiting there.
+ * hidden from the window it left, listed in the window of the branch where it is waiting: the one
+ * it reached, or a branch further down that was merged from it since.
  */
 async function placeManualCherryPicks(
   majorOrgs: MajorOrg[],
@@ -406,8 +407,12 @@ async function placeManualCherryPicks(
       pullRequests: org.pullRequestsInBranchSinceLastMerge,
     };
   });
-  applyManualCherryPicks(windows, results, index, config, (_result, move) =>
-    listed.has(move),
+  applyManualCherryPicks(
+    windows,
+    results,
+    index,
+    config,
+    (_result, move) => listed.get(move) || false,
   );
   // Same reason as after expandPullRequestsWithPromotions: the stories added to a window must not
   // sink under the row cutoff of the table

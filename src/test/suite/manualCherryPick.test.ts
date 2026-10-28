@@ -23,6 +23,7 @@ import {
   loadManualCherryPicks,
   ManualCherryPickDeps,
   manualCherryPickCacheKey,
+  windowsFingerprint,
 } from "../../utils/pipeline/manualCherryPickUtils";
 import {
   assertKeysTranslated,
@@ -242,6 +243,7 @@ suite("manual cherry-picks (detectManualCherryPicks)", () => {
         rowCommit: "",
         carrierPullRequest: null,
         carrierCommits: [],
+        carrierIsOwnStory: false,
         signal: "cherry-pick-trailer",
         targetCommit: "d1e2f3a4b5c6",
         // With the trailer signal there is no release Pull Request to name
@@ -254,6 +256,7 @@ suite("manual cherry-picks (detectManualCherryPicks)", () => {
         rowCommit: "f0f0f0f0f0f0",
         carrierPullRequest: 77,
         carrierCommits: ["5a5a5a5a5a5a"],
+        carrierIsOwnStory: false,
         signal: "pull-request-commits",
         targetCommit: "e1e2e3e4e5e6",
         releasePullRequest: "77",
@@ -479,13 +482,14 @@ suite("manual cherry-picks (detectManualCherryPicks)", () => {
       calls.filter((call) => call.startsWith("cli")).length,
       2,
     );
-    // Cached per step and per tips of origin/<source> and origin/<target>
+    // Cached per step, per tips of origin/<source> and origin/<target>, and per windows
     assert.ok(
       cache.has(
         manualCherryPickCacheKey(
           "/repo",
           { source: "uat", target: "preprod" },
           { source: "1111111", target: "2222222" },
+          windowsFingerprint(orgs, { source: "uat", target: "preprod" }),
         ),
       ),
     );
@@ -657,13 +661,25 @@ suite("manual cherry-picks (detectManualCherryPicks)", () => {
     assert.ok(listed.has(byRelease));
     assert.deepStrictEqual(asked, ["d1e2f3a4b5c6 main"]);
 
-    // preprod went live: the release Pull Request left its window, main holds the commit
+    // preprod went live: the release Pull Request left its window, main holds both commits. The
+    // story went to main with preprod: it is waiting there, not nowhere
     listed = await listMovesStillInTargetWindow(
       [result],
       orgs([], ["main"]),
       async () => true,
     );
-    assert.strictEqual(listed.size, 0);
+    assert.strictEqual(listed.get(byTrailer), "main");
+    assert.strictEqual(listed.get(byRelease), "main");
+
+    // The release Pull Request left the window but nothing further holds its commit: as before,
+    // it is listed nowhere
+    listed = await listMovesStillInTargetWindow(
+      [result],
+      orgs([], ["main"]),
+      async () => false,
+    );
+    assert.strictEqual(listed.get(byTrailer), "preprod");
+    assert.strictEqual(listed.has(byRelease), false);
 
     // git cannot tell: the story is listed where the CLI says it is
     listed = await listMovesStillInTargetWindow(
@@ -672,6 +688,261 @@ suite("manual cherry-picks (detectManualCherryPicks)", () => {
       async () => null,
     );
     assert.ok(listed.has(byTrailer));
+  });
+
+  test("a story picked into uat goes on with uat: listed in the furthest branch holding it, one git call per branch", async () => {
+    const result = parseManualCherryPickResult("integration", "uat", {
+      alreadyPromoted: [
+        {
+          pullRequests: [5],
+          alreadyPromotedBy: {
+            pullRequest: "aaaaaaa1",
+            branch: "uat",
+            url: "",
+            merged: true,
+            manualCherryPick: {
+              signal: "cherry-pick-trailer",
+              targetCommit: "aaaaaaa1aaaa",
+            },
+          },
+        },
+        {
+          pullRequests: [6],
+          alreadyPromotedBy: {
+            pullRequest: "bbbbbbb1",
+            branch: "uat",
+            url: "",
+            merged: true,
+            manualCherryPick: {
+              signal: "cherry-pick-trailer",
+              targetCommit: "bbbbbbb1bbbb",
+            },
+          },
+        },
+      ],
+    });
+    const orgs = [
+      {
+        branchName: "integration",
+        mergeTargets: ["uat"],
+        pullRequestsInBranchSinceLastMerge: [
+          pr({ number: 5 }),
+          pr({ number: 6 }),
+        ],
+      },
+      {
+        branchName: "uat",
+        mergeTargets: ["preprod"],
+        pullRequestsInBranchSinceLastMerge: [],
+      },
+      {
+        branchName: "preprod",
+        mergeTargets: ["main"],
+        pullRequestsInBranchSinceLastMerge: [],
+      },
+      {
+        branchName: "main",
+        mergeTargets: [],
+        pullRequestsInBranchSinceLastMerge: [],
+      },
+    ];
+    const asked: string[] = [];
+    // uat was merged into preprod since: both picks are in preprod, only the first one in main
+    const listed = await listMovesStillInTargetWindow(
+      [result],
+      orgs,
+      undefined,
+      async (commits, branch) => {
+        asked.push(`${branch}: ${commits.join(" ")}`);
+        return new Map(
+          commits.map((commit) => [
+            commit,
+            branch === "preprod" || commit === "aaaaaaa1aaaa",
+          ]),
+        );
+      },
+    );
+    assert.deepStrictEqual(asked, [
+      "preprod: aaaaaaa1aaaa bbbbbbb1bbbb",
+      "main: aaaaaaa1aaaa bbbbbbb1bbbb",
+    ]);
+    assert.strictEqual(listed.get(result.moved[0]), "main");
+    assert.strictEqual(listed.get(result.moved[1]), "preprod");
+
+    const windows = orgs.map((org) => ({
+      branchName: org.branchName,
+      pullRequests: org.pullRequestsInBranchSinceLastMerge,
+    }));
+    applyManualCherryPicks(
+      windows,
+      [result],
+      EMPTY_PROMOTION_INDEX,
+      ENABLED,
+      (_result, move) => listed.get(move) || false,
+    );
+    enforceSinglePlacePerPullRequest(windows, ENABLED);
+    const visible = (branch: string) =>
+      visiblePullRequests(
+        windows.find((entry) => entry.branchName === branch)!.pullRequests,
+      ).map((entry) => entry.number);
+    // Listed once, where it is waiting
+    assert.deepStrictEqual(visible("integration"), []);
+    assert.deepStrictEqual(visible("uat"), []);
+    assert.deepStrictEqual(visible("preprod"), [6]);
+    assert.deepStrictEqual(visible("main"), [5]);
+    // It still says where the cherry-pick was made
+    const copy = windows[3].pullRequests.find((entry) => entry.number === 5)!;
+    assert.strictEqual(copy.manualCherryPick?.targetBranch, "uat");
+    assert.strictEqual(copy.manualCherryPickCopy, true);
+  });
+
+  test("a hotfix branched from the source branch with a fix of its own is not hidden as a vehicle", () => {
+    const carrier = (pullRequest: number, own: boolean) => ({
+      pullRequest,
+      commits: [`${pullRequest}00000000`],
+      ...(own
+        ? { heldSourceBranchCommits: true, ownCommits: 1 }
+        : { heldSourceBranchCommits: false, ownCommits: 0 }),
+    });
+    const result = parseManualCherryPickResult("integration", "uat", {
+      alreadyPromoted: [
+        {
+          pullRequests: [5],
+          alreadyPromotedBy: {
+            pullRequest: "104",
+            branch: "hotfix/h",
+            url: "",
+            merged: true,
+            manualCherryPick: {
+              signal: "pull-request-commits",
+              targetCommit: "5555555555aa",
+              carrier: carrier(104, true),
+            },
+          },
+        },
+        {
+          pullRequests: [6],
+          alreadyPromotedBy: {
+            pullRequest: "101",
+            branch: "release/1",
+            url: "",
+            merged: true,
+            manualCherryPick: {
+              signal: "pull-request-commits",
+              targetCommit: "6666666666aa",
+              carrier: carrier(101, false),
+            },
+          },
+        },
+      ],
+    });
+    assert.strictEqual(result.moved[0].carrierIsOwnStory, true);
+    assert.strictEqual(result.moved[1].carrierIsOwnStory, false);
+    const hotfix = pr({ number: 104, sourceBranch: "hotfix/h" });
+    const release = pr({ number: 101, sourceBranch: "release/1" });
+    const windows = [
+      {
+        branchName: "integration",
+        pullRequests: [pr({ number: 5 }), pr({ number: 6 })],
+      },
+      { branchName: "uat", pullRequests: [hotfix, release] },
+    ];
+    applyManualCherryPicks(windows, [result], EMPTY_PROMOTION_INDEX, ENABLED);
+    assert.strictEqual(hotfix.carriesManualCherryPicks, undefined);
+    assert.strictEqual(release.carriesManualCherryPicks, true);
+    assert.deepStrictEqual(
+      userStoryPullRequests(
+        visiblePullRequests(windows[1].pullRequests),
+        ["integration", "uat"],
+        ENABLED,
+      )
+        .map((entry) => entry.number)
+        .sort((a, b) => Number(a) - Number(b)),
+      [5, 6, 104],
+    );
+  });
+
+  test("a Pull Request merged into a window since the last fetch asks the CLI again", async () => {
+    const orgs = (uatWindow: PullRequest[]) => [
+      {
+        branchName: "uat",
+        mergeTargets: ["preprod"],
+        pullRequestsInBranchSinceLastMerge: [pr({ number: 482 })],
+      },
+      {
+        branchName: "preprod",
+        mergeTargets: ["main"],
+        pullRequestsInBranchSinceLastMerge: uatWindow,
+      },
+    ];
+    // The local tips never move: nothing fetched
+    const { deps, calls } = fakeDeps();
+    await loadManualCherryPicks(orgs([]), PROJECT_ON, ENABLED, deps);
+    await loadManualCherryPicks(orgs([]), PROJECT_ON, ENABLED, deps);
+    assert.strictEqual(
+      calls.filter((call) => call.startsWith("cli")).length,
+      1,
+    );
+    // A release Pull Request squash-merged into preprod, seen by the provider only
+    await loadManualCherryPicks(
+      orgs([
+        pr({
+          number: 77,
+          targetBranch: "preprod",
+          mergeDate: "2026-10-27T10:00:00Z",
+        }),
+      ]),
+      PROJECT_ON,
+      ENABLED,
+      deps,
+    );
+    assert.strictEqual(
+      calls.filter((call) => call.startsWith("cli")).length,
+      2,
+    );
+  });
+
+  test("a story listed through a cherry-pick is ticked through the release Pull Request that brought it", () => {
+    const pipeline = readModuleFile("pipeline", "pipeline.js");
+    const view = new Function(
+      `return { ${extractMember(pipeline, "_promotionNumberOf(pr)")} };`,
+    )();
+    view._majorBranchNames = () => ["integration", "uat", "preprod", "main"];
+    assert.strictEqual(view._promotionNumberOf({ number: 12 }), 12);
+    const copy = (manualCherryPick: any) => ({
+      number: 5,
+      manualCherryPickCopy: true,
+      manualCherryPick,
+    });
+    assert.strictEqual(
+      view._promotionNumberOf(
+        copy({ releasePullRequest: "77", releaseBranch: "release/october" }),
+      ),
+      77,
+    );
+    // Picked straight onto the branch, or squashed by a merge between major branches: no number
+    // the promotion command knows, so it cannot be ticked
+    assert.strictEqual(
+      view._promotionNumberOf(copy({ targetCommit: "abc1234" })),
+      null,
+    );
+    assert.strictEqual(
+      view._promotionNumberOf(
+        copy({ releasePullRequest: "270", releaseBranch: "integration" }),
+      ),
+      null,
+    );
+    // The selection passes each release Pull Request once
+    assert.ok(
+      extractMember(pipeline, "handleModalPrSelect(event)").includes(
+        "this._promotionNumberOf(row)",
+      ),
+    );
+    assert.ok(
+      extractMember(pipeline, "_isSelectableForPromotion(pr)").includes(
+        "this._promotionNumberOf(pr) !== null",
+      ),
+    );
   });
 
   test("the Pull Requests and Tickets tabs flag a cherry-picked story", () => {

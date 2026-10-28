@@ -208,6 +208,9 @@ export type PullRequest = {
     totalCommits: number;
     targetCommit: string;
   };
+  // Set on the row detectManualCherryPicks added to the window the story reached: it is not a
+  // row of that branch, the next promotion carries it through its carrier (releasePullRequest)
+  manualCherryPickCopy?: boolean;
   // This Pull Request carried stories cherry-picked by hand into its target branch (a squashed
   // release branch): like a promotion, it moves other stories rather than carrying work of its own
   carriesManualCherryPicks?: boolean;

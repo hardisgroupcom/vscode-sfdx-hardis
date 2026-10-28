@@ -2625,8 +2625,31 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       pr.promotedAway !== true &&
       !this._isPromotionOrMajorPr(pr) &&
       typeof pr.number === "number" &&
-      pr.number > 0
+      pr.number > 0 &&
+      (pr.manualCherryPickCopy !== true || this._promotionNumberOf(pr) !== null)
     );
+  }
+
+  // The number the promotion command knows a ticked row by. A story listed here because it was
+  // cherry-picked by hand is not a row of this branch for sfdx-hardis: what it lists is the
+  // squashed release Pull Request that brought it, so that one is passed. A story picked straight
+  // onto the branch has no Pull Request to pass: it is chosen in the prompt of the command.
+  _promotionNumberOf(pr) {
+    if (pr.manualCherryPickCopy !== true) {
+      return pr.number;
+    }
+    const moved = pr.manualCherryPick || {};
+    const release = parseInt(moved.releasePullRequest, 10);
+    const releaseBranch = (moved.releaseBranch || "").toLowerCase();
+    if (
+      !Number.isInteger(release) ||
+      release <= 0 ||
+      this._majorBranchNames().includes(releaseBranch) ||
+      releaseBranch.startsWith("promotion/")
+    ) {
+      return null;
+    }
+    return release;
   }
 
   // The checkboxes exist to feed the promotion: they go away with the button, so a branch the
@@ -2667,7 +2690,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         numbers.includes(row.number) && this._isSelectableForPromotion(row),
     );
     this.modalSelectedPrIds = eligible.map((row) => row.id);
-    this.modalSelectedPrNumbers = eligible.map((row) => row.number);
+    // Two stories brought by the same release Pull Request pass its number once
+    this.modalSelectedPrNumbers = [
+      ...new Set(eligible.map((row) => this._promotionNumberOf(row))),
+    ];
   }
 
   // Builds the modal content (PR list, tickets, actions, Apex tests by line)

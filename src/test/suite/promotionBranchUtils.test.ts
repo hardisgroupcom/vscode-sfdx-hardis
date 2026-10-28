@@ -246,7 +246,8 @@ suite("promotionBranchUtils", () => {
       new Function(
         `return {
           ${extractMember(pipeline, "get modalPrListRows()")},
-          ${extractMember(pipeline, "handleModalPrSelect(event)")}
+          ${extractMember(pipeline, "handleModalPrSelect(event)")},
+          ${extractMember(pipeline, "_promotionNumberOf(pr)")}
         };`,
       )(),
       {

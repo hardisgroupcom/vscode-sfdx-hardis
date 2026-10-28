@@ -688,6 +688,10 @@ export interface ManualCherryPickMove {
   // What carries the story into the target branch, as the next step lists it (CLI carrier)
   carrierPullRequest: number | null;
   carrierCommits: string[];
+  // The carrier is a story of its own (a hotfix branched from the source branch, with a fix of
+  // its own), not a mere vehicle: it is not hidden like a promotion then. False with a CLI that
+  // does not say it
+  carrierIsOwnStory: boolean;
   signal: string;
   targetCommit: string;
   // The squashed Pull Request of the target branch that held the cherry-pick, when the CLI found
@@ -788,6 +792,9 @@ export function parseManualCherryPickResult(
     // target branch itself: there is no release Pull Request to name
     const fromPullRequest = signal === "pull-request-commits";
     const carrierNumber = normalizePullRequestId(manual.carrier?.pullRequest);
+    const carrierIsOwnStory =
+      manual.carrier?.heldSourceBranchCommits === true &&
+      Number(manual.carrier?.ownCommits) > 0;
     parsed.moved.push({
       pullRequests: numbers,
       rowCommit: String(entry?.commit || ""),
@@ -797,6 +804,7 @@ export function parseManualCherryPickResult(
             .map((sha: any) => String(sha || ""))
             .filter((sha: string) => sha)
         : [],
+      carrierIsOwnStory,
       signal,
       targetCommit: String(manual.targetCommit || ""),
       releasePullRequest: fromPullRequest ? String(by.pullRequest || "") : "",
@@ -830,10 +838,6 @@ export function parseManualCherryPickResult(
     }
   }
   return parsed;
-}
-
-function sameCommit(a: string, b: string): boolean {
-  return !!a && !!b && (a.startsWith(b) || b.startsWith(a));
 }
 
 /**
@@ -886,9 +890,10 @@ export function resolveManualCherryPickChain(
  * so its number still appears once in the pipeline. A story a promotion of the step already
  * carried keeps that placement: the declaration of a promotion always wins.
  *
- * `isStillInTargetWindow` says whether the cherry-pick is still waiting in the target branch: once
- * the target branch went further, the story is not listed there any more, exactly as a promotion
- * leaves the window of its target at the next merge.
+ * `isStillInTargetWindow` says where the cherry-pick is waiting: true for the target branch, the
+ * name of a branch further down when the target branch was merged on (the story went with it, so
+ * it is listed there, as a merged story would be), false when nothing can say. A story is never
+ * listed in a branch it only went through.
  *
  * Partial and probable matches stay where they are, flagged.
  */
@@ -900,7 +905,7 @@ export function applyManualCherryPicks(
   isStillInTargetWindow: (
     result: ManualCherryPickStepResult,
     move: ManualCherryPickMove,
-  ) => boolean = () => true,
+  ) => boolean | string = () => true,
 ): void {
   if (!config.enabled) {
     return;
@@ -938,12 +943,19 @@ export function applyManualCherryPicks(
             }
           : {}),
       };
-      const listInTarget =
-        !!target && isStillInTargetWindow(last.result, last.move);
-      // Every carrier on the way moves other stories: a vehicle, like a promotion
+      const waitingIn = isStillInTargetWindow(last.result, last.move);
+      const listedBranch =
+        waitingIn === true
+          ? last.result.targetBranch
+          : typeof waitingIn === "string" && waitingIn
+            ? waitingIn
+            : "";
+      const listedWindow = listedBranch ? findWindow(listedBranch) : undefined;
+      // Every carrier on the way moves other stories: a vehicle, like a promotion. Unless it is a
+      // story of its own that also brought some (a hotfix branched from the source branch)
       for (const hop of hops) {
         const carrierNumber = hop.move.carrierPullRequest;
-        if (carrierNumber === null) {
+        if (carrierNumber === null || hop.move.carrierIsOwnStory) {
           continue;
         }
         for (const window of windows) {
@@ -964,8 +976,18 @@ export function applyManualCherryPicks(
         story.manualCherryPick = { ...reference };
         story.promotedAway = true;
         // Nor is it waiting in a branch it only went through
-        for (const hop of hops.slice(0, -1)) {
-          const passedThrough = findWindow(hop.result.targetBranch);
+        const passedThroughBranches = hops
+          .slice(0, -1)
+          .map((hop) => hop.result.targetBranch);
+        if (
+          listedWindow &&
+          listedWindow !== target &&
+          last.result.targetBranch
+        ) {
+          passedThroughBranches.push(last.result.targetBranch);
+        }
+        for (const branchName of passedThroughBranches) {
+          const passedThrough = findWindow(branchName);
           const copy = passedThrough
             ? findStory(passedThrough.pullRequests, number)
             : undefined;
@@ -974,10 +996,10 @@ export function applyManualCherryPicks(
             copy.promotedAway = true;
           }
         }
-        if (!listInTarget) {
+        if (!listedWindow) {
           continue;
         }
-        const existing = findStory(target!.pullRequests, number);
+        const existing = findStory(listedWindow.pullRequests, number);
         if (existing) {
           // Already listed there (a promotion carried it in, or the window holds it): only say how
           // it came, unless a promotion did
@@ -990,13 +1012,15 @@ export function applyManualCherryPicks(
           ...story,
           promotedAway: false,
           manualCherryPick: { ...reference },
+          // Not a row of that branch: the next promotion carries it through its carrier
+          manualCherryPickCopy: true,
         };
         // What brought it into the source window does not apply to the target one
         delete copy.alreadyDeployedVia;
         delete copy.carriedByPullRequest;
         delete copy.partiallyCherryPicked;
         delete copy.probablyCherryPicked;
-        target!.pullRequests.push(copy);
+        listedWindow.pullRequests.push(copy);
       }
     }
     for (const partial of result.partial) {
@@ -1031,6 +1055,10 @@ export function applyManualCherryPicks(
       }
     }
   }
+}
+
+function sameCommit(a: string, b: string): boolean {
+  return !!a && !!b && (a.startsWith(b) || b.startsWith(a));
 }
 
 function pullRequestNumbersOf(entry: any): number[] {
