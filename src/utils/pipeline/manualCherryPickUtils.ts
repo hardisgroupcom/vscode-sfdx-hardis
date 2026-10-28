@@ -35,9 +35,15 @@ export interface BranchTips {
 export interface ManualCherryPickDeps {
   workspaceRoot: string;
   // The SHAs of origin/<source> and origin/<target>, null when either cannot be read
-  readTips: (sourceBranch: string, targetBranch: string) => Promise<BranchTips | null>;
+  readTips: (
+    sourceBranch: string,
+    targetBranch: string,
+  ) => Promise<BranchTips | null>;
   // The `result` of list-candidates --json, null when the CLI failed
-  runListCandidates: (sourceBranch: string, targetBranch: string) => Promise<any | null>;
+  runListCandidates: (
+    sourceBranch: string,
+    targetBranch: string,
+  ) => Promise<any | null>;
   getCached: (key: string) => ManualCherryPickStepResult | undefined;
   setCached: (key: string, value: ManualCherryPickStepResult) => Promise<void>;
   // True when the commit is in origin/<branch>, null when git cannot say
@@ -65,7 +71,10 @@ export async function loadManualCherryPicks(
   if (!config.enabled || !isManualCherryPickDetectionEnabled(projectConfig)) {
     return [];
   }
-  const steps = listManualCherryPickSteps(majorOrgs, config.allowedSteps).filter(
+  const steps = listManualCherryPickSteps(
+    majorOrgs,
+    config.allowedSteps,
+  ).filter(
     (step) =>
       SAFE_BRANCH_NAME.test(step.source) && SAFE_BRANCH_NAME.test(step.target),
   );
@@ -252,9 +261,8 @@ async function runListCandidates(
   // Agent mode never prompts for the git provider connection: the token goes in the environment
   let env: Record<string, string> = {};
   try {
-    const { collectProviderCredentialEnvVars } = await import(
-      "../providerCredentials"
-    );
+    const { collectProviderCredentialEnvVars } =
+      await import("../providerCredentials");
     env = await collectProviderCredentialEnvVars();
   } catch (e: any) {
     Logger.log(

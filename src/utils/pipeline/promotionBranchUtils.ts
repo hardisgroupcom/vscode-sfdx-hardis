@@ -701,7 +701,9 @@ export interface ManualCherryPickMove {
  * The detection only runs when the project enables both settings: it costs one CLI process per
  * promotion step. Project level only, like enablePromotionBranches.
  */
-export function isManualCherryPickDetectionEnabled(projectConfig: any): boolean {
+export function isManualCherryPickDetectionEnabled(
+  projectConfig: any,
+): boolean {
   return (
     !!projectConfig &&
     projectConfig.enablePromotionBranches === true &&
@@ -733,7 +735,10 @@ export function listManualCherryPickSteps(
       continue;
     }
     for (const target of org.mergeTargets || []) {
-      if (step.target !== "" && target.toLowerCase() !== step.target.toLowerCase()) {
+      if (
+        step.target !== "" &&
+        target.toLowerCase() !== step.target.toLowerCase()
+      ) {
         continue;
       }
       const alreadyThere = steps.some(
@@ -788,7 +793,9 @@ export function parseManualCherryPickResult(
       rowCommit: String(entry?.commit || ""),
       carrierPullRequest: carrierNumber,
       carrierCommits: Array.isArray(manual.carrier?.commits)
-        ? manual.carrier.commits.map((sha: any) => String(sha || "")).filter((sha: string) => sha)
+        ? manual.carrier.commits
+            .map((sha: any) => String(sha || ""))
+            .filter((sha: string) => sha)
         : [],
       signal,
       targetCommit: String(manual.targetCommit || ""),
@@ -860,7 +867,8 @@ export function resolveManualCherryPickChain(
     const carrierCommits = current.move.carrierCommits;
     const carried = next.moved.find(
       (entry) =>
-        (carrierNumber !== null && entry.pullRequests.includes(carrierNumber)) ||
+        (carrierNumber !== null &&
+          entry.pullRequests.includes(carrierNumber)) ||
         carrierCommits.some((sha) => sameCommit(sha, entry.rowCommit)),
     );
     if (!carried) {
