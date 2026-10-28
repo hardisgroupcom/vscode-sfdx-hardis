@@ -88,6 +88,9 @@
                         <template if:true={row.promotionLabel}>
                             <span class={row.promotionPillClass}><span class="hardis-pill-dot"></span>{row.promotionLabel}</span>
                         </template>
+                        <template if:true={row.cherryPickLabel}>
+                            <span class={row.cherryPickPillClass} title={row.cherryPickTitle}><span class="hardis-pill-dot"></span>{row.cherryPickLabel}</span>
+                        </template>
                     </div>
                 </div>
             </template>

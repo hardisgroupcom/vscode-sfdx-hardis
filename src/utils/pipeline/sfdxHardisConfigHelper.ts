@@ -147,6 +147,7 @@ export class SfdxHardisConfigHelper {
     { name: "codingAgentModel", scopes: ["global", "branch"] },
     { name: "codingAgentMaxTurns", scopes: ["global", "branch"] },
     { name: "enablePromotionBranches", scopes: ["global"] },
+    { name: "detectManualCherryPicks", scopes: ["global"] },
     { name: "allowedPromotionSteps", scopes: ["global"] },
     { name: "promotionConflictMarkersIgnoredFiles", scopes: ["global"] },
     { name: "enableDeltaDeploymentBetweenMajorBranches", scopes: ["global"] },
@@ -271,6 +272,7 @@ export class SfdxHardisConfigHelper {
       iconName: "utility:warning",
       keys: [
         "enablePromotionBranches",
+        "detectManualCherryPicks",
         "allowedPromotionSteps",
         "promotionConflictMarkersIgnoredFiles",
         "enableDeltaDeploymentBetweenMajorBranches",

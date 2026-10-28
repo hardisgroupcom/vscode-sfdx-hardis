@@ -649,3 +649,298 @@ export function enforceSinglePlacePerPullRequest(
     }
   });
 }
+
+/**
+ * Manual cherry-picks (sfdx-hardis `detectManualCherryPicks`, Beta): User Stories that reached the
+ * next major branch through a cherry-pick made by hand rather than a promotion branch. The CLI is
+ * the only engine (hardis:project:promotion:list-candidates); the extension only places what it
+ * answers, one result per promotion step.
+ */
+export interface ManualCherryPickStepResult {
+  sourceBranch: string;
+  targetBranch: string;
+  // Stories the CLI found in the target branch: they leave the source window for the target one
+  moved: ManualCherryPickMove[];
+  // Stories some of whose commits were found: they stay in the source window, flagged
+  partial: Array<{
+    pullRequests: number[];
+    foundCommits: number;
+    totalCommits: number;
+    targetCommit: string;
+  }>;
+  // Stories only matched by a commit title: they stay in the source window, flagged
+  probable: Array<{
+    pullRequests: number[];
+    targetCommit: string;
+    subject: string;
+  }>;
+}
+
+export interface ManualCherryPickMove {
+  pullRequests: number[];
+  signal: string;
+  targetCommit: string;
+  // The squashed Pull Request of the target branch that held the cherry-pick, when the CLI found
+  // it through the commits the git provider lists for it (signal pull-request-commits)
+  releasePullRequest: string;
+  releaseBranch: string;
+  releaseUrl: string;
+}
+
+/**
+ * The detection only runs when the project enables both settings: it costs one CLI process per
+ * promotion step. Project level only, like enablePromotionBranches.
+ */
+export function isManualCherryPickDetectionEnabled(projectConfig: any): boolean {
+  return (
+    !!projectConfig &&
+    projectConfig.enablePromotionBranches === true &&
+    projectConfig.detectManualCherryPicks === true
+  );
+}
+
+/**
+ * The promotion steps to ask the CLI about: the allowed steps that are a real edge of the
+ * pipeline (the target is a merge target of the source branch), and whose source window holds
+ * something to place. An empty list of allowed steps asks nothing: the CLI refuses to list
+ * candidates while the project has not declared them.
+ */
+export function listManualCherryPickSteps(
+  majorOrgs: Array<{
+    branchName: string;
+    mergeTargets: string[];
+    pullRequestsInBranchSinceLastMerge?: PullRequest[];
+  }>,
+  allowedSteps: PromotionStep[] | null | undefined,
+): PromotionStep[] {
+  const steps: PromotionStep[] = [];
+  for (const step of allowedSteps || []) {
+    const org = majorOrgs.find(
+      (entry) =>
+        (entry.branchName || "").toLowerCase() === step.source.toLowerCase(),
+    );
+    if (!org || (org.pullRequestsInBranchSinceLastMerge || []).length === 0) {
+      continue;
+    }
+    for (const target of org.mergeTargets || []) {
+      if (step.target !== "" && target.toLowerCase() !== step.target.toLowerCase()) {
+        continue;
+      }
+      const alreadyThere = steps.some(
+        (entry) =>
+          entry.source.toLowerCase() === org.branchName.toLowerCase() &&
+          entry.target.toLowerCase() === target.toLowerCase(),
+      );
+      if (!alreadyThere) {
+        steps.push({ source: org.branchName, target });
+      }
+    }
+  }
+  return steps;
+}
+
+/**
+ * Reads the `result` of `sf hardis:project:promotion:list-candidates --json`: the candidate
+ * summaries of `alreadyPromoted` carrying `alreadyPromotedBy.manualCherryPick` moved, the
+ * `candidates` flagged `partiallyCherryPicked` or `probablyCherryPicked` stay. Anything else
+ * (a story a promotion carries, a malformed entry) is left out.
+ */
+export function parseManualCherryPickResult(
+  sourceBranch: string,
+  targetBranch: string,
+  result: any,
+): ManualCherryPickStepResult {
+  const parsed: ManualCherryPickStepResult = {
+    sourceBranch,
+    targetBranch,
+    moved: [],
+    partial: [],
+    probable: [],
+  };
+  const alreadyPromoted = Array.isArray(result?.alreadyPromoted)
+    ? result.alreadyPromoted
+    : [];
+  for (const entry of alreadyPromoted) {
+    const by = entry?.alreadyPromotedBy;
+    const manual = by?.manualCherryPick;
+    const numbers = pullRequestNumbersOf(entry);
+    if (!manual || numbers.length === 0) {
+      continue;
+    }
+    const signal = String(manual.signal || "");
+    // With the trailer signal, pullRequest is only the short target commit and branch the
+    // target branch itself: there is no release Pull Request to name
+    const fromPullRequest = signal === "pull-request-commits";
+    parsed.moved.push({
+      pullRequests: numbers,
+      signal,
+      targetCommit: String(manual.targetCommit || ""),
+      releasePullRequest: fromPullRequest ? String(by.pullRequest || "") : "",
+      releaseBranch: fromPullRequest ? String(by.branch || "") : "",
+      releaseUrl: fromPullRequest ? String(by.url || "") : "",
+    });
+  }
+  const candidates = Array.isArray(result?.candidates) ? result.candidates : [];
+  for (const entry of candidates) {
+    const numbers = pullRequestNumbersOf(entry);
+    if (numbers.length === 0) {
+      continue;
+    }
+    const partial = entry?.partiallyCherryPicked;
+    const probable = entry?.probablyCherryPicked;
+    if (partial) {
+      parsed.partial.push({
+        pullRequests: numbers,
+        foundCommits: Array.isArray(partial.foundCommits)
+          ? partial.foundCommits.length
+          : Number(partial.foundCommits) || 0,
+        totalCommits: Number(partial.totalCommits) || 0,
+        targetCommit: String(partial.targetCommit || ""),
+      });
+    } else if (probable) {
+      parsed.probable.push({
+        pullRequests: numbers,
+        targetCommit: String(probable.targetCommit || ""),
+        subject: String(probable.subject || ""),
+      });
+    }
+  }
+  return parsed;
+}
+
+/**
+ * Places the answers of the CLI in the windows, the way a promotion places its stories: a story
+ * cherry-picked by hand is `promotedAway` from the source window and listed in the target window,
+ * so its number still appears once in the pipeline. A story a promotion of the step already
+ * carried keeps that placement: the declaration of a promotion always wins.
+ *
+ * `isStillInTargetWindow` says whether the cherry-pick is still waiting in the target branch: once
+ * the target branch went further, the story is not listed there any more, exactly as a promotion
+ * leaves the window of its target at the next merge.
+ *
+ * Partial and probable matches stay where they are, flagged.
+ */
+export function applyManualCherryPicks(
+  windows: Array<{ branchName: string; pullRequests: PullRequest[] }>,
+  results: ManualCherryPickStepResult[],
+  index: PromotionIndex,
+  config: PromotionBranchConfig,
+  isStillInTargetWindow: (
+    result: ManualCherryPickStepResult,
+    move: ManualCherryPickMove,
+  ) => boolean = () => true,
+): void {
+  if (!config.enabled) {
+    return;
+  }
+  const findWindow = (branchName: string) =>
+    windows.find(
+      (entry) =>
+        (entry.branchName || "").toLowerCase() ===
+        (branchName || "").toLowerCase(),
+    );
+  const findStory = (pullRequests: PullRequest[], number: number) =>
+    pullRequests.find((pr) => prNumber(pr) === number);
+  for (const result of results) {
+    const source = findWindow(result.sourceBranch);
+    if (!source) {
+      continue;
+    }
+    const target = findWindow(result.targetBranch);
+    const promotedOut =
+      index.promotedOutOf.get((result.sourceBranch || "").toLowerCase()) ||
+      new Set<number>();
+    for (const move of result.moved) {
+      const reference = {
+        targetBranch: result.targetBranch,
+        signal: move.signal,
+        targetCommit: move.targetCommit,
+        ...(move.releasePullRequest
+          ? {
+              releasePullRequest: move.releasePullRequest,
+              releaseBranch: move.releaseBranch,
+              releaseUrl: move.releaseUrl,
+            }
+          : {}),
+      };
+      const listInTarget = !!target && isStillInTargetWindow(result, move);
+      for (const number of move.pullRequests) {
+        if (promotedOut.has(number)) {
+          continue;
+        }
+        const story = findStory(source.pullRequests, number);
+        if (!story || isPromotionPullRequest(story, config)) {
+          continue;
+        }
+        story.manualCherryPick = { ...reference };
+        story.promotedAway = true;
+        if (!listInTarget) {
+          continue;
+        }
+        const existing = findStory(target!.pullRequests, number);
+        if (existing) {
+          // Already listed there (a promotion carried it in, or the window holds it): only say how
+          // it came, unless a promotion did
+          if (!existing.carriedByPullRequest) {
+            existing.manualCherryPick = { ...reference };
+          }
+          continue;
+        }
+        const copy: PullRequest = {
+          ...story,
+          promotedAway: false,
+          manualCherryPick: { ...reference },
+        };
+        // What brought it into the source window does not apply to the target one
+        delete copy.alreadyDeployedVia;
+        delete copy.carriedByPullRequest;
+        delete copy.partiallyCherryPicked;
+        delete copy.probablyCherryPicked;
+        target!.pullRequests.push(copy);
+      }
+    }
+    for (const partial of result.partial) {
+      for (const number of partial.pullRequests) {
+        const story = findStory(source.pullRequests, number);
+        if (!story || story.promotedAway === true) {
+          continue;
+        }
+        story.partiallyCherryPicked = {
+          targetBranch: result.targetBranch,
+          foundCommits: partial.foundCommits,
+          totalCommits: partial.totalCommits,
+          targetCommit: partial.targetCommit,
+        };
+      }
+    }
+    for (const probable of result.probable) {
+      for (const number of probable.pullRequests) {
+        const story = findStory(source.pullRequests, number);
+        if (
+          !story ||
+          story.promotedAway === true ||
+          story.partiallyCherryPicked
+        ) {
+          continue;
+        }
+        story.probablyCherryPicked = {
+          targetBranch: result.targetBranch,
+          targetCommit: probable.targetCommit,
+          subject: probable.subject,
+        };
+      }
+    }
+  }
+}
+
+function pullRequestNumbersOf(entry: any): number[] {
+  const raw = Array.isArray(entry?.pullRequests) ? entry.pullRequests : [];
+  const numbers: number[] = [];
+  for (const item of raw) {
+    const number = normalizePullRequestId(item);
+    if (number !== null && !numbers.includes(number)) {
+      numbers.push(number);
+    }
+  }
+  return numbers;
+}

@@ -44,6 +44,9 @@
                                 <div class="hardis-list-meta">
                                     <template for:each={row.pullRequests} for:item="pr">
                                         <button key={pr.key} class="hardis-pr-ref" title={pr.title} data-pr-number={pr.number} onclick={handleOpenPullRequest}>{pr.label}</button>
+                                        <template if:true={pr.cherryPickLabel}>
+                                            <span key={pr.cherryPickKey} class={pr.cherryPickPillClass} title={pr.cherryPickTitle}><span class="hardis-pill-dot"></span>{pr.cherryPickLabel}</span>
+                                        </template>
                                     </template>
                                 </div>
                             </template>
