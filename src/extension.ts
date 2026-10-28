@@ -23,7 +23,10 @@ import { SecretsManager } from "./utils/secretsManager";
 import { watchEnvFile } from "./utils/envFileCredentials";
 import { getExtensionConfigSections } from "./utils/extensionConfigUtils";
 import { startEventLoopMonitor } from "./utils/eventLoopMonitor";
-import { refreshWelcomeStatusBarItem } from "./commands/showWelcome";
+import {
+  openWelcomeAtStartup,
+  refreshWelcomeStatusBarItem,
+} from "./commands/showWelcome";
 import {
   setLinkedPluginPreloadScript,
   setNodeCompileCacheDir,
@@ -119,10 +122,9 @@ export function activate(context: vscode.ExtensionContext) {
 
       if (showWelcomeAtStartup) {
         welcomeShownThisSession = true;
-        // Delay slightly to ensure the tree view is fully rendered
-        setTimeout(() => {
-          vscode.commands.executeCommand("vscode-sfdx-hardis.showWelcome");
-        }, 500);
+        openWelcomeAtStartup().catch((e) =>
+          Logger.log("Error while opening the Welcome page: " + e?.message),
+        );
       }
     }
   });

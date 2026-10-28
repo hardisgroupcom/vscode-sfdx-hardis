@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Welcome page at startup: opens once VS Code has settled, and opens again by itself if it stayed blank after the "Could not register service worker" error
+
 ## [8.16.1] 2026-10-27
 
 - Guinea Run
