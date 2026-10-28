@@ -411,9 +411,8 @@ async function runListCandidates(
   targetBranch: string,
 ): Promise<any | null> {
   // Loaded on use, like before: providerCredentials reaches the VS Code secrets
-  const { execSfdxJsonWithProviderCredentials } = await import(
-    "../providerCredentials"
-  );
+  const { execSfdxJsonWithProviderCredentials } =
+    await import("../providerCredentials");
   return await execSfdxJsonWithProviderCredentials(
     `sf hardis:project:promotion:list-candidates --agent --source-branch ${sourceBranch} --target-branch ${targetBranch}`,
     `Manual cherry-picks ${sourceBranch} -> ${targetBranch}`,
