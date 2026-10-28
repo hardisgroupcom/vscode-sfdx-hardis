@@ -47,3 +47,8 @@ reason = "CVE-2026-50159, CSS injection through mermaid diagram input. Accepted 
 id = "GHSA-238p-pmpm-9mq7"
 ignoreUntil = 2026-11-16
 reason = "Added 2026-10-06: CVE-2026-103923, Low. katex 0.16.47 is pulled only by mermaid (katex@^0.16.25, held by the mermaid 11.15.0 pin) and the fix is only in katex 0.18.2, outside that range. KaTeX does not create prototype pollution, it only reads an already polluted Object.prototype, so it is exposed only together with the mermaid GHSA-3rrr-jr9j-h3q3 accepted risk above, and mermaid output is sanitized by DOMPurify (force-resolved in package.json). Re-evaluate together with the mermaid pin."
+
+[[IgnoredVulns]]
+id = "GHSA-gcqx-w48m-w2h4"
+ignoreUntil = 2027-01-31
+reason = "Added 2026-10-29: CVE-2026-2577 / CVE-2026-93753. deepmerge 4.3.1 has no fixed release. It is pulled only by bitbucket (the Bitbucket Cloud API client), which uses it to merge its default request options with the endpoint parameters our own code passes. Responses from the server are never merged, so no remote or user data reaches mergeObject and the prototype pollution path is not reachable. Re-evaluate when deepmerge ships a fix or bitbucket drops it."
