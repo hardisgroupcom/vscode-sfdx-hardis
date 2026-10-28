@@ -3,6 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { SfdxHardisConfigHelper } from "../../utils/pipeline/sfdxHardisConfigHelper";
 import { PullRequest } from "../../utils/gitProviders/types";
+import { pr } from "./pullRequestFixture";
 import {
   applyManualCherryPicks,
   buildPromotionIndex,
@@ -39,21 +40,6 @@ const PROJECT_ON = {
   detectManualCherryPicks: true,
   allowedPromotionSteps: [{ source: "uat", target: "preprod" }],
 };
-
-function pr(overrides: Partial<PullRequest> & { number: number }): PullRequest {
-  return {
-    id: overrides.number,
-    title: `PR ${overrides.number}`,
-    description: "",
-    sourceBranch: "feature/story",
-    targetBranch: "uat",
-    authorLabel: "someone",
-    state: "merged",
-    webUrl: `https://git.example.com/pr/${overrides.number}`,
-    jobsStatus: "unknown",
-    ...overrides,
-  };
-}
 
 // The JSON result of sf hardis:project:promotion:list-candidates --agent --json with
 // detectManualCherryPicks on, as toCandidateSummary writes it
@@ -304,43 +290,50 @@ suite("manual cherry-picks (detectManualCherryPicks)", () => {
   });
 
   test("a story goes as far as its carrier went: by number, or by commit when the row has none", () => {
-    const steps = { integration: "uat", uat: "preprod" } as Record<string, string>;
-    const integrationToUat = parseManualCherryPickResult("integration", steps.integration, {
-      alreadyPromoted: [
-        {
-          // Picked into a squashed release branch, merged into uat as !414
-          pullRequests: [5],
-          commit: "5555555555aa",
-          alreadyPromotedBy: {
-            pullRequest: "414",
-            branch: "release/uat-1467",
-            url: "",
-            merged: true,
-            manualCherryPick: {
-              signal: "pull-request-commits",
-              targetCommit: "1111111111aa",
-              carrier: { pullRequest: 414, commits: ["414414414414"] },
+    const steps = { integration: "uat", uat: "preprod" } as Record<
+      string,
+      string
+    >;
+    const integrationToUat = parseManualCherryPickResult(
+      "integration",
+      steps.integration,
+      {
+        alreadyPromoted: [
+          {
+            // Picked into a squashed release branch, merged into uat as !414
+            pullRequests: [5],
+            commit: "5555555555aa",
+            alreadyPromotedBy: {
+              pullRequest: "414",
+              branch: "release/uat-1467",
+              url: "",
+              merged: true,
+              manualCherryPick: {
+                signal: "pull-request-commits",
+                targetCommit: "1111111111aa",
+                carrier: { pullRequest: 414, commits: ["414414414414"] },
+              },
             },
           },
-        },
-        {
-          // Brought by a squashed integration -> uat merge (!270)
-          pullRequests: [6],
-          commit: "6666666666aa",
-          alreadyPromotedBy: {
-            pullRequest: "270",
-            branch: "integration",
-            url: "",
-            merged: true,
-            manualCherryPick: {
-              signal: "pull-request-commits",
-              targetCommit: "2222222222aa",
-              carrier: { pullRequest: 270, commits: ["cf0b3cbf0000"] },
+          {
+            // Brought by a squashed integration -> uat merge (!270)
+            pullRequests: [6],
+            commit: "6666666666aa",
+            alreadyPromotedBy: {
+              pullRequest: "270",
+              branch: "integration",
+              url: "",
+              merged: true,
+              manualCherryPick: {
+                signal: "pull-request-commits",
+                targetCommit: "2222222222aa",
+                carrier: { pullRequest: 270, commits: ["cf0b3cbf0000"] },
+              },
             },
           },
-        },
-      ],
-    });
+        ],
+      },
+    );
     const preprodCarrier = {
       pullRequest: "421",
       branch: "release/preprod-1704",
@@ -355,9 +348,17 @@ suite("manual cherry-picks (detectManualCherryPicks)", () => {
     const uatToPreprod = parseManualCherryPickResult("uat", steps.uat, {
       alreadyPromoted: [
         // The release row of uat, found in preprod through !421
-        { pullRequests: [414], commit: "414414414414", alreadyPromotedBy: preprodCarrier },
+        {
+          pullRequests: [414],
+          commit: "414414414414",
+          alreadyPromotedBy: preprodCarrier,
+        },
         // The squashed merge between major branches: its number was dropped, its commit stays
-        { pullRequests: [], commit: "cf0b3cbf0000", alreadyPromotedBy: preprodCarrier },
+        {
+          pullRequests: [],
+          commit: "cf0b3cbf0000",
+          alreadyPromotedBy: preprodCarrier,
+        },
       ],
     });
     assert.deepStrictEqual(
@@ -370,15 +371,43 @@ suite("manual cherry-picks (detectManualCherryPicks)", () => {
     );
 
     const windows = [
-      { branchName: "integration", pullRequests: [pr({ number: 5, targetBranch: "integration" }), pr({ number: 6, targetBranch: "integration" })] },
-      { branchName: "uat", pullRequests: [pr({ number: 414, sourceBranch: "release/uat-1467" }), pr({ number: 423, sourceBranch: "retrofit/x" })] },
-      { branchName: "preprod", pullRequests: [pr({ number: 421, sourceBranch: "release/preprod-1704", targetBranch: "preprod" })] },
+      {
+        branchName: "integration",
+        pullRequests: [
+          pr({ number: 5, targetBranch: "integration" }),
+          pr({ number: 6, targetBranch: "integration" }),
+        ],
+      },
+      {
+        branchName: "uat",
+        pullRequests: [
+          pr({ number: 414, sourceBranch: "release/uat-1467" }),
+          pr({ number: 423, sourceBranch: "retrofit/x" }),
+        ],
+      },
+      {
+        branchName: "preprod",
+        pullRequests: [
+          pr({
+            number: 421,
+            sourceBranch: "release/preprod-1704",
+            targetBranch: "preprod",
+          }),
+        ],
+      },
     ];
-    applyManualCherryPicks(windows, [integrationToUat, uatToPreprod], EMPTY_PROMOTION_INDEX, ENABLED);
+    applyManualCherryPicks(
+      windows,
+      [integrationToUat, uatToPreprod],
+      EMPTY_PROMOTION_INDEX,
+      ENABLED,
+    );
 
     const stories = (branch: string) =>
       userStoryPullRequests(
-        visiblePullRequests(windows.find((entry) => entry.branchName === branch)!.pullRequests),
+        visiblePullRequests(
+          windows.find((entry) => entry.branchName === branch)!.pullRequests,
+        ),
         ["integration", "uat", "preprod"],
         ENABLED,
       )
@@ -446,7 +475,10 @@ suite("manual cherry-picks (detectManualCherryPicks)", () => {
     const first = await loadManualCherryPicks(orgs, PROJECT_ON, config, deps);
     assert.strictEqual(first.length, 2);
     assert.strictEqual(maxRunning, 2, "the steps must run in parallel");
-    assert.strictEqual(calls.filter((call) => call.startsWith("cli")).length, 2);
+    assert.strictEqual(
+      calls.filter((call) => call.startsWith("cli")).length,
+      2,
+    );
     // Cached per step and per tips of origin/<source> and origin/<target>
     assert.ok(
       cache.has(
@@ -645,7 +677,9 @@ suite("manual cherry-picks (detectManualCherryPicks)", () => {
   test("the Pull Requests and Tickets tabs flag a cherry-picked story", () => {
     const pipeline = readModuleFile("pipeline", "pipeline.js");
     const view = Object.assign(
-      new Function(`return { ${extractMember(pipeline, "_cherryPickInfo(pr)")} };`)(),
+      new Function(
+        `return { ${extractMember(pipeline, "_cherryPickInfo(pr)")} };`,
+      )(),
       {
         t: (key: string, vars: any) => `${key} ${JSON.stringify(vars || {})}`,
       },
