@@ -188,6 +188,35 @@ export type PullRequest = {
   // True when a promotion assembled from the branch of this window carried the story away: it is
   // listed in the branch it reached instead, so a Pull Request number appears once in the pipeline
   promotedAway?: boolean;
+  // sfdx-hardis detectManualCherryPicks: the story reached targetBranch through a cherry-pick made
+  // by hand, not a promotion branch. Set on the copy listed in the target window (and on the one
+  // hidden in the source window). releasePullRequest names the squashed Pull Request that held
+  // the cherry-pick, when that is how it was found.
+  manualCherryPick?: {
+    targetBranch: string;
+    signal: string;
+    targetCommit: string;
+    releasePullRequest?: string;
+    releaseBranch?: string;
+    releaseUrl?: string;
+  };
+  // Some of the commits of the story were cherry-picked by hand into targetBranch: it stays in
+  // its window, flagged
+  partiallyCherryPicked?: {
+    targetBranch: string;
+    foundCommits: number;
+    totalCommits: number;
+    targetCommit: string;
+  };
+  // This Pull Request carried stories cherry-picked by hand into its target branch (a squashed
+  // release branch): like a promotion, it moves other stories rather than carrying work of its own
+  carriesManualCherryPicks?: boolean;
+  // A commit of targetBranch has the same title as the story: it stays in its window, flagged
+  probablyCherryPicked?: {
+    targetBranch: string;
+    targetCommit: string;
+    subject: string;
+  };
   // Whether the Pull Request still merges cleanly into its target branch. Filled for open Pull
   // Requests only, from data the provider already computes: see PullRequestMergeStatus.
   mergeStatus?: PullRequestMergeStatus;

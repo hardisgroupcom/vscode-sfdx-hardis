@@ -101,6 +101,11 @@ export default class TicketList extends SharedMixin(LightningElement) {
                   number: pr.number,
                   label: `#${pr.number}`,
                   title: pr.title || "",
+                  // A cherry-pick made by hand, as the Pull Requests tab shows it
+                  cherryPickKey: `${ticket.id}-${pr.number}-cherry-pick`,
+                  cherryPickLabel: pr.cherryPickLabel || "",
+                  cherryPickTitle: pr.cherryPickTitle || "",
+                  cherryPickPillClass: pr.cherryPickPillClass || "hardis-pill",
                 }))
             : [],
         };
