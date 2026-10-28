@@ -2583,6 +2583,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (pr.isPromotion === true) {
       return true;
     }
+    // A squashed release branch whose stories detectManualCherryPicks found: it moves them
+    if (pr.carriesManualCherryPicks === true) {
+      return true;
+    }
     // <YYYY-MM-DD>-<HHMM> where HHMM is a time of day, with -<n> when the name was taken,
     // or the <YYYY-MM-DD>-<counter> names of the first releases (no second counter then)
     return /^promotion\/[^/]+\/[^/]+\/\d{4}-\d{2}-\d{2}-(?:([01]\d|2[0-3])[0-5]\d(?:-\d+)?|\d+)$/.test(

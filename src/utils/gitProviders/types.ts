@@ -208,6 +208,9 @@ export type PullRequest = {
     totalCommits: number;
     targetCommit: string;
   };
+  // This Pull Request carried stories cherry-picked by hand into its target branch (a squashed
+  // release branch): like a promotion, it moves other stories rather than carrying work of its own
+  carriesManualCherryPicks?: boolean;
   // A commit of targetBranch has the same title as the story: it stays in its window, flagged
   probablyCherryPicked?: {
     targetBranch: string;
