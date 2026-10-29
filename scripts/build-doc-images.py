@@ -64,6 +64,8 @@ PANEL_SHOTS = {
     "replacement-rules-builtin.png": "replacement-rules-builtin",
     "replacement-rules-preview.png": "replacement-rules-preview",
     "replacement-rules-editor.png": "replacement-rules-editor",
+    "replacement-rules-editor-xml-value.png": "replacement-rules-editor-xml-value",
+    "replacement-rules-editor-text.png": "replacement-rules-editor-text",
     # Scratch Org Pool panel (whole window, like the DORA metrics images): at the zoom of the
     # other captures, then two zoom levels out so the whole panel fits, and the entry of the
     # DevOps Pipeline settings menu that opens it
@@ -94,6 +96,11 @@ SIDE_BAR_WIDTH = 435
 SIDE_BAR_WIDTH_BY_IMAGE = {
     # One zoom level out: separator line at x=366
     "replacement-rules-panel.png": 367,
+    "replacement-rules-values.png": 367,
+    # Two zoom levels out: separator line at x=306
+    "replacement-rules-editor.png": 307,
+    "replacement-rules-editor-xml-value.png": 307,
+    "replacement-rules-editor-text.png": 307,
 }
 
 # Images the documentation shows without the side bar, i.e. cropped to the
@@ -118,6 +125,8 @@ WEBVIEW_ONLY = {
     "replacement-rules-builtin.png",
     "replacement-rules-preview.png",
     "replacement-rules-editor.png",
+    "replacement-rules-editor-xml-value.png",
+    "replacement-rules-editor-text.png",
     "pipeline-config.png",
     "promotion-pipeline.png",
     "promotion-settings.png",
