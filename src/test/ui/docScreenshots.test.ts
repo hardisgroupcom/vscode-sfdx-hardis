@@ -3400,15 +3400,23 @@ suite("Documentation screenshots", function () {
   });
 
   // Replacement Rules panel, from the rules the mocked sf CLI lists (project, uat branch file
-  // and issue #128, built-in rules), on its Rules tab
+  // and issue #128, built-in rules), on its Rules tab. One zoom level out, so the columns of
+  // the rules table are wide enough to read and every rule fits in the capture
   test("replacement rules", async function () {
-    await shootPanel(panelManager, {
-      name: "replacement-rules",
-      command: "vscode-sfdx-hardis.showReplacementRules",
-      lwcId: "s-replacement-rules",
-      ready: (initData: any) => initData.loading === false && !!initData.data,
-      settleMs: 3000,
-    });
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await sleep(800);
+    try {
+      await shootPanel(panelManager, {
+        name: "replacement-rules",
+        command: "vscode-sfdx-hardis.showReplacementRules",
+        lwcId: "s-replacement-rules",
+        ready: (initData: any) => initData.loading === false && !!initData.data,
+        settleMs: 3000,
+      });
+    } finally {
+      await vscode.commands.executeCommand("workbench.action.zoomIn");
+      await sleep(800);
+    }
   });
 
   // Other tabs of the Replacement Rules panel, and the rule editor open on a user permission

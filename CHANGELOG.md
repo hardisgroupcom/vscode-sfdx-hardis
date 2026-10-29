@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Contributors: the Replacement Rules documentation screenshot is taken one zoom level out, so every rule and every column of the table fits
 - Welcome page at startup: opens once VS Code has settled, and opens again by itself if it stayed blank after the "Could not register service worker" error
 
 ## [8.16.1] 2026-10-27
