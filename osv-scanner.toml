@@ -50,5 +50,5 @@ reason = "Added 2026-10-06: CVE-2026-103923, Low. katex 0.16.47 is pulled only b
 
 [[IgnoredVulns]]
 id = "GHSA-gcqx-w48m-w2h4"
-ignoreUntil = 2026-11-30
-reason = "Added 2026-10-28: CVE-2026-93753, prototype poisoning through the deepmerge mergeObject function. No fixed deepmerge release exists (4.3.1 is the latest). deepmerge is pulled only by the bitbucket API client (bitbucket@^2.12.0 > deepmerge@^4.2.2), which merges request option objects built by the extension, never untrusted JSON parsed from a remote response, so a polluted payload does not reach mergeObject. Re-evaluate when deepmerge ships a fix."
+ignoreUntil = 2027-01-31
+reason = "Added 2026-10-29: CVE-2026-2577 / CVE-2026-93753. deepmerge 4.3.1 has no fixed release. It is pulled only by bitbucket (the Bitbucket Cloud API client), which uses it to merge its default request options with the endpoint parameters our own code passes. Responses from the server are never merged, so no remote or user data reaches mergeObject and the prototype pollution path is not reachable. Re-evaluate when deepmerge ships a fix or bitbucket drops it."

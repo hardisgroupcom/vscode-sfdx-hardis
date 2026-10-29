@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { Commands } from "../commands";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { t } from "../i18n/i18n";
+import { Logger } from "../logger";
 import {
   BANNER_IMAGE_URL,
   WEBSITE_URL,
@@ -30,6 +31,8 @@ import {
 
 const EXTENSION_ID = "NicolasVuillamy.vscode-sfdx-hardis";
 const QUICK_START_COLLAPSED_PREF = "welcomeQuickStartCollapsed";
+const WELCOME_STARTUP_DELAY_MS = 2000;
+const WELCOME_READY_TIMEOUT_MS = 15000;
 
 // Whitelist of navigation targets the Welcome LWC can request.
 // Keys are the card/button ids sent in the `navigateTo` message.
@@ -194,6 +197,33 @@ export function registerShowWelcome(command: Commands) {
   command.disposables.push(disposable);
 }
 
+/**
+ * Opens the Welcome page when VS Code starts.
+ * A webview created while VS Code is still restoring its window can fail with
+ * "Could not register service worker: The document is in an invalid state":
+ * the page then stays blank. So the page opens once the window has the focus
+ * and has settled, and is reopened once if it never finished loading.
+ */
+export async function openWelcomeAtStartup(): Promise<void> {
+  await waitForWindowFocus();
+  await new Promise((resolve) => setTimeout(resolve, WELCOME_STARTUP_DELAY_MS));
+  await vscode.commands.executeCommand("vscode-sfdx-hardis.showWelcome");
+  const panel = LwcPanelManager.getInstance().getPanel("s-welcome");
+  if (!panel) {
+    return;
+  }
+  const ready = await panel.waitForPageReady(WELCOME_READY_TIMEOUT_MS);
+  // A hidden page does not load until it is shown: nothing to repair there.
+  if (ready || panel.isDisposed() || !panel.isVisible()) {
+    return;
+  }
+  Logger.log(
+    `Welcome page did not load within ${WELCOME_READY_TIMEOUT_MS / 1000}s, opening it again`,
+  );
+  LwcPanelManager.getInstance().disposePanel("s-welcome");
+  await vscode.commands.executeCommand("vscode-sfdx-hardis.showWelcome");
+}
+
 let welcomeStatusBarItem: vscode.StatusBarItem | undefined;
 
 // Cloudity icon in the status bar, opening the Welcome page when clicked.
@@ -236,4 +266,19 @@ function withPosition(groups: CustomCommandsGroup[]): CustomCommandMenu[] {
       position: g.position || "last",
     })),
   );
+}
+
+// Resolves at once when the window has the focus, else when it gets it
+function waitForWindowFocus(): Promise<void> {
+  if (vscode.window.state.focused) {
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    const listener = vscode.window.onDidChangeWindowState((state) => {
+      if (state.focused) {
+        listener.dispose();
+        resolve();
+      }
+    });
+  });
 }

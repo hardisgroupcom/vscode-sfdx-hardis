@@ -81,11 +81,10 @@ GHSA-2v8p-3f2j-5mp7
 CVE-2026-103923
 GHSA-238p-pmpm-9mq7
 
-# --- deepmerge 4.3.1 (Low) ----------------------------------------------------------------------------
-# CVE-2026-93753, prototype poisoning through the mergeObject function. No fixed release exists (4.3.1 is
-# the latest). deepmerge is pulled only by the bitbucket API client (bitbucket@^2.12.0), which
-# merges request option objects built by the extension, never untrusted JSON parsed from a remote
-# response, so a polluted payload does not reach mergeObject. Re-evaluate when deepmerge ships a fix.
-# exp:2026-11-30
+# deepmerge 4.3.1 prototype poisoning via mergeObject (no fixed release). Pulled only by bitbucket
+# (Bitbucket Cloud API client), which merges its default request options with the endpoint parameters
+# our own code passes. Server responses are never merged, so no remote or user data reaches mergeObject
+# and the path is not reachable. Re-evaluate when deepmerge ships a fix or bitbucket drops it.
+# exp:2027-01-31
 CVE-2026-93753
-GHSA-gcqx-w48m-w2h4
+CVE-2026-2577
