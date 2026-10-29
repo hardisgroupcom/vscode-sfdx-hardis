@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Contributors: the Replacement Rules documentation screenshots are zoomed out so every column of the Rules and Values per org tables can be read, and the rule editor is captured for each rule type (Set XML value, Remove XML element, Find and replace), with the whole form visible
 - Welcome page at startup: opens once VS Code has settled, and opens again by itself if it stayed blank after the "Could not register service worker" error
 
 ## [8.16.1] 2026-10-27

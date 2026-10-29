@@ -64,6 +64,8 @@ PANEL_SHOTS = {
     "replacement-rules-builtin.png": "replacement-rules-builtin",
     "replacement-rules-preview.png": "replacement-rules-preview",
     "replacement-rules-editor.png": "replacement-rules-editor",
+    "replacement-rules-editor-xml-value.png": "replacement-rules-editor-xml-value",
+    "replacement-rules-editor-text.png": "replacement-rules-editor-text",
     # Scratch Org Pool panel (whole window, like the DORA metrics images): at the zoom of the
     # other captures, then two zoom levels out so the whole panel fits, and the entry of the
     # DevOps Pipeline settings menu that opens it
@@ -89,6 +91,18 @@ PANEL_SHOTS = {
 # webview) starts right after the separator line at x=434.
 SIDE_BAR_WIDTH = 435
 
+# Captures taken zoomed out have a narrower side bar: the webview starts right
+# after the separator line, wherever it lands at that zoom level.
+SIDE_BAR_WIDTH_BY_IMAGE = {
+    # One zoom level out: separator line at x=366
+    "replacement-rules-panel.png": 367,
+    "replacement-rules-values.png": 367,
+    # Two zoom levels out: separator line at x=306
+    "replacement-rules-editor.png": 307,
+    "replacement-rules-editor-xml-value.png": 307,
+    "replacement-rules-editor-text.png": 307,
+}
+
 # Images the documentation shows without the side bar, i.e. cropped to the
 # webview only. The others keep the whole window, because the side bar is part
 # of what they illustrate (the tree views, the menu entry to click).
@@ -111,6 +125,8 @@ WEBVIEW_ONLY = {
     "replacement-rules-builtin.png",
     "replacement-rules-preview.png",
     "replacement-rules-editor.png",
+    "replacement-rules-editor-xml-value.png",
+    "replacement-rules-editor-text.png",
     "pipeline-config.png",
     "promotion-pipeline.png",
     "promotion-settings.png",
@@ -393,9 +409,10 @@ def build_settings_reference(guide_dir, dry_run):
                 os.remove(os.path.join(guide_dir, file_name))
 
 
-def crop_to_webview(image):
+def crop_to_webview(image, name=None):
     """Keeps only the editor area of a capture (no activity bar, no side bar)."""
-    return image.crop((SIDE_BAR_WIDTH, 0, image.width, image.height))
+    left = SIDE_BAR_WIDTH_BY_IMAGE.get(name, SIDE_BAR_WIDTH)
+    return image.crop((left, 0, image.width, image.height))
 
 
 def crop_row(image, index, left=72, padding=14):
@@ -1111,7 +1128,7 @@ def main():
             missing.append(capture)
             continue
         if name in WEBVIEW_ONLY:
-            image = crop_to_webview(image)
+            image = crop_to_webview(image, name)
         save(image, os.path.join(args.docs_images, name), args.dry_run)
 
     print("VS Code user guide screenshots:")
