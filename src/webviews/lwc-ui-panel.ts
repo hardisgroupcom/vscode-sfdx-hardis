@@ -59,6 +59,14 @@ export class LwcUiPanel {
    */
   public lwcReady: boolean = false;
 
+  /**
+   * True once the page has posted webviewReady: its scripts loaded and its LWC
+   * component is mounted. A page whose webview failed to load (VS Code could not
+   * register its service worker) never sends it.
+   */
+  public pageReady: boolean = false;
+  private pageReadyWaiters: Array<(ready: boolean) => void> = [];
+
   private constructor(
     panel: vscode.WebviewPanel,
     extensionUri: vscode.Uri,
@@ -253,6 +261,7 @@ export class LwcUiPanel {
     // Clear message listeners
     this.messageListeners = [];
     this.persistentMessageListeners = [];
+    this.resolvePageReadyWaiters(false);
   }
 
   /**
@@ -268,6 +277,33 @@ export class LwcUiPanel {
 
   public isDisposed(): boolean {
     return this._isDisposed;
+  }
+
+  public isVisible(): boolean {
+    return !this._isDisposed && this.panel.visible;
+  }
+
+  /**
+   * Resolves true once the page has sent webviewReady, false when the panel is
+   * disposed or the time is up first.
+   */
+  public waitForPageReady(timeoutMs: number): Promise<boolean> {
+    if (this.pageReady || this._isDisposed) {
+      return Promise.resolve(this.pageReady);
+    }
+    return new Promise((resolve) => {
+      const waiter = (ready: boolean) => {
+        clearTimeout(timer);
+        resolve(ready);
+      };
+      const timer = setTimeout(() => {
+        this.pageReadyWaiters = this.pageReadyWaiters.filter(
+          (w) => w !== waiter,
+        );
+        resolve(false);
+      }, timeoutMs);
+      this.pageReadyWaiters.push(waiter);
+    });
   }
 
   /**
@@ -416,6 +452,12 @@ export class LwcUiPanel {
     this.messageListeners = [];
   }
 
+  private resolvePageReadyWaiters(ready: boolean): void {
+    const waiters = this.pageReadyWaiters;
+    this.pageReadyWaiters = [];
+    waiters.forEach((waiter) => waiter(ready));
+  }
+
   /**
    * Handle built-in file operation messages from the webview
    * @param message The message received from the webview
@@ -427,6 +469,8 @@ export class LwcUiPanel {
     try {
       switch (messageType) {
         case "webviewReady":
+          this.pageReady = true;
+          this.resolvePageReadyWaiters(true);
           // The webview page finished booting and mounted its LWC component:
           // deliver the initialization data (posting it earlier would be
           // dropped by VS Code, which previously left panels on their

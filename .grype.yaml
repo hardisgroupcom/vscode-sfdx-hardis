@@ -82,3 +82,11 @@ ignore:
     package:
       name: katex
       version: 0.16.47
+  # GHSA-gcqx-w48m-w2h4 / CVE-2026-2577 / CVE-2026-93753 - deepmerge 4.3.1, no fixed release.
+  # Pulled only by bitbucket (Bitbucket Cloud API client), which merges its default request options
+  # with the endpoint parameters our own code passes. Server responses are never merged, so no remote
+  # or user data reaches mergeObject. Re-evaluate (~2027-01-31) when deepmerge ships a fix.
+  - vulnerability: GHSA-gcqx-w48m-w2h4
+    package:
+      name: deepmerge
+      version: 4.3.1
