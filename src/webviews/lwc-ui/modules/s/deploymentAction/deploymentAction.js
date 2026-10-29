@@ -180,6 +180,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       { label: this.t("runBatchType"), value: "run-batch" },
       { label: this.t("publishCommunityType"), value: "publish-community" },
       { label: this.t("userAccessPolicyType"), value: "user-access-policy" },
+      { label: this.t("agentActivateType"), value: "agent-activate" },
       {
         label: this.t("removePackageXmlItemsType"),
         value: "remove-packagexml-items",
@@ -269,6 +270,11 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       },
       "user-access-policy": {
         // A deployment sets the policies it contains back to Design: they are activated after it
+        when: ["post-deploy"],
+        context: ["process-deployment-only"],
+      },
+      "agent-activate": {
+        // The version to activate exists only once the deployment is done
         when: ["post-deploy"],
         context: ["process-deployment-only"],
       },
@@ -622,6 +628,10 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   get showCommunityNameField() {
     const type = this.displayedAction?.type;
     return type === "publish-community";
+  }
+
+  get showAgentActivateFields() {
+    return this.displayedAction?.type === "agent-activate";
   }
 
   // --- User Access Policy -------------------------------------------------------
@@ -1518,11 +1528,15 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       previousType !== newType &&
       (previousType === "user-access-policy" ||
         newType === "user-access-policy");
+    const touchesAgentActivate =
+      previousType !== newType &&
+      (previousType === "agent-activate" || newType === "agent-activate");
     if (
       leavesCustomFunction ||
       entersCustomFunction ||
       touchesRunBatch ||
-      touchesUserAccessPolicy
+      touchesUserAccessPolicy ||
+      touchesAgentActivate
     ) {
       this.editedAction.parameters =
         this._buildInitialParametersForType(newType);
@@ -1530,6 +1544,11 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     // Each new deployment of a policy turns it off again: by default, it is activated at every
     // deployment, as the CLI does
     if (previousType !== newType && newType === "user-access-policy") {
+      this.editedAction.runOnlyOnceByOrg = false;
+    }
+    // An active version is left as it is, and a later deployment may bring a new one: by default,
+    // the action runs at every deployment, as the CLI does
+    if (previousType !== newType && newType === "agent-activate") {
       this.editedAction.runOnlyOnceByOrg = false;
     }
     this._applyCustomFunctionDefaults(newType);
@@ -1555,6 +1574,9 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   _buildInitialParametersForType(type) {
     if (type === "user-access-policy") {
       return { policies: [], activate: true, applyToAll: false };
+    }
+    if (type === "agent-activate") {
+      return { agentName: "", agentVersion: "latest" };
     }
     const customFunction = this.customFunctions.find((fn) => fn.id === type);
     if (!customFunction) {
@@ -1870,6 +1892,8 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       requiredFields.push("parameters.sfdmuProject");
     } else if (currentType === "publish-community") {
       requiredFields.push("parameters.communityName");
+    } else if (currentType === "agent-activate") {
+      requiredFields.push("parameters.agentName");
     } else if (currentType === "manual") {
       requiredFields.push("parameters.instructions");
     } else if (currentType === "remove-packagexml-items") {

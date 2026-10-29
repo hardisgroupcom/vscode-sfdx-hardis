@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- New menu entry **Retrieve an Agentforce agent**, to get an agent version with the components it uses from an org (requires sfdx-hardis 8.21.0)
+- Deployment actions: new **Activate Agentforce Agent** type, to activate another agent version than the deployed one. The deployed versions are activated without it (requires sfdx-hardis 8.21.0)
+- Pipeline Settings: new **Activate deployed Agentforce agents** setting in the Deployment section, global or per branch (requires sfdx-hardis 8.21.0)
 - Contributors: the Replacement Rules documentation screenshots are zoomed out so every column of the Rules and Values per org tables can be read, and the rule editor is captured for each rule type (Set XML value, Remove XML element, Find and replace), with the whole form visible
 - Welcome page at startup: opens once VS Code has settled, and opens again by itself if it stayed blank after the "Could not register service worker" error
 
