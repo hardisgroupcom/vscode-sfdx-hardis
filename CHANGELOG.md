@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-- New menu entry **Retrieve an Agentforce agent**, to get an agent version with the components it uses from an org (requires sfdx-hardis 8.20.0)
+- New menu entry **Retrieve an Agentforce agent**, to get an agent version with the components it uses from an org (requires sfdx-hardis 8.21.0)
+- Deployment actions: new **Activate Agentforce Agent** type, to activate another agent version than the deployed one. The deployed versions are activated without it (requires sfdx-hardis 8.21.0)
+- Pipeline Settings: new **Activate deployed Agentforce agents** setting in the Deployment section, global or per branch (requires sfdx-hardis 8.21.0)
 - Contributors: the Replacement Rules documentation screenshots are zoomed out so every column of the Rules and Values per org tables can be read, and the rule editor is captured for each rule type (Set XML value, Remove XML element, Find and replace), with the whole form visible
 - Welcome page at startup: opens once VS Code has settled, and opens again by itself if it stayed blank after the "Could not register service worker" error
 
@@ -18,10 +20,7 @@
 ## [8.16.0] 2026-10-19
 
 - Links opened from a panel keep their `#`: a Pull Request created from the creation link of a promotion no longer shows `%23` instead of the headings and the Pull Request numbers of its description
-- Deployment actions:
-  - New **Activate Agentforce Agent** type, to activate another agent version than the deployed one. The deployed versions are activated without it
-  - New **User Access Policy** type, to activate User Access Policies after a deployment, which leaves them in Design, and optionally apply them to all users, picked from the policies of the org and the project (requires sfdx-hardis 8.20.0)
-- Pipeline Settings: new **Activate deployed Agentforce agents** setting in the Deployment section, global or per branch (requires sfdx-hardis 8.20.0)
+- Deployment actions: new **User Access Policy** type, to activate User Access Policies after a deployment, which leaves them in Design, and optionally apply them to all users, picked from the policies of the org and the project (requires sfdx-hardis 8.20.0)
 - Pipeline Settings: new ServiceNow setting to turn off the work notes written on the records when they are deployed
 - Dark theme: the separator lines between the sections of a panel (DORA Metrics, Pipeline Settings, Welcome...) are visible again
 - Pull Request window: when the deployment actions are read from another branch, the note says that checking it out is what shows Retry and the editing buttons
