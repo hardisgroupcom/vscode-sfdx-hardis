@@ -3400,19 +3400,30 @@ suite("Documentation screenshots", function () {
   });
 
   // Replacement Rules panel, from the rules the mocked sf CLI lists (project, uat branch file
-  // and issue #128, built-in rules), on its Rules tab
+  // and issue #128, built-in rules), on its Rules tab. One zoom level out, so the columns of
+  // the rules table are wide enough to read and every rule fits in the capture
   test("replacement rules", async function () {
-    await shootPanel(panelManager, {
-      name: "replacement-rules",
-      command: "vscode-sfdx-hardis.showReplacementRules",
-      lwcId: "s-replacement-rules",
-      ready: (initData: any) => initData.loading === false && !!initData.data,
-      settleMs: 3000,
-    });
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await sleep(800);
+    try {
+      await shootPanel(panelManager, {
+        name: "replacement-rules",
+        command: "vscode-sfdx-hardis.showReplacementRules",
+        lwcId: "s-replacement-rules",
+        ready: (initData: any) => initData.loading === false && !!initData.data,
+        settleMs: 3000,
+      });
+    } finally {
+      await vscode.commands.executeCommand("workbench.action.zoomIn");
+      await sleep(800);
+    }
   });
 
-  // Other tabs of the Replacement Rules panel, and the rule editor open on a user permission
-  // removal. Coordinates are those of the 1920x982 capture of the "replacement rules" shot
+  // Other tabs of the Replacement Rules panel, and the rule editor open on a rule of each type.
+  // Built-in rules and Preview are taken at the usual zoom, with the coordinates of the 1920x982
+  // capture of the "replacement rules" shot. Values per org is one zoom level out, like the Rules
+  // tab, so the values of each org are readable. The editors are two zoom levels out, so the whole
+  // form fits without scrolling.
   test("replacement rules tabs and editor", async function () {
     if (!shouldTake("replacement-rules-tabs")) {
       this.skip();
@@ -3424,11 +3435,6 @@ suite("Documentation screenshots", function () {
       settleMs: 3000,
       force: true,
     };
-    await shootPanel(panelManager, {
-      ...panel,
-      name: "replacement-rules-values",
-      clicks: [{ x: 717, y: 245 }],
-    });
     await shootPanel(panelManager, {
       ...panel,
       name: "replacement-rules-builtin",
@@ -3445,14 +3451,51 @@ suite("Documentation screenshots", function () {
         { x: 886, y: 347 },
       ],
     });
-    await shootPanel(panelManager, {
-      ...panel,
-      name: "replacement-rules-editor",
-      clicks: [
-        { x: 1832, y: 439 },
-        { x: 1752, y: 480 },
-      ],
-    });
+    // The first click after a zoom change lands before the window has its new zoom: wait for it
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await sleep(2500);
+    try {
+      await shootPanel(panelManager, {
+        ...panel,
+        name: "replacement-rules-values",
+        clicks: [{ x: 603, y: 209 }],
+      });
+      await vscode.commands.executeCommand("workbench.action.zoomOut");
+      await sleep(2500);
+      try {
+        // Row menu of a rule, then its Edit item. The menu opens below the button, except for
+        // the rows near the bottom of the table, where it opens above
+        await shootPanel(panelManager, {
+          ...panel,
+          name: "replacement-rules-editor-xml-value",
+          clicks: [
+            { x: 1868, y: 330 },
+            { x: 1810, y: 357 },
+          ],
+        });
+        await shootPanel(panelManager, {
+          ...panel,
+          name: "replacement-rules-editor",
+          clicks: [
+            { x: 1868, y: 295 },
+            { x: 1810, y: 324 },
+          ],
+        });
+        await shootPanel(panelManager, {
+          ...panel,
+          name: "replacement-rules-editor-text",
+          clicks: [
+            { x: 1868, y: 448 },
+            { x: 1810, y: 367 },
+          ],
+        });
+      } finally {
+        await vscode.commands.executeCommand("workbench.action.zoomIn");
+      }
+    } finally {
+      await vscode.commands.executeCommand("workbench.action.zoomIn");
+      await sleep(800);
+    }
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
   });
 
