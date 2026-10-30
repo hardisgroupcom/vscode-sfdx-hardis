@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [8.17.0] 2026-10-30
+
 - DevOps Pipeline: with the new **Detect manual cherry-picks** setting (Beta, Pipeline Settings), User Stories cherry-picked by hand into the next branch are shown in the branch they reached, and the ones only partly or probably cherry-picked are flagged (requires sfdx-hardis 8.21.0)
 - Contributors: the Replacement Rules documentation screenshots are zoomed out so every column of the Rules and Values per org tables can be read, and the rule editor is captured for each rule type (Set XML value, Remove XML element, Find and replace), with the whole form visible
 - Welcome page at startup: opens once VS Code has settled, and opens again by itself if it stayed blank after the "Could not register service worker" error
