@@ -149,6 +149,8 @@ export default class Welcome extends SharedMixin(LightningElement) {
   @track repositoryUrl = "";
   @track marketplaceUrl = "";
   @track whatsNewUrl = "";
+  @track trainingUrl = "";
+  @track trainingBandDismissed = false;
   @track quickStartCollapsed = false;
   @track extensionVersion = "";
   @track customMenus = [];
@@ -219,6 +221,12 @@ export default class Welcome extends SharedMixin(LightningElement) {
     }
     if (data && data.whatsNewUrl) {
       this.whatsNewUrl = data.whatsNewUrl;
+    }
+    if (data && data.trainingUrl) {
+      this.trainingUrl = data.trainingUrl;
+    }
+    if (data && data.trainingBandDismissed === true) {
+      this.trainingBandDismissed = true;
     }
     if (data && data.extensionVersion) {
       this.extensionVersion = data.extensionVersion;
@@ -649,6 +657,10 @@ export default class Welcome extends SharedMixin(LightningElement) {
     });
   }
 
+  get showTrainingBand() {
+    return !this.trainingBandDismissed;
+  }
+
   get quickStartExpanded() {
     return !this.quickStartCollapsed;
   }
@@ -698,6 +710,25 @@ export default class Welcome extends SharedMixin(LightningElement) {
       type: "openExternal",
       data: this.whatsNewUrl,
     });
+  }
+
+  openTraining() {
+    window.sendMessageToVSCode({
+      type: "openExternal",
+      data: this.trainingUrl,
+    });
+  }
+
+  // The close button sits inside the clickable band: keep its click and its
+  // Enter / Space keys from opening the course
+  dismissTrainingBand(event) {
+    event.stopPropagation();
+    this.trainingBandDismissed = true;
+    window.sendMessageToVSCode({ type: "dismissTrainingBand" });
+  }
+
+  handleTrainingCloseKeydown(event) {
+    event.stopPropagation();
   }
 
   openCloudityServices() {
