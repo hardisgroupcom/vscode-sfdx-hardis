@@ -385,6 +385,28 @@
     flex: 0 0 auto;
 }
 
+.welcome-training-close {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    padding: 0.3rem;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    cursor: pointer;
+    color: var(--slds-g-color-neutral-base-50);
+}
+
+.welcome-training-close:hover {
+    color: var(--slds-g-color-neutral-base-10);
+    background: var(--slds-g-color-neutral-base-95);
+}
+
+.welcome-training-close lightning-icon {
+    color: inherit !important;
+    background-color: transparent !important;
+}
+
 /* Slim collapse handle at the right edge of the quick start strip */
 .welcome-quick-toggle {
     flex: 0 0 auto;

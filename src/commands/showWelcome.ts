@@ -32,6 +32,7 @@ import {
 
 const EXTENSION_ID = "NicolasVuillamy.vscode-sfdx-hardis";
 const QUICK_START_COLLAPSED_PREF = "welcomeQuickStartCollapsed";
+const TRAINING_BAND_DISMISSED_PREF = "welcomeTrainingBandDismissed";
 const WELCOME_STARTUP_DELAY_MS = 2000;
 const WELCOME_READY_TIMEOUT_MS = 15000;
 
@@ -127,6 +128,9 @@ export function registerShowWelcome(command: Commands) {
         marketplaceUrl: getMarketplaceRatingUrl(),
         whatsNewUrl: WHATS_NEW_URL,
         trainingUrl: TRAINING_URL,
+        trainingBandDismissed:
+          CacheManager.getPreference<boolean>(TRAINING_BAND_DISMISSED_PREF) ===
+          true,
         extensionVersion: extensionVersion,
         imagePaths: {
           flagGlobe: ["icons", "flag-globe.svg"],
@@ -190,6 +194,8 @@ export function registerShowWelcome(command: Commands) {
             QUICK_START_COLLAPSED_PREF,
             data?.collapsed === true,
           );
+        } else if (type === "dismissTrainingBand") {
+          void CacheManager.setPreference(TRAINING_BAND_DISMISSED_PREF, true);
         } else if (type === "dismissPrerequisitesModal") {
           dismissPrerequisitesModalForSession();
         }

@@ -3015,6 +3015,7 @@
   "welcomeTitle": "Willkommen bei VS Code SFDX Hardis",
   "welcomeTrainingAction": "Kurs starten",
   "welcomeTrainingDesc": "Praktische Labs in einer echten Pipeline, von Ihrer ersten User Story bis zum Release Manager, mit Badges zum Erwerben.",
+  "welcomeTrainingHide": "Kursbanner ausblenden",
   "welcomeTrainingTitle": "sfdx-hardis mit dem kostenlosen Kurs lernen",
   "welcomeWhatsNew": "Neuigkeiten ansehen",
   "withEmojis": "Mit Emojis",

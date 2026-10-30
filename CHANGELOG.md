@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Welcome page: a new band opens the free [sfdx-hardis training course](https://sfdx-hardis-training.cloudity.com/), its hands-on labs and badges
+- Welcome page: a new band opens the free [sfdx-hardis training course](https://sfdx-hardis-training.cloudity.com/), its hands-on labs and badges, until you close it
 
 ## [8.17.0] 2026-10-30
 

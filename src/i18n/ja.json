@@ -3015,6 +3015,7 @@
   "welcomeTitle": "SFDX Hardis へようこそ",
   "welcomeTrainingAction": "コースを始める",
   "welcomeTrainingDesc": "実際のパイプラインでのハンズオンラボです。最初の User Story からリリースマネージャーまで進み、バッジを獲得できます。",
+  "welcomeTrainingHide": "コースのバナーを非表示にする",
   "welcomeTrainingTitle": "無料コースで sfdx-hardis を学ぶ",
   "welcomeWhatsNew": "新機能を見る",
   "withEmojis": "絵文字あり",

@@ -147,7 +147,8 @@
                 </div>
                 </template>
 
-                <!-- Training course band -->
+                <!-- Training course band, until the user closes it -->
+                <template lwc:if={showTrainingBand}>
                 <div class="welcome-training" role="button" tabindex="0" onclick={openTraining} onkeydown={handleCardKeydown}>
                     <span class="hardis-tile violet welcome-training-tile">
                         <lightning-icon icon-name="utility:education" size="small"></lightning-icon>
@@ -157,7 +158,11 @@
                         <span>{i18n.welcomeTrainingDesc}</span>
                     </div>
                     <span class="welcome-quick-action">{i18n.welcomeTrainingAction} <span class="welcome-arrow">→</span></span>
+                    <button type="button" class="welcome-training-close" title={i18n.welcomeTrainingHide} aria-label={i18n.welcomeTrainingHide} onclick={dismissTrainingBand} onkeydown={handleTrainingCloseKeydown}>
+                        <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon>
+                    </button>
                 </div>
+                </template>
 
                 <!-- Feature groups -->
                 <template for:each={featureGroups} for:item="group">
