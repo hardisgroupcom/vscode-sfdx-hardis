@@ -7,7 +7,7 @@ import { SecretsManager, SecretSource } from "./secretsManager";
 import { onEnvFileChanged, PROVIDER_ENV_VAR_NAMES } from "./envFileCredentials";
 import { getConfig, isPipelineConfigured } from "./pipeline/sfdxHardisConfig";
 import { poolEncryptionKeySecretName } from "./scratchOrgPoolUtils";
-import { getWorkspaceRoot } from "../utils";
+import { execSfdxJson, getWorkspaceRoot } from "../utils";
 import { Logger } from "../logger";
 import { t } from "../i18n/i18n";
 
@@ -258,6 +258,49 @@ export function refreshProviderCredentialEnvCache(): Promise<void> {
 // workspace .env file
 SecretsManager.onSecretChanged(invalidateProviderCredentialEnvCache);
 onEnvFileChanged(invalidateProviderCredentialEnvCache);
+
+/**
+ * Runs an sfdx-hardis command with --json in the background, its git provider connection passed
+ * in the environment (agent mode never prompts for it), and returns its `result`. Null when the
+ * command failed: the reason is logged under `purpose`, and given to `onError`.
+ */
+export async function execSfdxJsonWithProviderCredentials(
+  command: string,
+  purpose: string,
+  onError?: (message: string) => void,
+): Promise<any | null> {
+  let env: Record<string, string> = {};
+  try {
+    env = await collectProviderCredentialEnvVars();
+  } catch (e: any) {
+    Logger.log(
+      `[vscode-sfdx-hardis] ${purpose}: provider credentials not collected: ${e?.message || e}`,
+    );
+  }
+  try {
+    const result = await execSfdxJson(command, {
+      fail: false,
+      output: false,
+      debug: false,
+      reuseRecentResult: false,
+      env,
+    });
+    if (result?.status === 0 && result?.result) {
+      return result.result;
+    }
+    const message = String(
+      result?.errorMessage || result?.message || "unknown error",
+    );
+    onError?.(message);
+    Logger.log(`[vscode-sfdx-hardis] ${purpose} not available: ${message}`);
+  } catch (e: any) {
+    onError?.(String(e?.message || e));
+    Logger.log(
+      `[vscode-sfdx-hardis] ${purpose} not available: ${e?.message || e}`,
+    );
+  }
+  return null;
+}
 
 /**
  * Collects available provider credentials (git + ticketing) and returns them

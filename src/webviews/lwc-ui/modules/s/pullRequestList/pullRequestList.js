@@ -129,6 +129,10 @@ export default class PullRequestList extends SharedMixin(LightningElement) {
         // A promotion itself, or a story a promotion merged elsewhere already shipped
         promotionLabel: carrier ? "" : pr.promotionLabel || "",
         promotionPillClass: pr.promotionPillClass || "hardis-pill",
+        // A cherry-pick made by hand: reached the next branch, or only partly / probably
+        cherryPickLabel: pr.cherryPickLabel || "",
+        cherryPickTitle: pr.cherryPickTitle || "",
+        cherryPickPillClass: pr.cherryPickPillClass || "hardis-pill",
       };
     });
   }

@@ -26,7 +26,10 @@ import {
   refreshCustomFunctionsCache,
 } from "../utils/customFunctionsUtils";
 import { execSfdxJson, getWorkspaceRoot } from "../utils";
-import { collectProviderCredentialEnvVars } from "../utils/providerCredentials";
+import {
+  collectProviderCredentialEnvVars,
+  execSfdxJsonWithProviderCredentials,
+} from "../utils/providerCredentials";
 import { connectGitProvider } from "../utils/gitProviders/connectGitProvider";
 import { isSafeJobUrl } from "../utils/pullRequestUrlUtils";
 import { t } from "../i18n/i18n";
@@ -1690,40 +1693,11 @@ async function runActionListJson(
   purpose: string,
   onError?: (message: string) => void,
 ): Promise<any | null> {
-  let env: Record<string, string> = {};
-  try {
-    env = await collectProviderCredentialEnvVars();
-  } catch (e: any) {
-    Logger.log(
-      `[vscode-sfdx-hardis] ${purpose}: provider credentials not collected: ${e?.message || e}`,
-    );
-  }
-  try {
-    const result = await execSfdxJson(
-      `sf hardis:project:action:list --with-status ${flags}`,
-      {
-        fail: false,
-        output: false,
-        debug: false,
-        reuseRecentResult: false,
-        env,
-      },
-    );
-    if (result?.status === 0 && result?.result) {
-      return result.result;
-    }
-    const message = String(
-      result?.errorMessage || result?.message || "unknown error",
-    );
-    onError?.(message);
-    Logger.log(`[vscode-sfdx-hardis] ${purpose} not available: ${message}`);
-  } catch (e: any) {
-    onError?.(String(e?.message || e));
-    Logger.log(
-      `[vscode-sfdx-hardis] ${purpose} not available: ${e?.message || e}`,
-    );
-  }
-  return null;
+  return await execSfdxJsonWithProviderCredentials(
+    `sf hardis:project:action:list --with-status ${flags}`,
+    purpose,
+    onError,
+  );
 }
 
 /**

@@ -940,8 +940,70 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         copy.promotionUrl = pr.webUrl || "";
       }
 
+      // Manual cherry-picks (detectManualCherryPicks): reached the next branch by hand, or flagged
+      const cherryPick = this._cherryPickInfo(pr);
+      copy.cherryPickLabel = cherryPick ? cherryPick.label : "";
+      copy.cherryPickTitle = cherryPick ? cherryPick.title : "";
+      copy.cherryPickPillClass = cherryPick ? cherryPick.pillClass : "";
+
       return copy;
     });
+  }
+
+  // How a story relates to a cherry-pick made by hand, as sfdx-hardis found it: null when it does
+  // not. A story found in the next branch is listed there; partial and probable matches stay put.
+  _cherryPickInfo(pr) {
+    const moved = pr && pr.manualCherryPick;
+    if (moved && moved.targetBranch) {
+      const sha = (moved.targetCommit || "").substring(0, 7);
+      const release = moved.releasePullRequest
+        ? `#${moved.releasePullRequest}${moved.releaseBranch ? " " + moved.releaseBranch : ""}`
+        : "";
+      return {
+        label: this.t("prManualCherryPick", { branch: moved.targetBranch }),
+        title: release
+          ? this.t("prManualCherryPickReleaseTooltip", {
+              branch: moved.targetBranch,
+              sha,
+              release,
+            })
+          : this.t("prManualCherryPickTooltip", {
+              branch: moved.targetBranch,
+              sha,
+            }),
+        pillClass: "hardis-pill hardis-status-info",
+      };
+    }
+    const partial = pr && pr.partiallyCherryPicked;
+    if (partial && partial.targetBranch) {
+      return {
+        label: this.t("prPartiallyCherryPicked", {
+          branch: partial.targetBranch,
+        }),
+        title: this.t("prPartiallyCherryPickedTooltip", {
+          branch: partial.targetBranch,
+          found: partial.foundCommits,
+          total: partial.totalCommits,
+          sha: (partial.targetCommit || "").substring(0, 7),
+        }),
+        pillClass: "hardis-pill hardis-status-pending",
+      };
+    }
+    const probable = pr && pr.probablyCherryPicked;
+    if (probable && probable.targetBranch) {
+      return {
+        label: this.t("prProbablyCherryPicked", {
+          branch: probable.targetBranch,
+        }),
+        title: this.t("prProbablyCherryPickedTooltip", {
+          branch: probable.targetBranch,
+          sha: (probable.targetCommit || "").substring(0, 7),
+          subject: probable.subject || "",
+        }),
+        pillClass: "hardis-pill hardis-status-unknown",
+      };
+    }
+    return null;
   }
 
   _formatCompactDate(value) {
@@ -2521,6 +2583,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (pr.isPromotion === true) {
       return true;
     }
+    // A squashed release branch whose stories detectManualCherryPicks found: it moves them
+    if (pr.carriesManualCherryPicks === true) {
+      return true;
+    }
     // <YYYY-MM-DD>-<HHMM> where HHMM is a time of day, with -<n> when the name was taken,
     // or the <YYYY-MM-DD>-<counter> names of the first releases (no second counter then)
     return /^promotion\/[^/]+\/[^/]+\/\d{4}-\d{2}-\d{2}-(?:([01]\d|2[0-3])[0-5]\d(?:-\d+)?|\d+)$/.test(
@@ -2559,8 +2625,31 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       pr.promotedAway !== true &&
       !this._isPromotionOrMajorPr(pr) &&
       typeof pr.number === "number" &&
-      pr.number > 0
+      pr.number > 0 &&
+      (pr.manualCherryPickCopy !== true || this._promotionNumberOf(pr) !== null)
     );
+  }
+
+  // The number the promotion command knows a ticked row by. A story listed here because it was
+  // cherry-picked by hand is not a row of this branch for sfdx-hardis: what it lists is the
+  // squashed release Pull Request that brought it, so that one is passed. A story picked straight
+  // onto the branch has no Pull Request to pass: it is chosen in the prompt of the command.
+  _promotionNumberOf(pr) {
+    if (pr.manualCherryPickCopy !== true) {
+      return pr.number;
+    }
+    const moved = pr.manualCherryPick || {};
+    const release = parseInt(moved.releasePullRequest, 10);
+    const releaseBranch = (moved.releaseBranch || "").toLowerCase();
+    if (
+      !Number.isInteger(release) ||
+      release <= 0 ||
+      this._majorBranchNames().includes(releaseBranch) ||
+      releaseBranch.startsWith("promotion/")
+    ) {
+      return null;
+    }
+    return release;
   }
 
   // The checkboxes exist to feed the promotion: they go away with the button, so a branch the
@@ -2601,7 +2690,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         numbers.includes(row.number) && this._isSelectableForPromotion(row),
     );
     this.modalSelectedPrIds = eligible.map((row) => row.id);
-    this.modalSelectedPrNumbers = eligible.map((row) => row.number);
+    // Two stories brought by the same release Pull Request pass its number once
+    this.modalSelectedPrNumbers = [
+      ...new Set(eligible.map((row) => this._promotionNumberOf(row))),
+    ];
   }
 
   // Builds the modal content (PR list, tickets, actions, Apex tests by line)
@@ -5539,6 +5631,16 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // Collect all tickets from all PRs, tracking ALL PRs each ticket belongs to
     for (const pr of prs) {
       if (pr.relatedTickets && Array.isArray(pr.relatedTickets)) {
+        // A story cherry-picked by hand says so next to its reference in the Tickets tab too
+        const cherryPick = this._cherryPickInfo(pr);
+        const prEntry = () => ({
+          number: pr.number,
+          title: pr.title,
+          webUrl: pr.webUrl,
+          cherryPickLabel: cherryPick ? cherryPick.label : "",
+          cherryPickTitle: cherryPick ? cherryPick.title : "",
+          cherryPickPillClass: cherryPick ? cherryPick.pillClass : "",
+        });
         for (const ticket of pr.relatedTickets) {
           if (ticket && ticket.id) {
             if (!ticketsMap.has(ticket.id)) {
@@ -5552,22 +5654,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
                 authorLabel: ticket.authorLabel || "",
                 url: ticket.url || "",
                 ...this._ticketDisplayFields(ticket),
-                prs: [
-                  {
-                    number: pr.number,
-                    title: pr.title,
-                    webUrl: pr.webUrl,
-                  },
-                ],
+                prs: [prEntry()],
               });
             } else {
               // Ticket already exists - add this PR to the list
               const existingTicket = ticketsMap.get(ticket.id);
-              existingTicket.prs.push({
-                number: pr.number,
-                title: pr.title,
-                webUrl: pr.webUrl,
-              });
+              existingTicket.prs.push(prEntry());
             }
           }
         }

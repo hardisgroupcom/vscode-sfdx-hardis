@@ -9,15 +9,22 @@ import { GitProvider } from "./gitProviders/gitProvider";
 import { getConfig } from "./pipeline/sfdxHardisConfig";
 import {
   annotateAlreadyPromoted,
+  applyManualCherryPicks,
   buildPromotionIndex,
   enforceSinglePlacePerPullRequest,
   expandPullRequestsWithPromotions,
   getPromotionBranchConfig,
   isMergedPullRequest,
   isPromotionPullRequest,
+  ManualCherryPickStepResult,
   parsePromotionBranchName,
   PromotionBranchConfig,
+  PromotionIndex,
 } from "./pipeline/promotionBranchUtils";
+import {
+  listMovesStillInTargetWindow,
+  loadManualCherryPicks,
+} from "./pipeline/manualCherryPickUtils";
 import { Logger } from "../logger";
 
 export interface MajorOrg {
@@ -340,8 +347,10 @@ async function completeMajorOrgsWithPromotionBranches(
   // soon as preprod goes live, while the stories it carried stay in the uat window until uat is
   // merged into preprod directly, which a project using promotions may never do again. The
   // provider is asked for the merged promotions of every step, whatever window they left.
-  promotions.push(
-    ...(await listMergedPromotionsOfSteps(
+  // Stories cherry-picked by hand (detectManualCherryPicks) are asked to the CLI at the same time:
+  // nothing is run unless the project enables it
+  const [mergedPromotionsOfSteps, manualCherryPicks] = await Promise.all([
+    listMergedPromotionsOfSteps(
       majorOrgs,
       (targetBranch, updatedAfter) =>
         gitProvider.listMergedPullRequestsIntoBranch(
@@ -350,9 +359,11 @@ async function completeMajorOrgsWithPromotionBranches(
         ),
       config,
       known,
-    )),
-  );
-  if (promotions.length === 0) {
+    ),
+    loadManualCherryPicks(majorOrgs, projectConfig, config),
+  ]);
+  promotions.push(...mergedPromotionsOfSteps);
+  if (promotions.length === 0 && manualCherryPicks.length === 0) {
     return;
   }
   const index = buildPromotionIndex(promotions, config);
@@ -364,7 +375,54 @@ async function completeMajorOrgsWithPromotionBranches(
       config,
     );
   }
+  // After annotateAlreadyPromoted, which resets promotedAway from the promotion index
+  if (manualCherryPicks.length > 0) {
+    await placeManualCherryPicks(majorOrgs, manualCherryPicks, index, config);
+  }
   enforceInvariant(majorOrgs, config);
+}
+
+/**
+ * A story the CLI found cherry-picked by hand into the next branch is placed like a promoted one:
+ * hidden from the window it left, listed in the window of the branch where it is waiting: the one
+ * it reached, or a branch further down that was merged from it since.
+ */
+async function placeManualCherryPicks(
+  majorOrgs: MajorOrg[],
+  results: ManualCherryPickStepResult[],
+  index: PromotionIndex,
+  config: PromotionBranchConfig,
+): Promise<void> {
+  const listed = await listMovesStillInTargetWindow(results, majorOrgs);
+  const sizesBefore = new Map<string, number>();
+  const windows = majorOrgs.map((org) => {
+    org.pullRequestsInBranchSinceLastMerge =
+      org.pullRequestsInBranchSinceLastMerge || [];
+    sizesBefore.set(
+      org.branchName,
+      org.pullRequestsInBranchSinceLastMerge.length,
+    );
+    return {
+      branchName: org.branchName,
+      pullRequests: org.pullRequestsInBranchSinceLastMerge,
+    };
+  });
+  applyManualCherryPicks(
+    windows,
+    results,
+    index,
+    config,
+    (_result, move) => listed.get(move) || false,
+  );
+  // Same reason as after expandPullRequestsWithPromotions: the stories added to a window must not
+  // sink under the row cutoff of the table
+  for (const org of majorOrgs) {
+    const window = org.pullRequestsInBranchSinceLastMerge || [];
+    if (window.length !== sizesBefore.get(org.branchName)) {
+      org.pullRequestsInBranchSinceLastMerge =
+        sortPullRequestsByMergeDateDesc(window);
+    }
+  }
 }
 
 /**
