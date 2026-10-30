@@ -1541,7 +1541,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       (previousType === "user-access-policy" ||
         newType === "user-access-policy");
     const agentTypes = ["agent-activate", "agent-running-user"];
-    const touchesAgentActivate =
+    const touchesAgentAction =
       previousType !== newType &&
       (agentTypes.includes(previousType) || agentTypes.includes(newType));
     if (
@@ -1549,7 +1549,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       entersCustomFunction ||
       touchesRunBatch ||
       touchesUserAccessPolicy ||
-      touchesAgentActivate
+      touchesAgentAction
     ) {
       this.editedAction.parameters =
         this._buildInitialParametersForType(newType);
