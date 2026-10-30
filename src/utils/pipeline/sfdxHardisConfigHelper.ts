@@ -157,7 +157,6 @@ export class SfdxHardisConfigHelper {
     { name: "testCoverageNotBlocking", scopes: ["branch"] },
     { name: "skipCodeCoverage", scopes: ["branch"] },
     { name: "notifTranslateDeploymentMessages", scopes: ["global"] },
-    { name: "agentAutoActivate", scopes: ["global", "branch"] },
     { name: "flowDeleteMaxAttempts", scopes: ["global"] },
     { name: "flowDeleteRetryDelayMs", scopes: ["global"] },
     { name: "flowDeleteInterviews", scopes: ["global"] },
@@ -188,7 +187,6 @@ export class SfdxHardisConfigHelper {
         "mergeTargets",
         "flowDeleteMaxAttempts",
         "flowDeleteRetryDelayMs",
-        "agentAutoActivate",
       ],
     },
     {

@@ -482,7 +482,7 @@
               </div>
             </template>
 
-            <template if:true={showAgentActivateFields}>
+            <template if:true={showAgentNameField}>
               <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
                 <div class="slds-form-element">
                   <label class="slds-form-element__label hardis-label-inline">
@@ -503,6 +503,9 @@
                   ></lightning-input>
                 </div>
               </div>
+            </template>
+
+            <template if:true={showAgentActivateFields}>
               <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
                 <div class="slds-form-element">
                   <label class="slds-form-element__label hardis-label-inline">

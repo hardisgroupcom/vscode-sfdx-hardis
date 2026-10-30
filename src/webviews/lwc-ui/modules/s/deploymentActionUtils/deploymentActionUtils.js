@@ -19,6 +19,7 @@ const TYPE_LABEL_KEY_BY_CODE = {
   "remove-packagexml-items": "removePackageXmlItemsType",
   "user-access-policy": "userAccessPolicyType",
   "agent-activate": "agentActivateType",
+  "agent-running-user": "agentRunningUserType",
   manual: "manualType",
 };
 
@@ -32,6 +33,7 @@ const TYPE_ICON_BY_CODE = {
   "remove-packagexml-items": "utility:filterList",
   "user-access-policy": "utility:user_role",
   "agent-activate": "utility:einstein",
+  "agent-running-user": "utility:adduser",
   manual: "utility:task",
 };
 
@@ -47,6 +49,7 @@ const TYPE_HUE_BY_CODE = {
   "remove-packagexml-items": "pink",
   "user-access-policy": "red",
   "agent-activate": "indigo",
+  "agent-running-user": "cyan",
   manual: "slate",
 };
 
