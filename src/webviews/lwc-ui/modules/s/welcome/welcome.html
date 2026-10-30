@@ -147,6 +147,18 @@
                 </div>
                 </template>
 
+                <!-- Training course band -->
+                <div class="welcome-training" role="button" tabindex="0" onclick={openTraining} onkeydown={handleCardKeydown}>
+                    <span class="hardis-tile violet welcome-training-tile">
+                        <lightning-icon icon-name="utility:education" size="small"></lightning-icon>
+                    </span>
+                    <div class="welcome-quick-text">
+                        <b>{i18n.welcomeTrainingTitle}</b>
+                        <span>{i18n.welcomeTrainingDesc}</span>
+                    </div>
+                    <span class="welcome-quick-action">{i18n.welcomeTrainingAction} <span class="welcome-arrow">→</span></span>
+                </div>
+
                 <!-- Feature groups -->
                 <template for:each={featureGroups} for:item="group">
                     <div key={group.id} class={group.groupClass}>

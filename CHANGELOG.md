@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Welcome page: a new band opens the free [sfdx-hardis training course](https://sfdx-hardis-training.cloudity.com/), its hands-on labs and badges
+
 ## [8.17.0] 2026-10-30
 
 - DevOps Pipeline: with the new **Detect manual cherry-picks** setting (Beta, Pipeline Settings), User Stories cherry-picked by hand into the next branch are shown in the branch they reached, and the ones only partly or probably cherry-picked are flagged (requires sfdx-hardis 8.21.0)

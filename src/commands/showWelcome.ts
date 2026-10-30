@@ -9,6 +9,7 @@ import {
   DOCSITE_URL,
   WEBSITE_CONTACT_FORM_URL,
   WHATS_NEW_URL,
+  TRAINING_URL,
   EXTENSION_MARKETPLACE_URL,
   EXTENSION_OPENVSX_URL,
   SFDX_HARDIS_REPOSITORY_URL,
@@ -125,6 +126,7 @@ export function registerShowWelcome(command: Commands) {
         repositoryUrl: SFDX_HARDIS_REPOSITORY_URL,
         marketplaceUrl: getMarketplaceRatingUrl(),
         whatsNewUrl: WHATS_NEW_URL,
+        trainingUrl: TRAINING_URL,
         extensionVersion: extensionVersion,
         imagePaths: {
           flagGlobe: ["icons", "flag-globe.svg"],

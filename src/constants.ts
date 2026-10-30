@@ -47,6 +47,8 @@ export const EXTENSION_MARKETPLACE_ITEM_URL =
   "https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis";
 export const EXTENSION_OPENVSX_URL =
   "https://open-vsx.org/extension/NicolasVuillamy/vscode-sfdx-hardis/reviews";
+// The free sfdx-hardis training course, linked from the Welcome page
+export const TRAINING_URL = "https://sfdx-hardis-training.cloudity.com/";
 export const WEBSITE_URL = "https://www.cloudity.com?ref=sfdxhardis";
 export const WEBSITE_CONTACT_URL =
   "https://cloudity.com/contact-us/?ref=sfdxhardis";

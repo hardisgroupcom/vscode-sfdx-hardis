@@ -149,6 +149,7 @@ export default class Welcome extends SharedMixin(LightningElement) {
   @track repositoryUrl = "";
   @track marketplaceUrl = "";
   @track whatsNewUrl = "";
+  @track trainingUrl = "";
   @track quickStartCollapsed = false;
   @track extensionVersion = "";
   @track customMenus = [];
@@ -219,6 +220,9 @@ export default class Welcome extends SharedMixin(LightningElement) {
     }
     if (data && data.whatsNewUrl) {
       this.whatsNewUrl = data.whatsNewUrl;
+    }
+    if (data && data.trainingUrl) {
+      this.trainingUrl = data.trainingUrl;
     }
     if (data && data.extensionVersion) {
       this.extensionVersion = data.extensionVersion;
@@ -697,6 +701,13 @@ export default class Welcome extends SharedMixin(LightningElement) {
     window.sendMessageToVSCode({
       type: "openExternal",
       data: this.whatsNewUrl,
+    });
+  }
+
+  openTraining() {
+    window.sendMessageToVSCode({
+      type: "openExternal",
+      data: this.trainingUrl,
     });
   }
 
