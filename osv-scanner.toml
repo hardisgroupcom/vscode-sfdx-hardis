@@ -1,7 +1,21 @@
+# glob and minimatch: the copy bundled in the extension (our direct glob dependency, used by
+# src/utils/orgConfigUtils.ts) is upgraded to glob 14 / minimatch 11, which fix both advisories below.
+# The copies left are held by build and test tools through major-version ranges: @vscode/vsce
+# (glob ^13 / ^11, minimatch ^10 / ^3, also through ovsx), mocha (glob ^10, minimatch ^9), eslint,
+# @eslint/config-array and @typescript-eslint/typescript-estree (minimatch ^10). Forcing glob 14 or
+# minimatch 11 onto them is not safe: minimatch 11 removes makeRe(), the AST class and changes how
+# empty path portions match, and minimatch 3 to 11 also changes the export shape. None of these tools
+# is bundled in the extension, and they only ever see patterns written in our own config files.
+
 [[IgnoredVulns]]
-id = "GHSA-vfj7-8cjw-p6xm"
-ignoreUntil = 2026-12-31
-reason = "Added 2026-10-03: no fixed braces release exists (every version through 3.0.3, the latest, is affected). Stack exhaustion DoS when braces expands an attacker-supplied deeply nested pattern. braces is only reached through ts-loader > micromatch at build time, expanding the glob patterns of our own webpack config; it is not bundled in the extension and never sees user or remote input. Re-evaluate when braces ships a fix."
+id = "GHSA-3g3m-2fjr-6pw4"
+ignoreUntil = 2027-01-31
+reason = "Added 2026-11-01: glob 9.0.0 to 14.0.1, an aborted async walk keeps reading directories in the background. Not reachable: the bundled glob is upgraded to 14.0.3. The copies left (glob 10.5.0 in mocha, 11.1.0 and 13.0.6 in @vscode/vsce) run only in tests and packaging, never receive an AbortSignal, and walk our own repository with our own patterns. Re-evaluate when mocha and @vscode/vsce move to glob 14."
+
+[[IgnoredVulns]]
+id = "GHSA-g3hv-75wg-m249"
+ignoreUntil = 2027-01-31
+reason = "Added 2026-11-01: minimatch before 11.0.1, CPU and memory DoS through an attacker-supplied pattern amplified by the **/../ preprocessing. Not reachable: the bundled glob now uses minimatch 11.0.3. The copies left (3.1.5 and 10.2.4 in @vscode/vsce, 9.0.9 in mocha, 10.2.5 in eslint and @typescript-eslint) are build and test tools that match only patterns from our own .vscodeignore, eslint and mocha config, never user or remote input. Re-evaluate when these tools move to minimatch 11."
 
 [[IgnoredVulns]]
 id = "GHSA-8988-4f7v-96qf"
