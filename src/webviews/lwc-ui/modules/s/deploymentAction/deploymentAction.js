@@ -180,6 +180,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       { label: this.t("runBatchType"), value: "run-batch" },
       { label: this.t("publishCommunityType"), value: "publish-community" },
       { label: this.t("userAccessPolicyType"), value: "user-access-policy" },
+      { label: this.t("agentPublishType"), value: "agent-publish" },
       { label: this.t("agentActivateType"), value: "agent-activate" },
       { label: this.t("agentRunningUserType"), value: "agent-running-user" },
       {
@@ -271,6 +272,11 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       },
       "user-access-policy": {
         // A deployment sets the policies it contains back to Design: they are activated after it
+        when: ["post-deploy"],
+        context: ["process-deployment-only"],
+      },
+      "agent-publish": {
+        // The dependencies of the agent are deployed first, and a check deploys nothing
         when: ["post-deploy"],
         context: ["process-deployment-only"],
       },
@@ -643,7 +649,11 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
 
   get showAgentNameField() {
     const type = this.displayedAction?.type;
-    return type === "agent-activate" || type === "agent-running-user";
+    return (
+      type === "agent-publish" ||
+      type === "agent-activate" ||
+      type === "agent-running-user"
+    );
   }
 
   // --- User Access Policy -------------------------------------------------------
@@ -1540,7 +1550,11 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       previousType !== newType &&
       (previousType === "user-access-policy" ||
         newType === "user-access-policy");
-    const agentTypes = ["agent-activate", "agent-running-user"];
+    const agentTypes = [
+      "agent-publish",
+      "agent-activate",
+      "agent-running-user",
+    ];
     const touchesAgentAction =
       previousType !== newType &&
       (agentTypes.includes(previousType) || agentTypes.includes(newType));
@@ -1558,6 +1572,10 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     // deployment, as the CLI does
     if (previousType !== newType && newType === "user-access-policy") {
       this.editedAction.runOnlyOnceByOrg = false;
+    }
+    // Each publication creates a new version: by default, it runs once by org, as the CLI does
+    if (previousType !== newType && newType === "agent-publish") {
+      this.editedAction.runOnlyOnceByOrg = true;
     }
     // An active version is left as it is, and a later deployment may bring a new one: by default,
     // the action runs at every deployment, as the CLI does
@@ -1594,6 +1612,9 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     }
     if (type === "agent-activate") {
       return { agentName: "", agentVersion: "latest" };
+    }
+    if (type === "agent-publish") {
+      return { agentName: "" };
     }
     if (type === "agent-running-user") {
       return { agentName: "" };
@@ -1913,6 +1934,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     } else if (currentType === "publish-community") {
       requiredFields.push("parameters.communityName");
     } else if (
+      currentType === "agent-publish" ||
       currentType === "agent-activate" ||
       currentType === "agent-running-user"
     ) {

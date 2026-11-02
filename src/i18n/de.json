@@ -58,6 +58,7 @@
   "agentActivateType": "Agentforce-Agent aktivieren",
   "agentNameHelp": "API-Name des Agentforce-Agenten",
   "agentNameLabel": "API-Name des Agenten",
+  "agentPublishType": "Agentforce-Agent veröffentlichen",
   "agentRunningUserType": "Ausführenden Benutzer eines Agentforce-Agenten erstellen",
   "agentVersionHelp": "Zu aktivierende Versionsnummer, oder latest für die höchste Version in der Ziel-Org. Leer lassen für latest.",
   "agentVersionLabel": "Agentenversion",

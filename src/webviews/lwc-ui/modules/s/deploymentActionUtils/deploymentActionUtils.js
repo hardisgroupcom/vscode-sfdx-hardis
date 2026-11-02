@@ -18,6 +18,7 @@ const TYPE_LABEL_KEY_BY_CODE = {
   "publish-community": "publishCommunityType",
   "remove-packagexml-items": "removePackageXmlItemsType",
   "user-access-policy": "userAccessPolicyType",
+  "agent-publish": "agentPublishType",
   "agent-activate": "agentActivateType",
   "agent-running-user": "agentRunningUserType",
   manual: "manualType",
@@ -32,6 +33,7 @@ const TYPE_ICON_BY_CODE = {
   "publish-community": "utility:world",
   "remove-packagexml-items": "utility:filterList",
   "user-access-policy": "utility:user_role",
+  "agent-publish": "utility:upload",
   "agent-activate": "utility:einstein",
   "agent-running-user": "utility:adduser",
   manual: "utility:task",
@@ -48,6 +50,7 @@ const TYPE_HUE_BY_CODE = {
   "publish-community": "green",
   "remove-packagexml-items": "pink",
   "user-access-policy": "red",
+  "agent-publish": "indigo",
   "agent-activate": "indigo",
   "agent-running-user": "cyan",
   manual: "slate",
@@ -182,8 +185,8 @@ export function getEffectiveActionContext(action, when) {
   if (action?.type === "run-batch" || action?.type === "user-access-policy") {
     return "process-deployment-only";
   }
-  // So is an agent activation: a deployment check deploys no version to activate
-  if (action?.type === "agent-activate") {
+  // So are an agent publication and activation: a deployment check deploys nothing
+  if (action?.type === "agent-publish" || action?.type === "agent-activate") {
     return "process-deployment-only";
   }
   if (action?.type === "manual" && (when || action?.when) === "pre-deploy") {

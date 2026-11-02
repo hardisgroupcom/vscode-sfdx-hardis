@@ -58,6 +58,7 @@
   "agentActivateType": "Agentforce-agent activeren",
   "agentNameHelp": "API-naam van de Agentforce-agent",
   "agentNameLabel": "API-naam van de agent",
+  "agentPublishType": "Agentforce-agent publiceren",
   "agentRunningUserType": "Uitvoerende gebruiker van een Agentforce-agent aanmaken",
   "agentVersionHelp": "Versienummer om te activeren, of latest voor de hoogste versie in de doel-org. Laat leeg voor latest.",
   "agentVersionLabel": "Agentversie",
