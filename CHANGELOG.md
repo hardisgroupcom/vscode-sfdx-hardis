@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [8.17.1] 2026-11-02
+
 - Welcome page: a new band opens the free [sfdx-hardis training course](https://sfdx-hardis-training.cloudity.com/), its hands-on labs and badges, until you close it
 - Command panel: a progress bar that ends with nothing to process shows as completed instead of staying on "Starting..."
 
