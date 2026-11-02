@@ -55,7 +55,7 @@ suite("Deployment action agent running user", () => {
     const js = readModuleFile("deploymentAction", "deploymentAction.js");
     assert.match(
       js,
-      /get showAgentNameField\(\) \{[^}]*type === "agent-activate" \|\| type === "agent-running-user";/,
+      /get showAgentNameField\(\) \{[^}]*type === "agent-activate" \|\|\s+type === "agent-running-user"\s*\)?;/,
     );
   });
 
