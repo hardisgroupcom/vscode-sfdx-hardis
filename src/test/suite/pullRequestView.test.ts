@@ -33,6 +33,7 @@ const EXPORTED = [
   "extractPullRequestReferences",
   "matchPastedList",
   "ticketOriginLines",
+  "ticketMatchStrength",
   "excludeKnownPullRequests",
   "typedPullRequestNumber",
   "journeyBranchPath",
@@ -1331,7 +1332,14 @@ suite("Pull Request view", () => {
           title: "Record the supplier of a panel batch",
           reasons: ["ticket", "branch"],
         },
-        { number: 487, title: "Warranty years", reasons: ["description"] },
+      ]);
+      // Only its description names the ticket: kept apart, with the text around it
+      assert.deepStrictEqual(result.weak, [
+        {
+          number: 487,
+          title: "Warranty years",
+          mentions: [{ id: "CRM-1042", excerpt: "Needs CRM-1042 first" }],
+        },
       ]);
       // Found, but a promotion already carries it: not ticked, and said so
       assert.deepStrictEqual(result.notSelectable, [
@@ -1341,9 +1349,162 @@ suite("Pull Request view", () => {
       // Nothing pasted: nothing found
       assert.deepStrictEqual(utils.matchPastedList(rows, "", []), {
         found: [],
+        weak: [],
         notSelectable: [],
         notFound: [],
       });
+    });
+
+    test("a ticket a description mentions in passing is a weak match, the ticket of the title a strong one", () => {
+      const longText = `${"x".repeat(100)} the only failing test comes from CRM-1407, already in integration, unrelated ${"y".repeat(100)}`;
+      const rows = [
+        // The story of the pasted ticket: its title names it, the provider linked it from there
+        {
+          number: 408,
+          title: "CRM-1419 / Feature / Adjustment",
+          sourceBranch: "feature/CRM-1419-adjustment",
+          description: "Adds the adjustment",
+          relatedTickets: [
+            { id: "CRM-1419", foundIn: [{ source: "title", excerpt: "x" }] },
+          ],
+          selectable: true,
+        },
+        // Another story whose description mentions a pasted ticket: the provider links it too, but
+        // from the description only
+        {
+          number: 441,
+          title: "CRM-1418 / Feature / Contract page",
+          sourceBranch: "feature/CRM-1418",
+          description: longText,
+          relatedTickets: [
+            { id: "CRM-1418", foundIn: [{ source: "title", excerpt: "x" }] },
+            {
+              id: "CRM-1407",
+              foundIn: [{ source: "description", excerpt: "x" }],
+            },
+          ],
+          selectable: true,
+        },
+        // Several tickets in one story, the extra ones in the description and in a title too
+        {
+          number: 450,
+          title: "CRM-1407 Labels",
+          sourceBranch: "feature/labels",
+          description: "Also covers CRM-1419",
+          relatedTickets: [],
+          selectable: true,
+        },
+        // A linked ticket with no place known stays a link: nothing says it is weak
+        {
+          number: 452,
+          title: "Hotfix",
+          sourceBranch: "fix/hotfix",
+          description: "",
+          relatedTickets: [{ id: "CRM-1419" }],
+          selectable: true,
+        },
+      ];
+      const result = utils.matchPastedList(rows, "CRM-1419\nCRM-1407", [
+        "CRM-1419",
+        "CRM-1407",
+      ]);
+      assert.deepStrictEqual(
+        result.found.map((item: any) => [item.number, item.reasons]),
+        [
+          [408, ["ticket", "title", "branch"]],
+          [450, ["description", "title"]],
+          [452, ["ticket"]],
+        ],
+      );
+      assert.deepStrictEqual(
+        result.weak.map((item: any) => item.number),
+        [441],
+      );
+      const excerpt = result.weak[0].mentions[0].excerpt;
+      assert.strictEqual(result.weak[0].mentions[0].id, "CRM-1407");
+      assert.ok(excerpt.startsWith("...") && excerpt.endsWith("..."), excerpt);
+      assert.ok(excerpt.includes("comes from CRM-1407, already in integration, unrelated"), excerpt);
+      // A linked ticket the provider read in a form the description does not hold as such keeps
+      // the excerpt the extension found for it
+      const normalized = utils.matchPastedList(
+        [
+          {
+            number: 460,
+            title: "Other",
+            sourceBranch: "feature/other",
+            description: "see crm 1407",
+            relatedTickets: [
+              {
+                id: "CRM-1407",
+                foundIn: [{ source: "description", excerpt: "see crm 1407" }],
+              },
+            ],
+            selectable: true,
+          },
+        ],
+        "CRM-1407",
+        ["CRM-1407"],
+      );
+      assert.deepStrictEqual(normalized.weak, [
+        {
+          number: 460,
+          title: "Other",
+          mentions: [{ id: "CRM-1407", excerpt: "see crm 1407" }],
+        },
+      ]);
+    });
+
+    test("a ticket only a description names is a weak match, one a title, a branch or a carried story names a strong one", () => {
+      const strength = utils.ticketMatchStrength;
+      assert.strictEqual(strength([{ source: "description" }]), "weak");
+      assert.strictEqual(
+        strength([{ source: "description" }, { source: "title" }]),
+        "strong",
+      );
+      assert.strictEqual(strength([{ source: "branch" }]), "strong");
+      assert.strictEqual(strength([{ source: "carried" }]), "strong");
+      // No place known: nothing says it is weak, nor strong
+      assert.strictEqual(strength([]), "unknown");
+      assert.strictEqual(strength(undefined), "unknown");
+      assert.strictEqual(strength([null, {}]), "unknown");
+    });
+
+    test("the Tickets tab marks a ticket strong or weak, and the Pull Requests only mentioning it", () => {
+      const ticketJs = readModuleFile("ticketList", "ticketList.js");
+      const ticketHtml = readModuleFile("ticketList", "ticketList.html");
+      const component: any = {
+        i18n: {},
+        t: (key: string, vars: Record<string, string>) => `${key}|${vars.pr}`,
+      };
+      for (const signature of [
+        "_ticketStrength(ticket)",
+        "_pullRequestRefFields(pr)",
+      ]) {
+        component[signature.split("(")[0]] = new Function(
+          "ticketMatchStrength",
+          `return function ${extractMember(ticketJs, signature)}`,
+        )(utils.ticketMatchStrength);
+      }
+      const story = { number: 408, title: "Story", foundIn: [{ source: "title" }] };
+      const passing = {
+        number: 441,
+        title: "Other story",
+        foundIn: [{ source: "description" }],
+      };
+      const unknown = { number: 452, title: "Hotfix", foundIn: [] };
+      assert.strictEqual(component._ticketStrength({ prs: [story, passing] }), "strong");
+      assert.strictEqual(component._ticketStrength({ prs: [passing, unknown] }), "weak");
+      assert.strictEqual(component._ticketStrength({ prs: [unknown] }), "unknown");
+      assert.deepStrictEqual(component._pullRequestRefFields(story), {
+        refClass: "hardis-pr-ref",
+        title: "Story",
+      });
+      assert.deepStrictEqual(component._pullRequestRefFields(passing), {
+        refClass: "hardis-pr-ref ticket-pr-weak",
+        title: "Other story\nticketsMatchWeakPullRequest|#441",
+      });
+      assert.ok(ticketHtml.includes("{row.strengthLabel}"));
+      assert.ok(ticketHtml.includes("class={pr.refClass}"));
     });
 
     test("a ticket says where each Pull Request mentions it, with the text around it", () => {
@@ -2017,7 +2178,8 @@ suite("Pull Request view", () => {
           "pullRequestLookup",
           "pullRequestHeader",
           "workflowRuns",
-          "ticketList",
+            "ticketList",
+          "pullRequestList",
         ].flatMap((module) => [
           readModuleFile(module, `${module}.html`),
           readModuleFile(module, `${module}.js`),
@@ -2025,12 +2187,12 @@ suite("Pull Request view", () => {
       ];
       for (const source of sources) {
         for (const match of source.matchAll(
-          /i18n\.((?:pr(?:Lookup|View|State|Explorer)|journey|workflow|ticket(?:NotFound|ingTool|sAll)|pullRequestsExplorer)\w*)/g,
+          /i18n\.((?:pr(?:Lookup|View|State|Explorer|ListPaste)|journey|workflow|ticket(?:NotFound|ingTool|sAll|sMatch)|pullRequestsExplorer)\w*)/g,
         )) {
           keys.add(match[1]);
         }
         for (const match of source.matchAll(
-          /\bt\(\s*"((?:pr(?:Lookup|View)|journey|workflow|ticketNotFound)\w*)"/g,
+          /\bt\(\s*"((?:pr(?:Lookup|View|ListPaste)|journey|workflow|ticketNotFound|ticketsMatch)\w*)"/g,
         )) {
           keys.add(match[1]);
         }

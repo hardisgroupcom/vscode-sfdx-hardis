@@ -35,6 +35,18 @@
                                 </template>
                             </div>
                         </template>
+                        <!-- Named only in a description, often in passing: shown with the text around, not ticked unless asked -->
+                        <template if:true={pasteHasWeak}>
+                            <div class="prl-paste-group">
+                                <div class="hardis-group-label">{pasteWeakTitle}</div>
+                                <template for:each={pasteWeak} for:item="item">
+                                    <div key={item.key} class="prl-paste-line">
+                                        <span class="prl-paste-pr">{item.label}</span>
+                                        <span class="muted">{item.mentions}</span>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
                         <template if:true={pasteHasNotSelectable}>
                             <div class="prl-paste-group">
                                 <div class="hardis-group-label">{pasteNotSelectableTitle}</div>
@@ -55,6 +67,12 @@
                     </div>
                 </template>
                 <div class="prl-paste-actions">
+                    <template if:true={pasteHasWeak}>
+                        <label class="prl-paste-include-weak">
+                            <input type="checkbox" checked={pasteIncludeWeak} onchange={handlePasteIncludeWeak} />
+                            <span>{pasteIncludeWeakLabel}</span>
+                        </label>
+                    </template>
                     <lightning-button variant="neutral" label={i18n.cancel} onclick={handlePasteCancel}></lightning-button>
                     <lightning-button class="hardis-btn-tinted-blue" variant="neutral" label={pasteSelectLabel} disabled={pasteSelectDisabled} onclick={handlePasteSelect}></lightning-button>
                 </div>

@@ -36,6 +36,9 @@
                                 <template if:false={row.url}>
                                     <span title={row.tooltip}>{row.id}</span>
                                 </template>
+                                <template if:true={row.hasStrength}>
+                                    <span class={row.strengthPillClass} title={row.strengthTitle}><span class="hardis-pill-dot"></span>{row.strengthLabel}</span>
+                                </template>
                                 <template if:true={row.subject}>
                                     <span class="ticket-subject">{row.subject}</span>
                                 </template>
@@ -43,7 +46,7 @@
                             <template if:true={row.pullRequests.length}>
                                 <div class="hardis-list-meta">
                                     <template for:each={row.pullRequests} for:item="pr">
-                                        <button key={pr.key} class="hardis-pr-ref" title={pr.title} data-pr-number={pr.number} onclick={handleOpenPullRequest}>{pr.label}</button>
+                                        <button key={pr.key} class={pr.refClass} title={pr.title} data-pr-number={pr.number} onclick={handleOpenPullRequest}>{pr.label}</button>
                                         <template if:true={pr.cherryPickLabel}>
                                             <span key={pr.cherryPickKey} class={pr.cherryPickPillClass} title={pr.cherryPickTitle}><span class="hardis-pill-dot"></span>{pr.cherryPickLabel}</span>
                                         </template>

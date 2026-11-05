@@ -57,7 +57,10 @@ export default class PullRequestList extends SharedMixin(LightningElement) {
   pasteExtracting = false;
   // What the pasted text selects: computed when the text, its ticket ids or the rows change, read
   // by every part of the box (matching is one regex per ticket on every row)
-  pasteMatch = { found: [], notSelectable: [], notFound: [] };
+  pasteMatch = { found: [], weak: [], notSelectable: [], notFound: [] };
+  // Also tick the Pull Requests only a description names: off for every new box, since those are
+  // most often tickets mentioned in passing
+  pasteIncludeWeak = false;
   _pasteRequestId = null;
   _pasteTimer = null;
 
@@ -179,6 +182,32 @@ export default class PullRequestList extends SharedMixin(LightningElement) {
     }));
   }
 
+  get pasteWeak() {
+    return this.pasteMatch.weak.map((item) => ({
+      key: `weak-${item.number}`,
+      label: `#${item.number} ${item.title}`,
+      mentions: item.mentions
+        .map((mention) =>
+          mention.excerpt ? `${mention.id}: "${mention.excerpt}"` : mention.id,
+        )
+        .join(" / "),
+    }));
+  }
+
+  get pasteHasWeak() {
+    return this.pasteMatch.weak.length > 0;
+  }
+
+  get pasteWeakTitle() {
+    return this.t("prListPasteWeak", { count: this.pasteMatch.weak.length });
+  }
+
+  get pasteIncludeWeakLabel() {
+    return this.t("prListPasteIncludeWeak", {
+      count: this.pasteMatch.weak.length,
+    });
+  }
+
   get pasteNotSelectable() {
     return this.pasteMatch.notSelectable.map((item) => ({
       key: `not-selectable-${item.number}`,
@@ -219,12 +248,14 @@ export default class PullRequestList extends SharedMixin(LightningElement) {
   }
 
   get pasteSelectLabel() {
-    return this.t("prListPasteSelect", { count: this.pasteMatch.found.length });
+    return this.t("prListPasteSelect", {
+      count: this._pasteNumbersToTick().length,
+    });
   }
 
   // Not while the ticket ids of the text are being read: the selection would miss them
   get pasteSelectDisabled() {
-    return this.pasteExtracting || this.pasteMatch.found.length === 0;
+    return this.pasteExtracting || this._pasteNumbersToTick().length === 0;
   }
 
   get rows() {
@@ -413,9 +444,13 @@ export default class PullRequestList extends SharedMixin(LightningElement) {
     }, PASTE_EXTRACT_DELAY_MS);
   }
 
+  handlePasteIncludeWeak(event) {
+    this.pasteIncludeWeak = event.target.checked === true;
+  }
+
   // Ticks what the text found, on top of the selection: unticking stays a choice made by hand
   handlePasteSelect() {
-    const found = this.pasteMatch.found.map((item) => item.number);
+    const found = this._pasteNumbersToTick();
     const numbers = [...new Set([...this._selectedNumbers, ...found])];
     if (this.selectedOnly) {
       this._selectedOnlyNumbers = [
@@ -437,8 +472,17 @@ export default class PullRequestList extends SharedMixin(LightningElement) {
     this.pasteText = "";
     this.pasteTicketIds = [];
     this.pasteExtracting = false;
+    this.pasteIncludeWeak = false;
     this._pasteRequestId = null;
     this._refreshPasteMatch();
+  }
+
+  // The strong matches, and the description-only ones when the box asks for them too
+  _pasteNumbersToTick() {
+    const items = this.pasteIncludeWeak
+      ? [...this.pasteMatch.found, ...this.pasteMatch.weak]
+      : this.pasteMatch.found;
+    return items.map((item) => item.number);
   }
 
   _refreshPasteMatch() {
