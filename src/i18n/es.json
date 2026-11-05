@@ -1703,6 +1703,7 @@
   "majorBranchCheckStatusPending": "Comprobación en cola",
   "majorBranchCheckStatusRunning": "Comprobación en curso",
   "majorBranchCheckStatusSuccess": "Desplegable",
+  "majorBranchCheckTab": "Comprobación del despliegue",
   "majorBranchCheckTitle": "Comprobación del despliegue en la org",
   "majorBranchCheckTooltip": "{{branch}}: última comprobación de despliegue {{status}}",
   "majorOrgWarning": "🦙 Su org predeterminada es una org PRINCIPAL vinculada a la rama git {{branch}}, tenga cuidado ya que el servidor de CI/CD es el que debe desplegar en esta org, no usted 😘",

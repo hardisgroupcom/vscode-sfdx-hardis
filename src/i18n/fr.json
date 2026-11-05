@@ -1703,6 +1703,7 @@
   "majorBranchCheckStatusPending": "Vérification en attente",
   "majorBranchCheckStatusRunning": "Vérification en cours",
   "majorBranchCheckStatusSuccess": "Déployable",
+  "majorBranchCheckTab": "Vérification du déploiement",
   "majorBranchCheckTitle": "Vérification du déploiement vers l'org",
   "majorBranchCheckTooltip": "{{branch}} : dernière vérification de déploiement {{status}}",
   "majorOrgWarning": "🦙 Votre org par défaut est une org MAJEURE liée à la branche git {{branch}}, faites attention car le serveur CI/CD est supposé déployer dans cette org, pas vous 😘",

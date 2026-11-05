@@ -1703,6 +1703,7 @@
   "majorBranchCheckStatusPending": "Prüfung in Warteschlange",
   "majorBranchCheckStatusRunning": "Prüfung läuft",
   "majorBranchCheckStatusSuccess": "Bereitstellbar",
+  "majorBranchCheckTab": "Bereitstellungsprüfung",
   "majorBranchCheckTitle": "Bereitstellungsprüfung gegen die Org",
   "majorBranchCheckTooltip": "{{branch}}: letzte Bereitstellungsprüfung {{status}}",
   "majorOrgWarning": "🦙 Ihre Standard-Org ist eine produktive Org, die mit dem git-Branch {{branch}} verknüpft ist. Seien Sie vorsichtig, da der CI/CD-Server in diese Org deployen soll, nicht Sie 😘",

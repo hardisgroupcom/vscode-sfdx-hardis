@@ -2035,6 +2035,20 @@ suite("Documentation screenshots", function () {
       return true;
     `);
     await sleep(2500);
+    // The check is the last tab of the window (the last role="tab" element is
+    // the overflow menu of the tab bar, so the tab is found by its value)
+    await inWebview(`
+      const tab = deepAll(
+        panelDocument,
+        'a[role="tab"][data-tab-value="majorBranchCheck"]',
+      )[0];
+      if (!tab) {
+        return null;
+      }
+      tab.click();
+      return true;
+    `);
+    await sleep(1000);
     await cleanChrome();
     await captureStable("major-branch-check-modal");
     await click(PROMOTION_MODAL_CLOSE.x, PROMOTION_MODAL_CLOSE.y);

@@ -1703,6 +1703,7 @@
   "majorBranchCheckStatusPending": "Verifica in coda",
   "majorBranchCheckStatusRunning": "Verifica in corso",
   "majorBranchCheckStatusSuccess": "Distribuibile",
+  "majorBranchCheckTab": "Verifica del deployment",
   "majorBranchCheckTitle": "Verifica del deployment sull'org",
   "majorBranchCheckTooltip": "{{branch}}: ultima verifica del deployment {{status}}",
   "majorOrgWarning": "🦙 La tua org predefinita è un'org PRINCIPALE collegata al branch git {{branch}}, fai attenzione perché il server CI/CD dovrebbe distribuire in questa org, non tu 😘",

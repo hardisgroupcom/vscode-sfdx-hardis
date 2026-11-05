@@ -261,7 +261,7 @@ BOX_CROPS = {
         (470, 60, 1866, 915),
     ),
     # Major branch deployment check: the window of preprod, whose last check
-    # failed and is stale, with the check block above the tabs
+    # failed and is stale, with its last tab (the check) open
     "major-branch-check-modal.png": (
         "major-branch-check/major-branch-check-modal",
         (470, 60, 1866, 915),

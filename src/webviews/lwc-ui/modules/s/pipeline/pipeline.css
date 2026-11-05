@@ -340,7 +340,7 @@
     );
 }
 
-/* Last deployment check of a major branch, above the tabs of its window */
+/* Last deployment check of a major branch, in the last tab of its window */
 .major-branch-check-row {
     display: flex;
     flex-wrap: wrap;

@@ -470,38 +470,6 @@
                             </div>
                         </template>
                     </template>
-                    <!-- Last deployment check of the major branch against its org (enableMajorBranchDeploymentCheck) -->
-                    <template if:true={showModalMajorBranchCheck}>
-                        <div class="major-branch-check slds-m-bottom_small">
-                            <div class="hardis-group-label">{i18n.majorBranchCheckTitle}</div>
-                            <template if:true={modalMajorBranchCheckFound}>
-                                <div class="major-branch-check-row">
-                                    <span class={modalMajorBranchCheckPillClass}><span class="hardis-pill-dot"></span>{modalMajorBranchCheckStatusLabel}</span>
-                                    <template if:true={modalMajorBranchCheckRanAt}>
-                                        <span class="muted">{modalMajorBranchCheckRanAt}</span>
-                                    </template>
-                                    <template if:true={modalMajorBranchCheckDuration}>
-                                        <span class="hardis-chip">{modalMajorBranchCheckDuration}</span>
-                                    </template>
-                                    <template if:true={modalMajorBranchCheckStaleText}>
-                                        <span class="major-branch-check-stale">
-                                            <lightning-icon icon-name="utility:clock" size="xx-small"></lightning-icon>
-                                            <span>{modalMajorBranchCheckStaleText}</span>
-                                        </span>
-                                    </template>
-                                    <template if:true={modalMajorBranchCheckHasUrl}>
-                                        <button class="hardis-textlink" onclick={handleOpenMajorBranchCheckJob}>{i18n.majorBranchCheckOpenJob}</button>
-                                    </template>
-                                </div>
-                            </template>
-                            <template if:false={modalMajorBranchCheckFound}>
-                                <div class="major-branch-check-row">
-                                    <span class="muted">{i18n.majorBranchCheckNone}</span>
-                                    <button class="hardis-textlink" onclick={handleOpenMajorBranchCheckDoc}>{i18n.majorBranchCheckHowTo}</button>
-                                </div>
-                            </template>
-                        </div>
-                    </template>
                     <!-- Go-lives selector (top branches such as main/prod) -->
                     <template if:true={modalIsTopBranch}>
                         <div class="slds-m-bottom_small">
@@ -853,6 +821,38 @@
                                         loading={workflowsLoading}
                                         empty-label={noDeploymentLabel}
                                     ></s-workflow-runs>
+                                </lightning-tab>
+                            </template>
+                            <!-- Last tab: last deployment check of the major branch against its org (enableMajorBranchDeploymentCheck) -->
+                            <template if:true={showModalMajorBranchCheck}>
+                                <lightning-tab onactive={handleModalTabActive} label={i18n.majorBranchCheckTab} value="majorBranchCheck" icon-name="utility:check" icon-assistive-text={i18n.majorBranchCheckTab} end-icon-name={majorBranchCheckTabEndIcon} end-icon-alternative-text={i18n.jobStatusRunning}>
+                                    <div class="slds-text-body_regular slds-m-bottom_small">{i18n.majorBranchCheckTitle}</div>
+                                    <template if:true={modalMajorBranchCheckFound}>
+                                        <div class="major-branch-check-row">
+                                            <span class={modalMajorBranchCheckPillClass}><span class="hardis-pill-dot"></span>{modalMajorBranchCheckStatusLabel}</span>
+                                            <template if:true={modalMajorBranchCheckRanAt}>
+                                                <span class="muted">{modalMajorBranchCheckRanAt}</span>
+                                            </template>
+                                            <template if:true={modalMajorBranchCheckDuration}>
+                                                <span class="hardis-chip">{modalMajorBranchCheckDuration}</span>
+                                            </template>
+                                            <template if:true={modalMajorBranchCheckStaleText}>
+                                                <span class="major-branch-check-stale">
+                                                    <lightning-icon icon-name="utility:clock" size="xx-small"></lightning-icon>
+                                                    <span>{modalMajorBranchCheckStaleText}</span>
+                                                </span>
+                                            </template>
+                                            <template if:true={modalMajorBranchCheckHasUrl}>
+                                                <button class="hardis-textlink" onclick={handleOpenMajorBranchCheckJob}>{i18n.majorBranchCheckOpenJob}</button>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <template if:false={modalMajorBranchCheckFound}>
+                                        <div class="major-branch-check-row">
+                                            <span class="muted">{i18n.majorBranchCheckNone}</span>
+                                            <button class="hardis-textlink" onclick={handleOpenMajorBranchCheckDoc}>{i18n.majorBranchCheckHowTo}</button>
+                                        </div>
+                                    </template>
                                 </lightning-tab>
                             </template>
                     </lightning-tabset>

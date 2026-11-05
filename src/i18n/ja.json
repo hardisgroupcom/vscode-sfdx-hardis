@@ -1703,6 +1703,7 @@
   "majorBranchCheckStatusPending": "チェック待機中",
   "majorBranchCheckStatusRunning": "チェック実行中",
   "majorBranchCheckStatusSuccess": "デプロイ可能",
+  "majorBranchCheckTab": "デプロイチェック",
   "majorBranchCheckTitle": "組織に対するデプロイチェック",
   "majorBranchCheckTooltip": "{{branch}}: 最新のデプロイチェック {{status}}",
   "majorOrgWarning": "🦙 デフォルトのOrgはgit branch {{branch}}に関連付けられたMAJOR Orgです。CI/CDサーバーがこのOrgにデプロイする想定のため、ご自身での操作にはご注意ください 😘",

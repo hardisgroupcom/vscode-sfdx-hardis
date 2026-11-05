@@ -1703,6 +1703,7 @@
   "majorBranchCheckStatusPending": "Check queued",
   "majorBranchCheckStatusRunning": "Check running",
   "majorBranchCheckStatusSuccess": "Deployable",
+  "majorBranchCheckTab": "Deployment check",
   "majorBranchCheckTitle": "Deployment check against the org",
   "majorBranchCheckTooltip": "{{branch}}: last deployment check {{status}}",
   "majorOrgWarning": "🦙 Your default org is a MAJOR org linked to git branch {{branch}}, be careful because the CI/CD Server is supposed to deploy in this org, not you 😘",

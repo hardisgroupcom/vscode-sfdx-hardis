@@ -1703,6 +1703,7 @@
   "majorBranchCheckStatusPending": "Controle in wachtrij",
   "majorBranchCheckStatusRunning": "Controle bezig",
   "majorBranchCheckStatusSuccess": "Implementeerbaar",
+  "majorBranchCheckTab": "Implementatiecontrole",
   "majorBranchCheckTitle": "Implementatiecontrole op de org",
   "majorBranchCheckTooltip": "{{branch}}: laatste implementatiecontrole {{status}}",
   "majorOrgWarning": "🦙 Je standaard org is een MAJOR org gekoppeld aan git branch {{branch}}, wees voorzichtig want de CI/CD-server is bedoeld om in deze org te implementeren, niet jij 😘",

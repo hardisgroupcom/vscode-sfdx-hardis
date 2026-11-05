@@ -5810,7 +5810,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return this.modalMode === "singlePR" && !this.isSinglePRMode;
   }
 
-  // ---- Major branch deployment check, above the tabs of a major branch window ----
+  // ---- Major branch deployment check, last tab of a major branch window ----
 
   get showModalMajorBranchCheck() {
     return (
@@ -5818,6 +5818,13 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       this.modalMode !== "singlePR" &&
       !this.isFeaturePrModal
     );
+  }
+
+  // Spinner on the tab while the check runs, like the job tabs of a Pull Request
+  get majorBranchCheckTabEndIcon() {
+    return this.modalMajorBranchCheck?.status === "running"
+      ? "utility:spinner"
+      : null;
   }
 
   get modalMajorBranchCheckFound() {

@@ -1703,6 +1703,7 @@
   "majorBranchCheckStatusPending": "Kontrola w kolejce",
   "majorBranchCheckStatusRunning": "Kontrola w toku",
   "majorBranchCheckStatusSuccess": "Wdrożenie możliwe",
+  "majorBranchCheckTab": "Kontrola wdrożenia",
   "majorBranchCheckTitle": "Kontrola wdrożenia do org",
   "majorBranchCheckTooltip": "{{branch}}: ostatnia kontrola wdrożenia {{status}}",
   "majorOrgWarning": "🦙 Twój domyślny org to GŁÓWNY org powiązany z gałęzią Git {{branch}}, bądź ostrożny, bo serwer CI/CD powinien wdrażać do tego orga, a nie ty 😘",

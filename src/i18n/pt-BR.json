@@ -1703,6 +1703,7 @@
   "majorBranchCheckStatusPending": "Verificação na fila",
   "majorBranchCheckStatusRunning": "Verificação em andamento",
   "majorBranchCheckStatusSuccess": "Deploy possível",
+  "majorBranchCheckTab": "Verificação do deploy",
   "majorBranchCheckTitle": "Verificação do deploy na org",
   "majorBranchCheckTooltip": "{{branch}}: última verificação de deploy {{status}}",
   "majorOrgWarning": "🦙 Sua org padrão é uma org PRINCIPAL vinculada à branch git {{branch}}, cuidado pois o Servidor CI/CD deve realizar deploys nesta org, não você 😘",
