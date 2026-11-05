@@ -1423,7 +1423,12 @@ suite("Pull Request view", () => {
       const excerpt = result.weak[0].mentions[0].excerpt;
       assert.strictEqual(result.weak[0].mentions[0].id, "CRM-1407");
       assert.ok(excerpt.startsWith("...") && excerpt.endsWith("..."), excerpt);
-      assert.ok(excerpt.includes("comes from CRM-1407, already in integration, unrelated"), excerpt);
+      assert.ok(
+        excerpt.includes(
+          "comes from CRM-1407, already in integration, unrelated",
+        ),
+        excerpt,
+      );
       // A linked ticket the provider read in a form the description does not hold as such keeps
       // the excerpt the extension found for it
       const normalized = utils.matchPastedList(
@@ -1485,16 +1490,29 @@ suite("Pull Request view", () => {
           `return function ${extractMember(ticketJs, signature)}`,
         )(utils.ticketMatchStrength);
       }
-      const story = { number: 408, title: "Story", foundIn: [{ source: "title" }] };
+      const story = {
+        number: 408,
+        title: "Story",
+        foundIn: [{ source: "title" }],
+      };
       const passing = {
         number: 441,
         title: "Other story",
         foundIn: [{ source: "description" }],
       };
       const unknown = { number: 452, title: "Hotfix", foundIn: [] };
-      assert.strictEqual(component._ticketStrength({ prs: [story, passing] }), "strong");
-      assert.strictEqual(component._ticketStrength({ prs: [passing, unknown] }), "weak");
-      assert.strictEqual(component._ticketStrength({ prs: [unknown] }), "unknown");
+      assert.strictEqual(
+        component._ticketStrength({ prs: [story, passing] }),
+        "strong",
+      );
+      assert.strictEqual(
+        component._ticketStrength({ prs: [passing, unknown] }),
+        "weak",
+      );
+      assert.strictEqual(
+        component._ticketStrength({ prs: [unknown] }),
+        "unknown",
+      );
       assert.deepStrictEqual(component._pullRequestRefFields(story), {
         refClass: "hardis-pr-ref",
         title: "Story",
@@ -2178,7 +2196,7 @@ suite("Pull Request view", () => {
           "pullRequestLookup",
           "pullRequestHeader",
           "workflowRuns",
-            "ticketList",
+          "ticketList",
           "pullRequestList",
         ].flatMap((module) => [
           readModuleFile(module, `${module}.html`),

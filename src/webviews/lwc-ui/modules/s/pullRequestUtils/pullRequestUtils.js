@@ -238,7 +238,9 @@ export function matchPastedList(rows, text, ticketIds) {
     // The text of the description, or the excerpt the extension kept for the linked ticket when
     // the provider read it in a form the text does not hold as such
     const fromLinked = linkedTickets
-      .flatMap((ticket) => (Array.isArray(ticket?.foundIn) ? ticket.foundIn : []))
+      .flatMap((ticket) =>
+        Array.isArray(ticket?.foundIn) ? ticket.foundIn : [],
+      )
       .find((place) => place?.source === "description" && place.excerpt);
     mentions.push({
       id,
@@ -275,18 +277,12 @@ export function matchPastedList(rows, text, ticketIds) {
       );
       const inDescription = wholeWord.test(String(row.description || ""));
       const fields = [
-        [
-          "ticket",
-          linkedTickets.some((ticket) => !onlyInDescription(ticket)),
-        ],
+        ["ticket", linkedTickets.some((ticket) => !onlyInDescription(ticket))],
         ["title", wholeWord.test(String(row.title || ""))],
         ["branch", wholeWord.test(String(row.sourceBranch || ""))],
         // A linked ticket found in the description only is a description match, even when the
         // ticketing provider read it in a form the text does not hold as such
-        [
-          "description",
-          inDescription || linkedTickets.some(onlyInDescription),
-        ],
+        ["description", inDescription || linkedTickets.some(onlyInDescription)],
       ];
       for (const [reason, hit] of fields) {
         if (hit) {
