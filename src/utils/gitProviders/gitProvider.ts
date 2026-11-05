@@ -26,6 +26,7 @@ import { repositoryKeyFromRemoteUrl } from "../pullRequestDescriptionCache";
 import { SecretsManager } from "../secretsManager";
 import { TicketProvider } from "../ticketProviders/ticketProvider";
 import { Ticket } from "../ticketProviders/types";
+import { findTicketsInPullRequest } from "../pipeline/ticketSourceUtils";
 import { completePullRequestsWithActions } from "../prePostCommandsUtils";
 import {
   isMajorBranchCheckName,
@@ -1006,17 +1007,10 @@ export class GitProvider {
       return _pullRequests;
     }
     for (const pr of _pullRequests) {
-      const allpullRequestRelatedStrings = [
-        pr.title,
-        pr.description,
-        pr.sourceBranch,
-      ];
-      const concatenated = allpullRequestRelatedStrings
-        .filter(Boolean)
-        .join("\n");
-      const tickets: Ticket[] =
-        await ticketProvider.getTicketsFromString(concatenated);
-      pr.relatedTickets = tickets;
+      // Field by field, so each ticket knows where it was found (the tooltip of its chip)
+      pr.relatedTickets = await findTicketsInPullRequest(pr, (text) =>
+        ticketProvider.getTicketsFromString(text),
+      );
     }
     if (options.fetchDetails && ticketProvider.isAuthenticated) {
       // Make unique list of tickets from all PRs
@@ -1045,12 +1039,14 @@ export class GitProvider {
       for (const [index, ticket] of uniqueTickets.entries()) {
         uniqueTicketsMap.set(ticket.id, detailedResults[index] ?? ticket);
       }
-      // Update details back to PRs
+      // Update details back to PRs. The details are shared by every Pull Request naming the
+      // ticket, where it was found is not: each Pull Request keeps its own
       for (const pr of _pullRequests) {
         if (pr.relatedTickets) {
-          pr.relatedTickets = pr.relatedTickets.map(
-            (t) => uniqueTicketsMap.get(t.id) || t,
-          );
+          pr.relatedTickets = pr.relatedTickets.map((t) => ({
+            ...(uniqueTicketsMap.get(t.id) || t),
+            foundIn: t.foundIn,
+          }));
         }
       }
     }

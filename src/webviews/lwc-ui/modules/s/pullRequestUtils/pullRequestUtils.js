@@ -147,6 +147,217 @@ export function filterPullRequestList(pullRequests, query) {
 }
 
 /**
+ * The Pull Request numbers a pasted text names: #482, !482 (GitLab), PR 482, MR #482, Pull Request
+ * 482, and the URL of a Pull Request on GitHub, GitLab, Azure DevOps or Bitbucket. A bare number is
+ * never one: a date, an amount or story points would tick the wrong Pull Request.
+ */
+export function extractPullRequestReferences(text) {
+  const source = String(text || "");
+  const numbers = new Set();
+  const patterns = [
+    // Not inside a word or a path: "abc#12" and "a/b#12" are no reference
+    /(?<![\w/])[#!](\d+)\b/g,
+    /\b(?:PR|MR|pull request|merge request)\s*#?(\d+)\b/gi,
+    /\/(?:pull|pulls|merge_requests|pullrequest|pull-requests)\/(\d+)\b/gi,
+  ];
+  for (const pattern of patterns) {
+    for (const match of source.matchAll(pattern)) {
+      const number = parseInt(match[1], 10);
+      if (number > 0) {
+        numbers.add(number);
+      }
+    }
+  }
+  return [...numbers];
+}
+
+/**
+ * Where a ticket was found in a Pull Request, one line per place with the text around it, for the
+ * tooltip of a ticket id: `foundIn` is the list the extension computed (title, description,
+ * branch, or the story a promotion carries). `translate` is the t() of the component. With
+ * `prNumber`, each line starts with it: the Tickets tab lists the places of every Pull Request.
+ */
+export function ticketOriginLines(foundIn, translate, prNumber) {
+  const keys = {
+    title: "prListTicketFoundInTitle",
+    branch: "prListTicketFoundInBranch",
+    description: "prListTicketFoundInDescription",
+    carried: "prListTicketFoundInCarried",
+  };
+  return (Array.isArray(foundIn) ? foundIn : [])
+    .filter((place) => place && keys[place.source])
+    .map((place) => {
+      // The excerpt is free text of a Pull Request, given to a t() that substitutes with
+      // String.replace: its "$" would be read as a replacement pattern ($&, $'), so it is doubled,
+      // and {{pr}} is substituted first, so a "{{pr}}" written in the excerpt stays as it is
+      const line = translate(keys[place.source], {
+        pr: place.pullRequest ? `#${place.pullRequest}` : "",
+        excerpt: String(place.excerpt || "").replace(/\$/g, "$$$$"),
+      });
+      return prNumber > 0 ? `#${prNumber}: ${line}` : line;
+    });
+}
+
+// Characters kept on each side of a ticket mentioned in a description, the same as the excerpts
+// of the ticket tooltips
+const PASTE_EXCERPT_RADIUS = 60;
+
+/**
+ * What a pasted list (release notes, an email, a spreadsheet column) selects among the Pull
+ * Requests of a window. `ticketIds` are the ticket identifiers found in the text (the extension
+ * reads them with the ticket provider of the project). A ticket is looked for in each Pull Request:
+ * its linked tickets, title, source branch and description, case insensitive and as a whole word,
+ * so ABC-12 is not found inside ABC-123. Each match says why, so it can be checked before ticking.
+ *
+ * A Pull Request whose description is the only place naming a pasted ticket is a weak match: a
+ * description often mentions other tickets in passing ("the failing test comes from ABC-12,
+ * unrelated"), so it is kept apart, with the text around each mention, and not ticked unless asked.
+ * A linked ticket the extension only found in the description counts as a description match.
+ *
+ * Returns { found: [{ number, title, reasons }], weak: [{ number, title, mentions: [{ id,
+ * excerpt }] }], notSelectable: [{ number, title }], notFound: [ref] } where `found` and `weak`
+ * hold the rows whose `selectable` is true, `notSelectable` the others the text names, and
+ * `notFound` the references and ticket ids matching nothing.
+ */
+export function matchPastedList(rows, text, ticketIds) {
+  const list = (Array.isArray(rows) ? rows : []).filter(
+    (row) => row && row.number > 0,
+  );
+  const reasonsByNumber = new Map();
+  const mentionsByNumber = new Map();
+  const notFound = [];
+  const addReason = (row, reason) => {
+    const reasons = reasonsByNumber.get(row.number) || [];
+    if (!reasons.includes(reason)) {
+      reasons.push(reason);
+    }
+    reasonsByNumber.set(row.number, reasons);
+  };
+  const addMention = (row, id, wholeWord, linkedTickets) => {
+    const mentions = mentionsByNumber.get(row.number) || [];
+    // The text of the description, or the excerpt the extension kept for the linked ticket when
+    // the provider read it in a form the text does not hold as such
+    const fromLinked = linkedTickets
+      .flatMap((ticket) =>
+        Array.isArray(ticket?.foundIn) ? ticket.foundIn : [],
+      )
+      .find((place) => place?.source === "description" && place.excerpt);
+    mentions.push({
+      id,
+      excerpt:
+        textAround(String(row.description || ""), wholeWord) ||
+        String(fromLinked?.excerpt || ""),
+    });
+    mentionsByNumber.set(row.number, mentions);
+  };
+  for (const number of extractPullRequestReferences(text)) {
+    const row = list.find((candidate) => candidate.number === number);
+    if (row) {
+      addReason(row, "reference");
+    } else {
+      notFound.push(`#${number}`);
+    }
+  }
+  const seenTickets = new Set();
+  for (const rawId of Array.isArray(ticketIds) ? ticketIds : []) {
+    const id = String(rawId || "").trim();
+    if (!id || seenTickets.has(id.toLowerCase())) {
+      continue;
+    }
+    seenTickets.add(id.toLowerCase());
+    const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const wholeWord = new RegExp(
+      `(?<![A-Za-z0-9])${escaped}(?![A-Za-z0-9])`,
+      "i",
+    );
+    let matched = false;
+    for (const row of list) {
+      const linkedTickets = (row.relatedTickets || []).filter((ticket) =>
+        wholeWord.test(String(ticket?.id || "")),
+      );
+      const inDescription = wholeWord.test(String(row.description || ""));
+      const fields = [
+        ["ticket", linkedTickets.some((ticket) => !onlyInDescription(ticket))],
+        ["title", wholeWord.test(String(row.title || ""))],
+        ["branch", wholeWord.test(String(row.sourceBranch || ""))],
+        // A linked ticket found in the description only is a description match, even when the
+        // ticketing provider read it in a form the text does not hold as such
+        ["description", inDescription || linkedTickets.some(onlyInDescription)],
+      ];
+      for (const [reason, hit] of fields) {
+        if (hit) {
+          addReason(row, reason);
+          matched = true;
+        }
+      }
+      if (fields[3][1]) {
+        addMention(row, id, wholeWord, linkedTickets);
+      }
+    }
+    if (!matched) {
+      notFound.push(id);
+    }
+  }
+  const found = [];
+  const weak = [];
+  const notSelectable = [];
+  for (const row of list) {
+    const reasons = reasonsByNumber.get(row.number);
+    if (!reasons) {
+      continue;
+    }
+    if (row.selectable !== true) {
+      notSelectable.push({ number: row.number, title: row.title || "" });
+    } else if (reasons.every((reason) => reason === "description")) {
+      weak.push({
+        number: row.number,
+        title: row.title || "",
+        mentions: mentionsByNumber.get(row.number) || [],
+      });
+    } else {
+      found.push({ number: row.number, title: row.title || "", reasons });
+    }
+  }
+  return { found, weak, notSelectable, notFound };
+}
+
+/**
+ * How firmly a Pull Request is about a ticket, from where the ticket was found in it (`foundIn`):
+ * "weak" when the description is the only place (often a ticket mentioned in passing), "strong"
+ * when the title, the branch or a story a promotion carries names it, "unknown" when no place is
+ * known (a ticket the provider read in a form none of the fields holds as such).
+ */
+export function ticketMatchStrength(foundIn) {
+  const places = (Array.isArray(foundIn) ? foundIn : []).filter(
+    (place) => place && place.source,
+  );
+  if (places.length === 0) {
+    return "unknown";
+  }
+  return places.every((place) => place.source === "description")
+    ? "weak"
+    : "strong";
+}
+
+// A linked ticket only its description names. With no place known, nothing says it is weak: it
+// stays a link.
+function onlyInDescription(ticket) {
+  return ticketMatchStrength(ticket?.foundIn) === "weak";
+}
+
+// The text around the first whole-word match, on one line, "..." where it was cut
+function textAround(text, wholeWord, radius = PASTE_EXCERPT_RADIUS) {
+  const match = wholeWord.exec(text);
+  if (!match) {
+    return "";
+  }
+  const start = Math.max(0, match.index - radius);
+  const end = Math.min(text.length, match.index + match[0].length + radius);
+  const snippet = text.slice(start, end).replace(/\s+/g, " ").trim();
+  return `${start > 0 ? "..." : ""}${snippet}${end < text.length ? "..." : ""}`;
+}
+
+/**
  * The Pull Requests already in memory that match what was typed: number, title, branches, author
  * or the id of a related ticket. A Pull Request listed in several windows comes out once, open
  * ones first, then the most recent numbers.

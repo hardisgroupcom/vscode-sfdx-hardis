@@ -91,6 +91,10 @@ function docsPlugins() {
 // instead of MyCompany-CRM without editing a single existing fixture value.
 // ---------------------------------------------------------------------------
 const MOCK_UNIVERSE = process.env.SF_MOCK_UNIVERSE || "";
+// Help text of the two risky answers of the promotion conflict question, as
+// sfdx-hardis words it (promotionCreateConflictTakeSourceHelp)
+const TAKE_SOURCE_HELP =
+  "Risky: nobody reviews what this answer decides. A change made in the target branch on the same lines (a hotfix, a retrofit) can be lost, and lines of User Stories that are not part of this promotion can come along. No validation job notices: the files are listed under a warning in the Pull Request description, check them before merging.";
 const UNIVERSE_OVERLAY = (() => {
   if (!MOCK_UNIVERSE) {
     return {};
@@ -2988,14 +2992,34 @@ const DOCS_SCENARIOS = {
             description:
               "The promotion is assembled in one go, then a coding agent solves every conflict at once: copy the prompt from the Pull Request description (also saved in hardis-report/) and paste it to Claude Code, Codex, Copilot... This is the recommended way, as a promotion window usually conflicts on the same files story after story.",
           },
+          // Same order as sfdx-hardis: the recommended answer, the same for this story only,
+          // solving it now, leaving it out, the risky ones, undoing everything
+          {
+            title:
+              "Commit this User Story anyway, with its conflict markers, to solve them later on the branch (by hand or with a coding agent)",
+            value: "commit-with-markers",
+          },
+          {
+            title: "Solve the conflicts of this User Story now, then continue",
+            value: "solve-now",
+            description:
+              "The command lists the conflicting files, and opens them when it runs in VS Code. Solve them, save, then come back to this prompt: the command checks that no marker is left and continues the promotion.",
+          },
           {
             title: "Leave this User Story out of the promotion and continue",
             value: "skip",
           },
           {
             title:
-              "Commit this User Story anyway, with its conflict markers, to solve them later on the branch (by hand or with a coding agent)",
-            value: "commit-with-markers",
+              "Keep the source branch version of the conflicting lines (risky)",
+            value: "take-source",
+            description: TAKE_SOURCE_HELP,
+          },
+          {
+            title:
+              "Keep the source branch version for this conflict and every following one, without asking again (risky)",
+            value: "take-source-all",
+            description: TAKE_SOURCE_HELP,
           },
           { title: "Stop and undo the promotion branch", value: "abort" },
         ],
@@ -3003,7 +3027,14 @@ const DOCS_SCENARIOS = {
       log("log", "commit-with-markers-all");
       log("action", "Conflict handling: commit-with-markers-all");
       await subCommand("git add -A", 200);
-      await subCommand("git -c core.editor=true cherry-pick --continue", 400);
+      log(
+        "log",
+        "Git hooks skipped for this commit: it holds conflict markers on purpose, to be solved on the promotion branch",
+      );
+      await subCommand(
+        'git -c core.hooksPath="/tmp/sfdx-hardis-no-git-hooks" -c core.editor=true cherry-pick --continue',
+        400,
+      );
       log(
         "warning",
         `${labelOf(candidate)} committed with conflict markers in: ${promo.conflict.files.join(", ")}. Solve them on the branch before merging`,

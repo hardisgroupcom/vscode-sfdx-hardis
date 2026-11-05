@@ -66,6 +66,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // Branch modal: ids (key-field) and numbers of the stories ticked for the next promotion
   @track modalSelectedPrIds = [];
   modalSelectedPrNumbers = [];
+  // Answer of the extension to the "Select from a list" box of the Pull Request list
+  prListExtractedTickets = null;
   // Branch modal: the unfiltered list behind the current view (the branch window, or the go-live
   // selected in the combobox), so the toggles can be applied again without reloading anything
   @track modalSourcePullRequests = [];
@@ -1858,6 +1860,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       case "returnSchedulableClasses":
         this.handleReturnSchedulableClasses(data);
         break;
+      case "ticketIdsFromText":
+        // Handed to the Pull Request list, which keeps only the answer to its last request
+        this.prListExtractedTickets = data || null;
+        break;
       case "returnBatchableClasses":
         this.handleReturnBatchableClasses(data);
         break;
@@ -2724,6 +2730,18 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       }));
     }
     return this._prListRows;
+  }
+
+  // The list pasted in "Select from a list": the extension reads its ticket ids with the
+  // ticketing provider of the project, and answers with ticketIdsFromText
+  handlePrListExtractTickets(event) {
+    window.sendMessageToVSCode({
+      type: "extractTicketIdsFromText",
+      data: {
+        requestId: event.detail?.requestId,
+        text: event.detail?.text || "",
+      },
+    });
   }
 
   handleModalPrSelect(event) {
@@ -5682,13 +5700,16 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       if (pr.relatedTickets && Array.isArray(pr.relatedTickets)) {
         // A story cherry-picked by hand says so next to its reference in the Tickets tab too
         const cherryPick = this._cherryPickInfo(pr);
-        const prEntry = () => ({
+        // Where the ticket was found belongs to the pair: the tooltip of the Tickets tab lists it
+        // for every Pull Request of the ticket
+        const prEntry = (ticket) => ({
           number: pr.number,
           title: pr.title,
           webUrl: pr.webUrl,
           cherryPickLabel: cherryPick ? cherryPick.label : "",
           cherryPickTitle: cherryPick ? cherryPick.title : "",
           cherryPickPillClass: cherryPick ? cherryPick.pillClass : "",
+          foundIn: ticket.foundIn || [],
         });
         for (const ticket of pr.relatedTickets) {
           if (ticket && ticket.id) {
@@ -5703,12 +5724,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
                 authorLabel: ticket.authorLabel || "",
                 url: ticket.url || "",
                 ...this._ticketDisplayFields(ticket),
-                prs: [prEntry()],
+                prs: [prEntry(ticket)],
               });
             } else {
               // Ticket already exists - add this PR to the list
               const existingTicket = ticketsMap.get(ticket.id);
-              existingTicket.prs.push(prEntry());
+              existingTicket.prs.push(prEntry(ticket));
             }
           }
         }

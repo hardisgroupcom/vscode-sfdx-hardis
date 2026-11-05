@@ -1,11 +1,19 @@
 import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
-import { safeWebUrl } from "s/pullRequestUtils";
+import {
+  safeWebUrl,
+  ticketMatchStrength,
+  ticketOriginLines,
+} from "s/pullRequestUtils";
 
 /**
  * Tickets tab of the Pull Request modal: one row per ticket, its status as a pill, who it is
  * assigned to, and the Pull Requests that mention it as references opening them in the panel.
  * The pills above the list add up the tickets by status and filter them.
+ *
+ * Each ticket says whether it is a strong match (a title, a branch or a carried story names it)
+ * or a weak one (only descriptions mention it, often in passing), the same rule as "Select from a
+ * list". A Pull Request reference only mentioning the ticket in its description is marked too.
  *
  * `tickets` are the rows built by s/pipeline (_aggregateTicketsFromPRs).
  *
@@ -79,11 +87,26 @@ export default class TicketList extends SharedMixin(LightningElement) {
     return this._tickets
       .filter((ticket) => !this.hiddenStatuses.includes(ticket.statusLabel))
       .map((ticket) => {
+        const strength = this._ticketStrength(ticket);
         return {
           key: ticket.id,
           id: ticket.id,
           url: safeWebUrl(ticket.url),
           subject: ticket.subject || "",
+          tooltip: this._ticketTooltip(ticket),
+          hasStrength: strength !== "unknown",
+          strengthLabel:
+            strength === "weak"
+              ? this.i18n.ticketsMatchWeak
+              : this.i18n.ticketsMatchStrong,
+          strengthTitle:
+            strength === "weak"
+              ? this.i18n.ticketsMatchWeakHelp
+              : this.i18n.ticketsMatchStrongHelp,
+          strengthPillClass:
+            strength === "weak"
+              ? "hardis-pill hardis-status-pending ticket-strength"
+              : "hardis-pill hardis-status-info ticket-strength",
           hasStatus: this.detailsAvailable && !!ticket.statusLabel,
           statusLabel: ticket.statusLabel || "",
           statusPillClass:
@@ -100,7 +123,7 @@ export default class TicketList extends SharedMixin(LightningElement) {
                   key: `${ticket.id}-${pr.number}`,
                   number: pr.number,
                   label: `#${pr.number}`,
-                  title: pr.title || "",
+                  ...this._pullRequestRefFields(pr),
                   // A cherry-pick made by hand, as the Pull Requests tab shows it
                   cherryPickKey: `${ticket.id}-${pr.number}-cherry-pick`,
                   cherryPickLabel: pr.cherryPickLabel || "",
@@ -135,5 +158,44 @@ export default class TicketList extends SharedMixin(LightningElement) {
     if (prNumber > 0) {
       this.dispatchEvent(new CustomEvent("open", { detail: { prNumber } }));
     }
+  }
+
+  // Strong as soon as one Pull Request is about the ticket, weak when every Pull Request whose
+  // places are known only mentions it in its description
+  _ticketStrength(ticket) {
+    const strengths = (ticket.prs || [])
+      .filter((pr) => pr && pr.number > 0)
+      .map((pr) => ticketMatchStrength(pr.foundIn))
+      .filter((strength) => strength !== "unknown");
+    if (strengths.length === 0) {
+      return "unknown";
+    }
+    return strengths.includes("strong") ? "strong" : "weak";
+  }
+
+  // A reference to a Pull Request that only mentions the ticket in its description is marked,
+  // and its title says why
+  _pullRequestRefFields(pr) {
+    const weak = ticketMatchStrength(pr.foundIn) === "weak";
+    return {
+      refClass: weak ? "hardis-pr-ref ticket-pr-weak" : "hardis-pr-ref",
+      title: weak
+        ? `${pr.title || ""}\n${this.t("ticketsMatchWeakPullRequest", { pr: `#${pr.number}` })}`.trim()
+        : pr.title || "",
+    };
+  }
+
+  // The subject of a ticket, then where each Pull Request mentions it, with the text around it.
+  // Several Pull Requests: each line starts with the number of its Pull Request.
+  _ticketTooltip(ticket) {
+    const prs = (ticket.prs || []).filter((pr) => pr && pr.number > 0);
+    const lines = prs.flatMap((pr) =>
+      ticketOriginLines(
+        pr.foundIn,
+        (key, params) => this.t(key, params),
+        prs.length > 1 ? pr.number : 0,
+      ),
+    );
+    return [ticket.subject || "", ...lines].filter(Boolean).join("\n");
   }
 }

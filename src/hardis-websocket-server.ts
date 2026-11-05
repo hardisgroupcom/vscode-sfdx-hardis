@@ -650,17 +650,29 @@ export class LocalWebSocketServer {
     // Request to open a file in editor
     else if (data.event === "openFile") {
       const currentWorkspaceFolderUri = getWorkspaceRoot();
-      var openPath = vscode.Uri.parse(
-        "file:///" + currentWorkspaceFolderUri + "/" + data.file,
+      // Uri.file, not Uri.parse: a Salesforce file name keeps its URL encoding on disk
+      // ("Account %28Sales%29 Layout.layout-meta.xml"), and parse would decode it into a
+      // name that does not exist. An absolute path is opened as it is.
+      var openPath = vscode.Uri.file(
+        path.isAbsolute(data.file)
+          ? data.file
+          : path.join(currentWorkspaceFolderUri, data.file),
       );
-      vscode.workspace.openTextDocument(openPath).then((doc) => {
-        vscode.window.showTextDocument(doc);
-        if (data.file.endsWith(".md")) {
-          new Promise((resolve) => setTimeout(resolve, 500)).then(() => {
-            vscode.commands.executeCommand("markdown.showPreview", doc);
-          });
-        }
-      });
+      vscode.workspace.openTextDocument(openPath).then(
+        (doc) => {
+          // Not a preview tab: a command opening several files (the conflicting files of a
+          // promotion) would otherwise replace each one with the next
+          vscode.window.showTextDocument(doc, { preview: false });
+          if (data.file.endsWith(".md")) {
+            new Promise((resolve) => setTimeout(resolve, 500)).then(() => {
+              vscode.commands.executeCommand("markdown.showPreview", doc);
+            });
+          }
+        },
+        (error) => {
+          Logger.log(`Could not open ${openPath.fsPath}: ${String(error)}`);
+        },
+      );
     }
     // Request the extension version (used by "sf hardis:doctor").
     // Answered regardless of userInput mode, as the command can run outside the LWC UI.

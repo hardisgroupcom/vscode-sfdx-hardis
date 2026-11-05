@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- DevOps Pipeline: when ticking User Stories for a promotion, **Selected only** shows the ticked ones, and **Select from a list** ticks the Pull Requests named in pasted text (release notes, an email, a spreadsheet column), directly or through their tickets, saying where each one was found
+  - A Pull Request whose description only mentions a pasted ticket is listed apart with the text around it, and ticked only when asked
+- DevOps Pipeline: hovering a ticket id shows where the Pull Request mentions it (title, description, branch, or the story a promotion carries), with the text around it
+  - The Tickets tab marks each ticket as a strong match (named in a title, a branch or a carried story) or a weak one (only mentioned in descriptions)
+- A file sfdx-hardis asks to open (a report, a conflicting file of a promotion) opens even when its name holds URL-encoded characters, like `Account %28Sales%29 Layout.layout-meta.xml`
+- Documentation screenshots: the promotion conflict question shows the new "solve now" and "keep the source version" answers of sfdx-hardis
 - DevOps Pipeline: the deployment arrow of a major branch shows its last real deployment again, no longer replaced by a scheduled run or by a run of the major branch deployment check
 - DevOps Pipeline: with the new **Enable major branch deployment check** setting (Pipeline Settings), each major branch node shows whether the branch still deploys to its own org, from the last scheduled check job
   - Green when deployable, red when not, pulsing while a check runs, lighter and dashed when the result is older than the validity you set or a deployment ran since
