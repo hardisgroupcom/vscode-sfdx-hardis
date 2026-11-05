@@ -2992,6 +2992,13 @@ const DOCS_SCENARIOS = {
             description:
               "The promotion is assembled in one go, then a coding agent solves every conflict at once: copy the prompt from the Pull Request description (also saved in hardis-report/) and paste it to Claude Code, Codex, Copilot... This is the recommended way, as a promotion window usually conflicts on the same files story after story.",
           },
+          // Same order as sfdx-hardis: the recommended answer, the same for this story only,
+          // solving it now, leaving it out, the risky ones, undoing everything
+          {
+            title:
+              "Commit this User Story anyway, with its conflict markers, to solve them later on the branch (by hand or with a coding agent)",
+            value: "commit-with-markers",
+          },
           {
             title: "Solve the conflicts of this User Story now, then continue",
             value: "solve-now",
@@ -3001,11 +3008,6 @@ const DOCS_SCENARIOS = {
           {
             title: "Leave this User Story out of the promotion and continue",
             value: "skip",
-          },
-          {
-            title:
-              "Commit this User Story anyway, with its conflict markers, to solve them later on the branch (by hand or with a coding agent)",
-            value: "commit-with-markers",
           },
           {
             title:
