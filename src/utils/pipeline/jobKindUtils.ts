@@ -10,12 +10,17 @@ import { Job, JobKind, JobTiming } from "../gitProviders/types";
  * - Bitbucket: Simulate SFDX deployment, Run MegaLinter, Deploy to major org
  *
  * Code quality is tested first: "check_quality" must not be read as a deployment check. A
- * validation is a deployment that is only simulated, so it is tested before "deploy".
+ * validation is a deployment that is only simulated, so it is tested before "deploy". The major
+ * branch deployment check (see isMajorBranchCheckName) is a validation too: "Check Major Branch
+ * Deployment" would otherwise be read as a deployment.
  */
 export function classifyJobKind(name: string | undefined | null): JobKind {
   const text = String(name || "").toLowerCase();
   if (/mega[\s_-]?linter|quality|\blint/.test(text)) {
     return "codeQuality";
+  }
+  if (isMajorBranchCheckName(text)) {
+    return "validation";
   }
   if (
     /simulat|check[\s_-]?deploy|deploy(ment)?[\s_-]?check|validat/.test(text)
@@ -26,6 +31,29 @@ export function classifyJobKind(name: string | undefined | null): JobKind {
     return "deployment";
   }
   return "other";
+}
+
+/**
+ * True for the name of the scheduled job that simulates the deployment of a major branch into its
+ * own org (sfdx-hardis enableMajorBranchDeploymentCheck). The names of the CI files sfdx-hardis
+ * installs:
+ *
+ * - GitHub:    Check Major Branch Deployment (sfdx-hardis), jobs Check Major Branch Deployment (<branch>)
+ * - GitLab:    check_deploy_to_current_branch_org
+ * - Azure:     Check Major Branch Deployment, job MajorBranchDeploymentCheck
+ * - Bitbucket: check-major-branch-deployment, step Check Major Branch Deployment
+ *
+ * A Jenkins or another external CI is told by the "major branch check" its job is named after.
+ * Such a run is no deployment: it never says what the deployment arrow of a branch shows.
+ */
+export function isMajorBranchCheckName(
+  name: string | undefined | null,
+): boolean {
+  const text = String(name || "");
+  return (
+    /(current|major)[\s_-]?branch/i.test(text) &&
+    /check|simulat|validat/i.test(text)
+  );
 }
 
 /**

@@ -187,9 +187,33 @@
     animation: edgeAnimationSlow 2s ease-in-out infinite;
 }
 
+/* A major branch whose deployment check is running pulses like a running
+   edge. Mermaid compiles classDefs with !important on fill and stroke only,
+   so the opacity of the node shape can be animated. The count bubble is a
+   group of its own and is not hit. */
+@keyframes nodeCheckRunning {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.55;
+    }
+}
+
+.mermaid svg g.node.hardis-node-check-running > rect,
+.mermaid svg g.node.hardis-node-check-running > path,
+.mermaid svg g.node.hardis-node-check-running > polygon,
+.mermaid svg g.node.hardis-node-check-running > g > path {
+    animation: nodeCheckRunning 1.4s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
     .mermaid svg path.edge-animation-fast,
-    .mermaid svg path.edge-animation-slow {
+    .mermaid svg path.edge-animation-slow,
+    .mermaid svg g.node.hardis-node-check-running > rect,
+    .mermaid svg g.node.hardis-node-check-running > path,
+    .mermaid svg g.node.hardis-node-check-running > polygon,
+    .mermaid svg g.node.hardis-node-check-running > g > path {
         animation: none;
     }
 }
@@ -232,6 +256,12 @@
     width: 8px;
     height: 8px;
     margin-right: 2px;
+}
+
+/* Status dot of a major branch node colored by its deployment check: a ring
+   keeps it visible on a fill of the same color */
+.mermaid .hardis-node-check-dot {
+    outline: 1.5px solid var(--slds-g-color-neutral-base-100);
 }
 
 /* Edge label pills: round the themed background behind labels */
@@ -295,6 +325,35 @@
 .legend-dot {
     width: 8px;
     height: 8px;
+}
+
+/* A branch node colored by its last deployment check */
+.legend-node-check {
+    display: inline-block;
+    width: 18px;
+    height: 10px;
+    border-radius: 3px;
+    background: linear-gradient(
+        90deg,
+        var(--slds-g-color-palette-green-50) 50%,
+        var(--slds-g-color-palette-red-40) 50%
+    );
+}
+
+/* Last deployment check of a major branch, in the last tab of its window */
+.major-branch-check-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.major-branch-check-stale {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--slds-g-color-palette-orange-40);
 }
 
 /* Make clickable branch nodes show pointer cursor */

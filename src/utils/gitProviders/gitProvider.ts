@@ -10,6 +10,7 @@ import type {
   Job,
   JobKind,
   JobTiming,
+  MajorBranchCheck,
   RepoInfo,
   JobStatus,
 } from "./types";
@@ -27,6 +28,7 @@ import { TicketProvider } from "../ticketProviders/ticketProvider";
 import { Ticket } from "../ticketProviders/types";
 import { completePullRequestsWithActions } from "../prePostCommandsUtils";
 import {
+  isMajorBranchCheckName,
   isUnfinishedJob,
   pickUnfinishedJobsByKind,
 } from "../pipeline/jobKindUtils";
@@ -56,6 +58,14 @@ export class GitProvider {
   // the (top) branch, so as long as the branch tip is unchanged the cached list
   // is still valid and the PR listing can be skipped. Same lifetime as above.
   protected goLivesCache: Map<string, GoLive[]> = new Map();
+
+  // Jobs of the runs that are over, by run: see listJobsOfRunCached. Same lifetime as above.
+  private finishedRunJobs:
+    Map<string, { version: string; jobs: Job[] }> | undefined;
+
+  // Answers shared for a few seconds: see shareRecentCall
+  private recentCalls:
+    Map<string, { at: number; value: Promise<unknown> }> | undefined;
 
   // Caches the "no provider detectable" result (no git repo, no origin remote,
   // unknown host): without it, every call re-spawns `git remote -v`.
@@ -457,6 +467,17 @@ export class GitProvider {
     return await this.expandUnfinishedRuns(branchJobs.jobs || [], "deployment");
   }
 
+  /**
+   * The last run of the scheduled job that simulates the deployment of a major branch into its
+   * own org (sfdx-hardis enableMajorBranchDeploymentCheck), shown on the node of the branch in the
+   * DevOps Pipeline. Null when none is found, or when the provider does not tell.
+   */
+  async getMajorBranchDeploymentCheck(
+    _branchName: string,
+  ): Promise<MajorBranchCheck | null> {
+    return null;
+  }
+
   async listOpenPullRequests(): Promise<PullRequest[]> {
     Logger.log(
       `listOpenPullRequests not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
@@ -760,6 +781,150 @@ export class GitProvider {
     }
   }
 
+  /**
+   * The jobs of a run, kept in memory once the run is over: the DevOps Pipeline refreshes every
+   * minute, and only the runs still going on are asked again. `runKey` names the run on its
+   * provider (its id). A run started again keeps its id (GitHub "Re-run failed jobs", a GitLab
+   * retry, an Azure or Bitbucket rerun) but not its attempt nor its update date: the cached jobs
+   * are only served for the same version of the run.
+   */
+  protected async listJobsOfRunCached(
+    run: Job,
+    runKey: string,
+  ): Promise<Job[]> {
+    const cache = this.finishedRunJobsCache();
+    const version = `${run.raw?.run_attempt ?? ""}|${run.status}|${run.updatedAt ?? ""}`;
+    const cached = cache.get(runKey);
+    if (cached && cached.version === version) {
+      return cached.jobs;
+    }
+    const jobs = await this.listJobsOfRun(run);
+    if (run.status === "success" || run.status === "failed") {
+      cache.set(runKey, { version, jobs });
+    } else {
+      cache.delete(runKey);
+    }
+    return jobs;
+  }
+
+  /**
+   * The first run of a list (newest first) that is not a major branch deployment check, for the
+   * deployment arrow. A run started by hand, by API or by a trigger can either deploy the branch or
+   * run the check (`mayRunCheck`): its jobs tell, read once when it is over. Only the 3 newest runs
+   * are opened this way; past them, the first run that cannot be a check is taken.
+   */
+  protected async firstRunWithoutMajorBranchCheck<T>(
+    newestFirst: T[],
+    run: {
+      mayRunCheck: (item: T) => boolean;
+      toJob: (item: T) => Job;
+      key: (item: T) => string;
+    },
+  ): Promise<T | null> {
+    for (const item of newestFirst.slice(0, 3)) {
+      if (!run.mayRunCheck(item)) {
+        return item;
+      }
+      const jobs = await this.listJobsOfRunCached(
+        run.toJob(item),
+        run.key(item),
+      );
+      if (!this.pickMajorBranchCheckJob(jobs)) {
+        return item;
+      }
+    }
+    return newestFirst.slice(3).find((item) => !run.mayRunCheck(item)) ?? null;
+  }
+
+  /**
+   * Runs `call` once for every caller asking the same `key` within a few seconds, and gives them
+   * all its answer. On each refresh of the DevOps Pipeline, the deployment arrow and the major
+   * branch deployment check of a branch read the same list from the git provider: one call is
+   * enough. A call that fails is not shared.
+   */
+  protected shareRecentCall<T>(
+    key: string,
+    call: () => Promise<T>,
+    maxAgeMs = 10000,
+  ): Promise<T> {
+    if (!this.recentCalls) {
+      this.recentCalls = new Map();
+    }
+    const calls = this.recentCalls;
+    const now = Date.now();
+    const recent = calls.get(key);
+    if (recent && now - recent.at < maxAgeMs) {
+      return recent.value as Promise<T>;
+    }
+    const value = call();
+    calls.set(key, { at: now, value });
+    value.catch(() => {
+      if (calls.get(key)?.value === value) {
+        calls.delete(key);
+      }
+    });
+    return value;
+  }
+
+  /**
+   * The first job of a run that is the major branch deployment check, out of its jobs as
+   * listJobsOfRun gives them. A job that did not run (manual, skipped: status unknown) is not one.
+   * `branchName`, when given, must be named in the job: one job per branch (GitHub matrix). The job
+   * holds the git branch (release/uat), a config file name writes it with __ (release__uat): both
+   * are accepted.
+   */
+  protected pickMajorBranchCheckJob(
+    jobs: Job[],
+    branchName?: string,
+  ): Job | null {
+    const names = branchName
+      ? [`(${branchName})`, `(${branchName.replace(/__/g, "/")})`]
+      : [];
+    return (
+      (jobs || []).find(
+        (job) =>
+          isMajorBranchCheckName(job.name) &&
+          job.status !== "unknown" &&
+          (names.length === 0 ||
+            names.some((name) => String(job.name || "").includes(name))),
+      ) || null
+    );
+  }
+
+  /**
+   * The major branch deployment check reported as a commit status by an external CI (Jenkins):
+   * the newest status named after it.
+   */
+  protected pickMajorBranchCheckFromStatuses(
+    statusJobs: Job[],
+  ): MajorBranchCheck | null {
+    const checks = (statusJobs || [])
+      .filter((job) => isMajorBranchCheckName(job.name))
+      .sort((a, b) =>
+        String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")),
+      );
+    return checks.length > 0 ? this.toMajorBranchCheck(checks[0]) : null;
+  }
+
+  /** A job as the check shown on a branch node: a job that is over has its end date. */
+  protected toMajorBranchCheck(job: Job): MajorBranchCheck {
+    const over = job.status === "success" || job.status === "failed";
+    return {
+      status: job.status,
+      name: job.name,
+      webUrl: job.webUrl || "",
+      startedAt: job.startedAt || undefined,
+      finishedAt: over ? job.updatedAt || undefined : undefined,
+    };
+  }
+
+  /** The commit statuses of a branch, without the major branch deployment check. */
+  protected leaveOutMajorBranchChecks(statusJobs: Job[]): Job[] {
+    return (statusJobs || []).filter(
+      (job) => !isMajorBranchCheckName(job.name),
+    );
+  }
+
   // Only the runs that are not over are opened: a finished run costs no call
   private async expandUnfinishedRuns(
     runs: Job[],
@@ -782,6 +947,17 @@ export class GitProvider {
       (run) => jobsByRun.get(run) || [],
       fallbackKind,
     );
+  }
+
+  // Created on first use: the provider suites build instances without running the constructor
+  private finishedRunJobsCache(): Map<
+    string,
+    { version: string; jobs: Job[] }
+  > {
+    if (!this.finishedRunJobs) {
+      this.finishedRunJobs = new Map();
+    }
+    return this.finishedRunJobs;
   }
 
   // The repository the cached answers belong to, from the git remote of the working copy

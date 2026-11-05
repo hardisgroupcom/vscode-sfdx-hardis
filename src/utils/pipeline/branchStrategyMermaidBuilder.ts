@@ -17,6 +17,7 @@ import {
   parsePromotionBranchName,
 } from "./promotionBranchUtils";
 import { t } from "../../i18n/i18n";
+import { MajorBranchCheckView } from "./majorBranchCheckUtils";
 
 /**
  * Describes a "+N more" node that folds the older feature branches targeting a
@@ -72,6 +73,9 @@ export class BranchStrategyMermaidBuilder {
     enabled: false,
     allowedSteps: [],
   };
+  // Last major branch deployment check of each major branch, by branch name: empty unless the
+  // project enables enableMajorBranchDeploymentCheck (see majorBranchCheckUtils.ts)
+  private majorBranchChecks: Record<string, MajorBranchCheckView | null> = {};
 
   constructor(
     branchesAndOrgs: any[],
@@ -84,8 +88,10 @@ export class BranchStrategyMermaidBuilder {
       enabled: false,
       allowedSteps: [],
     },
+    majorBranchChecks: Record<string, MajorBranchCheckView | null> = {},
   ) {
     this.promotionBranchConfig = promotionBranchConfig;
+    this.majorBranchChecks = majorBranchChecks || {};
     this.branchesAndOrgs = branchesAndOrgs;
     this.openPullRequests = openPullRequests;
     this.isAuthenticated = isAuthenticated;
@@ -132,10 +138,9 @@ export class BranchStrategyMermaidBuilder {
     this.listSalesforceOrgsAndLinks();
 
     if (options.onlyMajorBranches) {
-      // Filter out feature/hotfix/dev branches
-      this.gitBranches = this.gitBranches.filter(
-        (b) => b.class === "gitMain" || b.class === "gitMajor",
-      );
+      // Filter out feature/hotfix/dev branches (a major branch node can carry the class of its
+      // deployment check instead of gitMain / gitMajor)
+      this.gitBranches = this.gitBranches.filter((b) => b.isMajorNode === true);
       this.gitLinks = this.gitLinks.filter((l) => {
         // Only keep links between major branches
         const src = this.gitBranches.find((b) => b.nodeName === l.source);
@@ -251,18 +256,30 @@ export class BranchStrategyMermaidBuilder {
       // a notification-style bubble on the node's top-right corner (see
       // _decorateMermaidNodes in pipeline.js). It cannot be rendered inside
       // the label because foreignObject clips HTML label overflow.
+      // The last deployment check of the branch against its org: its status is a dot in the label
+      // (it does not rely on the node color alone) and the node class
+      const check = this.majorBranchCheckOf(branchAndOrg.branchName);
+      const checkDot = check
+        ? `<span class='hardis-pill-dot hardis-node-dot hardis-node-check-dot hardis-status-${check.status}'></span> `
+        : "";
       const branchLabel =
+        checkDot +
         BRANCH_ICON_SVG +
         " " +
         this.escapeHtmlLabel(branchAndOrg.branchName) +
         (prCount > 0
           ? `<span class='hardis-node-count' data-count='${prCount}' style='display:none;'></span>`
           : "");
+      const defaultClass = isProduction(branchAndOrg.branchName)
+        ? "gitMain"
+        : "gitMajor";
       return {
         name: branchAndOrg.branchName,
         nodeName: nodeName,
         label: branchLabel,
-        class: isProduction(branchAndOrg.branchName) ? "gitMain" : "gitMajor",
+        class: check ? this.majorBranchCheckClass(check) : defaultClass,
+        isMajorNode: true,
+        majorBranchCheck: check,
         level: branchAndOrg.level,
         instanceUrl: branchAndOrg.instanceUrl,
       };
@@ -863,10 +880,65 @@ export class BranchStrategyMermaidBuilder {
 
     // Add click callbacks for all branches (must be at the end)
     for (const gitBranch of this.gitBranches) {
+      const tooltip = gitBranch.majorBranchCheck
+        ? this.majorBranchCheckTooltip(
+            gitBranch.name,
+            gitBranch.majorBranchCheck,
+          )
+        : `Show ${gitBranch.name}`;
       this.mermaidLines.push(
-        `click ${gitBranch.nodeName} call handleMermaidClick() "Show ${gitBranch.name}"`,
+        `click ${gitBranch.nodeName} call handleMermaidClick() "${tooltip}"`,
       );
     }
+  }
+
+  /**
+   * The check of a major branch the diagram shows: only a status it can draw. Unknown (a check
+   * that never ran its job) leaves the node as it is without the feature.
+   */
+  private majorBranchCheckOf(branchName: string): MajorBranchCheckView | null {
+    const check = this.majorBranchChecks[branchName];
+    return check &&
+      ["success", "failed", "running", "pending"].includes(check.status)
+      ? check
+      : null;
+  }
+
+  /**
+   * Node class of a major branch with a deployment check: green when the branch deploys, red when
+   * it does not, a lighter dashed version of both when the result is stale, and the usual blue
+   * while a check runs or waits for a runner (the webview makes it pulse).
+   */
+  private majorBranchCheckClass(check: MajorBranchCheckView): string {
+    if (check.status === "running" || check.status === "pending") {
+      return "gitBranchCheckRunning";
+    }
+    const base =
+      check.status === "success"
+        ? "gitBranchCheckSuccess"
+        : "gitBranchCheckFailed";
+    return check.stale ? `${base}Stale` : base;
+  }
+
+  // Tooltip of the node of a major branch with a deployment check. Mermaid ends it at a double quote
+  private majorBranchCheckTooltip(
+    branchName: string,
+    check: MajorBranchCheckView,
+  ): string {
+    const statusLabels: Record<string, string> = {
+      success: t("jobStatusSuccess"),
+      failed: t("jobStatusFailed"),
+      running: t("jobStatusRunning"),
+      pending: t("jobStatusPending"),
+    };
+    const params = {
+      branch: branchName,
+      status: statusLabels[check.status] || t("jobStatusUnknown"),
+    };
+    const tooltip = check.stale
+      ? t("majorBranchCheckStaleTooltip", params)
+      : t("majorBranchCheckTooltip", params);
+    return String(tooltip).replace(/"/g, "'");
   }
 
   private addLinks(links: any[]) {
@@ -1039,6 +1111,11 @@ export class BranchStrategyMermaidBuilder {
   classDef gitMain fill:#1b96ff,stroke:#57a3fd,stroke-width:1.5px,color:#032d60,font-weight:700;
   classDef gitFeature fill:#1b232d,stroke:#33414e,stroke-width:1.25px,color:#c4d2de,font-weight:400;
   classDef gitFeatureGroup fill:#152b3f,stroke:#3489db,stroke-width:1.5px,stroke-dasharray:3 3,color:#a9cff7,font-weight:600;
+  classDef gitBranchCheckSuccess fill:#3e9b58,stroke:#a5e2b6,stroke-width:1.5px,color:#071f0f,font-weight:600;
+  classDef gitBranchCheckFailed fill:#f27065,stroke:#fcc0b9,stroke-width:1.5px,color:#3e0105,font-weight:600;
+  classDef gitBranchCheckRunning fill:#0b5cab,stroke:#3489db,stroke-width:1.5px,color:#eaf3ff,font-weight:600;
+  classDef gitBranchCheckSuccessStale fill:#12301d,stroke:#3e9b58,stroke-width:1.5px,stroke-dasharray:4 3,color:#a5e2b6,font-weight:600;
+  classDef gitBranchCheckFailedStale fill:#3e1215,stroke:#f27065,stroke-width:1.5px,stroke-dasharray:4 3,color:#fcc0b9,font-weight:600;
   style GitBranches fill:#161d25,color:#7a8b9c,stroke:#2b3642,stroke-width:1px;
   style SalesforceOrgs fill:#161d25,color:#7a8b9c,stroke:#2b3642,stroke-width:1px;
   style SalesforceDevOrgs fill:#161d25,color:#7a8b9c,stroke:#2b3642,stroke-width:1px;
@@ -1051,6 +1128,11 @@ export class BranchStrategyMermaidBuilder {
   classDef gitMain fill:#032d60,stroke:#032d60,stroke-width:1.5px,color:#ffffff,font-weight:700;
   classDef gitFeature fill:#ffffff,stroke:#d5dfe9,stroke-width:1.25px,color:#24435f,font-weight:400;
   classDef gitFeatureGroup fill:#eaf5fe,stroke:#0176d3,stroke-width:1.5px,stroke-dasharray:3 3,color:#014486,font-weight:600;
+  classDef gitBranchCheckSuccess fill:#2e844a,stroke:#1e5e37,stroke-width:1.5px,color:#ffffff,font-weight:600;
+  classDef gitBranchCheckFailed fill:#ba0517,stroke:#8e030f,stroke-width:1.5px,color:#ffffff,font-weight:600;
+  classDef gitBranchCheckRunning fill:#0176d3,stroke:#0b5cab,stroke-width:1.5px,color:#ffffff,font-weight:600;
+  classDef gitBranchCheckSuccessStale fill:#ebf7ee,stroke:#2e844a,stroke-width:1.5px,stroke-dasharray:4 3,color:#1e5e37,font-weight:600;
+  classDef gitBranchCheckFailedStale fill:#fef1ee,stroke:#ba0517,stroke-width:1.5px,stroke-dasharray:4 3,color:#8e030f,font-weight:600;
   style GitBranches fill:#f8fbfd,color:#5b6c7e,stroke:#dce5ee,stroke-width:1px;
   style SalesforceOrgs fill:#f8fbfd,color:#5b6c7e,stroke:#dce5ee,stroke-width:1px;
   style SalesforceDevOrgs fill:#f8fbfd,color:#5b6c7e,stroke:#dce5ee,stroke-width:1px;

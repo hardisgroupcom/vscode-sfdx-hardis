@@ -255,6 +255,18 @@ export type GoLive = {
   webUrl?: string; // canonical UI url of the promotion PR
 };
 
+/**
+ * The last run of the scheduled job that simulates the deployment of a major branch into its own
+ * org (sfdx-hardis enableMajorBranchDeploymentCheck). A canceled run is failed, as everywhere else.
+ */
+export type MajorBranchCheck = {
+  status: JobStatus;
+  name: string; // name of the job (or of the pipeline when no job can be told apart)
+  webUrl: string; // page of the job
+  startedAt?: string; // ISO date string
+  finishedAt?: string; // ISO date string, absent while the job is not over
+};
+
 /** When a CI job ran, read back from its link: what the time it took is computed from. */
 export type JobTiming = {
   // True for a job that is queued or running: the run is not over, whatever its other jobs say

@@ -9,8 +9,11 @@ import {
   Job,
   JobStatus,
 } from "./types";
-import type { JobKind, JobTiming } from "./types";
-import { pickJobTiming } from "../pipeline/jobKindUtils";
+import type { JobKind, JobTiming, MajorBranchCheck } from "./types";
+import {
+  isMajorBranchCheckName,
+  pickJobTiming,
+} from "../pipeline/jobKindUtils";
 import { mapAzureMergeStatus } from "./mergeStatus";
 import * as azdev from "azure-devops-node-api";
 import { GitApi } from "azure-devops-node-api/GitApi";
@@ -1611,75 +1614,21 @@ export class GitProviderAzure extends GitProvider {
     }
 
     try {
-      // Use server-side filtering with exact branch reference
-      const builds = await this.buildApi!.getBuilds(
-        this.repoInfo.owner, // project
-        undefined, // definitions
-        undefined, // queues
-        undefined, // buildNumber
-        undefined, // minTime
-        undefined, // maxTime
-        undefined, // requestedFor
-        undefined, // reasonFilter: undefined = all except PullRequest
-        undefined, // statusFilter
-        undefined, // resultFilter
-        undefined, // tagFilters
-        undefined, // properties
-        5, // top: limit results
-        undefined, // continuationToken
-        undefined, // maxBuildsPerDefinition
-        undefined, // deletedFilter
-        4, // queryOrder: QueueTimeDescending (4) ensures most recently triggered build first
-        `refs/heads/${branchName}`, // branchName: exact branch reference
+      const builds = await this.listBranchBuilds(
+        branchName,
+        "getJobsForBranchLatestCommit",
       );
-      await this.logApiCall("buildApi.getBuilds", {
-        caller: "getJobsForBranchLatestCommit",
-        branchName: `refs/heads/${branchName}`,
-      });
-
-      // Additional filter to exclude PR-triggered builds (reason code varies)
-      const commitBuilds = (builds || []).filter(
-        (b: any) => b.reason !== "pullRequest" && b.reason !== 256,
-      );
+      const commitBuilds = pickAzureBranchDeploymentBuilds(builds);
 
       if (commitBuilds.length === 0) {
         // Fallback: commit statuses (Jenkins, external CI)
         try {
-          const branchStats = await this.gitApi!.getBranch(
-            this.repoInfo.repo,
-            branchName,
-            this.repoInfo.owner,
+          const statusJobs = this.leaveOutMajorBranchChecks(
+            await this.listBranchCommitStatusJobs(
+              branchName,
+              "getJobsForBranchLatestCommit",
+            ),
           );
-          await this.logApiCall("gitApi.getBranch", {
-            caller: "getJobsForBranchLatestCommit",
-            branch: branchName,
-          });
-          const latestCommitId = branchStats?.commit?.commitId;
-          if (!latestCommitId) {
-            return { jobs: [], jobsStatus: "unknown" };
-          }
-
-          const statuses = await this.gitApi!.getStatuses(
-            latestCommitId,
-            this.repoInfo.repo,
-            this.repoInfo.owner,
-          );
-          await this.logApiCall("gitApi.getStatuses", {
-            caller: "getJobsForBranchLatestCommit",
-            commitId: latestCommitId,
-          });
-
-          if (!statuses || statuses.length === 0) {
-            return { jobs: [], jobsStatus: "unknown" };
-          }
-
-          const statusJobs: Job[] = statuses.map((s: any) => ({
-            name: s.context?.name || "external-ci",
-            status: this.mapAzureGitStatusStateToJobStatus(s.state),
-            webUrl: s.targetUrl || undefined,
-            updatedAt: s.creationDate?.toISOString() || undefined,
-            raw: s,
-          }));
           return {
             jobs: statusJobs,
             jobsStatus: this.computeJobsStatus(statusJobs),
@@ -1692,21 +1641,174 @@ export class GitProviderAzure extends GitProvider {
         }
       }
 
-      const build = commitBuilds[0];
-      const job: Job = {
-        name: build.definition?.name || String(build.id || ""),
-        status: this.mapAzureBuildStatus(build),
-        webUrl: build._links?.web?.href,
-        updatedAt: (build.finishTime || build.queueTime)?.toISOString(),
-        startedAt: (build.startTime || build.queueTime)?.toISOString(),
-        raw: build,
-      };
-
+      // A manual build of a renamed check pipeline is only known as a check by its jobs
+      const build = await this.firstRunWithoutMajorBranchCheck(commitBuilds, {
+        mayRunCheck: (item: any) =>
+          azureBuildReasonIs(item.reason, 1, "manual"),
+        toJob: (item: any) => this.buildToJob(item),
+        key: (item: any) => `azure:${item.id}`,
+      });
+      if (!build) {
+        return { jobs: [], jobsStatus: "unknown" };
+      }
+      const job = this.buildToJob(build);
       return { jobs: [job], jobsStatus: this.computeJobsStatus([job]) };
     } catch (e) {
       Logger.log(`Error fetching jobs for branch ${branchName}: ${String(e)}`);
       return null;
     }
+  }
+
+  /**
+   * The last major branch deployment check of a branch: the newest build of the branch made by
+   * the "Check Major Branch Deployment" pipeline. A pipeline renamed by the project is still found
+   * by its MajorBranchDeploymentCheck job, on the newest scheduled or manual builds. A Jenkins
+   * reporting a commit status named after the check is read when no build holds one.
+   */
+  async getMajorBranchDeploymentCheck(
+    branchName: string,
+  ): Promise<MajorBranchCheck | null> {
+    if (!this.connection || !this.repoInfo || !this.buildApi) {
+      return null;
+    }
+    try {
+      const builds = await this.listBranchBuilds(
+        branchName,
+        "getMajorBranchDeploymentCheck",
+      );
+      const named = builds.find((build: any) =>
+        isMajorBranchCheckName(build.definition?.name),
+      );
+      if (named) {
+        return this.toMajorBranchCheck(this.buildToJob(named));
+      }
+      const scheduledOrManual = builds
+        .filter(
+          (build: any) =>
+            azureBuildReasonIs(build.reason, 8, "schedule") ||
+            azureBuildReasonIs(build.reason, 1, "manual"),
+        )
+        .slice(0, 3);
+      for (const build of scheduledOrManual) {
+        const jobs = await this.listJobsOfRunCached(
+          this.buildToJob(build),
+          `azure:${build.id}`,
+        );
+        const check = this.pickMajorBranchCheckJob(jobs);
+        if (check) {
+          return this.toMajorBranchCheck(check);
+        }
+      }
+      return this.pickMajorBranchCheckFromStatuses(
+        await this.listBranchCommitStatusJobs(
+          branchName,
+          "getMajorBranchDeploymentCheck",
+        ),
+      );
+    } catch (e) {
+      Logger.log(
+        `Error reading the deployment check of branch ${branchName}: ${String(e)}`,
+      );
+      return null;
+    }
+  }
+
+  // The 10 most recently queued builds of a branch, newest first. The deployment arrow and the
+  // deployment check of a branch share one call per refresh.
+  private listBranchBuilds(branchName: string, caller: string): Promise<any[]> {
+    return this.shareRecentCall(`azure:builds:${branchName}`, () =>
+      this.fetchBranchBuilds(branchName, caller),
+    );
+  }
+
+  private async fetchBranchBuilds(
+    branchName: string,
+    caller: string,
+  ): Promise<any[]> {
+    // Use server-side filtering with exact branch reference
+    const builds = await this.buildApi!.getBuilds(
+      this.repoInfo!.owner, // project
+      undefined, // definitions
+      undefined, // queues
+      undefined, // buildNumber
+      undefined, // minTime
+      undefined, // maxTime
+      undefined, // requestedFor
+      undefined, // reasonFilter: undefined = all except PullRequest
+      undefined, // statusFilter
+      undefined, // resultFilter
+      undefined, // tagFilters
+      undefined, // properties
+      10, // top: enough to reach the deployment behind the nightly checks
+      undefined, // continuationToken
+      undefined, // maxBuildsPerDefinition
+      undefined, // deletedFilter
+      4, // queryOrder: QueueTimeDescending (4) ensures most recently triggered build first
+      `refs/heads/${branchName}`, // branchName: exact branch reference
+    );
+    await this.logApiCall("buildApi.getBuilds", {
+      caller,
+      branchName: `refs/heads/${branchName}`,
+    });
+    return builds || [];
+  }
+
+  // The statuses of the latest commit of a branch (Jenkins, external CI), as jobs. One call per
+  // refresh, shared like listBranchBuilds.
+  private listBranchCommitStatusJobs(
+    branchName: string,
+    caller: string,
+  ): Promise<Job[]> {
+    return this.shareRecentCall(`azure:statuses:${branchName}`, () =>
+      this.fetchBranchCommitStatusJobs(branchName, caller),
+    );
+  }
+
+  private async fetchBranchCommitStatusJobs(
+    branchName: string,
+    caller: string,
+  ): Promise<Job[]> {
+    const branchStats = await this.gitApi!.getBranch(
+      this.repoInfo!.repo,
+      branchName,
+      this.repoInfo!.owner,
+    );
+    await this.logApiCall("gitApi.getBranch", {
+      caller,
+      branch: branchName,
+    });
+    const latestCommitId = branchStats?.commit?.commitId;
+    if (!latestCommitId) {
+      return [];
+    }
+    const statuses = await this.gitApi!.getStatuses(
+      latestCommitId,
+      this.repoInfo!.repo,
+      this.repoInfo!.owner,
+    );
+    await this.logApiCall("gitApi.getStatuses", {
+      caller,
+      commitId: latestCommitId,
+    });
+    return (statuses || []).map((s: any) => ({
+      name: s.context?.name || "external-ci",
+      status: this.mapAzureGitStatusStateToJobStatus(s.state),
+      webUrl: s.targetUrl || undefined,
+      updatedAt: s.creationDate?.toISOString() || undefined,
+      raw: s,
+    }));
+  }
+
+  // One build as the Job the pipeline diagram displays
+  private buildToJob(build: any): Job {
+    return {
+      name: build.definition?.name || String(build.id || ""),
+      status: this.mapAzureBuildStatus(build),
+      webUrl: build._links?.web?.href,
+      updatedAt: (build.finishTime || build.queueTime)?.toISOString(),
+      startedAt: (build.startTime || build.queueTime)?.toISOString(),
+      raw: build,
+    };
   }
 
   convertToPullRequest(pr: any, branchName: string): PullRequest {
@@ -1810,4 +1912,36 @@ export class GitProviderAzure extends GitProvider {
     const title = `MAJOR: ${sourceBranch} to ${targetBranch}`;
     return `${this.repoInfo.webUrl}/pullrequestcreate?sourceRef=${encodeURIComponent(sourceBranch)}&targetRef=${encodeURIComponent(targetBranch)}&title=${encodeURIComponent(title)}`;
   }
+}
+
+/**
+ * The builds of a branch whose result the deployment arrow of the branch shows, newest first, out
+ * of the recent builds Azure DevOps lists for it.
+ *
+ * Pull Request builds validate a Pull Request, scheduled ones (Schedule, ScheduleForced) deploy
+ * nothing, and the major branch deployment check is a simulation whatever started it (it can be
+ * queued by hand): all of them are left out. The node client gives the reason as a number, the
+ * REST API as its name.
+ */
+export function pickAzureBranchDeploymentBuilds(builds: any[]): any[] {
+  return (builds || []).filter(
+    (build: any) =>
+      build &&
+      !azureBuildReasonIs(build.reason, 256, "pullRequest") &&
+      !azureBuildReasonIs(build.reason, 8, "schedule") &&
+      !azureBuildReasonIs(build.reason, 16, "scheduleForced") &&
+      !isMajorBranchCheckName(build.definition?.name),
+  );
+}
+
+// BuildReason of a build, given as its number or as its name
+function azureBuildReasonIs(
+  reason: unknown,
+  code: number,
+  name: string,
+): boolean {
+  if (typeof reason === "number") {
+    return reason === code;
+  }
+  return String(reason || "").toLowerCase() === name.toLowerCase();
 }
