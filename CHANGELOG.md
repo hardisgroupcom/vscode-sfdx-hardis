@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [8.18.0] 2026-11-06
+
 - DevOps Pipeline: when ticking User Stories for a promotion, **Selected only** shows the ticked ones, and **Select from a list** ticks the Pull Requests named in pasted text (release notes, an email, a spreadsheet column), directly or through their tickets, saying where each one was found
   - A Pull Request whose description only mentions a pasted ticket is listed apart with the text around it, and ticked only when asked
 - DevOps Pipeline: hovering a ticket id shows where the Pull Request mentions it (title, description, branch, or the story a promotion carries), with the text around it
