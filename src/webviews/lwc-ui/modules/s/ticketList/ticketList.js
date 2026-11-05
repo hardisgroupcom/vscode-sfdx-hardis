@@ -1,6 +1,6 @@
 import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
-import { safeWebUrl } from "s/pullRequestUtils";
+import { safeWebUrl, ticketOriginLines } from "s/pullRequestUtils";
 
 /**
  * Tickets tab of the Pull Request modal: one row per ticket, its status as a pill, who it is
@@ -84,6 +84,7 @@ export default class TicketList extends SharedMixin(LightningElement) {
           id: ticket.id,
           url: safeWebUrl(ticket.url),
           subject: ticket.subject || "",
+          tooltip: this._ticketTooltip(ticket),
           hasStatus: this.detailsAvailable && !!ticket.statusLabel,
           statusLabel: ticket.statusLabel || "",
           statusPillClass:
@@ -135,5 +136,19 @@ export default class TicketList extends SharedMixin(LightningElement) {
     if (prNumber > 0) {
       this.dispatchEvent(new CustomEvent("open", { detail: { prNumber } }));
     }
+  }
+
+  // The subject of a ticket, then where each Pull Request mentions it, with the text around it.
+  // Several Pull Requests: each line starts with the number of its Pull Request.
+  _ticketTooltip(ticket) {
+    const prs = (ticket.prs || []).filter((pr) => pr && pr.number > 0);
+    const lines = prs.flatMap((pr) =>
+      ticketOriginLines(
+        pr.foundIn,
+        (key, params) => this.t(key, params),
+        prs.length > 1 ? pr.number : 0,
+      ),
+    );
+    return [ticket.subject || "", ...lines].filter(Boolean).join("\n");
   }
 }

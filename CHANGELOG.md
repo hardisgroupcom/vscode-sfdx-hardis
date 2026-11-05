@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- DevOps Pipeline: when ticking User Stories for a promotion, **Selected only** shows the ticked ones, and **Select from a list** ticks the Pull Requests named in pasted text (release notes, an email, a spreadsheet column), directly or through their tickets, saying where each one was found
+- DevOps Pipeline: hovering a ticket id shows where the Pull Request mentions it (title, description, branch, or the story a promotion carries), with the text around it
 - A file sfdx-hardis asks to open (a report, a conflicting file of a promotion) opens even when its name holds URL-encoded characters, like `Account %28Sales%29 Layout.layout-meta.xml`
 - Documentation screenshots: the promotion conflict question shows the new "solve now" and "keep the source version" answers of sfdx-hardis
 - DevOps Pipeline: the deployment arrow of a major branch shows its last real deployment again, no longer replaced by a scheduled run or by a run of the major branch deployment check

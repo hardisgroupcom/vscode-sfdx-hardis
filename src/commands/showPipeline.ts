@@ -21,6 +21,7 @@ import {
 } from "../utils/prePostCommandsUtils";
 import { getCurrentGitBranch } from "../utils/pipeline/sfdxHardisConfig";
 import { handleDeploymentActionPickerMessage } from "../utils/pipeline/deploymentActionPickers";
+import { extractTicketIdsFromText } from "../utils/pipeline/pastedListUtils";
 import {
   getCachedCustomFunctions,
   refreshCustomFunctionsCache,
@@ -542,6 +543,16 @@ export function registerShowPipeline(commands: Commands) {
         else if (await handleDeploymentActionPickerMessage(panel, type, data)) {
           // Message handled by the shared deployment action pickers
         }
+        // A list pasted to select Pull Requests: its ticket ids, read by the ticketing provider
+        else if (type === "extractTicketIdsFromText") {
+          panel.sendMessage({
+            type: "ticketIdsFromText",
+            data: {
+              requestId: data?.requestId || null,
+              ids: await extractTicketIdsFromText(String(data?.text || "")),
+            },
+          });
+        }
         // Mark as done: recorded by sfdx-hardis in the background, no command panel for it
         else if (type === "markDeploymentActionDone") {
           const outcome = await markDeploymentActionDone(data);
@@ -770,9 +781,19 @@ export function registerShowPipeline(commands: Commands) {
                 for (const ticket of story.relatedTickets || []) {
                   if (!seenTickets.has(ticket.id)) {
                     seenTickets.add(ticket.id);
+                    // Found in the story, not in the promotion: its tooltip names the story
                     prDetails.relatedTickets = [
                       ...(prDetails.relatedTickets || []),
-                      ticket,
+                      {
+                        ...ticket,
+                        foundIn: [
+                          {
+                            source: "carried",
+                            excerpt: story.title || "",
+                            pullRequest: story.number,
+                          },
+                        ],
+                      },
                     ];
                   }
                 }

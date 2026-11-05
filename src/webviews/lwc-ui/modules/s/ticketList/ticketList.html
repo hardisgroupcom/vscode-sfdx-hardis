@@ -31,10 +31,10 @@
                         <div class="hardis-list-main">
                             <div class="hardis-list-title">
                                 <template if:true={row.url}>
-                                    <button class="hardis-pr-ref" data-url={row.url} onclick={handleOpenTicket}>{row.id}</button>
+                                    <button class="hardis-pr-ref" title={row.tooltip} data-url={row.url} onclick={handleOpenTicket}>{row.id}</button>
                                 </template>
                                 <template if:false={row.url}>
-                                    <span>{row.id}</span>
+                                    <span title={row.tooltip}>{row.id}</span>
                                 </template>
                                 <template if:true={row.subject}>
                                     <span class="ticket-subject">{row.subject}</span>

@@ -1,6 +1,14 @@
 import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
-import { filterPullRequestList, safeWebUrl } from "s/pullRequestUtils";
+import {
+  filterPullRequestList,
+  matchPastedList,
+  safeWebUrl,
+  ticketOriginLines,
+} from "s/pullRequestUtils";
+
+// Wait after the last keystroke before asking the extension for the ticket ids of the text
+const PASTE_EXTRACT_DELAY_MS = 300;
 
 /**
  * List of Pull Requests of a window of the DevOps Pipeline: the Pull Requests tab of a branch,
@@ -10,10 +18,16 @@ import { filterPullRequestList, safeWebUrl } from "s/pullRequestUtils";
  * source branch. What brought a story here is a "Carried by" reference opening that Pull
  * Request. A text filter narrows the list, and a chip lists the merges and promotions too.
  *
- * `pullRequests` are the rows built by s/pipeline (_mapPrsWithIcons), each with `selectable`
- * when it can be ticked for the next promotion.
+ * When the rows can be ticked, a "Selected only" chip shows the ticked rows alone, and "Select
+ * from a list" opens a box where release notes, an email or a spreadsheet column is pasted: the
+ * Pull Requests it names, directly or through a ticket, are ticked on top of the selection.
  *
- * Events: open { prNumber }, select { numbers }, vehicles { shown }
+ * `pullRequests` are the rows built by s/pipeline (_mapPrsWithIcons), each with `selectable`
+ * when it can be ticked for the next promotion. `extractedTickets` is the answer of the extension
+ * to an extracttickets event: { requestId, ids }.
+ *
+ * Events: open { prNumber }, select { numbers }, vehicles { shown },
+ * extracttickets { requestId, text }
  */
 export default class PullRequestList extends SharedMixin(LightningElement) {
   // Checkboxes feeding the next promotion
@@ -30,6 +44,29 @@ export default class PullRequestList extends SharedMixin(LightningElement) {
   @track filterText = "";
   _pullRequests = [];
   _selectedNumbers = [];
+  // "Selected only": the rows shown are the ones ticked when the chip was turned on, plus the
+  // ones ticked since. A row unticked meanwhile stays, so nothing disappears under the mouse.
+  selectedOnly = false;
+  _selectedOnlyNumbers = [];
+  // "Select from a list"
+  pasteOpen = false;
+  pasteText = "";
+  pasteTicketIds = [];
+  pasteExtracting = false;
+  _pasteRequestId = null;
+  _pasteTimer = null;
+
+  @api
+  get extractedTickets() {
+    return null;
+  }
+  set extractedTickets(value) {
+    // Only the answer to the last request: an older one would describe a text no longer there
+    if (value && value.requestId && value.requestId === this._pasteRequestId) {
+      this.pasteTicketIds = Array.isArray(value.ids) ? value.ids : [];
+      this.pasteExtracting = false;
+    }
+  }
 
   @api
   get pullRequests() {
@@ -72,7 +109,124 @@ export default class PullRequestList extends SharedMixin(LightningElement) {
   }
 
   get filtered() {
-    return filterPullRequestList(this._pullRequests, this.filterText);
+    const matching = filterPullRequestList(this._pullRequests, this.filterText);
+    if (!this.selectedOnly) {
+      return matching;
+    }
+    return matching.filter(
+      (pr) =>
+        this._selectedOnlyNumbers.includes(pr.number) ||
+        this._selectedNumbers.includes(pr.number),
+    );
+  }
+
+  get showSelectionTools() {
+    return this.selectable && this._pullRequests.length > 0;
+  }
+
+  get selectedOnlyLabel() {
+    return this.t("prListSelectedOnly", {
+      count: this._selectedNumbers.length,
+    });
+  }
+
+  get selectedOnlyPressed() {
+    return String(this.selectedOnly === true);
+  }
+
+  get selectedOnlyChipClass() {
+    return this.selectedOnly ? "prl-chip prl-chip-on" : "prl-chip";
+  }
+
+  // Nothing to show alone while nothing is ticked, unless the chip is already on
+  get selectedOnlyDisabled() {
+    return !this.selectedOnly && this._selectedNumbers.length === 0;
+  }
+
+  get pasteButtonClass() {
+    return this.pasteOpen ? "prl-chip prl-chip-on" : "prl-chip";
+  }
+
+  get pasteButtonPressed() {
+    return String(this.pasteOpen === true);
+  }
+
+  // What the pasted text selects, recomputed as it changes: the Pull Request references at once,
+  // the tickets once the extension has read them
+  get pasteMatch() {
+    return matchPastedList(
+      this._pullRequests,
+      this.pasteText,
+      this.pasteTicketIds,
+    );
+  }
+
+  get pasteHasText() {
+    return this.pasteText.trim().length > 0;
+  }
+
+  get pasteFound() {
+    const reasonLabels = {
+      reference: this.i18n.prListPasteReasonReference,
+      ticket: this.i18n.prListPasteReasonTicket,
+      title: this.i18n.prListPasteReasonTitle,
+      branch: this.i18n.prListPasteReasonBranch,
+      description: this.i18n.prListPasteReasonDescription,
+    };
+    return this.pasteMatch.found.map((item) => ({
+      key: `found-${item.number}`,
+      label: `#${item.number} ${item.title}`,
+      reasons: item.reasons
+        .map((reason) => reasonLabels[reason] || reason)
+        .join(", "),
+    }));
+  }
+
+  get pasteNotSelectable() {
+    return this.pasteMatch.notSelectable.map((item) => ({
+      key: `not-selectable-${item.number}`,
+      label: `#${item.number} ${item.title}`,
+    }));
+  }
+
+  get pasteNotFound() {
+    return this.pasteMatch.notFound.join(", ");
+  }
+
+  get pasteFoundTitle() {
+    return this.t("prListPasteFound", { count: this.pasteMatch.found.length });
+  }
+
+  get pasteNotSelectableTitle() {
+    return this.t("prListPasteNotSelectable", {
+      count: this.pasteMatch.notSelectable.length,
+    });
+  }
+
+  get pasteNotFoundTitle() {
+    return this.t("prListPasteNotFound", {
+      count: this.pasteMatch.notFound.length,
+    });
+  }
+
+  get pasteHasFound() {
+    return this.pasteMatch.found.length > 0;
+  }
+
+  get pasteHasNotSelectable() {
+    return this.pasteMatch.notSelectable.length > 0;
+  }
+
+  get pasteHasNotFound() {
+    return this.pasteMatch.notFound.length > 0;
+  }
+
+  get pasteSelectLabel() {
+    return this.t("prListPasteSelect", { count: this.pasteMatch.found.length });
+  }
+
+  get pasteSelectDisabled() {
+    return this.pasteMatch.found.length === 0;
   }
 
   get rows() {
@@ -102,7 +256,7 @@ export default class PullRequestList extends SharedMixin(LightningElement) {
             key: `${pr.number}-${ticket.id}`,
             id: ticket.id,
             url: safeWebUrl(ticket.url),
-            title: ticket.subject || "",
+            title: this._ticketTooltip(ticket),
           })),
         hasAuthor: !!pr.authorLabel,
         authorLabel: pr.authorLabel || "",
@@ -210,6 +364,82 @@ export default class PullRequestList extends SharedMixin(LightningElement) {
   _select(numbers) {
     this._selectedNumbers = numbers;
     this.dispatchEvent(new CustomEvent("select", { detail: { numbers } }));
+  }
+
+  // The subject of a ticket, then where it was found in the Pull Request with the text around it,
+  // so a ticket named in passing ("depends on ABC-12") can be told from the one the story is about
+  _ticketTooltip(ticket) {
+    const lines = ticketOriginLines(ticket.foundIn, (key, params) =>
+      this.t(key, params),
+    );
+    return [ticket.subject || "", ...lines].filter(Boolean).join("\n");
+  }
+
+  handleToggleSelectedOnly() {
+    this.selectedOnly = !this.selectedOnly;
+    this._selectedOnlyNumbers = this.selectedOnly
+      ? [...this._selectedNumbers]
+      : [];
+  }
+
+  handleTogglePaste() {
+    this.pasteOpen = !this.pasteOpen;
+    if (!this.pasteOpen) {
+      this._resetPaste();
+    }
+  }
+
+  handlePasteInput(event) {
+    this.pasteText = event.target.value || "";
+    clearTimeout(this._pasteTimer);
+    if (!this.pasteHasText) {
+      this.pasteTicketIds = [];
+      this.pasteExtracting = false;
+      this._pasteRequestId = null;
+      return;
+    }
+    this.pasteExtracting = true;
+    // eslint-disable-next-line @lwc/lwc/no-async-operation
+    this._pasteTimer = setTimeout(() => {
+      const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      this._pasteRequestId = requestId;
+      this.dispatchEvent(
+        new CustomEvent("extracttickets", {
+          detail: { requestId, text: this.pasteText },
+        }),
+      );
+    }, PASTE_EXTRACT_DELAY_MS);
+  }
+
+  // Ticks what the text found, on top of the selection: unticking stays a choice made by hand
+  handlePasteSelect() {
+    const found = this.pasteMatch.found.map((item) => item.number);
+    const numbers = [...new Set([...this._selectedNumbers, ...found])];
+    if (this.selectedOnly) {
+      this._selectedOnlyNumbers = [
+        ...new Set([...this._selectedOnlyNumbers, ...found]),
+      ];
+    }
+    this._select(numbers);
+    this.pasteOpen = false;
+    this._resetPaste();
+  }
+
+  handlePasteCancel() {
+    this.pasteOpen = false;
+    this._resetPaste();
+  }
+
+  _resetPaste() {
+    clearTimeout(this._pasteTimer);
+    this.pasteText = "";
+    this.pasteTicketIds = [];
+    this.pasteExtracting = false;
+    this._pasteRequestId = null;
+  }
+
+  disconnectedCallback() {
+    clearTimeout(this._pasteTimer);
   }
 
   handleOpen(event) {

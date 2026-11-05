@@ -147,6 +147,137 @@ export function filterPullRequestList(pullRequests, query) {
 }
 
 /**
+ * The Pull Request numbers a pasted text names: #482, !482 (GitLab), PR 482, MR #482, Pull Request
+ * 482, and the URL of a Pull Request on GitHub, GitLab, Azure DevOps or Bitbucket. A bare number is
+ * never one: a date, an amount or story points would tick the wrong Pull Request.
+ */
+export function extractPullRequestReferences(text) {
+  const source = String(text || "");
+  const numbers = new Set();
+  const patterns = [
+    // Not inside a word or a path: "abc#12" and "a/b#12" are no reference
+    /(?<![\w/])[#!](\d+)\b/g,
+    /\b(?:PR|MR|pull request|merge request)\s*#?(\d+)\b/gi,
+    /\/(?:pull|pulls|merge_requests|pullrequest|pull-requests)\/(\d+)\b/gi,
+  ];
+  for (const pattern of patterns) {
+    for (const match of source.matchAll(pattern)) {
+      const number = parseInt(match[1], 10);
+      if (number > 0) {
+        numbers.add(number);
+      }
+    }
+  }
+  return [...numbers];
+}
+
+/**
+ * Where a ticket was found in a Pull Request, one line per place with the text around it, for the
+ * tooltip of a ticket id: `foundIn` is the list the extension computed (title, description,
+ * branch, or the story a promotion carries). `translate` is the t() of the component. With
+ * `prNumber`, each line starts with it: the Tickets tab lists the places of every Pull Request.
+ */
+export function ticketOriginLines(foundIn, translate, prNumber) {
+  const keys = {
+    title: "prListTicketFoundInTitle",
+    branch: "prListTicketFoundInBranch",
+    description: "prListTicketFoundInDescription",
+    carried: "prListTicketFoundInCarried",
+  };
+  return (Array.isArray(foundIn) ? foundIn : [])
+    .filter((place) => place && keys[place.source])
+    .map((place) => {
+      const line = translate(keys[place.source], {
+        excerpt: place.excerpt || "",
+        pr: place.pullRequest ? `#${place.pullRequest}` : "",
+      });
+      return prNumber > 0 ? `#${prNumber}: ${line}` : line;
+    });
+}
+
+/**
+ * What a pasted list (release notes, an email, a spreadsheet column) selects among the Pull
+ * Requests of a window. `ticketIds` are the ticket identifiers found in the text (the extension
+ * reads them with the ticket provider of the project). A ticket is looked for in each Pull Request:
+ * its linked tickets, title, source branch and description, case insensitive and as a whole word,
+ * so ABC-12 is not found inside ABC-123. Each match says why, so it can be checked before ticking.
+ *
+ * Returns { found: [{ number, title, reasons }], notSelectable: [{ number, title }], notFound: [ref] }
+ * where `found` holds the rows whose `selectable` is true, `notSelectable` the others the text
+ * names, and `notFound` the references and ticket ids matching nothing.
+ */
+export function matchPastedList(rows, text, ticketIds) {
+  const list = (Array.isArray(rows) ? rows : []).filter(
+    (row) => row && row.number > 0,
+  );
+  const reasonsByNumber = new Map();
+  const notFound = [];
+  const addReason = (row, reason) => {
+    const reasons = reasonsByNumber.get(row.number) || [];
+    if (!reasons.includes(reason)) {
+      reasons.push(reason);
+    }
+    reasonsByNumber.set(row.number, reasons);
+  };
+  for (const number of extractPullRequestReferences(text)) {
+    const row = list.find((candidate) => candidate.number === number);
+    if (row) {
+      addReason(row, "reference");
+    } else {
+      notFound.push(`#${number}`);
+    }
+  }
+  const seenTickets = new Set();
+  for (const rawId of Array.isArray(ticketIds) ? ticketIds : []) {
+    const id = String(rawId || "").trim();
+    if (!id || seenTickets.has(id.toLowerCase())) {
+      continue;
+    }
+    seenTickets.add(id.toLowerCase());
+    const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const wholeWord = new RegExp(
+      `(?<![A-Za-z0-9])${escaped}(?![A-Za-z0-9])`,
+      "i",
+    );
+    let matched = false;
+    for (const row of list) {
+      const linked = (row.relatedTickets || []).some((ticket) =>
+        wholeWord.test(String(ticket?.id || "")),
+      );
+      const fields = [
+        ["ticket", linked],
+        ["title", wholeWord.test(String(row.title || ""))],
+        ["branch", wholeWord.test(String(row.sourceBranch || ""))],
+        ["description", wholeWord.test(String(row.description || ""))],
+      ];
+      for (const [reason, hit] of fields) {
+        if (hit) {
+          addReason(row, reason);
+          matched = true;
+        }
+      }
+    }
+    if (!matched) {
+      notFound.push(id);
+    }
+  }
+  const found = [];
+  const notSelectable = [];
+  for (const row of list) {
+    const reasons = reasonsByNumber.get(row.number);
+    if (!reasons) {
+      continue;
+    }
+    if (row.selectable === true) {
+      found.push({ number: row.number, title: row.title || "", reasons });
+    } else {
+      notSelectable.push({ number: row.number, title: row.title || "" });
+    }
+  }
+  return { found, notSelectable, notFound };
+}
+
+/**
  * The Pull Requests already in memory that match what was typed: number, title, branches, author
  * or the id of a related ticket. A Pull Request listed in several windows comes out once, open
  * ones first, then the most recent numbers.

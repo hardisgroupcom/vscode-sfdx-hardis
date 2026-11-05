@@ -30,6 +30,9 @@ const EXPORTED = [
   "lookupState",
   "filterLoadedPullRequests",
   "filterPullRequestList",
+  "extractPullRequestReferences",
+  "matchPastedList",
+  "ticketOriginLines",
   "excludeKnownPullRequests",
   "typedPullRequestNumber",
   "journeyBranchPath",
@@ -1257,6 +1260,112 @@ suite("Pull Request view", () => {
       assert.deepStrictEqual(utils.filterPullRequestList(null, "x"), []);
     });
 
+    test("a pasted list names Pull Requests by #, !, PR, MR or URL, never by a bare number", () => {
+      const refs = (text: string) =>
+        utils
+          .extractPullRequestReferences(text)
+          .sort((a: number, b: number) => a - b);
+      assert.deepStrictEqual(
+        refs("Validated: #482, !487 and PR 490, MR #491"),
+        [482, 487, 490, 491],
+      );
+      assert.deepStrictEqual(
+        refs(
+          [
+            "https://github.com/acme/crm/pull/501",
+            "https://gitlab.com/acme/crm/-/merge_requests/502",
+            "https://dev.azure.com/acme/crm/_git/crm/pullrequest/503",
+            "https://bitbucket.org/acme/crm/pull-requests/504",
+          ].join("\n"),
+        ),
+        [501, 502, 503, 504],
+      );
+      // A date, an amount, story points, a word and a path are no reference
+      assert.deepStrictEqual(
+        refs("2026-11-05: 3 points, 1200 EUR, abc#12, feature/x#13"),
+        [],
+      );
+    });
+
+    test("a pasted list selects the Pull Requests its tickets and references name, and says why", () => {
+      const rows = [
+        {
+          number: 482,
+          title: "Record the supplier of a panel batch",
+          sourceBranch: "feature/CRM-1042-supplier",
+          description: "",
+          relatedTickets: [{ id: "CRM-1042" }],
+          selectable: true,
+        },
+        {
+          number: 487,
+          title: "Warranty years",
+          sourceBranch: "feature/warranty",
+          description: "Needs CRM-1042 first",
+          relatedTickets: [],
+          selectable: true,
+        },
+        {
+          number: 490,
+          title: "CRM-1050 Crew capacity",
+          sourceBranch: "feature/crew",
+          relatedTickets: [],
+          selectable: false,
+        },
+        {
+          number: 491,
+          title: "CRM-10420 is another ticket",
+          sourceBranch: "feature/other",
+          relatedTickets: [],
+          selectable: true,
+        },
+      ];
+      const result = utils.matchPastedList(
+        rows,
+        "OK for prod: CRM-1042, crm-1050, CRM-9999 and #493",
+        ["CRM-1042", "crm-1050", "CRM-9999"],
+      );
+      assert.deepStrictEqual(result.found, [
+        {
+          number: 482,
+          title: "Record the supplier of a panel batch",
+          reasons: ["ticket", "branch"],
+        },
+        { number: 487, title: "Warranty years", reasons: ["description"] },
+      ]);
+      // Found, but a promotion already carries it: not ticked, and said so
+      assert.deepStrictEqual(result.notSelectable, [
+        { number: 490, title: "CRM-1050 Crew capacity" },
+      ]);
+      assert.deepStrictEqual(result.notFound, ["#493", "CRM-9999"]);
+      // Nothing pasted: nothing found
+      assert.deepStrictEqual(utils.matchPastedList(rows, "", []), {
+        found: [],
+        notSelectable: [],
+        notFound: [],
+      });
+    });
+
+    test("a ticket says where each Pull Request mentions it, with the text around it", () => {
+      const translate = (key: string, vars: Record<string, string>) =>
+        `${key}|${vars.pr}|${vars.excerpt}`;
+      const foundIn = [
+        { source: "title", excerpt: "CRM-1042 Supplier" },
+        { source: "carried", excerpt: "Supplier", pullRequest: 482 },
+        { source: "unknown", excerpt: "x" },
+      ];
+      assert.deepStrictEqual(utils.ticketOriginLines(foundIn, translate), [
+        "prListTicketFoundInTitle||CRM-1042 Supplier",
+        "prListTicketFoundInCarried|#482|Supplier",
+      ]);
+      // The Tickets tab prefixes each line with its Pull Request when there are several
+      assert.deepStrictEqual(
+        utils.ticketOriginLines(foundIn.slice(0, 1), translate, 487),
+        ["#487: prListTicketFoundInTitle||CRM-1042 Supplier"],
+      );
+      assert.deepStrictEqual(utils.ticketOriginLines(undefined, translate), []);
+    });
+
     test("a story names the Pull Request that carried it, by its number", () => {
       const listJs = readModuleFile("pullRequestList", "pullRequestList.js");
       const rows = Object.assign(
@@ -1270,6 +1379,7 @@ suite("Pull Request view", () => {
           ["_selectedNumbers"]: [],
           t: (key: string, vars: Record<string, string>) =>
             `${key}:${vars.branch || vars.number}`,
+          ["_ticketTooltip"]: (ticket: any) => ticket.subject || "",
           filtered: [
             {
               number: 124,

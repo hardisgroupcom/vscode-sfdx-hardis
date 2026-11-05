@@ -35,6 +35,58 @@
   font-weight: 600;
 }
 
+.prl-chip:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* Select from a list */
+.prl-paste {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--slds-g-color-neutral-base-80);
+  border-radius: 0.5rem;
+}
+
+.prl-paste-label {
+  font-size: 0.8125rem;
+  color: var(--slds-g-color-neutral-base-40);
+}
+
+.prl-paste-text {
+  width: 100%;
+  min-height: 6rem;
+  resize: vertical;
+}
+
+.prl-paste-result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.prl-paste-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.prl-paste-pr {
+  font-variant-numeric: tabular-nums;
+}
+
+.prl-paste-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
 .prl-chip:focus-visible,
 .prl-pill-button:focus-visible,
 .prl-ticket:focus-visible {
