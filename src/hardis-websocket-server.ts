@@ -650,8 +650,13 @@ export class LocalWebSocketServer {
     // Request to open a file in editor
     else if (data.event === "openFile") {
       const currentWorkspaceFolderUri = getWorkspaceRoot();
-      var openPath = vscode.Uri.parse(
-        "file:///" + currentWorkspaceFolderUri + "/" + data.file,
+      // Uri.file, not Uri.parse: a Salesforce file name keeps its URL encoding on disk
+      // ("Account %28Sales%29 Layout.layout-meta.xml"), and parse would decode it into a
+      // name that does not exist. An absolute path is opened as it is.
+      var openPath = vscode.Uri.file(
+        path.isAbsolute(data.file)
+          ? data.file
+          : path.join(currentWorkspaceFolderUri, data.file),
       );
       vscode.workspace.openTextDocument(openPath).then((doc) => {
         vscode.window.showTextDocument(doc);

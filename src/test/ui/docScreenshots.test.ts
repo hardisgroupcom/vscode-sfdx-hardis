@@ -2031,6 +2031,17 @@ suite("Documentation screenshots", function () {
       await click(1100, 500, { scroll: -30 });
     }
     await click(1100, 70, { scroll: -1 });
+    // Seven answers make the list of answers scroll on its own, and the wheel
+    // above lands on it: bring it back to its top, where the recommended
+    // answer the lab asks for is
+    // null from a webview without the list, so the command panel is asked too
+    await inWebview(`
+      const lists = deepAll(panelDocument, ".hardis-option-list");
+      for (const list of lists) {
+        list.scrollTop = 0;
+      }
+      return lists.length > 0 ? true : null;
+    `);
     await sleep(1000);
     await capture("promotion-create-conflict");
     panel.simulateWebviewMessage({

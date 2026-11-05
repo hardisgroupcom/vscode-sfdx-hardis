@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- A file sfdx-hardis asks to open (a report, a conflicting file of a promotion) opens even when its name holds URL-encoded characters, like `Account %28Sales%29 Layout.layout-meta.xml`
+- Documentation screenshots: the promotion conflict question shows the new "solve now" and "keep the source version" answers of sfdx-hardis
+
 ## [8.17.1] 2026-11-02
 
 - Welcome page: a new band opens the free [sfdx-hardis training course](https://sfdx-hardis-training.cloudity.com/), its hands-on labs and badges, until you close it
