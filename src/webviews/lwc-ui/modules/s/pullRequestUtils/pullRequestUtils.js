@@ -187,9 +187,12 @@ export function ticketOriginLines(foundIn, translate, prNumber) {
   return (Array.isArray(foundIn) ? foundIn : [])
     .filter((place) => place && keys[place.source])
     .map((place) => {
+      // The excerpt is free text of a Pull Request, given to a t() that substitutes with
+      // String.replace: its "$" would be read as a replacement pattern ($&, $'), so it is doubled,
+      // and {{pr}} is substituted first, so a "{{pr}}" written in the excerpt stays as it is
       const line = translate(keys[place.source], {
-        excerpt: place.excerpt || "",
         pr: place.pullRequest ? `#${place.pullRequest}` : "",
+        excerpt: String(place.excerpt || "").replace(/\$/g, "$$$$"),
       });
       return prNumber > 0 ? `#${prNumber}: ${line}` : line;
     });

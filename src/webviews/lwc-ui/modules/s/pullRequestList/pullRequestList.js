@@ -7,6 +7,8 @@ import {
   ticketOriginLines,
 } from "s/pullRequestUtils";
 
+// cspell:ignore extracttickets
+
 // Wait after the last keystroke before asking the extension for the ticket ids of the text
 const PASTE_EXTRACT_DELAY_MS = 300;
 
@@ -53,6 +55,9 @@ export default class PullRequestList extends SharedMixin(LightningElement) {
   pasteText = "";
   pasteTicketIds = [];
   pasteExtracting = false;
+  // What the pasted text selects: computed when the text, its ticket ids or the rows change, read
+  // by every part of the box (matching is one regex per ticket on every row)
+  pasteMatch = { found: [], notSelectable: [], notFound: [] };
   _pasteRequestId = null;
   _pasteTimer = null;
 
@@ -65,6 +70,7 @@ export default class PullRequestList extends SharedMixin(LightningElement) {
     if (value && value.requestId && value.requestId === this._pasteRequestId) {
       this.pasteTicketIds = Array.isArray(value.ids) ? value.ids : [];
       this.pasteExtracting = false;
+      this._refreshPasteMatch();
     }
   }
 
@@ -74,6 +80,7 @@ export default class PullRequestList extends SharedMixin(LightningElement) {
   }
   set pullRequests(value) {
     this._pullRequests = Array.isArray(value) ? value : [];
+    this._refreshPasteMatch();
   }
 
   @api
@@ -151,16 +158,6 @@ export default class PullRequestList extends SharedMixin(LightningElement) {
     return String(this.pasteOpen === true);
   }
 
-  // What the pasted text selects, recomputed as it changes: the Pull Request references at once,
-  // the tickets once the extension has read them
-  get pasteMatch() {
-    return matchPastedList(
-      this._pullRequests,
-      this.pasteText,
-      this.pasteTicketIds,
-    );
-  }
-
   get pasteHasText() {
     return this.pasteText.trim().length > 0;
   }
@@ -225,8 +222,9 @@ export default class PullRequestList extends SharedMixin(LightningElement) {
     return this.t("prListPasteSelect", { count: this.pasteMatch.found.length });
   }
 
+  // Not while the ticket ids of the text are being read: the selection would miss them
   get pasteSelectDisabled() {
-    return this.pasteMatch.found.length === 0;
+    return this.pasteExtracting || this.pasteMatch.found.length === 0;
   }
 
   get rows() {
@@ -392,10 +390,14 @@ export default class PullRequestList extends SharedMixin(LightningElement) {
   handlePasteInput(event) {
     this.pasteText = event.target.value || "";
     clearTimeout(this._pasteTimer);
+    // The ticket ids read from the previous text no longer apply, and neither does a late answer
+    // to its request: the Pull Request references of the new text show at once, its tickets once
+    // read
+    this.pasteTicketIds = [];
+    this._pasteRequestId = null;
+    this._refreshPasteMatch();
     if (!this.pasteHasText) {
-      this.pasteTicketIds = [];
       this.pasteExtracting = false;
-      this._pasteRequestId = null;
       return;
     }
     this.pasteExtracting = true;
@@ -436,6 +438,15 @@ export default class PullRequestList extends SharedMixin(LightningElement) {
     this.pasteTicketIds = [];
     this.pasteExtracting = false;
     this._pasteRequestId = null;
+    this._refreshPasteMatch();
+  }
+
+  _refreshPasteMatch() {
+    this.pasteMatch = matchPastedList(
+      this._pullRequests,
+      this.pasteText,
+      this.pasteTicketIds,
+    );
   }
 
   disconnectedCallback() {

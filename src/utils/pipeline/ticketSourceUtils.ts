@@ -28,10 +28,12 @@ export function ticketExcerpt(
 }
 
 /**
- * The tickets of a Pull Request, each with the places it was found: the title, the description
- * and the source branch are read one by one (the same regexes as on the whole text), so a tooltip
- * can tell the ticket a story is about from one its description only mentions. A ticket found in
- * several places is listed once, with all of them, in the order of its first appearance.
+ * The tickets of a Pull Request, each with the places it was found, so a tooltip can tell the
+ * ticket a story is about from one its description only mentions. The ticketing provider reads the
+ * whole text once (each call repeats its setup: configuration, credentials, regexes), then each
+ * ticket is located in the title, the description and the source branch. A ticket found in several
+ * places is listed once, with all of them; one the provider read in a form none of the fields
+ * holds as such keeps an empty list.
  */
 export async function findTicketsInPullRequest(
   pr: {
@@ -46,28 +48,27 @@ export async function findTicketsInPullRequest(
     ["description", String(pr.description || "")],
     ["branch", String(pr.sourceBranch || "")],
   ];
+  const joined = sources
+    .map(([, text]) => text)
+    .filter((text) => text.trim())
+    .join("\n");
+  if (!joined) {
+    return [];
+  }
   const byId = new Map<string, Ticket>();
-  for (const [source, text] of sources) {
-    if (!text.trim()) {
+  for (const ticket of await getTicketsFromString(joined)) {
+    if (!ticket?.id || byId.has(ticket.id)) {
       continue;
     }
-    for (const ticket of await getTicketsFromString(text)) {
-      if (!ticket?.id) {
-        continue;
-      }
-      const known = byId.get(ticket.id) || { ...ticket, foundIn: [] };
+    const foundIn: TicketFoundIn[] = [];
+    for (const [source, text] of sources) {
       const excerpt =
-        ticketExcerpt(text, ticket.id) ??
-        ticketExcerpt(text, ticket.url) ??
-        text
-          .replace(/\s+/g, " ")
-          .trim()
-          .slice(0, 2 * EXCERPT_RADIUS);
-      if (!(known.foundIn || []).some((place) => place.source === source)) {
-        known.foundIn = [...(known.foundIn || []), { source, excerpt }];
+        ticketExcerpt(text, ticket.id) ?? ticketExcerpt(text, ticket.url);
+      if (excerpt !== null) {
+        foundIn.push({ source, excerpt });
       }
-      byId.set(ticket.id, known);
     }
+    byId.set(ticket.id, { ...ticket, foundIn });
   }
   return [...byId.values()];
 }

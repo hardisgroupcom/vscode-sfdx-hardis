@@ -1364,6 +1364,31 @@ suite("Pull Request view", () => {
         ["#487: prListTicketFoundInTitle||CRM-1042 Supplier"],
       );
       assert.deepStrictEqual(utils.ticketOriginLines(undefined, translate), []);
+      // The t() of the panel substitutes with String.replace: a "$" or a "{{pr}}" of the text
+      // of a Pull Request must come out as written
+      const panelT = (_key: string, vars: Record<string, string>) => {
+        let value = "In {{excerpt}} of {{pr}}";
+        for (const [name, val] of Object.entries(vars)) {
+          value = value.replace(
+            new RegExp(`\\{\\{${name}\\}\\}`, "g"),
+            String(val),
+          );
+        }
+        return value;
+      };
+      assert.deepStrictEqual(
+        utils.ticketOriginLines(
+          [
+            {
+              source: "carried",
+              excerpt: "regex $& and $' {{pr}}",
+              pullRequest: 482,
+            },
+          ],
+          panelT,
+        ),
+        ["In regex $& and $' {{pr}} of #482"],
+      );
     });
 
     test("a story names the Pull Request that carried it, by its number", () => {

@@ -658,14 +658,21 @@ export class LocalWebSocketServer {
           ? data.file
           : path.join(currentWorkspaceFolderUri, data.file),
       );
-      vscode.workspace.openTextDocument(openPath).then((doc) => {
-        vscode.window.showTextDocument(doc);
-        if (data.file.endsWith(".md")) {
-          new Promise((resolve) => setTimeout(resolve, 500)).then(() => {
-            vscode.commands.executeCommand("markdown.showPreview", doc);
-          });
-        }
-      });
+      vscode.workspace.openTextDocument(openPath).then(
+        (doc) => {
+          // Not a preview tab: a command opening several files (the conflicting files of a
+          // promotion) would otherwise replace each one with the next
+          vscode.window.showTextDocument(doc, { preview: false });
+          if (data.file.endsWith(".md")) {
+            new Promise((resolve) => setTimeout(resolve, 500)).then(() => {
+              vscode.commands.executeCommand("markdown.showPreview", doc);
+            });
+          }
+        },
+        (error) => {
+          Logger.log(`Could not open ${openPath.fsPath}: ${String(error)}`);
+        },
+      );
     }
     // Request the extension version (used by "sf hardis:doctor").
     // Answered regardless of userInput mode, as the command can run outside the LWC UI.
