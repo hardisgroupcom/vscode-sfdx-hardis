@@ -191,6 +191,13 @@ SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION=true \
   SFDX_HARDIS_DOC_SCREENSHOTS_DIR=doc-screenshots/promotion \
   yarn screenshots promotion
 
+# Major branch deployment check: a variant run that turns
+# enableMajorBranchDeploymentCheck on, adds a uatrun branch and gives each major
+# branch a check in another state, into its own output folder
+SFDX_HARDIS_DOC_SCREENSHOTS_MAJOR_BRANCH_CHECK=true \
+  SFDX_HARDIS_DOC_SCREENSHOTS_DIR=doc-screenshots/major-branch-check \
+  yarn screenshots major-branch-check
+
 # Copy them into the documentation of the sibling sfdx-hardis repository
 python scripts/build-doc-images.py
 ```

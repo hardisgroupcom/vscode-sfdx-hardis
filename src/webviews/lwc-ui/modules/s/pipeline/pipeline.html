@@ -201,6 +201,10 @@
                                         <span class="legend-item"><span class="hardis-pill-dot legend-dot hardis-status-failed"></span>{i18n.jobStatusFailed}</span>
                                         <span class="legend-separator"></span>
                                         <span class="legend-item"><span class="hardis-conflict-glyph">&#9888;</span>{i18n.legendMergeConflicts}</span>
+                                        <template if:true={majorBranchCheckEnabled}>
+                                            <span class="legend-separator"></span>
+                                            <span class="legend-item"><span class="legend-node-check"></span>{i18n.legendMajorBranchCheck}</span>
+                                        </template>
                                 </div>
                                 <template if:true={error}>
                                     <pre class="mermaid-debug" style="color:#888;font-size:10px;max-height:100px;overflow:auto;"></pre>
@@ -465,6 +469,38 @@
                                 <p>{checkoutBehindNote}</p>
                             </div>
                         </template>
+                    </template>
+                    <!-- Last deployment check of the major branch against its org (enableMajorBranchDeploymentCheck) -->
+                    <template if:true={showModalMajorBranchCheck}>
+                        <div class="major-branch-check slds-m-bottom_small">
+                            <div class="hardis-group-label">{i18n.majorBranchCheckTitle}</div>
+                            <template if:true={modalMajorBranchCheckFound}>
+                                <div class="major-branch-check-row">
+                                    <span class={modalMajorBranchCheckPillClass}><span class="hardis-pill-dot"></span>{modalMajorBranchCheckStatusLabel}</span>
+                                    <template if:true={modalMajorBranchCheckRanAt}>
+                                        <span class="muted">{modalMajorBranchCheckRanAt}</span>
+                                    </template>
+                                    <template if:true={modalMajorBranchCheckDuration}>
+                                        <span class="hardis-chip">{modalMajorBranchCheckDuration}</span>
+                                    </template>
+                                    <template if:true={modalMajorBranchCheckStaleText}>
+                                        <span class="major-branch-check-stale">
+                                            <lightning-icon icon-name="utility:clock" size="xx-small"></lightning-icon>
+                                            <span>{modalMajorBranchCheckStaleText}</span>
+                                        </span>
+                                    </template>
+                                    <template if:true={modalMajorBranchCheckHasUrl}>
+                                        <button class="hardis-textlink" onclick={handleOpenMajorBranchCheckJob}>{i18n.majorBranchCheckOpenJob}</button>
+                                    </template>
+                                </div>
+                            </template>
+                            <template if:false={modalMajorBranchCheckFound}>
+                                <div class="major-branch-check-row">
+                                    <span class="muted">{i18n.majorBranchCheckNone}</span>
+                                    <button class="hardis-textlink" onclick={handleOpenMajorBranchCheckDoc}>{i18n.majorBranchCheckHowTo}</button>
+                                </div>
+                            </template>
+                        </div>
                     </template>
                     <!-- Go-lives selector (top branches such as main/prod) -->
                     <template if:true={modalIsTopBranch}>

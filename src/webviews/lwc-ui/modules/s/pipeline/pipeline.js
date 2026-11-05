@@ -23,7 +23,12 @@ import {
   runningJobRows,
   safeWebUrl,
   jobDurationKey,
+  formatDuration,
 } from "s/pullRequestUtils";
+
+// Where the major branch deployment check is explained and set up
+const MAJOR_BRANCH_CHECK_DOC_URL =
+  "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-major-branch-check/";
 
 // How often the jobs of the Pull Request shown are read again: while one is going on, and
 // while nothing is, to notice the one a new commit or a merge starts
@@ -251,6 +256,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // not enriched with tickets/deployment actions — so those tabs are hidden.
   isFeaturePrModal = false;
   modalBranchName = "";
+  // Last deployment check of the major branch of the window against its org (null unless the
+  // project enables enableMajorBranchDeploymentCheck): { found, status, webUrl, ... }
+  modalMajorBranchCheck = null;
   modalPullRequests = [];
   modalTickets = [];
   modalActions = [];
@@ -2528,9 +2536,44 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       this._loadGoLives(branchName);
     }
 
+    this.modalMajorBranchCheck = this._majorBranchCheckOfBranch(branchName);
     this._populateModalFromPrs(prs);
     this.modalActiveTabValue = "prs";
     this.showPRModal = true;
+  }
+
+  // The last deployment check of a major branch as its window shows it: null when the project
+  // did not enable the feature, { found: false } when no check was found
+  _majorBranchCheckOfBranch(branchName) {
+    if (this.pipelineData?.majorBranchDeploymentCheckEnabled !== true) {
+      return null;
+    }
+    const org = (this.pipelineData?.orgs || []).find(
+      (o) => o.name === branchName,
+    );
+    if (!org) {
+      return null;
+    }
+    const check = org.majorBranchCheck;
+    if (!check || !check.status) {
+      return { found: false };
+    }
+    return { found: true, ...check };
+  }
+
+  // The running jobs of a major branch check make its node pulse: the node names of these branches
+  _runningMajorBranchCheckNodeNames() {
+    const names = new Set();
+    if (this.pipelineData?.majorBranchDeploymentCheckEnabled !== true) {
+      return names;
+    }
+    for (const org of this.pipelineData?.orgs || []) {
+      const status = org.majorBranchCheck?.status;
+      if (status === "running" || status === "pending") {
+        names.add(`${this._sanitizeBranchName(org.name)}Branch`);
+      }
+    }
+    return names;
   }
 
   // The Pull Requests a branch still owns: the ones a promotion carried away are listed in the
@@ -2926,10 +2969,16 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
     const nodes = mermaidSvg.querySelectorAll("g.node");
     const svgScale = this._getMermaidEffectiveScale(mermaidSvg);
+    const runningCheckNodes = this._runningMajorBranchCheckNodeNames();
     nodes.forEach((node) => {
       node.style.cursor = "pointer";
       node.setAttribute("tabindex", "0");
       this._drawNodeCountBubble(node, svgScale);
+      // A major branch whose deployment check is running pulses (pipeline.css), its running dot
+      // staying the indicator when motion is reduced
+      if (runningCheckNodes.has(this._extractNodeIdentifier(node.id))) {
+        node.classList.add("hardis-node-check-running");
+      }
     });
   }
 
@@ -5759,6 +5808,84 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   get showPlainModalTitle() {
     return this.modalMode === "singlePR" && !this.isSinglePRMode;
+  }
+
+  // ---- Major branch deployment check, above the tabs of a major branch window ----
+
+  get showModalMajorBranchCheck() {
+    return (
+      !!this.modalMajorBranchCheck &&
+      this.modalMode !== "singlePR" &&
+      !this.isFeaturePrModal
+    );
+  }
+
+  get modalMajorBranchCheckFound() {
+    return this.modalMajorBranchCheck?.found === true;
+  }
+
+  get modalMajorBranchCheckPillClass() {
+    return `hardis-pill hardis-status-${this.modalMajorBranchCheck?.status || "unknown"}`;
+  }
+
+  get modalMajorBranchCheckStatusLabel() {
+    const labels = {
+      success: this.i18n.majorBranchCheckStatusSuccess,
+      failed: this.i18n.majorBranchCheckStatusFailed,
+      running: this.i18n.majorBranchCheckStatusRunning,
+      pending: this.i18n.majorBranchCheckStatusPending,
+    };
+    return (
+      labels[this.modalMajorBranchCheck?.status] || this.i18n.jobStatusUnknown
+    );
+  }
+
+  get modalMajorBranchCheckRanAt() {
+    const check = this.modalMajorBranchCheck || {};
+    const date = check.finishedAt || check.startedAt;
+    return date
+      ? this.t("majorBranchCheckRanAt", { date: this._formatCompactDate(date) })
+      : "";
+  }
+
+  get modalMajorBranchCheckDuration() {
+    return formatDuration(this.modalMajorBranchCheck?.durationSeconds);
+  }
+
+  get modalMajorBranchCheckStaleText() {
+    const check = this.modalMajorBranchCheck || {};
+    if (check.stale !== true) {
+      return "";
+    }
+    if (check.staleReason === "deployedAfter") {
+      return this.i18n.majorBranchCheckStaleDeployedAfter;
+    }
+    return this.t("majorBranchCheckStaleAge", {
+      hours: this.pipelineData?.majorBranchDeploymentCheckValidityHours || 24,
+    });
+  }
+
+  get modalMajorBranchCheckHasUrl() {
+    return !!safeWebUrl(this.modalMajorBranchCheck?.webUrl);
+  }
+
+  handleOpenMajorBranchCheckJob() {
+    const url = safeWebUrl(this.modalMajorBranchCheck?.webUrl);
+    if (!url) {
+      return;
+    }
+    window.sendMessageToVSCode({ type: "openExternal", data: { url } });
+  }
+
+  handleOpenMajorBranchCheckDoc() {
+    window.sendMessageToVSCode({
+      type: "openExternal",
+      data: { url: MAJOR_BRANCH_CHECK_DOC_URL },
+    });
+  }
+
+  get majorBranchCheckEnabled() {
+    return this.pipelineData?.majorBranchDeploymentCheckEnabled === true;
   }
 
   get modalPrsTabLabel() {

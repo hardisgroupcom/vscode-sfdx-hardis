@@ -106,6 +106,12 @@ suite("Running jobs of a Pull Request", () => {
         "Simulate SFDX deployment": "validation",
         "Run MegaLinter": "codeQuality",
         "Deploy to major org": "deployment",
+        // Major branch deployment check, whatever the CI
+        "Check Major Branch Deployment (sfdx-hardis)": "validation",
+        "Check Major Branch Deployment (integration)": "validation",
+        "Check Major Branch Deployment": "validation",
+        MajorBranchDeploymentCheck: "validation",
+        "check-major-branch-deployment": "validation",
       };
       for (const [name, kind] of Object.entries(expected)) {
         assert.strictEqual(classifyJobKind(name), kind, name);

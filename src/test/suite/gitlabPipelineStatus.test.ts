@@ -1,5 +1,8 @@
 import * as assert from "assert";
-import { GitProviderGitlab } from "../../utils/gitProviders/gitProviderGitlab";
+import {
+  GitProviderGitlab,
+  pickGitlabBranchDeploymentPipelines,
+} from "../../utils/gitProviders/gitProviderGitlab";
 
 /**
  * Which pipeline says what a GitLab merge request's CI is doing, when several ran on its head
@@ -130,7 +133,7 @@ suite("GitLab pipeline status of a merge request", () => {
   // the merge request pipelines out before asking for the newest one: the validation pipeline of a
   // merge request open on that branch must never be mistaken for its deployment.
   test("a deployment status is read from the branch pipelines only", () => {
-    const pipelines = [
+    const selection = pickGitlabBranchDeploymentPipelines([
       pipeline({
         id: 41,
         status: "failed",
@@ -143,12 +146,10 @@ suite("GitLab pipeline status of a merge request", () => {
         source: "push",
         updated_at: "2026-09-08T21:00:00.000Z",
       }),
-    ];
-    const commitPipelines = pipelines.filter(
-      (p) => p.source !== "merge_request_event",
-    );
-    const chosen = provider.newestPipeline(commitPipelines);
+    ]);
+    const chosen = provider.newestPipeline(selection.pipelines);
     assert.strictEqual(chosen.id, 40);
     assert.strictEqual(chosen.status, "success");
+    assert.strictEqual(selection.readCommitStatuses, false);
   });
 });

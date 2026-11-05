@@ -11,8 +11,11 @@ import {
   Job,
   JobStatus,
 } from "./types";
-import type { JobKind, JobTiming } from "./types";
-import { pickJobTiming } from "../pipeline/jobKindUtils";
+import type { JobKind, JobTiming, MajorBranchCheck } from "./types";
+import {
+  isMajorBranchCheckName,
+  pickJobTiming,
+} from "../pipeline/jobKindUtils";
 import { SecretsManager, SecretSource } from "../secretsManager";
 import { PROVIDER_ENV_VAR_NAMES } from "../envFileCredentials";
 import { Logger } from "../../logger";
@@ -927,7 +930,7 @@ export class GitProviderBitbucket extends GitProvider {
       return [
         {
           name:
-            pipeline?.target?.selector?.target ||
+            pipeline?.target?.selector?.pattern ||
             pipeline.target?.type ||
             pipeline.uuid ||
             "Default pipeline name",
@@ -953,94 +956,185 @@ export class GitProviderBitbucket extends GitProvider {
       return null;
     }
 
-    // Primary: commit statuses for the latest commit on the branch (covers Jenkins, external CI)
+    // Primary: the Bitbucket Pipelines of the branch
+    let pipelines: any[];
     try {
-      // listCommitsAt maps to /commits/{revision} — the canonical endpoint for branch commits
-      const commitsResponse =
-        await this.bitbucketClient.repositories.listCommitsAt({
-          workspace: this.workspace,
-          repo_slug: this.repoSlug,
-          revision: branchName,
-          pagelen: 1,
-        } as any);
-      await this.logApiCall("repositories.listCommitsAt", {
-        caller: "getJobsForBranchLatestCommit",
-        revision: branchName,
-      });
-      const latestCommit = commitsResponse?.data?.values?.[0]?.hash;
-      if (latestCommit) {
-        const statusResponse =
-          await this.bitbucketClient.repositories.listCommitStatuses({
-            workspace: this.workspace,
-            repo_slug: this.repoSlug,
-            commit: latestCommit,
-          } as any);
-        await this.logApiCall("repositories.listCommitStatuses", {
-          caller: "getJobsForBranchLatestCommit",
-          commit: latestCommit,
-        });
-        const statuses = statusResponse?.data?.values ?? [];
-        if (statuses.length > 0) {
-          const jobs: Job[] = statuses.map((s: any) => ({
-            name: s.name || s.key || "Build",
-            status: this.mapCommitStatusStateToJobStatus(s.state),
-            webUrl: s.url || undefined,
-            startedAt: s.created_on || undefined,
-            updatedAt: s.updated_on || undefined,
-            raw: s,
-          }));
-          return { jobs, jobsStatus: this.computeJobsStatus(jobs) };
-        }
-      }
-    } catch (e) {
-      Logger.log(
-        `Error fetching commit statuses for branch ${branchName}: ${String(e)}`,
+      pipelines = await this.listBranchPipelines(
+        branchName,
+        "getJobsForBranchLatestCommit",
       );
-    }
-
-    // Fallback: Bitbucket Pipelines
-    try {
-      const response = await this.bitbucketClient.pipelines.list({
-        workspace: this.workspace,
-        repo_slug: this.repoSlug,
-        q: `target.ref_name = "${branchName}"`,
-        sort: "-created_on",
-      } as any);
-      await this.logApiCall("pipelines.list", {
-        caller: "getJobsForBranchLatestCommit",
-        q: `target.ref_name = "${branchName}"`,
-      });
-      const values = response?.data?.values ?? [];
-      if (!values || values.length === 0) {
-        return { jobs: [], jobsStatus: "unknown" };
-      }
-
-      // Exclude pipelines triggered by pull requests
-      const commitPipelines = values.filter(
-        (p: any) => p.trigger?.type !== "PULL_REQUEST",
-      );
-      if (commitPipelines.length === 0) {
-        return { jobs: [], jobsStatus: "unknown" };
-      }
-
-      const pipeline: any = commitPipelines[0];
-      const job: Job = {
-        name:
-          pipeline?.target?.selector?.target ||
-          pipeline.target?.type ||
-          pipeline.uuid ||
-          "Default pipeline name",
-        status: this.mapPipelineStateToJobStatus(pipeline.state),
-        webUrl: this.pipelineWebUrl(pipeline),
-        startedAt: pipeline.created_on || undefined,
-        updatedAt: pipeline.updated_on || undefined,
-        raw: pipeline,
-      };
-      return { jobs: [job], jobsStatus: this.computeJobsStatus([job]) };
     } catch (e) {
       Logger.log(`Error fetching jobs for branch ${branchName}: ${String(e)}`);
       return null;
     }
+    const deploymentPipelines = pickBitbucketBranchDeploymentPipelines(
+      pipelines,
+      branchName,
+    );
+    if (deploymentPipelines.length > 0) {
+      const job = this.pipelineToJob(deploymentPipelines[0]);
+      return { jobs: [job], jobsStatus: this.computeJobsStatus([job]) };
+    }
+
+    // Fallback: commit statuses for the latest commit on the branch (Jenkins, external CI). The
+    // pipelines left out above report a commit status too: it is not a deployment either
+    try {
+      const leftOutBuildNumbers = new Set(
+        pipelines
+          .map((pipeline: any) => String(pipeline?.build_number || ""))
+          .filter(Boolean),
+      );
+      const statusJobs = this.leaveOutMajorBranchChecks(
+        await this.listBranchCommitStatusJobs(
+          branchName,
+          "getJobsForBranchLatestCommit",
+        ),
+      ).filter((job) => {
+        const statusUrl = String(job.webUrl || "");
+        const buildNumber = this.isRepositoryUrl(statusUrl)
+          ? /\/results\/(\d+)/.exec(statusUrl)?.[1]
+          : undefined;
+        return !buildNumber || !leftOutBuildNumbers.has(buildNumber);
+      });
+      return {
+        jobs: statusJobs,
+        jobsStatus: this.computeJobsStatus(statusJobs),
+      };
+    } catch (e) {
+      Logger.log(
+        `Error fetching commit statuses for branch ${branchName}: ${String(e)}`,
+      );
+      return { jobs: [], jobsStatus: "unknown" };
+    }
+  }
+
+  /**
+   * The last major branch deployment check of a branch: the newest run of the
+   * check-major-branch-deployment custom pipeline on the branch (scheduled or started by hand). A
+   * custom pipeline renamed by the project is still found by its "Check Major Branch Deployment"
+   * step. A Jenkins reporting a commit status named after the check is read when no pipeline
+   * holds one.
+   */
+  async getMajorBranchDeploymentCheck(
+    branchName: string,
+  ): Promise<MajorBranchCheck | null> {
+    if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
+      return null;
+    }
+    try {
+      const customPipelines = (
+        await this.listBranchPipelines(
+          branchName,
+          "getMajorBranchDeploymentCheck",
+        )
+      ).filter(
+        (pipeline: any) =>
+          pipeline?.target?.ref_name === branchName &&
+          pipeline?.target?.selector?.type === "custom",
+      );
+      const named = customPipelines.find((pipeline: any) =>
+        isMajorBranchCheckName(pipeline.target?.selector?.pattern),
+      );
+      if (named) {
+        return this.toMajorBranchCheck(this.pipelineToJob(named));
+      }
+      for (const pipeline of customPipelines.slice(0, 3)) {
+        const jobs = await this.listJobsOfRunCached(
+          this.pipelineToJob(pipeline),
+          `bitbucket:${pipeline.uuid || pipeline.build_number}`,
+        );
+        const check = this.pickMajorBranchCheckJob(jobs);
+        if (check) {
+          return this.toMajorBranchCheck(check);
+        }
+      }
+      return this.pickMajorBranchCheckFromStatuses(
+        await this.listBranchCommitStatusJobs(
+          branchName,
+          "getMajorBranchDeploymentCheck",
+        ),
+      );
+    } catch (e) {
+      Logger.log(
+        `Error reading the deployment check of branch ${branchName}: ${String(e)}`,
+      );
+      return null;
+    }
+  }
+
+  // The 30 most recent pipelines of a branch, newest first
+  private async listBranchPipelines(
+    branchName: string,
+    caller: string,
+  ): Promise<any[]> {
+    const q = `target.ref_name = "${branchName}"`;
+    const response = await this.bitbucketClient!.pipelines.list({
+      workspace: this.workspace,
+      repo_slug: this.repoSlug,
+      q,
+      sort: "-created_on",
+      // Enough to reach the deployment behind the nightly checks
+      pagelen: 30,
+    } as any);
+    await this.logApiCall("pipelines.list", { caller, q });
+    return response?.data?.values ?? [];
+  }
+
+  // The commit statuses of the latest commit of a branch (Jenkins, external CI), as jobs
+  private async listBranchCommitStatusJobs(
+    branchName: string,
+    caller: string,
+  ): Promise<Job[]> {
+    // listCommitsAt maps to /commits/{revision}, the canonical endpoint for branch commits
+    const commitsResponse =
+      await this.bitbucketClient!.repositories.listCommitsAt({
+        workspace: this.workspace,
+        repo_slug: this.repoSlug,
+        revision: branchName,
+        pagelen: 1,
+      } as any);
+    await this.logApiCall("repositories.listCommitsAt", {
+      caller,
+      revision: branchName,
+    });
+    const latestCommit = commitsResponse?.data?.values?.[0]?.hash;
+    if (!latestCommit) {
+      return [];
+    }
+    const statusResponse =
+      await this.bitbucketClient!.repositories.listCommitStatuses({
+        workspace: this.workspace,
+        repo_slug: this.repoSlug,
+        commit: latestCommit,
+      } as any);
+    await this.logApiCall("repositories.listCommitStatuses", {
+      caller,
+      commit: latestCommit,
+    });
+    return (statusResponse?.data?.values ?? []).map((s: any) => ({
+      name: s.name || s.key || "Build",
+      status: this.mapCommitStatusStateToJobStatus(s.state),
+      webUrl: s.url || undefined,
+      startedAt: s.created_on || undefined,
+      updatedAt: s.updated_on || undefined,
+      raw: s,
+    }));
+  }
+
+  // One pipeline as the Job the pipeline diagram displays
+  private pipelineToJob(pipeline: any): Job {
+    return {
+      name:
+        pipeline?.target?.selector?.pattern ||
+        pipeline?.target?.type ||
+        pipeline?.uuid ||
+        "Default pipeline name",
+      status: this.mapPipelineStateToJobStatus(pipeline?.state),
+      webUrl: this.pipelineWebUrl(pipeline),
+      startedAt: pipeline?.created_on || undefined,
+      updatedAt: pipeline?.completed_on || pipeline?.updated_on || undefined,
+      raw: pipeline,
+    };
   }
 
   /**
@@ -1269,4 +1363,25 @@ export class GitProviderBitbucket extends GitProvider {
     );
     return converted;
   }
+}
+
+/**
+ * The pipelines of a branch whose result the deployment arrow of the branch shows, newest first,
+ * out of the pipelines Bitbucket lists for its name.
+ *
+ * Only the pipelines of a push to the branch itself count: a Pull Request pipeline has another
+ * kind of target, a custom pipeline (the major branch deployment check, or any pipeline started
+ * by hand from its selector) deploys nothing, and neither does a scheduled run.
+ */
+export function pickBitbucketBranchDeploymentPipelines(
+  pipelines: any[],
+  branchName: string,
+): any[] {
+  return (pipelines || []).filter(
+    (pipeline: any) =>
+      pipeline?.target?.type === "pipeline_ref_target" &&
+      pipeline.target.ref_name === branchName &&
+      pipeline.target.selector?.type !== "custom" &&
+      pipeline.trigger?.name !== "SCHEDULE",
+  );
 }

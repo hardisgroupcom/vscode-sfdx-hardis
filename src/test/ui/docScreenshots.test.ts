@@ -492,6 +492,14 @@ const PROMOTION_TICKED_ROWS = (
   .map((pair) => parsePoint(pair, 531, 433));
 const PROMOTION_MODAL_CLOSE = { x: 1843, y: 78 };
 /**
+ * Major branch deployment check variant of the run
+ * (SFDX_HARDIS_DOC_SCREENSHOTS_MAJOR_BRANCH_CHECK): enableMajorBranchDeploymentCheck
+ * is on and every major branch of the fixture has a check. Off by default, so
+ * its shots are taken apart from the ordinary pipeline screenshots.
+ */
+const MAJOR_BRANCH_CHECK_VARIANT =
+  process.env.SFDX_HARDIS_DOC_SCREENSHOTS_MAJOR_BRANCH_CHECK === "true";
+/**
  * Action recovery variant of the run (SFDX_HARDIS_DOC_SCREENSHOTS_ACTION_RECOVERY):
  * a Pull Request merged into integration whose first post-deployment action
  * failed and stopped the two others, and the open fix Pull Request moving one of
@@ -1989,6 +1997,73 @@ suite("Documentation screenshots", function () {
       settleMs: 3500,
       force: true,
     });
+  });
+
+  // Major branch deployment check, for
+  // docs/salesforce-devops-setup-major-branch-check.md. Only in the major
+  // branch check variant of the run, which gives each major branch a check in
+  // another state (majorBranchCheckFixture in src/test/runUiTest.ts):
+  //   SFDX_HARDIS_DOC_SCREENSHOTS_MAJOR_BRANCH_CHECK=true \
+  //   SFDX_HARDIS_DOC_SCREENSHOTS_DIR=doc-screenshots/major-branch-check \
+  //   yarn screenshots major-branch-check
+  test("major branch deployment check", async function () {
+    if (!MAJOR_BRANCH_CHECK_VARIANT || !shouldTake("major-branch-check")) {
+      this.skip();
+    }
+    // The diagram: the five states of a branch node, and the legend line
+    await shootPanel(panelManager, {
+      name: "major-branch-check-pipeline",
+      command: "vscode-sfdx-hardis.showPipeline",
+      lwcId: "s-pipeline",
+      ready: pipelineFullyLoaded,
+      settleMs: 9000,
+      force: true,
+    });
+    // Window of preprod: its last check failed and is older than the validity.
+    // The node is clicked by its id rather than at a point, since the layout
+    // depends on the branches of the fixture
+    await sleep(1000);
+    await inWebview(`
+      const node = deepAll(panelDocument, "g.node").find((element) =>
+        /flowchart-preprodBranch-/.test(element.id || ""),
+      );
+      if (!node) {
+        return null;
+      }
+      const shape = node.querySelector("rect, path, polygon") || node;
+      shape.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      return true;
+    `);
+    await sleep(2500);
+    await cleanChrome();
+    await captureStable("major-branch-check-modal");
+    await click(PROMOTION_MODAL_CLOSE.x, PROMOTION_MODAL_CLOSE.y);
+    await sleep(1000);
+    // Deployment section of the Pipeline Settings, where the two settings of
+    // the feature live
+    await shootPanel(panelManager, {
+      name: "major-branch-check-settings",
+      command: "vscode-sfdx-hardis.showPipelineConfig",
+      commandArgs: [null, "Deployment"],
+      lwcId: "s-pipeline-config",
+      settleMs: 3500,
+      force: true,
+    });
+    // They come last in the section: brought into view, then captured again
+    const scrolled = await inWebview(`
+      const label = deepAll(panelDocument, ".hardis-field-label").find((element) =>
+        /major branch deployment check/i.test(element.textContent || ""),
+      );
+      if (!label) {
+        return null;
+      }
+      label.scrollIntoView({ block: "center" });
+      return true;
+    `);
+    if (scrolled) {
+      await sleep(800);
+      await captureStable("major-branch-check-settings");
+    }
   });
 
   // The command the Create promotion button runs, captured at the conflict

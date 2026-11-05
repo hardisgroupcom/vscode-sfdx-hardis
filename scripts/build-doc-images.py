@@ -85,6 +85,10 @@ PANEL_SHOTS = {
     # run into doc-screenshots/promotion (see CONTRIBUTING.md)
     "promotion-pipeline.png": "promotion/promotion-pipeline",
     "promotion-settings.png": "promotion/promotion-settings",
+    # Major branch deployment check, taken by the major branch check variant of
+    # the run into doc-screenshots/major-branch-check (see CONTRIBUTING.md)
+    "major-branch-check-pipeline.png": "major-branch-check/major-branch-check-pipeline",
+    "major-branch-check-settings.png": "major-branch-check/major-branch-check-settings",
 }
 
 # Width of the activity bar + side bar in a capture: the editor area (the
@@ -130,6 +134,8 @@ WEBVIEW_ONLY = {
     "pipeline-config.png",
     "promotion-pipeline.png",
     "promotion-settings.png",
+    "major-branch-check-pipeline.png",
+    "major-branch-check-settings.png",
     "scratch-org-pool-menu.png",
 }
 
@@ -252,6 +258,12 @@ BOX_CROPS = {
     ),
     "promotion-pr-modal.png": (
         "promotion/promotion-pr-modal",
+        (470, 60, 1866, 915),
+    ),
+    # Major branch deployment check: the window of preprod, whose last check
+    # failed and is stale, with the check block above the tabs
+    "major-branch-check-modal.png": (
+        "major-branch-check/major-branch-check-modal",
         (470, 60, 1866, 915),
     ),
 }

@@ -10,6 +10,7 @@ import type {
   Job,
   JobKind,
   JobTiming,
+  MajorBranchCheck,
   RepoInfo,
   JobStatus,
 } from "./types";
@@ -27,6 +28,7 @@ import { TicketProvider } from "../ticketProviders/ticketProvider";
 import { Ticket } from "../ticketProviders/types";
 import { completePullRequestsWithActions } from "../prePostCommandsUtils";
 import {
+  isMajorBranchCheckName,
   isUnfinishedJob,
   pickUnfinishedJobsByKind,
 } from "../pipeline/jobKindUtils";
@@ -56,6 +58,9 @@ export class GitProvider {
   // the (top) branch, so as long as the branch tip is unchanged the cached list
   // is still valid and the PR listing can be skipped. Same lifetime as above.
   protected goLivesCache: Map<string, GoLive[]> = new Map();
+
+  // Jobs of the runs that are over, by run: see listJobsOfRunCached. Same lifetime as above.
+  private finishedRunJobs: Map<string, Job[]> | undefined;
 
   // Caches the "no provider detectable" result (no git repo, no origin remote,
   // unknown host): without it, every call re-spawns `git remote -v`.
@@ -457,6 +462,17 @@ export class GitProvider {
     return await this.expandUnfinishedRuns(branchJobs.jobs || [], "deployment");
   }
 
+  /**
+   * The last run of the scheduled job that simulates the deployment of a major branch into its
+   * own org (sfdx-hardis enableMajorBranchDeploymentCheck), shown on the node of the branch in the
+   * DevOps Pipeline. Null when none is found, or when the provider does not tell.
+   */
+  async getMajorBranchDeploymentCheck(
+    _branchName: string,
+  ): Promise<MajorBranchCheck | null> {
+    return null;
+  }
+
   async listOpenPullRequests(): Promise<PullRequest[]> {
     Logger.log(
       `listOpenPullRequests not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
@@ -760,6 +776,80 @@ export class GitProvider {
     }
   }
 
+  /**
+   * The jobs of a run, kept in memory once the run is over: the DevOps Pipeline refreshes every
+   * minute, and only the runs still going on are asked again. `runKey` names the run on its
+   * provider (its id).
+   */
+  protected async listJobsOfRunCached(
+    run: Job,
+    runKey: string,
+  ): Promise<Job[]> {
+    const cache = this.finishedRunJobsCache();
+    const cached = cache.get(runKey);
+    if (cached) {
+      return cached;
+    }
+    const jobs = await this.listJobsOfRun(run);
+    if (run.status === "success" || run.status === "failed") {
+      cache.set(runKey, jobs);
+    }
+    return jobs;
+  }
+
+  /**
+   * The first job of a run that is the major branch deployment check, out of its jobs as
+   * listJobsOfRun gives them. A job that did not run (manual, skipped: status unknown) is not one.
+   * `branchName`, when given, must be named in the job: one job per branch (GitHub matrix).
+   */
+  protected pickMajorBranchCheckJob(
+    jobs: Job[],
+    branchName?: string,
+  ): Job | null {
+    return (
+      (jobs || []).find(
+        (job) =>
+          isMajorBranchCheckName(job.name) &&
+          job.status !== "unknown" &&
+          (!branchName || String(job.name || "").includes(`(${branchName})`)),
+      ) || null
+    );
+  }
+
+  /**
+   * The major branch deployment check reported as a commit status by an external CI (Jenkins):
+   * the newest status named after it.
+   */
+  protected pickMajorBranchCheckFromStatuses(
+    statusJobs: Job[],
+  ): MajorBranchCheck | null {
+    const checks = (statusJobs || [])
+      .filter((job) => isMajorBranchCheckName(job.name))
+      .sort((a, b) =>
+        String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")),
+      );
+    return checks.length > 0 ? this.toMajorBranchCheck(checks[0]) : null;
+  }
+
+  /** A job as the check shown on a branch node: a job that is over has its end date. */
+  protected toMajorBranchCheck(job: Job): MajorBranchCheck {
+    const over = job.status === "success" || job.status === "failed";
+    return {
+      status: job.status,
+      name: job.name,
+      webUrl: job.webUrl || "",
+      startedAt: job.startedAt || undefined,
+      finishedAt: over ? job.updatedAt || undefined : undefined,
+    };
+  }
+
+  /** The commit statuses of a branch, without the major branch deployment check. */
+  protected leaveOutMajorBranchChecks(statusJobs: Job[]): Job[] {
+    return (statusJobs || []).filter(
+      (job) => !isMajorBranchCheckName(job.name),
+    );
+  }
+
   // Only the runs that are not over are opened: a finished run costs no call
   private async expandUnfinishedRuns(
     runs: Job[],
@@ -782,6 +872,14 @@ export class GitProvider {
       (run) => jobsByRun.get(run) || [],
       fallbackKind,
     );
+  }
+
+  // Created on first use: the provider suites build instances without running the constructor
+  private finishedRunJobsCache(): Map<string, Job[]> {
+    if (!this.finishedRunJobs) {
+      this.finishedRunJobs = new Map();
+    }
+    return this.finishedRunJobs;
   }
 
   // The repository the cached answers belong to, from the git remote of the working copy
