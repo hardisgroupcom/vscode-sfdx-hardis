@@ -9,6 +9,7 @@ import { GitProviderGitlab } from "../../utils/gitProviders/gitProviderGitlab";
 import { GitProviderAzure } from "../../utils/gitProviders/gitProviderAzure";
 import { GitProviderBitbucket } from "../../utils/gitProviders/gitProviderBitbucket";
 import type { Job } from "../../utils/gitProviders/types";
+import { newBitbucketProviderStub } from "./bitbucketProviderStub";
 
 /**
  * The jobs still running for a Pull Request, shown in the Validation, Code Quality and Deployment
@@ -414,20 +415,14 @@ suite("Running jobs of a Pull Request", () => {
 
   suite("steps of a Bitbucket pipeline", () => {
     function provider(steps: any[], calls: any[] = []): any {
-      const stub: any = Object.create(GitProviderBitbucket.prototype);
-      stub.workspace = "ws";
-      stub.repoSlug = "repo";
-      stub.repoInfo = { webUrl: "https://bitbucket.org/ws/repo" };
-      stub.logApiCall = async () => undefined;
-      stub.bitbucketClient = {
+      return newBitbucketProviderStub({
         pipelines: {
           listSteps: async (params: any) => {
             calls.push(params);
             return { data: { values: steps } };
           },
         },
-      };
-      return stub;
+      });
     }
     const steps = [
       {

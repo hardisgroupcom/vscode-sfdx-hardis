@@ -16,13 +16,26 @@ import {
 } from "../../utils/gitProviders/gitProviderGitlab";
 import { GitProviderGitHub } from "../../utils/gitProviders/gitProviderGitHub";
 import { pickAzureBranchDeploymentBuilds } from "../../utils/gitProviders/gitProviderAzure";
-import {
-  GitProviderBitbucket,
-  pickBitbucketBranchDeploymentPipelines,
-} from "../../utils/gitProviders/gitProviderBitbucket";
+import { pickBitbucketBranchDeploymentPipelines } from "../../utils/gitProviders/gitProviderBitbucket";
 import { GitProviderMock } from "../../utils/gitProviders/gitProviderMock";
 import type { MajorBranchCheck } from "../../utils/gitProviders/types";
 import { newAzureProviderStub } from "./azureProviderStub";
+import { newBitbucketProviderStub } from "./bitbucketProviderStub";
+
+/** The commit statuses were read once, and only the Jenkins deployment is left: the check is out. */
+async function assertOnlyJenkinsDeployment(
+  stub: any,
+  calls: { statuses: number },
+  branch: string,
+): Promise<void> {
+  const result = await stub.getJobsForBranchLatestCommit(branch);
+  assert.strictEqual(calls.statuses, 1);
+  assert.strictEqual(result.jobsStatus, "success");
+  assert.deepStrictEqual(
+    result.jobs.map((job: any) => job.name),
+    ["jenkins-deploy"],
+  );
+}
 
 /**
  * The major branch deployment check (sfdx-hardis enableMajorBranchDeploymentCheck): a scheduled
@@ -441,13 +454,7 @@ suite("Major branch deployment check", () => {
           },
         ],
       });
-      const result = await stub.getJobsForBranchLatestCommit("integration");
-      assert.strictEqual(calls.statuses, 1);
-      assert.strictEqual(result.jobsStatus, "success");
-      assert.deepStrictEqual(
-        result.jobs.map((job: any) => job.name),
-        ["jenkins-deploy"],
-      );
+      await assertOnlyJenkinsDeployment(stub, calls, "integration");
     });
 
     test("the check is the job of the newest scheduled pipeline, its jobs read once when over", async () => {
@@ -788,12 +795,7 @@ suite("Major branch deployment check", () => {
 
     function provider(pipelines: any[], statuses: any[] = []) {
       const calls = { statuses: 0, list: [] as any[] };
-      const stub: any = Object.create(GitProviderBitbucket.prototype);
-      stub.workspace = "ws";
-      stub.repoSlug = "repo";
-      stub.repoInfo = { webUrl: "https://bitbucket.org/ws/repo" };
-      stub.logApiCall = async () => undefined;
-      stub.bitbucketClient = {
+      const stub = newBitbucketProviderStub({
         pipelines: {
           list: async (params: any) => {
             calls.list.push(params);
@@ -808,7 +810,7 @@ suite("Major branch deployment check", () => {
             return { data: { values: statuses } };
           },
         },
-      };
+      });
       return { stub, calls };
     }
 
@@ -855,13 +857,7 @@ suite("Major branch deployment check", () => {
           },
         ],
       );
-      const result = await stub.getJobsForBranchLatestCommit("uat");
-      assert.strictEqual(calls.statuses, 1);
-      assert.strictEqual(result.jobsStatus, "success");
-      assert.deepStrictEqual(
-        result.jobs.map((job: any) => job.name),
-        ["jenkins-deploy"],
-      );
+      await assertOnlyJenkinsDeployment(stub, calls, "uat");
     });
 
     test("the check is the newest run of the custom pipeline", async () => {
