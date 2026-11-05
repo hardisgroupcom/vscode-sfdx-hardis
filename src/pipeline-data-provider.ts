@@ -10,6 +10,12 @@ import {
   MajorOrg,
 } from "./utils/orgConfigUtils";
 import { PromotionBranchConfig } from "./utils/pipeline/promotionBranchUtils";
+import {
+  buildMajorBranchCheckView,
+  getMajorBranchCheckValidityHours,
+  isMajorBranchCheckEnabled,
+  MajorBranchCheckView,
+} from "./utils/pipeline/majorBranchCheckUtils";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 import { isScratchOrgPoolConfigured } from "./utils/scratchOrgPoolUtils";
 import { PullRequest } from "./utils/gitProviders/types";
@@ -29,6 +35,9 @@ export interface OrgNode {
   // Branches this one is promoted to, first one first (the "Next promotion" of the
   // Deployment Actions tab)
   mergeTargets?: string[];
+  // Last major branch deployment check of the branch, only when the project enables
+  // enableMajorBranchDeploymentCheck: null when none was found (see majorBranchCheckUtils.ts)
+  majorBranchCheck?: MajorBranchCheckView | null;
 }
 
 export interface OrgLink {
@@ -51,6 +60,10 @@ export interface PipelineData {
   promotionBranches?: PromotionBranchConfig;
   // The project has a scratch org pool (poolConfig.storageService): the menu shows its panel
   scratchOrgPoolEnabled?: boolean;
+  // Major branch deployment check of the project (enableMajorBranchDeploymentCheck), and the
+  // age in hours after which a check is stale (majorBranchDeploymentCheckValidityHours)
+  majorBranchDeploymentCheckEnabled?: boolean;
+  majorBranchDeploymentCheckValidityHours?: number;
 }
 
 export class PipelineDataProvider {
@@ -83,6 +96,22 @@ export class PipelineDataProvider {
         projectConfig,
         majorOrgs,
       );
+      const majorBranchCheckEnabled = isMajorBranchCheckEnabled(projectConfig);
+      const majorBranchCheckValidityHours =
+        getMajorBranchCheckValidityHours(projectConfig);
+      // Computed once, so the diagram and the branch modal tell the same thing
+      const now = new Date();
+      const majorBranchChecks: Record<string, MajorBranchCheckView | null> = {};
+      if (majorBranchCheckEnabled) {
+        for (const org of majorOrgs) {
+          majorBranchChecks[org.branchName] = buildMajorBranchCheckView(
+            org.majorBranchCheck,
+            (org.jobs || [])[0],
+            majorBranchCheckValidityHours,
+            now,
+          );
+        }
+      }
       const mermaidBuilder = new BranchStrategyMermaidBuilder(
         majorOrgs,
         isAuthenticated,
@@ -92,6 +121,7 @@ export class PipelineDataProvider {
         options.featureBranchGroupThreshold ??
           DEFAULT_FEATURE_BRANCH_GROUP_THRESHOLD,
         promotionBranchConfig,
+        majorBranchChecks,
       );
       const mermaidDiagram = mermaidBuilder.build({
         format: "string",
@@ -118,6 +148,9 @@ export class PipelineDataProvider {
         mergeTargets: org.mergeTargets || [],
         pullRequestsInBranchSinceLastMerge:
           org.pullRequestsInBranchSinceLastMerge || [],
+        ...(majorBranchCheckEnabled
+          ? { majorBranchCheck: majorBranchChecks[org.branchName] ?? null }
+          : {}),
       }));
       const links: OrgLink[] = [];
       for (const org of majorOrgs) {
@@ -146,6 +179,8 @@ export class PipelineDataProvider {
         featureBranchGroups,
         promotionBranches: promotionBranchConfig,
         scratchOrgPoolEnabled: isScratchOrgPoolConfigured(projectConfig),
+        majorBranchDeploymentCheckEnabled: majorBranchCheckEnabled,
+        majorBranchDeploymentCheckValidityHours: majorBranchCheckValidityHours,
       };
     } catch (error: any) {
       vscode.window.showErrorMessage(

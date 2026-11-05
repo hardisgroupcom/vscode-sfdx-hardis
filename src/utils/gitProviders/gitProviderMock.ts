@@ -6,6 +6,7 @@ import type {
   GoLive,
   Job,
   JobStatus,
+  MajorBranchCheck,
   ProviderDescription,
   PullRequest,
   PullRequestSearchResult,
@@ -159,6 +160,13 @@ export class GitProviderMock extends GitProvider {
   ): Promise<{ jobs: Job[]; jobsStatus: JobStatus } | null> {
     const byBranch = this.fixture.branchJobs || {};
     return byBranch[branchName] || null;
+  }
+
+  // majorBranchChecks of the fixture, by branch
+  async getMajorBranchDeploymentCheck(
+    branchName: string,
+  ): Promise<MajorBranchCheck | null> {
+    return this.fixture.majorBranchChecks?.[branchName] ?? null;
   }
 
   async getBranchLatestCommitId(

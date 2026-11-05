@@ -4,6 +4,10 @@
 
 - A file sfdx-hardis asks to open (a report, a conflicting file of a promotion) opens even when its name holds URL-encoded characters, like `Account %28Sales%29 Layout.layout-meta.xml`
 - Documentation screenshots: the promotion conflict question shows the new "solve now" and "keep the source version" answers of sfdx-hardis
+- DevOps Pipeline: the deployment arrow of a major branch shows its last real deployment again, no longer replaced by a scheduled run or by a run of the major branch deployment check
+- DevOps Pipeline: with the new **Enable major branch deployment check** setting (Pipeline Settings), each major branch node shows whether the branch still deploys to its own org, from the last scheduled check job
+  - Green when deployable, red when not, pulsing while a check runs, lighter and dashed when the result is older than the validity you set or a deployment ran since
+  - The last tab of the branch window shows the result, its date and duration, and a link to the job
 
 ## [8.17.1] 2026-11-02
 

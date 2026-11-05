@@ -71,6 +71,13 @@ async function main() {
   const promotionVariant =
     docScreenshots &&
     process.env.SFDX_HARDIS_DOC_SCREENSHOTS_PROMOTION === "true";
+  // Major branch deployment check variant of the screenshot run: the feature is
+  // off in the base fixture, so the ordinary screenshots keep their plain blue
+  // branch nodes. This variant turns it on and gives each major branch a check
+  // in another state (see majorBranchCheckFixture below).
+  const majorBranchCheckVariant =
+    docScreenshots &&
+    process.env.SFDX_HARDIS_DOC_SCREENSHOTS_MAJOR_BRANCH_CHECK === "true";
   // A post-deployment action failed after a merge, and its fix Pull Request is
   // open: only a universe bringing its own overlay has that state to show
   const actionRecoveryVariant =
@@ -418,6 +425,47 @@ async function main() {
     );
   }
 
+  if (majorBranchCheckVariant && !universe) {
+    // enableMajorBranchDeploymentCheck in the project config, and a fifth major
+    // branch (uatrun, merged into preprod) so the five states of a branch node
+    // show in one diagram
+    fs.appendFileSync(
+      path.join(workspaceDir, ".sfdx-hardis.yml"),
+      ["enableMajorBranchDeploymentCheck: true", ""].join("\n"),
+    );
+    const branchDir = path.join(workspaceDir, "config", "branches");
+    fs.writeFileSync(
+      path.join(branchDir, ".sfdx-hardis.uatrun.yml"),
+      [
+        "instanceUrl: https://mycompany--uatrun.sandbox.my.salesforce.com",
+        "targetUsername: deploy.user@mycompany.com.uatrun",
+        "alias: UAT Run",
+        "mergeTargets:",
+        "  - preprod",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    fs.copyFileSync(
+      path.join(branchDir, ".jwt", "uat.key"),
+      path.join(branchDir, ".jwt", "uatrun.key"),
+    );
+    git("branch uatrun");
+    const fixture = JSON.parse(fs.readFileSync(gitProviderFixtureFile, "utf8"));
+    const overlay = majorBranchCheckFixture(Date.now());
+    fixture.majorBranchChecks = overlay.majorBranchChecks;
+    fixture.branchJobs = {
+      ...(fixture.branchJobs || {}),
+      ...overlay.branchJobs,
+    };
+    gitProviderFixtureFile = path.join(workDir, "git-provider-mock.json");
+    fs.writeFileSync(
+      gitProviderFixtureFile,
+      JSON.stringify(fixture, null, 2),
+      "utf8",
+    );
+  }
+
   // The action recovery variant: the merged Pull Request whose actions failed,
   // its fix Pull Request, their actions files in the workspace, and the
   // statuses the mocked CLI answers for them
@@ -753,6 +801,8 @@ async function main() {
               SFDX_HARDIS_DOC_SCREENSHOTS_ACTION_RECOVERY: actionRecoveryVariant
                 ? "true"
                 : "",
+              SFDX_HARDIS_DOC_SCREENSHOTS_MAJOR_BRANCH_CHECK:
+                majorBranchCheckVariant ? "true" : "",
               // Statuses and command scenarios of the action recovery variant
               SF_MOCK_ACTION_RECOVERY_FILE: actionRecoveryOverlayFile,
               SF_MOCK_DEPS_STATE: process.env.SF_MOCK_DEPS_STATE || "ok",
@@ -781,6 +831,75 @@ async function main() {
 }
 
 main();
+
+/**
+ * The checks the major branch deployment check variant serves, one state per
+ * major branch of the MyCompany-CRM pipeline: integration running, uat
+ * deployable, uatrun not deployable, preprod not deployable and older than the
+ * validity, main deployable but deployed since. The dates are counted back from
+ * `now`, since whether a check is stale depends on the time of the run. main
+ * gets a deployment of the day for the same reason.
+ */
+function majorBranchCheckFixture(now: number): {
+  majorBranchChecks: Record<string, any>;
+  branchJobs: Record<string, any>;
+} {
+  const hoursAgo = (hours: number, extraSeconds = 0) =>
+    new Date(now - hours * 3600 * 1000 + extraSeconds * 1000).toISOString();
+  const runUrl = (run: number, job: number) =>
+    `https://github.com/mycompany/salesforce-crm/actions/runs/${run}/job/${job}`;
+  const check = (
+    branch: string,
+    status: string,
+    run: number,
+    startedHoursAgo: number,
+    durationSeconds: number | null,
+  ) => ({
+    status,
+    name: `Check Major Branch Deployment (${branch})`,
+    webUrl: runUrl(run, run * 10),
+    startedAt: hoursAgo(startedHoursAgo),
+    finishedAt:
+      durationSeconds === null
+        ? undefined
+        : hoursAgo(startedHoursAgo, durationSeconds),
+  });
+  return {
+    majorBranchChecks: {
+      integration: check("integration", "running", 1140, 0.08, null),
+      uat: check("uat", "success", 1138, 3, 372),
+      uatrun: check("uatrun", "failed", 1138, 3, 271),
+      preprod: check("preprod", "failed", 1131, 50, 305),
+      main: check("main", "success", 1137, 6, 398),
+    },
+    branchJobs: {
+      uatrun: {
+        jobs: [
+          {
+            name: "Deploy to uatrun",
+            status: "success",
+            webUrl:
+              "https://github.com/mycompany/salesforce-crm/actions/runs/1101",
+            updatedAt: hoursAgo(120),
+          },
+        ],
+        jobsStatus: "success",
+      },
+      main: {
+        jobs: [
+          {
+            name: "Deploy to production",
+            status: "success",
+            webUrl:
+              "https://github.com/mycompany/salesforce-crm/actions/runs/1139",
+            updatedAt: hoursAgo(1),
+          },
+        ],
+        jobsStatus: "success",
+      },
+    },
+  };
+}
 
 /** A TCP port nothing listens on, for the debugging port of the VS Code window. */
 function findFreePort(): Promise<number> {

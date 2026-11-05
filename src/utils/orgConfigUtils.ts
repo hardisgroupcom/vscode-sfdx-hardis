@@ -4,7 +4,13 @@ import { glob } from "glob";
 import * as yaml from "js-yaml";
 import { sortArray } from "./sortUtils";
 import { getWorkspaceRoot } from "../utils";
-import { Job, JobStatus, PullRequest } from "./gitProviders/types";
+import {
+  Job,
+  JobStatus,
+  MajorBranchCheck,
+  PullRequest,
+} from "./gitProviders/types";
+import { isMajorBranchCheckEnabled } from "./pipeline/majorBranchCheckUtils";
 import { GitProvider } from "./gitProviders/gitProvider";
 import { getConfig } from "./pipeline/sfdxHardisConfig";
 import {
@@ -40,6 +46,9 @@ export interface MajorOrg {
   pullRequestsInBranchSinceLastMerge?: PullRequest[];
   // Promotion branches switch, when set at branch level (see promotionBranchUtils.ts)
   enablePromotionBranches?: boolean;
+  // Last major branch deployment check of the branch, read only when the project enables
+  // enableMajorBranchDeploymentCheck (see majorBranchCheckUtils.ts). Null when none was found.
+  majorBranchCheck?: MajorBranchCheck | null;
 }
 
 export async function listMajorOrgs(
@@ -60,6 +69,8 @@ export async function listMajorOrgs(
   const projectConfig = await getConfig("project");
   const orgAuthenticationMode: string =
     projectConfig?.orgAuthenticationMode || "encryptedCert";
+  // No call at all to the git provider for it when the project did not enable it
+  const readMajorBranchCheck = isMajorBranchCheckEnabled(projectConfig);
 
   // Process all config files in parallel
   const configFileResults = await Promise.allSettled(
@@ -71,6 +82,7 @@ export async function listMajorOrgs(
         gitProvider,
         options,
         orgAuthenticationMode,
+        readMajorBranchCheck,
       ),
     ),
   );
@@ -148,6 +160,7 @@ async function processOrgSfdxHardisConfigFile(
   gitProvider: GitProvider | null,
   options: { browseGitProvider: boolean },
   orgAuthenticationMode: string = "encryptedCert",
+  readMajorBranchCheck: boolean = false,
 ): Promise<MajorOrg | null> {
   // `configFile` is workspace-relative (glob ran with cwd: workspaceRoot), so it
   // must be resolved against workspaceRoot rather than process.cwd() — the two
@@ -239,12 +252,29 @@ async function processOrgSfdxHardisConfigFile(
 
   let jobs: Job[] = [];
   let jobsStatus: JobStatus = "unknown";
+  let majorBranchCheck: MajorBranchCheck | null | undefined = undefined;
   if (options.browseGitProvider && gitProvider?.isActive) {
-    const jobsRes = await gitProvider.getJobsForBranchLatestCommit(branchName);
+    // The git provider knows the branch by its git name: a config file name writes each / as __
+    // (.sfdx-hardis.release__uat.yml is the branch release/uat)
+    const gitBranchName = branchName.replace(/__/g, "/");
+    const [jobsRes, check] = await Promise.all([
+      gitProvider.getJobsForBranchLatestCommit(gitBranchName),
+      readMajorBranchCheck
+        ? gitProvider
+            .getMajorBranchDeploymentCheck(gitBranchName)
+            .catch((e) => {
+              Logger.log(
+                `Error reading the deployment check of branch ${branchName}: ${String(e)}`,
+              );
+              return null;
+            })
+        : Promise.resolve(undefined),
+    ]);
     if (jobsRes) {
       jobsStatus = jobsRes.jobsStatus;
       jobs = jobsRes.jobs || [];
     }
+    majorBranchCheck = check;
   }
 
   return {
@@ -258,6 +288,7 @@ async function processOrgSfdxHardisConfigFile(
     jobs: jobs,
     jobsStatus: jobsStatus,
     enablePromotionBranches: props.enablePromotionBranches,
+    ...(majorBranchCheck !== undefined ? { majorBranchCheck } : {}),
   };
 }
 
