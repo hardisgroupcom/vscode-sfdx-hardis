@@ -9,10 +9,75 @@
                 value={filterText}
                 oninput={handleFilter}
             />
+            <template if:true={showSelectionTools}>
+                <button type="button" class={pasteButtonClass} aria-pressed={pasteButtonPressed} aria-expanded={pasteButtonPressed} title={i18n.prListPasteTitle} onclick={handleTogglePaste}>{i18n.prListPasteButton}</button>
+                <button type="button" class={selectedOnlyChipClass} aria-pressed={selectedOnlyPressed} disabled={selectedOnlyDisabled} onclick={handleToggleSelectedOnly}>{selectedOnlyLabel}</button>
+            </template>
             <template if:true={showVehiclesChip}>
                 <button type="button" class={vehiclesChipClass} aria-pressed={vehiclesPressed} title={i18n.showPromotionPrsHelp} onclick={handleToggleVehicles}>{vehiclesChipLabel}</button>
             </template>
         </div>
+        <!-- Select from a list: release notes, an email, a spreadsheet column, pasted as they are -->
+        <template if:true={pasteOpen}>
+            <div class="prl-paste">
+                <label class="prl-paste-label" for="prl-paste-text">{i18n.prListPasteTitle}</label>
+                <textarea id="prl-paste-text" class="slds-textarea prl-paste-text" rows="5" placeholder={i18n.prListPastePlaceholder} value={pasteText} oninput={handlePasteInput}></textarea>
+                <template if:true={pasteHasText}>
+                    <div class="prl-paste-result">
+                        <template if:true={pasteHasFound}>
+                            <div class="prl-paste-group">
+                                <div class="hardis-group-label">{pasteFoundTitle}</div>
+                                <template for:each={pasteFound} for:item="item">
+                                    <div key={item.key} class="prl-paste-line">
+                                        <span class="prl-paste-pr">{item.label}</span>
+                                        <span class="muted">{item.reasons}</span>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                        <!-- Named only in a description, often in passing: shown with the text around, not ticked unless asked -->
+                        <template if:true={pasteHasWeak}>
+                            <div class="prl-paste-group">
+                                <div class="hardis-group-label">{pasteWeakTitle}</div>
+                                <template for:each={pasteWeak} for:item="item">
+                                    <div key={item.key} class="prl-paste-line">
+                                        <span class="prl-paste-pr">{item.label}</span>
+                                        <span class="muted">{item.mentions}</span>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                        <template if:true={pasteHasNotSelectable}>
+                            <div class="prl-paste-group">
+                                <div class="hardis-group-label">{pasteNotSelectableTitle}</div>
+                                <template for:each={pasteNotSelectable} for:item="item">
+                                    <div key={item.key} class="prl-paste-line muted">{item.label}</div>
+                                </template>
+                            </div>
+                        </template>
+                        <template if:true={pasteHasNotFound}>
+                            <div class="prl-paste-group">
+                                <div class="hardis-group-label">{pasteNotFoundTitle}</div>
+                                <div class="prl-paste-line muted">{pasteNotFound}</div>
+                            </div>
+                        </template>
+                        <template if:true={pasteExtracting}>
+                            <div class="prl-paste-line muted">{i18n.prListPasteReadingTickets}</div>
+                        </template>
+                    </div>
+                </template>
+                <div class="prl-paste-actions">
+                    <template if:true={pasteHasWeak}>
+                        <label class="prl-paste-include-weak">
+                            <input type="checkbox" checked={pasteIncludeWeak} onchange={handlePasteIncludeWeak} />
+                            <span>{pasteIncludeWeakLabel}</span>
+                        </label>
+                    </template>
+                    <lightning-button variant="neutral" label={i18n.cancel} onclick={handlePasteCancel}></lightning-button>
+                    <lightning-button class="hardis-btn-tinted-blue" variant="neutral" label={pasteSelectLabel} disabled={pasteSelectDisabled} onclick={handlePasteSelect}></lightning-button>
+                </div>
+            </div>
+        </template>
         <div class="prl-sub">
             <template if:true={showSelectAll}>
                 <label class="prl-all" title={selectHelp}>
