@@ -400,7 +400,7 @@ suite("Major branch deployment check", () => {
       return { stub, calls };
     }
 
-    test("the arrow leaves out the scheduled, API and trigger pipelines, keeps a manual one", () => {
+    test("the arrow leaves out the scheduled pipelines, keeps the manual, API and trigger ones", () => {
       const selection = pickGitlabBranchDeploymentPipelines([
         pipeline(5, "schedule", { status: "failed" }),
         pipeline(4, "api"),
@@ -410,9 +410,66 @@ suite("Major branch deployment check", () => {
       ]);
       assert.deepStrictEqual(
         selection.pipelines.map((item) => item.id),
-        [2, 1],
+        [4, 3, 2, 1],
       );
       assert.strictEqual(selection.readCommitStatuses, false);
+    });
+
+    test("an API pipeline that ran the check is not a deployment, an API deployment is", async () => {
+      const { stub, calls } = provider({
+        pipelines: [
+          pipeline(5, "api", { status: "failed" }),
+          pipeline(4, "trigger"),
+          pipeline(1, "push", { status: "failed" }),
+        ],
+        jobs: {
+          5: [{ name: "check_deploy_to_current_branch_org", status: "failed" }],
+          4: [{ name: "deploy_to_org", status: "success" }],
+        },
+      });
+      const result = await stub.getJobsForBranchLatestCommit("integration");
+      assert.strictEqual(result.jobsStatus, "success");
+      assert.strictEqual(result.jobs[0].raw.id, 4);
+      assert.deepStrictEqual(calls.jobs, [5, 4]);
+    });
+
+    test("the arrow and the check of a branch share one list of pipelines", async () => {
+      const { stub, calls } = provider({
+        pipelines: [pipeline(2, "schedule"), pipeline(1, "push")],
+        jobs: {
+          2: [
+            { name: "check_deploy_to_current_branch_org", status: "success" },
+          ],
+        },
+      });
+      await Promise.all([
+        stub.getJobsForBranchLatestCommit("integration"),
+        stub.getMajorBranchDeploymentCheck("integration"),
+      ]);
+      assert.strictEqual(calls.pipelines.length, 1);
+    });
+
+    test("a check run again under the same pipeline id is read again", async () => {
+      const scheduled = pipeline(7, "schedule", { status: "failed" });
+      const jobs: Record<number, any[]> = {
+        7: [{ name: "check_deploy_to_current_branch_org", status: "failed" }],
+      };
+      const { stub, calls } = provider({ pipelines: [scheduled], jobs });
+      assert.strictEqual(
+        (await stub.getMajorBranchDeploymentCheck("integration")).status,
+        "failed",
+      );
+      // Retried: same id, new update date, the job now passes
+      scheduled.status = "success";
+      scheduled.updated_at = "2026-11-08T03:00:00.000Z";
+      jobs[7] = [
+        { name: "check_deploy_to_current_branch_org", status: "success" },
+      ];
+      assert.strictEqual(
+        (await stub.getMajorBranchDeploymentCheck("integration")).status,
+        "success",
+      );
+      assert.deepStrictEqual(calls.jobs, [7, 7]);
     });
 
     test("only scheduled pipelines: the arrow is unknown, the commit statuses are not read", async () => {
@@ -553,8 +610,17 @@ suite("Major branch deployment check", () => {
       };
     }
 
-    function provider(runs: any[], jobsByRun: Record<number, any[]> = {}) {
-      const calls = { workflowRuns: 0, jobs: [] as number[] };
+    // checkWorkflowRuns: the runs of check-major-branch-deploy.yml, or a 404 when not given
+    function provider(
+      runs: any[],
+      jobsByRun: Record<number, any[]> = {},
+      checkWorkflowRuns?: any[],
+    ) {
+      const calls = {
+        workflowRuns: 0,
+        checkWorkflow: [] as string[],
+        jobs: [] as number[],
+      };
       const stub: any = Object.create(GitProviderGitHub.prototype);
       stub.repoInfo = { owner: "acme", repo: "repo" };
       stub.logApiCall = async () => undefined;
@@ -564,6 +630,13 @@ suite("Major branch deployment check", () => {
           listCommitStatusesForRef: async () => ({ data: [] }),
         },
         actions: {
+          listWorkflowRuns: async (params: any) => {
+            calls.checkWorkflow.push(params.workflow_id);
+            if (!checkWorkflowRuns) {
+              throw Object.assign(new Error("Not Found"), { status: 404 });
+            }
+            return { data: { workflow_runs: checkWorkflowRuns } };
+          },
           listWorkflowRunsForRepo: async () => {
             calls.workflowRuns++;
             return { data: { workflow_runs: runs } };
@@ -648,6 +721,37 @@ suite("Major branch deployment check", () => {
       assert.deepStrictEqual(calls.jobs, [checkRun.id]);
     });
 
+    test("the runs of the check workflow are listed first, a branch with a slash is found", async () => {
+      const checkRun = run({
+        name: "Check Major Branch Deployment (sfdx-hardis)",
+        event: "schedule",
+        head_branch: "main",
+      });
+      const { stub, calls } = provider(
+        [],
+        {
+          [checkRun.id]: [
+            {
+              name: "Check Major Branch Deployment (release/uat)",
+              status: "completed",
+              conclusion: "success",
+            },
+          ],
+        },
+        [checkRun],
+      );
+      // Named after its config file, or after its git branch
+      const fromConfig =
+        await stub.getMajorBranchDeploymentCheck("release__uat");
+      const fromGit = await stub.getMajorBranchDeploymentCheck("release/uat");
+      assert.strictEqual(fromConfig.status, "success");
+      assert.strictEqual(fromGit.status, "success");
+      assert.deepStrictEqual(calls.checkWorkflow, [
+        "check-major-branch-deploy.yml",
+      ]);
+      assert.strictEqual(calls.workflowRuns, 0);
+    });
+
     test("a commit status of an external CI has no run to open", async () => {
       const { stub, calls } = provider([]);
       const jobs = await stub.listJobsOfRun({
@@ -680,7 +784,10 @@ suite("Major branch deployment check", () => {
       };
     }
 
-    function provider(builds: any[]) {
+    function provider(
+      builds: any[],
+      jobRecordsByBuild: Record<number, any[]> = {},
+    ) {
       const calls = { getBuilds: [] as any[][] };
       const stub = newAzureProviderStub();
       stub.connection = {};
@@ -689,7 +796,9 @@ suite("Major branch deployment check", () => {
           calls.getBuilds.push(args);
           return builds;
         },
-        getBuildTimeline: async () => ({ records: [] }),
+        getBuildTimeline: async (_project: string, buildId: number) => ({
+          records: jobRecordsByBuild[buildId] || [],
+        }),
       };
       stub.gitApi = {
         getBranch: async () => ({ commit: { commitId: "abc" } }),
@@ -728,6 +837,37 @@ suite("Major branch deployment check", () => {
       assert.strictEqual(result.jobs[0].raw.id, 1);
       // top is the 13th argument of getBuilds
       assert.strictEqual(calls.getBuilds[0][12], 10);
+    });
+
+    test("a renamed check pipeline started by hand is not a deployment", async () => {
+      const { stub, calls } = provider(
+        [
+          build({
+            id: 3,
+            reason: 1,
+            definition: { name: "Nightly org drift" },
+          }),
+          build({ id: 1 }),
+        ],
+        {
+          3: [
+            {
+              type: "Job",
+              name: "MajorBranchDeploymentCheck",
+              state: 2,
+              result: 0,
+            },
+          ],
+        },
+      );
+      const [arrow, check] = await Promise.all([
+        stub.getJobsForBranchLatestCommit("uat"),
+        stub.getMajorBranchDeploymentCheck("uat"),
+      ]);
+      assert.strictEqual(arrow.jobs[0].raw.id, 1);
+      assert.strictEqual(check.name, "MajorBranchDeploymentCheck");
+      // One list of builds for both
+      assert.strictEqual(calls.getBuilds.length, 1);
     });
 
     test("the check is the newest build of the check pipeline", async () => {
@@ -793,12 +933,16 @@ suite("Major branch deployment check", () => {
         ...overrides,
       });
 
-    function provider(pipelines: any[], statuses: any[] = []) {
+    // pipelines: an Error when Bitbucket refuses to list them
+    function provider(pipelines: any[] | Error, statuses: any[] = []) {
       const calls = { statuses: 0, list: [] as any[] };
       const stub = newBitbucketProviderStub({
         pipelines: {
           list: async (params: any) => {
             calls.list.push(params);
+            if (pipelines instanceof Error) {
+              throw pipelines;
+            }
             return { data: { values: pipelines } };
           },
           listSteps: async () => ({ data: { values: [] } }),
@@ -834,6 +978,19 @@ suite("Major branch deployment check", () => {
         pickBitbucketBranchDeploymentPipelines([pipeline(1)], "main").length,
         0,
       );
+    });
+
+    test("pipelines that cannot be read: the commit statuses of Jenkins are still read", async () => {
+      const { stub, calls } = provider(new Error("403 pipeline:read"), [
+        {
+          name: "jenkins-deploy",
+          state: "SUCCESSFUL",
+          url: "https://jenkins.example.com/job/deploy/3",
+        },
+      ]);
+      const result = await stub.getJobsForBranchLatestCommit("uat");
+      assert.strictEqual(calls.statuses, 1);
+      assert.strictEqual(result.jobsStatus, "success");
     });
 
     test("no push pipeline: the commit statuses are read, without the ones of the pipelines left out", async () => {

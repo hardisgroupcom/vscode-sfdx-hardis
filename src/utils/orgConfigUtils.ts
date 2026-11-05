@@ -254,15 +254,20 @@ async function processOrgSfdxHardisConfigFile(
   let jobsStatus: JobStatus = "unknown";
   let majorBranchCheck: MajorBranchCheck | null | undefined = undefined;
   if (options.browseGitProvider && gitProvider?.isActive) {
+    // The git provider knows the branch by its git name: a config file name writes each / as __
+    // (.sfdx-hardis.release__uat.yml is the branch release/uat)
+    const gitBranchName = branchName.replace(/__/g, "/");
     const [jobsRes, check] = await Promise.all([
-      gitProvider.getJobsForBranchLatestCommit(branchName),
+      gitProvider.getJobsForBranchLatestCommit(gitBranchName),
       readMajorBranchCheck
-        ? gitProvider.getMajorBranchDeploymentCheck(branchName).catch((e) => {
-            Logger.log(
-              `Error reading the deployment check of branch ${branchName}: ${String(e)}`,
-            );
-            return null;
-          })
+        ? gitProvider
+            .getMajorBranchDeploymentCheck(gitBranchName)
+            .catch((e) => {
+              Logger.log(
+                `Error reading the deployment check of branch ${branchName}: ${String(e)}`,
+              );
+              return null;
+            })
         : Promise.resolve(undefined),
     ]);
     if (jobsRes) {

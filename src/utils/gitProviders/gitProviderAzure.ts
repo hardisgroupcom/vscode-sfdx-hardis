@@ -1641,7 +1641,17 @@ export class GitProviderAzure extends GitProvider {
         }
       }
 
-      const job = this.buildToJob(commitBuilds[0]);
+      // A manual build of a renamed check pipeline is only known as a check by its jobs
+      const build = await this.firstRunWithoutMajorBranchCheck(commitBuilds, {
+        mayRunCheck: (item: any) =>
+          azureBuildReasonIs(item.reason, 1, "manual"),
+        toJob: (item: any) => this.buildToJob(item),
+        key: (item: any) => `azure:${item.id}`,
+      });
+      if (!build) {
+        return { jobs: [], jobsStatus: "unknown" };
+      }
+      const job = this.buildToJob(build);
       return { jobs: [job], jobsStatus: this.computeJobsStatus([job]) };
     } catch (e) {
       Logger.log(`Error fetching jobs for branch ${branchName}: ${String(e)}`);
@@ -1703,8 +1713,15 @@ export class GitProviderAzure extends GitProvider {
     }
   }
 
-  // The 10 most recently queued builds of a branch, newest first
-  private async listBranchBuilds(
+  // The 10 most recently queued builds of a branch, newest first. The deployment arrow and the
+  // deployment check of a branch share one call per refresh.
+  private listBranchBuilds(branchName: string, caller: string): Promise<any[]> {
+    return this.shareRecentCall(`azure:builds:${branchName}`, () =>
+      this.fetchBranchBuilds(branchName, caller),
+    );
+  }
+
+  private async fetchBranchBuilds(
     branchName: string,
     caller: string,
   ): Promise<any[]> {
@@ -1736,8 +1753,18 @@ export class GitProviderAzure extends GitProvider {
     return builds || [];
   }
 
-  // The statuses of the latest commit of a branch (Jenkins, external CI), as jobs
-  private async listBranchCommitStatusJobs(
+  // The statuses of the latest commit of a branch (Jenkins, external CI), as jobs. One call per
+  // refresh, shared like listBranchBuilds.
+  private listBranchCommitStatusJobs(
+    branchName: string,
+    caller: string,
+  ): Promise<Job[]> {
+    return this.shareRecentCall(`azure:statuses:${branchName}`, () =>
+      this.fetchBranchCommitStatusJobs(branchName, caller),
+    );
+  }
+
+  private async fetchBranchCommitStatusJobs(
     branchName: string,
     caller: string,
   ): Promise<Job[]> {

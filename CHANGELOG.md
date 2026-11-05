@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- DevOps Pipeline: the deployment arrow of a major branch shows its last real deployment again, no longer replaced by a scheduled or API run such as a nightly check
+- DevOps Pipeline: the deployment arrow of a major branch shows its last real deployment again, no longer replaced by a scheduled run or by a run of the major branch deployment check
 - DevOps Pipeline: with the new **Enable major branch deployment check** setting (Pipeline Settings), each major branch node shows whether the branch still deploys to its own org, from the last scheduled check job
   - Green when deployable, red when not, pulsing while a check runs, lighter and dashed when the result is older than the validity you set or a deployment ran since
   - The last tab of the branch window shows the result, its date and duration, and a link to the job

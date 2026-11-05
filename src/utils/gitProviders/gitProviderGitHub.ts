@@ -1179,10 +1179,33 @@ export class GitProviderGitHub extends GitProvider {
       return this.majorBranchCheckRuns.runs;
     }
     const runs = (async () => {
+      const [owner, repo] = [this.repoInfo!.owner, this.repoInfo!.repo];
+      // The runs of the check workflow only: among the runs of the whole repository (Pull Request
+      // validations, deployments...), last night's check is out of the first page by mid-morning
+      try {
+        const response = await this.gitHubClient!.actions.listWorkflowRuns({
+          owner,
+          repo,
+          workflow_id: GITHUB_MAJOR_BRANCH_CHECK_WORKFLOW_FILE,
+          per_page: 10,
+          exclude_pull_requests: true,
+        });
+        await this.logApiCall("actions.listWorkflowRuns", {
+          caller: "getMajorBranchDeploymentCheck",
+          workflow_id: GITHUB_MAJOR_BRANCH_CHECK_WORKFLOW_FILE,
+        });
+        return response.data?.workflow_runs || [];
+      } catch (e: any) {
+        Logger.log(
+          `No runs of ${GITHUB_MAJOR_BRANCH_CHECK_WORKFLOW_FILE} (${String(e?.status || e)}), looking for the check by run name`,
+        );
+      }
+      // No workflow file with the default name (the project renamed it), or a server without this
+      // endpoint (Gitea): the runs are found by name
       const response = await this.gitHubClient!.actions.listWorkflowRunsForRepo(
         {
-          owner: this.repoInfo!.owner,
-          repo: this.repoInfo!.repo,
+          owner,
+          repo,
           per_page: 30,
           exclude_pull_requests: true,
         },
@@ -1390,3 +1413,6 @@ export class GitProviderGitHub extends GitProvider {
 
 // Events of the workflow runs that never deploy a branch (see pickDeploymentRuns)
 const GITHUB_NOT_DEPLOYMENT_EVENTS = ["schedule", "repository_dispatch"];
+
+// Workflow file of the major branch deployment check in the sfdx-hardis templates
+const GITHUB_MAJOR_BRANCH_CHECK_WORKFLOW_FILE = "check-major-branch-deploy.yml";

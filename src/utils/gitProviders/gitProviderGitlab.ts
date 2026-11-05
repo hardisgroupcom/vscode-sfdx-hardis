@@ -1007,7 +1007,7 @@ export class GitProviderGitlab extends GitProvider {
 
       // Use the most recent deployment pipeline. The order is recomputed rather than taken from
       // the API answer, so a retried or canceled older run cannot be picked as the current one
-      const pipeline = this.newestPipeline(selection.pipelines);
+      const pipeline = await this.newestDeploymentPipeline(selection.pipelines);
       const converted: Job[] = pipeline ? [this.pipelineToJob(pipeline)] : [];
 
       return { jobs: converted, jobsStatus: this.computeJobsStatus(converted) };
@@ -1064,8 +1064,35 @@ export class GitProviderGitlab extends GitProvider {
     }
   }
 
-  // The 20 most recently updated pipelines of a branch, null when GitLab gave no answer
-  private async listBranchPipelines(
+  /**
+   * The newest pipeline of a list that is not a major branch deployment check. A manual, API or
+   * trigger pipeline can deploy the branch or run the check: its jobs tell (read once it is over,
+   * see listJobsOfRunCached). Scheduled pipelines are already out of the list.
+   */
+  private newestDeploymentPipeline(pipelines: any[]): Promise<any | null> {
+    const newestFirst = (pipelines || [])
+      .filter((pipeline) => pipeline)
+      .sort((a, b) => this.pipelineRank(b) - this.pipelineRank(a));
+    return this.firstRunWithoutMajorBranchCheck(newestFirst, {
+      mayRunCheck: (pipeline) =>
+        GITLAB_MAY_RUN_CHECK_SOURCES.includes(pipeline.source),
+      toJob: (pipeline) => this.pipelineToJob(pipeline),
+      key: (pipeline) => `gitlab:${pipeline.id}`,
+    });
+  }
+
+  // The 20 most recently updated pipelines of a branch, null when GitLab gave no answer. The
+  // deployment arrow and the deployment check of a branch share one call per refresh.
+  private listBranchPipelines(
+    branchName: string,
+    caller: string,
+  ): Promise<any[] | null> {
+    return this.shareRecentCall(`gitlab:pipelines:${branchName}`, () =>
+      this.fetchBranchPipelines(branchName, caller),
+    );
+  }
+
+  private async fetchBranchPipelines(
     branchName: string,
     caller: string,
   ): Promise<any[] | null> {
@@ -1095,8 +1122,18 @@ export class GitProviderGitlab extends GitProvider {
     }
   }
 
-  // The commit statuses of the latest commit of a branch (Jenkins, etc.), as jobs
-  private async listBranchCommitStatusJobs(
+  // The commit statuses of the latest commit of a branch (Jenkins, etc.), as jobs. One call per
+  // refresh, shared like listBranchPipelines.
+  private listBranchCommitStatusJobs(
+    branchName: string,
+    caller: string,
+  ): Promise<Job[]> {
+    return this.shareRecentCall(`gitlab:statuses:${branchName}`, () =>
+      this.fetchBranchCommitStatusJobs(branchName, caller),
+    );
+  }
+
+  private async fetchBranchCommitStatusJobs(
     branchName: string,
     caller: string,
   ): Promise<Job[]> {
@@ -1349,14 +1386,15 @@ export class GitProviderGitlab extends GitProvider {
  * The pipelines of a branch whose result the deployment arrow of the branch shows, out of the
  * ones GitLab lists for it, and whether the commit statuses must be read instead.
  *
- * Merge request pipelines validate a merge request, they deploy nothing. Scheduled, API and
- * trigger pipelines are not deployments either: the nightly major branch deployment check runs in
- * a scheduled one, and it used to replace the status of the last real deployment on the arrow.
- * A manual (`web`) pipeline is kept: on a major branch it runs the deployment.
+ * Merge request pipelines validate a merge request, they deploy nothing. Scheduled pipelines are
+ * not deployments either: the nightly major branch deployment check runs in one, and it used to
+ * replace the status of the last real deployment on the arrow. Manual (`web`), API and trigger
+ * pipelines are kept: many projects deploy that way. One of them that ran the check is left out
+ * later, from its jobs (newestDeploymentPipeline).
  *
  * The commit statuses (Jenkins, an external CI) are read only when GitLab runs nothing but merge
- * request pipelines on the branch. A list holding only scheduled or API pipelines says the branch
- * has a GitLab CI that did not deploy lately: the arrow is then unknown.
+ * request pipelines on the branch. A list holding only scheduled pipelines says the branch has a
+ * GitLab CI that did not deploy lately: the arrow is then unknown.
  */
 export function pickGitlabBranchDeploymentPipelines(pipelines: any[]): {
   pipelines: any[];
@@ -1376,7 +1414,13 @@ export function pickGitlabBranchDeploymentPipelines(pipelines: any[]): {
 }
 
 // Sources of the pipelines that never deploy a branch (see pickGitlabBranchDeploymentPipelines)
-const GITLAB_NOT_DEPLOYMENT_PIPELINE_SOURCES = ["schedule", "api", "trigger"];
+const GITLAB_NOT_DEPLOYMENT_PIPELINE_SOURCES = ["schedule"];
+
+// Sources of the pipelines that can either deploy a branch or run the major branch deployment check
+const GITLAB_MAY_RUN_CHECK_SOURCES = ["web", "api", "trigger"];
 
 // Sources of the pipelines that run the major branch deployment check
-const GITLAB_CHECK_PIPELINE_SOURCES = ["schedule", "web", "api"];
+const GITLAB_CHECK_PIPELINE_SOURCES = [
+  "schedule",
+  ...GITLAB_MAY_RUN_CHECK_SOURCES,
+];

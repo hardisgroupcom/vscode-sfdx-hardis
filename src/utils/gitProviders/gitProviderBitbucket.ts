@@ -956,16 +956,19 @@ export class GitProviderBitbucket extends GitProvider {
       return null;
     }
 
-    // Primary: the Bitbucket Pipelines of the branch
-    let pipelines: any[];
+    // Primary: the Bitbucket Pipelines of the branch. When they cannot be read (Pipelines not
+    // enabled, a token without the pipeline:read scope), the commit statuses are still read: a
+    // repository built by Jenkins has nothing else
+    let pipelines: any[] = [];
     try {
       pipelines = await this.listBranchPipelines(
         branchName,
         "getJobsForBranchLatestCommit",
       );
     } catch (e) {
-      Logger.log(`Error fetching jobs for branch ${branchName}: ${String(e)}`);
-      return null;
+      Logger.log(
+        `Error fetching pipelines for branch ${branchName}, reading its commit statuses: ${String(e)}`,
+      );
     }
     const deploymentPipelines = pickBitbucketBranchDeploymentPipelines(
       pipelines,
@@ -1062,8 +1065,18 @@ export class GitProviderBitbucket extends GitProvider {
     }
   }
 
-  // The 30 most recent pipelines of a branch, newest first
-  private async listBranchPipelines(
+  // The 30 most recent pipelines of a branch, newest first. The deployment arrow and the deployment
+  // check of a branch share one call per refresh.
+  private listBranchPipelines(
+    branchName: string,
+    caller: string,
+  ): Promise<any[]> {
+    return this.shareRecentCall(`bitbucket:pipelines:${branchName}`, () =>
+      this.fetchBranchPipelines(branchName, caller),
+    );
+  }
+
+  private async fetchBranchPipelines(
     branchName: string,
     caller: string,
   ): Promise<any[]> {
@@ -1080,8 +1093,18 @@ export class GitProviderBitbucket extends GitProvider {
     return response?.data?.values ?? [];
   }
 
-  // The commit statuses of the latest commit of a branch (Jenkins, external CI), as jobs
-  private async listBranchCommitStatusJobs(
+  // The commit statuses of the latest commit of a branch (Jenkins, external CI), as jobs. One call
+  // per refresh, shared like listBranchPipelines.
+  private listBranchCommitStatusJobs(
+    branchName: string,
+    caller: string,
+  ): Promise<Job[]> {
+    return this.shareRecentCall(`bitbucket:statuses:${branchName}`, () =>
+      this.fetchBranchCommitStatusJobs(branchName, caller),
+    );
+  }
+
+  private async fetchBranchCommitStatusJobs(
     branchName: string,
     caller: string,
   ): Promise<Job[]> {
