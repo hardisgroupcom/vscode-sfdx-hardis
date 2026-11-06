@@ -104,6 +104,8 @@ export class SfdxHardisConfigHelper {
     { name: "devHubAlias", scopes: ["global"] },
     { name: "devHubInstanceUrl", scopes: ["global"] },
     { name: "devHubUsername", scopes: ["global"] },
+    { name: "useScratchOrgSnapshot", scopes: ["branch"] },
+    { name: "scratchOrgSnapshotKeep", scopes: ["branch"] },
     { name: "dataPackages", scopes: ["global"] },
     { name: "packageNoOverwritePath", scopes: ["branch"] },
     { name: "useDeltaDeployment", scopes: ["global"] },
@@ -261,7 +263,13 @@ export class SfdxHardisConfigHelper {
       label: "devHub",
       description: "",
       iconName: "utility:connected_apps",
-      keys: ["devHubAlias", "devHubInstanceUrl", "devHubUsername"],
+      keys: [
+        "devHubAlias",
+        "devHubInstanceUrl",
+        "devHubUsername",
+        "useScratchOrgSnapshot",
+        "scratchOrgSnapshotKeep",
+      ],
     },
     {
       label: "securityPrivacy",

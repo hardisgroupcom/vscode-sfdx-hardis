@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Pipeline Settings: a major branch can turn on [scratch org snapshots for Pull Requests](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-scratch-org-pool/#use-scratch-org-snapshots-for-pull-requests) (`useScratchOrgSnapshot`) and set how many snapshots to keep (`scratchOrgSnapshotKeep`), in the Dev Hub section of its branch settings
+
 ## [8.18.0] 2026-11-06
 
 - DevOps Pipeline: when ticking User Stories for a promotion, **Selected only** shows the ticked ones, and **Select from a list** ticks the Pull Requests named in pasted text (release notes, an email, a spreadsheet column), directly or through their tickets, saying where each one was found
