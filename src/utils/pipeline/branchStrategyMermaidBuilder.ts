@@ -18,6 +18,7 @@ import {
 } from "./promotionBranchUtils";
 import { t } from "../../i18n/i18n";
 import { MajorBranchCheckView } from "./majorBranchCheckUtils";
+import { DevOrgView } from "./devOrgsUtils";
 
 /**
  * Describes a "+N more" node that folds the older feature branches targeting a
@@ -57,7 +58,9 @@ export class BranchStrategyMermaidBuilder {
   private openPullRequests: PullRequest[] = [];
   private gitBranches: any[] = [];
   private salesforceOrgs: any[] = [];
-  private salesforceDevOrgsGroup: string[] = [];
+  // One subgraph per target branch of the development orgs drawn: its id and its branch
+  private salesforceDevOrgsGroup: Array<{ id: string; branch: string }> = [];
+  private devOrgNodes: any[] = [];
   private gitLinks: any[] = [];
   private deployLinks: any[] = [];
   private sbDevLinks: any[] = [];
@@ -76,6 +79,9 @@ export class BranchStrategyMermaidBuilder {
   // Last major branch deployment check of each major branch, by branch name: empty unless the
   // project enables enableMajorBranchDeploymentCheck (see majorBranchCheckUtils.ts)
   private majorBranchChecks: Record<string, MajorBranchCheckView | null> = {};
+  // Development orgs registered by sfdx-hardis (sf hardis:project:dev-org:list), all of them: the
+  // display mode of each build picks the ones drawn
+  private devOrgs: DevOrgView[] = [];
 
   constructor(
     branchesAndOrgs: any[],
@@ -89,8 +95,10 @@ export class BranchStrategyMermaidBuilder {
       allowedSteps: [],
     },
     majorBranchChecks: Record<string, MajorBranchCheckView | null> = {},
+    devOrgs: DevOrgView[] = [],
   ) {
     this.promotionBranchConfig = promotionBranchConfig;
+    this.devOrgs = Array.isArray(devOrgs) ? devOrgs : [];
     this.majorBranchChecks = majorBranchChecks || {};
     this.branchesAndOrgs = branchesAndOrgs;
     this.openPullRequests = openPullRequests;
@@ -117,16 +125,19 @@ export class BranchStrategyMermaidBuilder {
    * @param options.format 'list' or 'string'
    * @param options.withMermaidTag wrap in code block
    * @param options.onlyMajorBranches if true, only major branches (prod, preprod, uat, uatrun, integration) and their links are included (no dev/feature/hotfix branches or dev orgs)
+   * @param options.devOrgs true draws every development org next to the branch it targets (with onlyMajorBranches, the "Dev orgs" view of the pipeline)
    */
   public build(options: {
     format: "list" | "string";
     withMermaidTag: boolean;
     onlyMajorBranches?: boolean;
+    devOrgs?: boolean;
   }): string | string[] {
     // Reset all arrays for each build
     this.gitBranches = [];
     this.salesforceOrgs = [];
     this.salesforceDevOrgsGroup = [];
+    this.devOrgNodes = [];
     this.gitLinks = [];
     this.deployLinks = [];
     this.sbDevLinks = [];
@@ -136,6 +147,9 @@ export class BranchStrategyMermaidBuilder {
 
     this.listGitBranchesAndLinks();
     this.listSalesforceOrgsAndLinks();
+    if (options.devOrgs) {
+      this.listDevOrgsAndLinks();
+    }
 
     if (options.onlyMajorBranches) {
       // Filter out feature/hotfix/dev branches (a major branch node can carry the class of its
@@ -156,12 +170,15 @@ export class BranchStrategyMermaidBuilder {
       this.deployLinks = this.deployLinks.filter((link) =>
         majorOrgNodeNames.includes(link.target),
       );
-      // Remove dev org groups and dev-specific links
-      this.salesforceDevOrgsGroup = [];
-      this.sbDevLinks = [];
+      // Development orgs stay only when asked for
+      if (!options.devOrgs) {
+        this.salesforceDevOrgsGroup = [];
+        this.devOrgNodes = [];
+        this.sbDevLinks = [];
+      }
     }
 
-    this.generateMermaidLines(options);
+    this.generateMermaidLines();
 
     if (options.withMermaidTag) {
       this.mermaidLines.unshift("```mermaid");
@@ -688,7 +705,80 @@ export class BranchStrategyMermaidBuilder {
     });
   }
 
-  private generateMermaidLines(options?: { onlyMajorBranches?: boolean }) {
+  /**
+   * One node per development org drawn, in a subgraph of its target branch, linked to the node of
+   * that branch. An org whose target branch is not a branch of the diagram is not drawn. The
+   * number of Pull Requests it misses is a hidden count marker, drawn as a bubble by the webview.
+   */
+  private listDevOrgsAndLinks(): void {
+    for (const devOrg of this.devOrgs) {
+      const branchNodeName =
+        this.sanitizeNodeName(devOrg.targetBranch) + "Branch";
+      if (
+        !devOrg.targetBranch ||
+        !this.gitBranches.some((branch) => branch.nodeName === branchNodeName)
+      ) {
+        continue;
+      }
+      const groupId = this.sanitizeNodeName(devOrg.targetBranch);
+      if (!this.salesforceDevOrgsGroup.some((group) => group.id === groupId)) {
+        this.salesforceDevOrgsGroup.push({
+          id: groupId,
+          branch: devOrg.targetBranch,
+        });
+      }
+      this.devOrgNodes.push({
+        name: devOrg.name,
+        nodeName: devOrg.nodeName,
+        label: this.devOrgLabel(devOrg),
+        class: this.devOrgClass(devOrg),
+        group: groupId,
+      });
+      this.sbDevLinks.push({
+        source: devOrg.nodeName,
+        target: branchNodeName,
+        type: "sfPushPull",
+        label: "",
+        group: groupId,
+        name: devOrg.name,
+      });
+    }
+    this.devOrgNodes = sortArray(this.devOrgNodes, {
+      by: ["group", "name"],
+      order: ["asc", "asc"],
+    });
+    this.sbDevLinks = sortArray(this.sbDevLinks, {
+      by: ["group", "name"],
+      order: ["asc", "asc"],
+    });
+  }
+
+  // Name of the org, its owner on a second smaller line, and the hidden count marker
+  private devOrgLabel(devOrg: DevOrgView): string {
+    const owner = devOrg.owner
+      ? `<br/><span class='hardis-node-owner'>${this.escapeHtmlLabel(devOrg.owner.name)}</span>`
+      : "";
+    const behindCount = devOrg.behind?.count || 0;
+    const countText = `${behindCount}${devOrg.behind?.cutOff ? "+" : ""}`;
+    const count =
+      behindCount > 0
+        ? `<span class='hardis-node-count' data-count='${countText}' style='display:none;'></span>`
+        : "";
+    return `${CLOUD_ICON_SVG} ${this.escapeHtmlLabel(devOrg.name)}${owner}${count}`;
+  }
+
+  // A stale org stands out first; an org whose missing Pull Requests are not known yet is muted
+  private devOrgClass(devOrg: DevOrgView): string {
+    if (devOrg.stale) {
+      return "salesforceDevStale";
+    }
+    if (devOrg.behind === null) {
+      return "salesforceDevUnknown";
+    }
+    return "salesforceDev";
+  }
+
+  private generateMermaidLines() {
     /* jscpd:ignore-start */
     this.mermaidLines.push("%%{init: {");
     this.mermaidLines.push('  "flowchart": {');
@@ -754,38 +844,36 @@ export class BranchStrategyMermaidBuilder {
       this.mermaidLines.push("");
     }
 
-    // Salesforce dev orgs (only if there are any dev orgs in the group, and only render each group once)
-    const renderedDevGroups = new Set();
+    // Development orgs: one subgraph per target branch, each org linked to that branch
+    // (none unless the build asked for them)
     for (const devOrgsGroup of this.salesforceDevOrgsGroup) {
-      if (renderedDevGroups.has(devOrgsGroup)) {
+      const devOrgNodes = this.devOrgNodes.filter(
+        (devOrgNode) => devOrgNode.group === devOrgsGroup.id,
+      );
+      if (devOrgNodes.length === 0) {
         continue;
       }
-      renderedDevGroups.add(devOrgsGroup);
-      const devOrgs = this.salesforceOrgs.filter(
-        (salesforceOrg) =>
-          salesforceOrg.group === devOrgsGroup &&
-          (salesforceOrg.name.startsWith("feature") ||
-            salesforceOrg.name.startsWith("hotfix")),
+      // A quoted subgraph title: only a double quote or a bracket could end it
+      const groupLabel = String(
+        t("devOrgsGroupLabel", { branch: devOrgsGroup.branch }),
+      ).replace(/["[\]]/g, "");
+      this.mermaidLines.push(
+        this.indent(
+          `subgraph SalesforceDevOrgs${devOrgsGroup.id} ["${groupLabel}"]`,
+          1,
+        ),
       );
-      if (devOrgs.length > 0 && !(options && options.onlyMajorBranches)) {
+      this.mermaidLines.push(this.indent("direction TB", 2));
+      for (const devOrgNode of devOrgNodes) {
         this.mermaidLines.push(
           this.indent(
-            `subgraph SalesforceDevOrgs${devOrgsGroup} [Salesforce Dev Orgs]`,
-            1,
+            `${devOrgNode.nodeName}(["${devOrgNode.label}"]):::${devOrgNode.class}`,
+            2,
           ),
         );
-        this.mermaidLines.push(this.indent("direction TB", 2));
-        for (const salesforceOrg of devOrgs) {
-          this.mermaidLines.push(
-            this.indent(
-              `${salesforceOrg.nodeName}(["${CLOUD_ICON_SVG} ${this.escapeHtmlLabel(salesforceOrg.label)}"]):::${salesforceOrg.class}`,
-              2,
-            ),
-          );
-        }
-        this.mermaidLines.push(this.indent("end", 1));
-        this.mermaidLines.push("");
       }
+      this.mermaidLines.push(this.indent("end", 1));
+      this.mermaidLines.push("");
     }
 
     // Links
@@ -818,19 +906,16 @@ export class BranchStrategyMermaidBuilder {
       }
     }
 
-    // Add dynamic SalesforceDevOrgs styles if used
+    // Development org subgraphs: the hairline frame of the other subgraphs, dashed
     const isDark = this.colorTheme === "dark";
     for (const salesforceDevOrgsGroup of this.salesforceDevOrgsGroup) {
-      if (
-        this.mermaidLines.some((l) =>
-          l.includes(`subgraph SalesforceDevOrgs${salesforceDevOrgsGroup} `),
-        )
-      ) {
+      const groupName = `SalesforceDevOrgs${salesforceDevOrgsGroup.id}`;
+      if (this.mermaidLines.some((l) => l.includes(`subgraph ${groupName} `))) {
         const devOrgStyle = isDark
-          ? `style SalesforceDevOrgs${salesforceDevOrgsGroup} fill:#1a1a1a,color:#d8e6fe,stroke:#0176d3,stroke-width:1px;`
-          : `style SalesforceDevOrgs${salesforceDevOrgsGroup} fill:#EBF6FF,color:#000000,stroke:#0077B5,stroke-width:1px;`;
+          ? `style ${groupName} fill:#161d25,color:#7a8b9c,stroke:#2b3642,stroke-width:1px,stroke-dasharray:4 3;`
+          : `style ${groupName} fill:#f8fbfd,color:#5b6c7e,stroke:#dce5ee,stroke-width:1px,stroke-dasharray:4 3;`;
         this.mermaidLines.push(devOrgStyle);
-        usedStyles.add(`SalesforceDevOrgs${salesforceDevOrgsGroup}`);
+        usedStyles.add(groupName);
       }
     }
 
@@ -971,8 +1056,10 @@ export class BranchStrategyMermaidBuilder {
           this.indent(`${link.source} -.->|"${label}"| ${link.target}`, 1),
         );
       } else if (link.type === "sfPushPull") {
+        // Mermaid refuses an empty label between the two halves of the arrow
+        const arrow = link.label ? `<-. ${link.label} .->` : "<-.->";
         this.mermaidLines.push(
-          this.indent(`${link.source} <-. ${link.label} .-> ${link.target}`, 1),
+          this.indent(`${link.source} ${arrow} ${link.target}`, 1),
         );
       }
     }
@@ -1105,6 +1192,8 @@ export class BranchStrategyMermaidBuilder {
     const classesAndStyles = isDark
       ? `
   classDef salesforceDev fill:#1b232d,stroke:#3c7cb8,stroke-width:1.5px,color:#a9cff7,font-weight:500;
+  classDef salesforceDevStale fill:#2a2116,stroke:#e2a336,stroke-width:1.5px,stroke-dasharray:4 3,color:#f9c97a,font-weight:500;
+  classDef salesforceDevUnknown fill:#1b232d,stroke:#5c6e80,stroke-width:1.25px,stroke-dasharray:2 3,color:#c4d2de,font-weight:400;
   classDef salesforceMajor fill:#152b3f,stroke:#3c7cb8,stroke-width:1.5px,color:#a9cff7,font-weight:500;
   classDef salesforceProd fill:#12301d,stroke:#3e9b58,stroke-width:2px,color:#a5e2b6,font-weight:600;
   classDef gitMajor fill:#0b5cab,stroke:#3489db,stroke-width:1.5px,color:#eaf3ff,font-weight:600;
@@ -1122,6 +1211,8 @@ export class BranchStrategyMermaidBuilder {
   `
       : `
   classDef salesforceDev fill:#f4f8fb,stroke:#67afe4,stroke-width:1.5px,color:#014486,font-weight:500;
+  classDef salesforceDevStale fill:#fef6e8,stroke:#dd7a01,stroke-width:1.5px,stroke-dasharray:4 3,color:#8c4b02,font-weight:500;
+  classDef salesforceDevUnknown fill:#ffffff,stroke:#aebfce,stroke-width:1.25px,stroke-dasharray:2 3,color:#5b6c7e,font-weight:400;
   classDef salesforceMajor fill:#eaf5fe,stroke:#67afe4,stroke-width:1.5px,color:#014486,font-weight:500;
   classDef salesforceProd fill:#ebf7ee,stroke:#2e844a,stroke-width:2px,color:#1e5e37,font-weight:600;
   classDef gitMajor fill:#0176d3,stroke:#0b5cab,stroke-width:1.5px,color:#ffffff,font-weight:600;

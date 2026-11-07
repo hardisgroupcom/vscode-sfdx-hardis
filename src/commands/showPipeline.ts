@@ -19,7 +19,10 @@ import {
   saveDeploymentApexTestClasses,
   savePrePostCommand,
 } from "../utils/prePostCommandsUtils";
-import { getCurrentGitBranch } from "../utils/pipeline/sfdxHardisConfig";
+import {
+  getConfig,
+  getCurrentGitBranch,
+} from "../utils/pipeline/sfdxHardisConfig";
 import { handleDeploymentActionPickerMessage } from "../utils/pipeline/deploymentActionPickers";
 import { extractTicketIdsFromText } from "../utils/pipeline/pastedListUtils";
 import {
@@ -50,6 +53,21 @@ import {
   parsePromotionPullRequestIds,
   PromotionBranchConfig,
 } from "../utils/pipeline/promotionBranchUtils";
+import { CacheManager } from "../utils/cache-manager";
+import { onCommandCompleted } from "../utils/commandCompletionEvents";
+import {
+  buildDevOrgListCommand,
+  buildDevOrgRegisterCommand,
+  buildDevOrgRemoveCommand,
+  devOrgsCacheKey,
+  DevOrgsOutcome,
+  DevOrgsView,
+  isDevOrgsChangeCommand,
+  isDevOrgsRegistryEnabled,
+  isSameOrgId,
+  readDevOrgsOutcome,
+  sanitizeDevOrgs,
+} from "../utils/pipeline/devOrgsUtils";
 
 const GIT_PULL_REFUSAL_COOLDOWN_MS = 60 * 60 * 1000;
 const promptedRemoteUpdatesByBranch = new Map<string, string>();
@@ -58,6 +76,8 @@ const notifiedAutoFixBranchHeadByPullRequest = new Map<string, string>();
 // One listener for the pipeline panel. It is disposed with the panel, and
 // replaced when the command runs again over a panel that is still open.
 let windowFocusListener: vscode.Disposable | undefined;
+// Same rule for the listener that reads the development orgs again after a command changed them
+let devOrgsCommandListener: vscode.Disposable | undefined;
 async function getOriginBranchUpdateStatus(branchName: string): Promise<{
   remoteHeadSha: string | null;
   hasNewRemoteCommit: boolean;
@@ -357,6 +377,7 @@ export function registerShowPipeline(commands: Commands) {
       let fullLoadInFlight: Promise<void> | null = null;
       const loadPipelineFull = (opts?: {
         resetGit?: boolean;
+        devOrgsMaxAgeMs?: number;
       }): Promise<void> => {
         if (!fullLoadInFlight) {
           fullLoadInFlight = runPipelineFullLoad(opts).finally(() => {
@@ -365,12 +386,16 @@ export function registerShowPipeline(commands: Commands) {
         }
         return fullLoadInFlight;
       };
-      const runPipelineFullLoad = async (opts?: { resetGit?: boolean }) => {
+      const runPipelineFullLoad = async (opts?: {
+        resetGit?: boolean;
+        devOrgsMaxAgeMs?: number;
+      }) => {
         try {
           const full = await loadAllPipelineInfo({
             browseGitProvider: true,
             resetGit: opts?.resetGit ?? false,
             withProgress: false,
+            devOrgsMaxAgeMs: opts?.devOrgsMaxAgeMs,
           });
           pipelineProperties = full;
           panel.sendInitializationData({
@@ -408,6 +433,17 @@ export function registerShowPipeline(commands: Commands) {
         }
       }
 
+      // A development org was registered, edited or removed in the command runner: the list is
+      // read again with the pipeline. One listener, replaced like the focus one when the command
+      // runs again over a panel that is still open.
+      devOrgsCommandListener?.dispose();
+      devOrgsCommandListener = onCommandCompleted((command) => {
+        if (isDevOrgsChangeCommand(command) && !panel.isDisposed()) {
+          void loadPipelineFull({ devOrgsMaxAgeMs: 0 });
+        }
+      });
+      panel.addDisposable(devOrgsCommandListener);
+
       panel.onMessage(async (type, data) => {
         // Retry after initial load error
         if (type === "retryInit") {
@@ -418,7 +454,11 @@ export function registerShowPipeline(commands: Commands) {
         // & PRs), keeps top bar visible; no intermediate PR-less render.
         if (type === "refreshPipeline") {
           ticketDetailsCache.clear();
-          await loadPipelineFull();
+          // The timer of the panel reloads for the job statuses: the development orgs are read
+          // again once an hour, or when somebody clicks Refresh
+          await loadPipelineFull({
+            devOrgsMaxAgeMs: data?.manual === true ? 0 : undefined,
+          });
         }
         // The card says the current branch has no Pull Request, and somebody
         // came back to the panel: one call to know whether it has one now, and
@@ -908,6 +948,30 @@ export function registerShowPipeline(commands: Commands) {
             });
           }
         }
+        // Development orgs: the actions of the details window
+        else if (type === "refreshDevOrgs") {
+          await refreshDevOrgs(panel, () =>
+            loadPipelineFull({ devOrgsMaxAgeMs: Number.POSITIVE_INFINITY }),
+          );
+        } else if (type === "getDevOrgConnection") {
+          panel.sendMessage({
+            type: "devOrgConnection",
+            data: {
+              requestId: data?.requestId ?? null,
+              orgId: data?.orgId ?? null,
+              username: await findDevOrgUsername(data?.orgId),
+            },
+          });
+        } else if (type === "registerDevOrg") {
+          const majorBranches: string[] = (
+            pipelineProperties?.pipelineData?.orgs || []
+          ).map((org: any) => org?.name);
+          runDevOrgCommand(() =>
+            buildDevOrgRegisterCommand(data || {}, majorBranches),
+          );
+        } else if (type === "removeDevOrg") {
+          runDevOrgCommand(() => buildDevOrgRemoveCommand(data?.orgId));
+        }
         // Update VS Code configuration
         else if (type === "updateVsCodeSfdxHardisConfiguration") {
           const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
@@ -1204,6 +1268,15 @@ export function registerShowPipeline(commands: Commands) {
       const themeConfig = LwcUiPanel.resolveTheme(colorThemeConfig);
       const colorTheme = themeConfig.colorTheme;
 
+      // Development orgs: read by sfdx-hardis in the full pass only, alongside the git provider
+      // calls below, when the last result is older than devOrgsMaxAgeMs (one hour by default).
+      // The fast pass uses the last result.
+      const devOrgsPromise = readDevOrgsForPipeline(
+        browseGitProvider
+          ? (options?.devOrgsMaxAgeMs ?? DEV_ORGS_READ_INTERVAL_MS)
+          : Number.POSITIVE_INFINITY,
+      );
+
       const prButtonInfo: any = {};
       let repoPlatformLabel = "";
       if (gitProvider?.repoInfo) {
@@ -1353,6 +1426,8 @@ export function registerShowPipeline(commands: Commands) {
         "pipelineFeatureBranchGroupThreshold",
         3,
       );
+      const devOrgs = await devOrgsPromise;
+      perfStep("devOrgs");
       const pipelineDataProvider = new PipelineDataProvider();
       const pipelineData = await pipelineDataProvider.getPipelineData(
         gitAuthenticated,
@@ -1361,6 +1436,7 @@ export function registerShowPipeline(commands: Commands) {
           browseGitProvider: browseGitProvider,
           colorTheme: colorTheme,
           featureBranchGroupThreshold: featureBranchGroupThreshold,
+          devOrgs: devOrgs,
         },
       );
       perfStep("getPipelineData (mermaid)");
@@ -1472,6 +1548,10 @@ type LoadPipelineOptions = {
   browseGitProvider: boolean;
   resetGit: boolean;
   withProgress?: boolean;
+  // The development orgs were just read (Refresh of the details window): the last result is used
+  // instead of reading them again
+  // Age of the last development orgs result above which sfdx-hardis reads them again
+  devOrgsMaxAgeMs?: number;
 };
 
 type PipelineInfo = {
@@ -2108,4 +2188,168 @@ async function markDeploymentActionDone(
     );
   }
   return { ok: false };
+}
+
+// The last list of development orgs is what the fast pass draws while sfdx-hardis reads it again
+const DEV_ORGS_LAST_RESULT_TTL_MS = 1000 * 60 * 60 * 24 * 30;
+
+// The automatic reloads of the panel are for the job statuses: the development orgs are read
+// again at most once an hour, unless somebody clicks Refresh
+const DEV_ORGS_READ_INTERVAL_MS = 1000 * 60 * 60;
+
+/**
+ * The development orgs a pass of the pipeline draws. Nothing when the project turned the list
+ * off. Read by sfdx-hardis when the last result is older than maxAgeMs, else the last result. Never throws: a failure, or no git provider token, only leaves the
+ * development orgs out.
+ */
+async function readDevOrgsForPipeline(
+  maxAgeMs: number,
+): Promise<DevOrgsView | null> {
+  try {
+    if (!isDevOrgsRegistryEnabled(await getConfig("project"))) {
+      return null;
+    }
+    if (lastDevOrgsAgeMs() <= maxAgeMs) {
+      return readLastDevOrgs();
+    }
+    const outcome = await loadDevOrgs(false);
+    return "devOrgs" in outcome ? outcome.devOrgs : null;
+  } catch (e: any) {
+    Logger.log(
+      `[vscode-sfdx-hardis] Development orgs not read: ${e?.message || e}`,
+    );
+    return null;
+  }
+}
+
+/**
+ * Reads the list with sf hardis:project:dev-org:list and keeps it as the last result. With
+ * refresh, sfdx-hardis first lists again the Pull Requests merged into the target branches.
+ */
+async function loadDevOrgs(refresh: boolean): Promise<DevOrgsOutcome> {
+  let errorMessage = "";
+  const answer = await execSfdxJsonWithProviderCredentials(
+    buildDevOrgListCommand(refresh),
+    "Development orgs",
+    (message) => {
+      errorMessage = message;
+    },
+  );
+  const outcome: DevOrgsOutcome = answer
+    ? readDevOrgsOutcome({ status: 0, result: answer })
+    : { error: { kind: "other", message: errorMessage } };
+  const cacheKey = devOrgsCacheKey(getWorkspaceRoot());
+  if ("devOrgs" in outcome) {
+    void CacheManager.set(
+      "project",
+      cacheKey,
+      { devOrgs: outcome.devOrgs, readAt: new Date().toISOString() },
+      DEV_ORGS_LAST_RESULT_TTL_MS,
+    );
+  } else {
+    Logger.log(
+      `[vscode-sfdx-hardis] Development orgs not read (${outcome.error.kind}): ${outcome.error.message}`,
+    );
+    // Without a token, the orgs of the last result must not come back at the next fast pass
+    if (outcome.error.kind === "noGitProvider") {
+      await CacheManager.delete("project", cacheKey);
+    }
+  }
+  return outcome;
+}
+
+// Infinity when there is no last result, or when its date cannot be read
+function lastDevOrgsAgeMs(): number {
+  const last = CacheManager.get<{ devOrgs: DevOrgsView; readAt: string }>(
+    "project",
+    devOrgsCacheKey(getWorkspaceRoot()),
+  );
+  const readAt = Date.parse(last?.readAt || "");
+  return last?.devOrgs && !isNaN(readAt)
+    ? Date.now() - readAt
+    : Number.POSITIVE_INFINITY;
+}
+
+function readLastDevOrgs(): DevOrgsView | null {
+  const last = CacheManager.get<{ devOrgs: DevOrgsView; readAt: string }>(
+    "project",
+    devOrgsCacheKey(getWorkspaceRoot()),
+  );
+  if (!last || !last.devOrgs || typeof last.devOrgs !== "object") {
+    return null;
+  }
+  return sanitizeDevOrgs(last.devOrgs);
+}
+
+/**
+ * Refresh of the details window: sfdx-hardis lists again the merged Pull Requests, then the
+ * pipeline is drawn again with that list. The window shows a spinner meanwhile.
+ */
+async function refreshDevOrgs(
+  panel: LwcUiPanel,
+  reloadPipeline: () => Promise<void>,
+): Promise<void> {
+  panel.sendMessage({ type: "devOrgsRefreshing", data: { refreshing: true } });
+  try {
+    const outcome = await loadDevOrgs(true);
+    if ("error" in outcome) {
+      vscode.window.showErrorMessage(
+        outcome.error.kind === "noGitProvider"
+          ? t("devOrgsNoGitProvider")
+          : t("devOrgsRefreshFailed", {
+              message: outcome.error.message || "unknown error",
+            }),
+      );
+    }
+    await reloadPipeline();
+  } finally {
+    if (!panel.isDisposed()) {
+      panel.sendMessage({
+        type: "devOrgsRefreshing",
+        data: { refreshing: false },
+      });
+    }
+  }
+}
+
+/**
+ * Username of the development org among the orgs authenticated on this computer, null when it
+ * is not one of them: the Backpromote button of the details window needs it.
+ */
+async function findDevOrgUsername(orgId: unknown): Promise<string | null> {
+  try {
+    const orgs = await listAllOrgs(false, true);
+    const match = orgs.find(
+      (org) => org.username && isSameOrgId(org.orgId, orgId),
+    );
+    return match?.username || null;
+  } catch (e: any) {
+    Logger.log(
+      `[vscode-sfdx-hardis] Orgs not listed for a development org: ${e?.message || e}`,
+    );
+    return null;
+  }
+}
+
+/**
+ * Runs a command of the details window in the command runner. The pipeline is drawn again when
+ * sfdx-hardis says the command ended (see onCommandCompleted in registerShowPipeline).
+ */
+function runDevOrgCommand(buildCommand: () => string): void {
+  let command: string;
+  try {
+    command = buildCommand();
+  } catch (e: any) {
+    const reason = String(e?.message || e);
+    vscode.window.showErrorMessage(
+      reason === "invalidCharacters"
+        ? t("devOrgEditInvalidCharacters")
+        : t("devOrgEditInvalid"),
+    );
+    return;
+  }
+  void vscode.commands.executeCommand(
+    "vscode-sfdx-hardis.execute-command",
+    command,
+  );
 }
