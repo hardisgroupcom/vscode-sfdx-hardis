@@ -1,3 +1,4 @@
+import { emitCommandCompleted } from "../utils/commandCompletionEvents";
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as os from "os";
@@ -127,6 +128,21 @@ interface BackpromotePanelState {
   resumedAt: string | null;
   /** Computes the plan again: called when a git provider gets connected while the token was missing */
   retryPlan: (() => Promise<void>) | null;
+  /**
+   * Org and parent branch asked by the command that opened the panel (the details window of a
+   * development org in the DevOps Pipeline), applied once the setup is read
+   */
+  requestedChoices: BackpromoteOpenRequest | null;
+  /** Applies the org and parent branch asked when the panel was already open */
+  applyRequestedChoices:
+    | ((request: BackpromoteOpenRequest) => Promise<void>)
+    | null;
+}
+
+/** Optional argument of vscode-sfdx-hardis.showBackpromote, in the shape acceptChoices reads */
+interface BackpromoteOpenRequest {
+  targetOrg: string | null;
+  parentBranch: string | null;
 }
 
 function createState(panel: LwcUiPanel): BackpromotePanelState {
@@ -159,6 +175,8 @@ function createState(panel: LwcUiPanel): BackpromotePanelState {
     pendingSession: null,
     resumedAt: null,
     retryPlan: null,
+    requestedChoices: null,
+    applyRequestedChoices: null,
   };
 }
 
@@ -169,6 +187,7 @@ function disposeState(panelState: BackpromotePanelState): void {
   panelState.orgChangeSubscription?.dispose();
   panelState.orgChangeSubscription = null;
   panelState.applyOrgChange = null;
+  panelState.applyRequestedChoices = null;
   for (const watcher of panelState.fileWatchers) {
     watcher.dispose();
   }
@@ -575,6 +594,31 @@ function acceptSelection(panelState: BackpromotePanelState, data: any): void {
   }
 }
 
+/**
+ * The optional argument of vscode-sfdx-hardis.showBackpromote: { targetOrgUsername, parentBranch }.
+ * It may come from a WebSocket message too: only strings are kept, and acceptChoices still checks
+ * them against the setup.
+ */
+function readBackpromoteOpenRequest(
+  args: unknown,
+): BackpromoteOpenRequest | null {
+  if (!args || typeof args !== "object") {
+    return null;
+  }
+  const { targetOrgUsername, parentBranch } = args as Record<string, unknown>;
+  const request: BackpromoteOpenRequest = {
+    targetOrg:
+      typeof targetOrgUsername === "string" && targetOrgUsername.trim()
+        ? targetOrgUsername.trim()
+        : null,
+    parentBranch:
+      typeof parentBranch === "string" && parentBranch.trim()
+        ? parentBranch.trim()
+        : null,
+  };
+  return request.targetOrg || request.parentBranch ? request : null;
+}
+
 /** The org and the parent branch the webview asks for, only when the setup offers them */
 function acceptChoices(panelState: BackpromotePanelState, data: any): boolean {
   const setup = panelState.setup;
@@ -731,13 +775,19 @@ export function registerShowBackpromote(commands: Commands) {
 
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showBackpromote",
-    async () => {
+    async (args?: unknown) => {
+      // Optional { targetOrgUsername, parentBranch }: used instead of the defaults, and only
+      // when the setup offers them (acceptChoices)
+      const requested = readBackpromoteOpenRequest(args);
       const lwcManager = LwcPanelManager.getInstance();
       const existing = lwcManager.getPanel(BACKPROMOTE_LWC_ID);
       if (existing && !existing.isDisposed() && state?.panel === existing) {
         // A plan may be computing, a merge being prepared or a run in progress: the
         // panel is only brought back
         existing.reveal();
+        if (requested && state.applyRequestedChoices) {
+          await state.applyRequestedChoices(requested);
+        }
         return;
       }
       if (state) {
@@ -750,6 +800,7 @@ export function registerShowBackpromote(commands: Commands) {
       });
       panel.updateTitle(t("backpromote"));
       const current = createState(panel);
+      current.requestedChoices = requested;
       state = current;
       lwcManager.setDisposalCallback(BACKPROMOTE_LWC_ID, () => {
         disposeState(current);
@@ -814,6 +865,13 @@ export function registerShowBackpromote(commands: Commands) {
           current.targetOrg =
             setup.orgs.find((org) => org.isDefault && !org.disabledReason)
               ?.username || null;
+        }
+        // The org and the branch the panel was opened for win over the defaults and over a
+        // resumed backpromote of another window
+        const requestedChoices = current.requestedChoices;
+        current.requestedChoices = null;
+        if (requestedChoices && acceptChoices(current, requestedChoices)) {
+          clearWindow();
         }
         return !current.tokenMissing;
       };
@@ -922,6 +980,18 @@ export function registerShowBackpromote(commands: Commands) {
       const startOver = async () => {
         clearWindow();
         await loadPlan();
+      };
+
+      current.applyRequestedChoices = async (request) => {
+        if (isBusy(current)) {
+          pushData(current);
+          return;
+        }
+        if (acceptChoices(current, request) || !current.plan) {
+          await startOver();
+        } else {
+          pushData(current);
+        }
       };
 
       // The orgs changed after "Connect another org": the org list is read again without its
@@ -1474,6 +1544,9 @@ async function runBackpromote(
     current.markers = {};
     // The window is done: the next plan starts from the default sfdx-hardis computes
     current.fromPullRequest = null;
+    // sfdx-hardis recorded the backpromote in the development orgs list: the DevOps Pipeline
+    // reads it again, like after the same command run in the command runner
+    emitCommandCompleted("hardis:work:backpromote", "success");
   }
   pushData(current);
   current.panel.sendMessage({ type: "runFinished" });
