@@ -2112,7 +2112,7 @@ suite("Documentation screenshots", function () {
       const button = deepAll(
         panelDocument,
         ".pipeline-view-switch button",
-      )[1];
+      )[2];
       if (!button) {
         return null;
       }
@@ -4065,18 +4065,20 @@ suite("Documentation screenshots", function () {
     });
     // The cards sit under the diagram, and neither zooming the window nor a
     // wheel event brings them up: the window zoom scales the diagram with the
-    // page, and a posted wheel never reaches the webview's scroller. The tabs
-    // of the cards are scrolled into view from inside the webview instead (the
-    // header used to have a feature branches toggle that shrank the diagram).
-    await inWebview(`
-      const tabs = deepAll(panelDocument, "lightning-tabset.pipeline-tabs")[0];
-      if (!tabs) {
-        return null;
-      }
-      tabs.scrollIntoView({ block: "start" });
-      return true;
-    `);
-    await sleep(1500);
+    // page, and a posted wheel never reaches the webview's scroller. The Major
+    // branches view of the switch above the diagram is what actually shrinks
+    // it, and it is a real control a reader can find.
+    const pickView = (index: number) =>
+      inWebview(`
+        const button = deepAll(panelDocument, ".pipeline-view-switch button")[${index}];
+        if (!button) {
+          return null;
+        }
+        button.click();
+        return true;
+      `);
+    await pickView(0);
+    await sleep(2500);
     // Two levels out on top of that, so the whole row of cards fits rather than
     // being cut off at the bottom edge
     await vscode.commands.executeCommand("workbench.action.zoomOut");
@@ -4091,6 +4093,9 @@ suite("Documentation screenshots", function () {
     await vscode.commands.executeCommand("workbench.action.zoomIn");
     await vscode.commands.executeCommand("workbench.action.zoomIn");
     await sleep(1200);
+    // Back to the feature branches for the captures that follow
+    await pickView(1);
+    await sleep(1500);
   });
 
   // Pipeline settings scoped to a major branch: the screen where a contributor

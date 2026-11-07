@@ -25,14 +25,6 @@
                     </button>
                 </template>
 
-                <!-- The feature branches or the dev orgs, never both -->
-                <template if:true={showViewSwitch}>
-                    <span class="hardis-segmented pipeline-view-switch" role="group" aria-label={i18n.pipelineViewTitle} title={i18n.pipelineViewTitle}>
-                        <button type="button" class={featureBranchesViewClass} aria-pressed={featureBranchesViewPressed} onclick={handleShowFeatureBranchesView}>{i18n.pipelineViewFeatureBranches}</button>
-                        <button type="button" class={devOrgsViewClass} aria-pressed={devOrgsViewPressed} onclick={handleShowDevOrgsView}>{i18n.pipelineViewDevOrgs}</button>
-                    </span>
-                </template>
-
                 <lightning-button-group>
                     <lightning-button-menu
                         alternative-text={i18n.pipelineConfig}
@@ -171,6 +163,14 @@
                     <template if:true={pipelineData.orgs}>
                         <template if:true={pipelineData.orgs.length}>
                             <div class="pipeline-container">
+                                <!-- What the diagram shows next to the major branches: nothing more, the feature branches, or the dev orgs -->
+                                <div class="pipeline-diagram-toolbar">
+                                    <span class="hardis-segmented pipeline-view-switch" role="group" aria-label={i18n.pipelineViewTitle} title={i18n.pipelineViewTitle}>
+                                        <button type="button" class={majorBranchesViewClass} aria-pressed={majorBranchesViewPressed} onclick={handleShowMajorBranchesView}>{i18n.pipelineViewMajorBranches}</button>
+                                        <button type="button" class={featureBranchesViewClass} aria-pressed={featureBranchesViewPressed} onclick={handleShowFeatureBranchesView}>{i18n.pipelineViewFeatureBranches}</button>
+                                        <button type="button" class={devOrgsViewClass} aria-pressed={devOrgsViewPressed} onclick={handleShowDevOrgsView}>{i18n.pipelineViewDevOrgs}</button>
+                                    </span>
+                                </div>
                                 <div style="position: relative;">
                                     <!-- Manual refresh: keep the diagram visible with a spinner overlaid on top -->
                                     <template if:true={isMermaidRefreshing}>

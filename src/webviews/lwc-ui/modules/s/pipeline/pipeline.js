@@ -59,9 +59,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track currentBranchPullRequest = null;
   @track autoFixPullRequest = null;
   @track openPullRequests = [];
-  // "Dev orgs" view of the switch: the major branches and every development org, instead of the
-  // feature branches. The panel always opens on the feature branches.
-  @track showDevOrgsView = false;
+  // View of the switch above the diagram: "majorBranches", "featureBranches" or "devOrgs". The
+  // panel always opens on the feature branches.
+  @track diagramView = "featureBranches";
   // Details window of a development org
   @track showDevOrgModal = false;
   @track selectedDevOrg = null;
@@ -638,10 +638,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         }
       }
     }
-    // Development orgs: each org by its node for a click on the diagram. The "Dev orgs" view
-    // ends when the last org left the list.
-    if (!this.showViewSwitch) {
-      this.showDevOrgsView = false;
+    // Development orgs: each org by its node for a click on the diagram. A view that has no
+    // diagram anymore falls back to the feature branches.
+    if (
+      (this.diagramView === "devOrgs" &&
+        !this.pipelineData?.mermaidDiagramDevOrgs) ||
+      (this.diagramView === "majorBranches" &&
+        !this.pipelineData?.mermaidDiagramMajor)
+    ) {
+      this.diagramView = "featureBranches";
     }
     this.devOrgsByNodeName = new Map();
     for (const devOrg of this.pipelineData?.devOrgs || []) {
@@ -2209,25 +2214,28 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return this.pipelineData?.devOrgsEnabled === true;
   }
 
-  // The Feature branches / Dev orgs switch of the header: always one view or the other
-  get showViewSwitch() {
-    return !!this.pipelineData?.mermaidDiagramDevOrgs;
+  get majorBranchesViewClass() {
+    return this._viewClass("majorBranches");
   }
 
   get featureBranchesViewClass() {
-    return this.showDevOrgsView ? "hardis-seg" : "hardis-seg on";
+    return this._viewClass("featureBranches");
   }
 
   get devOrgsViewClass() {
-    return this.showDevOrgsView ? "hardis-seg on" : "hardis-seg";
+    return this._viewClass("devOrgs");
+  }
+
+  get majorBranchesViewPressed() {
+    return String(this.diagramView === "majorBranches");
   }
 
   get featureBranchesViewPressed() {
-    return String(!this.showDevOrgsView);
+    return String(this.diagramView === "featureBranches");
   }
 
   get devOrgsViewPressed() {
-    return String(this.showDevOrgsView);
+    return String(this.diagramView === "devOrgs");
   }
 
   // Legend entry of the development org nodes: only while they are drawn
@@ -2273,12 +2281,16 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return branches;
   }
 
+  handleShowMajorBranchesView() {
+    this._setDiagramView("majorBranches");
+  }
+
   handleShowFeatureBranchesView() {
-    this._setDevOrgsView(false);
+    this._setDiagramView("featureBranches");
   }
 
   handleShowDevOrgsView() {
-    this._setDevOrgsView(true);
+    this._setDiagramView("devOrgs");
   }
 
   // "+" node: register an org on its branch; the org, the owner and the users are asked in the
@@ -2407,20 +2419,28 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.handleCloseDevOrgModal();
   }
 
-  _setDevOrgsView(showDevOrgs) {
-    if (showDevOrgs === this.showDevOrgsView) {
+  _setDiagramView(view) {
+    if (view === this.diagramView) {
       return;
     }
-    this.showDevOrgsView = showDevOrgs;
+    this.diagramView = view;
     this.currentDiagram = this._selectDiagram();
     setTimeout(() => this.renderMermaid(), 0);
   }
 
-  // The view of the switch: the feature branches, or the major branches with the dev orgs
+  _viewClass(view) {
+    return this.diagramView === view ? "hardis-seg on" : "hardis-seg";
+  }
+
+  // The view of the switch: the major branches alone, with the feature branches, or with the
+  // dev orgs
   _selectDiagram() {
     const data = this.pipelineData || {};
-    if (this.showDevOrgsView && data.mermaidDiagramDevOrgs) {
+    if (this.diagramView === "devOrgs" && data.mermaidDiagramDevOrgs) {
       return data.mermaidDiagramDevOrgs;
+    }
+    if (this.diagramView === "majorBranches" && data.mermaidDiagramMajor) {
+      return data.mermaidDiagramMajor;
     }
     return data.mermaidDiagram;
   }

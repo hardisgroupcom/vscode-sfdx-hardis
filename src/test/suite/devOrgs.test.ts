@@ -216,22 +216,34 @@ suite("Development orgs", () => {
         undefined,
       );
       const js = readModuleFile("pipeline", "pipeline.js");
-      assert.match(js, /@track showDevOrgsView = false;/);
+      assert.match(js, /@track diagramView = "featureBranches";/);
       assert.doesNotMatch(js, /setDevOrgsDisplay|displayDevOrgs/);
     });
 
-    test("the header always shows the Feature branches / Dev orgs switch, never the old toggle", () => {
+    test("the diagram card has the Major branches / Feature branches / Dev orgs switch, never the old toggle", () => {
       const html = readModuleFile("pipeline", "pipeline.html");
       assert.match(
         html,
-        /<template if:true=\{showViewSwitch\}>[\s\S]*handleShowFeatureBranchesView[\s\S]*handleShowDevOrgsView/,
+        /<div class="pipeline-diagram-toolbar">[\s\S]*handleShowMajorBranchesView[\s\S]*handleShowFeatureBranchesView[\s\S]*handleShowDevOrgsView/,
+      );
+      // Not in the header anymore: the switch comes after the diagram container opens
+      assert.ok(
+        html.indexOf("pipeline-view-switch") >
+          html.indexOf('class="pipeline-container"'),
       );
       assert.doesNotMatch(
         html,
         /handleToggleFeatureBranches|showFeatureBranches/,
       );
       const js = readModuleFile("pipeline", "pipeline.js");
-      assert.match(js, /return !!this\.pipelineData\?\.mermaidDiagramDevOrgs;/);
+      assert.match(
+        js,
+        /this\.diagramView === "majorBranches" && data\.mermaidDiagramMajor/,
+      );
+      assert.match(
+        js,
+        /this\.diagramView === "devOrgs" && data\.mermaidDiagramDevOrgs/,
+      );
       assert.doesNotMatch(
         js,
         /displayFeatureBranches|pipelineDisplayFeatureBranches/,
@@ -275,7 +287,7 @@ suite("Development orgs", () => {
       const load = source.slice(source.indexOf("async function loadDevOrgs("));
       assert.match(
         load,
-        /collectProviderCredentialEnvVarsWithStatus\(\);\s*if \(credentials\.timedOut\)/,
+        /collectProviderCredentialEnvVarsWithStatus\(\);\s*if \(credentials\.timedOut\) \{\s*await refreshProviderCredentialEnvCache\(\);/,
       );
     });
   });

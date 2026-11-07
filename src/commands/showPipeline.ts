@@ -34,6 +34,7 @@ import {
   collectProviderCredentialEnvVars,
   collectProviderCredentialEnvVarsWithStatus,
   execSfdxJsonWithProviderCredentials,
+  refreshProviderCredentialEnvCache,
 } from "../utils/providerCredentials";
 import { connectGitProvider } from "../utils/gitProviders/connectGitProvider";
 import { isSafeJobUrl } from "../utils/pullRequestUrlUtils";
@@ -2268,9 +2269,14 @@ function readDevOrgsInBackground(): Promise<boolean> {
  * refresh, sfdx-hardis first lists again the Pull Requests merged into the target branches.
  */
 async function loadDevOrgs(refresh: boolean): Promise<DevOrgsOutcome> {
-  // Credentials not read in time: sfdx-hardis would answer "no token" after a whole command run,
-  // and that answer would delete the last result. The next pass tries again.
-  const credentials = await collectProviderCredentialEnvVarsWithStatus();
+  // Credentials not read in time: this read runs in the background (or behind the spinner of
+  // Refresh), so it waits for them rather than run without them. Without them, sfdx-hardis would
+  // answer "no token" after a whole command run, and that answer would delete the last result.
+  let credentials = await collectProviderCredentialEnvVarsWithStatus();
+  if (credentials.timedOut) {
+    await refreshProviderCredentialEnvCache();
+    credentials = await collectProviderCredentialEnvVarsWithStatus();
+  }
   if (credentials.timedOut) {
     Logger.log(
       "[vscode-sfdx-hardis] Development orgs not read: provider credentials not read in time",

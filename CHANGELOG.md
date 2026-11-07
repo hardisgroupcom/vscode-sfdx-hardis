@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- DevOps Pipeline: new **Dev orgs** view, next to **Feature branches**: the developer sandboxes and scratch orgs of the team, the Pull Requests each one misses since its last backpromote, and a **+** to register one (requires sfdx-hardis 8.24.0)
+- DevOps Pipeline: a switch above the diagram shows the **Major branches**, the **Feature branches** (default) or the new **Dev orgs** view: the developer sandboxes and scratch orgs of the team, the Pull Requests each one misses since its last backpromote, and a **+** to register one (requires sfdx-hardis 8.24.0)
 
 ## [8.18.0] 2026-11-06
 
