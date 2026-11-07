@@ -52,6 +52,7 @@ export const sectionDefs = [
     description: "DevOps Pipeline display settings.",
     keys: [
       "vsCodeSfdxHardis.pipelineDisplayFeatureBranches",
+      "vsCodeSfdxHardis.pipelineDisplayDevOrgs",
       "vsCodeSfdxHardis.pipelineFeatureBranchGroupThreshold",
     ],
   },

@@ -340,6 +340,39 @@
     );
 }
 
+/* A development org linked to the branch it targets (two-way dotted edge) */
+.legend-line-dev-org {
+    border-top: 1.5px dotted var(--slds-g-color-palette-blue-50);
+}
+
+/* A development org with no activity for a while: dashed orange node */
+.legend-node-dev-org-stale {
+    display: inline-block;
+    width: 18px;
+    height: 10px;
+    border-radius: 5px;
+    border: 1.5px dashed var(--slds-g-color-palette-orange-60);
+}
+
+/* Mine / All / None switch of the development orgs, next to the feature branches toggle */
+.dev-orgs-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.dev-orgs-toggle-label {
+    font-size: 0.75rem;
+}
+
+/* Owner of a development org: second, smaller line of its node */
+.mermaid .hardis-node-owner {
+    font-size: 10px;
+    opacity: 0.8;
+}
+
 /* Last deployment check of a major branch, in the last tab of its window */
 .major-branch-check-row {
     display: flex;

@@ -60,6 +60,18 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track autoFixPullRequest = null;
   @track openPullRequests = [];
   @track displayFeatureBranches = true;
+  // Development orgs drawn in the diagram: "mine", "all" or "none" (setting pipelineDisplayDevOrgs)
+  @track displayDevOrgs = "mine";
+  // Details window of a development org
+  @track showDevOrgModal = false;
+  @track selectedDevOrg = null;
+  // Username of the selected org among the orgs authenticated on this computer (Backpromote)
+  @track devOrgConnectionUsername = null;
+  @track devOrgConnectionChecked = false;
+  // sfdx-hardis lists again the Pull Requests merged into the target branches (Refresh)
+  @track devOrgsRefreshing = false;
+  _devOrgConnectionRequestId = 0;
+  devOrgsByNodeName = new Map();
   // Branch modal: promotion and major-to-major Pull Requests are the vehicles that move the
   // User Stories, not stories themselves, so they are hidden unless this toggle is on
   @track modalShowPromotionPrs = false;
@@ -629,10 +641,20 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         }
       }
     }
-    // Select diagram based on displayFeatureBranches toggle
-    this.currentDiagram = this.displayFeatureBranches
-      ? this.pipelineData.mermaidDiagram
-      : this.pipelineData.mermaidDiagramMajor;
+    // Development orgs: display mode, and each org by its node for a click on the diagram
+    if (Object.prototype.hasOwnProperty.call(data, "displayDevOrgs")) {
+      this.displayDevOrgs = this._normalizeDevOrgsMode(data.displayDevOrgs);
+    }
+    this.devOrgsByNodeName = new Map();
+    for (const devOrg of this.pipelineData?.devOrgs || []) {
+      if (devOrg && devOrg.nodeName) {
+        this.devOrgsByNodeName.set(devOrg.nodeName, devOrg);
+      }
+    }
+    this._refreshOpenDevOrg();
+
+    // Select diagram based on the feature branches toggle and the development orgs mode
+    this.currentDiagram = this._selectDiagram();
     this.error = undefined;
     this.lastDiagram = "";
 
@@ -1643,6 +1665,16 @@ export default class Pipeline extends SharedMixin(LightningElement) {
             const targetId = mermaidNode.getAttribute("id") || "";
             const nodeIdentifier = this._extractNodeIdentifier(targetId);
 
+            // A development org (checked first: its node id ends with "Org" too)
+            if (
+              nodeIdentifier &&
+              nodeIdentifier.endsWith("DevOrg") &&
+              this.devOrgsByNodeName.has(nodeIdentifier)
+            ) {
+              this.handleOpenDevOrgNode(nodeIdentifier);
+              return;
+            }
+
             if (nodeIdentifier && nodeIdentifier.endsWith("Org")) {
               this.handleOpenOrgNode(nodeIdentifier);
               return;
@@ -1807,6 +1839,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
           this._requestActionStatuses();
           this._requestRunningJobs();
         }
+        break;
+      case "devOrgsRefreshing":
+        this.devOrgsRefreshing = data?.refreshing === true;
+        break;
+      case "devOrgConnection":
+        this.handleDevOrgConnection(data);
         break;
       case "openPullRequestsUpdated":
         // allow dynamic updates from extension host
@@ -1995,13 +2033,14 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   handleRefresh() {
-    this.refreshPipeline();
+    // Only the Refresh button reads the development orgs again before their hour is over
+    this.refreshPipeline(false, true);
     // Reset auto-refresh timer when manually refreshed
     this._startAutoRefresh();
   }
 
   // Added refreshPipeline method
-  refreshPipeline(isAutoRefresh = false) {
+  refreshPipeline(isAutoRefresh = false, manual = false) {
     this._isAutoRefresh = isAutoRefresh;
     // Manual refresh: overlay a spinner on the already-rendered diagram (keeping
     // it visible). If no diagram is shown yet, fall back to the full first-load
@@ -2020,7 +2059,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
     window.sendMessageToVSCode({
       type: "refreshPipeline",
-      data: {},
+      data: { manual: manual === true },
     });
     console.log(
       "Pipeline refresh event dispatched",
@@ -2148,6 +2187,256 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         command: "vscode-sfdx-hardis.showScratchOrgPool",
       },
     });
+  }
+
+  // ---- Development orgs (sf hardis:project:dev-org:*) ----
+
+  // The project keeps a list of development orgs (enableDevOrgsRegistry is not false)
+  get devOrgsEnabled() {
+    return this.pipelineData?.devOrgsEnabled === true;
+  }
+
+  // The Mine / All / None switch: only once some org is registered, or while the orgs are
+  // hidden (nothing is read then, the list may hold some)
+  get showDevOrgsToggle() {
+    return (
+      this.gitAuthenticated &&
+      this.devOrgsEnabled &&
+      (this.displayDevOrgs === "none" ||
+        (this.pipelineData?.devOrgs || []).length > 0)
+    );
+  }
+
+  get devOrgsMineClass() {
+    return this._devOrgsSegClass("mine");
+  }
+
+  get devOrgsAllClass() {
+    return this._devOrgsSegClass("all");
+  }
+
+  get devOrgsNoneClass() {
+    return this._devOrgsSegClass("none");
+  }
+
+  get devOrgsMinePressed() {
+    return String(this.displayDevOrgs === "mine");
+  }
+
+  get devOrgsAllPressed() {
+    return String(this.displayDevOrgs === "all");
+  }
+
+  get devOrgsNonePressed() {
+    return String(this.displayDevOrgs === "none");
+  }
+
+  // Legend entry of the development org nodes: only while some are drawn
+  get showDevOrgsLegend() {
+    return (
+      this.displayFeatureBranches &&
+      this.currentDiagram !== this.pipelineData?.mermaidDiagram &&
+      this.currentDiagram !== this.pipelineData?.mermaidDiagramMajor
+    );
+  }
+
+  get showDevOrgsMenu() {
+    return this.devOrgsEnabled;
+  }
+
+  get devOrgsDashboardUrl() {
+    return this.pipelineData?.devOrgsDashboardUrl || "";
+  }
+
+  get showDevOrgsDashboard() {
+    return this.devOrgsEnabled && !!this.devOrgsDashboardUrl;
+  }
+
+  get devOrgsStaleDays() {
+    return this.pipelineData?.devOrgsStaleDays || 0;
+  }
+
+  // Target branches offered by the Edit form of the details window
+  get devOrgMajorBranches() {
+    return (this.pipelineData?.orgs || [])
+      .map((org) => org.name)
+      .filter((name) => !!name);
+  }
+
+  handleDevOrgsDisplayMine() {
+    this._setDevOrgsDisplay("mine");
+  }
+
+  handleDevOrgsDisplayAll() {
+    this._setDevOrgsDisplay("all");
+  }
+
+  handleDevOrgsDisplayNone() {
+    this._setDevOrgsDisplay("none");
+  }
+
+  // Interactive: the owner, the users and the target branch are asked in the command runner
+  handleRegisterDevOrg() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: { command: "sf hardis:project:dev-org:register" },
+    });
+  }
+
+  handleOpenDevOrgsDashboard() {
+    if (!this.devOrgsDashboardUrl) {
+      return;
+    }
+    window.sendMessageToVSCode({
+      type: "openExternal",
+      data: { url: this.devOrgsDashboardUrl },
+    });
+  }
+
+  handleOpenDevOrgNode(nodeIdentifier) {
+    const devOrg = this.devOrgsByNodeName.get(nodeIdentifier);
+    if (!devOrg) {
+      return;
+    }
+    this.selectedDevOrg = devOrg;
+    this.showDevOrgModal = true;
+    // Backpromote needs the org among the ones authenticated on this computer
+    this.devOrgConnectionUsername = null;
+    this.devOrgConnectionChecked = false;
+    this._devOrgConnectionRequestId += 1;
+    window.sendMessageToVSCode({
+      type: "getDevOrgConnection",
+      data: {
+        requestId: this._devOrgConnectionRequestId,
+        orgId: devOrg.orgId,
+      },
+    });
+  }
+
+  handleDevOrgConnection(data) {
+    if (
+      !data ||
+      data.requestId !== this._devOrgConnectionRequestId ||
+      !this.selectedDevOrg ||
+      data.orgId !== this.selectedDevOrg.orgId
+    ) {
+      return;
+    }
+    this.devOrgConnectionUsername = data.username || null;
+    this.devOrgConnectionChecked = true;
+  }
+
+  handleCloseDevOrgModal() {
+    this.showDevOrgModal = false;
+    this.selectedDevOrg = null;
+    this._devOrgConnectionRequestId += 1;
+  }
+
+  handleDevOrgRefresh() {
+    if (this.devOrgsRefreshing) {
+      return;
+    }
+    this.devOrgsRefreshing = true;
+    window.sendMessageToVSCode({ type: "refreshDevOrgs", data: {} });
+  }
+
+  // Opens the Backpromote panel on that org, from its target branch
+  handleDevOrgBackpromote() {
+    const devOrg = this.selectedDevOrg;
+    if (!devOrg || !this.devOrgConnectionUsername) {
+      return;
+    }
+    window.sendMessageToVSCode({
+      type: "runVsCodeCommand",
+      data: {
+        command: "vscode-sfdx-hardis.showBackpromote",
+        args: [
+          {
+            targetOrgUsername: this.devOrgConnectionUsername,
+            parentBranch: devOrg.targetBranch,
+          },
+        ],
+      },
+    });
+  }
+
+  // The Edit form: sfdx-hardis writes it in the command runner, the pipeline reloads after
+  handleDevOrgSave(event) {
+    const detail = event?.detail || {};
+    window.sendMessageToVSCode({
+      type: "registerDevOrg",
+      data: {
+        orgId: detail.orgId,
+        targetBranch: detail.targetBranch,
+        owner: detail.owner,
+        users: detail.users,
+      },
+    });
+    this.handleCloseDevOrgModal();
+  }
+
+  handleDevOrgRemove(event) {
+    const orgId = event?.detail?.orgId;
+    if (!orgId) {
+      return;
+    }
+    window.sendMessageToVSCode({ type: "removeDevOrg", data: { orgId } });
+    this.handleCloseDevOrgModal();
+  }
+
+  _setDevOrgsDisplay(mode) {
+    const normalized = this._normalizeDevOrgsMode(mode);
+    if (normalized === this.displayDevOrgs) {
+      return;
+    }
+    this.displayDevOrgs = normalized;
+    window.sendMessageToVSCode({
+      type: "setDevOrgsDisplay",
+      data: { mode: normalized },
+    });
+    this.currentDiagram = this._selectDiagram();
+    setTimeout(() => this.renderMermaid(), 0);
+  }
+
+  _devOrgsSegClass(mode) {
+    return this.displayDevOrgs === mode ? "hardis-seg on" : "hardis-seg";
+  }
+
+  _normalizeDevOrgsMode(mode) {
+    return ["mine", "all", "none"].includes(mode) ? mode : "mine";
+  }
+
+  // The diagram matching the feature branches toggle and the development orgs mode. A mode that
+  // draws no org has no diagram of its own: the full one is the same.
+  _selectDiagram() {
+    const data = this.pipelineData || {};
+    if (!this.displayFeatureBranches) {
+      return data.mermaidDiagramMajor;
+    }
+    if (this.displayDevOrgs === "mine" && data.mermaidDiagramDevOrgsMine) {
+      return data.mermaidDiagramDevOrgsMine;
+    }
+    if (this.displayDevOrgs === "all" && data.mermaidDiagramDevOrgsAll) {
+      return data.mermaidDiagramDevOrgsAll;
+    }
+    return data.mermaidDiagram;
+  }
+
+  // New data while the details window is open: it shows the org as read now, and closes when
+  // the org left the list
+  _refreshOpenDevOrg() {
+    if (!this.showDevOrgModal || !this.selectedDevOrg) {
+      return;
+    }
+    const orgId = this.selectedDevOrg.orgId;
+    const updated = (this.pipelineData?.devOrgs || []).find(
+      (devOrg) => devOrg.orgId === orgId,
+    );
+    if (updated) {
+      this.selectedDevOrg = updated;
+    } else if (this.pipelineData?.devOrgsLoaded) {
+      this.handleCloseDevOrgModal();
+    }
   }
 
   // Promotion branches (sfdx-hardis enablePromotionBranches): a major branch with a merge
@@ -2335,9 +2624,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     });
 
     // Switch diagram
-    this.currentDiagram = this.displayFeatureBranches
-      ? this.pipelineData.mermaidDiagram
-      : this.pipelineData.mermaidDiagramMajor;
+    this.currentDiagram = this._selectDiagram();
 
     // Re-render the diagram
     setTimeout(() => this.renderMermaid(), 0);

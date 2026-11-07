@@ -2100,6 +2100,18 @@
       "title": "(DEPRECATED) Deployment plan",
       "type": "object"
     },
+    "devOrgsStaleDays": {
+      "$id": "#/properties/devOrgsStaleDays",
+      "default": 30,
+      "description": "Number of days without activity (User Story started or saved, backpromote) after which a development org is marked stale in the development orgs list. A stale org is never removed on its own: the release manager removes it.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/",
+      "examples": [
+        30,
+        60
+      ],
+      "title": "Development orgs: days before stale",
+      "type": "integer"
+    },
     "devHubAlias": {
       "$id": "#/properties/devHubAlias",
       "default": "",
@@ -2172,6 +2184,17 @@
       "description": "Automatically deploy MkDocs HTML documentation from sfdx-hardis Monitoring Workflow (BackUp step) to Salesforce org, as static resource",
       "examples": [true],
       "title": "Doc: Deploy to Salesforce Org",
+      "type": "boolean"
+    },
+    "enableDevOrgsRegistry": {
+      "$id": "#/properties/enableDevOrgsRegistry",
+      "default": true,
+      "description": "Keeps the list of the developer sandboxes and scratch orgs of the project in a \"Development Orgs Dashboard\" of the git provider, with the major branch each of them targets, so their owners know when to run a backpromote. sfdx-hardis registers an org when a User Story is started or saved in it, or when it receives a backpromote, and the deployment jobs of major branches count what each org misses. Set it to false to turn it off.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/",
+      "examples": [
+        false
+      ],
+      "title": "Enable development orgs list",
       "type": "boolean"
     },
     "enableDeltaDeploymentBetweenMajorBranches": {

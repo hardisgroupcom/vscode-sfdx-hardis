@@ -18,6 +18,12 @@ import {
 } from "./utils/pipeline/majorBranchCheckUtils";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 import { isScratchOrgPoolConfigured } from "./utils/scratchOrgPoolUtils";
+import {
+  DevOrgsView,
+  DevOrgView,
+  filterDevOrgsForDisplay,
+  isDevOrgsRegistryEnabled,
+} from "./utils/pipeline/devOrgsUtils";
 import { PullRequest } from "./utils/gitProviders/types";
 import { GitProvider } from "./utils/gitProviders/gitProvider";
 import { t } from "./i18n/i18n";
@@ -64,6 +70,18 @@ export interface PipelineData {
   // age in hours after which a check is stale (majorBranchDeploymentCheckValidityHours)
   majorBranchDeploymentCheckEnabled?: boolean;
   majorBranchDeploymentCheckValidityHours?: number;
+  // Development orgs registry of the project (enableDevOrgsRegistry, on unless set to false)
+  devOrgsEnabled?: boolean;
+  // The list of development orgs was read for this payload (from sfdx-hardis or its last result)
+  devOrgsLoaded?: boolean;
+  // Every registered development org, whatever the display mode: the webview filters and opens them
+  devOrgs?: DevOrgView[];
+  devOrgsDashboardUrl?: string | null;
+  devOrgsStaleDays?: number;
+  // Full diagram with the development orgs of the git user, or all of them: only when it draws
+  // at least one, else the webview keeps mermaidDiagram
+  mermaidDiagramDevOrgsMine?: string;
+  mermaidDiagramDevOrgsAll?: string;
 }
 
 export class PipelineDataProvider {
@@ -78,6 +96,8 @@ export class PipelineDataProvider {
       openPullRequests?: PullRequest[];
       colorTheme?: string;
       featureBranchGroupThreshold?: number;
+      // The list of development orgs to draw, null when it was not read
+      devOrgs?: DevOrgsView | null;
     } = {},
   ): Promise<PipelineData> {
     try {
@@ -97,6 +117,11 @@ export class PipelineDataProvider {
         majorOrgs,
       );
       const majorBranchCheckEnabled = isMajorBranchCheckEnabled(projectConfig);
+      const devOrgsEnabled = isDevOrgsRegistryEnabled(projectConfig);
+      const devOrgsList: DevOrgView[] =
+        devOrgsEnabled && options.devOrgs?.enabled !== false
+          ? options.devOrgs?.orgs || []
+          : [];
       const majorBranchCheckValidityHours =
         getMajorBranchCheckValidityHours(projectConfig);
       // Computed once, so the diagram and the branch modal tell the same thing
@@ -122,6 +147,7 @@ export class PipelineDataProvider {
           DEFAULT_FEATURE_BRANCH_GROUP_THRESHOLD,
         promotionBranchConfig,
         majorBranchChecks,
+        devOrgsList,
       );
       const mermaidDiagram = mermaidBuilder.build({
         format: "string",
@@ -135,6 +161,18 @@ export class PipelineDataProvider {
         withMermaidTag: true,
         onlyMajorBranches: true,
       }) as string;
+      // The full diagram with development orgs, one per display mode that draws any (the
+      // "none" mode is mermaidDiagram itself)
+      const devOrgDiagrams: Record<string, string> = {};
+      for (const mode of ["mine", "all"] as const) {
+        if (filterDevOrgsForDisplay(devOrgsList, mode).length > 0) {
+          devOrgDiagrams[mode] = mermaidBuilder.build({
+            format: "string",
+            withMermaidTag: true,
+            devOrgs: mode,
+          }) as string;
+        }
+      }
 
       // Build orgs and links for UI (not just for diagram)
       const orgs: OrgNode[] = majorOrgs.map((org) => ({
@@ -181,6 +219,13 @@ export class PipelineDataProvider {
         scratchOrgPoolEnabled: isScratchOrgPoolConfigured(projectConfig),
         majorBranchDeploymentCheckEnabled: majorBranchCheckEnabled,
         majorBranchDeploymentCheckValidityHours: majorBranchCheckValidityHours,
+        devOrgsEnabled,
+        devOrgsLoaded: !!options.devOrgs,
+        devOrgs: devOrgsList,
+        devOrgsDashboardUrl: options.devOrgs?.dashboardUrl || null,
+        devOrgsStaleDays: options.devOrgs?.staleDays || 0,
+        mermaidDiagramDevOrgsMine: devOrgDiagrams.mine,
+        mermaidDiagramDevOrgsAll: devOrgDiagrams.all,
       };
     } catch (error: any) {
       vscode.window.showErrorMessage(
