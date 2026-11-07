@@ -62,3 +62,12 @@
   gap: 0.5rem;
   margin-right: auto;
 }
+
+/* The kit link never wraps: a long instance URL or Pull Request title would spill over the next
+   column */
+.slds-scope .slds-modal .hardis-textlink.dev-org-link {
+  padding: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
+}

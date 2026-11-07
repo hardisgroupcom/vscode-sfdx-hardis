@@ -198,6 +198,12 @@ SFDX_HARDIS_DOC_SCREENSHOTS_MAJOR_BRANCH_CHECK=true \
   SFDX_HARDIS_DOC_SCREENSHOTS_DIR=doc-screenshots/major-branch-check \
   yarn screenshots major-branch-check
 
+# Development orgs: a variant run whose mocked CLI answers four development orgs
+# (devOrgsFixture in src/test/runUiTest.ts), into its own output folder
+SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS=true \
+  SFDX_HARDIS_DOC_SCREENSHOTS_DIR=doc-screenshots/dev-orgs \
+  yarn screenshots dev-orgs
+
 # Copy them into the documentation of the sibling sfdx-hardis repository
 python scripts/build-doc-images.py
 ```

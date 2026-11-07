@@ -60,7 +60,7 @@
                 <div class="hardis-prop-key">{i18n.devOrgInstanceUrl}</div>
                 <div class="hardis-prop-value">
                   <template if:true={hasInstanceUrl}>
-                    <a href="#" class="hardis-textlink" data-url={instanceUrl} title={instanceUrl} onclick={handleOpenUrl}>{instanceUrl}</a>
+                    <a href="#" class="hardis-textlink dev-org-link" data-url={instanceUrl} title={instanceUrl} onclick={handleOpenUrl}>{instanceUrl}</a>
                   </template>
                   <template if:false={hasInstanceUrl}>
                     <span class="muted">{i18n.devOrgNotSet}</span>
@@ -117,7 +117,7 @@
                     <li key={pullRequest.key} class="dev-org-pr">
                       <div class="dev-org-pr-head">
                         <template if:true={pullRequest.url}>
-                          <a href="#" class="hardis-textlink" data-url={pullRequest.url} title={pullRequest.label} onclick={handleOpenUrl}>{pullRequest.label}</a>
+                          <a href="#" class="hardis-textlink dev-org-link" data-url={pullRequest.url} title={pullRequest.label} onclick={handleOpenUrl}>{pullRequest.label}</a>
                         </template>
                         <template if:false={pullRequest.url}>
                           <span>{pullRequest.label}</span>
@@ -137,7 +137,7 @@
                           <template for:each={pullRequest.carried} for:item="carried">
                             <li key={carried.key}>
                               <template if:true={carried.url}>
-                                <a href="#" class="hardis-textlink" data-url={carried.url} title={carried.label} onclick={handleOpenUrl}>{carried.label}</a>
+                                <a href="#" class="hardis-textlink dev-org-link" data-url={carried.url} title={carried.label} onclick={handleOpenUrl}>{carried.label}</a>
                               </template>
                               <template if:false={carried.url}>
                                 <span>{carried.label}</span>

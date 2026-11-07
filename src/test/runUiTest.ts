@@ -78,6 +78,12 @@ async function main() {
   const majorBranchCheckVariant =
     docScreenshots &&
     process.env.SFDX_HARDIS_DOC_SCREENSHOTS_MAJOR_BRANCH_CHECK === "true";
+  // Development orgs variant of the screenshot run: the base fixture registers
+  // no development org, so the ordinary pipeline screenshots stay as they were.
+  // This variant serves a list of them (see devOrgsFixture below).
+  const devOrgsVariant =
+    docScreenshots &&
+    process.env.SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS === "true";
   // A post-deployment action failed after a merge, and its fix Pull Request is
   // open: only a universe bringing its own overlay has that state to show
   const actionRecoveryVariant =
@@ -466,6 +472,19 @@ async function main() {
     );
   }
 
+  // The development orgs the mocked CLI answers to hardis:project:dev-org:list.
+  // Written at each run: whether an org is stale and how old a missing Pull
+  // Request is depend on the time of the run.
+  let devOrgsFixtureFile = "";
+  if (devOrgsVariant && !universe) {
+    devOrgsFixtureFile = path.join(workDir, "dev-orgs-mock.json");
+    fs.writeFileSync(
+      devOrgsFixtureFile,
+      JSON.stringify(devOrgsFixture(Date.now()), null, 2),
+      "utf8",
+    );
+  }
+
   // The action recovery variant: the merged Pull Request whose actions failed,
   // its fix Pull Request, their actions files in the workspace, and the
   // statuses the mocked CLI answers for them
@@ -803,6 +822,11 @@ async function main() {
                 : "",
               SFDX_HARDIS_DOC_SCREENSHOTS_MAJOR_BRANCH_CHECK:
                 majorBranchCheckVariant ? "true" : "",
+              SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS: devOrgsVariant
+                ? "true"
+                : "",
+              // Answer of hardis:project:dev-org:list in the dev orgs variant
+              SF_MOCK_DEV_ORGS_FILE: devOrgsFixtureFile,
               // Statuses and command scenarios of the action recovery variant
               SF_MOCK_ACTION_RECOVERY_FILE: actionRecoveryOverlayFile,
               SF_MOCK_DEPS_STATE: process.env.SF_MOCK_DEPS_STATE || "ok",
@@ -898,6 +922,201 @@ function majorBranchCheckFixture(now: number): {
         jobsStatus: "success",
       },
     },
+  };
+}
+
+/**
+ * The development orgs the dev orgs variant serves, as hardis:project:dev-org:list
+ * answers them: a sandbox of the current user missing three Pull Requests, a
+ * shared sandbox up to date, a teammate's scratch org never backpromoted, and a
+ * stale sandbox missing a promotion into uat. The Pull Requests are the merged
+ * ones of the base git provider fixture. The dates are counted back from `now`.
+ */
+function devOrgsFixture(now: number): Record<string, any> {
+  const daysAgo = (days: number) =>
+    new Date(now - days * 24 * 3600 * 1000).toISOString();
+  const prUrl = (number: number) =>
+    `https://github.com/mycompany/salesforce-crm/pull/${number}`;
+  const alex = { name: "Alex Martin", email: "alex.martin@mycompany.com" };
+  const sam = { name: "Sam Dubois", email: "sam.dubois@mycompany.com" };
+  const jordan = { name: "Jordan Lee", email: "jordan.lee@mycompany.com" };
+  const story = (
+    number: number,
+    title: string,
+    sourceBranch: string,
+    mergedDaysAgo: number,
+  ) => ({
+    number,
+    title,
+    url: prUrl(number),
+    mergedAt: daysAgo(mergedDaysAgo),
+    sourceBranch,
+    vehicle: false,
+    carried: null,
+  });
+  const pr124 = story(
+    124,
+    "CRM-1049 Opportunity stage notifications",
+    "feature/CRM-1049-opportunity-stage-notification",
+    1,
+  );
+  const pr123 = story(
+    123,
+    "CRM-1044 Segment field on Account",
+    "feature/CRM-1044-account-segment-field",
+    3,
+  );
+  const pr122 = story(
+    122,
+    "CRM-1038 Minimize Sales User profile",
+    "feature/CRM-1038-minimize-sales-profile",
+    6,
+  );
+  const behind = (pullRequests: any[], computedDaysAgo = 0.02) => ({
+    count: pullRequests.length,
+    oldestMergedAt: pullRequests.length
+      ? pullRequests[pullRequests.length - 1].mergedAt
+      : null,
+    oldestDays: pullRequests.length
+      ? Math.floor(
+          (now - Date.parse(pullRequests[pullRequests.length - 1].mergedAt)) /
+            (24 * 3600 * 1000),
+        )
+      : null,
+    computedAt: daysAgo(computedDaysAgo),
+    cutOff: false,
+    pullRequests,
+  });
+  const orgs = [
+    {
+      orgId: "00D5f0000012XycEAE",
+      orgType: "sandbox",
+      name: "dev",
+      alias: "dev",
+      instanceUrl: "https://mycompany--dev.sandbox.my.salesforce.com",
+      expirationDate: null,
+      targetBranch: "integration",
+      owner: alex,
+      users: [],
+      featureBranches: [
+        { name: "feature/CRM-1042-account-hierarchy", lastSeen: daysAgo(1) },
+      ],
+      registeredAt: daysAgo(40),
+      lastActivityAt: daysAgo(1),
+      lastBackpromote: {
+        date: daysAgo(9),
+        parentBranch: "integration",
+        pullRequest: 121,
+      },
+      isMine: true,
+      stale: false,
+      startDate: daysAgo(9),
+      behind: behind([pr124, pr123, pr122]),
+    },
+    {
+      orgId: "00D5f0000012XydEAE",
+      orgType: "sandbox",
+      name: "dev2",
+      alias: "dev2",
+      instanceUrl: "https://mycompany--dev2.sandbox.my.salesforce.com",
+      expirationDate: null,
+      targetBranch: "integration",
+      owner: sam,
+      users: [alex],
+      featureBranches: [
+        { name: "feature/CRM-1055-quote-approval", lastSeen: daysAgo(0.5) },
+      ],
+      registeredAt: daysAgo(62),
+      lastActivityAt: daysAgo(0.5),
+      lastBackpromote: {
+        date: daysAgo(0.8),
+        parentBranch: "integration",
+        pullRequest: 124,
+      },
+      isMine: true,
+      stale: false,
+      startDate: daysAgo(0.8),
+      behind: behind([]),
+    },
+    {
+      orgId: "00D5f0000012XyeEAE",
+      orgType: "scratch",
+      name: "crm-1061",
+      alias: "crm-1061",
+      instanceUrl: "https://flow-power-3821-dev-ed.scratch.my.salesforce.com",
+      expirationDate: daysAgo(-5).slice(0, 10),
+      targetBranch: "integration",
+      owner: jordan,
+      users: [],
+      featureBranches: [
+        {
+          name: "feature/CRM-1061-opportunity-trigger-recursion",
+          lastSeen: daysAgo(0.3),
+        },
+      ],
+      registeredAt: daysAgo(2),
+      lastActivityAt: daysAgo(0.3),
+      lastBackpromote: null,
+      isMine: false,
+      stale: false,
+      startDate: daysAgo(2),
+      behind: behind([pr124]),
+    },
+    {
+      orgId: "00D5f0000012XyfEAE",
+      orgType: "sandbox",
+      name: "qa",
+      alias: "qa",
+      instanceUrl: "https://mycompany--qa.sandbox.my.salesforce.com",
+      expirationDate: null,
+      targetBranch: "uat",
+      owner: sam,
+      users: [jordan],
+      featureBranches: [
+        { name: "feature/CRM-1030-invoice-batch", lastSeen: daysAgo(45) },
+      ],
+      registeredAt: daysAgo(120),
+      lastActivityAt: daysAgo(45),
+      lastBackpromote: {
+        date: daysAgo(50),
+        parentBranch: "uat",
+        pullRequest: 109,
+      },
+      isMine: false,
+      stale: true,
+      startDate: daysAgo(50),
+      behind: behind([
+        {
+          number: 118,
+          title: "Promotion: integration to uat",
+          url: prUrl(118),
+          mergedAt: daysAgo(4),
+          sourceBranch: "integration",
+          vehicle: true,
+          carried: [
+            {
+              number: 117,
+              title: "CRM-1024 Case auto escalation",
+              url: prUrl(117),
+            },
+            {
+              number: 116,
+              title: "CRM-1018 Lead conversion assistant",
+              url: prUrl(116),
+            },
+          ],
+        },
+      ]),
+    },
+  ];
+  return {
+    enabled: true,
+    dashboardUrl: "https://github.com/mycompany/salesforce-crm/issues/87",
+    currentUser: alex,
+    staleDays: 30,
+    orgs,
+    branches: [],
+    warnings: [],
   };
 }
 
