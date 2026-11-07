@@ -366,5 +366,4 @@ export default class DevOrgDetails extends SharedMixin(LightningElement) {
   _formatDate(value) {
     return formatShortDate(value, this.locale || "en");
   }
-
 }

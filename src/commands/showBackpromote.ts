@@ -134,8 +134,7 @@ interface BackpromotePanelState {
   requestedChoices: BackpromoteOpenRequest | null;
   /** Applies the org and parent branch asked when the panel was already open */
   applyRequestedChoices:
-    | ((request: BackpromoteOpenRequest) => Promise<void>)
-    | null;
+    ((request: BackpromoteOpenRequest) => Promise<void>) | null;
 }
 
 /** Optional argument of vscode-sfdx-hardis.showBackpromote, in the shape acceptChoices reads */
