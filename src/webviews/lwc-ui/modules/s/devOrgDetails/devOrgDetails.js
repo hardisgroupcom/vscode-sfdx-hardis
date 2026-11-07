@@ -98,14 +98,20 @@ export default class DevOrgDetails extends SharedMixin(LightningElement) {
     return !!this.instanceUrl;
   }
 
+  // Owner and users show their email; the name is the tooltip of the email
   get ownerLabel() {
-    return this._formatPerson(this.devOrg?.owner) || this.i18n.devOrgNotSet;
+    return this.devOrg?.owner?.email || this.i18n.devOrgNotSet;
+  }
+
+  get ownerName() {
+    return this._nameTooltip(this.devOrg?.owner);
   }
 
   get users() {
     return (this.devOrg?.users || []).map((person) => ({
       key: person.email,
-      label: this._formatPerson(person),
+      label: person.email,
+      name: this._nameTooltip(person),
     }));
   }
 
@@ -353,6 +359,11 @@ export default class DevOrgDetails extends SharedMixin(LightningElement) {
   }
 
   // ---- Private ----
+
+  // The name of a person when it says more than the email, else nothing
+  _nameTooltip(person) {
+    return person?.name && person.name !== person.email ? person.name : "";
+  }
 
   _formatPerson(person) {
     if (!person || !person.email) {

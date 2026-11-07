@@ -472,6 +472,18 @@ suite("Development orgs", () => {
   });
 
   suite("webview", () => {
+    test("the details window shows the emails of the owner and the users, their name as tooltip", () => {
+      const html = readModuleFile("devOrgDetails", "devOrgDetails.html");
+      assert.match(html, /<span title=\{ownerName\}>\{ownerLabel\}<\/span>/);
+      assert.match(html, /title=\{user\.name\}>\{user\.label\}</);
+      const js = readModuleFile("devOrgDetails", "devOrgDetails.js");
+      assert.match(
+        js,
+        /return this\.devOrg\?\.owner\?\.email \|\| this\.i18n\.devOrgNotSet;/,
+      );
+      assert.match(js, /label: person\.email,/);
+    });
+
     test("the line to a development org is never animated like a pending job", () => {
       const js = readModuleFile("pipeline", "pipeline.js");
       const skip = js.indexOf(

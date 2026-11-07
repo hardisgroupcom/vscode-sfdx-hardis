@@ -41,14 +41,14 @@
               </div>
               <div class="hardis-prop">
                 <div class="hardis-prop-key">{i18n.devOrgOwner}</div>
-                <div class="hardis-prop-value">{ownerLabel}</div>
+                <div class="hardis-prop-value"><span title={ownerName}>{ownerLabel}</span></div>
               </div>
               <div class="hardis-prop">
                 <div class="hardis-prop-key">{i18n.devOrgUsers}</div>
                 <div class="hardis-prop-value">
                   <template if:true={hasUsers}>
                     <template for:each={users} for:item="user">
-                      <div key={user.key}>{user.label}</div>
+                      <div key={user.key} title={user.name}>{user.label}</div>
                     </template>
                   </template>
                   <template if:false={hasUsers}>
