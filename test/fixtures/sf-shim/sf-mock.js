@@ -48,6 +48,7 @@ const DOCS_VERSIONS = {
   sfdmu: "5.6.4",
   "sfdx-git-delta": "6.31.0",
   "sf-git-merge-driver": "1.9.0",
+  "sfdx-browserforce-plugin": "7.0.0",
   node: "24.11.1",
 };
 if (process.env.SF_MOCK_VERSIONS_FILE) {
@@ -67,6 +68,7 @@ const DOCS_PLUGINS = [
   "sfdmu",
   "sfdx-git-delta",
   "sf-git-merge-driver",
+  "sfdx-browserforce-plugin",
 ].map((name) => ({ name, version: DOCS_VERSIONS[name] }));
 
 function docsPlugins() {

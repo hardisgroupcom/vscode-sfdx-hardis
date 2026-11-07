@@ -709,7 +709,7 @@
   "deleteWorkspaceConfirmation": "Eliminare il workspace \"{{name}}\"?",
   "deleteWorkspaceMenu": "Elimina Workspace",
   "deleteWorkspaceTooltip": "Elimina definitivamente questo workspace",
-  "depBrowserforceExplanation": "Browserforce (sfdx-browserforce-plugin) applica le impostazioni Salesforce che la Metadata API non può distribuire. È usato dalle azioni di distribuzione Impostazione Browserforce.",
+  "depBrowserforceExplanation": "Browserforce (sfdx-browserforce-plugin) applica le impostazioni Salesforce che la Metadata API non può distribuire. È usato dalle azioni di distribuzione di tipo Browser.",
   "depGitDeltaExplanation": "sfdx-git-delta aiuta a generare package.xml/diff in base alle tue modifiche git.",
   "depGitDownloadLink": "Scarica e installa Git (con Git Bash)",
   "depGitExplanation": "Git è il VCS (Version Control System) usato per gestire i sorgenti del tuo progetto Salesforce. Fornisce anche Git Bash per Windows.",

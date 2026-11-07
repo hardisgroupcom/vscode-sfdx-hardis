@@ -39,6 +39,7 @@ const NPM_PACKAGES = [
   "sfdmu",
   "sfdx-git-delta",
   "sf-git-merge-driver",
+  "sfdx-browserforce-plugin",
 ];
 
 // The extension requires this minimal sfdx-hardis version (see
