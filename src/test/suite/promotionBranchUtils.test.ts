@@ -8,6 +8,7 @@ import {
   orderWindowsUpstreamFirst,
 } from "../../utils/orgConfigUtils";
 import { PullRequest } from "../../utils/gitProviders/types";
+import { pr } from "./pullRequestFixture";
 import { BranchStrategyMermaidBuilder } from "../../utils/pipeline/branchStrategyMermaidBuilder";
 import { extractMember, readModuleFile } from "./lwcSourceUtils";
 import {
@@ -37,21 +38,6 @@ const DISABLED = { enabled: false, allowedSteps: [] };
 const PROMOTION_BRANCH = "promotion/uat/preprod/2026-09-06-1";
 const DECLARATION =
   "Promotion of September\n\n```yaml\npromotionPullRequests: [482, 487]\n```\n";
-
-function pr(overrides: Partial<PullRequest> & { number: number }): PullRequest {
-  return {
-    id: overrides.number,
-    title: `PR ${overrides.number}`,
-    description: "",
-    sourceBranch: "feature/story",
-    targetBranch: "uat",
-    authorLabel: "someone",
-    state: "merged",
-    webUrl: `https://git.example.com/pr/${overrides.number}`,
-    jobsStatus: "unknown",
-    ...overrides,
-  };
-}
 
 suite("promotionBranchUtils", () => {
   test("enablePromotionBranches is a setting of the Danger Zone, at project and branch level", () => {
@@ -260,7 +246,8 @@ suite("promotionBranchUtils", () => {
       new Function(
         `return {
           ${extractMember(pipeline, "get modalPrListRows()")},
-          ${extractMember(pipeline, "handleModalPrSelect(event)")}
+          ${extractMember(pipeline, "handleModalPrSelect(event)")},
+          ${extractMember(pipeline, "_promotionNumberOf(pr)")}
         };`,
       )(),
       {

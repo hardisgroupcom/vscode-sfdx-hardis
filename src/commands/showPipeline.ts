@@ -21,12 +21,16 @@ import {
 } from "../utils/prePostCommandsUtils";
 import { getCurrentGitBranch } from "../utils/pipeline/sfdxHardisConfig";
 import { handleDeploymentActionPickerMessage } from "../utils/pipeline/deploymentActionPickers";
+import { extractTicketIdsFromText } from "../utils/pipeline/pastedListUtils";
 import {
   getCachedCustomFunctions,
   refreshCustomFunctionsCache,
 } from "../utils/customFunctionsUtils";
 import { execSfdxJson, getWorkspaceRoot } from "../utils";
-import { collectProviderCredentialEnvVars } from "../utils/providerCredentials";
+import {
+  collectProviderCredentialEnvVars,
+  execSfdxJsonWithProviderCredentials,
+} from "../utils/providerCredentials";
 import { connectGitProvider } from "../utils/gitProviders/connectGitProvider";
 import { isSafeJobUrl } from "../utils/pullRequestUrlUtils";
 import { t } from "../i18n/i18n";
@@ -539,6 +543,16 @@ export function registerShowPipeline(commands: Commands) {
         else if (await handleDeploymentActionPickerMessage(panel, type, data)) {
           // Message handled by the shared deployment action pickers
         }
+        // A list pasted to select Pull Requests: its ticket ids, read by the ticketing provider
+        else if (type === "extractTicketIdsFromText") {
+          panel.sendMessage({
+            type: "ticketIdsFromText",
+            data: {
+              requestId: data?.requestId || null,
+              ids: await extractTicketIdsFromText(String(data?.text || "")),
+            },
+          });
+        }
         // Mark as done: recorded by sfdx-hardis in the background, no command panel for it
         else if (type === "markDeploymentActionDone") {
           const outcome = await markDeploymentActionDone(data);
@@ -767,9 +781,19 @@ export function registerShowPipeline(commands: Commands) {
                 for (const ticket of story.relatedTickets || []) {
                   if (!seenTickets.has(ticket.id)) {
                     seenTickets.add(ticket.id);
+                    // Found in the story, not in the promotion: its tooltip names the story
                     prDetails.relatedTickets = [
                       ...(prDetails.relatedTickets || []),
-                      ticket,
+                      {
+                        ...ticket,
+                        foundIn: [
+                          {
+                            source: "carried",
+                            excerpt: story.title || "",
+                            pullRequest: story.number,
+                          },
+                        ],
+                      },
                     ];
                   }
                 }
@@ -1690,40 +1714,11 @@ async function runActionListJson(
   purpose: string,
   onError?: (message: string) => void,
 ): Promise<any | null> {
-  let env: Record<string, string> = {};
-  try {
-    env = await collectProviderCredentialEnvVars();
-  } catch (e: any) {
-    Logger.log(
-      `[vscode-sfdx-hardis] ${purpose}: provider credentials not collected: ${e?.message || e}`,
-    );
-  }
-  try {
-    const result = await execSfdxJson(
-      `sf hardis:project:action:list --with-status ${flags}`,
-      {
-        fail: false,
-        output: false,
-        debug: false,
-        reuseRecentResult: false,
-        env,
-      },
-    );
-    if (result?.status === 0 && result?.result) {
-      return result.result;
-    }
-    const message = String(
-      result?.errorMessage || result?.message || "unknown error",
-    );
-    onError?.(message);
-    Logger.log(`[vscode-sfdx-hardis] ${purpose} not available: ${message}`);
-  } catch (e: any) {
-    onError?.(String(e?.message || e));
-    Logger.log(
-      `[vscode-sfdx-hardis] ${purpose} not available: ${e?.message || e}`,
-    );
-  }
-  return null;
+  return await execSfdxJsonWithProviderCredentials(
+    `sf hardis:project:action:list --with-status ${flags}`,
+    purpose,
+    onError,
+  );
 }
 
 /**

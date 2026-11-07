@@ -13,7 +13,7 @@ import {
   Job,
   JobStatus,
 } from "./types";
-import type { JobTiming } from "./types";
+import type { JobTiming, MajorBranchCheck } from "./types";
 import { mapGitLabMergeStatus } from "./mergeStatus";
 import { SecretsManager } from "../secretsManager";
 import { PROVIDER_ENV_VAR_NAMES } from "../envFileCredentials";
@@ -29,6 +29,9 @@ import {
 export class GitProviderGitlab extends GitProvider {
   // gitbeaker paginates until exhaustion unless it is told otherwise
   private static readonly MERGED_MR_MAX_PAGES = 5;
+  // Pipelines of a branch read for its deployment arrow and its deployment check: enough to reach
+  // the last deployment behind two weeks of nightly checks and merge request pipelines
+  private static readonly BRANCH_PIPELINES_PAGE_SIZE = 20;
   // A merge request is updated when it is merged, but branches live long and clocks drift, so the
   // time bound is widened before it is used
   private static readonly MR_WINDOW_MARGIN_DAYS = 7;
@@ -971,67 +974,25 @@ export class GitProviderGitlab extends GitProvider {
       return null;
     }
     try {
-      const projectId = this.gitlabProjectId;
       // Fetch pipelines for the branch (most recent first)
-      let pipelines: any[] = [];
-      try {
-        // @ts-ignore - method signature may differ across gitbeaker versions
-        pipelines = await this.gitlabClient.Pipelines.all(projectId, {
-          ref: branchName,
-          orderBy: "updated_at",
-          sort: "desc",
-          perPage: 5,
-          maxPages: 1,
-        });
-        await this.logApiCall("Pipelines.all", {
-          caller: "getJobsForBranchLatestCommit",
-          ref: branchName,
-          perPage: 10,
-        });
-      } catch (e) {
-        Logger.log(
-          `Error fetching pipelines for branch ${branchName}: ${String(e)}`,
-        );
+      const pipelines = await this.listBranchPipelines(
+        branchName,
+        "getJobsForBranchLatestCommit",
+      );
+      if (pipelines === null) {
         return null;
       }
+      const selection = pickGitlabBranchDeploymentPipelines(pipelines);
 
-      if (!Array.isArray(pipelines) || pipelines.length === 0) {
-        return { jobs: [], jobsStatus: "unknown" };
-      }
-
-      // Filter out pipelines triggered by merge requests
-      // Only keep pipelines triggered by direct commits (source: 'push', 'web', 'api', 'schedule', etc.)
-      // Exclude pipelines with source: 'merge_request_event'
-      const commitPipelines = pipelines.filter(
-        (p) => p.source !== "merge_request_event",
-      );
-
-      if (commitPipelines.length === 0) {
+      if (selection.readCommitStatuses) {
         // Fallback: commit statuses (Jenkins, etc.)
         try {
-          const commits = await this.gitlabClient!.Commits.all(projectId, {
-            refName: branchName,
-            perPage: 1,
-          });
-          await this.logApiCall("Commits.all", {
-            caller: "getJobsForBranchLatestCommit",
-            action: "getLatestCommitSha",
-          });
-          const latestCommitSha = (commits as any[])[0]?.id;
-          if (!latestCommitSha) {
-            return { jobs: [], jobsStatus: "unknown" };
-          }
-          // @ts-ignore - Commits.allStatuses is part of gitbeaker but may be missing from some type versions
-          const statuses: any[] =
-            (await this.gitlabClient!.Commits.allStatuses(
-              projectId,
-              String(latestCommitSha),
-            )) || [];
-          await this.logApiCall("Commits.allStatuses", {
-            caller: "getJobsForBranchLatestCommit",
-            sha: latestCommitSha,
-          });
-          const statusJobs = this.mapGitLabCommitStatusesToJobs(statuses);
+          const statusJobs = this.leaveOutMajorBranchChecks(
+            await this.listBranchCommitStatusJobs(
+              branchName,
+              "getJobsForBranchLatestCommit",
+            ),
+          );
           return {
             jobs: statusJobs,
             jobsStatus: this.computeJobsStatus(statusJobs),
@@ -1044,9 +1005,9 @@ export class GitProviderGitlab extends GitProvider {
         }
       }
 
-      // Use the most recent commit-triggered pipeline. The order is recomputed rather than taken
-      // from the API answer, so a retried or canceled older run cannot be picked as the current one
-      const pipeline = this.newestPipeline(commitPipelines);
+      // Use the most recent deployment pipeline. The order is recomputed rather than taken from
+      // the API answer, so a retried or canceled older run cannot be picked as the current one
+      const pipeline = await this.newestDeploymentPipeline(selection.pipelines);
       const converted: Job[] = pipeline ? [this.pipelineToJob(pipeline)] : [];
 
       return { jobs: converted, jobsStatus: this.computeJobsStatus(converted) };
@@ -1054,6 +1015,152 @@ export class GitProviderGitlab extends GitProvider {
       Logger.log(`Unexpected error fetching branch pipelines: ${String(e)}`);
       return null;
     }
+  }
+
+  /**
+   * The last major branch deployment check of a branch: the check_deploy_to_current_branch_org
+   * job of the newest scheduled, manual (web) or API pipeline of the branch that ran it. A
+   * Jenkins reporting a commit status named after it is read when no pipeline holds one.
+   */
+  async getMajorBranchDeploymentCheck(
+    branchName: string,
+  ): Promise<MajorBranchCheck | null> {
+    if (!this.gitlabClient || !this.gitlabProjectId) {
+      return null;
+    }
+    try {
+      const pipelines =
+        (await this.listBranchPipelines(
+          branchName,
+          "getMajorBranchDeploymentCheck",
+        )) || [];
+      // Newest first, the order recomputed as newestPipeline does
+      const candidates = pipelines
+        .filter((pipeline) =>
+          GITLAB_CHECK_PIPELINE_SOURCES.includes(pipeline?.source),
+        )
+        .sort((a, b) => this.pipelineRank(b) - this.pipelineRank(a));
+      for (const pipeline of candidates.slice(0, 3)) {
+        const jobs = await this.listJobsOfRunCached(
+          this.pipelineToJob(pipeline),
+          `gitlab:${pipeline.id}`,
+        );
+        const check = this.pickMajorBranchCheckJob(jobs);
+        if (check) {
+          return this.toMajorBranchCheck(check);
+        }
+      }
+      return this.pickMajorBranchCheckFromStatuses(
+        await this.listBranchCommitStatusJobs(
+          branchName,
+          "getMajorBranchDeploymentCheck",
+        ),
+      );
+    } catch (e) {
+      Logger.log(
+        `Error reading the deployment check of branch ${branchName}: ${String(e)}`,
+      );
+      return null;
+    }
+  }
+
+  /**
+   * The newest pipeline of a list that is not a major branch deployment check. A manual, API or
+   * trigger pipeline can deploy the branch or run the check: its jobs tell (read once it is over,
+   * see listJobsOfRunCached). Scheduled pipelines are already out of the list.
+   */
+  private newestDeploymentPipeline(pipelines: any[]): Promise<any | null> {
+    const newestFirst = (pipelines || [])
+      .filter((pipeline) => pipeline)
+      .sort((a, b) => this.pipelineRank(b) - this.pipelineRank(a));
+    return this.firstRunWithoutMajorBranchCheck(newestFirst, {
+      mayRunCheck: (pipeline) =>
+        GITLAB_MAY_RUN_CHECK_SOURCES.includes(pipeline.source),
+      toJob: (pipeline) => this.pipelineToJob(pipeline),
+      key: (pipeline) => `gitlab:${pipeline.id}`,
+    });
+  }
+
+  // The 20 most recently updated pipelines of a branch, null when GitLab gave no answer. The
+  // deployment arrow and the deployment check of a branch share one call per refresh.
+  private listBranchPipelines(
+    branchName: string,
+    caller: string,
+  ): Promise<any[] | null> {
+    return this.shareRecentCall(`gitlab:pipelines:${branchName}`, () =>
+      this.fetchBranchPipelines(branchName, caller),
+    );
+  }
+
+  private async fetchBranchPipelines(
+    branchName: string,
+    caller: string,
+  ): Promise<any[] | null> {
+    try {
+      // @ts-ignore - method signature may differ across gitbeaker versions
+      const pipelines: any[] = await this.gitlabClient!.Pipelines.all(
+        this.gitlabProjectId!,
+        {
+          ref: branchName,
+          orderBy: "updated_at",
+          sort: "desc",
+          perPage: GitProviderGitlab.BRANCH_PIPELINES_PAGE_SIZE,
+          maxPages: 1,
+        },
+      );
+      await this.logApiCall("Pipelines.all", {
+        caller,
+        ref: branchName,
+        perPage: GitProviderGitlab.BRANCH_PIPELINES_PAGE_SIZE,
+      });
+      return Array.isArray(pipelines) ? pipelines : [];
+    } catch (e) {
+      Logger.log(
+        `Error fetching pipelines for branch ${branchName}: ${String(e)}`,
+      );
+      return null;
+    }
+  }
+
+  // The commit statuses of the latest commit of a branch (Jenkins, etc.), as jobs. One call per
+  // refresh, shared like listBranchPipelines.
+  private listBranchCommitStatusJobs(
+    branchName: string,
+    caller: string,
+  ): Promise<Job[]> {
+    return this.shareRecentCall(`gitlab:statuses:${branchName}`, () =>
+      this.fetchBranchCommitStatusJobs(branchName, caller),
+    );
+  }
+
+  private async fetchBranchCommitStatusJobs(
+    branchName: string,
+    caller: string,
+  ): Promise<Job[]> {
+    const projectId = this.gitlabProjectId!;
+    const commits = await this.gitlabClient!.Commits.all(projectId, {
+      refName: branchName,
+      perPage: 1,
+    });
+    await this.logApiCall("Commits.all", {
+      caller,
+      action: "getLatestCommitSha",
+    });
+    const latestCommitSha = (commits as any[])[0]?.id;
+    if (!latestCommitSha) {
+      return [];
+    }
+    // @ts-ignore - Commits.allStatuses is part of gitbeaker but may be missing from some type versions
+    const statuses: any[] =
+      (await this.gitlabClient!.Commits.allStatuses(
+        projectId,
+        String(latestCommitSha),
+      )) || [];
+    await this.logApiCall("Commits.allStatuses", {
+      caller,
+      sha: latestCommitSha,
+    });
+    return this.mapGitLabCommitStatusesToJobs(statuses);
   }
 
   /** One GitLab pipeline as the Job the pipeline diagram displays. */
@@ -1274,3 +1381,46 @@ export class GitProviderGitlab extends GitProvider {
     return `${this.repoInfo.webUrl}/-/merge_requests/new?merge_request[source_branch]=${encodeURIComponent(sourceBranch)}&merge_request[target_branch]=${encodeURIComponent(targetBranch)}&merge_request[title]=${encodeURIComponent(title)}`;
   }
 }
+
+/**
+ * The pipelines of a branch whose result the deployment arrow of the branch shows, out of the
+ * ones GitLab lists for it, and whether the commit statuses must be read instead.
+ *
+ * Merge request pipelines validate a merge request, they deploy nothing. Scheduled pipelines are
+ * not deployments either: the nightly major branch deployment check runs in one, and it used to
+ * replace the status of the last real deployment on the arrow. Manual (`web`), API and trigger
+ * pipelines are kept: many projects deploy that way. One of them that ran the check is left out
+ * later, from its jobs (newestDeploymentPipeline).
+ *
+ * The commit statuses (Jenkins, an external CI) are read only when GitLab runs nothing but merge
+ * request pipelines on the branch. A list holding only scheduled pipelines says the branch has a
+ * GitLab CI that did not deploy lately: the arrow is then unknown.
+ */
+export function pickGitlabBranchDeploymentPipelines(pipelines: any[]): {
+  pipelines: any[];
+  readCommitStatuses: boolean;
+} {
+  const all = (pipelines || []).filter((pipeline) => pipeline);
+  const notMergeRequest = all.filter(
+    (pipeline) => pipeline.source !== "merge_request_event",
+  );
+  return {
+    pipelines: notMergeRequest.filter(
+      (pipeline) =>
+        !GITLAB_NOT_DEPLOYMENT_PIPELINE_SOURCES.includes(pipeline.source),
+    ),
+    readCommitStatuses: all.length > 0 && notMergeRequest.length === 0,
+  };
+}
+
+// Sources of the pipelines that never deploy a branch (see pickGitlabBranchDeploymentPipelines)
+const GITLAB_NOT_DEPLOYMENT_PIPELINE_SOURCES = ["schedule"];
+
+// Sources of the pipelines that can either deploy a branch or run the major branch deployment check
+const GITLAB_MAY_RUN_CHECK_SOURCES = ["web", "api", "trigger"];
+
+// Sources of the pipelines that run the major branch deployment check
+const GITLAB_CHECK_PIPELINE_SOURCES = [
+  "schedule",
+  ...GITLAB_MAY_RUN_CHECK_SOURCES,
+];

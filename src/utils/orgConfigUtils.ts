@@ -4,20 +4,33 @@ import { glob } from "glob";
 import * as yaml from "js-yaml";
 import { sortArray } from "./sortUtils";
 import { getWorkspaceRoot } from "../utils";
-import { Job, JobStatus, PullRequest } from "./gitProviders/types";
+import {
+  Job,
+  JobStatus,
+  MajorBranchCheck,
+  PullRequest,
+} from "./gitProviders/types";
+import { isMajorBranchCheckEnabled } from "./pipeline/majorBranchCheckUtils";
 import { GitProvider } from "./gitProviders/gitProvider";
 import { getConfig } from "./pipeline/sfdxHardisConfig";
 import {
   annotateAlreadyPromoted,
+  applyManualCherryPicks,
   buildPromotionIndex,
   enforceSinglePlacePerPullRequest,
   expandPullRequestsWithPromotions,
   getPromotionBranchConfig,
   isMergedPullRequest,
   isPromotionPullRequest,
+  ManualCherryPickStepResult,
   parsePromotionBranchName,
   PromotionBranchConfig,
+  PromotionIndex,
 } from "./pipeline/promotionBranchUtils";
+import {
+  listMovesStillInTargetWindow,
+  loadManualCherryPicks,
+} from "./pipeline/manualCherryPickUtils";
 import { Logger } from "../logger";
 
 export interface MajorOrg {
@@ -33,6 +46,9 @@ export interface MajorOrg {
   pullRequestsInBranchSinceLastMerge?: PullRequest[];
   // Promotion branches switch, when set at branch level (see promotionBranchUtils.ts)
   enablePromotionBranches?: boolean;
+  // Last major branch deployment check of the branch, read only when the project enables
+  // enableMajorBranchDeploymentCheck (see majorBranchCheckUtils.ts). Null when none was found.
+  majorBranchCheck?: MajorBranchCheck | null;
 }
 
 export async function listMajorOrgs(
@@ -53,6 +69,8 @@ export async function listMajorOrgs(
   const projectConfig = await getConfig("project");
   const orgAuthenticationMode: string =
     projectConfig?.orgAuthenticationMode || "encryptedCert";
+  // No call at all to the git provider for it when the project did not enable it
+  const readMajorBranchCheck = isMajorBranchCheckEnabled(projectConfig);
 
   // Process all config files in parallel
   const configFileResults = await Promise.allSettled(
@@ -64,6 +82,7 @@ export async function listMajorOrgs(
         gitProvider,
         options,
         orgAuthenticationMode,
+        readMajorBranchCheck,
       ),
     ),
   );
@@ -141,6 +160,7 @@ async function processOrgSfdxHardisConfigFile(
   gitProvider: GitProvider | null,
   options: { browseGitProvider: boolean },
   orgAuthenticationMode: string = "encryptedCert",
+  readMajorBranchCheck: boolean = false,
 ): Promise<MajorOrg | null> {
   // `configFile` is workspace-relative (glob ran with cwd: workspaceRoot), so it
   // must be resolved against workspaceRoot rather than process.cwd() — the two
@@ -232,12 +252,29 @@ async function processOrgSfdxHardisConfigFile(
 
   let jobs: Job[] = [];
   let jobsStatus: JobStatus = "unknown";
+  let majorBranchCheck: MajorBranchCheck | null | undefined = undefined;
   if (options.browseGitProvider && gitProvider?.isActive) {
-    const jobsRes = await gitProvider.getJobsForBranchLatestCommit(branchName);
+    // The git provider knows the branch by its git name: a config file name writes each / as __
+    // (.sfdx-hardis.release__uat.yml is the branch release/uat)
+    const gitBranchName = branchName.replace(/__/g, "/");
+    const [jobsRes, check] = await Promise.all([
+      gitProvider.getJobsForBranchLatestCommit(gitBranchName),
+      readMajorBranchCheck
+        ? gitProvider
+            .getMajorBranchDeploymentCheck(gitBranchName)
+            .catch((e) => {
+              Logger.log(
+                `Error reading the deployment check of branch ${branchName}: ${String(e)}`,
+              );
+              return null;
+            })
+        : Promise.resolve(undefined),
+    ]);
     if (jobsRes) {
       jobsStatus = jobsRes.jobsStatus;
       jobs = jobsRes.jobs || [];
     }
+    majorBranchCheck = check;
   }
 
   return {
@@ -251,6 +288,7 @@ async function processOrgSfdxHardisConfigFile(
     jobs: jobs,
     jobsStatus: jobsStatus,
     enablePromotionBranches: props.enablePromotionBranches,
+    ...(majorBranchCheck !== undefined ? { majorBranchCheck } : {}),
   };
 }
 
@@ -340,8 +378,10 @@ async function completeMajorOrgsWithPromotionBranches(
   // soon as preprod goes live, while the stories it carried stay in the uat window until uat is
   // merged into preprod directly, which a project using promotions may never do again. The
   // provider is asked for the merged promotions of every step, whatever window they left.
-  promotions.push(
-    ...(await listMergedPromotionsOfSteps(
+  // Stories cherry-picked by hand (detectManualCherryPicks) are asked to the CLI at the same time:
+  // nothing is run unless the project enables it
+  const [mergedPromotionsOfSteps, manualCherryPicks] = await Promise.all([
+    listMergedPromotionsOfSteps(
       majorOrgs,
       (targetBranch, updatedAfter) =>
         gitProvider.listMergedPullRequestsIntoBranch(
@@ -350,9 +390,11 @@ async function completeMajorOrgsWithPromotionBranches(
         ),
       config,
       known,
-    )),
-  );
-  if (promotions.length === 0) {
+    ),
+    loadManualCherryPicks(majorOrgs, projectConfig, config),
+  ]);
+  promotions.push(...mergedPromotionsOfSteps);
+  if (promotions.length === 0 && manualCherryPicks.length === 0) {
     return;
   }
   const index = buildPromotionIndex(promotions, config);
@@ -364,7 +406,54 @@ async function completeMajorOrgsWithPromotionBranches(
       config,
     );
   }
+  // After annotateAlreadyPromoted, which resets promotedAway from the promotion index
+  if (manualCherryPicks.length > 0) {
+    await placeManualCherryPicks(majorOrgs, manualCherryPicks, index, config);
+  }
   enforceInvariant(majorOrgs, config);
+}
+
+/**
+ * A story the CLI found cherry-picked by hand into the next branch is placed like a promoted one:
+ * hidden from the window it left, listed in the window of the branch where it is waiting: the one
+ * it reached, or a branch further down that was merged from it since.
+ */
+async function placeManualCherryPicks(
+  majorOrgs: MajorOrg[],
+  results: ManualCherryPickStepResult[],
+  index: PromotionIndex,
+  config: PromotionBranchConfig,
+): Promise<void> {
+  const listed = await listMovesStillInTargetWindow(results, majorOrgs);
+  const sizesBefore = new Map<string, number>();
+  const windows = majorOrgs.map((org) => {
+    org.pullRequestsInBranchSinceLastMerge =
+      org.pullRequestsInBranchSinceLastMerge || [];
+    sizesBefore.set(
+      org.branchName,
+      org.pullRequestsInBranchSinceLastMerge.length,
+    );
+    return {
+      branchName: org.branchName,
+      pullRequests: org.pullRequestsInBranchSinceLastMerge,
+    };
+  });
+  applyManualCherryPicks(
+    windows,
+    results,
+    index,
+    config,
+    (_result, move) => listed.get(move) || false,
+  );
+  // Same reason as after expandPullRequestsWithPromotions: the stories added to a window must not
+  // sink under the row cutoff of the table
+  for (const org of majorOrgs) {
+    const window = org.pullRequestsInBranchSinceLastMerge || [];
+    if (window.length !== sizesBefore.get(org.branchName)) {
+      org.pullRequestsInBranchSinceLastMerge =
+        sortPullRequestsByMergeDateDesc(window);
+    }
+  }
 }
 
 /**

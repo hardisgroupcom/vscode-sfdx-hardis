@@ -4,6 +4,28 @@
 
 - New menu entry **Retrieve an Agentforce agent**, to get an agent version with the components it uses from an org (requires sfdx-hardis 8.21.0)
 - Deployment actions: new **Publish Agentforce Agent** type, to publish an agent in each org after the deployment and activate the version this creates, new **Activate Agentforce Agent** type, to activate a version the org already has, and new **Create Agentforce Agent Running User** type, to create the user a service agent runs as before the deployment. The **Agentforce agents deployment actions** source cleaning adds the publication and the running user to the Pull Request at each User Story save (requires sfdx-hardis 8.21.0)
+
+## [8.18.0] 2026-11-06
+
+- DevOps Pipeline: when ticking User Stories for a promotion, **Selected only** shows the ticked ones, and **Select from a list** ticks the Pull Requests named in pasted text (release notes, an email, a spreadsheet column), directly or through their tickets, saying where each one was found
+  - A Pull Request whose description only mentions a pasted ticket is listed apart with the text around it, and ticked only when asked
+- DevOps Pipeline: hovering a ticket id shows where the Pull Request mentions it (title, description, branch, or the story a promotion carries), with the text around it
+  - The Tickets tab marks each ticket as a strong match (named in a title, a branch or a carried story) or a weak one (only mentioned in descriptions)
+- A file sfdx-hardis asks to open (a report, a conflicting file of a promotion) opens even when its name holds URL-encoded characters, like `Account %28Sales%29 Layout.layout-meta.xml`
+- Documentation screenshots: the promotion conflict question shows the new "solve now" and "keep the source version" answers of sfdx-hardis
+- DevOps Pipeline: the deployment arrow of a major branch shows its last real deployment again, no longer replaced by a scheduled run or by a run of the major branch deployment check
+- DevOps Pipeline: with the new **Enable major branch deployment check** setting (Pipeline Settings), each major branch node shows whether the branch still deploys to its own org, from the last scheduled check job
+  - Green when deployable, red when not, pulsing while a check runs, lighter and dashed when the result is older than the validity you set or a deployment ran since
+  - The last tab of the branch window shows the result, its date and duration, and a link to the job
+
+## [8.17.1] 2026-11-02
+
+- Welcome page: a new band opens the free [sfdx-hardis training course](https://sfdx-hardis-training.cloudity.com/), its hands-on labs and badges, until you close it
+- Command panel: a progress bar that ends with nothing to process shows as completed instead of staying on "Starting..."
+
+## [8.17.0] 2026-10-30
+
+- DevOps Pipeline: with the new **Detect manual cherry-picks** setting (Beta, Pipeline Settings), User Stories cherry-picked by hand into the next branch are shown in the branch they reached, and the ones only partly or probably cherry-picked are flagged (requires sfdx-hardis 8.21.0)
 - Contributors: the Replacement Rules documentation screenshots are zoomed out so every column of the Rules and Values per org tables can be read, and the rule editor is captured for each rule type (Set XML value, Remove XML element, Find and replace), with the whole form visible
 - Welcome page at startup: opens once VS Code has settled, and opens again by itself if it stayed blank after the "Could not register service worker" error
 

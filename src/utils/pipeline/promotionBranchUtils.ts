@@ -606,7 +606,9 @@ export function isVehiclePullRequest(
   return (
     isMajorToMajorPullRequest(pr, majorBranchNames) ||
     isBackpromoteBranchName(pr.sourceBranch) ||
-    (config.enabled && isPromotionPullRequest(pr, config))
+    (config.enabled && isPromotionPullRequest(pr, config)) ||
+    // Only set when detectManualCherryPicks found the stories it carried
+    (config.enabled && pr.carriesManualCherryPicks === true)
   );
 }
 
@@ -648,4 +650,425 @@ export function enforceSinglePlacePerPullRequest(
       }
     }
   });
+}
+
+/**
+ * Manual cherry-picks (sfdx-hardis `detectManualCherryPicks`, Beta): User Stories that reached the
+ * next major branch through a cherry-pick made by hand rather than a promotion branch. The CLI is
+ * the only engine (hardis:project:promotion:list-candidates); the extension only places what it
+ * answers, one result per promotion step.
+ */
+export interface ManualCherryPickStepResult {
+  sourceBranch: string;
+  targetBranch: string;
+  // Stories the CLI found in the target branch: they leave the source window for the target one
+  moved: ManualCherryPickMove[];
+  // Stories some of whose commits were found: they stay in the source window, flagged
+  partial: Array<{
+    pullRequests: number[];
+    foundCommits: number;
+    totalCommits: number;
+    targetCommit: string;
+  }>;
+  // Stories only matched by a commit title: they stay in the source window, flagged
+  probable: Array<{
+    pullRequests: number[];
+    targetCommit: string;
+    subject: string;
+  }>;
+}
+
+export interface ManualCherryPickMove {
+  // Empty for a row of the source branch with no number (a squashed merge between major branches,
+  // whose number the CLI drops as a vehicle): nothing to place, but a carrier the previous step
+  // may point to
+  pullRequests: number[];
+  // The first-parent commit of the source branch this row stands for
+  rowCommit: string;
+  // What carries the story into the target branch, as the next step lists it (CLI carrier)
+  carrierPullRequest: number | null;
+  carrierCommits: string[];
+  // The carrier is a story of its own (a hotfix branched from the source branch, with a fix of
+  // its own), not a mere vehicle: it is not hidden like a promotion then. False with a CLI that
+  // does not say it
+  carrierIsOwnStory: boolean;
+  signal: string;
+  targetCommit: string;
+  // The squashed Pull Request of the target branch that held the cherry-pick, when the CLI found
+  // it through the commits the git provider lists for it (signal pull-request-commits)
+  releasePullRequest: string;
+  releaseBranch: string;
+  releaseUrl: string;
+}
+
+/**
+ * The detection only runs when the project enables both settings: it costs one CLI process per
+ * promotion step. Project level only, like enablePromotionBranches.
+ */
+export function isManualCherryPickDetectionEnabled(
+  projectConfig: any,
+): boolean {
+  return (
+    !!projectConfig &&
+    projectConfig.enablePromotionBranches === true &&
+    projectConfig.detectManualCherryPicks === true
+  );
+}
+
+/**
+ * The promotion steps to ask the CLI about: the allowed steps that are a real edge of the
+ * pipeline (the target is a merge target of the source branch), and whose source window holds
+ * something to place. An empty list of allowed steps asks nothing: the CLI refuses to list
+ * candidates while the project has not declared them.
+ */
+export function listManualCherryPickSteps(
+  majorOrgs: Array<{
+    branchName: string;
+    mergeTargets: string[];
+    pullRequestsInBranchSinceLastMerge?: PullRequest[];
+  }>,
+  allowedSteps: PromotionStep[] | null | undefined,
+): PromotionStep[] {
+  const steps: PromotionStep[] = [];
+  for (const step of allowedSteps || []) {
+    const org = majorOrgs.find(
+      (entry) =>
+        (entry.branchName || "").toLowerCase() === step.source.toLowerCase(),
+    );
+    if (!org || (org.pullRequestsInBranchSinceLastMerge || []).length === 0) {
+      continue;
+    }
+    for (const target of org.mergeTargets || []) {
+      if (
+        step.target !== "" &&
+        target.toLowerCase() !== step.target.toLowerCase()
+      ) {
+        continue;
+      }
+      const alreadyThere = steps.some(
+        (entry) =>
+          entry.source.toLowerCase() === org.branchName.toLowerCase() &&
+          entry.target.toLowerCase() === target.toLowerCase(),
+      );
+      if (!alreadyThere) {
+        steps.push({ source: org.branchName, target });
+      }
+    }
+  }
+  return steps;
+}
+
+/**
+ * Reads the `result` of `sf hardis:project:promotion:list-candidates --json`: the candidate
+ * summaries of `alreadyPromoted` carrying `alreadyPromotedBy.manualCherryPick` moved, the
+ * `candidates` flagged `partiallyCherryPicked` or `probablyCherryPicked` stay. Anything else
+ * (a story a promotion carries, a malformed entry) is left out.
+ */
+export function parseManualCherryPickResult(
+  sourceBranch: string,
+  targetBranch: string,
+  result: any,
+): ManualCherryPickStepResult {
+  const parsed: ManualCherryPickStepResult = {
+    sourceBranch,
+    targetBranch,
+    moved: [],
+    partial: [],
+    probable: [],
+  };
+  const alreadyPromoted = Array.isArray(result?.alreadyPromoted)
+    ? result.alreadyPromoted
+    : [];
+  for (const entry of alreadyPromoted) {
+    const by = entry?.alreadyPromotedBy;
+    const manual = by?.manualCherryPick;
+    if (!manual) {
+      continue;
+    }
+    // A row with no number is kept: the previous step may name it as the carrier of its stories
+    const numbers = pullRequestNumbersOf(entry);
+    const signal = String(manual.signal || "");
+    // With the trailer signal, pullRequest is only the short target commit and branch the
+    // target branch itself: there is no release Pull Request to name
+    const fromPullRequest = signal === "pull-request-commits";
+    const carrierNumber = normalizePullRequestId(manual.carrier?.pullRequest);
+    const carrierIsOwnStory =
+      manual.carrier?.heldSourceBranchCommits === true &&
+      Number(manual.carrier?.ownCommits) > 0;
+    parsed.moved.push({
+      pullRequests: numbers,
+      rowCommit: String(entry?.commit || ""),
+      carrierPullRequest: carrierNumber,
+      carrierCommits: Array.isArray(manual.carrier?.commits)
+        ? manual.carrier.commits
+            .map((sha: any) => String(sha || ""))
+            .filter((sha: string) => sha)
+        : [],
+      carrierIsOwnStory,
+      signal,
+      targetCommit: String(manual.targetCommit || ""),
+      releasePullRequest: fromPullRequest ? String(by.pullRequest || "") : "",
+      releaseBranch: fromPullRequest ? String(by.branch || "") : "",
+      releaseUrl: fromPullRequest ? String(by.url || "") : "",
+    });
+  }
+  const candidates = Array.isArray(result?.candidates) ? result.candidates : [];
+  for (const entry of candidates) {
+    const numbers = pullRequestNumbersOf(entry);
+    if (numbers.length === 0) {
+      continue;
+    }
+    const partial = entry?.partiallyCherryPicked;
+    const probable = entry?.probablyCherryPicked;
+    if (partial) {
+      parsed.partial.push({
+        pullRequests: numbers,
+        foundCommits: Array.isArray(partial.foundCommits)
+          ? partial.foundCommits.length
+          : Number(partial.foundCommits) || 0,
+        totalCommits: Number(partial.totalCommits) || 0,
+        targetCommit: String(partial.targetCommit || ""),
+      });
+    } else if (probable) {
+      parsed.probable.push({
+        pullRequests: numbers,
+        targetCommit: String(probable.targetCommit || ""),
+        subject: String(probable.subject || ""),
+      });
+    }
+  }
+  return parsed;
+}
+
+/**
+ * How far a story cherry-picked by hand went. Each step result only says it reached the next
+ * branch, held by a carrier (a squashed release Pull Request, a squashed merge between major
+ * branches): when the next step finds that very carrier in its own target branch, the story went
+ * there with it. Followed step after step, by number or by commit, so a story is placed where its
+ * carrier ended up, not one branch short.
+ *
+ * Returns every hop, the first being the given one: the last is where the story is.
+ */
+export function resolveManualCherryPickChain(
+  results: ManualCherryPickStepResult[],
+  result: ManualCherryPickStepResult,
+  move: ManualCherryPickMove,
+): Array<{ result: ManualCherryPickStepResult; move: ManualCherryPickMove }> {
+  const hops = [{ result, move }];
+  const visited = new Set<string>([result.sourceBranch.toLowerCase()]);
+  let current = hops[0];
+  while (!visited.has(current.result.targetBranch.toLowerCase())) {
+    visited.add(current.result.targetBranch.toLowerCase());
+    const next = results.find(
+      (entry) =>
+        entry.sourceBranch.toLowerCase() ===
+        current.result.targetBranch.toLowerCase(),
+    );
+    if (!next) {
+      break;
+    }
+    const carrierNumber = current.move.carrierPullRequest;
+    const carrierCommits = current.move.carrierCommits;
+    const carried = next.moved.find(
+      (entry) =>
+        (carrierNumber !== null &&
+          entry.pullRequests.includes(carrierNumber)) ||
+        carrierCommits.some((sha) => sameCommit(sha, entry.rowCommit)),
+    );
+    if (!carried) {
+      break;
+    }
+    current = { result: next, move: carried };
+    hops.push(current);
+  }
+  return hops;
+}
+
+/**
+ * Places the answers of the CLI in the windows, the way a promotion places its stories: a story
+ * cherry-picked by hand is `promotedAway` from the source window and listed in the target window,
+ * so its number still appears once in the pipeline. A story a promotion of the step already
+ * carried keeps that placement: the declaration of a promotion always wins.
+ *
+ * `isStillInTargetWindow` says where the cherry-pick is waiting: true for the target branch, the
+ * name of a branch further down when the target branch was merged on (the story went with it, so
+ * it is listed there, as a merged story would be), false when nothing can say. A story is never
+ * listed in a branch it only went through.
+ *
+ * Partial and probable matches stay where they are, flagged.
+ */
+export function applyManualCherryPicks(
+  windows: Array<{ branchName: string; pullRequests: PullRequest[] }>,
+  results: ManualCherryPickStepResult[],
+  index: PromotionIndex,
+  config: PromotionBranchConfig,
+  isStillInTargetWindow: (
+    result: ManualCherryPickStepResult,
+    move: ManualCherryPickMove,
+  ) => boolean | string = () => true,
+): void {
+  if (!config.enabled) {
+    return;
+  }
+  const findWindow = (branchName: string) =>
+    windows.find(
+      (entry) =>
+        (entry.branchName || "").toLowerCase() ===
+        (branchName || "").toLowerCase(),
+    );
+  const findStory = (pullRequests: PullRequest[], number: number) =>
+    pullRequests.find((pr) => prNumber(pr) === number);
+  for (const result of results) {
+    const source = findWindow(result.sourceBranch);
+    if (!source) {
+      continue;
+    }
+    const promotedOut =
+      index.promotedOutOf.get((result.sourceBranch || "").toLowerCase()) ||
+      new Set<number>();
+    for (const move of result.moved) {
+      // The story goes as far as its carrier went: the last hop says where, and how
+      const hops = resolveManualCherryPickChain(results, result, move);
+      const last = hops[hops.length - 1];
+      const target = findWindow(last.result.targetBranch);
+      const reference = {
+        targetBranch: last.result.targetBranch,
+        signal: last.move.signal,
+        targetCommit: last.move.targetCommit,
+        ...(last.move.releasePullRequest
+          ? {
+              releasePullRequest: last.move.releasePullRequest,
+              releaseBranch: last.move.releaseBranch,
+              releaseUrl: last.move.releaseUrl,
+            }
+          : {}),
+      };
+      const waitingIn = isStillInTargetWindow(last.result, last.move);
+      const listedBranch =
+        waitingIn === true
+          ? last.result.targetBranch
+          : typeof waitingIn === "string" && waitingIn
+            ? waitingIn
+            : "";
+      const listedWindow = listedBranch ? findWindow(listedBranch) : undefined;
+      // Every carrier on the way moves other stories: a vehicle, like a promotion. Unless it is a
+      // story of its own that also brought some (a hotfix branched from the source branch)
+      for (const hop of hops) {
+        const carrierNumber = hop.move.carrierPullRequest;
+        if (carrierNumber === null || hop.move.carrierIsOwnStory) {
+          continue;
+        }
+        for (const window of windows) {
+          const carrier = findStory(window.pullRequests, carrierNumber);
+          if (carrier) {
+            carrier.carriesManualCherryPicks = true;
+          }
+        }
+      }
+      for (const number of move.pullRequests) {
+        if (promotedOut.has(number)) {
+          continue;
+        }
+        const story = findStory(source.pullRequests, number);
+        if (!story || isPromotionPullRequest(story, config)) {
+          continue;
+        }
+        story.manualCherryPick = { ...reference };
+        story.promotedAway = true;
+        // Nor is it waiting in a branch it only went through
+        const passedThroughBranches = hops
+          .slice(0, -1)
+          .map((hop) => hop.result.targetBranch);
+        if (
+          listedWindow &&
+          listedWindow !== target &&
+          last.result.targetBranch
+        ) {
+          passedThroughBranches.push(last.result.targetBranch);
+        }
+        for (const branchName of passedThroughBranches) {
+          const passedThrough = findWindow(branchName);
+          const copy = passedThrough
+            ? findStory(passedThrough.pullRequests, number)
+            : undefined;
+          if (copy && !copy.carriedByPullRequest) {
+            copy.manualCherryPick = { ...reference };
+            copy.promotedAway = true;
+          }
+        }
+        if (!listedWindow) {
+          continue;
+        }
+        const existing = findStory(listedWindow.pullRequests, number);
+        if (existing) {
+          // Already listed there (a promotion carried it in, or the window holds it): only say how
+          // it came, unless a promotion did
+          if (!existing.carriedByPullRequest) {
+            existing.manualCherryPick = { ...reference };
+          }
+          continue;
+        }
+        const copy: PullRequest = {
+          ...story,
+          promotedAway: false,
+          manualCherryPick: { ...reference },
+          // Not a row of that branch: the next promotion carries it through its carrier
+          manualCherryPickCopy: true,
+        };
+        // What brought it into the source window does not apply to the target one
+        delete copy.alreadyDeployedVia;
+        delete copy.carriedByPullRequest;
+        delete copy.partiallyCherryPicked;
+        delete copy.probablyCherryPicked;
+        listedWindow.pullRequests.push(copy);
+      }
+    }
+    for (const partial of result.partial) {
+      for (const number of partial.pullRequests) {
+        const story = findStory(source.pullRequests, number);
+        if (!story || story.promotedAway === true) {
+          continue;
+        }
+        story.partiallyCherryPicked = {
+          targetBranch: result.targetBranch,
+          foundCommits: partial.foundCommits,
+          totalCommits: partial.totalCommits,
+          targetCommit: partial.targetCommit,
+        };
+      }
+    }
+    for (const probable of result.probable) {
+      for (const number of probable.pullRequests) {
+        const story = findStory(source.pullRequests, number);
+        if (
+          !story ||
+          story.promotedAway === true ||
+          story.partiallyCherryPicked
+        ) {
+          continue;
+        }
+        story.probablyCherryPicked = {
+          targetBranch: result.targetBranch,
+          targetCommit: probable.targetCommit,
+          subject: probable.subject,
+        };
+      }
+    }
+  }
+}
+
+function sameCommit(a: string, b: string): boolean {
+  return !!a && !!b && (a.startsWith(b) || b.startsWith(a));
+}
+
+function pullRequestNumbersOf(entry: any): number[] {
+  const raw = Array.isArray(entry?.pullRequests) ? entry.pullRequests : [];
+  const numbers: number[] = [];
+  for (const item of raw) {
+    const number = normalizePullRequestId(item);
+    if (number !== null && !numbers.includes(number)) {
+      numbers.push(number);
+    }
+  }
+  return numbers;
 }

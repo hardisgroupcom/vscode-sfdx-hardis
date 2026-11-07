@@ -11,8 +11,11 @@ import {
   Job,
   JobStatus,
 } from "./types";
-import type { JobKind, JobTiming } from "./types";
-import { pickJobTiming } from "../pipeline/jobKindUtils";
+import type { JobKind, JobTiming, MajorBranchCheck } from "./types";
+import {
+  isMajorBranchCheckName,
+  pickJobTiming,
+} from "../pipeline/jobKindUtils";
 import { Logger } from "../../logger";
 import { PROVIDER_BATCH_PROFILES, mapWithConcurrency } from "../concurrency";
 import { SecretsManager, SecretSource } from "../secretsManager";
@@ -35,6 +38,13 @@ export class GitProviderGitHub extends GitProvider {
   private static readonly PR_PAGE_SIZE = 100;
   // Stop rather than walk a huge closed history when no time bound applies
   private static readonly PR_MAX_PAGES = 10;
+  // The runs of the major branch deployment check workflow are listed once for every branch of
+  // the pipeline, and kept that long
+  private static readonly CHECK_RUNS_MAX_AGE_MS = 30 * 1000;
+  private majorBranchCheckRuns?: {
+    readAt: number;
+    runs: Promise<WorkflowRun[]>;
+  };
 
   private oldestCommitDateWithMargin(commits: any[]): Date | undefined {
     const times = (commits || [])
@@ -1030,8 +1040,8 @@ export class GitProviderGitHub extends GitProvider {
           caller: "getJobsForBranchLatestCommit",
           ref: latestCommitSha,
         });
-        const statusJobs = this.mapCommitStatusesToJobs(
-          statusesResp.data || [],
+        const statusJobs = this.leaveOutMajorBranchChecks(
+          this.mapCommitStatusesToJobs(statusesResp.data || []),
         );
         return {
           jobs: statusJobs,
@@ -1048,6 +1058,78 @@ export class GitProviderGitHub extends GitProvider {
   }
 
   /**
+   * The last major branch deployment check of a branch. The workflow runs on the default branch
+   * (schedule) or on the branch it was started from (workflow_dispatch), with one matrix job per
+   * major branch named "Check Major Branch Deployment (<branch>)": the branch is only in the name
+   * of the job, never in head_branch. A Jenkins reporting a commit status named after the check is
+   * read when no run holds one.
+   */
+  async getMajorBranchDeploymentCheck(
+    branchName: string,
+  ): Promise<MajorBranchCheck | null> {
+    if (!this.gitHubClient || !this.repoInfo) {
+      return null;
+    }
+    try {
+      const runs = [...(await this.listMajorBranchCheckRuns())].sort((a, b) =>
+        String(b.created_at || "").localeCompare(String(a.created_at || "")),
+      );
+      for (const run of runs.slice(0, 3)) {
+        const jobs = await this.listJobsOfRunCached(
+          this.mapWorkflowRunsToJobs([run])[0],
+          `github:${run.id}`,
+        );
+        const check = this.pickMajorBranchCheckJob(jobs, branchName);
+        if (check) {
+          return this.toMajorBranchCheck(check);
+        }
+      }
+      return this.pickMajorBranchCheckFromStatuses(
+        await this.listBranchCommitStatusJobs(branchName),
+      );
+    } catch (e) {
+      Logger.log(
+        `Error reading the deployment check of branch ${branchName}: ${String(e)}`,
+      );
+      return null;
+    }
+  }
+
+  /**
+   * The jobs of a workflow run, each one with the link to its own page. A commit status of an
+   * external CI has no run to open.
+   */
+  async listJobsOfRun(run: Job): Promise<Job[]> {
+    const runId = Number(run.raw?.id);
+    if (
+      !this.gitHubClient ||
+      !this.repoInfo ||
+      !runId ||
+      run.raw?.workflow_id === undefined
+    ) {
+      return [];
+    }
+    const response = await this.gitHubClient.actions.listJobsForWorkflowRun({
+      owner: this.repoInfo.owner,
+      repo: this.repoInfo.repo,
+      run_id: runId,
+      per_page: 100,
+    });
+    await this.logApiCall("actions.listJobsForWorkflowRun", {
+      caller: "listJobsOfRun",
+      runId,
+    });
+    return (response.data?.jobs || []).map((job: any) => ({
+      name: String(job.name || ""),
+      // A job has a status and a conclusion like its run
+      status: this.convertWorkflowRunToJobStatus(job),
+      webUrl: job.html_url || run.webUrl,
+      updatedAt: job.completed_at || job.started_at || undefined,
+      startedAt: job.started_at || run.startedAt || undefined,
+    }));
+  }
+
+  /**
    * The runs whose result the deployment arrow of a major branch shows, out of every run GitHub
    * lists for the latest commit of the branch.
    *
@@ -1058,6 +1140,9 @@ export class GitProviderGitHub extends GitProvider {
    * the latest of each workflow, and among them the deployment workflows: a name with "deploy" but
    * not "simulate", like Process Deployment (sfdx-hardis). When no workflow is named that way, all
    * of them are kept, as GitLab, Azure and Bitbucket show the whole pipeline of the branch.
+   *
+   * Scheduled and repository_dispatch runs never deploy the branch, and neither does the major
+   * branch deployment check, whatever started it: they are left out first.
    */
   private pickDeploymentRuns(
     runs: WorkflowRun[],
@@ -1066,6 +1151,8 @@ export class GitProviderGitHub extends GitProvider {
     const branchRuns = runs.filter(
       (run) =>
         !(run.event || "").startsWith("pull_request") &&
+        !GITHUB_NOT_DEPLOYMENT_EVENTS.includes(run.event || "") &&
+        !isMajorBranchCheckName(run.name) &&
         // A missing value is kept: Gitea serves the same API and may leave it out
         (!run.head_branch || run.head_branch === branchName),
     );
@@ -1079,6 +1166,96 @@ export class GitProviderGitHub extends GitProvider {
     return this.leaveOutSkippedRuns(
       deploymentRuns.length > 0 ? deploymentRuns : latestRuns,
     );
+  }
+
+  // The recent runs of the major branch deployment check workflow, read once for every branch
+  private listMajorBranchCheckRuns(): Promise<WorkflowRun[]> {
+    const now = Date.now();
+    if (
+      this.majorBranchCheckRuns &&
+      now - this.majorBranchCheckRuns.readAt <
+        GitProviderGitHub.CHECK_RUNS_MAX_AGE_MS
+    ) {
+      return this.majorBranchCheckRuns.runs;
+    }
+    const runs = (async () => {
+      const [owner, repo] = [this.repoInfo!.owner, this.repoInfo!.repo];
+      // The runs of the check workflow only: among the runs of the whole repository (Pull Request
+      // validations, deployments...), last night's check is out of the first page by mid-morning
+      try {
+        const response = await this.gitHubClient!.actions.listWorkflowRuns({
+          owner,
+          repo,
+          workflow_id: GITHUB_MAJOR_BRANCH_CHECK_WORKFLOW_FILE,
+          per_page: 10,
+          exclude_pull_requests: true,
+        });
+        await this.logApiCall("actions.listWorkflowRuns", {
+          caller: "getMajorBranchDeploymentCheck",
+          workflow_id: GITHUB_MAJOR_BRANCH_CHECK_WORKFLOW_FILE,
+        });
+        return response.data?.workflow_runs || [];
+      } catch (e: any) {
+        Logger.log(
+          `No runs of ${GITHUB_MAJOR_BRANCH_CHECK_WORKFLOW_FILE} (${String(e?.status || e)}), looking for the check by run name`,
+        );
+      }
+      // No workflow file with the default name (the project renamed it), or a server without this
+      // endpoint (Gitea): the runs are found by name
+      const response = await this.gitHubClient!.actions.listWorkflowRunsForRepo(
+        {
+          owner,
+          repo,
+          per_page: 30,
+          exclude_pull_requests: true,
+        },
+      );
+      await this.logApiCall("actions.listWorkflowRunsForRepo", {
+        caller: "getMajorBranchDeploymentCheck",
+      });
+      return (response.data?.workflow_runs || []).filter((run) =>
+        isMajorBranchCheckName(run.name),
+      );
+    })();
+    this.majorBranchCheckRuns = { readAt: now, runs };
+    // A failed call is asked again by the next branch, not served for 30 seconds
+    runs.catch(() => {
+      if (this.majorBranchCheckRuns?.runs === runs) {
+        this.majorBranchCheckRuns = undefined;
+      }
+    });
+    return runs;
+  }
+
+  // The commit statuses of the latest commit of a branch (Jenkins, CircleCI...), as jobs
+  private async listBranchCommitStatusJobs(branchName: string): Promise<Job[]> {
+    const [owner, repo] = [this.repoInfo!.owner, this.repoInfo!.repo];
+    const commitsResp = await this.gitHubClient!.repos.listCommits({
+      owner,
+      repo,
+      sha: branchName,
+      per_page: 1,
+    });
+    await this.logApiCall("repos.listCommits", {
+      caller: "getMajorBranchDeploymentCheck",
+      sha: branchName,
+    });
+    const latestCommitSha = commitsResp.data?.[0]?.sha;
+    if (!latestCommitSha) {
+      return [];
+    }
+    const statusesResp =
+      await this.gitHubClient!.repos.listCommitStatusesForRef({
+        owner,
+        repo,
+        ref: latestCommitSha,
+        per_page: 50,
+      });
+    await this.logApiCall("repos.listCommitStatusesForRef", {
+      caller: "getMajorBranchDeploymentCheck",
+      ref: latestCommitSha,
+    });
+    return this.mapCommitStatusesToJobs(statusesResp.data || []);
   }
 
   /**
@@ -1233,3 +1410,9 @@ export class GitProviderGitHub extends GitProvider {
     return `${this.repoInfo.webUrl}/compare/${encodeURIComponent(targetBranch)}...${encodeURIComponent(sourceBranch)}?expand=1&title=${encodeURIComponent(title)}`;
   }
 }
+
+// Events of the workflow runs that never deploy a branch (see pickDeploymentRuns)
+const GITHUB_NOT_DEPLOYMENT_EVENTS = ["schedule", "repository_dispatch"];
+
+// Workflow file of the major branch deployment check in the sfdx-hardis templates
+const GITHUB_MAJOR_BRANCH_CHECK_WORKFLOW_FILE = "check-major-branch-deploy.yml";

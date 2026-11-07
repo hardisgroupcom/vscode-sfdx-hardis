@@ -1967,6 +1967,17 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
             ? this.t("progressElapsed", { elapsed })
             : "";
         }
+      } else if (isProgress && section.totalSteps === 0 && !section.isActive) {
+        // Ended with no known total (often nothing to process): show it as done
+        progressPercentage = 100;
+        progressStepText =
+          section.currentStep > 0
+            ? this.t("progressStepsCompleted", { current: section.currentStep })
+            : this.i18n.statusCompletedLabel;
+        const elapsed = this.calculateSectionDuration(section);
+        progressTimeEstimation = elapsed
+          ? this.t("progressElapsed", { elapsed })
+          : "";
       } else if (isProgress && section.totalSteps === 0) {
         // If no total steps defined, show indeterminate progress
         // Show increasing progress based on steps taken, but cap at 90% for indeterminate feel
@@ -1979,12 +1990,6 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
             ? this.t("progressStepsCompleted", { current: section.currentStep })
             : this.i18n.progressStarting;
         isIndeterminate = true;
-        if (!section.isActive) {
-          const elapsed = this.calculateSectionDuration(section);
-          progressTimeEstimation = elapsed
-            ? this.t("progressElapsed", { elapsed })
-            : "";
-        }
       }
 
       const diffFilesByType = isDiff

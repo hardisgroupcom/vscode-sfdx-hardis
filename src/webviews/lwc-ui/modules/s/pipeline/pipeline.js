@@ -23,7 +23,12 @@ import {
   runningJobRows,
   safeWebUrl,
   jobDurationKey,
+  formatDuration,
 } from "s/pullRequestUtils";
+
+// Where the major branch deployment check is explained and set up
+const MAJOR_BRANCH_CHECK_DOC_URL =
+  "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-major-branch-check/";
 
 // How often the jobs of the Pull Request shown are read again: while one is going on, and
 // while nothing is, to notice the one a new commit or a merge starts
@@ -61,6 +66,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // Branch modal: ids (key-field) and numbers of the stories ticked for the next promotion
   @track modalSelectedPrIds = [];
   modalSelectedPrNumbers = [];
+  // Answer of the extension to the "Select from a list" box of the Pull Request list
+  prListExtractedTickets = null;
   // Branch modal: the unfiltered list behind the current view (the branch window, or the go-live
   // selected in the combobox), so the toggles can be applied again without reloading anything
   @track modalSourcePullRequests = [];
@@ -251,6 +258,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // not enriched with tickets/deployment actions — so those tabs are hidden.
   isFeaturePrModal = false;
   modalBranchName = "";
+  // Last deployment check of the major branch of the window against its org (null unless the
+  // project enables enableMajorBranchDeploymentCheck): { found, status, webUrl, ... }
+  modalMajorBranchCheck = null;
   modalPullRequests = [];
   modalTickets = [];
   modalActions = [];
@@ -940,8 +950,70 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         copy.promotionUrl = pr.webUrl || "";
       }
 
+      // Manual cherry-picks (detectManualCherryPicks): reached the next branch by hand, or flagged
+      const cherryPick = this._cherryPickInfo(pr);
+      copy.cherryPickLabel = cherryPick ? cherryPick.label : "";
+      copy.cherryPickTitle = cherryPick ? cherryPick.title : "";
+      copy.cherryPickPillClass = cherryPick ? cherryPick.pillClass : "";
+
       return copy;
     });
+  }
+
+  // How a story relates to a cherry-pick made by hand, as sfdx-hardis found it: null when it does
+  // not. A story found in the next branch is listed there; partial and probable matches stay put.
+  _cherryPickInfo(pr) {
+    const moved = pr && pr.manualCherryPick;
+    if (moved && moved.targetBranch) {
+      const sha = (moved.targetCommit || "").substring(0, 7);
+      const release = moved.releasePullRequest
+        ? `#${moved.releasePullRequest}${moved.releaseBranch ? " " + moved.releaseBranch : ""}`
+        : "";
+      return {
+        label: this.t("prManualCherryPick", { branch: moved.targetBranch }),
+        title: release
+          ? this.t("prManualCherryPickReleaseTooltip", {
+              branch: moved.targetBranch,
+              sha,
+              release,
+            })
+          : this.t("prManualCherryPickTooltip", {
+              branch: moved.targetBranch,
+              sha,
+            }),
+        pillClass: "hardis-pill hardis-status-info",
+      };
+    }
+    const partial = pr && pr.partiallyCherryPicked;
+    if (partial && partial.targetBranch) {
+      return {
+        label: this.t("prPartiallyCherryPicked", {
+          branch: partial.targetBranch,
+        }),
+        title: this.t("prPartiallyCherryPickedTooltip", {
+          branch: partial.targetBranch,
+          found: partial.foundCommits,
+          total: partial.totalCommits,
+          sha: (partial.targetCommit || "").substring(0, 7),
+        }),
+        pillClass: "hardis-pill hardis-status-pending",
+      };
+    }
+    const probable = pr && pr.probablyCherryPicked;
+    if (probable && probable.targetBranch) {
+      return {
+        label: this.t("prProbablyCherryPicked", {
+          branch: probable.targetBranch,
+        }),
+        title: this.t("prProbablyCherryPickedTooltip", {
+          branch: probable.targetBranch,
+          sha: (probable.targetCommit || "").substring(0, 7),
+          subject: probable.subject || "",
+        }),
+        pillClass: "hardis-pill hardis-status-unknown",
+      };
+    }
+    return null;
   }
 
   _formatCompactDate(value) {
@@ -1788,6 +1860,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       case "returnSchedulableClasses":
         this.handleReturnSchedulableClasses(data);
         break;
+      case "ticketIdsFromText":
+        // Handed to the Pull Request list, which keeps only the answer to its last request
+        this.prListExtractedTickets = data || null;
+        break;
       case "returnBatchableClasses":
         this.handleReturnBatchableClasses(data);
         break;
@@ -2466,9 +2542,44 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       this._loadGoLives(branchName);
     }
 
+    this.modalMajorBranchCheck = this._majorBranchCheckOfBranch(branchName);
     this._populateModalFromPrs(prs);
     this.modalActiveTabValue = "prs";
     this.showPRModal = true;
+  }
+
+  // The last deployment check of a major branch as its window shows it: null when the project
+  // did not enable the feature, { found: false } when no check was found
+  _majorBranchCheckOfBranch(branchName) {
+    if (this.pipelineData?.majorBranchDeploymentCheckEnabled !== true) {
+      return null;
+    }
+    const org = (this.pipelineData?.orgs || []).find(
+      (o) => o.name === branchName,
+    );
+    if (!org) {
+      return null;
+    }
+    const check = org.majorBranchCheck;
+    if (!check || !check.status) {
+      return { found: false };
+    }
+    return { found: true, ...check };
+  }
+
+  // The running jobs of a major branch check make its node pulse: the node names of these branches
+  _runningMajorBranchCheckNodeNames() {
+    const names = new Set();
+    if (this.pipelineData?.majorBranchDeploymentCheckEnabled !== true) {
+      return names;
+    }
+    for (const org of this.pipelineData?.orgs || []) {
+      const status = org.majorBranchCheck?.status;
+      if (status === "running" || status === "pending") {
+        names.add(`${this._sanitizeBranchName(org.name)}Branch`);
+      }
+    }
+    return names;
   }
 
   // The Pull Requests a branch still owns: the ones a promotion carried away are listed in the
@@ -2521,6 +2632,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (pr.isPromotion === true) {
       return true;
     }
+    // A squashed release branch whose stories detectManualCherryPicks found: it moves them
+    if (pr.carriesManualCherryPicks === true) {
+      return true;
+    }
     // <YYYY-MM-DD>-<HHMM> where HHMM is a time of day, with -<n> when the name was taken,
     // or the <YYYY-MM-DD>-<counter> names of the first releases (no second counter then)
     return /^promotion\/[^/]+\/[^/]+\/\d{4}-\d{2}-\d{2}-(?:([01]\d|2[0-3])[0-5]\d(?:-\d+)?|\d+)$/.test(
@@ -2559,8 +2674,31 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       pr.promotedAway !== true &&
       !this._isPromotionOrMajorPr(pr) &&
       typeof pr.number === "number" &&
-      pr.number > 0
+      pr.number > 0 &&
+      (pr.manualCherryPickCopy !== true || this._promotionNumberOf(pr) !== null)
     );
+  }
+
+  // The number the promotion command knows a ticked row by. A story listed here because it was
+  // cherry-picked by hand is not a row of this branch for sfdx-hardis: what it lists is the
+  // squashed release Pull Request that brought it, so that one is passed. A story picked straight
+  // onto the branch has no Pull Request to pass: it is chosen in the prompt of the command.
+  _promotionNumberOf(pr) {
+    if (pr.manualCherryPickCopy !== true) {
+      return pr.number;
+    }
+    const moved = pr.manualCherryPick || {};
+    const release = parseInt(moved.releasePullRequest, 10);
+    const releaseBranch = (moved.releaseBranch || "").toLowerCase();
+    if (
+      !Number.isInteger(release) ||
+      release <= 0 ||
+      this._majorBranchNames().includes(releaseBranch) ||
+      releaseBranch.startsWith("promotion/")
+    ) {
+      return null;
+    }
+    return release;
   }
 
   // The checkboxes exist to feed the promotion: they go away with the button, so a branch the
@@ -2594,6 +2732,18 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return this._prListRows;
   }
 
+  // The list pasted in "Select from a list": the extension reads its ticket ids with the
+  // ticketing provider of the project, and answers with ticketIdsFromText
+  handlePrListExtractTickets(event) {
+    window.sendMessageToVSCode({
+      type: "extractTicketIdsFromText",
+      data: {
+        requestId: event.detail?.requestId,
+        text: event.detail?.text || "",
+      },
+    });
+  }
+
   handleModalPrSelect(event) {
     const numbers = (event.detail && event.detail.numbers) || [];
     const eligible = (this.modalPullRequests || []).filter(
@@ -2601,7 +2751,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         numbers.includes(row.number) && this._isSelectableForPromotion(row),
     );
     this.modalSelectedPrIds = eligible.map((row) => row.id);
-    this.modalSelectedPrNumbers = eligible.map((row) => row.number);
+    // Two stories brought by the same release Pull Request pass its number once
+    this.modalSelectedPrNumbers = [
+      ...new Set(eligible.map((row) => this._promotionNumberOf(row))),
+    ];
   }
 
   // Builds the modal content (PR list, tickets, actions, Apex tests by line)
@@ -2834,10 +2987,16 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
     const nodes = mermaidSvg.querySelectorAll("g.node");
     const svgScale = this._getMermaidEffectiveScale(mermaidSvg);
+    const runningCheckNodes = this._runningMajorBranchCheckNodeNames();
     nodes.forEach((node) => {
       node.style.cursor = "pointer";
       node.setAttribute("tabindex", "0");
       this._drawNodeCountBubble(node, svgScale);
+      // A major branch whose deployment check is running pulses (pipeline.css), its running dot
+      // staying the indicator when motion is reduced
+      if (runningCheckNodes.has(this._extractNodeIdentifier(node.id))) {
+        node.classList.add("hardis-node-check-running");
+      }
     });
   }
 
@@ -5539,6 +5698,19 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // Collect all tickets from all PRs, tracking ALL PRs each ticket belongs to
     for (const pr of prs) {
       if (pr.relatedTickets && Array.isArray(pr.relatedTickets)) {
+        // A story cherry-picked by hand says so next to its reference in the Tickets tab too
+        const cherryPick = this._cherryPickInfo(pr);
+        // Where the ticket was found belongs to the pair: the tooltip of the Tickets tab lists it
+        // for every Pull Request of the ticket
+        const prEntry = (ticket) => ({
+          number: pr.number,
+          title: pr.title,
+          webUrl: pr.webUrl,
+          cherryPickLabel: cherryPick ? cherryPick.label : "",
+          cherryPickTitle: cherryPick ? cherryPick.title : "",
+          cherryPickPillClass: cherryPick ? cherryPick.pillClass : "",
+          foundIn: ticket.foundIn || [],
+        });
         for (const ticket of pr.relatedTickets) {
           if (ticket && ticket.id) {
             if (!ticketsMap.has(ticket.id)) {
@@ -5552,22 +5724,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
                 authorLabel: ticket.authorLabel || "",
                 url: ticket.url || "",
                 ...this._ticketDisplayFields(ticket),
-                prs: [
-                  {
-                    number: pr.number,
-                    title: pr.title,
-                    webUrl: pr.webUrl,
-                  },
-                ],
+                prs: [prEntry(ticket)],
               });
             } else {
               // Ticket already exists - add this PR to the list
               const existingTicket = ticketsMap.get(ticket.id);
-              existingTicket.prs.push({
-                number: pr.number,
-                title: pr.title,
-                webUrl: pr.webUrl,
-              });
+              existingTicket.prs.push(prEntry(ticket));
             }
           }
         }
@@ -5667,6 +5829,91 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   get showPlainModalTitle() {
     return this.modalMode === "singlePR" && !this.isSinglePRMode;
+  }
+
+  // ---- Major branch deployment check, last tab of a major branch window ----
+
+  get showModalMajorBranchCheck() {
+    return (
+      !!this.modalMajorBranchCheck &&
+      this.modalMode !== "singlePR" &&
+      !this.isFeaturePrModal
+    );
+  }
+
+  // Spinner on the tab while the check runs, like the job tabs of a Pull Request
+  get majorBranchCheckTabEndIcon() {
+    return this.modalMajorBranchCheck?.status === "running"
+      ? "utility:spinner"
+      : null;
+  }
+
+  get modalMajorBranchCheckFound() {
+    return this.modalMajorBranchCheck?.found === true;
+  }
+
+  get modalMajorBranchCheckPillClass() {
+    return `hardis-pill hardis-status-${this.modalMajorBranchCheck?.status || "unknown"}`;
+  }
+
+  get modalMajorBranchCheckStatusLabel() {
+    const labels = {
+      success: this.i18n.majorBranchCheckStatusSuccess,
+      failed: this.i18n.majorBranchCheckStatusFailed,
+      running: this.i18n.majorBranchCheckStatusRunning,
+      pending: this.i18n.majorBranchCheckStatusPending,
+    };
+    return (
+      labels[this.modalMajorBranchCheck?.status] || this.i18n.jobStatusUnknown
+    );
+  }
+
+  get modalMajorBranchCheckRanAt() {
+    const check = this.modalMajorBranchCheck || {};
+    const date = check.finishedAt || check.startedAt;
+    return date
+      ? this.t("majorBranchCheckRanAt", { date: this._formatCompactDate(date) })
+      : "";
+  }
+
+  get modalMajorBranchCheckDuration() {
+    return formatDuration(this.modalMajorBranchCheck?.durationSeconds);
+  }
+
+  get modalMajorBranchCheckStaleText() {
+    const check = this.modalMajorBranchCheck || {};
+    if (check.stale !== true) {
+      return "";
+    }
+    if (check.staleReason === "deployedAfter") {
+      return this.i18n.majorBranchCheckStaleDeployedAfter;
+    }
+    return this.t("majorBranchCheckStaleAge", {
+      hours: this.pipelineData?.majorBranchDeploymentCheckValidityHours || 24,
+    });
+  }
+
+  get modalMajorBranchCheckHasUrl() {
+    return !!safeWebUrl(this.modalMajorBranchCheck?.webUrl);
+  }
+
+  handleOpenMajorBranchCheckJob() {
+    const url = safeWebUrl(this.modalMajorBranchCheck?.webUrl);
+    if (!url) {
+      return;
+    }
+    window.sendMessageToVSCode({ type: "openExternal", data: { url } });
+  }
+
+  handleOpenMajorBranchCheckDoc() {
+    window.sendMessageToVSCode({
+      type: "openExternal",
+      data: { url: MAJOR_BRANCH_CHECK_DOC_URL },
+    });
+  }
+
+  get majorBranchCheckEnabled() {
+    return this.pipelineData?.majorBranchDeploymentCheckEnabled === true;
   }
 
   get modalPrsTabLabel() {

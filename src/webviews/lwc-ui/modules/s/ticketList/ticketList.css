@@ -34,3 +34,14 @@
 .ticket-subject {
   margin-left: 0.5rem;
 }
+
+.ticket-strength {
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+/* A Pull Request that only mentions the ticket in its description */
+.ticket-pr-weak {
+  text-decoration: underline dotted;
+  opacity: 0.75;
+}
