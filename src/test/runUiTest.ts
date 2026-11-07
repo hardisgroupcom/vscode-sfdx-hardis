@@ -927,10 +927,12 @@ function majorBranchCheckFixture(now: number): {
 
 /**
  * The development orgs the dev orgs variant serves, as hardis:project:dev-org:list
- * answers them: a sandbox of the current user missing three Pull Requests, a
- * shared sandbox up to date, a teammate's scratch org never backpromoted, and a
- * stale sandbox missing a promotion into uat. The Pull Requests are the merged
- * ones of the base git provider fixture. The dates are counted back from `now`.
+ * answers them. On integration (BUILD): a sandbox of the current user shared
+ * with two teammates and missing three Pull Requests, a shared sandbox up to
+ * date, and a teammate's scratch org never backpromoted. On preprod (RUN): the
+ * hotfix sandbox, missing a promotion. Developers work on these two target
+ * branches, never on uat. The Pull Requests are the merged ones of the base git
+ * provider fixture. The dates are counted back from `now`.
  */
 function devOrgsFixture(now: number): Record<string, any> {
   const daysAgo = (days: number) =>
@@ -997,7 +999,7 @@ function devOrgsFixture(now: number): Record<string, any> {
       expirationDate: null,
       targetBranch: "integration",
       owner: alex,
-      users: [],
+      users: [sam, jordan],
       featureBranches: [
         { name: "feature/CRM-1042-account-hierarchy", lastSeen: daysAgo(1) },
       ],
@@ -1065,33 +1067,33 @@ function devOrgsFixture(now: number): Record<string, any> {
     {
       orgId: "00D5f0000012XyfEAE",
       orgType: "sandbox",
-      name: "qa",
-      alias: "qa",
-      instanceUrl: "https://mycompany--qa.sandbox.my.salesforce.com",
+      name: "devHotfix",
+      alias: "devHotfix",
+      instanceUrl: "https://mycompany--devhotfix.sandbox.my.salesforce.com",
       expirationDate: null,
-      targetBranch: "uat",
+      targetBranch: "preprod",
       owner: sam,
       users: [jordan],
       featureBranches: [
-        { name: "feature/CRM-1030-invoice-batch", lastSeen: daysAgo(45) },
+        { name: "fix/CRM-1101-invoice-rounding", lastSeen: daysAgo(0.2) },
       ],
       registeredAt: daysAgo(120),
-      lastActivityAt: daysAgo(45),
+      lastActivityAt: daysAgo(0.2),
       lastBackpromote: {
         date: daysAgo(50),
-        parentBranch: "uat",
-        pullRequest: 109,
+        parentBranch: "preprod",
+        pullRequest: 108,
       },
       isMine: false,
-      stale: true,
+      stale: false,
       startDate: daysAgo(50),
       behind: behind([
         {
-          number: 118,
-          title: "Promotion: integration to uat",
-          url: prUrl(118),
+          number: 112,
+          title: "Promotion: uat to preprod",
+          url: prUrl(112),
           mergedAt: daysAgo(4),
-          sourceBranch: "integration",
+          sourceBranch: "uat",
           vehicle: true,
           carried: [
             {

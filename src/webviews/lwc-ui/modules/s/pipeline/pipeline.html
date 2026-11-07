@@ -25,7 +25,7 @@
                     </button>
                 </template>
 
-                <template if:true={gitAuthenticated}>
+                <template if:true={showFeatureBranchesToggle}>
                     <div class="toggle-wrapper">
                         <lightning-input
                             type="toggle"
@@ -38,16 +38,12 @@
                     </div>
                 </template>
 
-                <!-- Development orgs drawn in the diagram: the ones of the git user, all of them, or none -->
-                <template if:true={showDevOrgsToggle}>
-                    <div class="dev-orgs-toggle" title={i18n.devOrgsDisplayTitle}>
-                        <span class="dev-orgs-toggle-label">{i18n.devOrgsDisplayLabel}</span>
-                        <span class="hardis-segmented" role="group" aria-label={i18n.devOrgsDisplayTitle}>
-                            <button type="button" class={devOrgsMineClass} aria-pressed={devOrgsMinePressed} onclick={handleDevOrgsDisplayMine}>{i18n.devOrgsDisplayMine}</button>
-                            <button type="button" class={devOrgsAllClass} aria-pressed={devOrgsAllPressed} onclick={handleDevOrgsDisplayAll}>{i18n.devOrgsDisplayAll}</button>
-                            <button type="button" class={devOrgsNoneClass} aria-pressed={devOrgsNonePressed} onclick={handleDevOrgsDisplayNone}>{i18n.devOrgsDisplayNone}</button>
-                        </span>
-                    </div>
+                <!-- Once development orgs are registered: the feature branches or the dev orgs, never both -->
+                <template if:true={showViewSwitch}>
+                    <span class="hardis-segmented pipeline-view-switch" role="group" aria-label={i18n.pipelineViewTitle} title={i18n.pipelineViewTitle}>
+                        <button type="button" class={featureBranchesViewClass} aria-pressed={featureBranchesViewPressed} onclick={handleShowFeatureBranchesView}>{i18n.pipelineViewFeatureBranches}</button>
+                        <button type="button" class={devOrgsViewClass} aria-pressed={devOrgsViewPressed} onclick={handleShowDevOrgsView}>{i18n.pipelineViewDevOrgs}</button>
+                    </span>
                 </template>
 
                 <lightning-button-group>

@@ -60,8 +60,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track autoFixPullRequest = null;
   @track openPullRequests = [];
   @track displayFeatureBranches = true;
-  // Development orgs drawn in the diagram: "mine", "all" or "none" (setting pipelineDisplayDevOrgs)
-  @track displayDevOrgs = "mine";
+  // "Dev orgs" view of the switch: the major branches and every development org, instead of the
+  // feature branches. The panel always opens on the feature branches.
+  @track showDevOrgsView = false;
   // Details window of a development org
   @track showDevOrgModal = false;
   @track selectedDevOrg = null;
@@ -641,9 +642,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         }
       }
     }
-    // Development orgs: display mode, and each org by its node for a click on the diagram
-    if (Object.prototype.hasOwnProperty.call(data, "displayDevOrgs")) {
-      this.displayDevOrgs = this._normalizeDevOrgsMode(data.displayDevOrgs);
+    // Development orgs: each org by its node for a click on the diagram. The "Dev orgs" view
+    // ends when the last org left the list.
+    if (!this.showViewSwitch) {
+      this.showDevOrgsView = false;
     }
     this.devOrgsByNodeName = new Map();
     for (const devOrg of this.pipelineData?.devOrgs || []) {
@@ -653,7 +655,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
     this._refreshOpenDevOrg();
 
-    // Select diagram based on the feature branches toggle and the development orgs mode
+    // Select diagram based on the feature branches toggle or the Feature branches / Dev orgs switch
     this.currentDiagram = this._selectDiagram();
     this.error = undefined;
     this.lastDiagram = "";
@@ -1784,7 +1786,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // applyLinkAnimations(). Only meaningful for the full diagram (feature
   // branches shown), where the group edges exist.
   _bindFeatureGroupEdgeClicks(mermaidSvg) {
-    if (!this.displayFeatureBranches || !mermaidSvg) {
+    if (
+      this.currentDiagram !== this.pipelineData?.mermaidDiagram ||
+      !mermaidSvg
+    ) {
       return;
     }
     if (
@@ -2196,47 +2201,43 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return this.pipelineData?.devOrgsEnabled === true;
   }
 
-  // The Mine / All / None switch: only once some org is registered, or while the orgs are
-  // hidden (nothing is read then, the list may hold some)
-  get showDevOrgsToggle() {
+  // The Feature branches / Dev orgs switch replaces the feature branches toggle once some
+  // development org is registered: the two are never drawn together
+  get showViewSwitch() {
     return (
       this.gitAuthenticated &&
       this.devOrgsEnabled &&
-      (this.displayDevOrgs === "none" ||
-        (this.pipelineData?.devOrgs || []).length > 0)
+      (this.pipelineData?.devOrgs || []).length > 0 &&
+      !!this.pipelineData?.mermaidDiagramDevOrgs
     );
   }
 
-  get devOrgsMineClass() {
-    return this._devOrgsSegClass("mine");
+  // The feature branches toggle, while there is no development org to switch to
+  get showFeatureBranchesToggle() {
+    return this.gitAuthenticated && !this.showViewSwitch;
   }
 
-  get devOrgsAllClass() {
-    return this._devOrgsSegClass("all");
+  get featureBranchesViewClass() {
+    return this.showDevOrgsView ? "hardis-seg" : "hardis-seg on";
   }
 
-  get devOrgsNoneClass() {
-    return this._devOrgsSegClass("none");
+  get devOrgsViewClass() {
+    return this.showDevOrgsView ? "hardis-seg on" : "hardis-seg";
   }
 
-  get devOrgsMinePressed() {
-    return String(this.displayDevOrgs === "mine");
+  get featureBranchesViewPressed() {
+    return String(!this.showDevOrgsView);
   }
 
-  get devOrgsAllPressed() {
-    return String(this.displayDevOrgs === "all");
+  get devOrgsViewPressed() {
+    return String(this.showDevOrgsView);
   }
 
-  get devOrgsNonePressed() {
-    return String(this.displayDevOrgs === "none");
-  }
-
-  // Legend entry of the development org nodes: only while some are drawn
+  // Legend entry of the development org nodes: only while they are drawn
   get showDevOrgsLegend() {
     return (
-      this.displayFeatureBranches &&
-      this.currentDiagram !== this.pipelineData?.mermaidDiagram &&
-      this.currentDiagram !== this.pipelineData?.mermaidDiagramMajor
+      !!this.pipelineData?.mermaidDiagramDevOrgs &&
+      this.currentDiagram === this.pipelineData.mermaidDiagramDevOrgs
     );
   }
 
@@ -2263,16 +2264,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       .filter((name) => !!name);
   }
 
-  handleDevOrgsDisplayMine() {
-    this._setDevOrgsDisplay("mine");
+  handleShowFeatureBranchesView() {
+    this._setDevOrgsView(false);
   }
 
-  handleDevOrgsDisplayAll() {
-    this._setDevOrgsDisplay("all");
-  }
-
-  handleDevOrgsDisplayNone() {
-    this._setDevOrgsDisplay("none");
+  handleShowDevOrgsView() {
+    this._setDevOrgsView(true);
   }
 
   // Interactive: the owner, the users and the target branch are asked in the command runner
@@ -2384,40 +2381,26 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.handleCloseDevOrgModal();
   }
 
-  _setDevOrgsDisplay(mode) {
-    const normalized = this._normalizeDevOrgsMode(mode);
-    if (normalized === this.displayDevOrgs) {
+  _setDevOrgsView(showDevOrgs) {
+    if (showDevOrgs === this.showDevOrgsView) {
       return;
     }
-    this.displayDevOrgs = normalized;
-    window.sendMessageToVSCode({
-      type: "setDevOrgsDisplay",
-      data: { mode: normalized },
-    });
+    this.showDevOrgsView = showDevOrgs;
     this.currentDiagram = this._selectDiagram();
     setTimeout(() => this.renderMermaid(), 0);
   }
 
-  _devOrgsSegClass(mode) {
-    return this.displayDevOrgs === mode ? "hardis-seg on" : "hardis-seg";
-  }
-
-  _normalizeDevOrgsMode(mode) {
-    return ["mine", "all", "none"].includes(mode) ? mode : "mine";
-  }
-
-  // The diagram matching the feature branches toggle and the development orgs mode. A mode that
-  // draws no org has no diagram of its own: the full one is the same.
+  // With development orgs, the view of the switch: the feature branches (whatever the toggle
+  // said before) or the dev orgs. Without, the feature branches toggle.
   _selectDiagram() {
     const data = this.pipelineData || {};
+    if (this.showViewSwitch) {
+      return this.showDevOrgsView
+        ? data.mermaidDiagramDevOrgs
+        : data.mermaidDiagram;
+    }
     if (!this.displayFeatureBranches) {
       return data.mermaidDiagramMajor;
-    }
-    if (this.displayDevOrgs === "mine" && data.mermaidDiagramDevOrgsMine) {
-      return data.mermaidDiagramDevOrgsMine;
-    }
-    if (this.displayDevOrgs === "all" && data.mermaidDiagramDevOrgsAll) {
-      return data.mermaidDiagramDevOrgsAll;
     }
     return data.mermaidDiagram;
   }

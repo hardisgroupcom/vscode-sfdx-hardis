@@ -18,11 +18,7 @@ import {
 } from "./promotionBranchUtils";
 import { t } from "../../i18n/i18n";
 import { MajorBranchCheckView } from "./majorBranchCheckUtils";
-import {
-  DevOrgsDisplayMode,
-  DevOrgView,
-  filterDevOrgsForDisplay,
-} from "./devOrgsUtils";
+import { DevOrgView } from "./devOrgsUtils";
 
 /**
  * Describes a "+N more" node that folds the older feature branches targeting a
@@ -129,13 +125,13 @@ export class BranchStrategyMermaidBuilder {
    * @param options.format 'list' or 'string'
    * @param options.withMermaidTag wrap in code block
    * @param options.onlyMajorBranches if true, only major branches (prod, preprod, uat, uatrun, integration) and their links are included (no dev/feature/hotfix branches or dev orgs)
-   * @param options.devOrgs development orgs drawn next to the branch they target: the ones of the git user, all of them, or none (default)
+   * @param options.devOrgs true draws every development org next to the branch it targets (with onlyMajorBranches, the "Dev orgs" view of the pipeline)
    */
   public build(options: {
     format: "list" | "string";
     withMermaidTag: boolean;
     onlyMajorBranches?: boolean;
-    devOrgs?: DevOrgsDisplayMode;
+    devOrgs?: boolean;
   }): string | string[] {
     // Reset all arrays for each build
     this.gitBranches = [];
@@ -151,7 +147,9 @@ export class BranchStrategyMermaidBuilder {
 
     this.listGitBranchesAndLinks();
     this.listSalesforceOrgsAndLinks();
-    this.listDevOrgsAndLinks(options.devOrgs || "none");
+    if (options.devOrgs) {
+      this.listDevOrgsAndLinks();
+    }
 
     if (options.onlyMajorBranches) {
       // Filter out feature/hotfix/dev branches (a major branch node can carry the class of its
@@ -172,13 +170,15 @@ export class BranchStrategyMermaidBuilder {
       this.deployLinks = this.deployLinks.filter((link) =>
         majorOrgNodeNames.includes(link.target),
       );
-      // Remove dev org groups and dev-specific links
-      this.salesforceDevOrgsGroup = [];
-      this.devOrgNodes = [];
-      this.sbDevLinks = [];
+      // Development orgs stay only when asked for
+      if (!options.devOrgs) {
+        this.salesforceDevOrgsGroup = [];
+        this.devOrgNodes = [];
+        this.sbDevLinks = [];
+      }
     }
 
-    this.generateMermaidLines(options);
+    this.generateMermaidLines();
 
     if (options.withMermaidTag) {
       this.mermaidLines.unshift("```mermaid");
@@ -710,8 +710,8 @@ export class BranchStrategyMermaidBuilder {
    * that branch. An org whose target branch is not a branch of the diagram is not drawn. The
    * number of Pull Requests it misses is a hidden count marker, drawn as a bubble by the webview.
    */
-  private listDevOrgsAndLinks(mode: DevOrgsDisplayMode): void {
-    for (const devOrg of filterDevOrgsForDisplay(this.devOrgs, mode)) {
+  private listDevOrgsAndLinks(): void {
+    for (const devOrg of this.devOrgs) {
       const branchNodeName =
         this.sanitizeNodeName(devOrg.targetBranch) + "Branch";
       if (
@@ -778,7 +778,7 @@ export class BranchStrategyMermaidBuilder {
     return "salesforceDev";
   }
 
-  private generateMermaidLines(options?: { onlyMajorBranches?: boolean }) {
+  private generateMermaidLines() {
     /* jscpd:ignore-start */
     this.mermaidLines.push("%%{init: {");
     this.mermaidLines.push('  "flowchart": {');
@@ -845,36 +845,35 @@ export class BranchStrategyMermaidBuilder {
     }
 
     // Development orgs: one subgraph per target branch, each org linked to that branch
-    if (!(options && options.onlyMajorBranches)) {
-      for (const devOrgsGroup of this.salesforceDevOrgsGroup) {
-        const devOrgNodes = this.devOrgNodes.filter(
-          (devOrgNode) => devOrgNode.group === devOrgsGroup.id,
-        );
-        if (devOrgNodes.length === 0) {
-          continue;
-        }
-        // A quoted subgraph title: only a double quote or a bracket could end it
-        const groupLabel = String(
-          t("devOrgsGroupLabel", { branch: devOrgsGroup.branch }),
-        ).replace(/["[\]]/g, "");
+    // (none unless the build asked for them)
+    for (const devOrgsGroup of this.salesforceDevOrgsGroup) {
+      const devOrgNodes = this.devOrgNodes.filter(
+        (devOrgNode) => devOrgNode.group === devOrgsGroup.id,
+      );
+      if (devOrgNodes.length === 0) {
+        continue;
+      }
+      // A quoted subgraph title: only a double quote or a bracket could end it
+      const groupLabel = String(
+        t("devOrgsGroupLabel", { branch: devOrgsGroup.branch }),
+      ).replace(/["[\]]/g, "");
+      this.mermaidLines.push(
+        this.indent(
+          `subgraph SalesforceDevOrgs${devOrgsGroup.id} ["${groupLabel}"]`,
+          1,
+        ),
+      );
+      this.mermaidLines.push(this.indent("direction TB", 2));
+      for (const devOrgNode of devOrgNodes) {
         this.mermaidLines.push(
           this.indent(
-            `subgraph SalesforceDevOrgs${devOrgsGroup.id} ["${groupLabel}"]`,
-            1,
+            `${devOrgNode.nodeName}(["${devOrgNode.label}"]):::${devOrgNode.class}`,
+            2,
           ),
         );
-        this.mermaidLines.push(this.indent("direction TB", 2));
-        for (const devOrgNode of devOrgNodes) {
-          this.mermaidLines.push(
-            this.indent(
-              `${devOrgNode.nodeName}(["${devOrgNode.label}"]):::${devOrgNode.class}`,
-              2,
-            ),
-          );
-        }
-        this.mermaidLines.push(this.indent("end", 1));
-        this.mermaidLines.push("");
       }
+      this.mermaidLines.push(this.indent("end", 1));
+      this.mermaidLines.push("");
     }
 
     // Links

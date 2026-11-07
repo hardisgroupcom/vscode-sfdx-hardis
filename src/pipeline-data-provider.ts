@@ -21,7 +21,6 @@ import { isScratchOrgPoolConfigured } from "./utils/scratchOrgPoolUtils";
 import {
   DevOrgsView,
   DevOrgView,
-  filterDevOrgsForDisplay,
   isDevOrgsRegistryEnabled,
 } from "./utils/pipeline/devOrgsUtils";
 import { PullRequest } from "./utils/gitProviders/types";
@@ -78,10 +77,9 @@ export interface PipelineData {
   devOrgs?: DevOrgView[];
   devOrgsDashboardUrl?: string | null;
   devOrgsStaleDays?: number;
-  // Full diagram with the development orgs of the git user, or all of them: only when it draws
-  // at least one, else the webview keeps mermaidDiagram
-  mermaidDiagramDevOrgsMine?: string;
-  mermaidDiagramDevOrgsAll?: string;
+  // The "Dev orgs" view: the major branches and every development org, without the feature
+  // branches. Only when there is an org to draw.
+  mermaidDiagramDevOrgs?: string;
 }
 
 export class PipelineDataProvider {
@@ -161,18 +159,16 @@ export class PipelineDataProvider {
         withMermaidTag: true,
         onlyMajorBranches: true,
       }) as string;
-      // The full diagram with development orgs, one per display mode that draws any (the
-      // "none" mode is mermaidDiagram itself)
-      const devOrgDiagrams: Record<string, string> = {};
-      for (const mode of ["mine", "all"] as const) {
-        if (filterDevOrgsForDisplay(devOrgsList, mode).length > 0) {
-          devOrgDiagrams[mode] = mermaidBuilder.build({
-            format: "string",
-            withMermaidTag: true,
-            devOrgs: mode,
-          }) as string;
-        }
-      }
+      // The "Dev orgs" view: the major branches and every development org, no feature branch
+      const mermaidDiagramDevOrgs =
+        devOrgsList.length > 0
+          ? (mermaidBuilder.build({
+              format: "string",
+              withMermaidTag: true,
+              onlyMajorBranches: true,
+              devOrgs: true,
+            }) as string)
+          : undefined;
 
       // Build orgs and links for UI (not just for diagram)
       const orgs: OrgNode[] = majorOrgs.map((org) => ({
@@ -224,8 +220,7 @@ export class PipelineDataProvider {
         devOrgs: devOrgsList,
         devOrgsDashboardUrl: options.devOrgs?.dashboardUrl || null,
         devOrgsStaleDays: options.devOrgs?.staleDays || 0,
-        mermaidDiagramDevOrgsMine: devOrgDiagrams.mine,
-        mermaidDiagramDevOrgsAll: devOrgDiagrams.all,
+        mermaidDiagramDevOrgs,
       };
     } catch (error: any) {
       vscode.window.showErrorMessage(

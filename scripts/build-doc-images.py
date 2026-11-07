@@ -91,7 +91,7 @@ PANEL_SHOTS = {
     "major-branch-check-settings.png": "major-branch-check/major-branch-check-settings",
     # Development orgs, taken by the dev orgs variant of the run into
     # doc-screenshots/dev-orgs (see CONTRIBUTING.md)
-    "dev-orgs-pipeline.png": "dev-orgs/dev-orgs-pipeline-all",
+    "dev-orgs-pipeline.png": "dev-orgs/dev-orgs-pipeline",
 }
 
 # Width of the activity bar + side bar in a capture: the editor area (the

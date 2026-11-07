@@ -60,13 +60,11 @@ import {
   buildDevOrgRegisterCommand,
   buildDevOrgRemoveCommand,
   devOrgsCacheKey,
-  DevOrgsDisplayMode,
   DevOrgsOutcome,
   DevOrgsView,
   isDevOrgsChangeCommand,
   isDevOrgsRegistryEnabled,
   isSameOrgId,
-  normalizeDevOrgsDisplayMode,
   readDevOrgsOutcome,
   sanitizeDevOrgs,
 } from "../utils/pipeline/devOrgsUtils";
@@ -950,23 +948,8 @@ export function registerShowPipeline(commands: Commands) {
             });
           }
         }
-        // Development orgs: display mode, then the actions of the details window
-        else if (type === "setDevOrgsDisplay") {
-          const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
-          const previous = normalizeDevOrgsDisplayMode(
-            config.get("pipelineDisplayDevOrgs"),
-          );
-          const mode = normalizeDevOrgsDisplayMode(data?.mode);
-          await config.update(
-            "pipelineDisplayDevOrgs",
-            mode,
-            vscode.ConfigurationTarget.Global,
-          );
-          // The list is not read while the orgs are hidden: it is read once they are shown again
-          if (previous === "none" && mode !== "none") {
-            await loadPipelineFull();
-          }
-        } else if (type === "refreshDevOrgs") {
+        // Development orgs: the actions of the details window
+        else if (type === "refreshDevOrgs") {
           await refreshDevOrgs(panel, () =>
             loadPipelineFull({ devOrgsMaxAgeMs: Number.POSITIVE_INFINITY }),
           );
@@ -1288,11 +1271,7 @@ export function registerShowPipeline(commands: Commands) {
       // Development orgs: read by sfdx-hardis in the full pass only, alongside the git provider
       // calls below, when the last result is older than devOrgsMaxAgeMs (one hour by default).
       // The fast pass uses the last result.
-      const devOrgsDisplay = normalizeDevOrgsDisplayMode(
-        config.get("pipelineDisplayDevOrgs"),
-      );
       const devOrgsPromise = readDevOrgsForPipeline(
-        devOrgsDisplay,
         browseGitProvider
           ? (options?.devOrgsMaxAgeMs ?? DEV_ORGS_READ_INTERVAL_MS)
           : Number.POSITIVE_INFINITY,
@@ -1541,7 +1520,6 @@ export function registerShowPipeline(commands: Commands) {
         repoPlatformLabel: repoPlatformLabel,
         repoInfo: gitProvider?.repoInfo || null,
         displayFeatureBranches: displayFeatureBranches,
-        displayDevOrgs: devOrgsDisplay,
         projectApexScripts: projectApexScripts,
         projectSfdmuWorkspaces: projectDataWorkspaces,
         projectCommunities: [],
@@ -1589,7 +1567,6 @@ type PipelineInfo = {
   repoPlatformLabel: string;
   repoInfo?: any;
   displayFeatureBranches: boolean;
-  displayDevOrgs: DevOrgsDisplayMode;
   projectApexScripts: any[];
   projectSfdmuWorkspaces: any[];
   projectCommunities: any[];
@@ -2222,19 +2199,17 @@ const DEV_ORGS_READ_INTERVAL_MS = 1000 * 60 * 60;
 
 /**
  * The development orgs a pass of the pipeline draws. Nothing when the project turned the list
- * off. Read by sfdx-hardis when the last result is older than maxAgeMs and the orgs are shown,
- * else the last result. Never throws: a failure, or no git provider token, only leaves the
+ * off. Read by sfdx-hardis when the last result is older than maxAgeMs, else the last result. Never throws: a failure, or no git provider token, only leaves the
  * development orgs out.
  */
 async function readDevOrgsForPipeline(
-  mode: DevOrgsDisplayMode,
   maxAgeMs: number,
 ): Promise<DevOrgsView | null> {
   try {
     if (!isDevOrgsRegistryEnabled(await getConfig("project"))) {
       return null;
     }
-    if (mode === "none" || lastDevOrgsAgeMs() <= maxAgeMs) {
+    if (lastDevOrgsAgeMs() <= maxAgeMs) {
       return readLastDevOrgs();
     }
     const outcome = await loadDevOrgs(false);

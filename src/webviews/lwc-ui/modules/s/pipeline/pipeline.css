@@ -354,17 +354,10 @@
     border: 1.5px dashed var(--slds-g-color-palette-orange-60);
 }
 
-/* Mine / All / None switch of the development orgs, next to the feature branches toggle */
-.dev-orgs-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
+/* Feature branches / Dev orgs switch, in place of the feature branches toggle */
+.pipeline-view-switch {
     white-space: nowrap;
     flex-shrink: 0;
-}
-
-.dev-orgs-toggle-label {
-    font-size: 0.75rem;
 }
 
 /* Owner of a development org: second, smaller line of its node */

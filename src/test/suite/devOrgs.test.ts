@@ -7,11 +7,9 @@ import {
   buildDevOrgRemoveCommand,
   devOrgNodeName,
   DevOrgView,
-  filterDevOrgsForDisplay,
   isDevOrgsChangeCommand,
   isDevOrgsRegistryEnabled,
   isSameOrgId,
-  normalizeDevOrgsDisplayMode,
   readDevOrgsOutcome,
   sanitizeDevOrgs,
 } from "../../utils/pipeline/devOrgsUtils";
@@ -204,31 +202,38 @@ suite("Development orgs", () => {
     });
   });
 
-  suite("display mode", () => {
-    test("an unknown setting value falls back to mine", () => {
-      assert.strictEqual(normalizeDevOrgsDisplayMode("all"), "all");
-      assert.strictEqual(normalizeDevOrgsDisplayMode("none"), "none");
-      assert.strictEqual(normalizeDevOrgsDisplayMode("whatever"), "mine");
-      assert.strictEqual(normalizeDevOrgsDisplayMode(undefined), "mine");
-    });
-
-    test("mine keeps the orgs sfdx-hardis says are mine, none keeps nothing", () => {
-      const orgs = devOrgs([rawOrg(), rawOrg({ orgId: ORG_B, isMine: false })]);
-      assert.strictEqual(filterDevOrgsForDisplay(orgs, "mine").length, 1);
-      assert.strictEqual(filterDevOrgsForDisplay(orgs, "all").length, 2);
-      assert.strictEqual(filterDevOrgsForDisplay(orgs, "none").length, 0);
-    });
-
-    test("the setting is declared with its three values, mine by default", () => {
+  suite("view switch", () => {
+    test("no setting keeps a view: the pipeline always opens on the feature branches", () => {
       const packageJson = JSON.parse(
         fs.readFileSync(path.join(REPO_ROOT, "package.json"), "utf8"),
       );
-      const setting =
+      assert.strictEqual(
         packageJson.contributes.configuration.properties[
           "vsCodeSfdxHardis.pipelineDisplayDevOrgs"
-        ];
-      assert.deepStrictEqual(setting.enum, ["mine", "all", "none"]);
-      assert.strictEqual(setting.default, "mine");
+        ],
+        undefined,
+      );
+      const js = readModuleFile("pipeline", "pipeline.js");
+      assert.match(js, /@track showDevOrgsView = false;/);
+      assert.doesNotMatch(js, /setDevOrgsDisplay|displayDevOrgs/);
+    });
+
+    test("the Feature branches / Dev orgs switch replaces the feature branches toggle", () => {
+      const html = readModuleFile("pipeline", "pipeline.html");
+      assert.match(
+        html,
+        /<template if:true=\{showFeatureBranchesToggle\}>[\s\S]*handleToggleFeatureBranches/,
+      );
+      assert.match(
+        html,
+        /<template if:true=\{showViewSwitch\}>[\s\S]*handleShowFeatureBranchesView[\s\S]*handleShowDevOrgsView/,
+      );
+      const js = readModuleFile("pipeline", "pipeline.js");
+      assert.match(
+        js,
+        /return this\.gitAuthenticated && !this\.showViewSwitch;/,
+      );
+      assert.match(js, /data\.mermaidDiagramDevOrgs/);
     });
   });
 
@@ -342,7 +347,7 @@ suite("Development orgs", () => {
 
     function diagram(
       orgs: DevOrgView[],
-      mode: "mine" | "all" | "none",
+      withDevOrgs: boolean,
       onlyMajor = false,
     ): string {
       return new BranchStrategyMermaidBuilder(
@@ -359,7 +364,7 @@ suite("Development orgs", () => {
         format: "string",
         withMermaidTag: false,
         onlyMajorBranches: onlyMajor,
-        devOrgs: mode,
+        devOrgs: withDevOrgs,
       }) as string;
     }
 
@@ -382,7 +387,7 @@ suite("Development orgs", () => {
     ]);
 
     test("each org is a node linked to the branch it targets, with its behind count", () => {
-      const text = diagram(orgs, "all");
+      const text = diagram(orgs, true);
       const nodeA = devOrgNodeName(ORG_A);
       assert.match(
         text,
@@ -404,7 +409,7 @@ suite("Development orgs", () => {
     });
 
     test("a stale org and an org whose missing Pull Requests are unknown have their own class", () => {
-      const text = diagram(orgs, "all");
+      const text = diagram(orgs, true);
       assert.match(
         text,
         new RegExp(
@@ -422,13 +427,14 @@ suite("Development orgs", () => {
     });
 
     test("an org whose target branch is not drawn is left out", () => {
-      assert.doesNotMatch(diagram(orgs, "all"), /elsewhere/);
+      assert.doesNotMatch(diagram(orgs, true), /elsewhere/);
     });
 
-    test("mine draws only the orgs of the git user", () => {
-      const text = diagram(orgs, "mine");
+    test("the Dev orgs view draws every org, mine or not, next to the major branches", () => {
+      const text = diagram(orgs, true, true);
       assert.match(text, /dev-alpha/);
-      assert.doesNotMatch(text, /dev-bravo/);
+      assert.match(text, /dev-bravo/);
+      assert.match(text, /subgraph SalesforceDevOrgsintegration /);
     });
 
     test("a cut off count shows a plus", () => {
@@ -436,15 +442,15 @@ suite("Development orgs", () => {
         devOrgs([
           rawOrg({ behind: { ...rawOrg().behind, count: 7, cutOff: true } }),
         ]),
-        "all",
+        true,
       );
       assert.match(text, /data-count='7\+'/);
     });
 
-    test("none, or the major branches only, draw exactly the diagram without development orgs", () => {
-      const without = diagram([], "none");
-      assert.strictEqual(diagram(orgs, "none"), without);
-      assert.strictEqual(diagram(orgs, "all", true), diagram([], "none", true));
+    test("without devOrgs, the full and the major branches diagrams are the ones without development orgs", () => {
+      const without = diagram([], false);
+      assert.strictEqual(diagram(orgs, false), without);
+      assert.strictEqual(diagram(orgs, false, true), diagram([], false, true));
       assert.doesNotMatch(without, /DevOrg|salesforceDev|SalesforceDevOrgs/);
     });
   });

@@ -19,15 +19,6 @@ import { safeWebUrl } from "../doraReportUtils";
 export const DEV_ORGS_DOC_URL =
   "https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/";
 
-// Development orgs drawn in the diagram: the ones of the git user, all of them, or none
-export type DevOrgsDisplayMode = "mine" | "all" | "none";
-export const DEV_ORGS_DISPLAY_MODES: DevOrgsDisplayMode[] = [
-  "mine",
-  "all",
-  "none",
-];
-export const DEFAULT_DEV_ORGS_DISPLAY_MODE: DevOrgsDisplayMode = "mine";
-
 // Suffix of the node of a development org in the diagram (the click router of the webview reads it)
 export const DEV_ORG_NODE_SUFFIX = "DevOrg";
 
@@ -129,15 +120,6 @@ const BRANCH_NAME_PATTERN = /^[\w./-]+$/;
 // quotes: a value holding one is refused, never escaped
 const UNSAFE_QUOTED_VALUE = /["\\`$%!]/;
 
-/** The display mode of a setting value, the default one for anything unknown */
-export function normalizeDevOrgsDisplayMode(
-  value: unknown,
-): DevOrgsDisplayMode {
-  return DEV_ORGS_DISPLAY_MODES.includes(value as DevOrgsDisplayMode)
-    ? (value as DevOrgsDisplayMode)
-    : DEFAULT_DEV_ORGS_DISPLAY_MODE;
-}
-
 /** False only when the project turned the list off (enableDevOrgsRegistry: false) */
 export function isDevOrgsRegistryEnabled(projectConfig: any): boolean {
   return projectConfig?.enableDevOrgsRegistry !== false;
@@ -227,17 +209,6 @@ export function sanitizeDevOrgs(devOrgs: any): DevOrgsView {
       .filter((warning: string) => warning !== "")
       .slice(0, 20),
   };
-}
-
-/** The orgs the diagram draws for a display mode */
-export function filterDevOrgsForDisplay(
-  orgs: DevOrgView[],
-  mode: DevOrgsDisplayMode,
-): DevOrgView[] {
-  if (mode === "none") {
-    return [];
-  }
-  return mode === "mine" ? orgs.filter((org) => org.isMine) : orgs;
 }
 
 /**

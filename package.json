@@ -221,21 +221,6 @@
           "default": true,
           "description": "Display feature branches in the DevOps Pipeline diagram"
         },
-        "vsCodeSfdxHardis.pipelineDisplayDevOrgs": {
-          "type": "string",
-          "default": "mine",
-          "enum": [
-            "mine",
-            "all",
-            "none"
-          ],
-          "enumDescriptions": [
-            "Show the development orgs you own or use",
-            "Show every registered development org",
-            "Hide the development orgs"
-          ],
-          "description": "Development orgs (developer sandboxes and scratch orgs) shown in the DevOps Pipeline diagram, each linked to the major branch it targets"
-        },
         "vsCodeSfdxHardis.pipelineFeatureBranchGroupThreshold": {
           "type": "integer",
           "default": 3,

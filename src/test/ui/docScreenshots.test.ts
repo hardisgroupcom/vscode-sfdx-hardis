@@ -2097,68 +2097,55 @@ suite("Documentation screenshots", function () {
     if (!DEV_ORGS_VARIANT || !shouldTake("dev-orgs")) {
       this.skip();
     }
-    const settings = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
-    const previousMode = settings.get("pipelineDisplayDevOrgs");
-    try {
-      // The diagram with every org of the team, then only the ones of the
-      // current user (the default)
-      await settings.update(
-        "pipelineDisplayDevOrgs",
-        "all",
-        vscode.ConfigurationTarget.Global,
-      );
-      await shootPanel(panelManager, {
-        name: "dev-orgs-pipeline-all",
-        command: "vscode-sfdx-hardis.showPipeline",
-        lwcId: "s-pipeline",
-        ready: (data: any) =>
-          pipelineFullyLoaded(data) &&
-          (data?.pipelineData?.devOrgs || []).length > 0,
-        settleMs: 9000,
-        force: true,
-      });
-      await settings.update(
-        "pipelineDisplayDevOrgs",
-        "mine",
-        vscode.ConfigurationTarget.Global,
-      );
-      await shootPanel(panelManager, {
-        name: "dev-orgs-pipeline-mine",
-        command: "vscode-sfdx-hardis.showPipeline",
-        lwcId: "s-pipeline",
-        ready: (data: any) =>
-          pipelineFullyLoaded(data) &&
-          (data?.pipelineData?.devOrgs || []).length > 0,
-        settleMs: 9000,
-        force: true,
-      });
-      // Details window of the sandbox missing three Pull Requests. The node is
-      // clicked by its id, since the layout depends on the orgs of the fixture
-      await sleep(1000);
-      const opened = await inWebview(`
-        const node = deepAll(panelDocument, "g.node").find((element) =>
-          /flowchart-org00D5f0000012XycEAEDevOrg-/.test(element.id || ""),
-        );
-        if (!node) {
-          return null;
-        }
-        const shape = node.querySelector("rect, path, polygon") || node;
-        shape.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-        return true;
-      `);
-      if (opened) {
-        await sleep(2500);
-        await cleanChrome();
-        await captureStable("dev-orgs-details");
-      } else {
-        console.log("      [shot] dev-orgs-details: dev org node not found");
+    // The pipeline opens on the feature branches: the switch of the header
+    // shows the major branches with every development org instead
+    await shootPanel(panelManager, {
+      name: "dev-orgs-feature-branches",
+      command: "vscode-sfdx-hardis.showPipeline",
+      lwcId: "s-pipeline",
+      ready: (data: any) =>
+        pipelineFullyLoaded(data) &&
+        (data?.pipelineData?.devOrgs || []).length > 0,
+      settleMs: 9000,
+      force: true,
+    });
+    const switched = await inWebview(`
+      const button = deepAll(
+        panelDocument,
+        ".pipeline-view-switch button",
+      )[1];
+      if (!button) {
+        return null;
       }
-    } finally {
-      await settings.update(
-        "pipelineDisplayDevOrgs",
-        previousMode,
-        vscode.ConfigurationTarget.Global,
+      button.click();
+      return true;
+    `);
+    if (!switched) {
+      console.log("      [shot] dev-orgs-pipeline: view switch not found");
+      return;
+    }
+    await sleep(3000);
+    await cleanChrome();
+    await captureStable("dev-orgs-pipeline");
+    // Details window of the sandbox missing three Pull Requests. The node is
+    // clicked by its id, since the layout depends on the orgs of the fixture
+    const opened = await inWebview(`
+      const node = deepAll(panelDocument, "g.node").find((element) =>
+        /flowchart-org00D5f0000012XycEAEDevOrg-/.test(element.id || ""),
       );
+      if (!node) {
+        return null;
+      }
+      const shape = node.querySelector("rect, path, polygon") || node;
+      shape.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      return true;
+    `);
+    if (opened) {
+      await sleep(2500);
+      await cleanChrome();
+      await captureStable("dev-orgs-details");
+    } else {
+      console.log("      [shot] dev-orgs-details: dev org node not found");
     }
   });
 
