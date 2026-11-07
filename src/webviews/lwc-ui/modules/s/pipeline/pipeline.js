@@ -1663,6 +1663,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
               return;
             }
             const target = event.target;
+            // The chip of the Pull Requests a development org misses: its backpromote
+            const backpromoteChip = target.closest(".hardis-chip-backpromote");
+            if (backpromoteChip) {
+              this.handleBackpromoteDevOrgChip(
+                backpromoteChip.getAttribute("data-dev-org"),
+              );
+              return;
+            }
+
             const mermaidNode = target.closest("g.node");
             if (!mermaidNode) {
               return;
@@ -2375,6 +2384,19 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
     this.devOrgsRefreshing = true;
     window.sendMessageToVSCode({ type: "refreshDevOrgs", data: {} });
+  }
+
+  // The chip on the line of an org: the Backpromote panel on that org, from its target branch.
+  // VS Code finds the org among the ones connected here; else the panel asks for it.
+  handleBackpromoteDevOrgChip(nodeName) {
+    const devOrg = this.devOrgsByNodeName.get(nodeName);
+    if (!devOrg) {
+      return;
+    }
+    window.sendMessageToVSCode({
+      type: "backpromoteDevOrg",
+      data: { orgId: devOrg.orgId, parentBranch: devOrg.targetBranch },
+    });
   }
 
   // Opens the Backpromote panel on that org, from its target branch

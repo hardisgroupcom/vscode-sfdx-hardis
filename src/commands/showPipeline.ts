@@ -965,6 +965,21 @@ export function registerShowPipeline(commands: Commands) {
           await refreshDevOrgs(panel, () =>
             loadPipelineFull({ devOrgsMaxAgeMs: Number.POSITIVE_INFINITY }),
           );
+        } else if (type === "backpromoteDevOrg") {
+          // The chip on the line of an org: its backpromote, from its target branch. An org not
+          // connected on this computer opens the panel on the branch, which asks for the org.
+          const parentBranch =
+            typeof data?.parentBranch === "string" &&
+            /^[\w./-]+$/.test(data.parentBranch)
+              ? data.parentBranch
+              : null;
+          const targetOrgUsername = await findDevOrgUsername(data?.orgId);
+          await vscode.commands.executeCommand(
+            "vscode-sfdx-hardis.showBackpromote",
+            targetOrgUsername
+              ? { targetOrgUsername, parentBranch }
+              : { parentBranch },
+          );
         } else if (type === "getDevOrgConnection") {
           panel.sendMessage({
             type: "devOrgConnection",

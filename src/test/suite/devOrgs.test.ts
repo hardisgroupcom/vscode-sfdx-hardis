@@ -493,7 +493,7 @@ suite("Development orgs", () => {
       assert.match(
         text,
         new RegExp(
-          `${nodeA} -\\.-\\|"<span class='hardis-pill hardis-chip hardis-status-pending hardis-chip-backpromote' data-behind='2' title='[^']+'>[^<]+</span>"\\| integrationBranch\\n`,
+          `${nodeA} -\\.-\\|"<span class='hardis-pill hardis-chip hardis-status-pending hardis-chip-backpromote' data-behind='2' data-dev-org='${nodeA}' title='[^']+'>[^<]+</span>"\\| integrationBranch\\n`,
         ),
       );
       // No arrowhead on either side: an org never deploys to a branch
@@ -613,6 +613,31 @@ suite("Development orgs", () => {
       assert.match(
         draw,
         /\.hardis-count-bubble"\)\s*\.forEach\(\(bubble\) => bubble\.remove\(\)\)/,
+      );
+    });
+
+    test("a click on the chip of an org opens its backpromote, before the node routes", () => {
+      const js = readModuleFile("pipeline", "pipeline.js");
+      const chipRoute = js.indexOf(
+        'target.closest(".hardis-chip-backpromote")',
+      );
+      const nodeLookup = js.indexOf(
+        'const mermaidNode = target.closest("g.node");',
+      );
+      assert.ok(chipRoute > 0, "chip route");
+      // The chip sits in the label of a line, outside any node: checked before the node lookup
+      assert.ok(chipRoute < nodeLookup, "chip route before the node lookup");
+      assert.match(
+        js,
+        /type: "backpromoteDevOrg",\s*data: \{ orgId: devOrg\.orgId, parentBranch: devOrg\.targetBranch \}/,
+      );
+      const source = fs.readFileSync(
+        path.join(REPO_ROOT, "src", "commands", "showPipeline.ts"),
+        "utf8",
+      );
+      assert.match(
+        source,
+        /type === "backpromoteDevOrg"[\s\S]*?vscode-sfdx-hardis\.showBackpromote/,
       );
     });
 

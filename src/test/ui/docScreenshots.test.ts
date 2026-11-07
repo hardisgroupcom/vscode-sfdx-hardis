@@ -2164,6 +2164,51 @@ suite("Documentation screenshots", function () {
     } else {
       console.log("      [shot] dev-orgs-details: dev org node not found");
     }
+    // The chip of the Pull Requests an org misses opens its backpromote. What
+    // a pointer reaches at the center of the chip is clicked, so a label that
+    // does not take pointer events fails here rather than for a user.
+    await inWebview(`
+      const close = deepAll(panelDocument, ".slds-modal__close")[0];
+      if (close) {
+        close.click();
+      }
+      return true;
+    `);
+    await sleep(1000);
+    const chipClick = await inWebview(`
+      const chip = deepAll(panelDocument, ".hardis-chip-backpromote")[0];
+      if (!chip) {
+        return "no chip";
+      }
+      const box = chip.getBoundingClientRect();
+      // elementFromPoint stops at a shadow host: walk down the shadow roots
+      const x = box.left + box.width / 2;
+      const y = box.top + box.height / 2;
+      let hit = panelDocument.elementFromPoint(x, y);
+      while (hit && hit.shadowRoot) {
+        const inner = hit.shadowRoot.elementFromPoint(x, y);
+        if (!inner || inner === hit) {
+          break;
+        }
+        hit = inner;
+      }
+      if (!hit || !hit.closest(".hardis-chip-backpromote")) {
+        return "chip not reachable: " + (hit ? hit.tagName : "nothing");
+      }
+      hit.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      return "clicked";
+    `);
+    console.log(`      [shot] dev-orgs chip: ${chipClick}`);
+    try {
+      await waitFor(
+        () => panelManager.getPanel("s-backpromote"),
+        20000,
+        "backpromote panel",
+      );
+      console.log("      [shot] dev-orgs chip: Backpromote panel opened");
+    } catch (error) {
+      console.log(`      [shot] dev-orgs chip: ${(error as Error).message}`);
+    }
   });
 
   // The command the Create promotion button runs, captured at the conflict
