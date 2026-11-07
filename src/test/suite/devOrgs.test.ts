@@ -40,9 +40,9 @@ function rawOrg(overrides: Record<string, any> = {}): any {
   return {
     orgId: ORG_A,
     orgType: "sandbox",
-    name: "devjane",
-    alias: "devjane",
-    instanceUrl: "https://acme--devjane.sandbox.my.salesforce.com",
+    name: "dev-alpha",
+    alias: "dev-alpha",
+    instanceUrl: "https://acme--dev-alpha.sandbox.my.salesforce.com",
     expirationDate: null,
     targetBranch: "integration",
     owner: { name: "Jane Doe", email: "jane@example.com" },
@@ -365,13 +365,13 @@ suite("Development orgs", () => {
       rawOrg(),
       rawOrg({
         orgId: ORG_B,
-        name: "devjohn",
+        name: "dev-bravo",
         isMine: false,
         stale: true,
         targetBranch: "uat",
         owner: { name: "John", email: "john@example.com" },
       }),
-      rawOrg({ orgId: ORG_C, name: "devnew", behind: null }),
+      rawOrg({ orgId: ORG_C, name: "dev-charlie", behind: null }),
       rawOrg({
         orgId: "00D000000000004AAA",
         name: "elsewhere",
@@ -384,7 +384,7 @@ suite("Development orgs", () => {
       const nodeA = devOrgNodeName(ORG_A);
       assert.match(
         text,
-        new RegExp(`${nodeA}\\(\\[".*devjane.*"\\]\\):::salesforceDev\\b`),
+        new RegExp(`${nodeA}\\(\\[".*dev-alpha.*"\\]\\):::salesforceDev\\b`),
       );
       assert.match(text, new RegExp(`${nodeA} <-\\.-> integrationBranch`));
       assert.match(text, /hardis-node-owner'>Jane Doe</);
@@ -425,8 +425,8 @@ suite("Development orgs", () => {
 
     test("mine draws only the orgs of the git user", () => {
       const text = diagram(orgs, "mine");
-      assert.match(text, /devjane/);
-      assert.doesNotMatch(text, /devjohn/);
+      assert.match(text, /dev-alpha/);
+      assert.doesNotMatch(text, /dev-bravo/);
     });
 
     test("a cut off count shows a plus", () => {

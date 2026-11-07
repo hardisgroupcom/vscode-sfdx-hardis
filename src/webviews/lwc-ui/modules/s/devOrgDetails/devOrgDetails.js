@@ -3,6 +3,7 @@
 // @ts-nocheck
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
+import { formatShortDate } from "s/dateUtils";
 import { SharedMixin } from "s/sharedMixin";
 
 /**
@@ -363,21 +364,7 @@ export default class DevOrgDetails extends SharedMixin(LightningElement) {
   }
 
   _formatDate(value) {
-    if (!value) {
-      return "";
-    }
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return String(value);
-    }
-    try {
-      return date.toLocaleDateString(this.locale || "en", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    } catch (e) {
-      return date.toISOString().slice(0, 10);
-    }
+    return formatShortDate(value, this.locale || "en");
   }
+
 }

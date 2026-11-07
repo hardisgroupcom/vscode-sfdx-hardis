@@ -1,6 +1,7 @@
 import { LightningElement, api } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
 import { getMetadataTypePillClass } from "s/pillUtils";
+import { formatShortDate } from "s/dateUtils";
 import {
   getActionTypeLabel,
   getActionTypePillClass,
@@ -288,23 +289,9 @@ export default class Backpromote extends SharedMixin(LightningElement) {
   }
 
   formatDate(value) {
-    if (!value) {
-      return "";
-    }
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return String(value);
-    }
-    try {
-      return date.toLocaleDateString(this.locale || undefined, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    } catch (e) {
-      return date.toISOString().slice(0, 10);
-    }
+    return formatShortDate(value, this.locale);
   }
+
 
   // ---------------------------------------------------------------------------
   // States
