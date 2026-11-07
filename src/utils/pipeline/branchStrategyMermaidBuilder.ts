@@ -829,7 +829,7 @@ export class BranchStrategyMermaidBuilder {
         branch: devOrg.targetBranch,
       }),
     ).replace(/['"]/g, "");
-    return `<span class='hardis-pill hardis-chip hardis-status-pending hardis-chip-backpromote' data-behind='${countText}' data-dev-org='${devOrg.nodeName}' title='${title}'>${this.escapeHtmlLabel(String(text))}</span>`;
+    return `<span class='hardis-pill hardis-chip hardis-status-pending hardis-chip-backpromote' data-behind='${countText}' data-dev-org='${devOrg.nodeName}' style='cursor:pointer;' title='${title}'>${this.escapeHtmlLabel(String(text))}</span>`;
   }
 
   // A stale org stands out first; an org whose missing Pull Requests are not known yet is muted

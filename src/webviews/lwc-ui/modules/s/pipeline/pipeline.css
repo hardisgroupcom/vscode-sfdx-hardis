@@ -363,11 +363,6 @@
     z-index: 20;
 }
 
-/* The chip of the Pull Requests a development org misses opens its backpromote */
-.mermaid .hardis-chip-backpromote {
-    cursor: pointer;
-}
-
 .pipeline-view-switch {
     white-space: nowrap;
     flex-shrink: 0;

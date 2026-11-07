@@ -493,7 +493,7 @@ suite("Development orgs", () => {
       assert.match(
         text,
         new RegExp(
-          `${nodeA} -\\.-\\|"<span class='hardis-pill hardis-chip hardis-status-pending hardis-chip-backpromote' data-behind='2' data-dev-org='${nodeA}' title='[^']+'>[^<]+</span>"\\| integrationBranch\\n`,
+          `${nodeA} -\\.-\\|"<span class='hardis-pill hardis-chip hardis-status-pending hardis-chip-backpromote' data-behind='2' data-dev-org='${nodeA}' style='cursor:pointer;' title='[^']+'>[^<]+</span>"\\| integrationBranch\\n`,
         ),
       );
       // No arrowhead on either side: an org never deploys to a branch
@@ -639,6 +639,18 @@ suite("Development orgs", () => {
         source,
         /type === "backpromoteDevOrg"[\s\S]*?vscode-sfdx-hardis\.showBackpromote/,
       );
+    });
+
+    test("a backpromote run from its panel refreshes the DevOps Pipeline", () => {
+      const source = fs.readFileSync(
+        path.join(REPO_ROOT, "src", "commands", "showBackpromote.ts"),
+        "utf8",
+      );
+      assert.match(
+        source,
+        /emitCommandCompleted\("hardis:work:backpromote", "success"\)/,
+      );
+      assert.ok(isDevOrgsChangeCommand("hardis:work:backpromote"));
     });
 
     test("the line to a development org is never animated like a pending job", () => {

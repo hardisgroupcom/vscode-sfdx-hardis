@@ -1,3 +1,4 @@
+import { emitCommandCompleted } from "../utils/commandCompletionEvents";
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as os from "os";
@@ -134,7 +135,8 @@ interface BackpromotePanelState {
   requestedChoices: BackpromoteOpenRequest | null;
   /** Applies the org and parent branch asked when the panel was already open */
   applyRequestedChoices:
-    ((request: BackpromoteOpenRequest) => Promise<void>) | null;
+    | ((request: BackpromoteOpenRequest) => Promise<void>)
+    | null;
 }
 
 /** Optional argument of vscode-sfdx-hardis.showBackpromote, in the shape acceptChoices reads */
@@ -1542,6 +1544,9 @@ async function runBackpromote(
     current.markers = {};
     // The window is done: the next plan starts from the default sfdx-hardis computes
     current.fromPullRequest = null;
+    // sfdx-hardis recorded the backpromote in the development orgs list: the DevOps Pipeline
+    // reads it again, like after the same command run in the command runner
+    emitCommandCompleted("hardis:work:backpromote", "success");
   }
   pushData(current);
   current.panel.sendMessage({ type: "runFinished" });
