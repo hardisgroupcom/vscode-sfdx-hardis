@@ -108,3 +108,15 @@ commandsPostDeploy:
       waitTimeoutMinutes: 60
     command: ""
     context: process-deployment-only
+  # Appended last, so that the rows above keep their position
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-128a00000012
+    label: Switch the org to the compact density
+    type: browser
+    when: post-deploy
+    parameters:
+      setting: densitySettings
+      config:
+        density: Compact
+    command: ""
+    context: all
+    runOnlyOnceByOrg: true

@@ -105,6 +105,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track communitiesLoading = false;
   @track projectUserAccessPolicies = [];
   @track userAccessPoliciesLoading = false;
+  // Editor of a "browser" deployment action: the Browserforce catalog and the check of a value
+  @track browserforceCatalog = null;
+  @track browserforceCatalogLoading = false;
+  @track browserforceValidation = null;
+  _browserforceCatalogRequestId = null;
+  _browserforceValidationRequestId = null;
   @track communitiesRequestId = null;
   _refreshTimer = null;
   // When the git provider was last asked whether the current branch has a Pull Request
@@ -1940,6 +1946,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       case "returnUserAccessPolicies":
         this.handleReturnUserAccessPolicies(data);
         break;
+      case "returnBrowserforceCatalog":
+        this.handleReturnBrowserforceCatalog(data);
+        break;
+      case "returnBrowserforceValidation":
+        this.handleReturnBrowserforceValidation(data);
+        break;
       case "returnGoLives":
         this.handleReturnGoLives(data);
         break;
@@ -2049,6 +2061,55 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       ? data.values
       : [];
     this.userAccessPoliciesLoading = false;
+  }
+
+  // --- Browserforce (editor of a "browser" deployment action) -----------------
+
+  handleLoadBrowserforceCatalog() {
+    this.browserforceCatalogLoading = true;
+    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    this._browserforceCatalogRequestId = requestId;
+    window.sendMessageToVSCode({
+      type: "loadBrowserforceCatalog",
+      data: { requestId },
+    });
+  }
+
+  // Sent twice when the CI/CD variable names arrive after the catalog: the last answer wins
+  handleReturnBrowserforceCatalog(data) {
+    if (
+      this._browserforceCatalogRequestId &&
+      data?.requestId &&
+      data.requestId !== this._browserforceCatalogRequestId
+    ) {
+      return;
+    }
+    this.browserforceCatalog = data || null;
+    this.browserforceCatalogLoading = false;
+  }
+
+  handleValidateBrowserforceConfig(event) {
+    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    this._browserforceValidationRequestId = requestId;
+    window.sendMessageToVSCode({
+      type: "validateBrowserforceConfig",
+      data: {
+        requestId,
+        setting: event?.detail?.setting || "",
+        config: event?.detail?.config,
+      },
+    });
+  }
+
+  handleReturnBrowserforceValidation(data) {
+    if (
+      this._browserforceValidationRequestId &&
+      data?.requestId &&
+      data.requestId !== this._browserforceValidationRequestId
+    ) {
+      return;
+    }
+    this.browserforceValidation = data || null;
   }
 
   handleShowInstalledPackages() {

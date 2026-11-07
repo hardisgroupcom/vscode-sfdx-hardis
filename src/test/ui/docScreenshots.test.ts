@@ -2386,6 +2386,8 @@ suite("Documentation screenshots", function () {
       { name: "pipeline-edit-action-custom-function", row: 9, editY: 796 },
       // Appended last in the fixture, so that the rows above keep their position
       { name: "pipeline-edit-action-run-batch", row: 10, editY: 714 },
+      // A Browserforce setting, appended after it. editY not measured yet: check the image
+      { name: "pipeline-edit-action-browser", row: 11, editY: 796 },
     ];
     // A universe whose Pull Request declares its actions in another order says
     // so, because these shots are taken by row position. The names are the shot
@@ -2409,7 +2411,7 @@ suite("Documentation screenshots", function () {
     const FIRST_ROW_CENTER_Y = 299;
     const ROW_STEP = 53.8;
     const VISIBLE_ROWS = 9;
-    const LAST_ROW_INDEX = 10;
+    const LAST_ROW_INDEX = 11;
     const LAST_ROW_SCROLLED_Y = 805;
     // Clicking the action label opens its editor
     const EDIT_BUTTON_X = 520;

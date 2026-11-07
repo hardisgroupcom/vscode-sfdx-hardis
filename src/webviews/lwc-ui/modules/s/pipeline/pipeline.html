@@ -944,6 +944,9 @@
             communities-loading={communitiesLoading}
             user-access-policies={projectUserAccessPolicies}
             user-access-policies-loading={userAccessPoliciesLoading}
+            browserforce-catalog={browserforceCatalog}
+            browserforce-catalog-loading={browserforceCatalogLoading}
+            browserforce-validation={browserforceValidation}
             major-branches={majorBranchNames}
             parent-translations={translations}
             onclose={handleCloseDeploymentActionModal}
@@ -952,6 +955,8 @@
             onloadbatchableclasses={handleLoadBatchableClasses}
             onloadcommunities={handleLoadCommunities}
             onloaduseraccesspolicies={handleLoadUserAccessPolicies}
+            onloadbrowserforcecatalog={handleLoadBrowserforceCatalog}
+            onvalidatebrowserforceconfig={handleValidateBrowserforceConfig}
             onsave={handleSaveDeploymentAction}
         ></s-deployment-action>
     </template>

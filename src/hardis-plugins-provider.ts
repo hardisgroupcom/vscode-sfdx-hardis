@@ -332,6 +332,10 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       },
       { name: "sfdmu", helpUrl: "https://help.sfdmu.com/" },
       {
+        name: "sfdx-browserforce-plugin",
+        helpUrl: "https://github.com/amtrack/sfdx-browserforce-plugin",
+      },
+      {
         name: "sfdx-git-delta",
         helpUrl: "https://github.com/scolladon/sfdx-git-delta",
       },

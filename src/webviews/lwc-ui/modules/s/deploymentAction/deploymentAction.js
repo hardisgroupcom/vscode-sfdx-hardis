@@ -56,6 +56,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       this._requestBatchableClassesIfNeeded(this.displayedAction?.type);
       this._requestCommunitiesIfNeeded(this.displayedAction?.type);
       this._requestUserAccessPoliciesIfNeeded(this.displayedAction?.type);
+      this._requestBrowserforceCatalogIfNeeded(this.displayedAction?.type);
     }
   }
   get isEditMode() {
@@ -136,6 +137,33 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   }
 
   @api userAccessPoliciesLoading = false;
+  // Answer of the extension for a "browser" action: the Browserforce catalog, whether the plugin
+  // is installed, the CI/CD variable names per branch and the git provider
+  @api browserforceCatalog = null;
+  @api browserforceCatalogLoading = false;
+  // Check of the setting value by Browserforce, asked by this editor (Check button or Save)
+  _browserforceValidation = null;
+
+  @api
+  set browserforceValidation(val) {
+    // An answer this editor did not ask for (one kept by the panel from a previous editor) is ignored
+    if (!this.browserforceValidating) {
+      return;
+    }
+    this.browserforceValidating = false;
+    this._browserforceValidation = val || null;
+    if (this._saveAfterBrowserforceValidation) {
+      this._saveAfterBrowserforceValidation = false;
+      this._finishSaveAfterBrowserforceValidation(val);
+    }
+  }
+  get browserforceValidation() {
+    return this._browserforceValidation;
+  }
+
+  @track browserforceValidating = false;
+  _saveAfterBrowserforceValidation = false;
+  _browserforceFormHasErrors = false;
   // True while the panel reads the custom functions catalog: Save waits for it, so the inputs
   // of a custom function action are checked against its contract
   @api customFunctionsLoading = false;
@@ -157,6 +185,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   _batchableClassesRequested = false;
   _communitiesRequested = false;
   _userAccessPoliciesRequested = false;
+  _browserforceCatalogRequested = false;
 
   @api
   set parentTranslations(val) {
@@ -180,6 +209,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       { label: this.t("runBatchType"), value: "run-batch" },
       { label: this.t("publishCommunityType"), value: "publish-community" },
       { label: this.t("userAccessPolicyType"), value: "user-access-policy" },
+      { label: this.t("browserType"), value: "browser" },
       {
         label: this.t("removePackageXmlItemsType"),
         value: "remove-packagexml-items",
@@ -210,12 +240,13 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   }
 
   // Org initialization step types come from the CLI (stepTypes of sf hardis:config:org-init)
+  // A Browserforce setting is applied around a deployment: it is never an org initialization step
   _buildOrgInitTypeOptions() {
     return getOrgInitStepTypeOptions(
       this.orgInitStepTypes,
       (key, params) => this.t(key, params),
       this.customFunctions,
-    );
+    ).filter((option) => option.value !== "browser");
   }
 
   get isOrgInitMode() {
@@ -271,6 +302,11 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
         // A deployment sets the policies it contains back to Design: they are activated after it
         when: ["post-deploy"],
         context: ["process-deployment-only"],
+      },
+      browser: {
+        // A Browserforce setting can prepare the org or complete the deployment, in any job
+        when: ["pre-deploy", "post-deploy"],
+        context: ["all", "check-deployment-only", "process-deployment-only"],
       },
       "remove-packagexml-items": {
         // Filtering package.xml only makes sense before the metadata deployment
@@ -562,6 +598,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     this._requestBatchableClassesIfNeeded(this.displayedAction?.type);
     this._requestCommunitiesIfNeeded(this.displayedAction?.type);
     this._requestUserAccessPoliciesIfNeeded(this.displayedAction?.type);
+    this._requestBrowserforceCatalogIfNeeded(this.displayedAction?.type);
     this._updateWhenAndContextOptions(this.displayedAction?.type || "command");
   }
 
@@ -731,6 +768,77 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       return this.t("userAccessPolicyNothingToDo");
     }
     return "";
+  }
+
+  // --- Browser (Browserforce setting) -------------------------------------------
+
+  // Save waits for the custom functions catalog, and for Browserforce while it checks the value
+  get isSaveDisabled() {
+    return this.customFunctionsLoading === true || this.browserforceValidating;
+  }
+
+  get showBrowserFields() {
+    return this.displayedAction?.type === "browser";
+  }
+
+  get browserforceSetting() {
+    return this.displayedAction?.parameters?.setting || "";
+  }
+
+  get browserforceConfig() {
+    const config = this.displayedAction?.parameters?.config;
+    return config === undefined || config === null ? {} : config;
+  }
+
+  // The setting editor sends the whole value at each change, and tells when a field cannot be
+  // turned into a value (a number or a JSON being typed)
+  handleBrowserforceSettingChange(event) {
+    const detail = event.detail || {};
+    this._browserforceFormHasErrors = detail.hasErrors === true;
+    this._browserforceValidation = null;
+    this.editedAction = {
+      ...this.editedAction,
+      parameters: {
+        ...(this.editedAction.parameters || {}),
+        setting: detail.setting || "",
+        config: detail.config === undefined ? {} : detail.config,
+      },
+    };
+    this.validationError = "";
+  }
+
+  handleBrowserforceValidate() {
+    this._saveAfterBrowserforceValidation = false;
+    this._requestBrowserforceValidation();
+  }
+
+  handleBrowserforceReloadCatalog() {
+    this.dispatchEvent(new CustomEvent("loadbrowserforcecatalog"));
+  }
+
+  _requestBrowserforceValidation() {
+    this.browserforceValidating = true;
+    this._browserforceValidation = null;
+    this.dispatchEvent(
+      new CustomEvent("validatebrowserforceconfig", {
+        detail: {
+          setting: this.editedAction?.parameters?.setting || "",
+          config: JSON.parse(
+            JSON.stringify(this.editedAction?.parameters?.config ?? {}),
+          ),
+        },
+      }),
+    );
+  }
+
+  // Save goes on when Browserforce accepts the value, or when it could not check it: sfdx-hardis
+  // checks it again before applying it
+  _finishSaveAfterBrowserforceValidation(validation) {
+    if (validation?.valid === true || validation?.error) {
+      this._completeSave();
+      return;
+    }
+    this.validationError = this.t("browserforceConfigInvalid");
   }
 
   get showInstructionsField() {
@@ -1518,11 +1626,15 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       previousType !== newType &&
       (previousType === "user-access-policy" ||
         newType === "user-access-policy");
+    const touchesBrowser =
+      previousType !== newType &&
+      (previousType === "browser" || newType === "browser");
     if (
       leavesCustomFunction ||
       entersCustomFunction ||
       touchesRunBatch ||
-      touchesUserAccessPolicy
+      touchesUserAccessPolicy ||
+      touchesBrowser
     ) {
       this.editedAction.parameters =
         this._buildInitialParametersForType(newType);
@@ -1531,6 +1643,12 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     // deployment, as the CLI does
     if (previousType !== newType && newType === "user-access-policy") {
       this.editedAction.runOnlyOnceByOrg = false;
+    }
+    // A setting applied once stays applied: by default, once by org, as the CLI does
+    if (previousType !== newType && newType === "browser") {
+      this.editedAction.runOnlyOnceByOrg = true;
+      this._browserforceFormHasErrors = false;
+      this._browserforceValidation = null;
     }
     this._applyCustomFunctionDefaults(newType);
     if (this.isOrgInitMode && newType === "deploy-sources") {
@@ -1541,6 +1659,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     this._requestBatchableClassesIfNeeded(newType);
     this._requestCommunitiesIfNeeded(newType);
     this._requestUserAccessPoliciesIfNeeded(newType);
+    this._requestBrowserforceCatalogIfNeeded(newType);
     // Force re-render to show/hide fields by reassigning the tracked property
     this.editedAction = { ...this.editedAction };
     // Trigger reactivity by reassigning to force getter recalculation
@@ -1555,6 +1674,9 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   _buildInitialParametersForType(type) {
     if (type === "user-access-policy") {
       return { policies: [], activate: true, applyToAll: false };
+    }
+    if (type === "browser") {
+      return { setting: "", config: {} };
     }
     const customFunction = this.customFunctions.find((fn) => fn.id === type);
     if (!customFunction) {
@@ -1647,6 +1769,15 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     this.dispatchEvent(new CustomEvent("loaduseraccesspolicies"));
   }
 
+  // Asked in view mode too: the details show the title and the warnings of the setting
+  _requestBrowserforceCatalogIfNeeded(type) {
+    if (type !== "browser" || this._browserforceCatalogRequested) {
+      return;
+    }
+    this._browserforceCatalogRequested = true;
+    this.dispatchEvent(new CustomEvent("loadbrowserforcecatalog"));
+  }
+
   _requestBatchableClassesIfNeeded(type) {
     if (type !== "run-batch") {
       return;
@@ -1722,6 +1853,22 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       }
     }
 
+    // A Browserforce setting is saved once Browserforce has checked its value
+    if (this.isDeploymentMode && this.editedAction.type === "browser") {
+      if (this._browserforceFormHasErrors) {
+        this.validationError = this.t("browserforceFormHasErrors");
+        return;
+      }
+      this.validationError = "";
+      this._saveAfterBrowserforceValidation = true;
+      this._requestBrowserforceValidation();
+      return;
+    }
+
+    this._completeSave();
+  }
+
+  _completeSave() {
     this.validationError = "";
     this._normalizeRunBatchParameters();
     // A new action is created with an empty id: give it one here, because the id
@@ -1878,6 +2025,8 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       requiredFields.push("parameters.className", "parameters.cronExpression");
     } else if (currentType === "run-batch") {
       requiredFields.push("parameters.className");
+    } else if (currentType === "browser") {
+      requiredFields.push("parameters.setting");
     } else {
       // Custom function: the contract it declares says which inputs are required
       const customFunction = this.customFunctions.find(
