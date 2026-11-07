@@ -146,6 +146,28 @@ export function devOrgTargetBranches(projectConfig: any): string[] {
   return branches;
 }
 
+/**
+ * Target branches the Edit form of an org offers and accepts: the target branches of the project,
+ * or every major branch when the project declares none, and the branch the org targets now.
+ */
+export function devOrgEditBranches(
+  targetBranches: string[],
+  majorBranches: string[],
+  currentTargetBranch?: string | null,
+): string[] {
+  const branches = (
+    targetBranches.length > 0 ? targetBranches : majorBranches
+  ).filter((branch) => typeof branch === "string" && branch !== "");
+  if (
+    currentTargetBranch &&
+    majorBranches.includes(currentTargetBranch) &&
+    !branches.includes(currentTargetBranch)
+  ) {
+    branches.push(currentTargetBranch);
+  }
+  return [...new Set(branches)];
+}
+
 /** False only when the project turned the list off (enableDevOrgsRegistry: false) */
 export function isDevOrgsRegistryEnabled(projectConfig: any): boolean {
   return projectConfig?.enableDevOrgsRegistry !== false;

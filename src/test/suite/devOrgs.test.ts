@@ -6,6 +6,7 @@ import {
   buildDevOrgRegisterCommand,
   buildDevOrgRemoveCommand,
   devOrgNodeName,
+  devOrgEditBranches,
   devOrgTargetBranches,
   DevOrgView,
   isDevOrgsChangeCommand,
@@ -274,6 +275,23 @@ suite("Development orgs", () => {
       );
       assert.deepStrictEqual(devOrgTargetBranches({}), []);
     });
+
+    test("the Edit form offers the target branches and the current one, never production otherwise", () => {
+      const majors = ["integration", "uat", "preprod", "main"];
+      assert.deepStrictEqual(
+        devOrgEditBranches(["integration", "preprod"], majors, "uat"),
+        ["integration", "preprod", "uat"],
+      );
+      assert.deepStrictEqual(
+        devOrgEditBranches(["integration", "preprod"], majors, "integration"),
+        ["integration", "preprod"],
+      );
+      assert.deepStrictEqual(devOrgEditBranches([], majors, null), majors);
+      assert.deepStrictEqual(
+        devOrgEditBranches(["integration"], majors, "gone"),
+        ["integration"],
+      );
+    });
   });
 
   suite("commands of the details window", () => {
@@ -506,7 +524,8 @@ suite("Development orgs", () => {
       );
       assert.match(text, /uatDevOrgAdd -\.- uatBranch\n/);
       assert.doesNotMatch(text, /integrationDevOrgAdd/);
-      assert.doesNotMatch(text, /not-in-pipeline|notinpipelineDevOrgAdd/);
+      assert.doesNotMatch(text, /not-in-pipeline/);
+      assert.strictEqual((text.match(/DevOrgAdd\(/g) || []).length, 1);
       assert.match(text, /classDef salesforceDevAdd /);
     });
 

@@ -64,6 +64,7 @@ import {
   DevOrgsView,
   isDevOrgsChangeCommand,
   isDevOrgsRegistryEnabled,
+  devOrgEditBranches,
   isSameOrgId,
   readDevOrgsOutcome,
   sanitizeDevOrgs,
@@ -963,11 +964,19 @@ export function registerShowPipeline(commands: Commands) {
             },
           });
         } else if (type === "registerDevOrg") {
-          const majorBranches: string[] = (
-            pipelineProperties?.pipelineData?.orgs || []
-          ).map((org: any) => org?.name);
+          const pipelineData = pipelineProperties?.pipelineData;
+          const registered = (pipelineData?.devOrgs || []).find((org: any) =>
+            isSameOrgId(org?.orgId, data?.orgId),
+          );
           runDevOrgCommand(() =>
-            buildDevOrgRegisterCommand(data || {}, majorBranches),
+            buildDevOrgRegisterCommand(
+              data || {},
+              devOrgEditBranches(
+                pipelineData?.devOrgTargetBranches || [],
+                (pipelineData?.orgs || []).map((org: any) => org?.name),
+                registered?.targetBranch,
+              ),
+            ),
           );
         } else if (type === "removeDevOrg") {
           runDevOrgCommand(() => buildDevOrgRemoveCommand(data?.orgId));
@@ -1543,8 +1552,6 @@ type LoadPipelineOptions = {
   browseGitProvider: boolean;
   resetGit: boolean;
   withProgress?: boolean;
-  // The development orgs were just read (Refresh of the details window): the last result is used
-  // instead of reading them again
   // Age of the last development orgs result above which sfdx-hardis reads them again
   devOrgsMaxAgeMs?: number;
 };
@@ -2191,6 +2198,10 @@ const DEV_ORGS_LAST_RESULT_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 // again at most once an hour, unless somebody clicks Refresh
 const DEV_ORGS_READ_INTERVAL_MS = 1000 * 60 * 60;
 
+// When the last read of the development orgs failed, by cache key of the workspace: a failure
+// waits the same interval as a success before the automatic reloads try again
+const devOrgsFailedAt = new Map<string, number>();
+
 /**
  * The development orgs a pass of the pipeline draws. Nothing when the project turned the list
  * off. Read by sfdx-hardis when the last result is older than maxAgeMs, else the last result. Never throws: a failure, or no git provider token, only leaves the
@@ -2203,11 +2214,16 @@ async function readDevOrgsForPipeline(
     if (!isDevOrgsRegistryEnabled(await getConfig("project"))) {
       return null;
     }
-    if (lastDevOrgsAgeMs() <= maxAgeMs) {
+    if (Math.min(lastDevOrgsAgeMs(), lastDevOrgsFailureAgeMs()) <= maxAgeMs) {
       return readLastDevOrgs();
     }
     const outcome = await loadDevOrgs(false);
-    return "devOrgs" in outcome ? outcome.devOrgs : null;
+    if ("devOrgs" in outcome) {
+      return outcome.devOrgs;
+    }
+    // A failed read (network, provider) keeps what was read last; without a token, nothing is
+    // kept (loadDevOrgs deleted it)
+    return readLastDevOrgs();
   } catch (e: any) {
     Logger.log(
       `[vscode-sfdx-hardis] Development orgs not read: ${e?.message || e}`,
@@ -2234,6 +2250,7 @@ async function loadDevOrgs(refresh: boolean): Promise<DevOrgsOutcome> {
     : { error: { kind: "other", message: errorMessage } };
   const cacheKey = devOrgsCacheKey(getWorkspaceRoot());
   if ("devOrgs" in outcome) {
+    devOrgsFailedAt.delete(cacheKey);
     void CacheManager.set(
       "project",
       cacheKey,
@@ -2244,12 +2261,20 @@ async function loadDevOrgs(refresh: boolean): Promise<DevOrgsOutcome> {
     Logger.log(
       `[vscode-sfdx-hardis] Development orgs not read (${outcome.error.kind}): ${outcome.error.message}`,
     );
+    // The automatic reloads do not start the CLI again before the interval
+    devOrgsFailedAt.set(cacheKey, Date.now());
     // Without a token, the orgs of the last result must not come back at the next fast pass
     if (outcome.error.kind === "noGitProvider") {
       await CacheManager.delete("project", cacheKey);
     }
   }
   return outcome;
+}
+
+// Infinity when the last read of the development orgs of this workspace did not fail
+function lastDevOrgsFailureAgeMs(): number {
+  const failedAt = devOrgsFailedAt.get(devOrgsCacheKey(getWorkspaceRoot()));
+  return failedAt ? Date.now() - failedAt : Number.POSITIVE_INFINITY;
 }
 
 // Infinity when there is no last result, or when its date cannot be read

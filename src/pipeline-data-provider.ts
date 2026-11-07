@@ -83,6 +83,8 @@ export interface PipelineData {
   mermaidDiagramDevOrgs?: string;
   // "+" nodes of that view: a target branch no development org targets yet
   devOrgAddNodes?: Array<{ nodeName: string; branch: string }>;
+  // developmentBranch and availableTargetBranches that are major branches of the pipeline
+  devOrgTargetBranches?: string[];
 }
 
 export class PipelineDataProvider {
@@ -174,6 +176,11 @@ export class PipelineDataProvider {
           : [],
       }) as string;
       const devOrgAddNodes = mermaidBuilder.getDevOrgAddNodes();
+      // The branches an org can target, among the major branches of the pipeline
+      const majorBranchNames = majorOrgs.map((org) => org.branchName);
+      const devOrgTargetBranchList = devOrgTargetBranches(projectConfig).filter(
+        (branch) => majorBranchNames.includes(branch),
+      );
 
       // Build orgs and links for UI (not just for diagram)
       const orgs: OrgNode[] = majorOrgs.map((org) => ({
@@ -227,6 +234,7 @@ export class PipelineDataProvider {
         devOrgsStaleDays: options.devOrgs?.staleDays || 0,
         mermaidDiagramDevOrgs,
         devOrgAddNodes,
+        devOrgTargetBranches: devOrgTargetBranchList,
       };
     } catch (error: any) {
       vscode.window.showErrorMessage(

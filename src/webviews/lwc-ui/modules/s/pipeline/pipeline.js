@@ -2254,11 +2254,23 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return this.pipelineData?.devOrgsStaleDays || 0;
   }
 
-  // Target branches offered by the Edit form of the details window
+  // Target branches offered by the Edit form of the details window: the target branches of the
+  // project (every major branch when it declares none), and the branch the org targets now
   get devOrgMajorBranches() {
-    return (this.pipelineData?.orgs || [])
+    const majorBranches = (this.pipelineData?.orgs || [])
       .map((org) => org.name)
       .filter((name) => !!name);
+    const targets = this.pipelineData?.devOrgTargetBranches || [];
+    const branches = targets.length > 0 ? [...targets] : [...majorBranches];
+    const current = this.selectedDevOrg?.targetBranch;
+    if (
+      current &&
+      majorBranches.includes(current) &&
+      !branches.includes(current)
+    ) {
+      branches.push(current);
+    }
+    return branches;
   }
 
   handleShowFeatureBranchesView() {
