@@ -59,7 +59,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track currentBranchPullRequest = null;
   @track autoFixPullRequest = null;
   @track openPullRequests = [];
-  @track displayFeatureBranches = true;
   // "Dev orgs" view of the switch: the major branches and every development org, instead of the
   // feature branches. The panel always opens on the feature branches.
   @track showDevOrgsView = false;
@@ -587,9 +586,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.warnings = (this.pipelineData && this.pipelineData.warnings) || [];
     this.hasWarnings = this.warnings.length > 0;
     this.showOnlyMajor = false;
-    if (Object.prototype.hasOwnProperty.call(data, "displayFeatureBranches")) {
-      this.displayFeatureBranches = data.displayFeatureBranches ?? true;
-    }
     if (
       Object.prototype.hasOwnProperty.call(
         data,
@@ -1667,6 +1663,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
             const targetId = mermaidNode.getAttribute("id") || "";
             const nodeIdentifier = this._extractNodeIdentifier(targetId);
 
+            // The "+" node of a target branch with no development org: register one
+            if (nodeIdentifier && nodeIdentifier.endsWith("DevOrgAdd")) {
+              this.handleAddDevOrgNode(nodeIdentifier);
+              return;
+            }
+
             // A development org (checked first: its node id ends with "Org" too)
             if (
               nodeIdentifier &&
@@ -2207,20 +2209,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return this.pipelineData?.devOrgsEnabled === true;
   }
 
-  // The Feature branches / Dev orgs switch replaces the feature branches toggle once some
-  // development org is registered: the two are never drawn together
+  // The Feature branches / Dev orgs switch of the header: always one view or the other
   get showViewSwitch() {
-    return (
-      this.gitAuthenticated &&
-      this.devOrgsEnabled &&
-      (this.pipelineData?.devOrgs || []).length > 0 &&
-      !!this.pipelineData?.mermaidDiagramDevOrgs
-    );
-  }
-
-  // The feature branches toggle, while there is no development org to switch to
-  get showFeatureBranchesToggle() {
-    return this.gitAuthenticated && !this.showViewSwitch;
+    return !!this.pipelineData?.mermaidDiagramDevOrgs;
   }
 
   get featureBranchesViewClass() {
@@ -2276,6 +2267,23 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   handleShowDevOrgsView() {
     this._setDevOrgsView(true);
+  }
+
+  // "+" node: register an org on its branch; the org, the owner and the users are asked in the
+  // command runner
+  handleAddDevOrgNode(nodeName) {
+    const slot = (this.pipelineData?.devOrgAddNodes || []).find(
+      (node) => node.nodeName === nodeName,
+    );
+    if (!slot || !/^[\w./-]+$/.test(slot.branch || "")) {
+      return;
+    }
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: `sf hardis:project:dev-org:register --target-branch ${slot.branch}`,
+      },
+    });
   }
 
   // Interactive: the owner, the users and the target branch are asked in the command runner
@@ -2396,17 +2404,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     setTimeout(() => this.renderMermaid(), 0);
   }
 
-  // With development orgs, the view of the switch: the feature branches (whatever the toggle
-  // said before) or the dev orgs. Without, the feature branches toggle.
+  // The view of the switch: the feature branches, or the major branches with the dev orgs
   _selectDiagram() {
     const data = this.pipelineData || {};
-    if (this.showViewSwitch) {
-      return this.showDevOrgsView
-        ? data.mermaidDiagramDevOrgs
-        : data.mermaidDiagram;
-    }
-    if (!this.displayFeatureBranches) {
-      return data.mermaidDiagramMajor;
+    if (this.showDevOrgsView && data.mermaidDiagramDevOrgs) {
+      return data.mermaidDiagramDevOrgs;
     }
     return data.mermaidDiagram;
   }
@@ -2597,31 +2599,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         data: {},
       });
     }
-  }
-
-  handleToggleFeatureBranches(event) {
-    // Get the new state from the toggle
-    this.displayFeatureBranches = event.target.checked;
-
-    // Update VS Code configuration
-    window.sendMessageToVSCode({
-      type: "updateVsCodeSfdxHardisConfiguration",
-      data: {
-        configKey: "pipelineDisplayFeatureBranches",
-        value: this.displayFeatureBranches,
-      },
-    });
-
-    // Switch diagram
-    this.currentDiagram = this._selectDiagram();
-
-    // Re-render the diagram
-    setTimeout(() => this.renderMermaid(), 0);
-
-    console.log(
-      "Feature branches display toggled:",
-      this.displayFeatureBranches,
-    );
   }
 
   _handleVisibilityChange() {

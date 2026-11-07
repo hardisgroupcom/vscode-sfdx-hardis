@@ -61,6 +61,8 @@ export class BranchStrategyMermaidBuilder {
   // One subgraph per target branch of the development orgs drawn: its id and its branch
   private salesforceDevOrgsGroup: Array<{ id: string; branch: string }> = [];
   private devOrgNodes: any[] = [];
+  // "+" node of a target branch that no development org targets: its node and its branch
+  private devOrgAddNodes: Array<{ nodeName: string; branch: string }> = [];
   private gitLinks: any[] = [];
   private deployLinks: any[] = [];
   private sbDevLinks: any[] = [];
@@ -120,24 +122,32 @@ export class BranchStrategyMermaidBuilder {
     return this.featureBranchGroups;
   }
 
+  /** The "+" nodes of the last build, to register a development org on their branch */
+  public getDevOrgAddNodes(): Array<{ nodeName: string; branch: string }> {
+    return this.devOrgAddNodes;
+  }
+
   /**
    * Build the mermaid diagram.
    * @param options.format 'list' or 'string'
    * @param options.withMermaidTag wrap in code block
    * @param options.onlyMajorBranches if true, only major branches (prod, preprod, uat, uatrun, integration) and their links are included (no dev/feature/hotfix branches or dev orgs)
    * @param options.devOrgs true draws every development org next to the branch it targets (with onlyMajorBranches, the "Dev orgs" view of the pipeline)
+   * @param options.devOrgAddBranches with devOrgs, the target branches that get a "+" node when no development org targets them
    */
   public build(options: {
     format: "list" | "string";
     withMermaidTag: boolean;
     onlyMajorBranches?: boolean;
     devOrgs?: boolean;
+    devOrgAddBranches?: string[];
   }): string | string[] {
     // Reset all arrays for each build
     this.gitBranches = [];
     this.salesforceOrgs = [];
     this.salesforceDevOrgsGroup = [];
     this.devOrgNodes = [];
+    this.devOrgAddNodes = [];
     this.gitLinks = [];
     this.deployLinks = [];
     this.sbDevLinks = [];
@@ -148,7 +158,7 @@ export class BranchStrategyMermaidBuilder {
     this.listGitBranchesAndLinks();
     this.listSalesforceOrgsAndLinks();
     if (options.devOrgs) {
-      this.listDevOrgsAndLinks();
+      this.listDevOrgsAndLinks(options.devOrgAddBranches || []);
     }
 
     if (options.onlyMajorBranches) {
@@ -174,6 +184,7 @@ export class BranchStrategyMermaidBuilder {
       if (!options.devOrgs) {
         this.salesforceDevOrgsGroup = [];
         this.devOrgNodes = [];
+        this.devOrgAddNodes = [];
         this.sbDevLinks = [];
       }
     }
@@ -710,7 +721,7 @@ export class BranchStrategyMermaidBuilder {
    * that branch. An org whose target branch is not a branch of the diagram is not drawn. The
    * number of Pull Requests it misses is a hidden count marker, drawn as a bubble by the webview.
    */
-  private listDevOrgsAndLinks(): void {
+  private listDevOrgsAndLinks(addBranches: string[]): void {
     for (const devOrg of this.devOrgs) {
       const branchNodeName =
         this.sanitizeNodeName(devOrg.targetBranch) + "Branch";
@@ -744,6 +755,43 @@ export class BranchStrategyMermaidBuilder {
         label: this.devOrgBehindChip(devOrg),
         group: groupId,
         name: devOrg.name,
+      });
+    }
+    // A target branch no org targets yet: a "+" node that registers one
+    for (const branch of addBranches) {
+      const branchNodeName = this.sanitizeNodeName(branch) + "Branch";
+      if (
+        !this.gitBranches.some(
+          (gitBranch) => gitBranch.nodeName === branchNodeName,
+        ) ||
+        this.devOrgNodes.some(
+          (node) => node.group === this.sanitizeNodeName(branch),
+        )
+      ) {
+        continue;
+      }
+      const groupId = this.sanitizeNodeName(branch);
+      this.salesforceDevOrgsGroup.push({ id: groupId, branch });
+      const nodeName = `${groupId}DevOrgAdd`;
+      const title = String(t("devOrgAddNodeTitle", { branch })).replace(
+        /['"]/g,
+        "",
+      );
+      this.devOrgNodes.push({
+        name: "",
+        nodeName,
+        label: `<span class='hardis-dev-org-add' title='${title}'>+</span>`,
+        class: "salesforceDevAdd",
+        group: groupId,
+      });
+      this.devOrgAddNodes.push({ nodeName, branch });
+      this.sbDevLinks.push({
+        source: nodeName,
+        target: branchNodeName,
+        type: "sfPushPull",
+        label: "",
+        group: groupId,
+        name: "",
       });
     }
     this.devOrgNodes = sortArray(this.devOrgNodes, {
@@ -1209,6 +1257,7 @@ export class BranchStrategyMermaidBuilder {
     const classesAndStyles = isDark
       ? `
   classDef salesforceDev fill:#1b232d,stroke:#3c7cb8,stroke-width:1.5px,color:#a9cff7,font-weight:500;
+  classDef salesforceDevAdd fill:#161d25,stroke:#3c7cb8,stroke-width:1.25px,stroke-dasharray:4 3,color:#a9cff7,font-weight:700,font-size:16px,cursor:pointer;
   classDef salesforceDevStale fill:#2a2116,stroke:#e2a336,stroke-width:1.5px,stroke-dasharray:4 3,color:#f9c97a,font-weight:500;
   classDef salesforceDevUnknown fill:#1b232d,stroke:#5c6e80,stroke-width:1.25px,stroke-dasharray:2 3,color:#c4d2de,font-weight:400;
   classDef salesforceMajor fill:#152b3f,stroke:#3c7cb8,stroke-width:1.5px,color:#a9cff7,font-weight:500;
@@ -1228,6 +1277,7 @@ export class BranchStrategyMermaidBuilder {
   `
       : `
   classDef salesforceDev fill:#f4f8fb,stroke:#67afe4,stroke-width:1.5px,color:#014486,font-weight:500;
+  classDef salesforceDevAdd fill:#ffffff,stroke:#67afe4,stroke-width:1.25px,stroke-dasharray:4 3,color:#0176d3,font-weight:700,font-size:16px,cursor:pointer;
   classDef salesforceDevStale fill:#fef6e8,stroke:#dd7a01,stroke-width:1.5px,stroke-dasharray:4 3,color:#8c4b02,font-weight:500;
   classDef salesforceDevUnknown fill:#ffffff,stroke:#aebfce,stroke-width:1.25px,stroke-dasharray:2 3,color:#5b6c7e,font-weight:400;
   classDef salesforceMajor fill:#eaf5fe,stroke:#67afe4,stroke-width:1.5px,color:#014486,font-weight:500;

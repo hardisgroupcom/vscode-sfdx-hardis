@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- DevOps Pipeline: a **Dev orgs** view shows the developer sandboxes and scratch orgs of the team next to the major branch they target, with the number of Pull Requests they miss since their last backpromote; click one to see the details, refresh the list, start its backpromote, edit or remove it (requires sfdx-hardis 8.24.0)
+- DevOps Pipeline: the **Feature branches / Dev orgs** switch replaces the feature branches toggle; the **Dev orgs** view shows the developer sandboxes and scratch orgs of the team next to the major branch they target, with the number of Pull Requests they miss since their last backpromote, and a **+** to register one; click an org to see the details, start its backpromote, edit or remove it (requires sfdx-hardis 8.24.0)
 
 ## [8.18.0] 2026-11-06
 

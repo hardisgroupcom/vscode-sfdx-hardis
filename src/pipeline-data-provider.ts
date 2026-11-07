@@ -21,6 +21,7 @@ import { isScratchOrgPoolConfigured } from "./utils/scratchOrgPoolUtils";
 import {
   DevOrgsView,
   DevOrgView,
+  devOrgTargetBranches,
   isDevOrgsRegistryEnabled,
 } from "./utils/pipeline/devOrgsUtils";
 import { PullRequest } from "./utils/gitProviders/types";
@@ -78,8 +79,10 @@ export interface PipelineData {
   devOrgsDashboardUrl?: string | null;
   devOrgsStaleDays?: number;
   // The "Dev orgs" view: the major branches and every development org, without the feature
-  // branches. Only when there is an org to draw.
+  // branches
   mermaidDiagramDevOrgs?: string;
+  // "+" nodes of that view: a target branch no development org targets yet
+  devOrgAddNodes?: Array<{ nodeName: string; branch: string }>;
 }
 
 export class PipelineDataProvider {
@@ -159,16 +162,18 @@ export class PipelineDataProvider {
         withMermaidTag: true,
         onlyMajorBranches: true,
       }) as string;
-      // The "Dev orgs" view: the major branches and every development org, no feature branch
-      const mermaidDiagramDevOrgs =
-        devOrgsList.length > 0
-          ? (mermaidBuilder.build({
-              format: "string",
-              withMermaidTag: true,
-              onlyMajorBranches: true,
-              devOrgs: true,
-            }) as string)
-          : undefined;
+      // The "Dev orgs" view: the major branches and every development org, no feature branch,
+      // and a "+" node for each target branch no org targets yet (when the list is on)
+      const mermaidDiagramDevOrgs = mermaidBuilder.build({
+        format: "string",
+        withMermaidTag: true,
+        onlyMajorBranches: true,
+        devOrgs: true,
+        devOrgAddBranches: devOrgsEnabled
+          ? devOrgTargetBranches(projectConfig)
+          : [],
+      }) as string;
+      const devOrgAddNodes = mermaidBuilder.getDevOrgAddNodes();
 
       // Build orgs and links for UI (not just for diagram)
       const orgs: OrgNode[] = majorOrgs.map((org) => ({
@@ -221,6 +226,7 @@ export class PipelineDataProvider {
         devOrgsDashboardUrl: options.devOrgs?.dashboardUrl || null,
         devOrgsStaleDays: options.devOrgs?.staleDays || 0,
         mermaidDiagramDevOrgs,
+        devOrgAddNodes,
       };
     } catch (error: any) {
       vscode.window.showErrorMessage(

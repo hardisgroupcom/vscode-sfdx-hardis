@@ -25,20 +25,7 @@
                     </button>
                 </template>
 
-                <template if:true={showFeatureBranchesToggle}>
-                    <div class="toggle-wrapper">
-                        <lightning-input
-                            type="toggle"
-                            label={i18n.showFeatureBranches}
-                            checked={displayFeatureBranches}
-                            onchange={handleToggleFeatureBranches}
-                            message-toggle-active=""
-                            message-toggle-inactive=""
-                        ></lightning-input>
-                    </div>
-                </template>
-
-                <!-- Once development orgs are registered: the feature branches or the dev orgs, never both -->
+                <!-- The feature branches or the dev orgs, never both -->
                 <template if:true={showViewSwitch}>
                     <span class="hardis-segmented pipeline-view-switch" role="group" aria-label={i18n.pipelineViewTitle} title={i18n.pipelineViewTitle}>
                         <button type="button" class={featureBranchesViewClass} aria-pressed={featureBranchesViewPressed} onclick={handleShowFeatureBranchesView}>{i18n.pipelineViewFeatureBranches}</button>

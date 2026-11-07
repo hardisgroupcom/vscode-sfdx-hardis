@@ -6,6 +6,7 @@ import {
   buildDevOrgRegisterCommand,
   buildDevOrgRemoveCommand,
   devOrgNodeName,
+  devOrgTargetBranches,
   DevOrgView,
   isDevOrgsChangeCommand,
   isDevOrgsRegistryEnabled,
@@ -218,22 +219,60 @@ suite("Development orgs", () => {
       assert.doesNotMatch(js, /setDevOrgsDisplay|displayDevOrgs/);
     });
 
-    test("the Feature branches / Dev orgs switch replaces the feature branches toggle", () => {
+    test("the header always shows the Feature branches / Dev orgs switch, never the old toggle", () => {
       const html = readModuleFile("pipeline", "pipeline.html");
-      assert.match(
-        html,
-        /<template if:true=\{showFeatureBranchesToggle\}>[\s\S]*handleToggleFeatureBranches/,
-      );
       assert.match(
         html,
         /<template if:true=\{showViewSwitch\}>[\s\S]*handleShowFeatureBranchesView[\s\S]*handleShowDevOrgsView/,
       );
+      assert.doesNotMatch(
+        html,
+        /handleToggleFeatureBranches|showFeatureBranches/,
+      );
       const js = readModuleFile("pipeline", "pipeline.js");
+      assert.match(js, /return !!this\.pipelineData\?\.mermaidDiagramDevOrgs;/);
+      assert.doesNotMatch(
+        js,
+        /displayFeatureBranches|pipelineDisplayFeatureBranches/,
+      );
+      const packageJson = JSON.parse(
+        fs.readFileSync(path.join(REPO_ROOT, "package.json"), "utf8"),
+      );
+      assert.strictEqual(
+        packageJson.contributes.configuration.properties[
+          "vsCodeSfdxHardis.pipelineDisplayFeatureBranches"
+        ],
+        undefined,
+      );
+    });
+
+    test("a click on a + node registers an org on its branch, before the other routes", () => {
+      const js = readModuleFile("pipeline", "pipeline.js");
+      const addRoute = js.indexOf('nodeIdentifier.endsWith("DevOrgAdd")');
+      const devOrgRoute = js.indexOf('nodeIdentifier.endsWith("DevOrg")');
+      assert.ok(addRoute > 0, "DevOrgAdd route");
+      assert.ok(addRoute < devOrgRoute, "DevOrgAdd route first");
       assert.match(
         js,
-        /return this\.gitAuthenticated && !this\.showViewSwitch;/,
+        /command: `sf hardis:project:dev-org:register --target-branch \$\{slot\.branch\}`/,
       );
-      assert.match(js, /data\.mermaidDiagramDevOrgs/);
+    });
+  });
+
+  suite("target branches", () => {
+    test("developmentBranch then availableTargetBranches, each once, description cut", () => {
+      assert.deepStrictEqual(
+        devOrgTargetBranches({
+          developmentBranch: "integration",
+          availableTargetBranches: [
+            "integration",
+            "preprod,Hotfixes on production",
+            "bad branch",
+          ],
+        }),
+        ["integration", "preprod"],
+      );
+      assert.deepStrictEqual(devOrgTargetBranches({}), []);
     });
   });
 
@@ -349,6 +388,7 @@ suite("Development orgs", () => {
       orgs: DevOrgView[],
       withDevOrgs: boolean,
       onlyMajor = false,
+      addBranches: string[] = [],
     ): string {
       return new BranchStrategyMermaidBuilder(
         branches,
@@ -365,6 +405,7 @@ suite("Development orgs", () => {
         withMermaidTag: false,
         onlyMajorBranches: onlyMajor,
         devOrgs: withDevOrgs,
+        devOrgAddBranches: addBranches,
       }) as string;
     }
 
@@ -451,6 +492,29 @@ suite("Development orgs", () => {
       assert.match(text, /dev-alpha/);
       assert.match(text, /dev-bravo/);
       assert.match(text, /subgraph SalesforceDevOrgsintegration /);
+    });
+
+    test("a target branch no org targets gets a + node linked to it, the others none", () => {
+      const text = diagram(devOrgs([rawOrg()]), true, true, [
+        "integration",
+        "uat",
+        "not-in-pipeline",
+      ]);
+      assert.match(
+        text,
+        /uatDevOrgAdd\(\["<span class='hardis-dev-org-add' title='[^']+'>\+<\/span>"\]\):::salesforceDevAdd/,
+      );
+      assert.match(text, /uatDevOrgAdd -\.- uatBranch\n/);
+      assert.doesNotMatch(text, /integrationDevOrgAdd/);
+      assert.doesNotMatch(text, /not-in-pipeline|notinpipelineDevOrgAdd/);
+      assert.match(text, /classDef salesforceDevAdd /);
+    });
+
+    test("no + node without devOrgs", () => {
+      assert.doesNotMatch(
+        diagram([], false, true, ["integration"]),
+        /DevOrgAdd/,
+      );
     });
 
     test("a cut off count shows a plus", () => {

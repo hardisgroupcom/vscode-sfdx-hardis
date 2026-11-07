@@ -480,7 +480,14 @@ async function main() {
     devOrgsFixtureFile = path.join(workDir, "dev-orgs-mock.json");
     fs.writeFileSync(
       devOrgsFixtureFile,
-      JSON.stringify(devOrgsFixture(Date.now()), null, 2),
+      JSON.stringify(
+        // SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS_EMPTY: no org registered yet, the "+" nodes
+        process.env.SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS_EMPTY === "true"
+          ? { ...devOrgsFixture(Date.now()), orgs: [] }
+          : devOrgsFixture(Date.now()),
+        null,
+        2,
+      ),
       "utf8",
     );
   }
@@ -563,12 +570,6 @@ async function main() {
   } else if (process.env.SFDX_HARDIS_VISUAL_THEME === "dark") {
     workspaceSettings["workbench.colorTheme"] = "Default Dark Modern";
     workspaceSettings["vsCodeSfdxHardis.theme.colorTheme"] = "dark";
-  }
-  // Lab 3.1 step 8 compares this picture with the learner's own panel, which has none of the
-  // feature branches of later labs: show the major branches only
-  if (pipelineState === "level3-split") {
-    workspaceSettings["vsCodeSfdxHardis.pipelineDisplayFeatureBranches"] =
-      false;
   }
   if (docScreenshots) {
     // Documentation screenshots are always taken in light mode, English, with

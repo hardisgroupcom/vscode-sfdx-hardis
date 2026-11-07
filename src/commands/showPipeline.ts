@@ -1441,10 +1441,6 @@ export function registerShowPipeline(commands: Commands) {
       );
       perfStep("getPipelineData (mermaid)");
 
-      // Read displayFeatureBranches configuration
-      const displayFeatureBranches =
-        config.get<boolean>("pipelineDisplayFeatureBranches") ?? true;
-
       const ticketProvider = await TicketProvider.getInstance({
         reset: false,
         authenticate: false,
@@ -1519,7 +1515,6 @@ export function registerShowPipeline(commands: Commands) {
         openPullRequests: openPullRequests,
         repoPlatformLabel: repoPlatformLabel,
         repoInfo: gitProvider?.repoInfo || null,
-        displayFeatureBranches: displayFeatureBranches,
         projectApexScripts: projectApexScripts,
         projectSfdmuWorkspaces: projectDataWorkspaces,
         projectCommunities: [],
@@ -1566,7 +1561,6 @@ type PipelineInfo = {
   openPullRequests: PullRequest[];
   repoPlatformLabel: string;
   repoInfo?: any;
-  displayFeatureBranches: boolean;
   projectApexScripts: any[];
   projectSfdmuWorkspaces: any[];
   projectCommunities: any[];

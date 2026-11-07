@@ -120,6 +120,32 @@ const BRANCH_NAME_PATTERN = /^[\w./-]+$/;
 // quotes: a value holding one is refused, never escaped
 const UNSAFE_QUOTED_VALUE = /["\\`$%!]/;
 
+/**
+ * The branches a development org can target: developmentBranch, then availableTargetBranches
+ * (an entry can be "branch,description"). Each one once, in that order.
+ */
+export function devOrgTargetBranches(projectConfig: any): string[] {
+  const branches: string[] = [];
+  const candidates = [
+    projectConfig?.developmentBranch,
+    ...(Array.isArray(projectConfig?.availableTargetBranches)
+      ? projectConfig.availableTargetBranches
+      : []),
+  ];
+  for (const candidate of candidates) {
+    const branch =
+      typeof candidate === "string" ? candidate.split(",")[0].trim() : "";
+    if (
+      branch &&
+      BRANCH_NAME_PATTERN.test(branch) &&
+      !branches.includes(branch)
+    ) {
+      branches.push(branch);
+    }
+  }
+  return branches;
+}
+
 /** False only when the project turned the list off (enableDevOrgsRegistry: false) */
 export function isDevOrgsRegistryEnabled(projectConfig: any): boolean {
   return projectConfig?.enableDevOrgsRegistry !== false;

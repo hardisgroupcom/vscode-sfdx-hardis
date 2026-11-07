@@ -51,7 +51,6 @@ export const sectionDefs = [
     iconName: "utility:merge",
     description: "DevOps Pipeline display settings.",
     keys: [
-      "vsCodeSfdxHardis.pipelineDisplayFeatureBranches",
       "vsCodeSfdxHardis.pipelineFeatureBranchGroupThreshold",
     ],
   },

@@ -203,6 +203,8 @@ SFDX_HARDIS_DOC_SCREENSHOTS_MAJOR_BRANCH_CHECK=true \
 SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS=true \
   SFDX_HARDIS_DOC_SCREENSHOTS_DIR=doc-screenshots/dev-orgs \
   yarn screenshots dev-orgs
+# The same view before any org is registered (the "+" nodes)
+SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS=true SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS_EMPTY=true   SFDX_HARDIS_DOC_SCREENSHOTS_DIR=doc-screenshots/dev-orgs-empty   yarn screenshots dev-orgs
 
 # Copy them into the documentation of the sibling sfdx-hardis repository
 python scripts/build-doc-images.py

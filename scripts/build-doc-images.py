@@ -92,6 +92,9 @@ PANEL_SHOTS = {
     # Development orgs, taken by the dev orgs variant of the run into
     # doc-screenshots/dev-orgs (see CONTRIBUTING.md)
     "dev-orgs-pipeline.png": "dev-orgs/dev-orgs-pipeline",
+    # Same view before any org is registered: a "+" node per target branch, taken with
+    # SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS_EMPTY=true into doc-screenshots/dev-orgs-empty
+    "dev-orgs-pipeline-empty.png": "dev-orgs-empty/dev-orgs-pipeline",
 }
 
 # Width of the activity bar + side bar in a capture: the editor area (the
@@ -140,6 +143,7 @@ WEBVIEW_ONLY = {
     "major-branch-check-pipeline.png",
     "major-branch-check-settings.png",
     "dev-orgs-pipeline.png",
+    "dev-orgs-pipeline-empty.png",
     "scratch-org-pool-menu.png",
 }
 

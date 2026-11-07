@@ -2104,8 +2104,7 @@ suite("Documentation screenshots", function () {
       command: "vscode-sfdx-hardis.showPipeline",
       lwcId: "s-pipeline",
       ready: (data: any) =>
-        pipelineFullyLoaded(data) &&
-        (data?.pipelineData?.devOrgs || []).length > 0,
+        pipelineFullyLoaded(data) && data?.pipelineData?.devOrgsLoaded === true,
       settleMs: 9000,
       force: true,
     });
