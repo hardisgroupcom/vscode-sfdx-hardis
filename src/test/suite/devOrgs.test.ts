@@ -260,6 +260,26 @@ suite("Development orgs", () => {
     });
   });
 
+  suite("pipeline load", () => {
+    test("a pass never waits for sf hardis:project:dev-org:list, and a credentials timeout runs nothing", () => {
+      const source = fs.readFileSync(
+        path.join(REPO_ROOT, "src", "commands", "showPipeline.ts"),
+        "utf8",
+      );
+      const read = source.slice(
+        source.indexOf("async function readDevOrgsForPipeline("),
+        source.indexOf("function readDevOrgsInBackground("),
+      );
+      assert.match(read, /void readDevOrgsInBackground\(\)/);
+      assert.doesNotMatch(read, /await loadDevOrgs\(/);
+      const load = source.slice(source.indexOf("async function loadDevOrgs("));
+      assert.match(
+        load,
+        /collectProviderCredentialEnvVarsWithStatus\(\);\s*if \(credentials\.timedOut\)/,
+      );
+    });
+  });
+
   suite("target branches", () => {
     test("developmentBranch then availableTargetBranches, each once, description cut", () => {
       assert.deepStrictEqual(

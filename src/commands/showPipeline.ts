@@ -32,6 +32,7 @@ import {
 import { execSfdxJson, getWorkspaceRoot } from "../utils";
 import {
   collectProviderCredentialEnvVars,
+  collectProviderCredentialEnvVarsWithStatus,
   execSfdxJsonWithProviderCredentials,
 } from "../utils/providerCredentials";
 import { connectGitProvider } from "../utils/gitProviders/connectGitProvider";
@@ -397,6 +398,15 @@ export function registerShowPipeline(commands: Commands) {
             resetGit: opts?.resetGit ?? false,
             withProgress: false,
             devOrgsMaxAgeMs: opts?.devOrgsMaxAgeMs,
+            // sfdx-hardis read the development orgs in the background and the list changed: draw
+            // it, from that result, once the pass that may still run is over
+            onDevOrgsChanged: () => {
+              void (fullLoadInFlight || Promise.resolve()).then(() =>
+                loadPipelineFull({
+                  devOrgsMaxAgeMs: Number.POSITIVE_INFINITY,
+                }),
+              );
+            },
           });
           pipelineProperties = full;
           panel.sendInitializationData({
@@ -1277,13 +1287,14 @@ export function registerShowPipeline(commands: Commands) {
       const themeConfig = LwcUiPanel.resolveTheme(colorThemeConfig);
       const colorTheme = themeConfig.colorTheme;
 
-      // Development orgs: read by sfdx-hardis in the full pass only, alongside the git provider
-      // calls below, when the last result is older than devOrgsMaxAgeMs (one hour by default).
-      // The fast pass uses the last result.
+      // Development orgs: the last result, always. In the full pass, when it is older than
+      // devOrgsMaxAgeMs (one hour by default), sfdx-hardis reads them again in the background:
+      // the pipeline never waits for that command, it is drawn again if the list changed.
       const devOrgsPromise = readDevOrgsForPipeline(
         browseGitProvider
           ? (options?.devOrgsMaxAgeMs ?? DEV_ORGS_READ_INTERVAL_MS)
           : Number.POSITIVE_INFINITY,
+        browseGitProvider ? options?.onDevOrgsChanged : undefined,
       );
 
       const prButtonInfo: any = {};
@@ -1554,6 +1565,8 @@ type LoadPipelineOptions = {
   withProgress?: boolean;
   // Age of the last development orgs result above which sfdx-hardis reads them again
   devOrgsMaxAgeMs?: number;
+  // Called when that background read changed the list
+  onDevOrgsChanged?: () => void;
 };
 
 type PipelineInfo = {
@@ -2203,26 +2216,27 @@ const DEV_ORGS_READ_INTERVAL_MS = 1000 * 60 * 60;
 const devOrgsFailedAt = new Map<string, number>();
 
 /**
- * The development orgs a pass of the pipeline draws. Nothing when the project turned the list
- * off. Read by sfdx-hardis when the last result is older than maxAgeMs, else the last result. Never throws: a failure, or no git provider token, only leaves the
+ * The development orgs a pass of the pipeline draws: the last result, at once. Nothing when the
+ * project turned the list off. When the last result (or the last failed read) is older than
+ * maxAgeMs, sfdx-hardis reads the list again in the background, and onChanged is called when the
+ * new list differs. Never throws: a failure, or no git provider token, only leaves the
  * development orgs out.
  */
 async function readDevOrgsForPipeline(
   maxAgeMs: number,
+  onChanged?: () => void,
 ): Promise<DevOrgsView | null> {
   try {
     if (!isDevOrgsRegistryEnabled(await getConfig("project"))) {
       return null;
     }
-    if (Math.min(lastDevOrgsAgeMs(), lastDevOrgsFailureAgeMs()) <= maxAgeMs) {
-      return readLastDevOrgs();
+    if (Math.min(lastDevOrgsAgeMs(), lastDevOrgsFailureAgeMs()) > maxAgeMs) {
+      void readDevOrgsInBackground().then((changed) => {
+        if (changed && onChanged) {
+          onChanged();
+        }
+      });
     }
-    const outcome = await loadDevOrgs(false);
-    if ("devOrgs" in outcome) {
-      return outcome.devOrgs;
-    }
-    // A failed read (network, provider) keeps what was read last; without a token, nothing is
-    // kept (loadDevOrgs deleted it)
     return readLastDevOrgs();
   } catch (e: any) {
     Logger.log(
@@ -2232,19 +2246,62 @@ async function readDevOrgsForPipeline(
   }
 }
 
+// One background read of the development orgs at a time, for every pass that asks
+let devOrgsBackgroundRead: Promise<boolean> | null = null;
+
+/** Reads the list with sfdx-hardis. True when the last result changed. */
+function readDevOrgsInBackground(): Promise<boolean> {
+  if (!devOrgsBackgroundRead) {
+    const before = JSON.stringify(readLastDevOrgs()?.orgs ?? null);
+    devOrgsBackgroundRead = loadDevOrgs(false)
+      .then(() => JSON.stringify(readLastDevOrgs()?.orgs ?? null) !== before)
+      .catch(() => false)
+      .finally(() => {
+        devOrgsBackgroundRead = null;
+      });
+  }
+  return devOrgsBackgroundRead;
+}
+
 /**
  * Reads the list with sf hardis:project:dev-org:list and keeps it as the last result. With
  * refresh, sfdx-hardis first lists again the Pull Requests merged into the target branches.
  */
 async function loadDevOrgs(refresh: boolean): Promise<DevOrgsOutcome> {
-  let errorMessage = "";
-  const answer = await execSfdxJsonWithProviderCredentials(
-    buildDevOrgListCommand(refresh),
-    "Development orgs",
-    (message) => {
-      errorMessage = message;
-    },
-  );
+  // Credentials not read in time: sfdx-hardis would answer "no token" after a whole command run,
+  // and that answer would delete the last result. The next pass tries again.
+  const credentials = await collectProviderCredentialEnvVarsWithStatus();
+  if (credentials.timedOut) {
+    Logger.log(
+      "[vscode-sfdx-hardis] Development orgs not read: provider credentials not read in time",
+    );
+    return {
+      error: {
+        kind: "other",
+        message: "provider credentials not read in time",
+      },
+    };
+  }
+  let errorMessage = "unknown error";
+  let answer: any = null;
+  try {
+    const result = await execSfdxJson(buildDevOrgListCommand(refresh), {
+      fail: false,
+      output: false,
+      debug: false,
+      reuseRecentResult: false,
+      env: credentials.env,
+    });
+    if (result?.status === 0 && result?.result) {
+      answer = result.result;
+    } else {
+      errorMessage = String(
+        result?.errorMessage || result?.message || errorMessage,
+      );
+    }
+  } catch (e: any) {
+    errorMessage = String(e?.message || e);
+  }
   const outcome: DevOrgsOutcome = answer
     ? readDevOrgsOutcome({ status: 0, result: answer })
     : { error: { kind: "other", message: errorMessage } };
