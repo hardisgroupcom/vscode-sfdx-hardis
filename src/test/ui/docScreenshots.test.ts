@@ -4065,11 +4065,18 @@ suite("Documentation screenshots", function () {
     });
     // The cards sit under the diagram, and neither zooming the window nor a
     // wheel event brings them up: the window zoom scales the diagram with the
-    // page, and a posted wheel never reaches the webview's scroller. Hiding the
-    // feature branches is what actually shrinks the diagram, and it is a real
-    // control a reader can find, right in the header.
-    await click(1555, 104); // "Show feature branches" toggle
-    await sleep(2500);
+    // page, and a posted wheel never reaches the webview's scroller. The tabs
+    // of the cards are scrolled into view from inside the webview instead (the
+    // header used to have a feature branches toggle that shrank the diagram).
+    await inWebview(`
+      const tabs = deepAll(panelDocument, "lightning-tabset.pipeline-tabs")[0];
+      if (!tabs) {
+        return null;
+      }
+      tabs.scrollIntoView({ block: "start" });
+      return true;
+    `);
+    await sleep(1500);
     // Two levels out on top of that, so the whole row of cards fits rather than
     // being cut off at the bottom edge
     await vscode.commands.executeCommand("workbench.action.zoomOut");
@@ -4084,8 +4091,6 @@ suite("Documentation screenshots", function () {
     await vscode.commands.executeCommand("workbench.action.zoomIn");
     await vscode.commands.executeCommand("workbench.action.zoomIn");
     await sleep(1200);
-    await click(1555, 104); // put the toggle back for the captures that follow
-    await sleep(1500);
   });
 
   // Pipeline settings scoped to a major branch: the screen where a contributor

@@ -377,6 +377,19 @@ async function main() {
       "utf8",
     );
   }
+  // Lab 3.1 step 8 compares this picture with the learner's own panel, which has none of the Pull
+  // Requests of later labs: no open Pull Request, so the Feature branches view draws the major
+  // branches only (the panel has no toggle to hide feature branches anymore)
+  if (pipelineState === "level3-split") {
+    const fixture = JSON.parse(fs.readFileSync(gitProviderFixtureFile, "utf8"));
+    fixture.openPullRequests = [];
+    gitProviderFixtureFile = path.join(workDir, "git-provider-mock.json");
+    fs.writeFileSync(
+      gitProviderFixtureFile,
+      JSON.stringify(fixture, null, 2),
+      "utf8",
+    );
+  }
   if (promotionVariant) {
     // The promotion branch exists on the repository, like any branch pushed by
     // hardis:project:promotion:create. An alternate universe names its own, so
