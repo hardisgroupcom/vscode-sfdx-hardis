@@ -292,7 +292,6 @@ export default class Backpromote extends SharedMixin(LightningElement) {
     return formatShortDate(value, this.locale);
   }
 
-
   // ---------------------------------------------------------------------------
   // States
   // ---------------------------------------------------------------------------

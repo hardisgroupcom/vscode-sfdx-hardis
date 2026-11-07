@@ -311,7 +311,9 @@ suite("Development orgs", () => {
       // The commands that register the org they work with
       assert.ok(isDevOrgsChangeCommand("sf hardis:work:new --agent"));
       assert.ok(isDevOrgsChangeCommand("sf hardis:work:save"));
-      assert.ok(isDevOrgsChangeCommand("sf hardis:work:backpromote --auto --json"));
+      assert.ok(
+        isDevOrgsChangeCommand("sf hardis:work:backpromote --auto --json"),
+      );
       assert.ok(isDevOrgsChangeCommand("sf hardis:org:create"));
       assert.ok(!isDevOrgsChangeCommand("hardis:project:dev-org:list"));
       assert.ok(!isDevOrgsChangeCommand("sf hardis:work:refresh"));
