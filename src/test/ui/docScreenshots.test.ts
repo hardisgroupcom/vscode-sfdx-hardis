@@ -500,6 +500,13 @@ const PROMOTION_MODAL_CLOSE = { x: 1843, y: 78 };
 const MAJOR_BRANCH_CHECK_VARIANT =
   process.env.SFDX_HARDIS_DOC_SCREENSHOTS_MAJOR_BRANCH_CHECK === "true";
 /**
+ * Development orgs variant of the run (SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS): the
+ * mocked CLI answers a list of development orgs. The base fixture has none, so
+ * the ordinary pipeline screenshots keep their diagram.
+ */
+const DEV_ORGS_VARIANT =
+  process.env.SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS === "true";
+/**
  * Action recovery variant of the run (SFDX_HARDIS_DOC_SCREENSHOTS_ACTION_RECOVERY):
  * a Pull Request merged into integration whose first post-deployment action
  * failed and stopped the two others, and the open fix Pull Request moving one of
@@ -2077,6 +2084,67 @@ suite("Documentation screenshots", function () {
     if (scrolled) {
       await sleep(800);
       await captureStable("major-branch-check-settings");
+    }
+  });
+
+  // Development orgs list, for docs/salesforce-devops-dev-orgs.md. Only in the
+  // dev orgs variant of the run, whose mocked CLI answers four development orgs
+  // (devOrgsFixture in src/test/runUiTest.ts):
+  //   SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS=true \
+  //   SFDX_HARDIS_DOC_SCREENSHOTS_DIR=doc-screenshots/dev-orgs \
+  //   yarn screenshots dev-orgs
+  test("development orgs", async function () {
+    if (!DEV_ORGS_VARIANT || !shouldTake("dev-orgs")) {
+      this.skip();
+    }
+    // The pipeline opens on the feature branches: the switch of the header
+    // shows the major branches with every development org instead
+    await shootPanel(panelManager, {
+      name: "dev-orgs-feature-branches",
+      command: "vscode-sfdx-hardis.showPipeline",
+      lwcId: "s-pipeline",
+      ready: (data: any) =>
+        pipelineFullyLoaded(data) && data?.pipelineData?.devOrgsLoaded === true,
+      settleMs: 9000,
+      force: true,
+    });
+    const switched = await inWebview(`
+      const button = deepAll(
+        panelDocument,
+        ".pipeline-view-switch button",
+      )[1];
+      if (!button) {
+        return null;
+      }
+      button.click();
+      return true;
+    `);
+    if (!switched) {
+      console.log("      [shot] dev-orgs-pipeline: view switch not found");
+      return;
+    }
+    await sleep(3000);
+    await cleanChrome();
+    await captureStable("dev-orgs-pipeline");
+    // Details window of the sandbox missing three Pull Requests. The node is
+    // clicked by its id, since the layout depends on the orgs of the fixture
+    const opened = await inWebview(`
+      const node = deepAll(panelDocument, "g.node").find((element) =>
+        /flowchart-org00D5f0000012XycEAEDevOrg-/.test(element.id || ""),
+      );
+      if (!node) {
+        return null;
+      }
+      const shape = node.querySelector("rect, path, polygon") || node;
+      shape.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      return true;
+    `);
+    if (opened) {
+      await sleep(2500);
+      await cleanChrome();
+      await captureStable("dev-orgs-details");
+    } else {
+      console.log("      [shot] dev-orgs-details: dev org node not found");
     }
   });
 

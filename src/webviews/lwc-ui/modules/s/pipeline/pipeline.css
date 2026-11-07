@@ -340,6 +340,26 @@
     );
 }
 
+/* A development org linked to the branch it targets (two-way dotted edge) */
+.legend-line-dev-org {
+    border-top: 1.5px dotted var(--slds-g-color-palette-blue-50);
+}
+
+/* A development org with no activity for a while: dashed orange node */
+.legend-node-dev-org-stale {
+    display: inline-block;
+    width: 18px;
+    height: 10px;
+    border-radius: 5px;
+    border: 1.5px dashed var(--slds-g-color-palette-orange-60);
+}
+
+/* Feature branches / Dev orgs switch, in place of the feature branches toggle */
+.pipeline-view-switch {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
 /* Last deployment check of a major branch, in the last tab of its window */
 .major-branch-check-row {
     display: flex;

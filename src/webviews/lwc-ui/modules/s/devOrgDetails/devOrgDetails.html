@@ -1,0 +1,263 @@
+<template>
+  <div class="slds-scope">
+    <section
+      role="dialog"
+      tabindex="-1"
+      aria-modal="true"
+      aria-labelledby="dev-org-details-heading"
+      class="slds-modal slds-fade-in-open slds-modal_medium"
+    >
+      <div class="slds-modal__container">
+        <div class="modal-accent-strip"></div>
+        <header class="slds-modal__header">
+          <button
+            class="slds-button slds-button_icon slds-modal__close"
+            title={i18n.close}
+            onclick={handleClose}
+          >
+            <lightning-icon icon-name="utility:close" size="small" alternative-text={i18n.close}></lightning-icon>
+            <span class="slds-assistive-text">{i18n.close}</span>
+          </button>
+          <h2 id="dev-org-details-heading" class="slds-modal__title slds-hyphenate">{title}</h2>
+          <p class="dev-org-subtitle">{subtitle}</p>
+          <div class="hardis-chip-row dev-org-badges">
+            <span class="hardis-pill hardis-status-info">{typeLabel}</span>
+            <template if:true={isMine}>
+              <span class="hardis-pill hardis-status-success"><span class="hardis-pill-dot"></span>{i18n.devOrgMineBadge}</span>
+            </template>
+            <template if:true={isStale}>
+              <span class="hardis-pill hardis-status-pending"><span class="hardis-pill-dot"></span>{staleBadgeLabel}</span>
+            </template>
+          </div>
+        </header>
+
+        <div class="slds-modal__content slds-p-around_medium">
+          <!-- Details and missing Pull Requests -->
+          <template if:true={isViewMode}>
+            <div class="hardis-prop-grid">
+              <div class="hardis-prop">
+                <div class="hardis-prop-key">{i18n.devOrgTargetBranch}</div>
+                <div class="hardis-prop-value"><span class="hardis-branch-chip">{targetBranch}</span></div>
+              </div>
+              <div class="hardis-prop">
+                <div class="hardis-prop-key">{i18n.devOrgOwner}</div>
+                <div class="hardis-prop-value"><span title={ownerName}>{ownerLabel}</span></div>
+              </div>
+              <div class="hardis-prop">
+                <div class="hardis-prop-key">{i18n.devOrgUsers}</div>
+                <div class="hardis-prop-value">
+                  <template if:true={hasUsers}>
+                    <template for:each={users} for:item="user">
+                      <div key={user.key} title={user.name}>{user.label}</div>
+                    </template>
+                  </template>
+                  <template if:false={hasUsers}>
+                    <span class="muted">{i18n.devOrgNotSet}</span>
+                  </template>
+                </div>
+              </div>
+              <div class="hardis-prop">
+                <div class="hardis-prop-key">{i18n.devOrgInstanceUrl}</div>
+                <div class="hardis-prop-value">
+                  <template if:true={hasInstanceUrl}>
+                    <a href="#" class="hardis-textlink dev-org-link" data-url={instanceUrl} title={instanceUrl} onclick={handleOpenUrl}>{instanceUrl}</a>
+                  </template>
+                  <template if:false={hasInstanceUrl}>
+                    <span class="muted">{i18n.devOrgNotSet}</span>
+                  </template>
+                </div>
+              </div>
+              <div class="hardis-prop">
+                <div class="hardis-prop-key">{i18n.devOrgRegisteredAt}</div>
+                <div class="hardis-prop-value">{registeredAtLabel}</div>
+              </div>
+              <div class="hardis-prop">
+                <div class="hardis-prop-key">{i18n.devOrgLastActivity}</div>
+                <div class="hardis-prop-value">{lastActivityLabel}</div>
+              </div>
+              <div class="hardis-prop">
+                <div class="hardis-prop-key">{i18n.devOrgLastBackpromote}</div>
+                <div class="hardis-prop-value">{lastBackpromoteLabel}</div>
+              </div>
+              <template if:true={hasExpiration}>
+                <div class="hardis-prop">
+                  <div class="hardis-prop-key">{i18n.devOrgExpiration}</div>
+                  <div class="hardis-prop-value">{expirationLabel}</div>
+                </div>
+              </template>
+              <template if:true={hasFeatureBranches}>
+                <div class="hardis-prop dev-org-prop-wide">
+                  <div class="hardis-prop-key">{i18n.devOrgFeatureBranches}</div>
+                  <div class="hardis-prop-value hardis-chip-row">
+                    <template for:each={featureBranches} for:item="branch">
+                      <span key={branch.key} class="hardis-branch-chip" title={branch.title}>{branch.name}</span>
+                    </template>
+                  </div>
+                </div>
+              </template>
+            </div>
+
+            <div class="hardis-group-label dev-org-section">
+              {i18n.devOrgMissingPullRequests}
+              <template if:true={hasMissingPullRequests}>
+                <span class="hardis-count-chip">{missingCountLabel}</span>
+              </template>
+            </div>
+            <template if:true={behindNotComputed}>
+              <div class="hardis-note">{i18n.devOrgBehindNotComputed}</div>
+            </template>
+            <template if:false={behindNotComputed}>
+              <p class="hardis-group-desc">{missingDescription} {computedAtLabel}</p>
+              <template if:true={isUpToDate}>
+                <div class="hardis-note success">{upToDateLabel}</div>
+              </template>
+              <template if:true={hasMissingPullRequests}>
+                <ul class="dev-org-pr-list">
+                  <template for:each={missingPullRequests} for:item="pullRequest">
+                    <li key={pullRequest.key} class="dev-org-pr">
+                      <div class="dev-org-pr-head">
+                        <template if:true={pullRequest.url}>
+                          <a href="#" class="hardis-textlink dev-org-link" data-url={pullRequest.url} title={pullRequest.label} onclick={handleOpenUrl}>{pullRequest.label}</a>
+                        </template>
+                        <template if:false={pullRequest.url}>
+                          <span>{pullRequest.label}</span>
+                        </template>
+                        <template if:true={pullRequest.vehicle}>
+                          <span class="hardis-pill hardis-status-unknown">{i18n.devOrgVehicleBadge}</span>
+                        </template>
+                      </div>
+                      <div class="dev-org-pr-meta muted">
+                        {pullRequest.mergedLabel}
+                        <template if:true={pullRequest.sourceBranch}>
+                          <span class="hardis-branch-chip">{pullRequest.sourceBranch}</span>
+                        </template>
+                      </div>
+                      <template if:true={pullRequest.hasCarried}>
+                        <ul class="dev-org-carried-list">
+                          <template for:each={pullRequest.carried} for:item="carried">
+                            <li key={carried.key}>
+                              <template if:true={carried.url}>
+                                <a href="#" class="hardis-textlink dev-org-link" data-url={carried.url} title={carried.label} onclick={handleOpenUrl}>{carried.label}</a>
+                              </template>
+                              <template if:false={carried.url}>
+                                <span>{carried.label}</span>
+                              </template>
+                            </li>
+                          </template>
+                        </ul>
+                      </template>
+                      <template if:true={pullRequest.carriedNotComputed}>
+                        <div class="dev-org-carried-list muted">{i18n.devOrgCarriedNotComputed}</div>
+                      </template>
+                    </li>
+                  </template>
+                </ul>
+              </template>
+              <template if:true={showCutOff}>
+                <div class="hardis-note warning slds-m-top_small">{i18n.devOrgBehindCutOff}</div>
+              </template>
+            </template>
+          </template>
+
+          <!-- Edit form: written by sfdx-hardis in the command runner -->
+          <template if:true={isEditMode}>
+            <div class="slds-grid slds-wrap slds-gutters">
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <lightning-combobox
+                  label={i18n.devOrgTargetBranch}
+                  value={editTargetBranch}
+                  options={branchOptions}
+                  onchange={handleTargetBranchChange}
+                  required
+                ></lightning-combobox>
+              </div>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <lightning-input
+                  label={i18n.devOrgOwner}
+                  value={editOwner}
+                  placeholder="Jane Doe <jane.doe@example.com>"
+                  field-level-help={i18n.devOrgOwnerHelp}
+                  onchange={handleOwnerChange}
+                ></lightning-input>
+              </div>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <lightning-textarea
+                  label={i18n.devOrgUsers}
+                  value={editUsers}
+                  placeholder="Jane Doe <jane.doe@example.com>, john.smith@example.com"
+                  field-level-help={i18n.devOrgUsersHelp}
+                  onchange={handleUsersChange}
+                ></lightning-textarea>
+              </div>
+            </div>
+          </template>
+
+          <!-- Removal from the list, confirmed first -->
+          <template if:true={isConfirmRemoveMode}>
+            <div class="hardis-note warning">{removeConfirmLabel}</div>
+          </template>
+        </div>
+
+        <footer class="slds-modal__footer dev-org-footer">
+          <template if:true={isViewMode}>
+            <div class="dev-org-footer-actions">
+              <lightning-button
+                variant="neutral"
+                class="hardis-btn-tinted-red"
+                label={i18n.devOrgRemove}
+                icon-name="utility:delete"
+                onclick={handleRemove}
+              ></lightning-button>
+              <lightning-button
+                variant="neutral"
+                label={i18n.edit}
+                icon-name="utility:edit"
+                onclick={handleEdit}
+              ></lightning-button>
+              <lightning-button
+                variant="neutral"
+                label={refreshLabel}
+                title={i18n.devOrgRefreshTitle}
+                icon-name="utility:refresh"
+                disabled={refreshing}
+                onclick={handleRefresh}
+              ></lightning-button>
+              <lightning-button
+                variant="neutral"
+                class="hardis-btn-tinted-blue"
+                label={i18n.devOrgBackpromote}
+                title={backpromoteTitle}
+                icon-name="utility:download"
+                disabled={backpromoteDisabled}
+                onclick={handleBackpromote}
+              ></lightning-button>
+            </div>
+            <lightning-button variant="neutral" label={i18n.close} onclick={handleClose}></lightning-button>
+          </template>
+          <template if:true={isEditMode}>
+            <div class="dev-org-footer-actions"></div>
+            <lightning-button variant="neutral" label={i18n.cancel} onclick={handleCancel}></lightning-button>
+            <lightning-button
+              variant="neutral"
+              class="hardis-btn-tinted-blue"
+              label={i18n.save}
+              disabled={saveDisabled}
+              onclick={handleSave}
+            ></lightning-button>
+          </template>
+          <template if:true={isConfirmRemoveMode}>
+            <div class="dev-org-footer-actions"></div>
+            <lightning-button variant="neutral" label={i18n.cancel} onclick={handleCancel}></lightning-button>
+            <lightning-button
+              variant="neutral"
+              class="hardis-btn-tinted-red"
+              label={i18n.devOrgRemoveConfirmButton}
+              onclick={handleConfirmRemove}
+            ></lightning-button>
+          </template>
+        </footer>
+      </div>
+    </section>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+  </div>
+</template>

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- DevOps Pipeline: new **Dev orgs** view, next to **Feature branches**: the developer sandboxes and scratch orgs of the team, the Pull Requests each one misses since its last backpromote, and a **+** to register one (requires sfdx-hardis 8.24.0)
+
 ## [8.18.0] 2026-11-06
 
 - DevOps Pipeline: when ticking User Stories for a promotion, **Selected only** shows the ticked ones, and **Select from a list** ticks the Pull Requests named in pasted text (release notes, an email, a spreadsheet column), directly or through their tickets, saying where each one was found

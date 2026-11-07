@@ -18,6 +18,12 @@ import {
 } from "./utils/pipeline/majorBranchCheckUtils";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 import { isScratchOrgPoolConfigured } from "./utils/scratchOrgPoolUtils";
+import {
+  DevOrgsView,
+  DevOrgView,
+  devOrgTargetBranches,
+  isDevOrgsRegistryEnabled,
+} from "./utils/pipeline/devOrgsUtils";
 import { PullRequest } from "./utils/gitProviders/types";
 import { GitProvider } from "./utils/gitProviders/gitProvider";
 import { t } from "./i18n/i18n";
@@ -64,6 +70,21 @@ export interface PipelineData {
   // age in hours after which a check is stale (majorBranchDeploymentCheckValidityHours)
   majorBranchDeploymentCheckEnabled?: boolean;
   majorBranchDeploymentCheckValidityHours?: number;
+  // Development orgs registry of the project (enableDevOrgsRegistry, on unless set to false)
+  devOrgsEnabled?: boolean;
+  // The list of development orgs was read for this payload (from sfdx-hardis or its last result)
+  devOrgsLoaded?: boolean;
+  // Every registered development org, whatever the display mode: the webview filters and opens them
+  devOrgs?: DevOrgView[];
+  devOrgsDashboardUrl?: string | null;
+  devOrgsStaleDays?: number;
+  // The "Dev orgs" view: the major branches and every development org, without the feature
+  // branches
+  mermaidDiagramDevOrgs?: string;
+  // "+" nodes of that view: a target branch no development org targets yet
+  devOrgAddNodes?: Array<{ nodeName: string; branch: string }>;
+  // developmentBranch and availableTargetBranches that are major branches of the pipeline
+  devOrgTargetBranches?: string[];
 }
 
 export class PipelineDataProvider {
@@ -78,6 +99,8 @@ export class PipelineDataProvider {
       openPullRequests?: PullRequest[];
       colorTheme?: string;
       featureBranchGroupThreshold?: number;
+      // The list of development orgs to draw, null when it was not read
+      devOrgs?: DevOrgsView | null;
     } = {},
   ): Promise<PipelineData> {
     try {
@@ -97,6 +120,11 @@ export class PipelineDataProvider {
         majorOrgs,
       );
       const majorBranchCheckEnabled = isMajorBranchCheckEnabled(projectConfig);
+      const devOrgsEnabled = isDevOrgsRegistryEnabled(projectConfig);
+      const devOrgsList: DevOrgView[] =
+        devOrgsEnabled && options.devOrgs?.enabled !== false
+          ? options.devOrgs?.orgs || []
+          : [];
       const majorBranchCheckValidityHours =
         getMajorBranchCheckValidityHours(projectConfig);
       // Computed once, so the diagram and the branch modal tell the same thing
@@ -122,6 +150,7 @@ export class PipelineDataProvider {
           DEFAULT_FEATURE_BRANCH_GROUP_THRESHOLD,
         promotionBranchConfig,
         majorBranchChecks,
+        devOrgsList,
       );
       const mermaidDiagram = mermaidBuilder.build({
         format: "string",
@@ -135,6 +164,23 @@ export class PipelineDataProvider {
         withMermaidTag: true,
         onlyMajorBranches: true,
       }) as string;
+      // The "Dev orgs" view: the major branches and every development org, no feature branch,
+      // and a "+" node for each target branch no org targets yet (when the list is on)
+      const mermaidDiagramDevOrgs = mermaidBuilder.build({
+        format: "string",
+        withMermaidTag: true,
+        onlyMajorBranches: true,
+        devOrgs: true,
+        devOrgAddBranches: devOrgsEnabled
+          ? devOrgTargetBranches(projectConfig)
+          : [],
+      }) as string;
+      const devOrgAddNodes = mermaidBuilder.getDevOrgAddNodes();
+      // The branches an org can target, among the major branches of the pipeline
+      const majorBranchNames = majorOrgs.map((org) => org.branchName);
+      const devOrgTargetBranchList = devOrgTargetBranches(projectConfig).filter(
+        (branch) => majorBranchNames.includes(branch),
+      );
 
       // Build orgs and links for UI (not just for diagram)
       const orgs: OrgNode[] = majorOrgs.map((org) => ({
@@ -181,6 +227,14 @@ export class PipelineDataProvider {
         scratchOrgPoolEnabled: isScratchOrgPoolConfigured(projectConfig),
         majorBranchDeploymentCheckEnabled: majorBranchCheckEnabled,
         majorBranchDeploymentCheckValidityHours: majorBranchCheckValidityHours,
+        devOrgsEnabled,
+        devOrgsLoaded: !!options.devOrgs,
+        devOrgs: devOrgsList,
+        devOrgsDashboardUrl: options.devOrgs?.dashboardUrl || null,
+        devOrgsStaleDays: options.devOrgs?.staleDays || 0,
+        mermaidDiagramDevOrgs,
+        devOrgAddNodes,
+        devOrgTargetBranches: devOrgTargetBranchList,
       };
     } catch (error: any) {
       vscode.window.showErrorMessage(
