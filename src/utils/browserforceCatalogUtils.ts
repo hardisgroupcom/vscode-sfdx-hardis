@@ -21,6 +21,9 @@ export const BROWSERFORCE_MIN_VERSION = "7.0.0";
 // Version of the catalog format this extension reads: a higher one may lack what it reads
 export const SUPPORTED_BROWSERFORCE_CATALOG_FORMAT_VERSION = 1;
 const SECRETS_LOOKUP_CACHE_MS = 10 * 60 * 1000;
+// Set when the CLI could not describe the CI/CD variable names (sfdx-hardis older than the
+// action:types command): not asked again in this session, as each run costs seconds
+let secretsLookupUnavailable = false;
 
 export interface InstalledBrowserforce {
   version: string;
@@ -42,6 +45,8 @@ export interface BrowserforceCatalogAnswer {
   notInstalled: boolean;
   outdated: boolean;
   installedVersion: string | null;
+  // BROWSERFORCE_MIN_VERSION, so the editor names the version to install
+  minimumVersion: string;
   error: string | null;
 }
 
@@ -76,19 +81,17 @@ export async function loadBrowserforceCatalog(): Promise<BrowserforceCatalogAnsw
       notInstalled: true,
       outdated: false,
       installedVersion: null,
+      minimumVersion: BROWSERFORCE_MIN_VERSION,
       error: null,
     };
   }
-  // A linked plugin is a development copy: it is used whatever its version
-  if (
-    !installed.linked &&
-    comparePluginVersions(installed.version, BROWSERFORCE_MIN_VERSION) < 0
-  ) {
+  if (!isUsableBrowserforce(installed)) {
     return {
       catalog: null,
       notInstalled: true,
       outdated: true,
       installedVersion: installed.version,
+      minimumVersion: BROWSERFORCE_MIN_VERSION,
       error: null,
     };
   }
@@ -99,6 +102,7 @@ export async function loadBrowserforceCatalog(): Promise<BrowserforceCatalogAnsw
       notInstalled: false,
       outdated: false,
       installedVersion: installed.version,
+      minimumVersion: BROWSERFORCE_MIN_VERSION,
       error: null,
     };
   } catch (error: any) {
@@ -110,9 +114,26 @@ export async function loadBrowserforceCatalog(): Promise<BrowserforceCatalogAnsw
       notInstalled: false,
       outdated: false,
       installedVersion: installed.version,
+      minimumVersion: BROWSERFORCE_MIN_VERSION,
       error: error?.message || String(error),
     };
   }
+}
+
+/**
+ * Whether the installed Browserforce can give its catalog: installed and recent enough. A linked
+ * plugin is a development copy: it is used whatever its version.
+ */
+export function isUsableBrowserforce(
+  installed: InstalledBrowserforce | null,
+): boolean {
+  if (!installed) {
+    return false;
+  }
+  return (
+    installed.linked ||
+    comparePluginVersions(installed.version, BROWSERFORCE_MIN_VERSION) >= 0
+  );
 }
 
 /**
@@ -170,9 +191,13 @@ export async function validateBrowserforceConfig(
 /**
  * The CI/CD variable names sfdx-hardis reads for a `${NAME}` value, per major branch, as the CLI
  * describes them (`sf hardis:project:action:types --type browser`). null when the CLI is too old
- * to describe them: the editor then shows the variable name only.
+ * to describe them: the editor then shows the variable name only. A run that could not describe
+ * them is not started again in this session.
  */
 export async function loadBrowserSecretsLookup(): Promise<BrowserSecretsLookup | null> {
+  if (secretsLookupUnavailable) {
+    return null;
+  }
   try {
     const answer = await execSfdxJson(
       "sf hardis:project:action:types --type browser --json",
@@ -183,32 +208,46 @@ export async function loadBrowserSecretsLookup(): Promise<BrowserSecretsLookup |
         cacheExpiration: SECRETS_LOOKUP_CACHE_MS,
       },
     );
-    const types = Array.isArray(answer?.result?.types)
-      ? answer.result.types
-      : [];
-    const lookup = types.find((type: any) => type?.type === "browser")?.details
-      ?.secretsLookup;
-    if (!lookup || !Array.isArray(lookup.branches)) {
-      return null;
+    const lookup = parseBrowserSecretsLookup(answer);
+    if (!lookup) {
+      secretsLookupUnavailable = true;
     }
-    return {
-      provider: String(lookup.provider || ""),
-      label: String(lookup.label || ""),
-      branches: lookup.branches
-        .filter((branch: any) => branch && typeof branch.branch === "string")
-        .map((branch: any) => ({
-          branch: branch.branch,
-          names: Array.isArray(branch.names)
-            ? branch.names.map((name: any) => String(name))
-            : [],
-        })),
-    };
+    return lookup;
   } catch (error: any) {
+    secretsLookupUnavailable = true;
     Logger.log(
       `[Browserforce] Unable to read the CI/CD variable names: ${error?.message || error}`,
     );
     return null;
   }
+}
+
+/**
+ * The CI/CD variable names in the JSON answer of `sf hardis:project:action:types --type browser`.
+ * null when the answer does not describe them: a failed run (an sfdx-hardis without the command)
+ * or a CLI that does not know the browser type.
+ */
+export function parseBrowserSecretsLookup(
+  answer: any,
+): BrowserSecretsLookup | null {
+  const types = Array.isArray(answer?.result?.types) ? answer.result.types : [];
+  const lookup = types.find((type: any) => type?.type === "browser")?.details
+    ?.secretsLookup;
+  if (!lookup || !Array.isArray(lookup.branches)) {
+    return null;
+  }
+  return {
+    provider: String(lookup.provider || ""),
+    label: String(lookup.label || ""),
+    branches: lookup.branches
+      .filter((branch: any) => branch && typeof branch.branch === "string")
+      .map((branch: any) => ({
+        branch: branch.branch,
+        names: Array.isArray(branch.names)
+          ? branch.names.map((name: any) => String(name))
+          : [],
+      })),
+  };
 }
 
 /**

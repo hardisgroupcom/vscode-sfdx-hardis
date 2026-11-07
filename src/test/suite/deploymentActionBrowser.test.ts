@@ -1,11 +1,13 @@
 import * as assert from "assert";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 import {
   BUILT_IN_ACTION_TYPES,
   isBuiltInActionType,
 } from "../../utils/prePostCommandsUtils";
 import { handleDeploymentActionPickerMessage } from "../../utils/pipeline/deploymentActionPickers";
+import { BROWSERFORCE_MIN_VERSION } from "../../utils/browserforceCatalogUtils";
 import {
   REPO_ROOT,
   assertKeysTranslated,
@@ -19,6 +21,21 @@ import {
  */
 
 const BROWSER_EDITOR_MODULE = "browserforceSettingEditor";
+
+// The shared host helper has no import: its source is evaluated here with a fake window
+function loadHostUtils(fakeWindow: any): any {
+  const source = readModuleFile(
+    "browserforceHostUtils",
+    "browserforceHostUtils.js",
+  );
+  assert.ok(!/^import /m.test(source), "the module must stay free of imports");
+  const exported = [...source.matchAll(/^export function (\w+)/gm)].map(
+    (match) => match[1],
+  );
+  const body =
+    source.replace(/^export /gm, "") + `\nreturn { ${exported.join(", ")} };`;
+  return new Function("window", body)(fakeWindow);
+}
 
 suite("Deployment action browser (Browserforce setting)", () => {
   test("browser is a built-in action type", () => {
@@ -94,9 +111,171 @@ suite("Deployment action browser (Browserforce setting)", () => {
         );
       }
       const js = readModuleFile(panel, `${panel}.js`);
-      assert.match(js, /type: "validateBrowserforceConfig"/);
-      assert.match(js, /handleReturnBrowserforceCatalog\(data\)/);
-      assert.match(js, /handleReturnBrowserforceValidation\(data\)/);
+      assert.match(js, /from "s\/browserforceHostUtils"/);
+      assert.match(js, /receiveBrowserforceCatalog\(this, data\)/);
+      assert.match(js, /receiveBrowserforceValidation\(this, data\)/);
+      assert.match(js, /requestBrowserforceCatalog\(this\)/);
+      assert.match(js, /requestBrowserforceValidation\(this, event\)/);
+      assert.ok(
+        !js.includes('type: "validateBrowserforceConfig"'),
+        `${panel} must use the shared helper, not its own copy`,
+      );
+    }
+  });
+
+  test("the shared host helper sends the requests and keeps only the expected answers", () => {
+    const sent: any[] = [];
+    const utils = loadHostUtils({
+      sendMessageToVSCode: (message: any) => sent.push(message),
+    });
+    const host: any = {};
+    utils.requestBrowserforceCatalog(host);
+    assert.strictEqual(host.browserforceCatalogLoading, true);
+    assert.strictEqual(sent[0].type, "loadBrowserforceCatalog");
+    const catalogRequestId = sent[0].data.requestId;
+    utils.receiveBrowserforceCatalog(host, { requestId: "old", catalog: 1 });
+    assert.strictEqual(host.browserforceCatalog, undefined);
+    utils.receiveBrowserforceCatalog(host, {
+      requestId: catalogRequestId,
+      catalog: 2,
+    });
+    assert.strictEqual(host.browserforceCatalog.catalog, 2);
+    assert.strictEqual(host.browserforceCatalogLoading, false);
+
+    // The editor names its check: the answer to an older one never reaches it
+    utils.requestBrowserforceValidation(host, {
+      detail: { requestId: "check-2", setting: "density", config: { a: 1 } },
+    });
+    assert.deepStrictEqual(sent[1], {
+      type: "validateBrowserforceConfig",
+      data: { requestId: "check-2", setting: "density", config: { a: 1 } },
+    });
+    utils.receiveBrowserforceValidation(host, { requestId: "check-1" });
+    assert.strictEqual(host.browserforceValidation, undefined);
+    utils.receiveBrowserforceValidation(host, {
+      requestId: "check-2",
+      valid: true,
+    });
+    assert.strictEqual(host.browserforceValidation.valid, true);
+  });
+
+  test("a save answer is used only for the value sent, and a check that never answers ends", () => {
+    const js = readModuleFile("deploymentAction", "deploymentAction.js");
+    assert.match(
+      js,
+      /const BROWSERFORCE_VALIDATION_TIMEOUT_MS = 3 \* 60 \* 1000;/,
+    );
+    // The answer must carry the id of the pending check
+    assert.match(
+      js,
+      /val\.requestId !== this\._browserforceValidationRequestId/,
+    );
+    // The value sent is kept and compared when the answer comes
+    assert.match(
+      js,
+      /this\._browserforceValidationSnapshot = this\._browserforceValueSnapshot\(\);/,
+    );
+    assert.match(
+      js,
+      /this\._browserforceValueSnapshot\(\) !== this\._browserforceValidationSnapshot[\s\S]*?browserforceValueChangedDuringCheck/,
+    );
+    // A form in error is never saved, even when Browserforce accepted the value
+    assert.match(
+      js,
+      /_finishSaveAfterBrowserforceValidation\(validation\) \{\s+if \(this\._browserforceFormHasErrors\) \{/,
+    );
+    // No answer in time: the wait ends with a message, and the timer is cleared on close
+    assert.match(
+      js,
+      /_handleBrowserforceValidationTimeout\(requestId\) \{[\s\S]*?this\._endBrowserforceValidationWait\(\);[\s\S]*?"browserforceCheckTimeout"/,
+    );
+    assert.match(
+      js,
+      /disconnectedCallback\(\) \{[\s\S]*?this\._clearBrowserforceValidationTimer\(\);/,
+    );
+  });
+
+  test("the setting editor keeps what is typed and tells the parent its error state", () => {
+    const js = readModuleFile(
+      BROWSER_EDITOR_MODULE,
+      `${BROWSER_EDITOR_MODULE}.js`,
+    );
+    // The second catalog answer (CI/CD variable names) does not rebuild the form
+    assert.match(
+      js,
+      /set catalogState\(val\) \{[\s\S]*?if \(catalogJson === this\._catalogJson\) \{\s+return;\s+\}/,
+    );
+    // Clearing the errors of the form is told to the parent
+    assert.match(
+      js,
+      /const hadFormErrors = this\.formErrors\.length > 0;[\s\S]*?if \(hadFormErrors\) \{[\s\S]*?this\._emitChange\(this\._hasErrors\(\)\)/,
+    );
+    // Each JSON mode switch tells the parent, and a form in error cannot switch to JSON
+    const toggle = js.match(/handleJsonModeToggle\(event\) \{[\s\S]*?\n {2}\}/);
+    assert.ok(toggle);
+    assert.strictEqual(
+      (toggle[0].match(/this\._emitChange\(this\._hasErrors\(\)\)/g) || [])
+        .length,
+      2,
+    );
+    assert.match(toggle[0], /"browserforceFixFormBeforeJson"/);
+    // Check never runs on a form in error
+    assert.match(
+      js,
+      /get isCheckDisabled\(\) \{[\s\S]*?this\.formErrors\.length > 0/,
+    );
+    // The minimum version comes from the extension, not from the component
+    assert.match(js, /minimum: this\._catalogState\.minimumVersion/);
+    assert.ok(!/BROWSERFORCE_MIN_VERSION|"7\.0\.0"/.test(js));
+    const html = readModuleFile(
+      BROWSER_EDITOR_MODULE,
+      `${BROWSER_EDITOR_MODULE}.html`,
+    );
+    const handlers = [...html.matchAll(/on(?:change|click)=\{(handle\w+)\}/g)]
+      .map((match) => match[1])
+      .filter(
+        (name) =>
+          !["handleOpenSetup", "handleReloadCatalog", "handleCheck"].includes(
+            name,
+          ),
+      );
+    const disabled = (html.match(/disabled=\{inputsDisabled\}/g) || []).length;
+    assert.strictEqual(
+      disabled,
+      handlers.length,
+      "every input of the value is disabled while Browserforce checks it",
+    );
+  });
+
+  test("the catalog answer skips the CI/CD variable names when Browserforce is missing", async () => {
+    const previousDataDir = process.env.SF_DATA_DIR;
+    const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "bf-no-plugin-"));
+    process.env.SF_DATA_DIR = dataDir;
+    try {
+      const messages: any[] = [];
+      const handled = await handleDeploymentActionPickerMessage(
+        { sendMessage: (message) => messages.push(message) },
+        "loadBrowserforceCatalog",
+        { requestId: "c1" },
+      );
+      assert.strictEqual(handled, true);
+      // One answer only: no second one waiting for sfdx-hardis
+      assert.strictEqual(messages.length, 1);
+      assert.strictEqual(messages[0].type, "returnBrowserforceCatalog");
+      assert.strictEqual(messages[0].data.requestId, "c1");
+      assert.strictEqual(messages[0].data.notInstalled, true);
+      assert.strictEqual(messages[0].data.secretsLookup, null);
+      assert.strictEqual(
+        messages[0].data.minimumVersion,
+        BROWSERFORCE_MIN_VERSION,
+      );
+    } finally {
+      if (previousDataDir === undefined) {
+        delete process.env.SF_DATA_DIR;
+      } else {
+        process.env.SF_DATA_DIR = previousDataDir;
+      }
+      fs.rmSync(dataDir, { recursive: true, force: true });
     }
   });
 

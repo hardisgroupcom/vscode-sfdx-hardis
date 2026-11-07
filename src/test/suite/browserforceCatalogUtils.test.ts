@@ -7,9 +7,12 @@ import {
   findInstalledBrowserforce,
   getBrowserforceCatalogCacheDir,
   getBrowserforceCatalogFile,
+  isUsableBrowserforce,
+  parseBrowserSecretsLookup,
   readBrowserforceCatalogFile,
   writeBrowserforceCatalogFile,
 } from "../../utils/browserforceCatalogUtils";
+import { REPO_ROOT } from "./lwcSourceUtils";
 
 /**
  * The installed Browserforce is read from the sf CLI plugin registry without starting the CLI, and
@@ -136,5 +139,69 @@ suite("Browserforce catalog utils", () => {
     assert.strictEqual(readBrowserforceCatalogFile("7.1.0"), null);
     writeJson(getBrowserforceCatalogFile("7.1.0"), { plugins: [] });
     assert.strictEqual(readBrowserforceCatalogFile("7.1.0"), null);
+  });
+
+  test("only a recent enough or linked Browserforce gives its catalog", () => {
+    assert.strictEqual(isUsableBrowserforce(null), false);
+    assert.strictEqual(
+      isUsableBrowserforce({ version: "6.9.0", root: "r", linked: false }),
+      false,
+    );
+    assert.strictEqual(
+      isUsableBrowserforce({ version: "7.0.0", root: "r", linked: false }),
+      true,
+    );
+    assert.strictEqual(
+      isUsableBrowserforce({ version: "6.0.0", root: "r", linked: true }),
+      true,
+    );
+  });
+
+  test("a failed run of action:types describes no CI/CD variable names", () => {
+    // sfdx-hardis without the command: the run fails and is not started again in the session
+    assert.strictEqual(
+      parseBrowserSecretsLookup({ status: 1, name: "CommandNotFound" }),
+      null,
+    );
+    assert.strictEqual(
+      parseBrowserSecretsLookup({ status: 0, result: { types: [] } }),
+      null,
+    );
+    assert.deepStrictEqual(
+      parseBrowserSecretsLookup({
+        status: 0,
+        result: {
+          types: [
+            {
+              type: "browser",
+              details: {
+                secretsLookup: {
+                  provider: "github",
+                  label: "GitHub",
+                  branches: [{ branch: "uat", names: ["{NAME}_UAT", 3] }, {}],
+                },
+              },
+            },
+          ],
+        },
+      }),
+      {
+        provider: "github",
+        label: "GitHub",
+        branches: [{ branch: "uat", names: ["{NAME}_UAT", "3"] }],
+      },
+    );
+    const source = fs.readFileSync(
+      path.join(REPO_ROOT, "src", "utils", "browserforceCatalogUtils.ts"),
+      "utf8",
+    );
+    assert.match(
+      source,
+      /if \(secretsLookupUnavailable\) \{\s+return null;\s+\}/,
+    );
+    assert.match(
+      source,
+      /if \(!lookup\) \{\s+secretsLookupUnavailable = true;/,
+    );
   });
 });

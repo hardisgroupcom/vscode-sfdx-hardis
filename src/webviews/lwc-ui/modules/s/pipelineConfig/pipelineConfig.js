@@ -17,6 +17,12 @@ import {
   isEmptyConfigValue,
   isUrlConfigValue,
 } from "s/configValueUtils";
+import {
+  receiveBrowserforceCatalog,
+  receiveBrowserforceValidation,
+  requestBrowserforceCatalog,
+  requestBrowserforceValidation,
+} from "s/browserforceHostUtils";
 
 // A section made only of these keys gets the compact "Salesforce Org" card
 // layout in read-only mode instead of a list of field rows.
@@ -1110,50 +1116,19 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
   // --- Browserforce (editor of a "browser" deployment action) -----------------
 
   handleLoadBrowserforceCatalog() {
-    this.browserforceCatalogLoading = true;
-    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    this._browserforceCatalogRequestId = requestId;
-    window.sendMessageToVSCode({
-      type: "loadBrowserforceCatalog",
-      data: { requestId },
-    });
+    requestBrowserforceCatalog(this);
   }
 
-  // Sent twice when the CI/CD variable names arrive after the catalog: the last answer wins
   handleReturnBrowserforceCatalog(data) {
-    if (
-      this._browserforceCatalogRequestId &&
-      data?.requestId &&
-      data.requestId !== this._browserforceCatalogRequestId
-    ) {
-      return;
-    }
-    this.browserforceCatalog = data || null;
-    this.browserforceCatalogLoading = false;
+    receiveBrowserforceCatalog(this, data);
   }
 
   handleValidateBrowserforceConfig(event) {
-    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    this._browserforceValidationRequestId = requestId;
-    window.sendMessageToVSCode({
-      type: "validateBrowserforceConfig",
-      data: {
-        requestId,
-        setting: event?.detail?.setting || "",
-        config: event?.detail?.config,
-      },
-    });
+    requestBrowserforceValidation(this, event);
   }
 
   handleReturnBrowserforceValidation(data) {
-    if (
-      this._browserforceValidationRequestId &&
-      data?.requestId &&
-      data.requestId !== this._browserforceValidationRequestId
-    ) {
-      return;
-    }
-    this.browserforceValidation = data || null;
+    receiveBrowserforceValidation(this, data);
   }
 
   handleAddArrayObjectItem(event) {

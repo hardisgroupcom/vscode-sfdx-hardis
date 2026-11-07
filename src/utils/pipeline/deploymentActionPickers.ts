@@ -2,6 +2,8 @@ import { execSfdxJson } from "../../utils";
 import { Logger } from "../../logger";
 import { t } from "../../i18n/i18n";
 import {
+  findInstalledBrowserforce,
+  isUsableBrowserforce,
   loadBrowserSecretsLookup,
   loadBrowserforceCatalog,
   validateBrowserforceConfig,
@@ -446,18 +448,28 @@ async function handleBrowserforceMessage(
 
 /**
  * Answers with the catalog as soon as it is read. The CI/CD variable names come from sfdx-hardis,
- * whose start takes seconds: when they are not cached, a second answer brings them.
+ * whose start takes seconds: when they are not cached, a second answer brings them. They are not
+ * asked when Browserforce is missing or too old: the editor then only offers to install it.
  */
 async function sendBrowserforceCatalog(
   panel: { sendMessage: (message: any) => void },
   requestId: string | null,
 ): Promise<void> {
-  const secretsLookupPromise = loadBrowserSecretsLookup();
+  const secretsLookupPromise = isUsableBrowserforce(findInstalledBrowserforce())
+    ? loadBrowserSecretsLookup()
+    : null;
   const [answer, gitProvider] = await Promise.all([
     loadBrowserforceCatalog(),
     detectGitProviderName(),
   ]);
   const reply = { requestId, ...answer, gitProvider };
+  if (!secretsLookupPromise || answer.notInstalled) {
+    panel.sendMessage({
+      type: "returnBrowserforceCatalog",
+      data: { ...reply, secretsLookup: null },
+    });
+    return;
+  }
   const quickSecretsLookup = await Promise.race([
     secretsLookupPromise,
     new Promise<undefined>((resolve) =>

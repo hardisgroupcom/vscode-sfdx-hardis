@@ -39,8 +39,6 @@ const ERROR_LABEL_KEYS = {
   duplicateEntryName: "browserforceErrorDuplicateEntryName",
 };
 
-const BROWSERFORCE_MIN_VERSION = "7.0.0";
-
 export default class BrowserforceSettingEditor extends SharedMixin(
   LightningElement,
 ) {
@@ -54,10 +52,14 @@ export default class BrowserforceSettingEditor extends SharedMixin(
   @track jsonMode = false;
   @track jsonText = "{}";
   @track jsonError = "";
+  // Why Edit as JSON was refused (fields of the form in error)
+  @track jsonSwitchError = "";
   _setting = "";
   _config = {};
   _configJson = "{}";
   _catalogState = null;
+  // JSON of the catalog the form model was built from
+  _catalogJson = "null";
 
   @api
   set setting(val) {
@@ -90,9 +92,16 @@ export default class BrowserforceSettingEditor extends SharedMixin(
     return this._config;
   }
 
+  // The extension answers twice when the CI/CD variable names arrive after the catalog: the form
+  // is only rebuilt when the catalog itself changed, so what is being typed stays
   @api
   set catalogState(val) {
     this._catalogState = val || null;
+    const catalogJson = JSON.stringify(this._catalogState?.catalog || null);
+    if (catalogJson === this._catalogJson) {
+      return;
+    }
+    this._catalogJson = catalogJson;
     this._rebuildModel();
   }
   get catalogState() {
@@ -121,7 +130,7 @@ export default class BrowserforceSettingEditor extends SharedMixin(
     if (this._catalogState?.outdated) {
       return this.t("browserforceOutdated", {
         version: this._catalogState.installedVersion || "",
-        minimum: BROWSERFORCE_MIN_VERSION,
+        minimum: this._catalogState.minimumVersion || "",
       });
     }
     return this.t("browserforceNotInstalled");
@@ -375,8 +384,16 @@ export default class BrowserforceSettingEditor extends SharedMixin(
     return !this.readOnly && !!this._setting;
   }
 
+  // Never checks a value other than the one the form shows: not while a field is in error
   get isCheckDisabled() {
-    return this.validating === true || !!this.jsonError;
+    return (
+      this.validating === true || !!this.jsonError || this.formErrors.length > 0
+    );
+  }
+
+  // The value cannot change while Browserforce checks it
+  get inputsDisabled() {
+    return this.validating === true;
   }
 
   get showValidating() {
@@ -498,13 +515,22 @@ export default class BrowserforceSettingEditor extends SharedMixin(
     this._applyModel(removeGroupItem(this.model, groupPath, Number(index)));
   }
 
-  // Back to the form only with a JSON that parses: the form is built from it
+  // To JSON only from a form without errors, as the JSON shows the value the form holds; back to
+  // the form only with a JSON that parses, as the form is built from it. The parent is told the
+  // error state after each switch.
   handleJsonModeToggle(event) {
     const checked = event.target.checked === true;
     if (checked) {
+      if (this.formErrors.length > 0) {
+        event.target.checked = false;
+        this.jsonSwitchError = this.t("browserforceFixFormBeforeJson");
+        return;
+      }
+      this.jsonSwitchError = "";
       this.jsonText = JSON.stringify(this._config, null, 2);
       this.jsonError = "";
       this.jsonMode = true;
+      this._emitChange(this._hasErrors());
       return;
     }
     if (this.jsonError) {
@@ -513,6 +539,7 @@ export default class BrowserforceSettingEditor extends SharedMixin(
     }
     this.jsonMode = false;
     this._rebuildModel();
+    this._emitChange(this._hasErrors());
   }
 
   handleJsonChange(event) {
@@ -549,10 +576,17 @@ export default class BrowserforceSettingEditor extends SharedMixin(
 
   // --- Private -------------------------------------------------------------------
 
+  // A rebuilt form has no field in error: the parent is told when it had some. Told after the
+  // current update, as a property set by the parent while it renders also rebuilds the form.
   _rebuildModel() {
     const entry = this.entry;
     this.model = entry ? configToFormModel(entry, this._config) : null;
+    const hadFormErrors = this.formErrors.length > 0;
     this.formErrors = [];
+    this.jsonSwitchError = "";
+    if (hadFormErrors) {
+      Promise.resolve().then(() => this._emitChange(this._hasErrors()));
+    }
   }
 
   _applyModel(model) {
@@ -562,8 +596,15 @@ export default class BrowserforceSettingEditor extends SharedMixin(
     this.model = model;
     const { config, errors } = formModelToConfig(this.entry, model);
     this.formErrors = errors;
+    if (errors.length === 0) {
+      this.jsonSwitchError = "";
+    }
     this._setConfig(config);
-    this._emitChange(errors.length > 0);
+    this._emitChange(this._hasErrors());
+  }
+
+  _hasErrors() {
+    return !!this.jsonError || this.formErrors.length > 0;
   }
 
   _setConfig(config) {

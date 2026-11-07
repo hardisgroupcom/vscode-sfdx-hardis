@@ -49,6 +49,7 @@
           value={setting}
           options={settingOptions}
           placeholder={i18n.browserforceSettingPlaceholder}
+          disabled={inputsDisabled}
           onchange={handleSettingSelect}
         ></s-typeahead>
       </template>
@@ -59,6 +60,7 @@
           value={setting}
           placeholder="densitySettings"
           field-level-help={i18n.browserforceSettingKeyHelp}
+          disabled={inputsDisabled}
           onchange={handleSettingKeyChange}
         ></lightning-input>
       </template>
@@ -89,10 +91,14 @@
           type="toggle"
           label={i18n.browserforceEditAsJson}
           checked={jsonMode}
+          disabled={inputsDisabled}
           onchange={handleJsonModeToggle}
           message-toggle-active=""
           message-toggle-inactive=""
         ></lightning-input>
+        <template if:true={jsonSwitchError}>
+          <p class="slds-form-element__help slds-text-color_error bfe-error">{jsonSwitchError}</p>
+        </template>
       </div>
     </template>
 
@@ -108,6 +114,7 @@
                   icon-name="utility:add"
                   label={i18n.browserforceAddItem}
                   data-group-path={section.groupPath}
+                  disabled={inputsDisabled}
                   onclick={handleAddItem}
                 ></lightning-button>
               </div>
@@ -131,6 +138,7 @@
                     label={i18n.browserforceRemoveItem}
                     data-group-path={item.groupPath}
                     data-index={item.index}
+                    disabled={inputsDisabled}
                     onclick={handleRemoveItem}
                   ></lightning-button>
                 </div>
@@ -150,6 +158,7 @@
                       value={item.name}
                       data-group-path={item.groupPath}
                       data-index={item.index}
+                      disabled={inputsDisabled}
                       onchange={handleEntryNameChange}
                     ></lightning-input>
                     <template if:true={item.hasNameError}>
@@ -180,6 +189,7 @@
                         value={field.variableName}
                         placeholder={i18n.browserforceVariableNamePlaceholder}
                         data-key={field.key}
+                        disabled={inputsDisabled}
                         onchange={handleVariableNameChange}
                       ></lightning-input>
                     </template>
@@ -189,6 +199,7 @@
                         variant="label-hidden"
                         value={field.text}
                         data-key={field.key}
+                        disabled={inputsDisabled}
                         onchange={handleTextChange}
                       ></lightning-input>
                     </template>
@@ -199,6 +210,7 @@
                         value={field.text}
                         options={field.options}
                         data-key={field.key}
+                        disabled={inputsDisabled}
                         onchange={handleTextChange}
                       ></lightning-combobox>
                     </template>
@@ -209,6 +221,7 @@
                         variant="label-hidden"
                         checked={field.checked}
                         data-key={field.key}
+                        disabled={inputsDisabled}
                         onchange={handleCheckboxChange}
                       ></lightning-input>
                     </template>
@@ -220,6 +233,7 @@
                         variant="label-hidden"
                         value={field.text}
                         data-key={field.key}
+                        disabled={inputsDisabled}
                         onchange={handleTextChange}
                       ></lightning-input>
                     </template>
@@ -230,6 +244,7 @@
                         value={field.text}
                         placeholder={i18n.browserforceOneValuePerLine}
                         data-key={field.key}
+                        disabled={inputsDisabled}
                         onchange={handleTextChange}
                       ></lightning-textarea>
                     </template>
@@ -240,6 +255,7 @@
                         variant="label-hidden"
                         value={field.text}
                         data-key={field.key}
+                        disabled={inputsDisabled}
                         onchange={handleTextChange}
                       ></lightning-textarea>
                     </template>
@@ -255,6 +271,7 @@
                         label={i18n.browserforceValuePerOrg}
                         checked={field.isVariable}
                         data-key={field.key}
+                        disabled={inputsDisabled}
                         onchange={handleVariableToggle}
                       ></lightning-input>
                     </template>
@@ -278,6 +295,7 @@
           label={i18n.browserforceValueLabel}
           variant="label-hidden"
           value={jsonText}
+          disabled={inputsDisabled}
           onchange={handleJsonChange}
         ></lightning-textarea>
         <template if:true={jsonError}>

@@ -9,6 +9,9 @@ import {
   getOrgInitStepTypeOptions,
 } from "s/deploymentActionUtils";
 
+// How long Save and Check with Browserforce wait for the check of a setting value
+const BROWSERFORCE_VALIDATION_TIMEOUT_MS = 3 * 60 * 1000;
+
 export default class DeploymentAction extends SharedMixin(LightningElement) {
   @api action = null;
   // "deployment": a deployment action (commandsPreDeploy / commandsPostDeploy).
@@ -146,14 +149,30 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
 
   @api
   set browserforceValidation(val) {
-    // An answer this editor did not ask for (one kept by the panel from a previous editor) is ignored
-    if (!this.browserforceValidating) {
+    // Only the answer to the pending check counts: one kept by the panel from a previous editor,
+    // or one arriving after the timeout, is ignored
+    if (
+      !this.browserforceValidating ||
+      !val ||
+      val.requestId !== this._browserforceValidationRequestId
+    ) {
       return;
     }
-    this.browserforceValidating = false;
-    this._browserforceValidation = val || null;
-    if (this._saveAfterBrowserforceValidation) {
-      this._saveAfterBrowserforceValidation = false;
+    this._endBrowserforceValidationWait();
+    const saveAfter = this._saveAfterBrowserforceValidation;
+    this._saveAfterBrowserforceValidation = false;
+    // The answer is about the value sent: a value changed since then was not checked
+    if (
+      this._browserforceValueSnapshot() !== this._browserforceValidationSnapshot
+    ) {
+      this._browserforceValidation = null;
+      if (saveAfter) {
+        this.validationError = this.t("browserforceValueChangedDuringCheck");
+      }
+      return;
+    }
+    this._browserforceValidation = val;
+    if (saveAfter) {
       this._finishSaveAfterBrowserforceValidation(val);
     }
   }
@@ -164,6 +183,10 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   @track browserforceValidating = false;
   _saveAfterBrowserforceValidation = false;
   _browserforceFormHasErrors = false;
+  // The pending check: its id, the value sent (JSON) and the timer that ends the wait
+  _browserforceValidationRequestId = null;
+  _browserforceValidationSnapshot = null;
+  _browserforceValidationTimer = null;
   // True while the panel reads the custom functions catalog: Save waits for it, so the inputs
   // of a custom function action are checked against its contract
   @api customFunctionsLoading = false;
@@ -602,6 +625,13 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     this._updateWhenAndContextOptions(this.displayedAction?.type || "command");
   }
 
+  disconnectedCallback() {
+    if (super.disconnectedCallback) {
+      super.disconnectedCallback();
+    }
+    this._clearBrowserforceValidationTimer();
+  }
+
   get modalTitle() {
     if (this.isOrgInitMode) {
       return this.isEditMode
@@ -816,12 +846,22 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     this.dispatchEvent(new CustomEvent("loadbrowserforcecatalog"));
   }
 
+  // The value sent is kept, so the answer is only used while the form still holds it
   _requestBrowserforceValidation() {
+    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    this._browserforceValidationRequestId = requestId;
+    this._browserforceValidationSnapshot = this._browserforceValueSnapshot();
     this.browserforceValidating = true;
     this._browserforceValidation = null;
+    this._clearBrowserforceValidationTimer();
+    this._browserforceValidationTimer = setTimeout(
+      () => this._handleBrowserforceValidationTimeout(requestId),
+      BROWSERFORCE_VALIDATION_TIMEOUT_MS,
+    );
     this.dispatchEvent(
       new CustomEvent("validatebrowserforceconfig", {
         detail: {
+          requestId,
           setting: this.editedAction?.parameters?.setting || "",
           config: JSON.parse(
             JSON.stringify(this.editedAction?.parameters?.config ?? {}),
@@ -831,9 +871,50 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     );
   }
 
+  // The type, the setting and the value the check is about
+  _browserforceValueSnapshot() {
+    return JSON.stringify({
+      type: this.editedAction?.type || "",
+      setting: this.editedAction?.parameters?.setting || "",
+      config: this.editedAction?.parameters?.config ?? {},
+    });
+  }
+
+  // No answer in time: Save is enabled again, nothing was saved, a late answer is ignored
+  _handleBrowserforceValidationTimeout(requestId) {
+    if (
+      !this.browserforceValidating ||
+      requestId !== this._browserforceValidationRequestId
+    ) {
+      return;
+    }
+    this._endBrowserforceValidationWait();
+    this._saveAfterBrowserforceValidation = false;
+    this.validationError = this.t("browserforceCheckTimeout", {
+      minutes: BROWSERFORCE_VALIDATION_TIMEOUT_MS / 60000,
+    });
+  }
+
+  _endBrowserforceValidationWait() {
+    this._clearBrowserforceValidationTimer();
+    this.browserforceValidating = false;
+    this._browserforceValidationRequestId = null;
+  }
+
+  _clearBrowserforceValidationTimer() {
+    if (this._browserforceValidationTimer) {
+      clearTimeout(this._browserforceValidationTimer);
+      this._browserforceValidationTimer = null;
+    }
+  }
+
   // Save goes on when Browserforce accepts the value, or when it could not check it: sfdx-hardis
-  // checks it again before applying it
+  // checks it again before applying it. A form in error is never saved.
   _finishSaveAfterBrowserforceValidation(validation) {
+    if (this._browserforceFormHasErrors) {
+      this.validationError = this.t("browserforceFormHasErrors");
+      return;
+    }
     if (validation?.valid === true || validation?.error) {
       this._completeSave();
       return;

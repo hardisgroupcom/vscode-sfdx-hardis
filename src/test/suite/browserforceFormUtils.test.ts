@@ -260,6 +260,40 @@ suite("Browserforce form utils", () => {
     });
   });
 
+  test("an optional field never set keeps the objects that were already empty", () => {
+    const entry = {
+      key: "nested",
+      groups: [],
+      fields: [
+        {
+          path: "a.b.c",
+          type: "string",
+          required: false,
+          isPassword: false,
+          isIrreversible: false,
+        },
+        {
+          path: "e.f",
+          type: "string",
+          required: false,
+          isPassword: false,
+          isIrreversible: false,
+        },
+      ],
+      examples: [],
+    };
+    const model = utils.configToFormModel(entry, {
+      a: { b: {} },
+      e: {},
+      d: 1,
+    });
+    assert.deepStrictEqual(utils.formModelToConfig(entry, model).config, {
+      a: { b: {} },
+      e: {},
+      d: 1,
+    });
+  });
+
   test("a new setting starts from its first example", () => {
     const config = utils.defaultConfigOf(PORTAL_ENTRY);
     assert.deepStrictEqual(config, PORTAL_ENTRY.examples[0]);

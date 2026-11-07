@@ -587,7 +587,8 @@ function setAtPath(root, path, value) {
   return result;
 }
 
-// Removes the value at the path, and the objects it leaves empty
+// Removes the value at the path, and the objects this removal leaves empty. An object that was
+// already empty in the source value is kept: the value at the path was not there to remove.
 function deleteAtPath(root, path) {
   if (path === "") {
     return undefined;
@@ -605,7 +606,11 @@ function deleteAtPath(root, path) {
     current = current[segment];
     parents.push(current);
   }
-  delete current[segments[segments.length - 1]];
+  const lastSegment = segments[segments.length - 1];
+  if (!Object.prototype.hasOwnProperty.call(current, lastSegment)) {
+    return root;
+  }
+  delete current[lastSegment];
   for (let index = parents.length - 1; index > 0; index--) {
     if (Object.keys(parents[index]).length > 0) {
       break;
