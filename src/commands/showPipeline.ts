@@ -386,6 +386,13 @@ export function registerShowPipeline(commands: Commands) {
           fullLoadInFlight = runPipelineFullLoad(opts).finally(() => {
             fullLoadInFlight = null;
           });
+          return fullLoadInFlight;
+        }
+        // A pass asked with its own age of the development orgs (a manual Refresh, a command that
+        // changed an org, a list just read) runs after the one in progress: that one read the
+        // list with the default age, and what was asked would be lost
+        if (opts?.devOrgsMaxAgeMs !== undefined) {
+          return fullLoadInFlight.then(() => loadPipelineFull(opts));
         }
         return fullLoadInFlight;
       };

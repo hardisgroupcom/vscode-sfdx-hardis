@@ -169,7 +169,9 @@
                                         <span class="hardis-segmented pipeline-view-switch" role="group" aria-label={i18n.pipelineViewTitle} title={i18n.pipelineViewTitle}>
                                             <button type="button" class={majorBranchesViewClass} aria-pressed={majorBranchesViewPressed} onclick={handleShowMajorBranchesView}>{i18n.pipelineViewMajorBranches}</button>
                                             <button type="button" class={featureBranchesViewClass} aria-pressed={featureBranchesViewPressed} onclick={handleShowFeatureBranchesView}>{i18n.pipelineViewFeatureBranches}</button>
-                                            <button type="button" class={devOrgsViewClass} aria-pressed={devOrgsViewPressed} onclick={handleShowDevOrgsView}>{i18n.pipelineViewDevOrgs}</button>
+                                            <template if:true={devOrgsEnabled}>
+                                                <button type="button" class={devOrgsViewClass} aria-pressed={devOrgsViewPressed} onclick={handleShowDevOrgsView}>{i18n.pipelineViewDevOrgs}</button>
+                                            </template>
                                         </span>
                                     </div>
                                     <!-- Manual refresh: keep the diagram visible with a spinner overlaid on top -->

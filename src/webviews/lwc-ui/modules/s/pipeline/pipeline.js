@@ -642,7 +642,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // diagram anymore falls back to the feature branches.
     if (
       (this.diagramView === "devOrgs" &&
-        !this.pipelineData?.mermaidDiagramDevOrgs) ||
+        (!this.pipelineData?.mermaidDiagramDevOrgs || !this.devOrgsEnabled)) ||
       (this.diagramView === "majorBranches" &&
         !this.pipelineData?.mermaidDiagramMajor)
     ) {

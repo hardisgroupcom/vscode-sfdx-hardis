@@ -616,6 +616,23 @@ suite("Development orgs", () => {
       );
     });
 
+    test("the Dev orgs view only exists when the project keeps the list", () => {
+      const html = readModuleFile("pipeline", "pipeline.html");
+      assert.match(
+        html,
+        /<template if:true=\{devOrgsEnabled\}>\s*<button[^>]*onclick=\{handleShowDevOrgsView\}/,
+      );
+      const source = fs.readFileSync(
+        path.join(REPO_ROOT, "src", "commands", "showPipeline.ts"),
+        "utf8",
+      );
+      // A forced read of the dev orgs asked during a load runs after it, never merged into it
+      assert.match(
+        source,
+        /if \(opts\?\.devOrgsMaxAgeMs !== undefined\) \{\s*return fullLoadInFlight\.then\(\(\) => loadPipelineFull\(opts\)\);/,
+      );
+    });
+
     test("a click on the chip of an org opens its backpromote, before the node routes", () => {
       const js = readModuleFile("pipeline", "pipeline.js");
       const chipRoute = js.indexOf(
