@@ -386,16 +386,31 @@ suite("Development orgs", () => {
       }),
     ]);
 
-    test("each org is a node linked to the branch it targets, with its behind count", () => {
+    test("each org is a node reached by one arrow from the branch it targets, the behind count on the arrow", () => {
       const text = diagram(orgs, true);
       const nodeA = devOrgNodeName(ORG_A);
       assert.match(
         text,
         new RegExp(`${nodeA}\\(\\[".*dev-alpha.*"\\]\\):::salesforceDev\\b`),
       );
-      assert.match(text, new RegExp(`${nodeA} <-\\.-> integrationBranch`));
-      assert.match(text, /hardis-node-owner'>Jane Doe</);
-      assert.match(text, /hardis-node-count' data-count='2'/);
+      // Name only on the node: no owner, no count bubble (that one means Pull Requests to promote)
+      assert.doesNotMatch(text, /Jane Doe/);
+      assert.doesNotMatch(
+        text,
+        new RegExp(`${nodeA}\\(\\[[^\\n]*hardis-node-count`),
+      );
+      assert.match(
+        text,
+        new RegExp(
+          `integrationBranch -\\.->\\|"<span class='hardis-pill hardis-chip hardis-status-pending hardis-chip-backpromote' data-behind='2' title='[^']+'>[^<]+</span>"\\| ${nodeA}\\n`,
+        ),
+      );
+      assert.doesNotMatch(text, /<-\.->/);
+      // An org whose missing Pull Requests are not known yet gets a plain arrow
+      assert.match(
+        text,
+        new RegExp(`integrationBranch -\\.-> ${devOrgNodeName(ORG_C)}\\n`),
+      );
       assert.match(
         text,
         /subgraph SalesforceDevOrgsintegration \["[^"[\]]+"\]/,
@@ -444,7 +459,7 @@ suite("Development orgs", () => {
         ]),
         true,
       );
-      assert.match(text, /data-count='7\+'/);
+      assert.match(text, /data-behind='7\+'/);
     });
 
     test("without devOrgs, the full and the major branches diagrams are the ones without development orgs", () => {

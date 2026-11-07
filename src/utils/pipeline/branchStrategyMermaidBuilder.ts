@@ -734,11 +734,13 @@ export class BranchStrategyMermaidBuilder {
         class: this.devOrgClass(devOrg),
         group: groupId,
       });
+      // One way: a backpromote brings the target branch into the org, an org never deploys
+      // to a branch. The Pull Requests to backpromote are a chip on that arrow.
       this.sbDevLinks.push({
-        source: devOrg.nodeName,
-        target: branchNodeName,
+        source: branchNodeName,
+        target: devOrg.nodeName,
         type: "sfPushPull",
-        label: "",
+        label: this.devOrgBehindChip(devOrg),
         group: groupId,
         name: devOrg.name,
       });
@@ -753,18 +755,32 @@ export class BranchStrategyMermaidBuilder {
     });
   }
 
-  // Name of the org, its owner on a second smaller line, and the hidden count marker
+  // Name of the org only. The owner and the users are in the details window and on the
+  // dashboard; what it misses is on the arrow that reaches it.
   private devOrgLabel(devOrg: DevOrgView): string {
-    const owner = devOrg.owner
-      ? `<br/><span class='hardis-node-owner'>${this.escapeHtmlLabel(devOrg.owner.name)}</span>`
-      : "";
+    return `${CLOUD_ICON_SVG} ${this.escapeHtmlLabel(devOrg.name)}`;
+  }
+
+  // Orange chip "↓ 3 PRs" of the Pull Requests to backpromote, nothing when the org has them all
+  // or when they are not known yet. Not the bubble of a branch node, which counts the Pull
+  // Requests waiting to be promoted: a different meaning, so a different shape and place.
+  private devOrgBehindChip(devOrg: DevOrgView): string {
     const behindCount = devOrg.behind?.count || 0;
+    if (behindCount === 0) {
+      return "";
+    }
     const countText = `${behindCount}${devOrg.behind?.cutOff ? "+" : ""}`;
-    const count =
-      behindCount > 0
-        ? `<span class='hardis-node-count' data-count='${countText}' style='display:none;'></span>`
-        : "";
-    return `${CLOUD_ICON_SVG} ${this.escapeHtmlLabel(devOrg.name)}${owner}${count}`;
+    const text =
+      countText === "1"
+        ? t("devOrgBehindChipOne")
+        : t("devOrgBehindChip", { count: countText });
+    const title = String(
+      t("devOrgBehindChipTitle", {
+        count: countText,
+        branch: devOrg.targetBranch,
+      }),
+    ).replace(/['"]/g, "");
+    return `<span class='hardis-pill hardis-chip hardis-status-pending hardis-chip-backpromote' data-behind='${countText}' title='${title}'>${this.escapeHtmlLabel(String(text))}</span>`;
   }
 
   // A stale org stands out first; an org whose missing Pull Requests are not known yet is muted
@@ -787,6 +803,39 @@ export class BranchStrategyMermaidBuilder {
     this.mermaidLines.push("}}%%");
     this.mermaidLines.push("flowchart LR");
     this.mermaidLines.push("");
+
+    // Development orgs: one subgraph per target branch, each org reached from that branch.
+    // Declared before the branches, so the layout puts them under the branches rather than above.
+    // (none unless the build asked for them)
+    for (const devOrgsGroup of this.salesforceDevOrgsGroup) {
+      const devOrgNodes = this.devOrgNodes.filter(
+        (devOrgNode) => devOrgNode.group === devOrgsGroup.id,
+      );
+      if (devOrgNodes.length === 0) {
+        continue;
+      }
+      // A quoted subgraph title: only a double quote or a bracket could end it
+      const groupLabel = String(
+        t("devOrgsGroupLabel", { branch: devOrgsGroup.branch }),
+      ).replace(/["[\]]/g, "");
+      this.mermaidLines.push(
+        this.indent(
+          `subgraph SalesforceDevOrgs${devOrgsGroup.id} ["${groupLabel}"]`,
+          1,
+        ),
+      );
+      this.mermaidLines.push(this.indent("direction TB", 2));
+      for (const devOrgNode of devOrgNodes) {
+        this.mermaidLines.push(
+          this.indent(
+            `${devOrgNode.nodeName}(["${devOrgNode.label}"]):::${devOrgNode.class}`,
+            2,
+          ),
+        );
+      }
+      this.mermaidLines.push(this.indent("end", 1));
+      this.mermaidLines.push("");
+    }
 
     // Git branches
     const gitBranchesLabel = t("gitBranches");
@@ -839,38 +888,6 @@ export class BranchStrategyMermaidBuilder {
         // Node click is handled in the pipeline webview to run sf org open with proper targeting.
         const nodeLine = `${salesforceOrg.nodeName}(["${CLOUD_ICON_SVG} ${this.escapeHtmlLabel(salesforceOrg.label)}"]):::${salesforceOrg.class}`;
         this.mermaidLines.push(this.indent(nodeLine, 2));
-      }
-      this.mermaidLines.push(this.indent("end", 1));
-      this.mermaidLines.push("");
-    }
-
-    // Development orgs: one subgraph per target branch, each org linked to that branch
-    // (none unless the build asked for them)
-    for (const devOrgsGroup of this.salesforceDevOrgsGroup) {
-      const devOrgNodes = this.devOrgNodes.filter(
-        (devOrgNode) => devOrgNode.group === devOrgsGroup.id,
-      );
-      if (devOrgNodes.length === 0) {
-        continue;
-      }
-      // A quoted subgraph title: only a double quote or a bracket could end it
-      const groupLabel = String(
-        t("devOrgsGroupLabel", { branch: devOrgsGroup.branch }),
-      ).replace(/["[\]]/g, "");
-      this.mermaidLines.push(
-        this.indent(
-          `subgraph SalesforceDevOrgs${devOrgsGroup.id} ["${groupLabel}"]`,
-          1,
-        ),
-      );
-      this.mermaidLines.push(this.indent("direction TB", 2));
-      for (const devOrgNode of devOrgNodes) {
-        this.mermaidLines.push(
-          this.indent(
-            `${devOrgNode.nodeName}(["${devOrgNode.label}"]):::${devOrgNode.class}`,
-            2,
-          ),
-        );
       }
       this.mermaidLines.push(this.indent("end", 1));
       this.mermaidLines.push("");
@@ -1056,8 +1073,8 @@ export class BranchStrategyMermaidBuilder {
           this.indent(`${link.source} -.->|"${label}"| ${link.target}`, 1),
         );
       } else if (link.type === "sfPushPull") {
-        // Mermaid refuses an empty label between the two halves of the arrow
-        const arrow = link.label ? `<-. ${link.label} .->` : "<-.->";
+        // Mermaid refuses an empty label: no label, no pipes
+        const arrow = link.label ? `-.->|"${link.label}"|` : "-.->";
         this.mermaidLines.push(
           this.indent(`${link.source} ${arrow} ${link.target}`, 1),
         );
