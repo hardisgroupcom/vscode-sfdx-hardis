@@ -1757,6 +1757,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       const label = edgeLabels[i];
       const path = edgePaths[i];
 
+      // The orange chip of the Pull Requests to backpromote is no job status: its dotted line
+      // to a development org never moves
+      if (label.querySelector(".hardis-chip-backpromote")) {
+        continue;
+      }
+
       // Status is carried by the chip CSS classes emitted by the mermaid
       // builder (hardis-status-*); keep the legacy emoji check as fallback.
       const labelText = label.textContent || "";

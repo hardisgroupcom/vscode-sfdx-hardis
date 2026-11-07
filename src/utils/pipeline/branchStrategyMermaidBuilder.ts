@@ -734,11 +734,12 @@ export class BranchStrategyMermaidBuilder {
         class: this.devOrgClass(devOrg),
         group: groupId,
       });
-      // One way: a backpromote brings the target branch into the org, an org never deploys
-      // to a branch. The Pull Requests to backpromote are a chip on that arrow.
+      // A plain dotted line, no arrowhead: an org never deploys to a branch, and the org as the
+      // source of the line puts it in the column left of its branch. The Pull Requests to
+      // backpromote are a chip on that line.
       this.sbDevLinks.push({
-        source: branchNodeName,
-        target: devOrg.nodeName,
+        source: devOrg.nodeName,
+        target: branchNodeName,
         type: "sfPushPull",
         label: this.devOrgBehindChip(devOrg),
         group: groupId,
@@ -804,39 +805,6 @@ export class BranchStrategyMermaidBuilder {
     this.mermaidLines.push("flowchart LR");
     this.mermaidLines.push("");
 
-    // Development orgs: one subgraph per target branch, each org reached from that branch.
-    // Declared before the branches, so the layout puts them under the branches rather than above.
-    // (none unless the build asked for them)
-    for (const devOrgsGroup of this.salesforceDevOrgsGroup) {
-      const devOrgNodes = this.devOrgNodes.filter(
-        (devOrgNode) => devOrgNode.group === devOrgsGroup.id,
-      );
-      if (devOrgNodes.length === 0) {
-        continue;
-      }
-      // A quoted subgraph title: only a double quote or a bracket could end it
-      const groupLabel = String(
-        t("devOrgsGroupLabel", { branch: devOrgsGroup.branch }),
-      ).replace(/["[\]]/g, "");
-      this.mermaidLines.push(
-        this.indent(
-          `subgraph SalesforceDevOrgs${devOrgsGroup.id} ["${groupLabel}"]`,
-          1,
-        ),
-      );
-      this.mermaidLines.push(this.indent("direction TB", 2));
-      for (const devOrgNode of devOrgNodes) {
-        this.mermaidLines.push(
-          this.indent(
-            `${devOrgNode.nodeName}(["${devOrgNode.label}"]):::${devOrgNode.class}`,
-            2,
-          ),
-        );
-      }
-      this.mermaidLines.push(this.indent("end", 1));
-      this.mermaidLines.push("");
-    }
-
     // Git branches
     const gitBranchesLabel = t("gitBranches");
     this.mermaidLines.push(
@@ -888,6 +856,38 @@ export class BranchStrategyMermaidBuilder {
         // Node click is handled in the pipeline webview to run sf org open with proper targeting.
         const nodeLine = `${salesforceOrg.nodeName}(["${CLOUD_ICON_SVG} ${this.escapeHtmlLabel(salesforceOrg.label)}"]):::${salesforceOrg.class}`;
         this.mermaidLines.push(this.indent(nodeLine, 2));
+      }
+      this.mermaidLines.push(this.indent("end", 1));
+      this.mermaidLines.push("");
+    }
+
+    // Development orgs: one subgraph per target branch, each org linked to that branch
+    // (none unless the build asked for them)
+    for (const devOrgsGroup of this.salesforceDevOrgsGroup) {
+      const devOrgNodes = this.devOrgNodes.filter(
+        (devOrgNode) => devOrgNode.group === devOrgsGroup.id,
+      );
+      if (devOrgNodes.length === 0) {
+        continue;
+      }
+      // A quoted subgraph title: only a double quote or a bracket could end it
+      const groupLabel = String(
+        t("devOrgsGroupLabel", { branch: devOrgsGroup.branch }),
+      ).replace(/["[\]]/g, "");
+      this.mermaidLines.push(
+        this.indent(
+          `subgraph SalesforceDevOrgs${devOrgsGroup.id} ["${groupLabel}"]`,
+          1,
+        ),
+      );
+      this.mermaidLines.push(this.indent("direction TB", 2));
+      for (const devOrgNode of devOrgNodes) {
+        this.mermaidLines.push(
+          this.indent(
+            `${devOrgNode.nodeName}(["${devOrgNode.label}"]):::${devOrgNode.class}`,
+            2,
+          ),
+        );
       }
       this.mermaidLines.push(this.indent("end", 1));
       this.mermaidLines.push("");
@@ -1074,7 +1074,7 @@ export class BranchStrategyMermaidBuilder {
         );
       } else if (link.type === "sfPushPull") {
         // Mermaid refuses an empty label: no label, no pipes
-        const arrow = link.label ? `-.->|"${link.label}"|` : "-.->";
+        const arrow = link.label ? `-.-|"${link.label}"|` : "-.-";
         this.mermaidLines.push(
           this.indent(`${link.source} ${arrow} ${link.target}`, 1),
         );
@@ -1263,7 +1263,7 @@ export class BranchStrategyMermaidBuilder {
           sfDeploy:
             "stroke:#3e9b58,stroke-width:1.5px,color:#52c36e,opacity:1;",
           sfPushPull:
-            "stroke:#57a3fd,stroke-width:1.5px,color:#8fa1b3,opacity:1;",
+            "stroke:#57a3fd,stroke-width:1.5px,color:#8fa1b3,stroke-dasharray:2 3,opacity:1;",
         }
       : {
           gitMerge:
@@ -1273,7 +1273,7 @@ export class BranchStrategyMermaidBuilder {
           sfDeploy:
             "stroke:#2e844a,stroke-width:1.5px,color:#2e844a,opacity:1;",
           sfPushPull:
-            "stroke:#0176d3,stroke-width:1.5px,color:#66788a,opacity:1;",
+            "stroke:#0176d3,stroke-width:1.5px,color:#66788a,stroke-dasharray:2 3,opacity:1;",
         };
 
     const statusColors: Record<string, string> = isDark

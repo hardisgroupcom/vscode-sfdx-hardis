@@ -386,7 +386,7 @@ suite("Development orgs", () => {
       }),
     ]);
 
-    test("each org is a node reached by one arrow from the branch it targets, the behind count on the arrow", () => {
+    test("each org is a node left of the branch it targets, linked without arrowhead, the behind count on the line", () => {
       const text = diagram(orgs, true);
       const nodeA = devOrgNodeName(ORG_A);
       assert.match(
@@ -402,14 +402,15 @@ suite("Development orgs", () => {
       assert.match(
         text,
         new RegExp(
-          `integrationBranch -\\.->\\|"<span class='hardis-pill hardis-chip hardis-status-pending hardis-chip-backpromote' data-behind='2' title='[^']+'>[^<]+</span>"\\| ${nodeA}\\n`,
+          `${nodeA} -\\.-\\|"<span class='hardis-pill hardis-chip hardis-status-pending hardis-chip-backpromote' data-behind='2' title='[^']+'>[^<]+</span>"\\| integrationBranch\\n`,
         ),
       );
-      assert.doesNotMatch(text, /<-\.->/);
-      // An org whose missing Pull Requests are not known yet gets a plain arrow
+      // No arrowhead on either side: an org never deploys to a branch
+      assert.doesNotMatch(text, /<-\.->|DevOrg -\.->/);
+      // An org whose missing Pull Requests are not known yet gets a line without chip
       assert.match(
         text,
-        new RegExp(`integrationBranch -\\.-> ${devOrgNodeName(ORG_C)}\\n`),
+        new RegExp(`${devOrgNodeName(ORG_C)} -\\.- integrationBranch\\n`),
       );
       assert.match(
         text,
@@ -471,6 +472,18 @@ suite("Development orgs", () => {
   });
 
   suite("webview", () => {
+    test("the line to a development org is never animated like a pending job", () => {
+      const js = readModuleFile("pipeline", "pipeline.js");
+      const skip = js.indexOf(
+        'label.querySelector(".hardis-chip-backpromote")',
+      );
+      const pending = js.indexOf(
+        'label.querySelector(".hardis-status-pending")',
+      );
+      assert.ok(skip > 0, "backpromote chip skipped");
+      assert.ok(skip < pending, "skipped before the pending check");
+    });
+
     test("a click on a development org opens its details, before the org node route", () => {
       const js = readModuleFile("pipeline", "pipeline.js");
       const devOrgRoute = js.indexOf('nodeIdentifier.endsWith("DevOrg")');
