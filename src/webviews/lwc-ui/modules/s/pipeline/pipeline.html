@@ -38,6 +38,18 @@
                     </div>
                 </template>
 
+                <!-- Development orgs drawn in the diagram: the ones of the git user, all of them, or none -->
+                <template if:true={showDevOrgsToggle}>
+                    <div class="dev-orgs-toggle" title={i18n.devOrgsDisplayTitle}>
+                        <span class="dev-orgs-toggle-label">{i18n.devOrgsDisplayLabel}</span>
+                        <span class="hardis-segmented" role="group" aria-label={i18n.devOrgsDisplayTitle}>
+                            <button type="button" class={devOrgsMineClass} aria-pressed={devOrgsMinePressed} onclick={handleDevOrgsDisplayMine}>{i18n.devOrgsDisplayMine}</button>
+                            <button type="button" class={devOrgsAllClass} aria-pressed={devOrgsAllPressed} onclick={handleDevOrgsDisplayAll}>{i18n.devOrgsDisplayAll}</button>
+                            <button type="button" class={devOrgsNoneClass} aria-pressed={devOrgsNonePressed} onclick={handleDevOrgsDisplayNone}>{i18n.devOrgsDisplayNone}</button>
+                        </span>
+                    </div>
+                </template>
+
                 <lightning-button-group>
                     <lightning-button-menu
                         alternative-text={i18n.pipelineConfig}
@@ -82,6 +94,22 @@
                                 label={i18n.scratchOrgPoolTitle}
                                 icon-name="utility:database"
                                 onclick={handleShowScratchOrgPool}
+                            ></lightning-menu-item>
+                        </template>
+                        <template if:true={showDevOrgsMenu}>
+                            <lightning-menu-item
+                                value="registerDevOrg"
+                                label={i18n.menuRegisterDevOrg}
+                                icon-name="utility:new_window"
+                                onclick={handleRegisterDevOrg}
+                            ></lightning-menu-item>
+                        </template>
+                        <template if:true={showDevOrgsDashboard}>
+                            <lightning-menu-item
+                                value="devOrgsDashboard"
+                                label={i18n.menuDevOrgsDashboard}
+                                icon-name="utility:list"
+                                onclick={handleOpenDevOrgsDashboard}
                             ></lightning-menu-item>
                         </template>
                     </lightning-button-menu>
@@ -204,6 +232,11 @@
                                         <template if:true={majorBranchCheckEnabled}>
                                             <span class="legend-separator"></span>
                                             <span class="legend-item"><span class="legend-node-check"></span>{i18n.legendMajorBranchCheck}</span>
+                                        </template>
+                                        <template if:true={showDevOrgsLegend}>
+                                            <span class="legend-separator"></span>
+                                            <span class="legend-item"><span class="legend-line legend-line-dev-org"></span>{i18n.legendDevOrg}</span>
+                                            <span class="legend-item"><span class="legend-node-dev-org-stale"></span>{i18n.legendDevOrgStale}</span>
                                         </template>
                                 </div>
                                 <template if:true={error}>
@@ -936,5 +969,22 @@
             onloaduseraccesspolicies={handleLoadUserAccessPolicies}
             onsave={handleSaveDeploymentAction}
         ></s-deployment-action>
+    </template>
+
+    <!-- Development org details window -->
+    <template if:true={showDevOrgModal}>
+        <s-dev-org-details
+            dev-org={selectedDevOrg}
+            major-branches={devOrgMajorBranches}
+            connected-username={devOrgConnectionUsername}
+            connection-checked={devOrgConnectionChecked}
+            refreshing={devOrgsRefreshing}
+            stale-days={devOrgsStaleDays}
+            onclose={handleCloseDevOrgModal}
+            onrefresh={handleDevOrgRefresh}
+            onbackpromote={handleDevOrgBackpromote}
+            onsave={handleDevOrgSave}
+            onremove={handleDevOrgRemove}
+        ></s-dev-org-details>
     </template>
 </template>
