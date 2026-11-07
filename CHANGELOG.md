@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- New menu entry **Retrieve an Agentforce agent**, to get an agent version with the components it uses from an org (requires sfdx-hardis 8.21.0)
+- Deployment actions: new **Publish Agentforce Agent** type, to publish an agent in each org after the deployment and activate the version this creates, new **Activate Agentforce Agent** type, to activate a version the org already has, and new **Create Agentforce Agent Running User** type, to create the user a service agent runs as before the deployment. The **Agentforce agents deployment actions** source cleaning adds the publication and the running user to the Pull Request at each User Story save (requires sfdx-hardis 8.21.0)
+
 ## [8.18.0] 2026-11-06
 
 - DevOps Pipeline: when ticking User Stories for a promotion, **Selected only** shows the ticked ones, and **Select from a list** ticks the Pull Requests named in pasted text (release notes, an email, a spreadsheet column), directly or through their tickets, saying where each one was found
