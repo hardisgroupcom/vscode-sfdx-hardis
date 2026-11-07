@@ -89,6 +89,12 @@ PANEL_SHOTS = {
     # the run into doc-screenshots/major-branch-check (see CONTRIBUTING.md)
     "major-branch-check-pipeline.png": "major-branch-check/major-branch-check-pipeline",
     "major-branch-check-settings.png": "major-branch-check/major-branch-check-settings",
+    # Development orgs, taken by the dev orgs variant of the run into
+    # doc-screenshots/dev-orgs (see CONTRIBUTING.md)
+    "dev-orgs-pipeline.png": "dev-orgs/dev-orgs-pipeline",
+    # Same view before any org is registered: a "+" node per target branch, taken with
+    # SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS_EMPTY=true into doc-screenshots/dev-orgs-empty
+    "dev-orgs-pipeline-empty.png": "dev-orgs-empty/dev-orgs-pipeline",
 }
 
 # Width of the activity bar + side bar in a capture: the editor area (the
@@ -136,6 +142,8 @@ WEBVIEW_ONLY = {
     "promotion-settings.png",
     "major-branch-check-pipeline.png",
     "major-branch-check-settings.png",
+    "dev-orgs-pipeline.png",
+    "dev-orgs-pipeline-empty.png",
     "scratch-org-pool-menu.png",
 }
 
@@ -265,6 +273,11 @@ BOX_CROPS = {
     "major-branch-check-modal.png": (
         "major-branch-check/major-branch-check-modal",
         (470, 60, 1866, 915),
+    ),
+    # Development orgs: the window of the sandbox missing three Pull Requests
+    "dev-orgs-details.png": (
+        "dev-orgs/dev-orgs-details",
+        (640, 40, 1700, 860),
     ),
 }
 

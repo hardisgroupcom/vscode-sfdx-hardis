@@ -1,0 +1,73 @@
+/* Details window of a development org: layout only, colors come from the global kits */
+
+.dev-org-subtitle {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+}
+
+.dev-org-badges {
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.dev-org-prop-wide {
+  grid-column: 1 / -1;
+}
+
+.dev-org-section {
+  margin-top: 1.25rem;
+}
+
+.dev-org-pr-list {
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.dev-org-pr-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dev-org-pr-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+}
+
+.dev-org-carried-list {
+  margin: 0.3rem 0 0 1.25rem;
+  padding: 0;
+  list-style: disc;
+  font-size: 0.8rem;
+}
+
+.dev-org-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dev-org-footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-right: auto;
+}
+
+/* The kit link never wraps: a long instance URL or Pull Request title would spill over the next
+   column */
+.slds-scope .slds-modal .hardis-textlink.dev-org-link {
+  padding: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
