@@ -2104,7 +2104,10 @@ suite("Documentation screenshots", function () {
       command: "vscode-sfdx-hardis.showPipeline",
       lwcId: "s-pipeline",
       ready: (data: any) =>
-        pipelineFullyLoaded(data) && data?.pipelineData?.devOrgsLoaded === true,
+        // The list is read in the background, after the first draw: wait for the orgs (the
+        // empty list variant waits out the timeout and captures its + nodes)
+        pipelineFullyLoaded(data) &&
+        (data?.pipelineData?.devOrgs || []).length > 0,
       settleMs: 9000,
       force: true,
     });
@@ -2124,6 +2127,21 @@ suite("Documentation screenshots", function () {
       return;
     }
     await sleep(3000);
+    // The list arrives in the background after the first draw: unless the run
+    // serves an empty list, wait until the webview has drawn an org (not only a +)
+    const expectsOrgs =
+      process.env.SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS_EMPTY !== "true";
+    for (let attempt = 0; expectsOrgs && attempt < 90; attempt++) {
+      const drawn = await inWebview(`
+        return deepAll(panelDocument, "g.node").some((node) =>
+          /DevOrg-\\d/.test(node.id || ""),
+        );
+      `);
+      if (drawn) {
+        break;
+      }
+      await sleep(1000);
+    }
     await cleanChrome();
     await captureStable("dev-orgs-pipeline");
     // Details window of the sandbox missing three Pull Requests. The node is

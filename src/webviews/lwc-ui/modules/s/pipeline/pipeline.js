@@ -1319,6 +1319,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     } else {
       viewport.style.height = `${Math.min(Math.floor(availableHeight), renderedHeight)}px`;
     }
+    // The bubbles are sized for the scale just set: drawn again at every fit
+    this._drawNodeCountBubbles(mermaidSvg);
   }
 
   _getAvailableMermaidViewportHeight(viewport) {
@@ -2641,6 +2643,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     );
     // Restart timer with appropriate interval when visibility changes
     this._startAutoRefresh();
+    // A diagram drawn while the panel was hidden is fitted again, with its bubbles
+    if (this._isVisible) {
+      this._applyMermaidZoom(this.template.querySelector(".mermaid svg"));
+    }
     if (this._isVisible) {
       this._checkForNewPullRequest();
     }
@@ -3271,17 +3277,34 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       return;
     }
     const nodes = mermaidSvg.querySelectorAll("g.node");
-    const svgScale = this._getMermaidEffectiveScale(mermaidSvg);
     const runningCheckNodes = this._runningMajorBranchCheckNodeNames();
+    this._drawNodeCountBubbles(mermaidSvg);
     nodes.forEach((node) => {
       node.style.cursor = "pointer";
       node.setAttribute("tabindex", "0");
-      this._drawNodeCountBubble(node, svgScale);
       // A major branch whose deployment check is running pulses (pipeline.css), its running dot
       // staying the indicator when motion is reduced
       if (runningCheckNodes.has(this._extractNodeIdentifier(node.id))) {
         node.classList.add("hardis-node-check-running");
       }
+    });
+  }
+
+  // The count bubbles of every node, for the scale the diagram has now. A diagram drawn while the
+  // panel had no width (hidden tab, automatic reload in the background) got a scale clamped to
+  // its minimum, and bubbles about three times too big that stayed so: nothing is drawn without a
+  // width, and every fit (resize, zoom, panel shown again) draws them again.
+  _drawNodeCountBubbles(mermaidSvg) {
+    const viewport = this.template.querySelector(".mermaid-viewport");
+    if (!mermaidSvg || !viewport || viewport.clientWidth <= 1) {
+      return;
+    }
+    mermaidSvg
+      .querySelectorAll(".hardis-count-bubble")
+      .forEach((bubble) => bubble.remove());
+    const svgScale = this._getMermaidEffectiveScale(mermaidSvg);
+    mermaidSvg.querySelectorAll("g.node").forEach((node) => {
+      this._drawNodeCountBubble(node, svgScale);
     });
   }
 

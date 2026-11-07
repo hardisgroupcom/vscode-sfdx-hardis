@@ -839,6 +839,8 @@ async function main() {
               SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS: devOrgsVariant
                 ? "true"
                 : "",
+              SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS_EMPTY:
+                process.env.SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS_EMPTY || "",
               // Answer of hardis:project:dev-org:list in the dev orgs variant
               SF_MOCK_DEV_ORGS_FILE: devOrgsFixtureFile,
               // Statuses and command scenarios of the action recovery variant

@@ -599,6 +599,23 @@ suite("Development orgs", () => {
       assert.match(js, /label: person\.email,/);
     });
 
+    test("the count bubbles are drawn again at every fit, never without a width", () => {
+      const js = readModuleFile("pipeline", "pipeline.js");
+      const fit = js.slice(
+        js.indexOf("  _applyMermaidZoom(mermaidSvg) {"),
+        js.indexOf("  _getAvailableMermaidViewportHeight("),
+      );
+      assert.match(fit, /this\._drawNodeCountBubbles\(mermaidSvg\);/);
+      const draw = js.slice(
+        js.indexOf("  _drawNodeCountBubbles(mermaidSvg) {"),
+      );
+      assert.match(draw, /viewport\.clientWidth <= 1/);
+      assert.match(
+        draw,
+        /\.hardis-count-bubble"\)\s*\.forEach\(\(bubble\) => bubble\.remove\(\)\)/,
+      );
+    });
+
     test("the line to a development org is never animated like a pending job", () => {
       const js = readModuleFile("pipeline", "pipeline.js");
       const skip = js.indexOf(

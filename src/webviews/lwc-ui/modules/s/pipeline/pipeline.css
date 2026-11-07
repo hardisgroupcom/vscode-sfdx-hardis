@@ -354,12 +354,13 @@
     border: 1.5px dashed var(--slds-g-color-palette-orange-60);
 }
 
-/* Major branches / Feature branches / Dev orgs switch, in a row above the diagram: it never
-   covers a node, unlike the zoom buttons that float on the drawing */
+/* Major branches / Feature branches / Dev orgs switch, over the top left corner of the diagram,
+   like the zoom buttons at the bottom: it takes no room from the diagram */
 .pipeline-diagram-toolbar {
-    display: flex;
-    justify-content: flex-start;
-    padding: 0 0 0.5rem;
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    z-index: 20;
 }
 
 .pipeline-view-switch {
