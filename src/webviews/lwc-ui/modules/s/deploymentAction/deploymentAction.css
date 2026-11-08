@@ -3,11 +3,45 @@
 }
 
 .slds-text-font_monospace {
-  font-family: var(--vscode-editor-font-family, 'Menlo', 'Consolas', 'Courier New', monospace);
+  font-family: var(
+    --vscode-editor-font-family,
+    "Menlo",
+    "Consolas",
+    "Courier New",
+    monospace
+  );
   background-color: var(--slds-g-color-neutral-base-95);
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   display: inline-block;
   max-width: 100%;
   word-break: break-all;
+}
+
+/* Save: a spinner inside the button while the checks run before saving */
+.da-save-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.da-button-spinner {
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: da-spin 0.8s linear infinite;
+}
+
+@keyframes da-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .da-button-spinner {
+    animation: none;
+  }
 }

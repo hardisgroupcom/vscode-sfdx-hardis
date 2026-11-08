@@ -72,7 +72,8 @@ export function setLinkedPluginPreloadScript(scriptPath: string | null): void {
   linkedDetectionCache = null;
 }
 
-function getSfCliDataDir(): string {
+// Folder where the sf CLI keeps its plugin registry (package.json) and its user plugins
+export function getSfCliDataDir(): string {
   if (process.env.SF_DATA_DIR) {
     return process.env.SF_DATA_DIR;
   }

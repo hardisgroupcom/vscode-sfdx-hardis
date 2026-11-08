@@ -26,6 +26,7 @@ import { ThemeUtils } from "./utils/themeUtils";
 import { t } from "./i18n/i18n";
 import {
   SetupHelper,
+  buildPluginsInstallCommand,
   buildSfCliUpgradeCommand,
   getSalesforceExtensionPackStatus,
   isNativeSfCliInstall,
@@ -331,6 +332,10 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         helpUrl: DOCSITE_URL,
       },
       { name: "sfdmu", helpUrl: "https://help.sfdmu.com/" },
+      {
+        name: "sfdx-browserforce-plugin",
+        helpUrl: "https://github.com/amtrack/sfdx-browserforce-plugin",
+      },
       {
         name: "sfdx-git-delta",
         helpUrl: "https://github.com/scolladon/sfdx-git-delta",
@@ -992,21 +997,13 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     recommendedSfdxCliVersion?: string,
   ): string {
     const hardisTag = getSfdxHardisInstallTag();
-    let command = outdated
-      .map((plugin) => {
-        const tag = plugin.name === "sfdx-hardis" ? hardisTag : "latest";
-        return `echo y|sf plugins:install ${plugin.name}@${tag}`;
-      })
-      .join(" && ");
+    // Every install runs even when one fails: a failed Browserforce download must not skip
+    // sfdx-git-delta, sf-git-merge-driver or the merge driver enable step
+    let command = buildPluginsInstallCommand(outdated, hardisTag);
     if (legacySfdx) {
       command =
         "npm uninstall sfdx-cli --global && npm install @salesforce/cli --global && " +
-        plugins
-          .map((plugin: any) => {
-            const tag = plugin.name === "sfdx-hardis" ? hardisTag : "latest";
-            return `echo y|sf plugins:install ${plugin.name}@${tag}`;
-          })
-          .join(" && ");
+        buildPluginsInstallCommand(plugins, hardisTag);
     } else if (sfdxCliOutdated === true) {
       // Pin the exact recommended/latest version rather than letting
       // buildSfCliUpgradeCommand fall back to @latest: the installed version is

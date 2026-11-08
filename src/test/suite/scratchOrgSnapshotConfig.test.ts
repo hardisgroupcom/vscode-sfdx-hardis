@@ -29,7 +29,10 @@ suite("Scratch org snapshot configuration", () => {
         ["branch"],
         `${key} is read from the branch config only`,
       );
-      assert.ok(section!.keys.includes(key), `the Dev Hub section must hold ${key}`);
+      assert.ok(
+        section!.keys.includes(key),
+        `the Dev Hub section must hold ${key}`,
+      );
     }
   });
 
@@ -59,7 +62,10 @@ suite("Scratch org snapshot configuration", () => {
     assert.strictEqual(saved.scratchOrgSnapshotKeep, 3);
     const global: any = yaml.load(fs.readFileSync(globalPath, "utf8"));
     for (const key of keys) {
-      assert.ok(!(key in global), `${key} must not be written to the project config`);
+      assert.ok(
+        !(key in global),
+        `${key} must not be written to the project config`,
+      );
     }
 
     // An emptied number is removed, so the CLI default (2) applies

@@ -1,5 +1,13 @@
 import { execSfdxJson } from "../../utils";
 import { Logger } from "../../logger";
+import { t } from "../../i18n/i18n";
+import {
+  findInstalledBrowserforce,
+  isUsableBrowserforce,
+  loadBrowserSecretsLookup,
+  loadBrowserforceCatalog,
+  validateBrowserforceConfig,
+} from "../browserforceCatalogUtils";
 import {
   BATCHABLE_APEX_CLASS_REGEX,
   listProjectBatchableClasses,
@@ -352,6 +360,9 @@ export async function handleDeploymentActionPickerMessage(
   type: string,
   data: any,
 ): Promise<boolean> {
+  if (await handleBrowserforceMessage(panel, type, data)) {
+    return true;
+  }
   const pickers: Record<
     string,
     { responseType: string; list: () => Promise<PickerValues> }
@@ -391,4 +402,104 @@ export async function handleDeploymentActionPickerMessage(
     data: { requestId, ...result },
   });
   return true;
+}
+
+// How long the catalog answer waits for the CI/CD variable names before going without them
+const SECRETS_LOOKUP_WAIT_MS = 300;
+// A Browserforce setting key, as in the catalog (ex: "densitySettings", "customerPortal")
+const BROWSERFORCE_SETTING_PATTERN = /^[A-Za-z0-9_.-]+$/;
+
+/**
+ * Messages of the editor of a "browser" deployment action: the Browserforce catalog and the check
+ * of a setting value. The editor never installs the plugin: the SFDX Hardis Setup panel does.
+ * Returns true when the message was one of them.
+ */
+async function handleBrowserforceMessage(
+  panel: { sendMessage: (message: any) => void },
+  type: string,
+  data: any,
+): Promise<boolean> {
+  const requestId = data?.requestId || null;
+  if (type === "loadBrowserforceCatalog") {
+    await sendBrowserforceCatalog(panel, requestId);
+    return true;
+  }
+  if (type === "validateBrowserforceConfig") {
+    const setting =
+      typeof data?.setting === "string" ? data.setting.trim() : "";
+    const validation = BROWSERFORCE_SETTING_PATTERN.test(setting)
+      ? await validateBrowserforceConfig(setting, data?.config ?? {})
+      : {
+          valid: false,
+          errors: [
+            { path: "setting", message: t("browserforceSettingRequired") },
+          ],
+          environmentVariables: [],
+          error: null,
+        };
+    panel.sendMessage({
+      type: "returnBrowserforceValidation",
+      data: { requestId, ...validation },
+    });
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Answers with the catalog as soon as it is read. The CI/CD variable names come from sfdx-hardis,
+ * whose start takes seconds: when they are not cached, a second answer brings them. They are not
+ * asked when Browserforce is missing or too old: the editor then only offers to install it.
+ */
+async function sendBrowserforceCatalog(
+  panel: { sendMessage: (message: any) => void },
+  requestId: string | null,
+): Promise<void> {
+  const secretsLookupPromise = isUsableBrowserforce(findInstalledBrowserforce())
+    ? loadBrowserSecretsLookup()
+    : null;
+  const [answer, gitProvider] = await Promise.all([
+    loadBrowserforceCatalog(),
+    detectGitProviderName(),
+  ]);
+  const reply = { requestId, ...answer, gitProvider };
+  if (!secretsLookupPromise || answer.notInstalled) {
+    panel.sendMessage({
+      type: "returnBrowserforceCatalog",
+      data: { ...reply, secretsLookup: null },
+    });
+    return;
+  }
+  const quickSecretsLookup = await Promise.race([
+    secretsLookupPromise,
+    new Promise<undefined>((resolve) =>
+      setTimeout(() => resolve(undefined), SECRETS_LOOKUP_WAIT_MS),
+    ),
+  ]);
+  if (quickSecretsLookup !== undefined) {
+    panel.sendMessage({
+      type: "returnBrowserforceCatalog",
+      data: { ...reply, secretsLookup: quickSecretsLookup },
+    });
+    return;
+  }
+  panel.sendMessage({
+    type: "returnBrowserforceCatalog",
+    data: { ...reply, secretsLookup: null },
+  });
+  panel.sendMessage({
+    type: "returnBrowserforceCatalog",
+    data: { ...reply, secretsLookup: await secretsLookupPromise },
+  });
+}
+
+// "github", "gitlab"... from the origin remote, or "" when unknown
+async function detectGitProviderName(): Promise<string> {
+  try {
+    const gitProviderModule = await import("../gitProviders/gitProvider");
+    const repoInfo = await gitProviderModule.GitProvider.detectRepoInfo();
+    return repoInfo?.providerName || "";
+  } catch {
+    return "";
+  }
 }

@@ -27,7 +27,8 @@ export type BuiltInActionType =
   | "schedule-batch"
   | "run-batch"
   | "remove-packagexml-items"
-  | "user-access-policy";
+  | "user-access-policy"
+  | "browser";
 
 export const BUILT_IN_ACTION_TYPES: BuiltInActionType[] = [
   "command",
@@ -39,6 +40,7 @@ export const BUILT_IN_ACTION_TYPES: BuiltInActionType[] = [
   "run-batch",
   "remove-packagexml-items",
   "user-access-policy",
+  "browser",
 ];
 
 export function isBuiltInActionType(type: string): boolean {
@@ -71,6 +73,10 @@ export interface PrePostCommand {
     policies?: string[]; // for 'user-access-policy' actions: developer names
     activate?: boolean; // optional for 'user-access-policy' actions, true when unset
     applyToAll?: boolean; // optional for 'user-access-policy' actions, false when unset
+    setting?: string; // for 'browser' actions: the Browserforce setting key
+    // for 'browser' actions: the value of that setting (object or array). A value written
+    // exactly "${NAME}" is a CI/CD variable sfdx-hardis resolves for the target branch.
+    config?: any;
     [key: string]: any;
   };
   command: string;

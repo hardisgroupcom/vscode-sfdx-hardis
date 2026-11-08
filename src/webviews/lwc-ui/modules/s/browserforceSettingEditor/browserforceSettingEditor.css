@@ -1,0 +1,247 @@
+/* Layout only: notes, cards, field rows and chips come from SLDS and resources/global-theme.css. */
+
+.bfe-block {
+  margin-bottom: 0.75rem;
+}
+
+/* "No item yet.": the same space under it as under a field */
+.bfe-help {
+  margin: 0.25rem 0 0.75rem;
+}
+
+.bfe-error {
+  margin-top: 0.25rem;
+  width: 100%;
+}
+
+.bfe-note-with-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.bfe-note-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* The Browserforce part of the action on a soft tint of the hue of the Browser type pill, set
+   apart from the fields every action has. Cards and inputs keep their own surface on it. */
+.bfe-panel {
+  background: light-dark(
+    var(--slds-g-color-palette-hot-orange-95),
+    var(--slds-g-color-palette-hot-orange-90)
+  );
+  border: 1px solid var(--slds-g-color-palette-hot-orange-80);
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem 0.1rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Title, key and description of the selected setting */
+.bfe-setting-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.bfe-setting-desc {
+  margin-top: 0.35rem;
+  max-width: none;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.bfe-multiline {
+  white-space: pre-line;
+}
+
+.bfe-section {
+  margin-bottom: 0.25rem;
+}
+
+.bfe-item {
+  margin-bottom: 0.75rem;
+  padding: 0.75rem 0.75rem 0;
+}
+
+.bfe-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Fields are stacked like the fields every action has: the label line, the control, then what
+   goes with it. One vertical rhythm everywhere: 0.75rem between fields, 0.25rem under a control. */
+.bfe-field-cell {
+  margin-bottom: 0.75rem;
+}
+
+/* The control of a field sits right under its label: in two toggles side by side, the label of
+   the shorter one comes down, so both toggles stay level */
+.bfe-field-cell > .slds-form-element {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 100%;
+}
+
+/* Label, help icon, then the raw key, flowing like a sentence: when the label wraps, the icon
+   and the key follow its last word. A key longer than the line is cut (full text in its tooltip). */
+.bfe-field-label {
+  display: block;
+  padding-right: 0;
+}
+
+.bfe-field-label s-multiline-helptext {
+  display: inline-block;
+  margin-left: 0.25rem;
+  vertical-align: middle;
+}
+
+.bfe-field-label .hardis-chip,
+.bfe-raw-key {
+  margin-left: 0.35rem;
+  max-width: 100%;
+  vertical-align: middle;
+  text-overflow: ellipsis;
+}
+
+.bfe-under {
+  margin-top: 0.25rem;
+}
+
+/* A toggle sits under its label, its state on its right */
+.bfe-toggle-line {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 1.5rem;
+}
+
+/* Secondary actions of a field, left aligned under its value. The negative margin lines the
+   text of the first link up with the control above (the kit link has a 4px inner padding). */
+.bfe-field-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  margin-left: -4px;
+}
+
+.bfe-field-links:empty {
+  display: none;
+}
+
+.bfe-variable-switch,
+.bfe-check-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.bfe-switch-icon {
+  --slds-c-icon-color-foreground-default: currentColor;
+  --slds-c-icon-color-foreground: currentColor;
+}
+
+/* Two columns read at a glance: the org, then the variable it reads */
+.bfe-lookup {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+}
+
+.bfe-lookup-row {
+  display: contents;
+}
+
+.bfe-lookup-branch {
+  justify-self: start;
+}
+
+.bfe-lookup-names {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.35rem;
+  min-width: 0;
+}
+
+.bfe-lookup-then,
+.bfe-lookup-other {
+  font-size: 0.72rem;
+}
+
+.bfe-pattern-chip {
+  margin-left: 0.25rem;
+  vertical-align: middle;
+}
+
+/* Spinner inside the Check button while Browserforce answers */
+.bfe-button-spinner {
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: bfe-spin 0.8s linear infinite;
+}
+
+@keyframes bfe-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bfe-button-spinner {
+    animation: none;
+  }
+}
+
+.bfe-loading-note {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bfe-readonly-setting {
+  text-align: left;
+}
+
+.bfe-readonly-json {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 0.5rem;
+  margin: 0;
+}
+
+.bfe-json {
+  --slds-c-textarea-sizing-min-height: 160px;
+}
+
+.bfe-variable {
+  margin-bottom: 0.5rem;
+}
+
+.bfe-variable .bfe-lookup {
+  margin-top: 0.25rem;
+}
+
+.bfe-error-list {
+  margin: 0.25rem 0 0 1.25rem;
+  list-style: disc;
+}
+
+.bfe-lookup-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}

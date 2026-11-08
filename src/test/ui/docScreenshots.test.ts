@@ -296,6 +296,89 @@ async function click(
   await sleep(900);
 }
 
+// Catalog of the documentation screenshots of the Browser action type: the one setting the
+// fixture action uses, as `sf browserforce plugins list` describes it
+const DOC_BROWSERFORCE_CATALOG = {
+  formatVersion: 1,
+  browserforceVersion: "7.0.0",
+  deprecatedSettings: [],
+  plugins: [
+    {
+      key: "densitySettings",
+      title: "Density Settings",
+      groups: [],
+      fields: [
+        {
+          path: "density",
+          type: "string",
+          title: "Density",
+          description: "Choose the default display setting for your org",
+          required: false,
+          enum: ["Comfy", "Compact"],
+          isPassword: false,
+          isIrreversible: false,
+        },
+      ],
+      examples: [{ density: "Compact" }, { density: "Comfy" }],
+      warnings: {
+        irreversibleFields: [],
+        userInterface: null,
+        prerequisites: [],
+      },
+    },
+  ],
+};
+
+/**
+ * Serves a Browserforce catalog to the editor of a Browser action without the plugin: an
+ * installed Browserforce 7.0.0 in a temporary sf data folder, and the cache file of its catalog
+ * (read by src/utils/browserforceCatalogUtils.ts). Returns what puts everything back.
+ */
+function installFakeBrowserforce(catalog: any): () => void {
+  const version = "7.0.0";
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "bf-shots-"));
+  const dataDir = path.join(root, "sf-data");
+  const pluginDir = path.join(
+    dataDir,
+    "node_modules",
+    "sfdx-browserforce-plugin",
+  );
+  const cacheDir = path.join(root, "cache");
+  fs.mkdirSync(pluginDir, { recursive: true });
+  fs.mkdirSync(cacheDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(dataDir, "package.json"),
+    JSON.stringify({
+      oclif: { plugins: [{ name: "sfdx-browserforce-plugin", type: "user" }] },
+    }),
+  );
+  fs.writeFileSync(
+    path.join(pluginDir, "package.json"),
+    JSON.stringify({ name: "sfdx-browserforce-plugin", version }),
+  );
+  fs.writeFileSync(
+    path.join(cacheDir, `catalog-${version}.json`),
+    JSON.stringify({ ...catalog, browserforceVersion: version }),
+  );
+  const previous = {
+    SF_DATA_DIR: process.env.SF_DATA_DIR,
+    SFDX_HARDIS_BROWSERFORCE_CACHE_DIR:
+      process.env.SFDX_HARDIS_BROWSERFORCE_CACHE_DIR,
+  };
+  process.env.SF_DATA_DIR = dataDir;
+  process.env.SFDX_HARDIS_BROWSERFORCE_CACHE_DIR = cacheDir;
+  return () => {
+    for (const [name, value] of Object.entries(previous)) {
+      if (value === undefined) {
+        delete process.env[name];
+      } else {
+        process.env[name] = value;
+      }
+    }
+    fs.rmSync(root, { recursive: true, force: true });
+  };
+}
+
 /**
  * Opens a panel through its VS Code command, waits for the webview to be ready
  * and for its data to arrive, then captures the window.
@@ -2386,6 +2469,9 @@ suite("Documentation screenshots", function () {
       { name: "pipeline-edit-action-custom-function", row: 9, editY: 796 },
       // Appended last in the fixture, so that the rows above keep their position
       { name: "pipeline-edit-action-run-batch", row: 10, editY: 714 },
+      // A Browserforce setting, appended after it, with a catalog of one setting served as an
+      // installed Browserforce. editY 0: the Edit button is clicked by its text
+      { name: "pipeline-edit-action-browser", row: 11, editY: 0 },
     ];
     // A universe whose Pull Request declares its actions in another order says
     // so, because these shots are taken by row position. The names are the shot
@@ -2409,7 +2495,7 @@ suite("Documentation screenshots", function () {
     const FIRST_ROW_CENTER_Y = 299;
     const ROW_STEP = 53.8;
     const VISIBLE_ROWS = 9;
-    const LAST_ROW_INDEX = 10;
+    const LAST_ROW_INDEX = 11;
     const LAST_ROW_SCROLLED_Y = 805;
     // Clicking the action label opens its editor
     const EDIT_BUTTON_X = 520;
@@ -2420,6 +2506,9 @@ suite("Documentation screenshots", function () {
     await vscode.commands.executeCommand("workbench.action.zoomOut");
     await vscode.commands.executeCommand("workbench.action.zoomOut");
     await sleep(800);
+    const uninstallBrowserforce = installFakeBrowserforce(
+      DOC_BROWSERFORCE_CATALOG,
+    );
     try {
       const editorShots = takeAllEditors
         ? ACTION_EDITOR_SHOTS
@@ -2462,11 +2551,339 @@ suite("Documentation screenshots", function () {
         await sleep(1800);
         // Switch the read-only details view to the editable form: the published
         // screenshots must show the values inside editable fields
-        await click(1360, shot.editY); // "Edit" button of the details view
+        if (shot.editY > 0) {
+          await click(1360, shot.editY); // "Edit" button of the details view
+        } else {
+          await inWebview(`
+            const action = deepAll(panelDocument, "s-deployment-action")[0];
+            const edit = action && deepAll(action.shadowRoot || action, "button").find(
+              (button) => (button.textContent || "").trim() === "Edit" && button.offsetParent !== null,
+            );
+            if (!edit) { return null; }
+            edit.click();
+            return true;
+          `);
+        }
         await sleep(1500);
         await captureStable(shot.name);
       }
     } finally {
+      uninstallBrowserforce();
+      await vscode.commands.executeCommand("workbench.action.zoomIn");
+      await vscode.commands.executeCommand("workbench.action.zoomIn");
+      await sleep(800);
+      checkoutWorkspaceBranch("integration");
+    }
+  });
+
+  // The editor of a Browser deployment action over every setting of a real Browserforce catalog,
+  // to look at each form: never part of a run without names, as it takes many images. The
+  // catalog is the JSON of `sf browserforce plugins list --json` (or its result), named by
+  // SFDX_HARDIS_DOC_SCREENSHOTS_BROWSERFORCE_CATALOG; the run serves it as the cache of an
+  // installed Browserforce 7.0.0, so the editor finds it without the plugin:
+  //   SFDX_HARDIS_DOC_SCREENSHOTS_BROWSERFORCE_CATALOG=/tmp/catalog.json \
+  //   SFDX_HARDIS_DOC_SCREENSHOTS_DIR=/tmp/browserforce-shots \
+  //   yarn screenshots browserforce-settings
+  // SFDX_HARDIS_DOC_SCREENSHOTS_BROWSERFORCE_ONLY=key1,key2 limits the settings captured, and
+  // SFDX_HARDIS_DOC_SCREENSHOTS_THEME=dark takes them in the dark theme.
+  test("browserforce settings", async function () {
+    if (!ONLY.includes("browserforce-settings")) {
+      this.skip();
+    }
+    currentGate = "browserforce-settings";
+    const catalogFile =
+      process.env.SFDX_HARDIS_DOC_SCREENSHOTS_BROWSERFORCE_CATALOG || "";
+    if (!catalogFile || !fs.existsSync(catalogFile)) {
+      console.log(
+        "      [shot] browserforce-settings: set SFDX_HARDIS_DOC_SCREENSHOTS_BROWSERFORCE_CATALOG",
+      );
+      this.skip();
+    }
+    const raw = JSON.parse(fs.readFileSync(catalogFile, "utf8"));
+    const catalog = raw.result || raw;
+    const onlySettings = (
+      process.env.SFDX_HARDIS_DOC_SCREENSHOTS_BROWSERFORCE_ONLY || ""
+    )
+      .split(",")
+      .map((key) => key.trim())
+      .filter(Boolean);
+    const deprecatedKeys = (catalog.deprecatedSettings || []).map(
+      (setting: any) => setting.path,
+    );
+    const settingKeys: string[] = (catalog.plugins || [])
+      .map((plugin: any) => plugin.key)
+      .filter((key: string) => !deprecatedKeys.includes(key))
+      .filter(
+        (key: string) =>
+          onlySettings.length === 0 || onlySettings.includes(key),
+      );
+    const uninstallBrowserforce = installFakeBrowserforce(catalog);
+
+    // Runs in the webview, with `editor` the setting editor shown
+    const inEditor = (body: string) =>
+      inWebview(`
+        const editor = deepAll(panelDocument, "s-browserforce-setting-editor").find(
+          (element) => element.offsetParent !== null || element.getClientRects().length > 0,
+        );
+        if (!editor) { return null; }
+        const inside = (selector) => deepAll(editor.shadowRoot || editor, selector);
+        ${body}
+      `);
+    // The scrolling body of the modal: the first ancestor of the editor that scrolls
+    const FIND_SCROLLER = `
+      let scroller = editor;
+      while (scroller && !/(auto|scroll)/.test(getComputedStyle(scroller).overflowY)) {
+        scroller = scroller.parentElement || (scroller.getRootNode && scroller.getRootNode().host) || null;
+      }
+    `;
+    const scrollTo = (selector: string) =>
+      inEditor(`
+        const target = inside(${JSON.stringify(selector)})[0];
+        if (!target) { return null; }
+        target.scrollIntoView({ block: "start" });
+        return true;
+      `);
+    const scrollDown = () =>
+      inEditor(`
+        ${FIND_SCROLLER}
+        if (!scroller) { return null; }
+        const before = scroller.scrollTop;
+        scroller.scrollTop = before + Math.round(scroller.clientHeight * 0.85);
+        return scroller.scrollTop > before + 2;
+      `);
+    const clickInEditor = (selector: string, text = "", nth = 0) =>
+      inEditor(`
+        const target = inside(${JSON.stringify(selector)}).filter(
+          (element) => ${JSON.stringify(text)} === "" || (element.textContent || "").trim() === ${JSON.stringify(text)},
+        )[${nth}];
+        if (!target) { return null; }
+        target.scrollIntoView({ block: "center" });
+        target.click();
+        return true;
+      `);
+    // Types into the n-th visible native input matching the selector, as a user does
+    const typeInEditor = (selector: string, index: number, value: string) =>
+      inEditor(`
+        const inputs = inside(${JSON.stringify(selector)}).filter((element) => element.offsetParent !== null);
+        const input = inputs[${index}];
+        if (!input) { return null; }
+        input.scrollIntoView({ block: "center" });
+        input.focus();
+        input.value = ${JSON.stringify(value)};
+        input.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true, composed: true }));
+        return true;
+      `);
+    const selectSetting = (key: string) =>
+      inEditor(`
+        const picker = inside("s-typeahead")[0];
+        if (!picker) { return null; }
+        picker.dispatchEvent(new CustomEvent("change", { detail: { value: ${JSON.stringify(key)} } }));
+        return true;
+      `);
+    // The details of the Browser action of the fixture, in view mode
+    const openBrowserDetails = async () => {
+      await shootPanel(panelManager, {
+        name: "browserforce-settings-base",
+        command: "vscode-sfdx-hardis.showPipeline",
+        lwcId: "s-pipeline",
+        ready: pipelineFullyLoaded,
+        settleMs: 8000,
+        force: true,
+        commandArgs: PIPELINE_ACTIONS_DEEP_LINK,
+      });
+      const opened = await inWebview(`
+        const label = deepAll(panelDocument, "button.da-label").find((button) =>
+          /compact density/i.test(button.textContent || ""),
+        );
+        if (!label) { return null; }
+        label.scrollIntoView({ block: "center" });
+        label.click();
+        return true;
+      `);
+      if (!opened) {
+        throw new Error("No Browser action in the Deployment Actions tab");
+      }
+      await sleep(1500);
+    };
+    const openBrowserEditor = async () => {
+      await openBrowserDetails();
+      const edited = await inWebview(`
+        const action = deepAll(panelDocument, "s-deployment-action")[0];
+        if (!action) { return null; }
+        const edit = deepAll(action.shadowRoot || action, "button").find(
+          (button) => (button.textContent || "").trim() === "Edit" && button.offsetParent !== null,
+        );
+        if (!edit) { return null; }
+        edit.click();
+        return true;
+      `);
+      if (!edited) {
+        throw new Error("No Edit button in the details of the Browser action");
+      }
+      await waitFor(
+        async () =>
+          (await inEditor(
+            `return inside("s-typeahead").length > 0 && !inside("s-typeahead")[0].disabled ? true : null;`,
+          )) === true,
+        30000,
+        "the Browserforce catalog in the editor",
+      );
+      await sleep(800);
+    };
+    // Every page of the form of the setting shown, from its title down
+    const captureForm = async (name: string) => {
+      await scrollTo(".bfe-setting-head");
+      await sleep(400);
+      await captureStable(`${name}-1`, { attempts: 3, intervalMs: 500 });
+      for (let page = 2; page <= 15; page++) {
+        if ((await scrollDown()) !== true) {
+          break;
+        }
+        await sleep(400);
+        await captureStable(`${name}-${page}`, {
+          attempts: 3,
+          intervalMs: 500,
+        });
+      }
+    };
+
+    checkoutWorkspaceBranch(FEATURE_BRANCH);
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await vscode.commands.executeCommand("workbench.action.zoomOut");
+    await sleep(800);
+    try {
+      // View mode: the fields of the setting, read-only, the JSON on demand, and the line that
+      // says the settings are loading
+      await openBrowserDetails();
+      await waitFor(
+        async () =>
+          (await inEditor(
+            `return inside(".bfe-setting-head").length > 0 ? true : null;`,
+          )) === true,
+        30000,
+        "the Browserforce setting in view mode",
+      );
+      await sleep(800);
+      await scrollTo(".bfe-setting-head");
+      await sleep(400);
+      await captureStable("bf-view-1-form", { attempts: 3, intervalMs: 500 });
+      await inEditor(`
+        const toggle = inside("input[type=checkbox]").find((input) => input.offsetParent !== null && !input.disabled);
+        if (!toggle) { return null; }
+        toggle.click();
+        return true;
+      `);
+      await sleep(600);
+      await scrollTo(".bfe-setting-head");
+      await captureStable("bf-view-2-json", { attempts: 3, intervalMs: 500 });
+      await inEditor(`
+        editor.catalogState = null;
+        editor.catalogLoading = true;
+        return true;
+      `);
+      await sleep(600);
+      await captureStable("bf-view-3-loading", {
+        attempts: 3,
+        intervalMs: 500,
+      });
+
+      await openBrowserEditor();
+      // The loading state of the Setting picker, as the editor shows it while the catalog loads
+      await inEditor(`
+        editor.catalogState = null;
+        editor.catalogLoading = true;
+        return true;
+      `);
+      await sleep(600);
+      await captureStable("bf-00-loading", { attempts: 3, intervalMs: 500 });
+
+      // Every setting of the catalog
+      await openBrowserEditor();
+      for (const [index, key] of settingKeys.entries()) {
+        await selectSetting(key);
+        await sleep(900);
+        await captureForm(`bf-${String(index + 1).padStart(2, "0")}-${key}`);
+      }
+
+      // A field read from an ENV variable, then a name refused inline
+      await selectSetting("companyInformation");
+      await sleep(800);
+      await clickInEditor("button.bfe-variable-switch");
+      await sleep(600);
+      await scrollTo(".bfe-setting-head");
+      await captureStable("bf-zz-env-variable", {
+        attempts: 3,
+        intervalMs: 500,
+      });
+      await typeInEditor("input[type=text]", 1, "1bad name");
+      await sleep(600);
+      await captureStable("bf-zz-validation-error", {
+        attempts: 3,
+        intervalMs: 500,
+      });
+
+      // A record group with a new entry: its password starts from the suggested variable name
+      await selectSetting("authProviders");
+      await sleep(800);
+      await clickInEditor("button", "Add");
+      await sleep(600);
+      await typeInEditor("input[type=text]", 4, "Partner_Portal");
+      await sleep(600);
+      await captureForm("bf-zz-record-entry-added");
+
+      // Array groups with a new item each
+      await selectSetting("security");
+      await sleep(800);
+      for (const nth of [0, 1, 2]) {
+        await clickInEditor("button", "Add", nth);
+        await sleep(600);
+      }
+      await captureForm("bf-zz-array-item-added");
+
+      // The JSON mode
+      await selectSetting("densitySettings");
+      await sleep(800);
+      await inEditor(`
+        const toggle = inside("input[type=checkbox]").find((input) => input.offsetParent !== null);
+        if (!toggle) { return null; }
+        toggle.click();
+        return true;
+      `);
+      await sleep(600);
+      await scrollTo(".bfe-setting-head");
+      await captureStable("bf-zz-json-mode", { attempts: 3, intervalMs: 500 });
+      await inEditor(`
+        const toggle = inside("input[type=checkbox]").find((input) => input.offsetParent !== null);
+        if (toggle) { toggle.click(); }
+        return true;
+      `);
+      await sleep(600);
+
+      // The check: the button spins while Browserforce answers (the mocked check takes 6 s)
+      await clickInEditor("button.bfe-check-button");
+      await sleep(1200);
+      await captureStable("bf-zz-checking", { attempts: 1 });
+      await sleep(7000);
+      await captureStable("bf-zz-check-valid", {
+        attempts: 3,
+        intervalMs: 500,
+      });
+
+      // Save checks the value with Browserforce first: the Save button spins and says so
+      await inWebview(`
+        const action = deepAll(panelDocument, "s-deployment-action")[0];
+        if (!action) { return null; }
+        const save = deepAll(action.shadowRoot || action, "button.da-save-button")[0];
+        if (!save) { return null; }
+        save.click();
+        return true;
+      `);
+      await sleep(1200);
+      await captureStable("bf-zz-saving", { attempts: 1 });
+      await sleep(7000);
+    } finally {
+      uninstallBrowserforce();
       await vscode.commands.executeCommand("workbench.action.zoomIn");
       await vscode.commands.executeCommand("workbench.action.zoomIn");
       await sleep(800);
