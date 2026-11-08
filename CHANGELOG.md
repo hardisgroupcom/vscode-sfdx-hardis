@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Pipeline Settings: a major branch can turn on [scratch org snapshots for Pull Requests](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-scratch-org-pool/#use-scratch-org-snapshots-for-pull-requests) (`useScratchOrgSnapshot`) and set how many snapshots to keep (`scratchOrgSnapshotKeep`), in the Dev Hub section of its branch settings
 - DevOps Pipeline: the Pull Request count bubbles of the branches no longer become giant when the diagram was drawn while the panel was in the background.
 - DevOps Pipeline: a switch on the diagram shows the **Major branches**, the **Feature branches** (default) or the new **Dev orgs** view: the developer sandboxes and scratch orgs of the team, the Pull Requests each one misses since its last backpromote (click the count to start it), and a **+** to register one (requires sfdx-hardis 8.24.0)
 
