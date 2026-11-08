@@ -17,11 +17,7 @@
             "properties": {
               "metadataType": {
                 "type": "string",
-                "enum": [
-                  "CustomField",
-                  "GlobalValueSet",
-                  "StandardValueSet"
-                ],
+                "enum": ["CustomField", "GlobalValueSet", "StandardValueSet"],
                 "description": "the metadata type"
               },
               "metadataFullName": {
@@ -53,10 +49,7 @@
                 "description": "ensure the picklist value is absent/deleted"
               }
             },
-            "required": [
-              "metadataType",
-              "metadataFullName"
-            ]
+            "required": ["metadataType", "metadataFullName"]
           }
         },
         "fieldDependencies": {
@@ -70,32 +63,18 @@
               "object": {
                 "type": "string",
                 "title": "the API name of the CustomObject",
-                "examples": [
-                  "Account",
-                  "Vehicle__c",
-                  "ACME__Vehicle__c"
-                ]
+                "examples": ["Account", "Vehicle__c", "ACME__Vehicle__c"]
               },
               "dependentField": {
                 "type": "string",
                 "title": "the API name of the CustomField that has its values filtered",
-                "examples": [
-                  "Gears__c",
-                  "ACME__Gears__c"
-                ]
+                "examples": ["Gears__c", "ACME__Gears__c"]
               },
               "controllingField": {
                 "title": "the API name of the CustomField that drives filtering",
                 "description": "If this value is null or not set, the Field Dependency will be deleted.",
-                "examples": [
-                  "Transmission__c",
-                  "ACME__Transmission__c",
-                  null
-                ],
-                "type": [
-                  "string",
-                  "null"
-                ]
+                "examples": ["Transmission__c", "ACME__Transmission__c", null],
+                "type": ["string", "null"]
               }
             }
           }
@@ -158,11 +137,7 @@
         "type": "string",
         "description": "the metadata type",
         "required": true,
-        "enum": [
-          "CustomField",
-          "GlobalValueSet",
-          "StandardValueSet"
-        ],
+        "enum": ["CustomField", "GlobalValueSet", "StandardValueSet"],
         "isPassword": false,
         "isIrreversible": false
       },
@@ -323,11 +298,7 @@
               },
               "on": {
                 "type": "string",
-                "enum": [
-                  "Create",
-                  "Update",
-                  "CreateAndUpdate"
-                ],
+                "enum": ["Create", "Update", "CreateAndUpdate"],
                 "description": "Optional: specify when to apply the policy - 'Create', 'Update', or 'CreateAndUpdate'. Only used when active is true."
               },
               "applyToAll": {
@@ -337,9 +308,7 @@
                 "description": "Run Apply To All once the policy is set: assigns its access to every user matching its criteria. Runs Apply To All at each apply: Salesforce keeps no state that tells it already ran. A run cannot be undone."
               }
             },
-            "required": [
-              "apiName"
-            ]
+            "required": ["apiName"]
           }
         }
       },
@@ -411,11 +380,7 @@
         "type": "string",
         "description": "Optional: specify when to apply the policy - 'Create', 'Update', or 'CreateAndUpdate'. Only used when active is true.",
         "required": false,
-        "enum": [
-          "Create",
-          "Update",
-          "CreateAndUpdate"
-        ],
+        "enum": ["Create", "Update", "CreateAndUpdate"],
         "isPassword": false,
         "isIrreversible": false
       },
@@ -460,9 +425,7 @@
       }
     ],
     "warnings": {
-      "irreversibleFields": [
-        "accessPolicies[].applyToAll"
-      ],
+      "irreversibleFields": ["accessPolicies[].applyToAll"],
       "userInterface": null,
       "prerequisites": [
         "User Access Policies enabled (User Management Settings)"
