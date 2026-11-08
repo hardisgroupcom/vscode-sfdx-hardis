@@ -30,7 +30,8 @@ export type BuiltInActionType =
   | "user-access-policy"
   | "agent-publish"
   | "agent-activate"
-  | "agent-running-user";
+  | "agent-running-user"
+  | "browser";
 
 export const BUILT_IN_ACTION_TYPES: BuiltInActionType[] = [
   "command",
@@ -45,6 +46,7 @@ export const BUILT_IN_ACTION_TYPES: BuiltInActionType[] = [
   "agent-publish",
   "agent-activate",
   "agent-running-user",
+  "browser",
 ];
 
 export function isBuiltInActionType(type: string): boolean {
@@ -79,6 +81,10 @@ export interface PrePostCommand {
     applyToAll?: boolean; // optional for 'user-access-policy' actions, false when unset
     agentName?: string; // for 'agent-publish', 'agent-activate' and 'agent-running-user' actions: API name of the agent
     agentVersion?: string; // optional for 'agent-activate' actions: version number or latest, latest when unset
+    setting?: string; // for 'browser' actions: the Browserforce setting key
+    // for 'browser' actions: the value of that setting (object or array). A value written
+    // exactly "${NAME}" is a CI/CD variable sfdx-hardis resolves for the target branch.
+    config?: any;
     [key: string]: any;
   };
   command: string;

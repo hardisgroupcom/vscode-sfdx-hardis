@@ -21,6 +21,7 @@ const TYPE_LABEL_KEY_BY_CODE = {
   "agent-publish": "agentPublishType",
   "agent-activate": "agentActivateType",
   "agent-running-user": "agentRunningUserType",
+  browser: "browserType",
   manual: "manualType",
 };
 
@@ -36,6 +37,7 @@ const TYPE_ICON_BY_CODE = {
   "agent-publish": "utility:upload",
   "agent-activate": "utility:einstein",
   "agent-running-user": "utility:adduser",
+  browser: "utility:desktop",
   manual: "utility:task",
 };
 
@@ -53,6 +55,8 @@ const TYPE_HUE_BY_CODE = {
   "agent-publish": "indigo",
   "agent-activate": "indigo",
   "agent-running-user": "cyan",
+  // Every other hue is taken by a type or by the moment and context pills
+  browser: "orange",
   manual: "slate",
 };
 

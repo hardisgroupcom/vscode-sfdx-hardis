@@ -48,6 +48,7 @@ const DOCS_VERSIONS = {
   sfdmu: "5.6.4",
   "sfdx-git-delta": "6.31.0",
   "sf-git-merge-driver": "1.9.0",
+  "sfdx-browserforce-plugin": "7.0.0",
   node: "24.11.1",
 };
 if (process.env.SF_MOCK_VERSIONS_FILE) {
@@ -67,6 +68,7 @@ const DOCS_PLUGINS = [
   "sfdmu",
   "sfdx-git-delta",
   "sf-git-merge-driver",
+  "sfdx-browserforce-plugin",
 ].map((name) => ({ name, version: DOCS_VERSIONS[name] }));
 
 function docsPlugins() {
@@ -744,6 +746,63 @@ async function main() {
     return 0;
   }
 
+  // The ENV variable names sfdx-hardis reads for a ${NAME} value of a browser action, per major
+  // branch, as `sf hardis:project:action:types --type browser` describes them (CI/CD variables
+  // provider: the branch suffix variants, then the bare name)
+  if (first === "hardis:project:action:types" && DOCS_PROFILE) {
+    const branchNames = (branch) => [
+      `{NAME}_${branch}`,
+      `{NAME}_${branch.toUpperCase()}`,
+      "{NAME}",
+    ];
+    outputJsonIfRequested(
+      {
+        status: 0,
+        result: {
+          types: [
+            {
+              type: "browser",
+              details: {
+                secretsLookup: {
+                  provider: "ci-variables",
+                  label: "CI/CD variables",
+                  branches: [
+                    ...["integration", "uat", "main"].map((branch) => ({
+                      branch,
+                      names: branchNames(branch),
+                    })),
+                    { branch: "dev-sandboxes", names: ["{NAME}"] },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      },
+      "",
+    );
+    return 0;
+  }
+
+  // Check of a Browserforce setting value: accepted, after the few seconds the real plugin takes,
+  // so the Check button is seen spinning
+  if (
+    first === "browserforce" &&
+    args[1] === "plugins" &&
+    args[2] === "validate" &&
+    DOCS_PROFILE
+  ) {
+    await new Promise((resolve) => setTimeout(resolve, 6000));
+    outputJsonIfRequested(
+      {
+        status: 0,
+        result: { valid: true, errors: [], environmentVariables: [] },
+      },
+      "",
+    );
+    return 0;
+  }
+
   if (
     first === "hardis:project:action:list" &&
     DOCS_PROFILE &&
@@ -1158,6 +1217,36 @@ async function main() {
           dashboardUrl: pool.dashboardUrl,
           availableScratchOrgs: pool.available,
           maxScratchOrgs: pool.max,
+        },
+      },
+      "",
+    );
+    return 0;
+  }
+
+  // Development orgs of the DevOps Pipeline: none in the base universe, so the diagram of the
+  // documentation screenshots stays as it was. A universe overlay can declare `devOrgs`, and
+  // the dev orgs variant of the screenshot run passes its list in SF_MOCK_DEV_ORGS_FILE.
+  if (first === "hardis:project:dev-org:list" && args.includes("--json")) {
+    const devOrgs = readJsonFileOr(
+      process.env.SF_MOCK_DEV_ORGS_FILE,
+      universeValue("devOrgs", {
+        enabled: true,
+        dashboardUrl: null,
+        currentUser: { name: "Nicolas", email: "nicolas@example.com" },
+        staleDays: 30,
+        orgs: [],
+        branches: [],
+        warnings: [],
+      }),
+    );
+    outputJsonIfRequested(
+      {
+        status: 0,
+        result: {
+          status: 0,
+          outputString: `${(devOrgs.orgs || []).length} development orgs`,
+          devOrgs,
         },
       },
       "",
@@ -2156,6 +2245,18 @@ function deltaPackageXml() {
   }
   lines.push("    <version>64.0</version>", "</Package>");
   return lines.join("\n");
+}
+
+/** The JSON content of a file named by an environment variable, or the fallback. */
+function readJsonFileOr(file, fallback) {
+  if (!file) {
+    return fallback;
+  }
+  try {
+    return JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch {
+    return fallback;
+  }
 }
 
 /**

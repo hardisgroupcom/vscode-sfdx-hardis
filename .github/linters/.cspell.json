@@ -79,6 +79,20 @@
     "bootstrapper",
     "brouillon",
     "browsable",
+    "Browserforce",
+    "browserforce",
+    "BROWSERFORCE",
+    "onvalidatebrowserforceconfig",
+    "onloadbrowserforcecatalog",
+    "loadbrowserforcecatalog",
+    "validatebrowserforceconfig",
+    "settingchange",
+    "onsettingchange",
+    "oncheckvalue",
+    "checkvalue",
+    "reloadcatalog",
+    "onreloadcatalog",
+    "MYPROVIDER",
     "bufferutil",
     "buildargs",
     "busalesforce",
@@ -657,6 +671,11 @@
     "ZIZMOR",
     "zoomin",
     "zoomout",
-    "ZYIAY"
+    "ZYIAY",
+    "onbackpromote",
+    "onrefresh",
+    "Orgsintegration",
+    "Orgsuat",
+    "textlink"
   ]
 }

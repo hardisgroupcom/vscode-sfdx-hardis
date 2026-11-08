@@ -25,19 +25,6 @@
                     </button>
                 </template>
 
-                <template if:true={gitAuthenticated}>
-                    <div class="toggle-wrapper">
-                        <lightning-input
-                            type="toggle"
-                            label={i18n.showFeatureBranches}
-                            checked={displayFeatureBranches}
-                            onchange={handleToggleFeatureBranches}
-                            message-toggle-active=""
-                            message-toggle-inactive=""
-                        ></lightning-input>
-                    </div>
-                </template>
-
                 <lightning-button-group>
                     <lightning-button-menu
                         alternative-text={i18n.pipelineConfig}
@@ -82,6 +69,22 @@
                                 label={i18n.scratchOrgPoolTitle}
                                 icon-name="utility:database"
                                 onclick={handleShowScratchOrgPool}
+                            ></lightning-menu-item>
+                        </template>
+                        <template if:true={showDevOrgsMenu}>
+                            <lightning-menu-item
+                                value="registerDevOrg"
+                                label={i18n.menuRegisterDevOrg}
+                                icon-name="utility:new_window"
+                                onclick={handleRegisterDevOrg}
+                            ></lightning-menu-item>
+                        </template>
+                        <template if:true={showDevOrgsDashboard}>
+                            <lightning-menu-item
+                                value="devOrgsDashboard"
+                                label={i18n.menuDevOrgsDashboard}
+                                icon-name="utility:list"
+                                onclick={handleOpenDevOrgsDashboard}
                             ></lightning-menu-item>
                         </template>
                     </lightning-button-menu>
@@ -161,6 +164,16 @@
                         <template if:true={pipelineData.orgs.length}>
                             <div class="pipeline-container">
                                 <div style="position: relative;">
+                                    <!-- What the diagram shows next to the major branches: nothing more, the feature branches, or the dev orgs. On its own row above the diagram, so it never covers the title of a Mermaid group -->
+                                    <div class="pipeline-diagram-toolbar">
+                                        <span class="hardis-segmented pipeline-view-switch" role="group" aria-label={i18n.pipelineViewTitle} title={i18n.pipelineViewTitle}>
+                                            <button type="button" class={majorBranchesViewClass} aria-pressed={majorBranchesViewPressed} onclick={handleShowMajorBranchesView}>{i18n.pipelineViewMajorBranches}</button>
+                                            <button type="button" class={featureBranchesViewClass} aria-pressed={featureBranchesViewPressed} onclick={handleShowFeatureBranchesView}>{i18n.pipelineViewFeatureBranches}</button>
+                                            <template if:true={devOrgsEnabled}>
+                                                <button type="button" class={devOrgsViewClass} aria-pressed={devOrgsViewPressed} onclick={handleShowDevOrgsView}>{i18n.pipelineViewDevOrgs}</button>
+                                            </template>
+                                        </span>
+                                    </div>
                                     <!-- Manual refresh: keep the diagram visible with a spinner overlaid on top -->
                                     <template if:true={isMermaidRefreshing}>
                                         <div class="pipeline-loading-overlay"></div>
@@ -204,6 +217,11 @@
                                         <template if:true={majorBranchCheckEnabled}>
                                             <span class="legend-separator"></span>
                                             <span class="legend-item"><span class="legend-node-check"></span>{i18n.legendMajorBranchCheck}</span>
+                                        </template>
+                                        <template if:true={showDevOrgsLegend}>
+                                            <span class="legend-separator"></span>
+                                            <span class="legend-item"><span class="legend-line legend-line-dev-org"></span>{i18n.legendDevOrg}</span>
+                                            <span class="legend-item"><span class="legend-node-dev-org-stale"></span>{i18n.legendDevOrgStale}</span>
                                         </template>
                                 </div>
                                 <template if:true={error}>
@@ -926,6 +944,9 @@
             communities-loading={communitiesLoading}
             user-access-policies={projectUserAccessPolicies}
             user-access-policies-loading={userAccessPoliciesLoading}
+            browserforce-catalog={browserforceCatalog}
+            browserforce-catalog-loading={browserforceCatalogLoading}
+            browserforce-validation={browserforceValidation}
             major-branches={majorBranchNames}
             parent-translations={translations}
             onclose={handleCloseDeploymentActionModal}
@@ -934,7 +955,26 @@
             onloadbatchableclasses={handleLoadBatchableClasses}
             onloadcommunities={handleLoadCommunities}
             onloaduseraccesspolicies={handleLoadUserAccessPolicies}
+            onloadbrowserforcecatalog={handleLoadBrowserforceCatalog}
+            onvalidatebrowserforceconfig={handleValidateBrowserforceConfig}
             onsave={handleSaveDeploymentAction}
         ></s-deployment-action>
+    </template>
+
+    <!-- Development org details window -->
+    <template if:true={showDevOrgModal}>
+        <s-dev-org-details
+            dev-org={selectedDevOrg}
+            major-branches={devOrgMajorBranches}
+            connected-username={devOrgConnectionUsername}
+            connection-checked={devOrgConnectionChecked}
+            refreshing={devOrgsRefreshing}
+            stale-days={devOrgsStaleDays}
+            onclose={handleCloseDevOrgModal}
+            onrefresh={handleDevOrgRefresh}
+            onbackpromote={handleDevOrgBackpromote}
+            onsave={handleDevOrgSave}
+            onremove={handleDevOrgRemove}
+        ></s-dev-org-details>
     </template>
 </template>

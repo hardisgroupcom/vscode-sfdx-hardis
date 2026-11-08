@@ -91,7 +91,7 @@ Salesforce DX is powerful, but you have to glue together dozens of `sf` commands
 
 1. Install [Visual Studio Code](https://code.visualstudio.com/) (or any VS Code-compatible IDE, see below).
 2. Install the [**SFDX Hardis** extension](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) (or from [Open VSX](https://open-vsx.org/extension/NicolasVuillamy/vscode-sfdx-hardis)).
-3. Click the **Hardis** icon in the VS Code Activity Bar, then **Install dependencies** - the extension installs and updates everything for you (`@salesforce/cli`, `sfdx-hardis`, SFDMU, sfdx-git-delta…).
+3. Click the **Hardis** icon in the VS Code Activity Bar, then **Install dependencies** - the extension installs and updates everything for you (`@salesforce/cli`, `sfdx-hardis`, SFDMU, sfdx-git-delta, Browserforce…).
 
 ### Works in every VS Code-compatible IDE
 
@@ -449,6 +449,7 @@ plugins:
 
 - [Salesforce Data Move Utility (SFDMU)](https://github.com/forcedotcom/SFDX-Data-Move-Utility)
 - [sfdx-git-delta](https://github.com/scolladon/sfdx-git-delta)
+- [Browserforce](https://github.com/amtrack/sfdx-browserforce-plugin)
 - [Texei SFDX Plugin](https://github.com/texei/texei-sfdx-plugin)
 
 ---

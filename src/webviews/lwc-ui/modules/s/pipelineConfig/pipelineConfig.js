@@ -17,6 +17,12 @@ import {
   isEmptyConfigValue,
   isUrlConfigValue,
 } from "s/configValueUtils";
+import {
+  receiveBrowserforceCatalog,
+  receiveBrowserforceValidation,
+  requestBrowserforceCatalog,
+  requestBrowserforceValidation,
+} from "s/browserforceHostUtils";
 
 // A section made only of these keys gets the compact "Salesforce Org" card
 // layout in read-only mode instead of a list of field rows.
@@ -75,6 +81,12 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
   @track communitiesLoading = false;
   @track projectUserAccessPolicies = [];
   @track userAccessPoliciesLoading = false;
+  // Editor of a "browser" deployment action: the Browserforce catalog and the check of a value
+  @track browserforceCatalog = null;
+  @track browserforceCatalogLoading = false;
+  @track browserforceValidation = null;
+  _browserforceCatalogRequestId = null;
+  _browserforceValidationRequestId = null;
   _deploymentActionKey = null; // commandsPreDeploy | commandsPostDeploy
   _deploymentActionEditIndex = -1;
   _schedulableClassesRequestId = null;
@@ -1101,6 +1113,24 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
     this.userAccessPoliciesLoading = false;
   }
 
+  // --- Browserforce (editor of a "browser" deployment action) -----------------
+
+  handleLoadBrowserforceCatalog() {
+    requestBrowserforceCatalog(this);
+  }
+
+  handleReturnBrowserforceCatalog(data) {
+    receiveBrowserforceCatalog(this, data);
+  }
+
+  handleValidateBrowserforceConfig(event) {
+    requestBrowserforceValidation(this, event);
+  }
+
+  handleReturnBrowserforceValidation(data) {
+    receiveBrowserforceValidation(this, data);
+  }
+
   handleAddArrayObjectItem(event) {
     const key = event.target.dataset.key;
     if (this.deploymentActionKeys[key] !== undefined) {
@@ -1558,6 +1588,10 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
       this.handleReturnCommunities(data);
     } else if (type === "returnUserAccessPolicies") {
       this.handleReturnUserAccessPolicies(data);
+    } else if (type === "returnBrowserforceCatalog") {
+      this.handleReturnBrowserforceCatalog(data);
+    } else if (type === "returnBrowserforceValidation") {
+      this.handleReturnBrowserforceValidation(data);
     } else if (type === "customFunctionsLoaded") {
       // Read in the background: an open editor stays open
       this.setCustomFunctions(data.customFunctions);
