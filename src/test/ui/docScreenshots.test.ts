@@ -500,6 +500,13 @@ const PROMOTION_MODAL_CLOSE = { x: 1843, y: 78 };
 const MAJOR_BRANCH_CHECK_VARIANT =
   process.env.SFDX_HARDIS_DOC_SCREENSHOTS_MAJOR_BRANCH_CHECK === "true";
 /**
+ * Development orgs variant of the run (SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS): the
+ * mocked CLI answers a list of development orgs. The base fixture has none, so
+ * the ordinary pipeline screenshots keep their diagram.
+ */
+const DEV_ORGS_VARIANT =
+  process.env.SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS === "true";
+/**
  * Action recovery variant of the run (SFDX_HARDIS_DOC_SCREENSHOTS_ACTION_RECOVERY):
  * a Pull Request merged into integration whose first post-deployment action
  * failed and stopped the two others, and the open fix Pull Request moving one of
@@ -2077,6 +2084,130 @@ suite("Documentation screenshots", function () {
     if (scrolled) {
       await sleep(800);
       await captureStable("major-branch-check-settings");
+    }
+  });
+
+  // Development orgs list, for docs/salesforce-devops-dev-orgs.md. Only in the
+  // dev orgs variant of the run, whose mocked CLI answers four development orgs
+  // (devOrgsFixture in src/test/runUiTest.ts):
+  //   SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS=true \
+  //   SFDX_HARDIS_DOC_SCREENSHOTS_DIR=doc-screenshots/dev-orgs \
+  //   yarn screenshots dev-orgs
+  test("development orgs", async function () {
+    if (!DEV_ORGS_VARIANT || !shouldTake("dev-orgs")) {
+      this.skip();
+    }
+    // The pipeline opens on the feature branches: the switch of the header
+    // shows the major branches with every development org instead
+    await shootPanel(panelManager, {
+      name: "dev-orgs-feature-branches",
+      command: "vscode-sfdx-hardis.showPipeline",
+      lwcId: "s-pipeline",
+      ready: (data: any) =>
+        // The list is read in the background, after the first draw: wait for the orgs (the
+        // empty list variant waits out the timeout and captures its + nodes)
+        pipelineFullyLoaded(data) &&
+        (data?.pipelineData?.devOrgs || []).length > 0,
+      settleMs: 9000,
+      force: true,
+    });
+    const switched = await inWebview(`
+      const button = deepAll(
+        panelDocument,
+        ".pipeline-view-switch button",
+      )[2];
+      if (!button) {
+        return null;
+      }
+      button.click();
+      return true;
+    `);
+    if (!switched) {
+      console.log("      [shot] dev-orgs-pipeline: view switch not found");
+      return;
+    }
+    await sleep(3000);
+    // The list arrives in the background after the first draw: unless the run
+    // serves an empty list, wait until the webview has drawn an org (not only a +)
+    const expectsOrgs =
+      process.env.SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS_EMPTY !== "true";
+    for (let attempt = 0; expectsOrgs && attempt < 90; attempt++) {
+      const drawn = await inWebview(`
+        return deepAll(panelDocument, "g.node").some((node) =>
+          /DevOrg-\\d/.test(node.id || ""),
+        );
+      `);
+      if (drawn) {
+        break;
+      }
+      await sleep(1000);
+    }
+    await cleanChrome();
+    await captureStable("dev-orgs-pipeline");
+    // Details window of the sandbox missing three Pull Requests. The node is
+    // clicked by its id, since the layout depends on the orgs of the fixture
+    const opened = await inWebview(`
+      const node = deepAll(panelDocument, "g.node").find((element) =>
+        /flowchart-org00D5f0000012XycEAEDevOrg-/.test(element.id || ""),
+      );
+      if (!node) {
+        return null;
+      }
+      const shape = node.querySelector("rect, path, polygon") || node;
+      shape.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      return true;
+    `);
+    if (opened) {
+      await sleep(2500);
+      await cleanChrome();
+      await captureStable("dev-orgs-details");
+    } else {
+      console.log("      [shot] dev-orgs-details: dev org node not found");
+    }
+    // The chip of the Pull Requests an org misses opens its backpromote. What
+    // a pointer reaches at the center of the chip is clicked, so a label that
+    // does not take pointer events fails here rather than for a user.
+    await inWebview(`
+      const close = deepAll(panelDocument, ".slds-modal__close")[0];
+      if (close) {
+        close.click();
+      }
+      return true;
+    `);
+    await sleep(1000);
+    const chipClick = await inWebview(`
+      const chip = deepAll(panelDocument, ".hardis-chip-backpromote")[0];
+      if (!chip) {
+        return "no chip";
+      }
+      const box = chip.getBoundingClientRect();
+      // elementFromPoint stops at a shadow host: walk down the shadow roots
+      const x = box.left + box.width / 2;
+      const y = box.top + box.height / 2;
+      let hit = panelDocument.elementFromPoint(x, y);
+      while (hit && hit.shadowRoot) {
+        const inner = hit.shadowRoot.elementFromPoint(x, y);
+        if (!inner || inner === hit) {
+          break;
+        }
+        hit = inner;
+      }
+      if (!hit || !hit.closest(".hardis-chip-backpromote")) {
+        return "chip not reachable: " + (hit ? hit.tagName : "nothing");
+      }
+      hit.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      return "clicked";
+    `);
+    console.log(`      [shot] dev-orgs chip: ${chipClick}`);
+    try {
+      await waitFor(
+        () => panelManager.getPanel("s-backpromote"),
+        20000,
+        "backpromote panel",
+      );
+      console.log("      [shot] dev-orgs chip: Backpromote panel opened");
+    } catch (error) {
+      console.log(`      [shot] dev-orgs chip: ${(error as Error).message}`);
     }
   });
 
@@ -3997,10 +4128,19 @@ suite("Documentation screenshots", function () {
     });
     // The cards sit under the diagram, and neither zooming the window nor a
     // wheel event brings them up: the window zoom scales the diagram with the
-    // page, and a posted wheel never reaches the webview's scroller. Hiding the
-    // feature branches is what actually shrinks the diagram, and it is a real
-    // control a reader can find, right in the header.
-    await click(1555, 104); // "Show feature branches" toggle
+    // page, and a posted wheel never reaches the webview's scroller. The Major
+    // branches view of the switch above the diagram is what actually shrinks
+    // it, and it is a real control a reader can find.
+    const pickView = (index: number) =>
+      inWebview(`
+        const button = deepAll(panelDocument, ".pipeline-view-switch button")[${index}];
+        if (!button) {
+          return null;
+        }
+        button.click();
+        return true;
+      `);
+    await pickView(0);
     await sleep(2500);
     // Two levels out on top of that, so the whole row of cards fits rather than
     // being cut off at the bottom edge
@@ -4016,7 +4156,8 @@ suite("Documentation screenshots", function () {
     await vscode.commands.executeCommand("workbench.action.zoomIn");
     await vscode.commands.executeCommand("workbench.action.zoomIn");
     await sleep(1200);
-    await click(1555, 104); // put the toggle back for the captures that follow
+    // Back to the feature branches for the captures that follow
+    await pickView(1);
     await sleep(1500);
   });
 

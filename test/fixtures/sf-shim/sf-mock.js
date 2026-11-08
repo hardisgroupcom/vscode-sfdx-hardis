@@ -1165,6 +1165,36 @@ async function main() {
     return 0;
   }
 
+  // Development orgs of the DevOps Pipeline: none in the base universe, so the diagram of the
+  // documentation screenshots stays as it was. A universe overlay can declare `devOrgs`, and
+  // the dev orgs variant of the screenshot run passes its list in SF_MOCK_DEV_ORGS_FILE.
+  if (first === "hardis:project:dev-org:list" && args.includes("--json")) {
+    const devOrgs = readJsonFileOr(
+      process.env.SF_MOCK_DEV_ORGS_FILE,
+      universeValue("devOrgs", {
+        enabled: true,
+        dashboardUrl: null,
+        currentUser: { name: "Nicolas", email: "nicolas@example.com" },
+        staleDays: 30,
+        orgs: [],
+        branches: [],
+        warnings: [],
+      }),
+    );
+    outputJsonIfRequested(
+      {
+        status: 0,
+        result: {
+          status: 0,
+          outputString: `${(devOrgs.orgs || []).length} development orgs`,
+          devOrgs,
+        },
+      },
+      "",
+    );
+    return 0;
+  }
+
   // Replacement Rules panel: list, preview, create, update and delete
   if (first.startsWith("hardis:project:replacement:")) {
     return await answerReplacementRules(first);
@@ -2156,6 +2186,18 @@ function deltaPackageXml() {
   }
   lines.push("    <version>64.0</version>", "</Package>");
   return lines.join("\n");
+}
+
+/** The JSON content of a file named by an environment variable, or the fallback. */
+function readJsonFileOr(file, fallback) {
+  if (!file) {
+    return fallback;
+  }
+  try {
+    return JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch {
+    return fallback;
+  }
 }
 
 /**
