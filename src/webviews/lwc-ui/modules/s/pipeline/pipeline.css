@@ -356,11 +356,12 @@
 
 /* Major branches / Feature branches / Dev orgs switch, over the top left corner of the diagram,
    like the zoom buttons at the bottom: it takes no room from the diagram */
+/* A row of its own above the diagram: laid over its top left corner, the switch covered the title
+   of the first Mermaid group ("Git Branches") whenever the diagram was narrow */
 .pipeline-diagram-toolbar {
-    position: absolute;
-    top: 0.5rem;
-    left: 0.5rem;
-    z-index: 20;
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.5rem 0;
 }
 
 .pipeline-view-switch {

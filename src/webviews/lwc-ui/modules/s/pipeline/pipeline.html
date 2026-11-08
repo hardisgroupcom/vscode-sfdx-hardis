@@ -164,7 +164,7 @@
                         <template if:true={pipelineData.orgs.length}>
                             <div class="pipeline-container">
                                 <div style="position: relative;">
-                                    <!-- What the diagram shows next to the major branches: nothing more, the feature branches, or the dev orgs. Over the top left corner of the diagram, like the zoom buttons at the bottom: it takes no room from the diagram -->
+                                    <!-- What the diagram shows next to the major branches: nothing more, the feature branches, or the dev orgs. On its own row above the diagram, so it never covers the title of a Mermaid group -->
                                     <div class="pipeline-diagram-toolbar">
                                         <span class="hardis-segmented pipeline-view-switch" role="group" aria-label={i18n.pipelineViewTitle} title={i18n.pipelineViewTitle}>
                                             <button type="button" class={majorBranchesViewClass} aria-pressed={majorBranchesViewPressed} onclick={handleShowMajorBranchesView}>{i18n.pipelineViewMajorBranches}</button>
@@ -944,6 +944,9 @@
             communities-loading={communitiesLoading}
             user-access-policies={projectUserAccessPolicies}
             user-access-policies-loading={userAccessPoliciesLoading}
+            browserforce-catalog={browserforceCatalog}
+            browserforce-catalog-loading={browserforceCatalogLoading}
+            browserforce-validation={browserforceValidation}
             major-branches={majorBranchNames}
             parent-translations={translations}
             onclose={handleCloseDeploymentActionModal}
@@ -952,6 +955,8 @@
             onloadbatchableclasses={handleLoadBatchableClasses}
             onloadcommunities={handleLoadCommunities}
             onloaduseraccesspolicies={handleLoadUserAccessPolicies}
+            onloadbrowserforcecatalog={handleLoadBrowserforceCatalog}
+            onvalidatebrowserforceconfig={handleValidateBrowserforceConfig}
             onsave={handleSaveDeploymentAction}
         ></s-deployment-action>
     </template>

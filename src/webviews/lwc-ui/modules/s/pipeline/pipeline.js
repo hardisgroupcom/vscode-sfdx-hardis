@@ -25,6 +25,12 @@ import {
   jobDurationKey,
   formatDuration,
 } from "s/pullRequestUtils";
+import {
+  receiveBrowserforceCatalog,
+  receiveBrowserforceValidation,
+  requestBrowserforceCatalog,
+  requestBrowserforceValidation,
+} from "s/browserforceHostUtils";
 
 // Where the major branch deployment check is explained and set up
 const MAJOR_BRANCH_CHECK_DOC_URL =
@@ -105,6 +111,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track communitiesLoading = false;
   @track projectUserAccessPolicies = [];
   @track userAccessPoliciesLoading = false;
+  // Editor of a "browser" deployment action: the Browserforce catalog and the check of a value
+  @track browserforceCatalog = null;
+  @track browserforceCatalogLoading = false;
+  @track browserforceValidation = null;
+  _browserforceCatalogRequestId = null;
+  _browserforceValidationRequestId = null;
   @track communitiesRequestId = null;
   _refreshTimer = null;
   // When the git provider was last asked whether the current branch has a Pull Request
@@ -1940,6 +1952,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       case "returnUserAccessPolicies":
         this.handleReturnUserAccessPolicies(data);
         break;
+      case "returnBrowserforceCatalog":
+        this.handleReturnBrowserforceCatalog(data);
+        break;
+      case "returnBrowserforceValidation":
+        this.handleReturnBrowserforceValidation(data);
+        break;
       case "returnGoLives":
         this.handleReturnGoLives(data);
         break;
@@ -2049,6 +2067,24 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       ? data.values
       : [];
     this.userAccessPoliciesLoading = false;
+  }
+
+  // --- Browserforce (editor of a "browser" deployment action) -----------------
+
+  handleLoadBrowserforceCatalog() {
+    requestBrowserforceCatalog(this);
+  }
+
+  handleReturnBrowserforceCatalog(data) {
+    receiveBrowserforceCatalog(this, data);
+  }
+
+  handleValidateBrowserforceConfig(event) {
+    requestBrowserforceValidation(this, event);
+  }
+
+  handleReturnBrowserforceValidation(data) {
+    receiveBrowserforceValidation(this, data);
   }
 
   handleShowInstalledPackages() {

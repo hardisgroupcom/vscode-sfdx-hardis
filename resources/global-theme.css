@@ -451,6 +451,10 @@ lightning-helptext::part(icon) {
   background: var(--slds-g-color-palette-orange-90);
   color: var(--slds-g-color-palette-orange-40);
 }
+.slds-scope[data-theme] .hardis-pill.hardis-hue-orange {
+  background: var(--slds-g-color-palette-hot-orange-90);
+  color: var(--slds-g-color-palette-hot-orange-40);
+}
 .slds-scope[data-theme] .hardis-pill.hardis-hue-red {
   background: var(--slds-g-color-palette-red-90);
   color: var(--slds-g-color-palette-red-40);

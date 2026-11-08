@@ -244,6 +244,24 @@
               </div>
             </template>
 
+            <!-- Browser: one Browserforce setting, edited by its own component -->
+            <template if:true={showBrowserFields}>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <s-browserforce-setting-editor
+                  setting={browserforceSetting}
+                  config={browserforceConfig}
+                  read-only={isViewMode}
+                  catalog-state={browserforceCatalog}
+                  catalog-loading={browserforceCatalogLoading}
+                  validation={browserforceValidation}
+                  validating={browserforceValidating}
+                  onsettingchange={handleBrowserforceSettingChange}
+                  oncheckvalue={handleBrowserforceValidate}
+                  onreloadcatalog={handleBrowserforceReloadCatalog}
+                ></s-browserforce-setting-editor>
+              </div>
+            </template>
+
             <template if:true={showPermissionSetsField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
@@ -897,7 +915,7 @@
             <lightning-button class="hardis-btn-tinted-blue"
               variant="neutral"
               label={i18n.saveLabel}
-              disabled={customFunctionsLoading}
+              disabled={isSaveDisabled}
               onclick={handleSave}
             ></lightning-button>
           </template>
