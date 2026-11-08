@@ -296,8 +296,10 @@ async function click(
   await sleep(900);
 }
 
-// Catalog of the documentation screenshots of the Browser action type: the one setting the
-// fixture action uses, as `sf browserforce plugins list` describes it
+// Catalog of the documentation screenshots of the Browser action type: the settings the
+// fixture actions use, as `sf browserforce plugins list` describes them. densitySettings is
+// written here; userAccessPolicies and picklists are copied from the catalog of
+// Browserforce 7.0.0 (test/fixtures/doc-screenshots-browserforce-settings.json)
 const DOC_BROWSERFORCE_CATALOG = {
   formatVersion: 1,
   browserforceVersion: "7.0.0",
@@ -326,6 +328,20 @@ const DOC_BROWSERFORCE_CATALOG = {
         prerequisites: [],
       },
     },
+    ...JSON.parse(
+      fs.readFileSync(
+        path.join(
+          __dirname,
+          "..",
+          "..",
+          "..",
+          "test",
+          "fixtures",
+          "doc-screenshots-browserforce-settings.json",
+        ),
+        "utf8",
+      ),
+    ),
   ],
 };
 
@@ -2444,10 +2460,13 @@ suite("Documentation screenshots", function () {
     // Rows of the Deployment Actions tab of the PR modal, in display order
     // editY: y of the Edit button of the read-only details view, which
     // depends on the height of the modal (one height per action type)
+    // scrollToText: the editor of a long setting is scrolled until the first text that starts
+    // with it is at the top of the modal, so the image shows the fields of its first item
     const ACTION_EDITOR_SHOTS: Array<{
       name: string;
       row: number;
       editY: number;
+      scrollToText?: string;
     }> = [
       { name: "pipeline-edit-action-command", row: 0, editY: 672 },
       { name: "pipeline-edit-action-data", row: 1, editY: 671 },
@@ -2469,9 +2488,25 @@ suite("Documentation screenshots", function () {
       { name: "pipeline-edit-action-custom-function", row: 9, editY: 796 },
       // Appended last in the fixture, so that the rows above keep their position
       { name: "pipeline-edit-action-run-batch", row: 10, editY: 714 },
-      // A Browserforce setting, appended after it, with a catalog of one setting served as an
-      // installed Browserforce. editY 0: the Edit button is clicked by its text
+      // A Browserforce setting, appended after it, with the catalog of DOC_BROWSERFORCE_CATALOG
+      // served as an installed Browserforce. editY 0: the Edit button is clicked by its text
       { name: "pipeline-edit-action-browser", row: 11, editY: 0 },
+      // Appended after it: the User Access Policies type, then two more Browser actions, the
+      // userAccessPolicies setting (run a policy on new users only) and the picklists setting
+      // (change the API name of a picklist value)
+      { name: "pipeline-edit-action-user-access-policy", row: 12, editY: 0 },
+      {
+        name: "pipeline-edit-action-browser-user-access-policies",
+        row: 13,
+        editY: 0,
+        scrollToText: "Cannot be undone",
+      },
+      {
+        name: "pipeline-edit-action-browser-picklists",
+        row: 14,
+        editY: 0,
+        scrollToText: "Item 1",
+      },
     ];
     // A universe whose Pull Request declares its actions in another order says
     // so, because these shots are taken by row position. The names are the shot
@@ -2495,7 +2530,7 @@ suite("Documentation screenshots", function () {
     const FIRST_ROW_CENTER_Y = 299;
     const ROW_STEP = 53.8;
     const VISIBLE_ROWS = 9;
-    const LAST_ROW_INDEX = 11;
+    const LAST_ROW_INDEX = 14;
     const LAST_ROW_SCROLLED_Y = 805;
     // Clicking the action label opens its editor
     const EDIT_BUTTON_X = 520;
@@ -2565,6 +2600,22 @@ suite("Documentation screenshots", function () {
           `);
         }
         await sleep(1500);
+        if (shot.scrollToText) {
+          await inWebview(`
+            const action = deepAll(panelDocument, "s-deployment-action")[0];
+            if (!action) { return null; }
+            const target = deepAll(action.shadowRoot || action, "*").find(
+              (element) =>
+                element.children.length === 0 &&
+                element.offsetParent !== null &&
+                (element.textContent || "").trim().startsWith(${JSON.stringify(shot.scrollToText)}),
+            );
+            if (!target) { return null; }
+            target.scrollIntoView({ block: "start" });
+            return true;
+          `);
+          await sleep(800);
+        }
         await captureStable(shot.name);
       }
     } finally {

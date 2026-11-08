@@ -95,8 +95,8 @@ suite("Deployment action browser (Browserforce setting)", () => {
     }
   });
 
-  test("both panels hosting the editor pass it the catalog and the check", () => {
-    for (const panel of ["pipeline", "pipelineConfig"]) {
+  test("every panel hosting the editor passes it the catalog and the check", () => {
+    for (const panel of ["pipeline", "pipelineConfig", "orgInit"]) {
       const html = readModuleFile(panel, `${panel}.html`);
       for (const attribute of [
         "browserforce-catalog={browserforceCatalog}",
@@ -358,9 +358,19 @@ suite("Deployment action browser (Browserforce setting)", () => {
     }
   });
 
-  test("the Org Initialization panel does not wire the Browserforce editor", () => {
+  test("the Org Initialization panel lists the User Access Policies of a step", () => {
     const html = readModuleFile("orgInit", "orgInit.html");
-    assert.ok(!html.includes("browserforce"));
+    assert.ok(
+      html.includes("onloaduseraccesspolicies={handleLoadUserAccessPolicies}"),
+    );
+    assert.ok(html.includes("user-access-policies={userAccessPolicies}"));
+    const js = readModuleFile("orgInit", "orgInit.js");
+    assert.match(js, /case "returnUserAccessPolicies":/);
+  });
+
+  test("a Browser step is checked by Browserforce before it is saved, like an action", () => {
+    const editor = readModuleFile("deploymentAction", "deploymentAction.js");
+    assert.match(editor, /if \(this\.editedAction\.type === "browser"\) \{/);
   });
 
   test("the type has a label, an icon and a pill color of its own", () => {
