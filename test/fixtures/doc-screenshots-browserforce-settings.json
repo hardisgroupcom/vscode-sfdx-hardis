@@ -1,0 +1,435 @@
+[
+  {
+    "key": "picklists",
+    "title": "Picklists",
+    "description": "Changes picklist values in ways the Metadata API cannot:\n\n- replace a value by another one in the records using it, then deactivate or delete the old value;\n- activate or deactivate values;\n- manage (create, modify, delete) the field dependencies of custom fields. An existing field dependency of the dependent field is deleted first.",
+    "docUrl": "https://amtrack.github.io/sfdx-browserforce-plugin/settings/picklists/",
+    "jsonSchema": {
+      "type": "object",
+      "properties": {
+        "picklistValues": {
+          "default": [],
+          "title": "Picklist Values",
+          "description": "Replace (and delete) picklist values",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "metadataType": {
+                "type": "string",
+                "enum": ["CustomField", "GlobalValueSet", "StandardValueSet"],
+                "description": "the metadata type"
+              },
+              "metadataFullName": {
+                "type": "string",
+                "description": "the API name of the CustomField/GlobalValueSet/StandardValueSet"
+              },
+              "value": {
+                "type": "string",
+                "description": "the API name of the value"
+              },
+              "newValue": {
+                "type": "string",
+                "description": "the API name of the new value, otherwise blank"
+              },
+              "statusCategory": {
+                "type": "string",
+                "description": "the Status Category of a new picklist value"
+              },
+              "replaceAllBlankValues": {
+                "type": "boolean",
+                "description": "replace all blank values (mutually exclusive to replacing an old value)"
+              },
+              "active": {
+                "type": "boolean",
+                "description": "ensure the picklist value is active/inactive"
+              },
+              "absent": {
+                "type": "boolean",
+                "description": "ensure the picklist value is absent/deleted"
+              }
+            },
+            "required": ["metadataType", "metadataFullName"]
+          }
+        },
+        "fieldDependencies": {
+          "default": [],
+          "description": "Manage (create/modify/delete) Field Dependencies on CustomFields.\nIf a Field Dependency already exists for the dependent field, it will be deleted.",
+          "title": "Field Dependencies",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "object": {
+                "type": "string",
+                "title": "the API name of the CustomObject",
+                "examples": ["Account", "Vehicle__c", "ACME__Vehicle__c"]
+              },
+              "dependentField": {
+                "type": "string",
+                "title": "the API name of the CustomField that has its values filtered",
+                "examples": ["Gears__c", "ACME__Gears__c"]
+              },
+              "controllingField": {
+                "title": "the API name of the CustomField that drives filtering",
+                "description": "If this value is null or not set, the Field Dependency will be deleted.",
+                "examples": ["Transmission__c", "ACME__Transmission__c", null],
+                "type": ["string", "null"]
+              }
+            }
+          }
+        }
+      },
+      "title": "Picklists",
+      "description": "Changes picklist values in ways the Metadata API cannot:\n\n- replace a value by another one in the records using it, then deactivate or delete the old value;\n- activate or deactivate values;\n- manage (create, modify, delete) the field dependencies of custom fields. An existing field dependency of the dependent field is deleted first.",
+      "examples": [
+        {
+          "picklistValues": [
+            {
+              "metadataType": "StandardValueSet",
+              "metadataFullName": "LeadSource",
+              "value": "Phone Inquiry",
+              "newValue": "Other"
+            }
+          ]
+        },
+        {
+          "picklistValues": [
+            {
+              "metadataType": "StandardValueSet",
+              "metadataFullName": "LeadSource",
+              "value": "Purchased List",
+              "newValue": "Other",
+              "absent": true
+            }
+          ]
+        },
+        {
+          "picklistValues": [
+            {
+              "metadataType": "CustomField",
+              "metadataFullName": "Account.MyPicklist__c",
+              "value": "MyOldValue",
+              "active": false
+            }
+          ]
+        }
+      ]
+    },
+    "groups": [
+      {
+        "path": "picklistValues[]",
+        "kind": "array",
+        "title": "Picklist Values",
+        "description": "Replace (and delete) picklist values"
+      },
+      {
+        "path": "fieldDependencies[]",
+        "kind": "array",
+        "title": "Field Dependencies",
+        "description": "Manage (create/modify/delete) Field Dependencies on CustomFields.\nIf a Field Dependency already exists for the dependent field, it will be deleted."
+      }
+    ],
+    "fields": [
+      {
+        "path": "picklistValues[].metadataType",
+        "group": "picklistValues[]",
+        "type": "string",
+        "description": "the metadata type",
+        "required": true,
+        "enum": ["CustomField", "GlobalValueSet", "StandardValueSet"],
+        "isPassword": false,
+        "isIrreversible": false
+      },
+      {
+        "path": "picklistValues[].metadataFullName",
+        "group": "picklistValues[]",
+        "type": "string",
+        "description": "the API name of the CustomField/GlobalValueSet/StandardValueSet",
+        "required": true,
+        "isPassword": false,
+        "isIrreversible": false
+      },
+      {
+        "path": "picklistValues[].value",
+        "group": "picklistValues[]",
+        "type": "string",
+        "description": "the API name of the value",
+        "required": false,
+        "isPassword": false,
+        "isIrreversible": false
+      },
+      {
+        "path": "picklistValues[].newValue",
+        "group": "picklistValues[]",
+        "type": "string",
+        "description": "the API name of the new value, otherwise blank",
+        "required": false,
+        "isPassword": false,
+        "isIrreversible": false
+      },
+      {
+        "path": "picklistValues[].statusCategory",
+        "group": "picklistValues[]",
+        "type": "string",
+        "description": "the Status Category of a new picklist value",
+        "required": false,
+        "isPassword": false,
+        "isIrreversible": false
+      },
+      {
+        "path": "picklistValues[].replaceAllBlankValues",
+        "group": "picklistValues[]",
+        "type": "boolean",
+        "description": "replace all blank values (mutually exclusive to replacing an old value)",
+        "required": false,
+        "isPassword": false,
+        "isIrreversible": false
+      },
+      {
+        "path": "picklistValues[].active",
+        "group": "picklistValues[]",
+        "type": "boolean",
+        "description": "ensure the picklist value is active/inactive",
+        "required": false,
+        "isPassword": false,
+        "isIrreversible": false
+      },
+      {
+        "path": "picklistValues[].absent",
+        "group": "picklistValues[]",
+        "type": "boolean",
+        "description": "ensure the picklist value is absent/deleted",
+        "required": false,
+        "isPassword": false,
+        "isIrreversible": false
+      },
+      {
+        "path": "fieldDependencies[].object",
+        "group": "fieldDependencies[]",
+        "type": "string",
+        "title": "the API name of the CustomObject",
+        "required": false,
+        "isPassword": false,
+        "isIrreversible": false
+      },
+      {
+        "path": "fieldDependencies[].dependentField",
+        "group": "fieldDependencies[]",
+        "type": "string",
+        "title": "the API name of the CustomField that has its values filtered",
+        "required": false,
+        "isPassword": false,
+        "isIrreversible": false
+      },
+      {
+        "path": "fieldDependencies[].controllingField",
+        "group": "fieldDependencies[]",
+        "type": "json",
+        "title": "the API name of the CustomField that drives filtering",
+        "description": "If this value is null or not set, the Field Dependency will be deleted.",
+        "required": false,
+        "isPassword": false,
+        "isIrreversible": false
+      }
+    ],
+    "examples": [
+      {
+        "picklistValues": [
+          {
+            "metadataType": "StandardValueSet",
+            "metadataFullName": "LeadSource",
+            "value": "Phone Inquiry",
+            "newValue": "Other"
+          }
+        ]
+      },
+      {
+        "picklistValues": [
+          {
+            "metadataType": "StandardValueSet",
+            "metadataFullName": "LeadSource",
+            "value": "Purchased List",
+            "newValue": "Other",
+            "absent": true
+          }
+        ]
+      },
+      {
+        "picklistValues": [
+          {
+            "metadataType": "CustomField",
+            "metadataFullName": "Account.MyPicklist__c",
+            "value": "MyOldValue",
+            "active": false
+          }
+        ]
+      }
+    ],
+    "warnings": {
+      "irreversibleFields": [],
+      "userInterface": null,
+      "prerequisites": []
+    }
+  },
+  {
+    "key": "userAccessPolicies",
+    "title": "User Access Policies",
+    "description": "Setup: **Users → User Access Policies** (`/lightning/setup/UserAccessPolicies/home`)\n\nActivates or deactivates User Access Policies, chooses when they run (on create, update, or both), and runs Apply To All.",
+    "docUrl": "https://amtrack.github.io/sfdx-browserforce-plugin/settings/userAccessPolicies/",
+    "jsonSchema": {
+      "type": "object",
+      "properties": {
+        "accessPolicies": {
+          "default": [],
+          "title": "Access Policies",
+          "description": "List of user access policies to activate, deactivate or apply to all users",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "apiName": {
+                "type": "string",
+                "description": "The API name of the user access policy (e.g., 'Grant_Permissions')"
+              },
+              "active": {
+                "type": "boolean",
+                "description": "Whether the policy should be active (true) or inactive (false). Leave it out to keep the current status of the policy."
+              },
+              "on": {
+                "type": "string",
+                "enum": ["Create", "Update", "CreateAndUpdate"],
+                "description": "Optional: specify when to apply the policy - 'Create', 'Update', or 'CreateAndUpdate'. Only used when active is true."
+              },
+              "applyToAll": {
+                "type": "boolean",
+                "title": "Apply To All",
+                "x-irreversible": true,
+                "description": "Run Apply To All once the policy is set: assigns its access to every user matching its criteria. Runs Apply To All at each apply: Salesforce keeps no state that tells it already ran. A run cannot be undone."
+              }
+            },
+            "required": ["apiName"]
+          }
+        }
+      },
+      "title": "User Access Policies",
+      "description": "Setup: **Users → User Access Policies** (`/lightning/setup/UserAccessPolicies/home`)\n\nActivates or deactivates User Access Policies, chooses when they run (on create, update, or both), and runs Apply To All.",
+      "examples": [
+        {
+          "accessPolicies": [
+            {
+              "apiName": "Grant_Permissions",
+              "active": true,
+              "on": "Create"
+            }
+          ]
+        },
+        {
+          "accessPolicies": [
+            {
+              "apiName": "Grant_Permissions",
+              "active": true,
+              "on": "Create",
+              "applyToAll": true
+            }
+          ]
+        },
+        {
+          "accessPolicies": [
+            {
+              "apiName": "Grant_Permissions",
+              "applyToAll": true
+            }
+          ]
+        }
+      ],
+      "x-prerequisites": [
+        "User Access Policies enabled (User Management Settings)"
+      ]
+    },
+    "groups": [
+      {
+        "path": "accessPolicies[]",
+        "kind": "array",
+        "title": "Access Policies",
+        "description": "List of user access policies to activate, deactivate or apply to all users"
+      }
+    ],
+    "fields": [
+      {
+        "path": "accessPolicies[].apiName",
+        "group": "accessPolicies[]",
+        "type": "string",
+        "description": "The API name of the user access policy (e.g., 'Grant_Permissions')",
+        "required": true,
+        "isPassword": false,
+        "isIrreversible": false
+      },
+      {
+        "path": "accessPolicies[].active",
+        "group": "accessPolicies[]",
+        "type": "boolean",
+        "description": "Whether the policy should be active (true) or inactive (false). Leave it out to keep the current status of the policy.",
+        "required": false,
+        "isPassword": false,
+        "isIrreversible": false
+      },
+      {
+        "path": "accessPolicies[].on",
+        "group": "accessPolicies[]",
+        "type": "string",
+        "description": "Optional: specify when to apply the policy - 'Create', 'Update', or 'CreateAndUpdate'. Only used when active is true.",
+        "required": false,
+        "enum": ["Create", "Update", "CreateAndUpdate"],
+        "isPassword": false,
+        "isIrreversible": false
+      },
+      {
+        "path": "accessPolicies[].applyToAll",
+        "group": "accessPolicies[]",
+        "type": "boolean",
+        "title": "Apply To All",
+        "description": "Run Apply To All once the policy is set: assigns its access to every user matching its criteria. Runs Apply To All at each apply: Salesforce keeps no state that tells it already ran. A run cannot be undone.",
+        "required": false,
+        "isPassword": false,
+        "isIrreversible": true
+      }
+    ],
+    "examples": [
+      {
+        "accessPolicies": [
+          {
+            "apiName": "Grant_Permissions",
+            "active": true,
+            "on": "Create"
+          }
+        ]
+      },
+      {
+        "accessPolicies": [
+          {
+            "apiName": "Grant_Permissions",
+            "active": true,
+            "on": "Create",
+            "applyToAll": true
+          }
+        ]
+      },
+      {
+        "accessPolicies": [
+          {
+            "apiName": "Grant_Permissions",
+            "applyToAll": true
+          }
+        ]
+      }
+    ],
+    "warnings": {
+      "irreversibleFields": ["accessPolicies[].applyToAll"],
+      "userInterface": null,
+      "prerequisites": [
+        "User Access Policies enabled (User Management Settings)"
+      ]
+    }
+  }
+]

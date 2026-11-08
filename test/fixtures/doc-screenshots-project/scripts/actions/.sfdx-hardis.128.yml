@@ -120,3 +120,48 @@ commandsPostDeploy:
     command: ""
     context: all
     runOnlyOnceByOrg: true
+  # Appended last, so that the rows above keep their position
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-128a00000013
+    label: Activate the sales access policies
+    type: user-access-policy
+    when: post-deploy
+    parameters:
+      policies:
+        - Sales_Rep_Access
+        - Sales_Manager_Access
+      activate: true
+      applyToAll: true
+    command: ""
+    context: process-deployment-only
+    runOnlyOnceByOrg: false
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-128a00000014
+    label: Run the Sales Rep access policy on new users only
+    type: browser
+    when: post-deploy
+    parameters:
+      setting: userAccessPolicies
+      config:
+        accessPolicies:
+          - apiName: Sales_Rep_Access
+            active: true
+            "on": Create
+            applyToAll: true
+    command: ""
+    context: all
+    runOnlyOnceByOrg: true
+  - id: 6f0b2b1e-1c9a-4e0d-9d2a-128a00000015
+    label: Fix the API name of the Platinium account tier
+    type: browser
+    when: post-deploy
+    parameters:
+      setting: picklists
+      config:
+        picklistValues:
+          - metadataType: CustomField
+            metadataFullName: Account.Tier__c
+            value: Platinium
+            newValue: Platinum
+            absent: true
+    command: ""
+    context: all
+    runOnlyOnceByOrg: true

@@ -240,6 +240,24 @@ BOX_CROPS = {
         "pipeline-edit-action-remove-packagexml-items",
         (760, 239, 1462, 728),
     ),
+    "screenshot-deployment-action-user-access-policy.jpg": (
+        "pipeline-edit-action-user-access-policy",
+        (760, 100, 1462, 854),
+    ),
+    # Browser type: the density setting of the fixture, then the two examples of its doc page,
+    # scrolled to the fields of their first item (userAccessPolicies, picklists)
+    "screenshot-deployment-action-browser.jpg": (
+        "pipeline-edit-action-browser",
+        (760, 146, 1462, 810),
+    ),
+    "screenshot-deployment-action-browser-user-access-policies.jpg": (
+        "pipeline-edit-action-browser-user-access-policies",
+        (760, 66, 1462, 882),
+    ),
+    "screenshot-deployment-action-browser-picklists.jpg": (
+        "pipeline-edit-action-browser-picklists",
+        (760, 66, 1462, 882),
+    ),
     # Security & Privacy tab of the Pipeline Settings panel, in edit mode: the
     # anonymization editor of SECURITY.md (captured two zoom levels out, so the
     # three levels, the local runs toggle and the four channels all fit)

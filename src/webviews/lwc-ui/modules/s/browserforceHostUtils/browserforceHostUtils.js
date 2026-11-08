@@ -4,8 +4,9 @@
 // eslint-env es6
 
 // Shared message handling of the panels hosting the editor of a "browser" deployment action
-// (s/deploymentAction): the DevOps Pipeline panel and the Pipeline Settings editor ask the
-// extension for the Browserforce catalog and for the check of a setting value the same way.
+// (s/deploymentAction): the DevOps Pipeline panel, the Pipeline Settings editor and the Org
+// Initialization panel ask the extension for the Browserforce catalog and for the check of a
+// setting value the same way.
 // The host component holds the state the editor is bound to: browserforceCatalog,
 // browserforceCatalogLoading and browserforceValidation (tracked fields of the host).
 // No import: the unit tests evaluate this source as is.
