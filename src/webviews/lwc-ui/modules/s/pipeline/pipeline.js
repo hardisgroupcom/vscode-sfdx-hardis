@@ -111,6 +111,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track communitiesLoading = false;
   @track projectUserAccessPolicies = [];
   @track userAccessPoliciesLoading = false;
+  // Agents of the project sources, for the agent deployment action types
+  @track projectAgents = { values: [], authoringBundles: [] };
+  @track agentsLoading = false;
   // Editor of a "browser" deployment action: the Browserforce catalog and the check of a value
   @track browserforceCatalog = null;
   @track browserforceCatalogLoading = false;
@@ -118,6 +121,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   _browserforceCatalogRequestId = null;
   _browserforceValidationRequestId = null;
   @track communitiesRequestId = null;
+  agentsRequestId = null;
   _refreshTimer = null;
   // When the git provider was last asked whether the current branch has a Pull Request
   _lastPullRequestCheckAt = 0;
@@ -1952,6 +1956,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       case "returnUserAccessPolicies":
         this.handleReturnUserAccessPolicies(data);
         break;
+      case "returnAgents":
+        this.handleReturnAgents(data);
+        break;
       case "returnBrowserforceCatalog":
         this.handleReturnBrowserforceCatalog(data);
         break;
@@ -2067,6 +2074,33 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       ? data.values
       : [];
     this.userAccessPoliciesLoading = false;
+  }
+
+  handleLoadAgents() {
+    this.agentsLoading = true;
+    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    this.agentsRequestId = requestId;
+    window.sendMessageToVSCode({
+      type: "loadAgents",
+      data: { requestId },
+    });
+  }
+
+  handleReturnAgents(data) {
+    if (
+      this.agentsRequestId &&
+      data?.requestId &&
+      data.requestId !== this.agentsRequestId
+    ) {
+      return;
+    }
+    this.projectAgents = {
+      values: Array.isArray(data?.values) ? data.values : [],
+      authoringBundles: Array.isArray(data?.authoringBundles)
+        ? data.authoringBundles
+        : [],
+    };
+    this.agentsLoading = false;
   }
 
   // --- Browserforce (editor of a "browser" deployment action) -----------------

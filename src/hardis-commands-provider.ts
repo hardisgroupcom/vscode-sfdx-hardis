@@ -291,6 +291,14 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             helpUrl: DOCSITE_URL + "/hardis/scratch/pull/",
           },
           {
+            id: "hardis:org:retrieve:agent",
+            label: t("retrieveAgentforceAgent"),
+            tooltip: t("retrieveAgentforceAgentTooltip"),
+            command: "sf hardis:org:retrieve:agent",
+            requiresProject: true,
+            helpUrl: DOCSITE_URL + "/hardis/org/retrieve/agent/",
+          },
+          {
             id: "force:source:tracking:clear",
             label: t("clearLocalSfdxTrackingFiles"),
             tooltip: t("removeTrackingFilesTooltip"),

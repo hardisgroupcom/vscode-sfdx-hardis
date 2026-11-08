@@ -10,6 +10,7 @@ import {
 } from "../browserforceCatalogUtils";
 import {
   BATCHABLE_APEX_CLASS_REGEX,
+  listProjectAgents,
   listProjectBatchableClasses,
   listProjectSchedulableClasses,
   listProjectUserAccessPolicies,
@@ -382,6 +383,10 @@ export async function handleDeploymentActionPickerMessage(
     loadUserAccessPolicies: {
       responseType: "returnUserAccessPolicies",
       list: listUserAccessPolicies,
+    },
+    loadAgents: {
+      responseType: "returnAgents",
+      list: listProjectAgents,
     },
   };
   const picker = pickers[type];

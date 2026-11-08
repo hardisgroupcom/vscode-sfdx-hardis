@@ -18,6 +18,9 @@ const TYPE_LABEL_KEY_BY_CODE = {
   "publish-community": "publishCommunityType",
   "remove-packagexml-items": "removePackageXmlItemsType",
   "user-access-policy": "userAccessPolicyType",
+  "agent-publish": "agentPublishType",
+  "agent-activate": "agentActivateType",
+  "agent-running-user": "agentRunningUserType",
   browser: "browserType",
   manual: "manualType",
 };
@@ -31,6 +34,9 @@ const TYPE_ICON_BY_CODE = {
   "publish-community": "utility:world",
   "remove-packagexml-items": "utility:filterList",
   "user-access-policy": "utility:user_role",
+  "agent-publish": "utility:upload",
+  "agent-activate": "utility:einstein",
+  "agent-running-user": "utility:adduser",
   browser: "utility:desktop",
   manual: "utility:task",
 };
@@ -46,7 +52,12 @@ const TYPE_HUE_BY_CODE = {
   "publish-community": "green",
   "remove-packagexml-items": "pink",
   "user-access-policy": "red",
-  // Every other hue is taken by a type or by the moment and context pills
+  // The agent types share one hue, their icon and label tell them apart:
+  // every other hue is taken by a type, or by the moment and context pills
+  // (cyan, indigo), which would make the pills of one row look the same
+  "agent-publish": "yellow",
+  "agent-activate": "yellow",
+  "agent-running-user": "yellow",
   browser: "orange",
   manual: "slate",
 };
@@ -178,6 +189,10 @@ export function getEffectiveActionContext(action, when) {
   // A batch run and a User Access Policy activation are deployment-only actions, whatever their
   // context holds, as in the CLI
   if (action?.type === "run-batch" || action?.type === "user-access-policy") {
+    return "process-deployment-only";
+  }
+  // So are an agent publication and activation: a deployment check deploys nothing
+  if (action?.type === "agent-publish" || action?.type === "agent-activate") {
     return "process-deployment-only";
   }
   if (action?.type === "manual" && (when || action?.when) === "pre-deploy") {

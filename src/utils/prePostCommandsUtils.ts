@@ -28,6 +28,9 @@ export type BuiltInActionType =
   | "run-batch"
   | "remove-packagexml-items"
   | "user-access-policy"
+  | "agent-publish"
+  | "agent-activate"
+  | "agent-running-user"
   | "browser";
 
 export const BUILT_IN_ACTION_TYPES: BuiltInActionType[] = [
@@ -40,6 +43,9 @@ export const BUILT_IN_ACTION_TYPES: BuiltInActionType[] = [
   "run-batch",
   "remove-packagexml-items",
   "user-access-policy",
+  "agent-publish",
+  "agent-activate",
+  "agent-running-user",
   "browser",
 ];
 
@@ -718,6 +724,42 @@ export async function listProjectUserAccessPolicies(): Promise<string[]> {
   const names = uris.map((uri) =>
     path.basename(uri.fsPath).replace(/\.useraccesspolicy-meta\.xml$/, ""),
   );
+  return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
+}
+
+export interface ProjectAgents {
+  // Agents of the project: authoring bundles and bots (a published bundle becomes a bot of its name)
+  values: string[];
+  // Authoring bundles only: what an 'agent-publish' action can publish
+  authoringBundles: string[];
+}
+
+/**
+ * API names of the Agentforce agents of the project sources, offered by the agent action types.
+ * Not cached: an agent retrieved a minute ago must be listed.
+ */
+export async function listProjectAgents(): Promise<ProjectAgents> {
+  const [bundleUris, botUris] = await Promise.all([
+    findPackageDirectoriesFiles(["**/aiAuthoringBundles/*/*.bundle-meta.xml"]),
+    findPackageDirectoriesFiles(["**/bots/*/*.bot-meta.xml"]),
+  ]);
+  const authoringBundles = agentNamesFromSourcePaths(
+    bundleUris.map((uri) => uri.fsPath),
+  );
+  const bots = agentNamesFromSourcePaths(botUris.map((uri) => uri.fsPath));
+  const values = Array.from(new Set([...authoringBundles, ...bots])).sort(
+    (a, b) => a.localeCompare(b),
+  );
+  return { values, authoringBundles };
+}
+
+/**
+ * The folder holding an authoring bundle or a bot file carries the API name of the agent.
+ */
+export function agentNamesFromSourcePaths(filePaths: string[]): string[] {
+  const names = filePaths
+    .map((filePath) => path.basename(path.dirname(filePath)))
+    .filter((name) => !!name);
   return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
 }
 

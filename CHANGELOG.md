@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- New menu entry **Retrieve an Agentforce agent**, to get an agent version with the components it uses from an org (requires sfdx-hardis 8.21.0)
+- Deployment actions: new **Publish Agentforce Agent** type, to publish an agent in each org after the deployment and activate the version this creates, new **Activate Agentforce Agent** type, to activate the latest version of the agent in each org, and new **Create Agentforce Agent Running User** type, to create the user a service agent runs as before the deployment. The **Agentforce agents deployment actions** source cleaning adds the publication and the running user to the Pull Request at each User Story save (requires sfdx-hardis 8.21.0). The agent is picked from the agents of the project sources
 - Deployment actions: new **Browser** type, to apply with Browserforce a Setup setting the Metadata API cannot deploy (requires sfdx-hardis 8.24.0)
 - Org Initialization: **Browser** and **User Access Policies** steps, with the Browserforce setting form and the policy picker of the deployment action editor (requires sfdx-hardis 8.24.0)
 - Dependencies: when several sf CLI plugins are upgraded at once, one that fails to install no longer stops the others

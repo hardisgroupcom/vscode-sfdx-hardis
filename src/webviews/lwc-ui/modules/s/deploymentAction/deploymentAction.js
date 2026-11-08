@@ -136,6 +136,20 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   }
 
   @api userAccessPoliciesLoading = false;
+  // Agents of the project sources: { values, authoringBundles }, answered to "loadagents"
+  _storedAgents = null;
+
+  @api
+  set agents(val) {
+    if (val && Array.isArray(val.values)) {
+      this._storedAgents = val;
+    }
+  }
+  get agents() {
+    return this._storedAgents || { values: [], authoringBundles: [] };
+  }
+
+  @api agentsLoading = false;
   // Answer of the extension for a "browser" action: the Browserforce catalog, whether the plugin
   // is installed, the CI/CD variable names per branch and the git provider
   @api browserforceCatalog = null;
@@ -204,6 +218,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   _batchableClassesRequested = false;
   _communitiesRequested = false;
   _userAccessPoliciesRequested = false;
+  _agentsRequested = false;
   _browserforceCatalogRequested = false;
 
   @api
@@ -228,6 +243,9 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       { label: this.t("runBatchType"), value: "run-batch" },
       { label: this.t("publishCommunityType"), value: "publish-community" },
       { label: this.t("userAccessPolicyType"), value: "user-access-policy" },
+      { label: this.t("agentPublishType"), value: "agent-publish" },
+      { label: this.t("agentActivateType"), value: "agent-activate" },
+      { label: this.t("agentRunningUserType"), value: "agent-running-user" },
       { label: this.t("browserType"), value: "browser" },
       {
         label: this.t("removePackageXmlItemsType"),
@@ -321,6 +339,22 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
         // A deployment sets the policies it contains back to Design: they are activated after it
         when: ["post-deploy"],
         context: ["process-deployment-only"],
+      },
+      "agent-publish": {
+        // The dependencies of the agent are deployed first, and a check deploys nothing
+        when: ["post-deploy"],
+        context: ["process-deployment-only"],
+      },
+      "agent-activate": {
+        // The version to activate exists only once the deployment is done
+        when: ["post-deploy"],
+        context: ["process-deployment-only"],
+      },
+      "agent-running-user": {
+        // The replacement rules read the user right after the pre-deployment actions. "all" first:
+        // the deployment check then validates the agent with its real user
+        when: ["pre-deploy"],
+        context: ["all", "check-deployment-only", "process-deployment-only"],
       },
       browser: {
         // A Browserforce setting can prepare the org or complete the deployment, in any job
@@ -623,6 +657,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     this._requestBatchableClassesIfNeeded(type);
     this._requestCommunitiesIfNeeded(type);
     this._requestUserAccessPoliciesIfNeeded(type);
+    this._requestAgentsIfNeeded(type);
     this._requestBrowserforceCatalogIfNeeded(type);
   }
 
@@ -690,6 +725,46 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   get showCommunityNameField() {
     const type = this.displayedAction?.type;
     return type === "publish-community";
+  }
+
+  get showAgentNameField() {
+    const type = this.displayedAction?.type;
+    return (
+      type === "agent-publish" ||
+      type === "agent-activate" ||
+      type === "agent-running-user"
+    );
+  }
+
+  // Agents of the project sources (authoring bundles only for a publication), plus the selected
+  // one when the sources no longer hold it: hiding it would drop it from the action at the next save
+  get agentOptions() {
+    const selectedAgent = this.displayedAction?.parameters?.agentName;
+    if (this.isViewMode) {
+      return selectedAgent ? [{ label: selectedAgent, value: selectedAgent }] : [];
+    }
+    if (this.agentsLoading) {
+      const loadingOption = { label: this.t("loadingAgents"), value: "" };
+      return selectedAgent
+        ? [{ label: selectedAgent, value: selectedAgent }, loadingOption]
+        : [loadingOption];
+    }
+    const agents = this.agents;
+    const names =
+      this.displayedAction?.type === "agent-publish"
+        ? agents.authoringBundles || []
+        : agents.values || [];
+    const options = names.map((name) => ({ label: name, value: name }));
+    if (selectedAgent && !names.includes(selectedAgent)) {
+      options.unshift({
+        label: this.t("agentNotInSources", { value: selectedAgent }),
+        value: selectedAgent,
+      });
+    }
+    if (this._agentsRequested && options.length === 0) {
+      return [{ label: this.t("noAgentFound"), value: "" }];
+    }
+    return options;
   }
 
   // --- User Access Policy -------------------------------------------------------
@@ -1730,6 +1805,14 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       previousType !== newType &&
       (previousType === "user-access-policy" ||
         newType === "user-access-policy");
+    const agentTypes = [
+      "agent-publish",
+      "agent-activate",
+      "agent-running-user",
+    ];
+    const touchesAgentAction =
+      previousType !== newType &&
+      (agentTypes.includes(previousType) || agentTypes.includes(newType));
     const touchesBrowser =
       previousType !== newType &&
       (previousType === "browser" || newType === "browser");
@@ -1738,6 +1821,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       entersCustomFunction ||
       touchesRunBatch ||
       touchesUserAccessPolicy ||
+      touchesAgentAction ||
       touchesBrowser
     ) {
       this.editedAction.parameters =
@@ -1746,6 +1830,19 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     // Each new deployment of a policy turns it off again: by default, it is activated at every
     // deployment, as the CLI does
     if (previousType !== newType && newType === "user-access-policy") {
+      this.editedAction.runOnlyOnceByOrg = false;
+    }
+    // Each publication creates a new version: by default, it runs once by org, as the CLI does
+    if (previousType !== newType && newType === "agent-publish") {
+      this.editedAction.runOnlyOnceByOrg = true;
+    }
+    // An active version is left as it is, and a later deployment may bring a new one: by default,
+    // the action runs at every deployment, as the CLI does
+    if (previousType !== newType && newType === "agent-activate") {
+      this.editedAction.runOnlyOnceByOrg = false;
+    }
+    // An existing user is found again: the action runs at every deployment, as the CLI does
+    if (previousType !== newType && newType === "agent-running-user") {
       this.editedAction.runOnlyOnceByOrg = false;
     }
     // A setting applied once stays applied: by default, once by org, as the CLI does
@@ -1763,6 +1860,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     this._requestBatchableClassesIfNeeded(newType);
     this._requestCommunitiesIfNeeded(newType);
     this._requestUserAccessPoliciesIfNeeded(newType);
+    this._requestAgentsIfNeeded(newType);
     this._requestBrowserforceCatalogIfNeeded(newType);
     // Force re-render to show/hide fields by reassigning the tracked property
     this.editedAction = { ...this.editedAction };
@@ -1778,6 +1876,15 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   _buildInitialParametersForType(type) {
     if (type === "user-access-policy") {
       return { policies: [], activate: true, applyToAll: false };
+    }
+    if (type === "agent-activate") {
+      return { agentName: "" };
+    }
+    if (type === "agent-publish") {
+      return { agentName: "" };
+    }
+    if (type === "agent-running-user") {
+      return { agentName: "" };
     }
     if (type === "browser") {
       return { setting: "", config: {} };
@@ -1855,6 +1962,25 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     }
     this._communitiesRequested = true;
     this.dispatchEvent(new CustomEvent("loadcommunities"));
+  }
+
+  _requestAgentsIfNeeded(type) {
+    if (
+      type !== "agent-publish" &&
+      type !== "agent-activate" &&
+      type !== "agent-running-user"
+    ) {
+      return;
+    }
+    if (this.isViewMode) {
+      return;
+    }
+    if (this._agentsRequested) {
+      return;
+    }
+    // Asked each time the editor opens: an agent retrieved since the last opening must be listed
+    this._agentsRequested = true;
+    this.dispatchEvent(new CustomEvent("loadagents"));
   }
 
   _requestUserAccessPoliciesIfNeeded(type) {
@@ -2126,6 +2252,12 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       requiredFields.push("parameters.sfdmuProject");
     } else if (currentType === "publish-community") {
       requiredFields.push("parameters.communityName");
+    } else if (
+      currentType === "agent-publish" ||
+      currentType === "agent-activate" ||
+      currentType === "agent-running-user"
+    ) {
+      requiredFields.push("parameters.agentName");
     } else if (currentType === "manual") {
       requiredFields.push("parameters.instructions");
     } else if (currentType === "remove-packagexml-items") {
