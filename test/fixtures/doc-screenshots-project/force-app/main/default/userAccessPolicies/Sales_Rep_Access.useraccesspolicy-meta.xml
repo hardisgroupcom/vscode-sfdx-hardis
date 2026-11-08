@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UserAccessPolicy xmlns="http://soap.sforce.com/2006/04/metadata">
+    <booleanFilter>1</booleanFilter>
+    <description>Gives the sales permission set group to the users of the Sales Rep profile</description>
+    <masterLabel>Sales Rep Access</masterLabel>
+    <order>1</order>
+    <status>Design</status>
+    <triggerType>CreateAndUpdate</triggerType>
+</UserAccessPolicy>

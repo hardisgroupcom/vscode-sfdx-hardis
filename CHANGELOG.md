@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Deployment actions: new **Browser** type, to apply with Browserforce a Setup setting the Metadata API cannot deploy (requires sfdx-hardis 8.24.0)
+- Org Initialization: **Browser** and **User Access Policies** steps, with the Browserforce setting form and the policy picker of the deployment action editor (requires sfdx-hardis 8.24.0)
 - Dependencies: when several sf CLI plugins are upgraded at once, one that fails to install no longer stops the others
 - Pipeline Settings: a major branch can turn on [scratch org snapshots for Pull Requests](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-scratch-org-pool/#use-scratch-org-snapshots-for-pull-requests) (`useScratchOrgSnapshot`) and set how many snapshots to keep (`scratchOrgSnapshotKeep`), in the Dev Hub section of its branch settings
 - DevOps Pipeline: the Pull Request count bubbles of the branches no longer become giant when the diagram was drawn while the panel was in the background.
