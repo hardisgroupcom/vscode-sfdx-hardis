@@ -92,23 +92,24 @@
   height: 100%;
 }
 
-/* Label, help icon, then the raw key on one line: the label wraps when it must, a long key is
-   cut first (its full text is in its tooltip) */
+/* Label, help icon, then the raw key, flowing like a sentence: when the label wraps, the icon
+   and the key follow its last word. A key longer than the line is cut (full text in its tooltip). */
 .bfe-field-label {
-  flex-wrap: nowrap;
-  min-width: 0;
+  display: block;
   padding-right: 0;
 }
 
-.bfe-field-label > span:first-child {
-  flex: 0 1 auto;
-  min-width: 0;
+.bfe-field-label s-multiline-helptext {
+  display: inline-block;
+  margin-left: 0.25rem;
+  vertical-align: middle;
 }
 
+.bfe-field-label .hardis-chip,
 .bfe-raw-key {
-  flex: 0 1000 auto;
-  min-width: 3rem;
-  margin-left: 0.25rem;
+  margin-left: 0.35rem;
+  max-width: 100%;
+  vertical-align: middle;
   text-overflow: ellipsis;
 }
 
