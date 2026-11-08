@@ -2,14 +2,22 @@
 
 ## Unreleased
 
-- New menu entry **Retrieve an Agentforce agent**, to get an agent version with the components it uses from an org (requires sfdx-hardis 8.21.0)
-- Deployment actions: new **Publish Agentforce Agent** type, to publish an agent in each org after the deployment and activate the version this creates, new **Activate Agentforce Agent** type, to activate the latest version of the agent in each org, and new **Create Agentforce Agent Running User** type, to create the user a service agent runs as before the deployment. The **Agentforce agents deployment actions** source cleaning adds the publication and the running user to the Pull Request at each User Story save (requires sfdx-hardis 8.21.0). The agent is picked from the agents of the project sources
-- Deployment actions: new **Browser** type, to apply with Browserforce a Setup setting the Metadata API cannot deploy (requires sfdx-hardis 8.24.0)
-- Org Initialization: **Browser** and **User Access Policies** steps, with the Browserforce setting form and the policy picker of the deployment action editor (requires sfdx-hardis 8.24.0)
-- Dependencies: when several sf CLI plugins are upgraded at once, one that fails to install no longer stops the others
-- Pipeline Settings: a major branch can turn on [scratch org snapshots for Pull Requests](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-scratch-org-pool/#use-scratch-org-snapshots-for-pull-requests) (`useScratchOrgSnapshot`) and set how many snapshots to keep (`scratchOrgSnapshotKeep`), in the Dev Hub section of its branch settings
+## [8.19.0] 2026-11-08
+
+- **Browserforce** ([doc](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions-browser/)): apply with your Pull Request the Setup settings the Metadata API cannot deploy.
+  - Deployment actions: new **Browser** type, with a form for the Browserforce setting (requires sfdx-hardis 8.24.0).
+  - Org Initialization: new **Browser** and **User Access Policies** steps, with the same setting form and the policy picker of the deployment action editor (requires sfdx-hardis 8.24.0).
+- **Scratch org snapshots** ([doc](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-scratch-org-pool/#use-scratch-org-snapshots-for-pull-requests)): the scratch org of a Pull Request starts from a snapshot of its target branch.
+  - Pipeline Settings: a major branch turns it on (`useScratchOrgSnapshot`) and sets how many snapshots to keep (`scratchOrgSnapshotKeep`), in the Dev Hub section of its branch settings.
+- **Development orgs list** ([doc](https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/)): see the developer sandboxes and scratch orgs of the team and the Pull Requests each one misses since its last backpromote (requires sfdx-hardis 8.24.0).
+  - DevOps Pipeline: a switch on the diagram shows the **Major branches**, the **Feature branches** (default) or the new **Dev orgs** view.
+  - Click the count of missed Pull Requests to start a backpromote, and use **+** to register an org.
+- **Agentforce agents in CI/CD** ([doc](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-agentforce-agents/)): retrieve an agent, then publish and activate it in each org with your Pull Request (requires sfdx-hardis 8.24.0).
+  - New menu entry **Retrieve an Agentforce agent**, to get an agent version with the components it uses from an org.
+  - Deployment actions: new **Publish Agentforce Agent**, **Activate Agentforce Agent** and **Create Agentforce Agent Running User** types, the agent picked from the agents of the project sources.
+  - The **Agentforce agents deployment actions** source cleaning adds the publication and the running user to the Pull Request at each User Story save.
 - DevOps Pipeline: the Pull Request count bubbles of the branches no longer become giant when the diagram was drawn while the panel was in the background.
-- DevOps Pipeline: a switch on the diagram shows the **Major branches**, the **Feature branches** (default) or the new **Dev orgs** view: the developer sandboxes and scratch orgs of the team, the Pull Requests each one misses since its last backpromote (click the count to start it), and a **+** to register one (requires sfdx-hardis 8.24.0)
+- Dependencies: when several sf CLI plugins are upgraded at once, one that fails to install no longer stops the others.
 
 ## [8.18.0] 2026-11-06
 
