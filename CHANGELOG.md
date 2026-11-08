@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Pull Request window: a long line of a job log or of a comment code block wraps instead of making the block scroll sideways.
+
 ## [8.19.0] 2026-11-08
 
 - **Browserforce** ([doc](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions-browser/)): apply with your Pull Request the Setup settings the Metadata API cannot deploy.
