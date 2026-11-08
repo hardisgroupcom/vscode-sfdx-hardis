@@ -328,14 +328,17 @@ suite("Browserforce form utils", () => {
     const entry = {
       key: "cpq",
       groups: [],
-      fields: ["enabled", "lineEditor.wrapButtons", "quote.allowOptionDeletion"]
-        .map((path) => ({
-          path,
-          type: "boolean",
-          required: false,
-          isPassword: false,
-          isIrreversible: false,
-        })),
+      fields: [
+        "enabled",
+        "lineEditor.wrapButtons",
+        "quote.allowOptionDeletion",
+      ].map((path) => ({
+        path,
+        type: "boolean",
+        required: false,
+        isPassword: false,
+        isIrreversible: false,
+      })),
       examples: [],
     };
     const sections = utils.buildFormSections(

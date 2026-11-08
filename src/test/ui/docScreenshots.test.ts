@@ -338,7 +338,11 @@ function installFakeBrowserforce(catalog: any): () => void {
   const version = "7.0.0";
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "bf-shots-"));
   const dataDir = path.join(root, "sf-data");
-  const pluginDir = path.join(dataDir, "node_modules", "sfdx-browserforce-plugin");
+  const pluginDir = path.join(
+    dataDir,
+    "node_modules",
+    "sfdx-browserforce-plugin",
+  );
   const cacheDir = path.join(root, "cache");
   fs.mkdirSync(pluginDir, { recursive: true });
   fs.mkdirSync(cacheDir, { recursive: true });
@@ -2610,7 +2614,8 @@ suite("Documentation screenshots", function () {
       .map((plugin: any) => plugin.key)
       .filter((key: string) => !deprecatedKeys.includes(key))
       .filter(
-        (key: string) => onlySettings.length === 0 || onlySettings.includes(key),
+        (key: string) =>
+          onlySettings.length === 0 || onlySettings.includes(key),
       );
     const uninstallBrowserforce = installFakeBrowserforce(catalog);
 
@@ -2714,7 +2719,9 @@ suite("Documentation screenshots", function () {
       }
       await waitFor(
         async () =>
-          (await inEditor(`return inside("s-typeahead").length > 0 && !inside("s-typeahead")[0].disabled ? true : null;`)) === true,
+          (await inEditor(
+            `return inside("s-typeahead").length > 0 && !inside("s-typeahead")[0].disabled ? true : null;`,
+          )) === true,
         30000,
         "the Browserforce catalog in the editor",
       );
@@ -2730,7 +2737,10 @@ suite("Documentation screenshots", function () {
           break;
         }
         await sleep(400);
-        await captureStable(`${name}-${page}`, { attempts: 3, intervalMs: 500 });
+        await captureStable(`${name}-${page}`, {
+          attempts: 3,
+          intervalMs: 500,
+        });
       }
     };
 
@@ -2763,7 +2773,10 @@ suite("Documentation screenshots", function () {
       await clickInEditor("button.bfe-variable-switch");
       await sleep(600);
       await scrollTo(".bfe-setting-head");
-      await captureStable("bf-zz-env-variable", { attempts: 3, intervalMs: 500 });
+      await captureStable("bf-zz-env-variable", {
+        attempts: 3,
+        intervalMs: 500,
+      });
       await typeInEditor("input[type=text]", 1, "1bad name");
       await sleep(600);
       await captureStable("bf-zz-validation-error", {
@@ -2813,8 +2826,10 @@ suite("Documentation screenshots", function () {
       await sleep(1200);
       await captureStable("bf-zz-checking", { attempts: 1 });
       await sleep(7000);
-      await captureStable("bf-zz-check-valid", { attempts: 3, intervalMs: 500 });
-
+      await captureStable("bf-zz-check-valid", {
+        attempts: 3,
+        intervalMs: 500,
+      });
     } finally {
       uninstallBrowserforce();
       await vscode.commands.executeCommand("workbench.action.zoomIn");

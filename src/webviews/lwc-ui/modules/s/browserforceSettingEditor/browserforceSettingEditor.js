@@ -735,13 +735,14 @@ export default class BrowserforceSettingEditor extends SharedMixin(
       variableSwitchLabel: field.isVariable
         ? this.i18n.browserforceUseFixedValue
         : this.i18n.browserforceUseEnvVariable,
-      variableSwitchIcon: field.isVariable ? "utility:edit" : "utility:variable",
+      variableSwitchIcon: field.isVariable
+        ? "utility:edit"
+        : "utility:variable",
       variableState: field.isVariable ? "true" : "false",
       // Toggles pair up two by two on a wide editor, every other field takes the whole line
-      cellClass:
-        field.isBoolean
-          ? "slds-col slds-size_1-of-1 slds-medium-size_1-of-2 bfe-field-cell"
-          : "slds-col slds-size_1-of-1 bfe-field-cell",
+      cellClass: field.isBoolean
+        ? "slds-col slds-size_1-of-1 slds-medium-size_1-of-2 bfe-field-cell"
+        : "slds-col slds-size_1-of-1 bfe-field-cell",
       lookupRows: field.hasVariableName
         ? this._lookupRows(field.variableName.trim())
         : [],
@@ -792,7 +793,9 @@ export default class BrowserforceSettingEditor extends SharedMixin(
       return "";
     }
     const knownKey = KNOWN_NAME_PATTERNS[pattern];
-    return knownKey ? this.i18n[knownKey] : this.i18n.browserforceEntryNameMustMatch;
+    return knownKey
+      ? this.i18n[knownKey]
+      : this.i18n.browserforceEntryNameMustMatch;
   }
 
   // The names sfdx-hardis reads for a variable: one row per major branch with the names of its
