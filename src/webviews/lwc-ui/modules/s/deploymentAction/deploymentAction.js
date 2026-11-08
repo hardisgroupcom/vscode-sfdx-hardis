@@ -1961,8 +1961,9 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       }
     }
 
-    // A Browserforce setting is saved once Browserforce has checked its value
-    if (this.isDeploymentMode && this.editedAction.type === "browser") {
+    // A Browserforce setting is saved once Browserforce has checked its value, as a deployment
+    // action or as an org initialization step
+    if (this.editedAction.type === "browser") {
       if (this._browserforceFormHasErrors) {
         this.validationError = this.t("browserforceFormHasErrors");
         return;
