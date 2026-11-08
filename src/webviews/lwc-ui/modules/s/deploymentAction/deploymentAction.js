@@ -136,6 +136,20 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   }
 
   @api userAccessPoliciesLoading = false;
+  // Agents of the project sources: { values, authoringBundles }, answered to "loadagents"
+  _storedAgents = null;
+
+  @api
+  set agents(val) {
+    if (val && Array.isArray(val.values)) {
+      this._storedAgents = val;
+    }
+  }
+  get agents() {
+    return this._storedAgents || { values: [], authoringBundles: [] };
+  }
+
+  @api agentsLoading = false;
   // Answer of the extension for a "browser" action: the Browserforce catalog, whether the plugin
   // is installed, the CI/CD variable names per branch and the git provider
   @api browserforceCatalog = null;
@@ -204,6 +218,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   _batchableClassesRequested = false;
   _communitiesRequested = false;
   _userAccessPoliciesRequested = false;
+  _agentsRequested = false;
   _browserforceCatalogRequested = false;
 
   @api
@@ -642,6 +657,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     this._requestBatchableClassesIfNeeded(type);
     this._requestCommunitiesIfNeeded(type);
     this._requestUserAccessPoliciesIfNeeded(type);
+    this._requestAgentsIfNeeded(type);
     this._requestBrowserforceCatalogIfNeeded(type);
   }
 
@@ -722,6 +738,37 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       type === "agent-activate" ||
       type === "agent-running-user"
     );
+  }
+
+  // Agents of the project sources (authoring bundles only for a publication), plus the selected
+  // one when the sources no longer hold it: hiding it would drop it from the action at the next save
+  get agentOptions() {
+    const selectedAgent = this.displayedAction?.parameters?.agentName;
+    if (this.isViewMode) {
+      return selectedAgent ? [{ label: selectedAgent, value: selectedAgent }] : [];
+    }
+    if (this.agentsLoading) {
+      const loadingOption = { label: this.t("loadingAgents"), value: "" };
+      return selectedAgent
+        ? [{ label: selectedAgent, value: selectedAgent }, loadingOption]
+        : [loadingOption];
+    }
+    const agents = this.agents;
+    const names =
+      this.displayedAction?.type === "agent-publish"
+        ? agents.authoringBundles || []
+        : agents.values || [];
+    const options = names.map((name) => ({ label: name, value: name }));
+    if (selectedAgent && !names.includes(selectedAgent)) {
+      options.unshift({
+        label: this.t("agentNotInSources", { value: selectedAgent }),
+        value: selectedAgent,
+      });
+    }
+    if (this._agentsRequested && options.length === 0) {
+      return [{ label: this.t("noAgentFound"), value: "" }];
+    }
+    return options;
   }
 
   // --- User Access Policy -------------------------------------------------------
@@ -1817,6 +1864,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     this._requestBatchableClassesIfNeeded(newType);
     this._requestCommunitiesIfNeeded(newType);
     this._requestUserAccessPoliciesIfNeeded(newType);
+    this._requestAgentsIfNeeded(newType);
     this._requestBrowserforceCatalogIfNeeded(newType);
     // Force re-render to show/hide fields by reassigning the tracked property
     this.editedAction = { ...this.editedAction };
@@ -1918,6 +1966,25 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     }
     this._communitiesRequested = true;
     this.dispatchEvent(new CustomEvent("loadcommunities"));
+  }
+
+  _requestAgentsIfNeeded(type) {
+    if (
+      type !== "agent-publish" &&
+      type !== "agent-activate" &&
+      type !== "agent-running-user"
+    ) {
+      return;
+    }
+    if (this.isViewMode) {
+      return;
+    }
+    if (this._agentsRequested) {
+      return;
+    }
+    // Asked each time the editor opens: an agent retrieved since the last opening must be listed
+    this._agentsRequested = true;
+    this.dispatchEvent(new CustomEvent("loadagents"));
   }
 
   _requestUserAccessPoliciesIfNeeded(type) {

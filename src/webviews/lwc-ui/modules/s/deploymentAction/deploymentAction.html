@@ -510,15 +510,17 @@
                     </span>
                     <s-multiline-helptext content={i18n.agentNameHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
-                  <lightning-input
+                  <lightning-combobox
                     label={i18n.agentNameLabel}
                     value={displayedAction.parameters.agentName}
+                    options={agentOptions}
                     data-field="parameters.agentName"
                     onchange={handleFieldChange}
                     required={isEditMode}
                     disabled={isViewMode}
                     variant="label-hidden"
-                  ></lightning-input>
+                    placeholder={i18n.selectAnAgent}
+                  ></lightning-combobox>
                 </div>
               </div>
             </template>

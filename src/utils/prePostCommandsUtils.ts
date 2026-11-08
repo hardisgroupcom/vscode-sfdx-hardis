@@ -79,8 +79,6 @@ export interface PrePostCommand {
     policies?: string[]; // for 'user-access-policy' actions: developer names
     activate?: boolean; // optional for 'user-access-policy' actions, true when unset
     applyToAll?: boolean; // optional for 'user-access-policy' actions, false when unset
-    agentName?: string; // for 'agent-publish', 'agent-activate' and 'agent-running-user' actions: API name of the agent
-    agentVersion?: string; // optional for 'agent-activate' actions: version number or latest, latest when unset
     setting?: string; // for 'browser' actions: the Browserforce setting key
     // for 'browser' actions: the value of that setting (object or array). A value written
     // exactly "${NAME}" is a CI/CD variable sfdx-hardis resolves for the target branch.
@@ -726,6 +724,42 @@ export async function listProjectUserAccessPolicies(): Promise<string[]> {
   const names = uris.map((uri) =>
     path.basename(uri.fsPath).replace(/\.useraccesspolicy-meta\.xml$/, ""),
   );
+  return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
+}
+
+export interface ProjectAgents {
+  // Agents of the project: authoring bundles and bots (a published bundle becomes a bot of its name)
+  values: string[];
+  // Authoring bundles only: what an 'agent-publish' action can publish
+  authoringBundles: string[];
+}
+
+/**
+ * API names of the Agentforce agents of the project sources, offered by the agent action types.
+ * Not cached: an agent retrieved a minute ago must be listed.
+ */
+export async function listProjectAgents(): Promise<ProjectAgents> {
+  const [bundleUris, botUris] = await Promise.all([
+    findPackageDirectoriesFiles(["**/aiAuthoringBundles/*/*.bundle-meta.xml"]),
+    findPackageDirectoriesFiles(["**/bots/*/*.bot-meta.xml"]),
+  ]);
+  const authoringBundles = agentNamesFromSourcePaths(
+    bundleUris.map((uri) => uri.fsPath),
+  );
+  const bots = agentNamesFromSourcePaths(botUris.map((uri) => uri.fsPath));
+  const values = Array.from(new Set([...authoringBundles, ...bots])).sort(
+    (a, b) => a.localeCompare(b),
+  );
+  return { values, authoringBundles };
+}
+
+/**
+ * The folder holding an authoring bundle or a bot file carries the API name of the agent.
+ */
+export function agentNamesFromSourcePaths(filePaths: string[]): string[] {
+  const names = filePaths
+    .map((filePath) => path.basename(path.dirname(filePath)))
+    .filter((name) => !!name);
   return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
 }
 
