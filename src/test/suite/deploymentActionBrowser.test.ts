@@ -382,11 +382,30 @@ suite("Deployment action browser (Browserforce setting)", () => {
     assert.match(utils, /browser: "utility:desktop"/);
     const hueBlock = utils.match(/TYPE_HUE_BY_CODE = \{[\s\S]*?\};/);
     assert.ok(hueBlock);
-    const hues = [...hueBlock[0].matchAll(/: "([a-z]+)"/g)].map(
-      (match) => match[1],
+    const entries = [...hueBlock[0].matchAll(/"?([a-z-]+)"?: "([a-z]+)"/g)].map(
+      (match) => ({ type: match[1], hue: match[2] }),
     );
-    assert.strictEqual(new Set(hues).size, hues.length, "hues must differ");
-    assert.ok(hues.includes("orange"));
+    // Every type has a hue of its own, except the agent types, one family
+    // with one hue that no other type nor the moment and context pills use
+    const agentHues = new Set(
+      entries.filter((e) => e.type.startsWith("agent-")).map((e) => e.hue),
+    );
+    const otherHues = entries
+      .filter((e) => !e.type.startsWith("agent-"))
+      .map((e) => e.hue);
+    assert.strictEqual(
+      new Set(otherHues).size,
+      otherHues.length,
+      "hues must differ",
+    );
+    assert.strictEqual(agentHues.size, 1, "the agent types share one hue");
+    const [agentHue] = [...agentHues];
+    assert.ok(!otherHues.includes(agentHue));
+    for (const block of ["WHEN_HUE_BY_CODE", "CONTEXT_HUE_BY_CODE"]) {
+      const pills = utils.match(new RegExp(`${block} = \\{[\\s\\S]*?\\};`));
+      assert.ok(pills && !pills[0].includes(`"${agentHue}"`), block);
+    }
+    assert.ok(otherHues.includes("orange"));
   });
 
   test("the picker answers a check that names no setting without starting a command", async () => {

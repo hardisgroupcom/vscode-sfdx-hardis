@@ -52,11 +52,12 @@ const TYPE_HUE_BY_CODE = {
   "publish-community": "green",
   "remove-packagexml-items": "pink",
   "user-access-policy": "red",
+  // The agent types share one hue, their icon and label tell them apart:
+  // every other hue is taken by a type, or by the moment and context pills
+  // (cyan, indigo), which would make the pills of one row look the same
   "agent-publish": "yellow",
-  // No hue is left free of the moment and context pills: these two share
-  // theirs, the type and moment columns stay tellable apart by their labels
-  "agent-activate": "indigo",
-  "agent-running-user": "cyan",
+  "agent-activate": "yellow",
+  "agent-running-user": "yellow",
   browser: "orange",
   manual: "slate",
 };
