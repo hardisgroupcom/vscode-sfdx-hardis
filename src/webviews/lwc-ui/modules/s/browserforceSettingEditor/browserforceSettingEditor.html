@@ -1,9 +1,7 @@
 <template>
   <div class="bfe-root">
-    <!-- Plugin state: loading, missing or too old (installed from the Setup panel), catalog error -->
-    <template if:true={showCatalogLoading}>
-      <p class="loading-text bfe-block">{i18n.browserforceCatalogLoading}</p>
-    </template>
+    <!-- Plugin state: missing or too old (installed from the Setup panel), catalog error. While
+         the catalog loads, the Setting picker says so. -->
     <template if:true={showNotInstalled}>
       <div class="hardis-note warning bfe-block bfe-note-with-action">
         <span>{notInstalledText}</span>
@@ -46,10 +44,11 @@
         <s-typeahead
           label={i18n.browserforceSettingLabel}
           variant="label-hidden"
-          value={setting}
+          value={settingPickerValue}
           options={settingOptions}
-          placeholder={i18n.browserforceSettingPlaceholder}
-          disabled={inputsDisabled}
+          placeholder={settingPickerPlaceholder}
+          loading={showCatalogLoading}
+          disabled={settingPickerDisabled}
           onchange={handleSettingSelect}
         ></s-typeahead>
       </template>
@@ -67,11 +66,23 @@
       <template if:true={readOnly}>
         <p class="hardis-field-value mono bfe-readonly-setting">{settingTitle}</p>
       </template>
-      <template if:true={hasSettingDescription}>
-        <p class="hardis-field-help bfe-help">{settingDescription}</p>
-      </template>
     </div>
 
+    <!-- What the selected setting does, then its warnings -->
+    <template if:true={showSettingHead}>
+      <div class="bfe-setting-head bfe-block">
+        <div class="bfe-setting-title">
+          <div class="hardis-tile small amber">
+            <lightning-icon icon-name="utility:desktop" size="x-small"></lightning-icon>
+          </div>
+          <h3 class="hardis-card-title">{settingHeadTitle}</h3>
+          <span class="hardis-branch-chip">{setting}</span>
+        </div>
+        <template if:true={hasSettingDescription}>
+          <p class="hardis-field-help bfe-setting-desc">{settingDescription}</p>
+        </template>
+      </div>
+    </template>
     <template if:true={hasDeprecatedText}>
       <div class="hardis-note warning bfe-block" role="alert">{deprecatedText}</div>
     </template>
@@ -105,6 +116,9 @@
     <template if:true={showForm}>
       <template for:each={formSections} for:item="section">
         <div key={section.key} class="bfe-section">
+          <template if:true={section.showSubsectionTitle}>
+            <div class="hardis-group-label">{section.title}</div>
+          </template>
           <template if:true={section.isGroup}>
             <div class="hardis-group-label">
               {section.title}
@@ -120,7 +134,7 @@
               </div>
             </div>
             <template if:true={section.hasHelp}>
-              <p class="hardis-group-desc">{section.help}</p>
+              <p class="hardis-group-desc bfe-multiline">{section.help}</p>
             </template>
             <template if:true={section.isEmpty}>
               <p class="hardis-field-help bfe-help">{i18n.browserforceNoItem}</p>
@@ -151,136 +165,192 @@
                     </div>
                     <div class="hardis-field-help">{section.keyPatternText}</div>
                   </div>
-                  <div class="hardis-field-control">
-                    <lightning-input
-                      label={i18n.browserforceEntryName}
-                      variant="label-hidden"
-                      value={item.name}
-                      data-group-path={item.groupPath}
-                      data-index={item.index}
-                      disabled={inputsDisabled}
-                      onchange={handleEntryNameChange}
-                    ></lightning-input>
-                    <template if:true={item.hasNameError}>
-                      <p class="slds-form-element__help slds-text-color_error bfe-error">{item.nameErrorText}</p>
-                    </template>
+                  <div class="hardis-field-control bfe-field-control">
+                    <div class="bfe-control-stack">
+                      <lightning-input
+                        label={i18n.browserforceEntryName}
+                        variant="label-hidden"
+                        value={item.name}
+                        data-group-path={item.groupPath}
+                        data-index={item.index}
+                        disabled={inputsDisabled}
+                        onchange={handleEntryNameChange}
+                      ></lightning-input>
+                      <template if:true={item.hasNameError}>
+                        <p class="slds-form-element__help slds-text-color_error bfe-error">{item.nameErrorText}</p>
+                      </template>
+                    </div>
                   </div>
                 </div>
               </template>
               <template for:each={item.fields} for:item="field">
                 <div key={field.key} class={field.rowClass}>
                   <div class="hardis-field-text">
-                    <div class="hardis-field-label">
+                    <div class="hardis-field-label bfe-field-label">
                       <span>
                         <template if:true={field.required}>
                           <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                         </template>
                         {field.label}
                       </span>
+                      <s-multiline-helptext content={field.helpText} class="slds-icon-text-info"></s-multiline-helptext>
+                      <span class="hardis-branch-chip bfe-raw-key">{field.rawKey}</span>
                     </div>
-                    <template if:true={field.hasHelp}>
-                      <div class="hardis-field-help">{field.help}</div>
-                    </template>
                   </div>
-                  <div class="hardis-field-control">
-                    <template if:true={field.showVariableInput}>
-                      <lightning-input
-                        label={i18n.browserforceVariableNameLabel}
-                        value={field.variableName}
-                        placeholder={i18n.browserforceVariableNamePlaceholder}
-                        data-key={field.key}
-                        disabled={inputsDisabled}
-                        onchange={handleVariableNameChange}
-                      ></lightning-input>
-                    </template>
-                    <template if:true={field.isString}>
-                      <lightning-input
-                        label={field.label}
-                        variant="label-hidden"
-                        value={field.text}
-                        data-key={field.key}
-                        disabled={inputsDisabled}
-                        onchange={handleTextChange}
-                      ></lightning-input>
-                    </template>
-                    <template if:true={field.isEnum}>
-                      <lightning-combobox
-                        label={field.label}
-                        variant="label-hidden"
-                        value={field.text}
-                        options={field.options}
-                        data-key={field.key}
-                        disabled={inputsDisabled}
-                        onchange={handleTextChange}
-                      ></lightning-combobox>
-                    </template>
-                    <template if:true={field.isBoolean}>
-                      <lightning-input
-                        type="checkbox"
-                        label={field.label}
-                        variant="label-hidden"
-                        checked={field.checked}
-                        data-key={field.key}
-                        disabled={inputsDisabled}
-                        onchange={handleCheckboxChange}
-                      ></lightning-input>
-                    </template>
-                    <template if:true={field.isNumber}>
-                      <lightning-input
-                        type="number"
-                        step={field.step}
-                        label={field.label}
-                        variant="label-hidden"
-                        value={field.text}
-                        data-key={field.key}
-                        disabled={inputsDisabled}
-                        onchange={handleTextChange}
-                      ></lightning-input>
-                    </template>
-                    <template if:true={field.isStringList}>
-                      <lightning-textarea
-                        label={field.label}
-                        variant="label-hidden"
-                        value={field.text}
-                        placeholder={i18n.browserforceOneValuePerLine}
-                        data-key={field.key}
-                        disabled={inputsDisabled}
-                        onchange={handleTextChange}
-                      ></lightning-textarea>
-                    </template>
-                    <template if:true={field.isJson}>
-                      <lightning-textarea
-                        class="bfe-json"
-                        label={field.label}
-                        variant="label-hidden"
-                        value={field.text}
-                        data-key={field.key}
-                        disabled={inputsDisabled}
-                        onchange={handleTextChange}
-                      ></lightning-textarea>
-                    </template>
-                    <template if:true={field.hasError}>
-                      <p class="slds-form-element__help slds-text-color_error bfe-error">{field.errorText}</p>
-                    </template>
-                    <template if:true={field.hasLiteralSecret}>
-                      <p class="hardis-note warning bfe-error">{i18n.browserforceSecretInClear}</p>
-                    </template>
-                    <template if:true={field.canToggleVariable}>
-                      <lightning-input
-                        type="checkbox"
-                        label={i18n.browserforceValuePerOrg}
-                        checked={field.isVariable}
-                        data-key={field.key}
-                        disabled={inputsDisabled}
-                        onchange={handleVariableToggle}
-                      ></lightning-input>
-                    </template>
+                  <div class="hardis-field-control bfe-field-control">
+                    <div class="bfe-control-stack">
+                      <!-- Value read from an ENV variable: its name, and the names read per org -->
+                      <template if:true={field.showVariableInput}>
+                        <lightning-input
+                          label={i18n.browserforceVariableNameLabel}
+                          value={field.variableName}
+                          placeholder={field.suggestedVariable}
+                          data-key={field.key}
+                          disabled={inputsDisabled}
+                          onchange={handleVariableNameChange}
+                        ></lightning-input>
+                      </template>
+                      <template if:true={field.isString}>
+                        <lightning-input
+                          label={field.label}
+                          variant="label-hidden"
+                          value={field.text}
+                          data-key={field.key}
+                          disabled={inputsDisabled}
+                          onchange={handleTextChange}
+                        ></lightning-input>
+                      </template>
+                      <template if:true={field.isEnum}>
+                        <lightning-combobox
+                          label={field.label}
+                          variant="label-hidden"
+                          value={field.text}
+                          options={field.options}
+                          placeholder={i18n.browserforceNotSet}
+                          data-key={field.key}
+                          disabled={inputsDisabled}
+                          onchange={handleTextChange}
+                        ></lightning-combobox>
+                      </template>
+                      <template if:true={field.isBoolean}>
+                        <lightning-input
+                          type="toggle"
+                          class="bfe-toggle"
+                          label={field.label}
+                          variant="label-hidden"
+                          checked={field.checked}
+                          message-toggle-active={field.toggleActiveText}
+                          message-toggle-inactive={field.toggleInactiveText}
+                          data-key={field.key}
+                          disabled={inputsDisabled}
+                          onchange={handleBooleanChange}
+                        ></lightning-input>
+                      </template>
+                      <template if:true={field.isNumber}>
+                        <lightning-input
+                          type="number"
+                          step={field.step}
+                          label={field.label}
+                          variant="label-hidden"
+                          value={field.text}
+                          data-key={field.key}
+                          disabled={inputsDisabled}
+                          onchange={handleTextChange}
+                        ></lightning-input>
+                      </template>
+                      <template if:true={field.isStringList}>
+                        <lightning-textarea
+                          label={field.label}
+                          variant="label-hidden"
+                          value={field.text}
+                          placeholder={i18n.browserforceOneValuePerLine}
+                          data-key={field.key}
+                          disabled={inputsDisabled}
+                          onchange={handleTextChange}
+                        ></lightning-textarea>
+                      </template>
+                      <template if:true={field.isJson}>
+                        <lightning-textarea
+                          class="bfe-json"
+                          label={field.label}
+                          variant="label-hidden"
+                          value={field.text}
+                          data-key={field.key}
+                          disabled={inputsDisabled}
+                          onchange={handleTextChange}
+                        ></lightning-textarea>
+                      </template>
+                      <template if:true={field.hasError}>
+                        <p class="slds-form-element__help slds-text-color_error bfe-error">{field.errorText}</p>
+                      </template>
+                      <template if:true={field.hasLiteralSecret}>
+                        <p class="hardis-note warning bfe-error">{i18n.browserforceSecretInClear}</p>
+                      </template>
+                      <template if:true={field.hasLookupRows}>
+                        <div class="bfe-lookup">
+                          <p class="hardis-field-help">{i18n.browserforceVariableLookupTitle}</p>
+                          <template for:each={field.lookupRows} for:item="row">
+                            <div key={row.key} class="bfe-lookup-row">
+                              <span class="hardis-chip bfe-lookup-branch">{row.branch}</span>
+                              <span class="bfe-lookup-names">
+                                <template for:each={row.names} for:item="variableName">
+                                  <span key={variableName.key} class="bfe-lookup-name">
+                                    <template if:true={variableName.showThen}>
+                                      <span class="muted bfe-lookup-then">{i18n.browserforceThen}</span>
+                                    </template>
+                                    <span class="hardis-branch-chip">{variableName.name}</span>
+                                  </span>
+                                </template>
+                              </span>
+                            </div>
+                          </template>
+                        </div>
+                      </template>
+                      <template if:true={field.showNoLookup}>
+                        <p class="hardis-field-help">{i18n.browserforceVariablesNoLookup}</p>
+                      </template>
+                      <!-- Secondary actions under the value: back to "not set", read from an ENV variable -->
+                      <div class="bfe-field-links">
+                        <template if:true={field.canClear}>
+                          <button
+                            type="button"
+                            class="hardis-textlink bfe-variable-switch"
+                            title={i18n.browserforceHelpOptionalBoolean}
+                            data-key={field.key}
+                            disabled={inputsDisabled}
+                            onclick={handleClearValue}
+                          >
+                            <lightning-icon icon-name="utility:undo" size="xx-small" class="bfe-switch-icon"></lightning-icon>
+                            {i18n.browserforceClearValue}
+                          </button>
+                        </template>
+                        <template if:true={field.canToggleVariable}>
+                          <button
+                            type="button"
+                            class="hardis-textlink bfe-variable-switch"
+                            aria-pressed={field.variableState}
+                            data-key={field.key}
+                            data-variable={field.variableState}
+                            data-suggested={field.suggestedVariable}
+                            data-current={field.variableName}
+                            disabled={inputsDisabled}
+                            onclick={handleVariableToggle}
+                          >
+                            <lightning-icon icon-name={field.variableSwitchIcon} size="xx-small" class="bfe-switch-icon"></lightning-icon>
+                            {field.variableSwitchLabel}
+                          </button>
+                        </template>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </template>
             </div>
           </template>
         </div>
+      </template>
+      <template if:true={showGithubNote}>
+        <div class="hardis-note bfe-block">{i18n.browserforceGithubEnvNote}</div>
       </template>
     </template>
 
@@ -311,23 +381,29 @@
       </div>
     </template>
 
-    <!-- CI/CD variables the value references -->
-    <template if:true={hasVariables}>
+    <!-- ENV variables the value references, outside the form (JSON, read-only) -->
+    <template if:true={showVariablesSection}>
       <div class="bfe-block">
         <div class="hardis-group-label">{i18n.browserforceVariablesTitle}</div>
         <p class="hardis-group-desc">{variablesHelp}</p>
-        <template if:true={hasSecretsLookupLabel}>
-          <p class="hardis-field-help bfe-help">{secretsLookupLabel}</p>
-        </template>
         <template for:each={variables} for:item="variable">
           <div key={variable.name} class="bfe-variable">
             <span class="hardis-chip">{variable.name}</span>
             <template if:true={variable.hasRows}>
-              <div class="hardis-prop-grid bfe-variable-grid">
+              <div class="bfe-lookup">
                 <template for:each={variable.rows} for:item="row">
-                  <div key={row.key} class="hardis-prop">
-                    <div class="hardis-prop-key">{row.branch}</div>
-                    <div class="hardis-prop-value mono">{row.names}</div>
+                  <div key={row.key} class="bfe-lookup-row">
+                    <span class="hardis-chip bfe-lookup-branch">{row.branch}</span>
+                    <span class="bfe-lookup-names">
+                      <template for:each={row.names} for:item="variableName">
+                        <span key={variableName.key} class="bfe-lookup-name">
+                          <template if:true={variableName.showThen}>
+                            <span class="muted bfe-lookup-then">{i18n.browserforceThen}</span>
+                          </template>
+                          <span class="hardis-branch-chip">{variableName.name}</span>
+                        </span>
+                      </template>
+                    </span>
                   </div>
                 </template>
               </div>
@@ -340,20 +416,25 @@
       </div>
     </template>
 
-    <!-- Check with Browserforce -->
+    <!-- Check with Browserforce: the button spins and says so while Browserforce answers -->
     <template if:true={showCheckButton}>
       <div class="bfe-block">
-        <lightning-button
-          variant="neutral"
-          icon-name="utility:check"
-          label={i18n.browserforceCheck}
+        <button
+          type="button"
+          class="slds-button slds-button_neutral bfe-check-button"
           disabled={isCheckDisabled}
+          aria-busy={checkButtonBusy}
           onclick={handleCheck}
-        ></lightning-button>
+        >
+          <template if:true={showValidating}>
+            <span class="bfe-button-spinner" aria-hidden="true"></span>
+          </template>
+          <template if:false={showValidating}>
+            <lightning-icon icon-name="utility:check" size="x-small" class="bfe-switch-icon"></lightning-icon>
+          </template>
+          {checkButtonLabel}
+        </button>
       </div>
-    </template>
-    <template if:true={showValidating}>
-      <p class="loading-text bfe-block">{i18n.browserforceChecking}</p>
     </template>
     <template if:true={showValidationValid}>
       <div class="hardis-note success bfe-block">{i18n.browserforceCheckValid}</div>

@@ -17,7 +17,30 @@
 
 // A value written exactly ${NAME} is a CI/CD variable sfdx-hardis resolves for the target branch
 const VARIABLE_REFERENCE_PATTERN = /^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$/;
-const VARIABLE_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+// The names the form accepts: what CI/CD tools expect of an environment variable
+const VARIABLE_NAME_PATTERN = /^[A-Z_][A-Z0-9_]*$/;
+// Written in capitals in a label made from a key (authProviderApiName: "Auth provider API name")
+const ACRONYMS = new Set([
+  "API",
+  "CPQ",
+  "CSV",
+  "HTML",
+  "HTTP",
+  "HTTPS",
+  "ID",
+  "ISO",
+  "JSON",
+  "PDF",
+  "SAML",
+  "SOQL",
+  "SSO",
+  "UI",
+  "URI",
+  "URL",
+  "XML",
+]);
+// Longest example shown in the help of a field
+const MAX_EXAMPLE_LENGTH = 120;
 const ROOT_GROUP = "";
 const ROOT_INDEX = -1;
 // Pseudo path of the name of an entry keyed by name
@@ -103,27 +126,43 @@ export function buildFormSections(entry, model, errors = []) {
   );
   const fields = Array.isArray(entry?.fields) ? entry.fields : [];
   const sections = [];
+  // Fields of the setting itself, one section per object they belong to ("lineEditor.x" and
+  // "lineEditor.y" under "Line editor"), the fields at the top first
   const topFields = rootFields(entry);
-  if (topFields.length > 0) {
+  const prefixes = [];
+  for (const field of topFields) {
+    const prefix = parentPath(field.path);
+    if (!prefixes.includes(prefix)) {
+      prefixes.push(prefix);
+    }
+  }
+  prefixes.sort((a, b) => (a === "" ? -1 : b === "" ? 1 : 0));
+  for (const prefix of prefixes) {
     sections.push({
-      key: "root",
+      key: `root-${prefix}`,
       isGroup: false,
       isRecord: false,
+      isSubsection: prefix !== "",
+      title: humanizePath(prefix),
       items: [
         {
-          key: "root-item",
+          key: `root-item-${prefix}`,
           itemClass: "bfe-root-item",
           isGroupItem: false,
           isRecordEntry: false,
-          fields: topFields.map((field) =>
-            describeField(
-              field,
-              field.path,
-              model?.fields?.[field.path],
-              fieldStateKey(ROOT_GROUP, ROOT_INDEX, field.path),
-              errorByKey,
+          fields: topFields
+            .filter((field) => parentPath(field.path) === prefix)
+            .map((field) =>
+              describeField(
+                entry,
+                field,
+                field.path,
+                model?.fields?.[field.path],
+                fieldStateKey(ROOT_GROUP, ROOT_INDEX, field.path),
+                errorByKey,
+                suggestVariableName(entry, null, null, ROOT_INDEX, field.path),
+              ),
             ),
-          ),
         },
       ],
     });
@@ -136,18 +175,37 @@ export function buildFormSections(entry, model, errors = []) {
       groupPath: group.path,
       isGroup: true,
       isRecord: group.kind === "record",
-      title: group.title || group.path,
+      isSubsection: false,
+      title:
+        group.title ||
+        humanizePath(groupContainerPath(group)) ||
+        entry?.title ||
+        group.path,
       help: group.description || "",
       hasHelp: !!group.description,
       keyPattern: group.keyPattern || "",
       isEmpty: items.length === 0,
       items: items.map((item, index) => {
         const nameKey = fieldStateKey(group.path, index, ENTRY_NAME_PATH);
+        const describedFields = groupFields.map((field) => {
+          const relativePath = relativeFieldPath(group, field);
+          return describeField(
+            entry,
+            field,
+            relativePath,
+            item.fields?.[relativePath],
+            fieldStateKey(group.path, index, relativePath),
+            errorByKey,
+            suggestVariableName(entry, group, item, index, relativePath),
+          );
+        });
         return {
           key: `${group.path}#${index}`,
           groupPath: group.path,
           index: String(index),
           number: index + 1,
+          // What tells the items apart: the first text the item holds
+          summary: itemSummary(describedFields),
           itemClass: "hardis-card bfe-item",
           isGroupItem: true,
           isRecordEntry: group.kind === "record",
@@ -155,21 +213,60 @@ export function buildFormSections(entry, model, errors = []) {
           nameKey,
           nameErrorCode: errorByKey.get(nameKey) || "",
           hasNameError: errorByKey.has(nameKey),
-          fields: groupFields.map((field) => {
-            const relativePath = relativeFieldPath(group, field);
-            return describeField(
-              field,
-              relativePath,
-              item.fields?.[relativePath],
-              fieldStateKey(group.path, index, relativePath),
-              errorByKey,
-            );
-          }),
+          fields: describedFields,
         };
       }),
     });
   }
   return sections;
+}
+
+/**
+ * Readable label of a key path: its last segment in words, known acronyms in capitals
+ * ("authenticationConfiguration.services" -> "Services", "authProviderApiName" ->
+ * "Auth provider API name"). "" for an empty path.
+ */
+export function humanizeKey(path) {
+  const segments = String(path || "")
+    .split(".")
+    .map((segment) => segment.replace(/\[\]$/, ""))
+    .filter((segment) => segment !== "" && segment !== "*" && segment !== "[]");
+  if (segments.length === 0) {
+    return "";
+  }
+  return wordsToLabel(splitWords(segments[segments.length - 1]));
+}
+
+/**
+ * Suggested CI/CD variable name of a field: the setting key, the entry name or the item number,
+ * then the field path, in capitals ("AUTH_PROVIDERS_MYPROVIDER_CONSUMER_SECRET").
+ */
+export function suggestVariableName(entry, group, item, index, path) {
+  const parts = [snakeCase(entry?.key || "")];
+  if (group) {
+    if (group.kind === "record") {
+      parts.push(String(item?.name || "").toUpperCase());
+    } else {
+      const container = groupContainerPath(group);
+      if (container) {
+        parts.push(snakeCase(container.split(".").pop()));
+      }
+      parts.push(String(index + 1));
+    }
+  }
+  for (const segment of String(path || "").split(".")) {
+    parts.push(snakeCase(segment));
+  }
+  let name = parts
+    .join("_")
+    .toUpperCase()
+    .replace(/[^A-Z0-9_]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "");
+  if (/^[0-9]/.test(name)) {
+    name = `_${name}`;
+  }
+  return name || "MY_VARIABLE";
 }
 
 /** Key of the state of a field: the group path, the item index (-1 outside a group), the field path. */
@@ -197,16 +294,20 @@ export function updateFieldState(model, key, patch) {
   return next;
 }
 
-export function setEntryName(model, groupPath, index, name) {
+/** Renames an entry. With the entry of the catalog, the suggested variable names follow. */
+export function setEntryName(model, groupPath, index, name, entry = null) {
   const next = clone(model);
   const item = next.groups?.[groupPath]?.[index];
   if (item) {
     item.name = name;
   }
-  return next;
+  return refreshSuggestedVariables(entry, next, groupPath);
 }
 
-/** Adds an empty item to a group: its fields start empty, defaults are applied by Browserforce. */
+/**
+ * Adds an empty item to a group: its fields start empty, defaults are applied by Browserforce. A
+ * password starts with its suggested variable name, as it can only be a variable.
+ */
 export function addGroupItem(entry, model, groupPath) {
   const next = clone(model);
   const group = groupsOf(entry).find(
@@ -218,20 +319,23 @@ export function addGroupItem(entry, model, groupPath) {
   const groupFields = (entry.fields || []).filter(
     (field) => field.group === groupPath,
   );
-  next.groups[groupPath] = [
-    ...(next.groups[groupPath] || []),
-    buildItem(group, groupFields, "", undefined),
-  ];
-  return next;
+  const item = buildItem(group, groupFields, "", undefined);
+  for (const field of groupFields.filter((candidate) => candidate.isPassword)) {
+    const state = item.fields[relativeFieldPath(group, field)];
+    state.variableAuto = true;
+  }
+  next.groups[groupPath] = [...(next.groups[groupPath] || []), item];
+  return refreshSuggestedVariables(entry, next, groupPath);
 }
 
-export function removeGroupItem(model, groupPath, index) {
+/** Removes an item. With the entry of the catalog, the suggested variable names follow. */
+export function removeGroupItem(model, groupPath, index, entry = null) {
   const next = clone(model);
   const items = next.groups?.[groupPath];
   if (Array.isArray(items)) {
     items.splice(index, 1);
   }
-  return next;
+  return refreshSuggestedVariables(entry, next, groupPath);
 }
 
 /** Value of a new action of this setting: its first example, or an empty value of the right kind. */
@@ -290,6 +394,25 @@ export function findDeprecatedSetting(catalog, key) {
     ? catalog.deprecatedSettings
     : [];
   return deprecated.find((item) => item?.path === key) || null;
+}
+
+// A variable name the form suggested (variableAuto) follows the entry name and the item number
+function refreshSuggestedVariables(entry, model, groupPath) {
+  const group = groupsOf(entry).find(
+    (candidate) => candidate.path === groupPath,
+  );
+  const items = model?.groups?.[groupPath];
+  if (!group || !Array.isArray(items)) {
+    return model;
+  }
+  items.forEach((item, index) => {
+    for (const [path, state] of Object.entries(item.fields || {})) {
+      if (state?.variableAuto) {
+        state.variable = suggestVariableName(entry, group, item, index, path);
+      }
+    }
+  });
+  return model;
 }
 
 function rootFields(entry) {
@@ -394,6 +517,8 @@ function emptyState() {
     checked: false,
     isVariable: false,
     variable: "",
+    // The variable name is the one the form suggested: it follows the entry name
+    variableAuto: false,
     literalSecret: null,
   };
 }
@@ -496,7 +621,11 @@ function stateToValue(field, rawState) {
     }
     default: {
       if (text === "") {
-        return { set: false };
+        // A required text the value holds empty stays empty: it has a meaning there (the
+        // default layout of a profile)
+        return field.required === true && state.present
+          ? { set: true, value: "" }
+          : { set: false };
       }
       if (Array.isArray(field.enum)) {
         const enumValue = field.enum.find((option) => String(option) === text);
@@ -507,25 +636,45 @@ function stateToValue(field, rawState) {
   }
 }
 
-function describeField(field, path, rawState, key, errorByKey) {
+// Everything the template needs to render one field: no expression in LWC templates. The texts
+// that need a translation are codes (typeHelp) the editor turns into labels.
+function describeField(
+  entry,
+  field,
+  path,
+  rawState,
+  key,
+  errorByKey,
+  suggestedVariable,
+) {
   const state = { ...emptyState(), ...(rawState || {}) };
   const variableMode = field.isPassword || state.isVariable;
   const hasEnum = Array.isArray(field.enum) && field.enum.length > 0;
   const type = field.type || "string";
+  const required = field.required === true;
   const errorCode = errorByKey.get(key) || "";
+  const isBoolean = !variableMode && type === "boolean";
+  const isStringList = !variableMode && type === "string[]";
+  const isJson = !variableMode && type === "json";
+  const rawKey = path || field.path || "";
   return {
     key,
     path,
-    label: field.title || path || field.path || "",
-    help: field.description || "",
-    hasHelp: !!field.description,
-    required: field.required === true,
+    rawKey,
+    label: field.title || humanizeKey(rawKey),
+    description: field.description || "",
+    typeHelp: typeHelpOf(field, type, hasEnum),
+    example: field.isPassword ? "" : exampleOf(entry, field),
+    required,
     isPassword: field.isPassword === true,
     isIrreversible: field.isIrreversible === true,
     canToggleVariable: field.isPassword !== true,
     isVariable: variableMode,
     showVariableInput: variableMode,
     variableName: state.variable || "",
+    suggestedVariable,
+    hasVariableName:
+      variableMode && isValidVariableName(String(state.variable || "").trim()),
     hasLiteralSecret:
       field.isPassword === true &&
       !state.variable &&
@@ -533,26 +682,136 @@ function describeField(field, path, rawState, key, errorByKey) {
       state.literalSecret !== undefined,
     isString: !variableMode && type === "string" && !hasEnum,
     isEnum: !variableMode && type === "string" && hasEnum,
+    // An optional list can go back to "not set": its first option has an empty value, the
+    // editor gives it its label
     options: hasEnum
-      ? field.enum.map((option) => ({
-          label: String(option),
-          value: String(option),
-        }))
+      ? [
+          ...(required ? [] : [{ label: "", value: "" }]),
+          ...field.enum.map((option) => ({
+            label: String(option),
+            value: String(option),
+          })),
+        ]
       : [],
-    isBoolean: !variableMode && type === "boolean",
+    isBoolean,
     checked: state.checked === true,
+    // A boolean nobody set keeps what the org has: shown as "not set", and an optional one
+    // that was set can go back to it
+    isSet: state.present === true,
+    canClear: isBoolean && state.present === true && !required,
     isNumber: !variableMode && (type === "number" || type === "integer"),
     step: type === "integer" ? "1" : "any",
-    isStringList: !variableMode && type === "string[]",
-    isJson: !variableMode && type === "json",
+    isStringList,
+    isJson,
     rowClass:
-      !variableMode && (type === "string[]" || type === "json")
-        ? "hardis-field-row stacked"
-        : "hardis-field-row",
+      isStringList || isJson ? "hardis-field-row stacked" : "hardis-field-row",
     text: state.text || "",
     errorCode,
     hasError: !!errorCode,
   };
+}
+
+// Code of the sentence that tells how to fill a field without description in the catalog
+function typeHelpOf(field, type, hasEnum) {
+  if (field.isPassword) {
+    return "password";
+  }
+  if (hasEnum) {
+    return "enum";
+  }
+  if (["boolean", "string[]", "json", "number", "integer"].includes(type)) {
+    return type === "string[]" ? "list" : type;
+  }
+  return "text";
+}
+
+// The value the first example of the setting gives to a field, as text: "" when none does
+function exampleOf(entry, field) {
+  if (field.type === "boolean") {
+    return "";
+  }
+  const group = field.group
+    ? groupsOf(entry).find((candidate) => candidate.path === field.group)
+    : null;
+  for (const example of Array.isArray(entry?.examples) ? entry.examples : []) {
+    let values = [];
+    if (!group) {
+      values = [getAtPath(example, field.path)];
+    } else {
+      const container = getAtPath(example, groupContainerPath(group));
+      const items = Array.isArray(container)
+        ? container
+        : isPlainObject(container)
+          ? Object.values(container)
+          : [];
+      const relativePath = relativeFieldPath(group, field);
+      values = items.map((item) => getAtPath(item, relativePath));
+    }
+    const value = values.find(
+      (candidate) => candidate !== undefined && candidate !== null,
+    );
+    if (value !== undefined && !getVariableName(value)) {
+      const text = typeof value === "string" ? value : JSON.stringify(value);
+      return text.length > MAX_EXAMPLE_LENGTH
+        ? `${text.slice(0, MAX_EXAMPLE_LENGTH)}...`
+        : text;
+    }
+  }
+  return "";
+}
+
+// The first text an item holds, required texts first, then picked values: the title of its card
+function itemSummary(describedFields) {
+  const filled = describedFields.filter((field) => field.text.trim() !== "");
+  const ordered = [
+    ...filled.filter((field) => field.isString && field.required),
+    ...filled.filter((field) => field.isString && !field.required),
+    ...filled.filter((field) => field.isEnum),
+  ];
+  return ordered.length > 0 ? ordered[0].text.trim() : "";
+}
+
+// "lineEditor.totalsField" -> "lineEditor", "enabled" -> ""
+function parentPath(path) {
+  const index = String(path || "").lastIndexOf(".");
+  return index === -1 ? "" : path.slice(0, index);
+}
+
+// Every segment of a path in words: "authenticationConfiguration.services" ->
+// "Authentication configuration services"
+function humanizePath(path) {
+  const words = String(path || "")
+    .split(".")
+    .map((segment) => segment.replace(/\[\]$/, ""))
+    .filter((segment) => segment !== "" && segment !== "*")
+    .flatMap(splitWords);
+  return wordsToLabel(words);
+}
+
+// "authProviderApiName" -> ["auth", "Provider", "Api", "Name"], "SSOEnabled" -> ["SSO", "Enabled"]
+function splitWords(segment) {
+  return String(segment || "")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
+    .split(/[\s_-]+/)
+    .filter((word) => word !== "");
+}
+
+function wordsToLabel(words) {
+  const label = words
+    .map((word) => {
+      const upper = word.toUpperCase();
+      return ACRONYMS.has(upper) ? upper : word.toLowerCase();
+    })
+    .join(" ");
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+// "authProviders" -> "AUTH_PROVIDERS"
+function snakeCase(segment) {
+  return splitWords(String(segment || "").replace(/\[\]$/, ""))
+    .join("_")
+    .toUpperCase();
 }
 
 function getAtPath(value, path) {

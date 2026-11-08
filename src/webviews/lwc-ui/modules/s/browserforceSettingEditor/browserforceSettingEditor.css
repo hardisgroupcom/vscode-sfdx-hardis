@@ -27,6 +27,25 @@
   flex-wrap: wrap;
 }
 
+/* Title, key and description of the selected setting */
+.bfe-setting-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.bfe-setting-desc {
+  margin-top: 0.35rem;
+  max-width: none;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.bfe-multiline {
+  white-space: pre-line;
+}
+
 .bfe-section {
   margin-bottom: 1rem;
 }
@@ -41,6 +60,113 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+}
+
+/* Label, help icon and raw key of a field on one line, wrapping when narrow */
+.bfe-field-label {
+  gap: 0.35rem;
+}
+
+.bfe-raw-key {
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
+
+/* Every value of the form starts at the same left edge, whatever the length of its label.
+   Stacked rows (lists, JSON, ENV variables) keep the full width of the kit. */
+.bfe-field-control {
+  flex: 0 0 min(55%, 440px);
+  max-width: min(55%, 440px);
+}
+
+/* The value, then what goes with it (error, names read per org, ENV variable switch), stacked */
+.bfe-control-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.bfe-control-stack > .bfe-toggle {
+  align-self: flex-end;
+}
+
+/* Secondary actions of a field, right aligned under its value */
+.bfe-field-links {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+}
+
+.bfe-field-links:empty {
+  display: none;
+}
+
+.bfe-variable-switch,
+.bfe-check-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.bfe-switch-icon {
+  --slds-c-icon-color-foreground-default: currentColor;
+  --slds-c-icon-color-foreground: currentColor;
+}
+
+.bfe-lookup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+/* One line per org: the branch, then the names read in order */
+.bfe-lookup-row {
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr);
+  align-items: start;
+  gap: 0.5rem;
+}
+
+.bfe-lookup-branch {
+  justify-self: start;
+}
+
+.bfe-lookup-names {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.35rem;
+  min-width: 0;
+}
+
+.bfe-lookup-then {
+  font-size: 0.72rem;
+}
+
+/* Spinner inside the Check button while Browserforce answers */
+.bfe-button-spinner {
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: bfe-spin 0.8s linear infinite;
+}
+
+@keyframes bfe-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bfe-button-spinner {
+    animation: none;
+  }
 }
 
 .bfe-readonly-setting {
@@ -62,11 +188,17 @@
   margin-bottom: 0.5rem;
 }
 
-.bfe-variable-grid {
+.bfe-variable .bfe-lookup {
   margin-top: 0.25rem;
 }
 
 .bfe-error-list {
   margin: 0.25rem 0 0 1.25rem;
   list-style: disc;
+}
+
+.bfe-lookup-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
 }

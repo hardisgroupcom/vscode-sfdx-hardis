@@ -746,6 +746,63 @@ async function main() {
     return 0;
   }
 
+  // The ENV variable names sfdx-hardis reads for a ${NAME} value of a browser action, per major
+  // branch, as `sf hardis:project:action:types --type browser` describes them (CI/CD variables
+  // provider: the branch suffix variants, then the bare name)
+  if (first === "hardis:project:action:types" && DOCS_PROFILE) {
+    const branchNames = (branch) => [
+      `{NAME}_${branch}`,
+      `{NAME}_${branch.toUpperCase()}`,
+      "{NAME}",
+    ];
+    outputJsonIfRequested(
+      {
+        status: 0,
+        result: {
+          types: [
+            {
+              type: "browser",
+              details: {
+                secretsLookup: {
+                  provider: "ci-variables",
+                  label: "CI/CD variables",
+                  branches: [
+                    ...["integration", "uat", "main"].map((branch) => ({
+                      branch,
+                      names: branchNames(branch),
+                    })),
+                    { branch: "dev-sandboxes", names: ["{NAME}"] },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      },
+      "",
+    );
+    return 0;
+  }
+
+  // Check of a Browserforce setting value: accepted, after the few seconds the real plugin takes,
+  // so the Check button is seen spinning
+  if (
+    first === "browserforce" &&
+    args[1] === "plugins" &&
+    args[2] === "validate" &&
+    DOCS_PROFILE
+  ) {
+    await new Promise((resolve) => setTimeout(resolve, 6000));
+    outputJsonIfRequested(
+      {
+        status: 0,
+        result: { valid: true, errors: [], environmentVariables: [] },
+      },
+      "",
+    );
+    return 0;
+  }
+
   if (
     first === "hardis:project:action:list" &&
     DOCS_PROFILE &&

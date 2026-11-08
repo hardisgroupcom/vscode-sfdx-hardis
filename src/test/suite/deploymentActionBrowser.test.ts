@@ -239,12 +239,54 @@ suite("Deployment action browser (Browserforce setting)", () => {
             name,
           ),
       );
-    const disabled = (html.match(/disabled=\{inputsDisabled\}/g) || []).length;
+    // The Setting picker is also disabled while the catalog loads
+    const disabled = (
+      html.match(/disabled=\{(?:inputsDisabled|settingPickerDisabled)\}/g) || []
+    ).length;
     assert.strictEqual(
       disabled,
       handlers.length,
       "every input of the value is disabled while Browserforce checks it",
     );
+  });
+
+  test("the editor reads well: loading in the picker, readable fields, ENV variables apart", () => {
+    const js = readModuleFile(
+      BROWSER_EDITOR_MODULE,
+      `${BROWSER_EDITOR_MODULE}.js`,
+    );
+    const html = readModuleFile(
+      BROWSER_EDITOR_MODULE,
+      `${BROWSER_EDITOR_MODULE}.html`,
+    );
+    // The loading text is the placeholder of the Setting picker, not a line of its own
+    assert.ok(html.includes("placeholder={settingPickerPlaceholder}"));
+    assert.ok(html.includes("loading={showCatalogLoading}"));
+    assert.ok(!html.includes("{i18n.browserforceCatalogLoading}"));
+    assert.match(js, /this\.i18n\.browserforceCatalogLoading/);
+    // A boolean is a toggle, and no field has a checkbox: the ENV variable switch is a link
+    assert.ok(!html.includes('type="checkbox"'));
+    assert.match(html, /type="toggle"[\s\S]*?onchange=\{handleBooleanChange\}/);
+    assert.match(
+      html,
+      /class="hardis-textlink bfe-variable-switch"[\s\S]*?onclick=\{handleVariableToggle\}/,
+    );
+    // Every field has a help icon and its raw key
+    assert.ok(
+      html.includes(
+        '<s-multiline-helptext content={field.helpText} class="slds-icon-text-info"></s-multiline-helptext>',
+      ),
+    );
+    assert.ok(html.includes("{field.rawKey}"));
+    // Variable names are typed in capitals
+    assert.match(
+      js,
+      /handleVariableNameChange\(event\) \{[\s\S]*?\.toUpperCase\(\)/,
+    );
+    // The Check button spins and says so, with no other checking text
+    assert.match(html, /class="bfe-button-spinner"/);
+    assert.match(js, /this\.i18n\.browserforceChecking/);
+    assert.ok(!html.includes("{i18n.browserforceChecking}"));
   });
 
   test("the catalog answer skips the CI/CD variable names when Browserforce is missing", async () => {

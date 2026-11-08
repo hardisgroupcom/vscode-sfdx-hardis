@@ -24,11 +24,23 @@ import {
  *
  * The setting list and the form come from the Browserforce catalog the extension reads
  * (sf browserforce plugins list). A value written ${NAME} is a CI/CD variable sfdx-hardis resolves
- * for the target branch: a password is always one, any other field can be one ("value per org").
+ * for the target branch: a password is always one, any other field can be one ("Use ENV variable").
  * The editor only emits the setting and its value (settingchange); the deployment action editor
  * stores them, and asks the extension to check them (checkvalue). It never installs Browserforce:
  * when the plugin is missing, it sends the user to the SFDX Hardis Setup panel, which installs it.
  */
+
+// Sentence telling how to fill a field the catalog does not describe, by typeHelp code
+const TYPE_HELP_KEYS = {
+  boolean: "browserforceHelpBoolean",
+  enum: "browserforceHelpEnum",
+  integer: "browserforceHelpInteger",
+  json: "browserforceHelpJson",
+  list: "browserforceHelpList",
+  number: "browserforceHelpNumber",
+  password: "browserforceHelpPassword",
+  text: "browserforceHelpText",
+};
 
 const ERROR_LABEL_KEYS = {
   invalidNumber: "browserforceErrorInvalidNumber",
@@ -119,7 +131,7 @@ export default class BrowserforceSettingEditor extends SharedMixin(
   }
 
   get showCatalogLoading() {
-    return this.catalogLoading === true;
+    return this.catalogLoading === true && !this.hasCatalog;
   }
 
   get showNotInstalled() {
@@ -160,13 +172,29 @@ export default class BrowserforceSettingEditor extends SharedMixin(
     );
   }
 
+  // While the catalog loads, the picker is shown disabled, the loading text inside it
   get showSettingPicker() {
-    return !this.readOnly && this.hasCatalog;
+    return !this.readOnly && (this.hasCatalog || this.showCatalogLoading);
+  }
+
+  get settingPickerDisabled() {
+    return this.inputsDisabled || this.showCatalogLoading;
+  }
+
+  // Empty while the catalog loads, so the picker shows its loading placeholder
+  get settingPickerValue() {
+    return this.showCatalogLoading ? "" : this._setting;
+  }
+
+  get settingPickerPlaceholder() {
+    return this.showCatalogLoading
+      ? this.i18n.browserforceCatalogLoading
+      : this.i18n.browserforceSettingPlaceholder;
   }
 
   // Without a catalog, the key is typed and the value edited as JSON
   get showSettingKeyInput() {
-    return !this.readOnly && !this.hasCatalog;
+    return !this.readOnly && !this.hasCatalog && !this.showCatalogLoading;
   }
 
   get settingOptions() {
@@ -190,6 +218,15 @@ export default class BrowserforceSettingEditor extends SharedMixin(
       return `${entry.title} (${entry.key})`;
     }
     return this._setting || this.t("browserforceNoSetting");
+  }
+
+  // Title and description of the selected setting, above its warnings
+  get showSettingHead() {
+    return !!this.entry;
+  }
+
+  get settingHeadTitle() {
+    return this.entry?.title || this._setting;
   }
 
   get settingDescription() {
@@ -285,8 +322,14 @@ export default class BrowserforceSettingEditor extends SharedMixin(
     return !this.readOnly && !!this.entry && !this.jsonMode && !!this.model;
   }
 
+  // Nothing to edit while the catalog loads: the form or the JSON comes with it
   get showJsonEditor() {
-    return !this.readOnly && !!this._setting && (this.jsonMode || !this.entry);
+    return (
+      !this.readOnly &&
+      !this.showCatalogLoading &&
+      !!this._setting &&
+      (this.jsonMode || !this.entry)
+    );
   }
 
   get showJsonSwitch() {
@@ -308,6 +351,9 @@ export default class BrowserforceSettingEditor extends SharedMixin(
     return buildFormSections(this.entry, this.model, this.formErrors).map(
       (section) => ({
         ...section,
+        showSubsectionTitle: section.isSubsection && !!section.title,
+        // The setting head already says it when the group is the whole setting
+        hasHelp: section.hasHelp && section.help !== this.settingDescription,
         keyPatternText: section.keyPattern
           ? this.t("browserforceEntryNamePattern", {
               pattern: section.keyPattern,
@@ -315,17 +361,12 @@ export default class BrowserforceSettingEditor extends SharedMixin(
           : "",
         items: section.items.map((item) => ({
           ...item,
-          title: item.isRecordEntry
-            ? item.name || this.t("browserforceNewEntry")
-            : this.t("browserforceItemNumber", { number: item.number }),
+          title: this._itemTitle(item),
           nameErrorText: this._errorText(
             item.nameErrorCode,
             section.keyPattern,
           ),
-          fields: item.fields.map((field) => ({
-            ...field,
-            errorText: this._errorText(field.errorCode, ""),
-          })),
+          fields: item.fields.map((field) => this._fieldView(field)),
         })),
       }),
     );
@@ -338,16 +379,7 @@ export default class BrowserforceSettingEditor extends SharedMixin(
     const branches = Array.isArray(lookup?.branches) ? lookup.branches : [];
     return listVariableNames(this._config).map((name) => ({
       name,
-      rows: branches.map((branch) => ({
-        key: `${name}-${branch.branch}`,
-        branch:
-          branch.branch === "dev-sandboxes"
-            ? this.t("devSandboxesOption")
-            : branch.branch,
-        names: (branch.names || [])
-          .map((pattern) => String(pattern).replace(/\{NAME\}/g, name))
-          .join(", "),
-      })),
+      rows: this._lookupRows(name),
       hasRows: branches.length > 0,
     }));
   }
@@ -356,16 +388,14 @@ export default class BrowserforceSettingEditor extends SharedMixin(
     return this.variables.length > 0;
   }
 
+  // The form shows the names read for each variable under its field: this list is for the JSON
+  // and read-only views
+  get showVariablesSection() {
+    return this.hasVariables && !this.showForm;
+  }
+
   get hasSecretsLookup() {
     return Array.isArray(this._catalogState?.secretsLookup?.branches);
-  }
-
-  get secretsLookupLabel() {
-    return this._catalogState?.secretsLookup?.label || "";
-  }
-
-  get hasSecretsLookupLabel() {
-    return this.hasSecretsLookup && !!this.secretsLookupLabel;
   }
 
   get variablesHelp() {
@@ -381,14 +411,13 @@ export default class BrowserforceSettingEditor extends SharedMixin(
   // --- Check -------------------------------------------------------------------
 
   get showCheckButton() {
-    return !this.readOnly && !!this._setting;
+    return !this.readOnly && !this.showCatalogLoading && !!this._setting;
   }
 
-  // Never checks a value other than the one the form shows: not while a field is in error
+  // Never checks a value other than the one the form shows: not while a field is in error. While
+  // Browserforce answers, the button stays readable (spinner and label) and ignores clicks.
   get isCheckDisabled() {
-    return (
-      this.validating === true || !!this.jsonError || this.formErrors.length > 0
-    );
+    return !!this.jsonError || this.formErrors.length > 0;
   }
 
   // The value cannot change while Browserforce checks it
@@ -398,6 +427,16 @@ export default class BrowserforceSettingEditor extends SharedMixin(
 
   get showValidating() {
     return this.validating === true;
+  }
+
+  get checkButtonBusy() {
+    return this.showValidating ? "true" : "false";
+  }
+
+  get checkButtonLabel() {
+    return this.showValidating
+      ? this.i18n.browserforceChecking
+      : this.i18n.browserforceCheck;
   }
 
   get showValidationValid() {
@@ -463,7 +502,7 @@ export default class BrowserforceSettingEditor extends SharedMixin(
     );
   }
 
-  handleCheckboxChange(event) {
+  handleBooleanChange(event) {
     this._applyModel(
       updateFieldState(this.model, event.target.dataset.key, {
         checked: event.target.checked === true,
@@ -472,18 +511,41 @@ export default class BrowserforceSettingEditor extends SharedMixin(
     );
   }
 
-  handleVariableToggle(event) {
+  // An optional boolean goes back to "not set": the org keeps what it has
+  handleClearValue(event) {
     this._applyModel(
-      updateFieldState(this.model, event.target.dataset.key, {
-        isVariable: event.target.checked === true,
+      updateFieldState(this.model, event.currentTarget.dataset.key, {
+        checked: false,
+        present: false,
       }),
     );
   }
 
+  // Turned on, the variable name starts from the suggested one when none was typed before
+  handleVariableToggle(event) {
+    const { key, variable, suggested, current } = event.currentTarget.dataset;
+    const turnOn = variable !== "true";
+    const patch = { isVariable: turnOn };
+    if (turnOn && !current) {
+      patch.variable = suggested || "";
+      patch.variableAuto = true;
+    }
+    this._applyModel(updateFieldState(this.model, key, patch));
+  }
+
+  // Environment variable names are written in capitals: the name is uppercased as it is typed
   handleVariableNameChange(event) {
+    const name = String(event.target.value || "")
+      .toUpperCase()
+      .trim()
+      .replace(/[\s-]+/g, "_");
+    if (event.target.value !== name) {
+      event.target.value = name;
+    }
     this._applyModel(
       updateFieldState(this.model, event.target.dataset.key, {
-        variable: String(event.target.value || "").trim(),
+        variable: name,
+        variableAuto: false,
       }),
     );
   }
@@ -496,6 +558,7 @@ export default class BrowserforceSettingEditor extends SharedMixin(
         groupPath,
         Number(index),
         event.target.value || "",
+        this.entry,
       ),
     );
   }
@@ -512,7 +575,9 @@ export default class BrowserforceSettingEditor extends SharedMixin(
 
   handleRemoveItem(event) {
     const { groupPath, index } = event.currentTarget.dataset;
-    this._applyModel(removeGroupItem(this.model, groupPath, Number(index)));
+    this._applyModel(
+      removeGroupItem(this.model, groupPath, Number(index), this.entry),
+    );
   }
 
   // To JSON only from a form without errors, as the JSON shows the value the form holds; back to
@@ -559,6 +624,9 @@ export default class BrowserforceSettingEditor extends SharedMixin(
   }
 
   handleCheck() {
+    if (this.validating === true) {
+      return;
+    }
     this.dispatchEvent(new CustomEvent("checkvalue"));
   }
 
@@ -624,10 +692,117 @@ export default class BrowserforceSettingEditor extends SharedMixin(
     );
   }
 
+  // "Item 2: Customer" when the item holds a text, "Item 2" otherwise; an entry keyed by name
+  // shows its name
+  _itemTitle(item) {
+    if (item.isRecordEntry) {
+      return item.name || this.t("browserforceNewEntry");
+    }
+    const title = this.t("browserforceItemNumber", { number: item.number });
+    return item.summary ? `${title}: ${item.summary}` : title;
+  }
+
+  // What the template shows for a field, from what the form utils describe
+  _fieldView(field) {
+    const notSet = this.i18n.browserforceNotSet;
+    return {
+      ...field,
+      label: field.label || this.i18n.browserforceValueLabel,
+      helpText: this._fieldHelp(field),
+      options: field.options.map((option) =>
+        option.value === "" ? { ...option, label: notSet } : option,
+      ),
+      // A boolean nobody set says so on both sides of the toggle
+      toggleActiveText: field.isSet ? this.i18n.browserforceToggleOn : notSet,
+      toggleInactiveText: field.isSet
+        ? this.i18n.browserforceToggleOff
+        : notSet,
+      variableSwitchLabel: field.isVariable
+        ? this.i18n.browserforceUseFixedValue
+        : this.i18n.browserforceUseEnvVariable,
+      variableSwitchIcon: field.isVariable ? "utility:edit" : "utility:variable",
+      variableState: field.isVariable ? "true" : "false",
+      // A value read from a variable takes the whole row: the names read per org need room
+      rowClass: field.isVariable ? "hardis-field-row stacked" : field.rowClass,
+      lookupRows: field.hasVariableName
+        ? this._lookupRows(field.variableName.trim())
+        : [],
+      hasLookupRows: field.hasVariableName && this.hasSecretsLookup,
+      showNoLookup: field.hasVariableName && !this.hasSecretsLookup,
+      errorText: this._errorText(field.errorCode, ""),
+    };
+  }
+
+  // Help icon of a field: the catalog description, or how to fill a field of its type, then its
+  // example, then what an empty value does. HTML: the help icon renders rich text.
+  _fieldHelp(field) {
+    const lines = [
+      escapeHtml(
+        field.description || this.i18n[TYPE_HELP_KEYS[field.typeHelp]] || "",
+      ),
+    ];
+    if (field.example) {
+      lines.push(
+        this.t("browserforceHelpExample", {
+          example: escapeHtml(field.example),
+        }),
+      );
+    }
+    if (!field.required && !field.isPassword) {
+      lines.push(
+        field.isBoolean
+          ? this.i18n.browserforceHelpOptionalBoolean
+          : this.i18n.browserforceHelpOptional,
+      );
+    }
+    return lines.filter((line) => !!line).join("<br/>");
+  }
+
+  // The names sfdx-hardis reads for a variable, per major branch, in the order it reads them.
+  // Names differing only by case are one name for whoever declares them: the capitals are kept.
+  _lookupRows(name) {
+    const lookup = this._catalogState?.secretsLookup;
+    const branches = Array.isArray(lookup?.branches) ? lookup.branches : [];
+    return branches.map((branch) => {
+      const names = [];
+      for (const pattern of branch.names || []) {
+        const variableName = String(pattern).replace(/\{NAME\}/g, name);
+        const sameName = names.findIndex(
+          (known) => known.toUpperCase() === variableName.toUpperCase(),
+        );
+        if (sameName === -1) {
+          names.push(variableName);
+        } else if (variableName === variableName.toUpperCase()) {
+          names[sameName] = variableName;
+        }
+      }
+      return {
+        key: `${name}-${branch.branch}`,
+        branch:
+          branch.branch === "dev-sandboxes"
+            ? this.t("devSandboxesOption")
+            : branch.branch,
+        names: names.map((variableName, index) => ({
+          key: `${branch.branch}-${variableName}`,
+          name: variableName,
+          showThen: index > 0,
+        })),
+      };
+    });
+  }
+
   _errorText(code, pattern) {
     if (!code || !ERROR_LABEL_KEYS[code]) {
       return "";
     }
     return this.t(ERROR_LABEL_KEYS[code], { pattern: pattern || "" });
   }
+}
+
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }

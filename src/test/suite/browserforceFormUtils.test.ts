@@ -300,6 +300,124 @@ suite("Browserforce form utils", () => {
     assert.notStrictEqual(config, PORTAL_ENTRY.examples[0]);
   });
 
+  test("labels are readable words, known acronyms in capitals", () => {
+    assert.strictEqual(
+      utils.humanizeKey("authProviderApiName"),
+      "Auth provider API name",
+    );
+    assert.strictEqual(
+      utils.humanizeKey("services[].objectApiName"),
+      "Object API name",
+    );
+    assert.strictEqual(utils.humanizeKey("SSOEnabled"), "SSO enabled");
+    assert.strictEqual(utils.humanizeKey("loginUrl"), "Login URL");
+    assert.strictEqual(utils.humanizeKey(""), "");
+    const sections = utils.buildFormSections(
+      PORTAL_ENTRY,
+      utils.configToFormModel(PORTAL_ENTRY, { portals: [{ name: "B2B" }] }),
+      [],
+    );
+    const nameField = sections[1].items[0].fields[0];
+    assert.strictEqual(nameField.label, "Name");
+    assert.strictEqual(nameField.rawKey, "name");
+    // An item is told apart by the first text it holds
+    assert.strictEqual(sections[1].items[0].summary, "B2B");
+  });
+
+  test("fields of nested objects get a section per object", () => {
+    const entry = {
+      key: "cpq",
+      groups: [],
+      fields: ["enabled", "lineEditor.wrapButtons", "quote.allowOptionDeletion"]
+        .map((path) => ({
+          path,
+          type: "boolean",
+          required: false,
+          isPassword: false,
+          isIrreversible: false,
+        })),
+      examples: [],
+    };
+    const sections = utils.buildFormSections(
+      entry,
+      utils.configToFormModel(entry, {}),
+      [],
+    );
+    assert.deepStrictEqual(
+      sections.map((section: any) => [section.isSubsection, section.title]),
+      [
+        [false, ""],
+        [true, "Line editor"],
+        [true, "Quote"],
+      ],
+    );
+  });
+
+  test("a field help says its type, its example and whether it can stay empty", () => {
+    const entry = {
+      ...PORTAL_ENTRY,
+      examples: [{ portals: [{ name: "Customer", maxUsers: 10 }] }],
+    };
+    const sections = utils.buildFormSections(
+      entry,
+      utils.configToFormModel(entry, { portals: [{}] }),
+      [],
+    );
+    const [enabled] = sections[0].items[0].fields;
+    const [name, maxUsers] = sections[1].items[0].fields;
+    assert.strictEqual(enabled.typeHelp, "boolean");
+    assert.strictEqual(enabled.isSet, false);
+    assert.strictEqual(enabled.canClear, false);
+    assert.strictEqual(name.example, "Customer");
+    assert.strictEqual(name.required, true);
+    assert.strictEqual(maxUsers.typeHelp, "integer");
+    assert.strictEqual(maxUsers.example, "10");
+  });
+
+  test("a suggested ENV variable name follows the entry name, a typed one stays", () => {
+    assert.strictEqual(
+      utils.suggestVariableName(
+        AUTH_ENTRY,
+        AUTH_ENTRY.groups[0],
+        { name: "MyProvider" },
+        0,
+        "consumerSecret",
+      ),
+      "AUTH_PROVIDERS_MYPROVIDER_CONSUMER_SECRET",
+    );
+    assert.strictEqual(
+      utils.suggestVariableName(
+        PORTAL_ENTRY,
+        PORTAL_ENTRY.groups[0],
+        {},
+        1,
+        "maxUsers",
+      ),
+      "CUSTOMER_PORTAL_PORTALS_2_MAX_USERS",
+    );
+    let model = utils.configToFormModel(AUTH_ENTRY, {});
+    model = utils.addGroupItem(AUTH_ENTRY, model, "*");
+    model = utils.setEntryName(model, "*", 0, "Partner", AUTH_ENTRY);
+    assert.deepStrictEqual(utils.formModelToConfig(AUTH_ENTRY, model).config, {
+      Partner: { consumerSecret: "${AUTH_PROVIDERS_PARTNER_CONSUMER_SECRET}" },
+    });
+    const secretKey = utils.fieldStateKey("*", 0, "consumerSecret");
+    model = utils.updateFieldState(model, secretKey, {
+      variable: "MY_SECRET",
+      variableAuto: false,
+    });
+    model = utils.setEntryName(model, "*", 0, "Other", AUTH_ENTRY);
+    assert.deepStrictEqual(utils.formModelToConfig(AUTH_ENTRY, model).config, {
+      Other: { consumerSecret: "${MY_SECRET}" },
+    });
+  });
+
+  test("ENV variable names are written in capitals", () => {
+    assert.strictEqual(utils.isValidVariableName("MY_SECRET_2"), true);
+    assert.strictEqual(utils.isValidVariableName("my_secret"), false);
+    assert.strictEqual(utils.isValidVariableName("2SECRET"), false);
+  });
+
   test("variables are listed once, in order", () => {
     assert.deepStrictEqual(
       utils.listVariableNames({
