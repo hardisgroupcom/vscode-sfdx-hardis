@@ -27,6 +27,19 @@
   flex-wrap: wrap;
 }
 
+/* The Browserforce part of the action on a soft tint of the hue of the Browser type pill, set
+   apart from the fields every action has. Cards and inputs keep their own surface on it. */
+.bfe-panel {
+  background: light-dark(
+    var(--slds-g-color-palette-hot-orange-95),
+    var(--slds-g-color-palette-hot-orange-90)
+  );
+  border: 1px solid var(--slds-g-color-palette-hot-orange-80);
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem 0.1rem;
+  margin-bottom: 0.75rem;
+}
+
 /* Title, key and description of the selected setting */
 .bfe-setting-title {
   display: flex;
@@ -117,18 +130,16 @@
   --slds-c-icon-color-foreground: currentColor;
 }
 
+/* Two columns read at a glance: the org, then the variable it reads */
 .bfe-lookup {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: 0.25rem 0.75rem;
 }
 
-/* One line per org: the branch, then the names read in order */
 .bfe-lookup-row {
-  display: grid;
-  grid-template-columns: 9rem minmax(0, 1fr);
-  align-items: start;
-  gap: 0.5rem;
+  display: contents;
 }
 
 .bfe-lookup-branch {
@@ -143,8 +154,14 @@
   min-width: 0;
 }
 
-.bfe-lookup-then {
+.bfe-lookup-then,
+.bfe-lookup-other {
   font-size: 0.72rem;
+}
+
+.bfe-pattern-chip {
+  margin-left: 0.25rem;
+  vertical-align: middle;
 }
 
 /* Spinner inside the Check button while Browserforce answers */

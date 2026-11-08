@@ -30,6 +30,17 @@ import {
  * when the plugin is missing, it sends the user to the SFDX Hardis Setup panel, which installs it.
  */
 
+// Entry name patterns said in words; any other pattern is shown as it is
+const KNOWN_NAME_PATTERNS = {
+  "^[a-zA-Z0-9_]+$": "browserforcePatternLettersDigitsUnderscore",
+  "^[A-Za-z0-9_]+$": "browserforcePatternLettersDigitsUnderscore",
+  "^\\w+$": "browserforcePatternLettersDigitsUnderscore",
+  "^[a-zA-Z0-9]+$": "browserforcePatternLettersDigits",
+  "^[A-Za-z0-9]+$": "browserforcePatternLettersDigits",
+  "^[a-zA-Z_][a-zA-Z0-9_]*$": "browserforcePatternIdentifier",
+  "^[A-Za-z_][A-Za-z0-9_]*$": "browserforcePatternIdentifier",
+};
+
 // Sentence telling how to fill a field the catalog does not describe, by typeHelp code
 const TYPE_HELP_KEYS = {
   boolean: "browserforceHelpBoolean",
@@ -220,6 +231,12 @@ export default class BrowserforceSettingEditor extends SharedMixin(
     return this._setting || this.t("browserforceNoSetting");
   }
 
+  // The panel of the setting, its value and its check: once a setting is chosen and the catalog
+  // is there to describe it
+  get showValuePanel() {
+    return !!this._setting && !this.showCatalogLoading;
+  }
+
   // Title and description of the selected setting, above its warnings
   get showSettingHead() {
     return !!this.entry;
@@ -354,17 +371,18 @@ export default class BrowserforceSettingEditor extends SharedMixin(
         showSubsectionTitle: section.isSubsection && !!section.title,
         // The setting head already says it when the group is the whole setting
         hasHelp: section.hasHelp && section.help !== this.settingDescription,
-        keyPatternText: section.keyPattern
-          ? this.t("browserforceEntryNamePattern", {
-              pattern: section.keyPattern,
-            })
-          : "",
+        keyPatternText: this._patternText(section.keyPattern),
+        // A pattern with no words for it is shown as it is, in a chip
+        keyPatternChip: KNOWN_NAME_PATTERNS[section.keyPattern]
+          ? ""
+          : section.keyPattern,
         items: section.items.map((item) => ({
           ...item,
           title: this._itemTitle(item),
           nameErrorText: this._errorText(
             item.nameErrorCode,
-            section.keyPattern,
+            this.i18n[KNOWN_NAME_PATTERNS[section.keyPattern]] ||
+              section.keyPattern,
           ),
           fields: item.fields.map((field) => this._fieldView(field)),
         })),
@@ -758,15 +776,34 @@ export default class BrowserforceSettingEditor extends SharedMixin(
     return lines.filter((line) => !!line).join("<br/>");
   }
 
-  // The names sfdx-hardis reads for a variable, per major branch, in the order it reads them.
-  // Names differing only by case are one name for whoever declares them: the capitals are kept.
+  // "Allowed: letters, digits and _ only" for a known entry name pattern, the sentence that
+  // introduces the pattern chip otherwise
+  _patternText(pattern) {
+    if (!pattern) {
+      return "";
+    }
+    const knownKey = KNOWN_NAME_PATTERNS[pattern];
+    return knownKey ? this.i18n[knownKey] : this.i18n.browserforceEntryNameMustMatch;
+  }
+
+  // The names sfdx-hardis reads for a variable: one row per major branch with the names of its
+  // own, then one row for the name any org without its own variable reads (developer sandboxes
+  // included). Names differing only by case are one name for whoever declares them: the one in
+  // capitals is shown.
   _lookupRows(name) {
     const lookup = this._catalogState?.secretsLookup;
     const branches = Array.isArray(lookup?.branches) ? lookup.branches : [];
-    return branches.map((branch) => {
+    const fallback = name.toUpperCase();
+    let hasFallback = false;
+    const rows = [];
+    for (const branch of branches) {
       const names = [];
       for (const pattern of branch.names || []) {
         const variableName = String(pattern).replace(/\{NAME\}/g, name);
+        if (variableName.toUpperCase() === fallback) {
+          hasFallback = true;
+          continue;
+        }
         const sameName = names.findIndex(
           (known) => known.toUpperCase() === variableName.toUpperCase(),
         );
@@ -776,19 +813,40 @@ export default class BrowserforceSettingEditor extends SharedMixin(
           names[sameName] = variableName;
         }
       }
-      return {
-        key: `${name}-${branch.branch}`,
-        branch:
-          branch.branch === "dev-sandboxes"
-            ? this.t("devSandboxesOption")
-            : branch.branch,
-        names: names.map((variableName, index) => ({
-          key: `${branch.branch}-${variableName}`,
-          name: variableName,
-          showThen: index > 0,
-        })),
-      };
-    });
+      if (names.length > 0) {
+        rows.push(
+          this._lookupRow(
+            branch.branch,
+            branch.branch === "dev-sandboxes"
+              ? this.t("devSandboxesOption")
+              : branch.branch,
+            names,
+            false,
+          ),
+        );
+      }
+    }
+    if (hasFallback) {
+      rows.push(
+        this._lookupRow("*", this.i18n.browserforceAnyOtherOrg, [name], true),
+      );
+    }
+    return rows;
+  }
+
+  _lookupRow(branchKey, label, names, isFallback) {
+    return {
+      key: `${names[0]}-${branchKey}`,
+      branch: label,
+      branchClass: isFallback
+        ? "muted bfe-lookup-branch bfe-lookup-other"
+        : "hardis-chip bfe-lookup-branch",
+      names: names.map((variableName, index) => ({
+        key: `${branchKey}-${variableName}`,
+        name: variableName,
+        showThen: index > 0,
+      })),
+    };
   }
 
   _errorText(code, pattern) {

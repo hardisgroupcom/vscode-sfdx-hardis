@@ -283,6 +283,11 @@ suite("Deployment action browser (Browserforce setting)", () => {
       js,
       /handleVariableNameChange\(event\) \{[\s\S]*?\.toUpperCase\(\)/,
     );
+    // One row per org with its own name, then one row for the name any other org reads
+    assert.match(js, /this\.i18n\.browserforceAnyOtherOrg/);
+    // Known entry name patterns are said in words, any other one shown in a chip
+    assert.match(js, /"\^\[a-zA-Z0-9_\]\+\$": "browserforcePatternLettersDigitsUnderscore"/);
+    assert.ok(html.includes("{section.keyPatternChip}"));
     // The Check button spins and says so, with no other checking text
     assert.match(html, /class="bfe-button-spinner"/);
     assert.match(js, /this\.i18n\.browserforceChecking/);
