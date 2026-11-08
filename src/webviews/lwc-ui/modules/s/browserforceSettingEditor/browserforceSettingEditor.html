@@ -161,21 +161,18 @@
                       ></lightning-button>
                     </div>
                   </template>
-                  <template if:true={item.isRecordEntry}>
-                    <div class="hardis-field-row">
-                      <div class="hardis-field-text">
-                        <div class="hardis-field-label">
-                          <span><abbr class="slds-required" title={i18n.requiredField}>*</abbr>{i18n.browserforceEntryName}</span>
-                        </div>
-                        <div class="hardis-field-help">
-                          {section.keyPatternText}
-                          <template if:true={section.keyPatternChip}>
-                            <span class="hardis-branch-chip bfe-pattern-chip">{section.keyPatternChip}</span>
-                          </template>
-                        </div>
-                      </div>
-                      <div class="hardis-field-control bfe-field-control">
-                        <div class="bfe-control-stack">
+                  <!-- Stacked fields, as the fields every action has: label line, then the control,
+                       then its secondary links. Toggles pair up two by two on a wide editor. -->
+                  <div class="slds-grid slds-wrap slds-gutters_x-small">
+                    <template if:true={item.isRecordEntry}>
+                      <div class="slds-col slds-size_1-of-1 bfe-field-cell">
+                        <div class="slds-form-element">
+                          <label class="slds-form-element__label hardis-label-inline bfe-field-label">
+                            <span>
+                              <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
+                              {i18n.browserforceEntryName}
+                            </span>
+                          </label>
                           <lightning-input
                             label={i18n.browserforceEntryName}
                             variant="label-hidden"
@@ -186,32 +183,38 @@
                             onchange={handleEntryNameChange}
                           ></lightning-input>
                           <template if:true={item.hasNameError}>
-                            <p class="slds-form-element__help slds-text-color_error bfe-error">{item.nameErrorText}</p>
+                            <p class="slds-form-element__help slds-text-color_error bfe-under">{item.nameErrorText}</p>
                           </template>
-                        </div>
-                      </div>
-                    </div>
-                  </template>
-                  <template for:each={item.fields} for:item="field">
-                    <div key={field.key} class={field.rowClass}>
-                      <div class="hardis-field-text">
-                        <div class="hardis-field-label bfe-field-label">
-                          <span>
-                            <template if:true={field.required}>
-                              <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
+                          <p class="hardis-field-help bfe-under">
+                            {section.keyPatternText}
+                            <template if:true={section.keyPatternChip}>
+                              <span class="hardis-branch-chip bfe-pattern-chip">{section.keyPatternChip}</span>
                             </template>
-                            {field.label}
-                          </span>
-                          <s-multiline-helptext content={field.helpText} class="slds-icon-text-info"></s-multiline-helptext>
-                          <span class="hardis-branch-chip bfe-raw-key">{field.rawKey}</span>
+                          </p>
                         </div>
                       </div>
-                      <div class="hardis-field-control bfe-field-control">
-                        <div class="bfe-control-stack">
+                    </template>
+                    <template for:each={item.fields} for:item="field">
+                      <div key={field.key} class={field.cellClass}>
+                        <div class="slds-form-element">
+                          <label class="slds-form-element__label hardis-label-inline bfe-field-label">
+                            <span>
+                              <template if:true={field.required}>
+                                <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
+                              </template>
+                              {field.label}
+                            </span>
+                            <s-multiline-helptext content={field.helpText} class="slds-icon-text-info"></s-multiline-helptext>
+                            <template if:true={field.isVariable}>
+                              <span class="hardis-chip">{i18n.browserforceVariableNameLabel}</span>
+                            </template>
+                            <span class="hardis-branch-chip bfe-raw-key" title={field.rawKey}>{field.rawKey}</span>
+                          </label>
                           <!-- Value read from an ENV variable: its name, and the names read per org -->
                           <template if:true={field.showVariableInput}>
                             <lightning-input
                               label={i18n.browserforceVariableNameLabel}
+                              variant="label-hidden"
                               value={field.variableName}
                               placeholder={field.suggestedVariable}
                               data-key={field.key}
@@ -242,18 +245,20 @@
                             ></lightning-combobox>
                           </template>
                           <template if:true={field.isBoolean}>
-                            <lightning-input
-                              type="toggle"
-                              class="bfe-toggle"
-                              label={field.label}
-                              variant="label-hidden"
-                              checked={field.checked}
-                              message-toggle-active={field.toggleActiveText}
-                              message-toggle-inactive={field.toggleInactiveText}
-                              data-key={field.key}
-                              disabled={inputsDisabled}
-                              onchange={handleBooleanChange}
-                            ></lightning-input>
+                            <div class="bfe-toggle-line">
+                              <lightning-input
+                                type="toggle"
+                                label={field.label}
+                                variant="label-hidden"
+                                checked={field.checked}
+                                message-toggle-active=""
+                                message-toggle-inactive=""
+                                data-key={field.key}
+                                disabled={inputsDisabled}
+                                onchange={handleBooleanChange}
+                              ></lightning-input>
+                              <span class="muted slds-text-body_small">{field.toggleStateText}</span>
+                            </div>
                           </template>
                           <template if:true={field.isNumber}>
                             <lightning-input
@@ -290,14 +295,14 @@
                             ></lightning-textarea>
                           </template>
                           <template if:true={field.hasError}>
-                            <p class="slds-form-element__help slds-text-color_error bfe-error">{field.errorText}</p>
+                            <p class="slds-form-element__help slds-text-color_error bfe-under">{field.errorText}</p>
                           </template>
                           <template if:true={field.hasLiteralSecret}>
-                            <p class="hardis-note warning bfe-error">{i18n.browserforceSecretInClear}</p>
+                            <p class="hardis-note warning bfe-under">{i18n.browserforceSecretInClear}</p>
                           </template>
                           <template if:true={field.hasLookupRows}>
-                            <p class="hardis-field-help">{i18n.browserforceVariableLookupTitle}</p>
-                            <div class="bfe-lookup">
+                            <p class="hardis-field-help bfe-under">{i18n.browserforceVariableLookupTitle}</p>
+                            <div class="bfe-lookup bfe-under">
                               <template for:each={field.lookupRows} for:item="row">
                                 <div key={row.key} class="bfe-lookup-row">
                                   <span class={row.branchClass}>{row.branch}</span>
@@ -316,10 +321,10 @@
                             </div>
                           </template>
                           <template if:true={field.showNoLookup}>
-                            <p class="hardis-field-help">{i18n.browserforceVariablesNoLookup}</p>
+                            <p class="hardis-field-help bfe-under">{i18n.browserforceVariablesNoLookup}</p>
                           </template>
                           <!-- Secondary actions under the value: back to "not set", read from an ENV variable -->
-                          <div class="bfe-field-links">
+                          <div class="bfe-field-links bfe-under">
                             <template if:true={field.canClear}>
                               <button
                                 type="button"
@@ -352,8 +357,8 @@
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </template>
+                    </template>
+                  </div>
                 </div>
               </template>
             </div>

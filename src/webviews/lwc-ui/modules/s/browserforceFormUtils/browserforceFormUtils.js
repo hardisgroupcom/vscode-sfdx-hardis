@@ -703,8 +703,6 @@ function describeField(
     step: type === "integer" ? "1" : "any",
     isStringList,
     isJson,
-    rowClass:
-      isStringList || isJson ? "hardis-field-row stacked" : "hardis-field-row",
     text: state.text || "",
     errorCode,
     hasError: !!errorCode,

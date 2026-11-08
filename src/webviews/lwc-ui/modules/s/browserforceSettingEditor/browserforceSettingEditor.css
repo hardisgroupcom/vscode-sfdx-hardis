@@ -4,8 +4,9 @@
   margin-bottom: 0.75rem;
 }
 
+/* "No item yet.": the same space under it as under a field */
 .bfe-help {
-  margin-top: 0.25rem;
+  margin: 0.25rem 0 0.75rem;
 }
 
 .bfe-error {
@@ -60,12 +61,12 @@
 }
 
 .bfe-section {
-  margin-bottom: 1rem;
+  margin-bottom: 0.25rem;
 }
 
 .bfe-item {
   margin-bottom: 0.75rem;
-  padding: 0.5rem 0.75rem;
+  padding: 0.75rem 0.75rem 0;
 }
 
 .bfe-item-head {
@@ -73,45 +74,63 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
-/* Label, help icon and raw key of a field on one line, wrapping when narrow */
-.bfe-field-label {
-  gap: 0.35rem;
+/* Fields are stacked like the fields every action has: the label line, the control, then what
+   goes with it. One vertical rhythm everywhere: 0.75rem between fields, 0.25rem under a control. */
+.bfe-field-cell {
+  margin-bottom: 0.75rem;
 }
 
-.bfe-raw-key {
-  max-width: 100%;
-  text-overflow: ellipsis;
-}
-
-/* Every value of the form starts at the same left edge, whatever the length of its label.
-   Stacked rows (lists, JSON, ENV variables) keep the full width of the kit. */
-.bfe-field-control {
-  flex: 0 0 min(55%, 440px);
-  max-width: min(55%, 440px);
-}
-
-/* The value, then what goes with it (error, names read per org, ENV variable switch), stacked */
-.bfe-control-stack {
+/* The control of a field sits right under its label: in two toggles side by side, the label of
+   the shorter one comes down, so both toggles stay level */
+.bfe-field-cell > .slds-form-element {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: 0.35rem;
-  width: 100%;
+  justify-content: flex-end;
+  height: 100%;
+}
+
+/* Label, help icon, then the raw key on one line: the label wraps when it must, a long key is
+   cut first (its full text is in its tooltip) */
+.bfe-field-label {
+  flex-wrap: nowrap;
+  min-width: 0;
+  padding-right: 0;
+}
+
+.bfe-field-label > span:first-child {
+  flex: 0 1 auto;
   min-width: 0;
 }
 
-.bfe-control-stack > .bfe-toggle {
-  align-self: flex-end;
+.bfe-raw-key {
+  flex: 0 1000 auto;
+  min-width: 3rem;
+  margin-left: 0.25rem;
+  text-overflow: ellipsis;
 }
 
-/* Secondary actions of a field, right aligned under its value */
+.bfe-under {
+  margin-top: 0.25rem;
+}
+
+/* A toggle sits under its label, its state on its right */
+.bfe-toggle-line {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 1.5rem;
+}
+
+/* Secondary actions of a field, left aligned under its value. The negative margin lines the
+   text of the first link up with the control above (the kit link has a 4px inner padding). */
 .bfe-field-links {
   display: flex;
-  justify-content: flex-end;
   flex-wrap: wrap;
   gap: 0.25rem 0.75rem;
+  margin-left: -4px;
 }
 
 .bfe-field-links:empty {

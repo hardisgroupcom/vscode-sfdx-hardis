@@ -730,18 +730,18 @@ export default class BrowserforceSettingEditor extends SharedMixin(
       options: field.options.map((option) =>
         option.value === "" ? { ...option, label: notSet } : option,
       ),
-      // A boolean nobody set says so on both sides of the toggle
-      toggleActiveText: field.isSet ? this.i18n.browserforceToggleOn : notSet,
-      toggleInactiveText: field.isSet
-        ? this.i18n.browserforceToggleOff
-        : notSet,
+      // Right of the toggle: a boolean nobody set says so
+      toggleStateText: this._toggleStateText(field),
       variableSwitchLabel: field.isVariable
         ? this.i18n.browserforceUseFixedValue
         : this.i18n.browserforceUseEnvVariable,
       variableSwitchIcon: field.isVariable ? "utility:edit" : "utility:variable",
       variableState: field.isVariable ? "true" : "false",
-      // A value read from a variable takes the whole row: the names read per org need room
-      rowClass: field.isVariable ? "hardis-field-row stacked" : field.rowClass,
+      // Toggles pair up two by two on a wide editor, every other field takes the whole line
+      cellClass:
+        field.isBoolean
+          ? "slds-col slds-size_1-of-1 slds-medium-size_1-of-2 bfe-field-cell"
+          : "slds-col slds-size_1-of-1 bfe-field-cell",
       lookupRows: field.hasVariableName
         ? this._lookupRows(field.variableName.trim())
         : [],
@@ -749,6 +749,15 @@ export default class BrowserforceSettingEditor extends SharedMixin(
       showNoLookup: field.hasVariableName && !this.hasSecretsLookup,
       errorText: this._errorText(field.errorCode, ""),
     };
+  }
+
+  _toggleStateText(field) {
+    if (!field.isSet) {
+      return this.i18n.browserforceNotSet;
+    }
+    return field.checked
+      ? this.i18n.browserforceToggleOn
+      : this.i18n.browserforceToggleOff;
   }
 
   // Help icon of a field: the catalog description, or how to fill a field of its type, then its
