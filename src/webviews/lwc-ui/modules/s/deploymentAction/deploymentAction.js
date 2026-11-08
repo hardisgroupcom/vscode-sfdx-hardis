@@ -55,11 +55,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     this._isEditMode = val;
     if (val && wasViewMode) {
       // Switched into edit mode - trigger schedulable class loading if needed
-      this._requestSchedulableClassesIfNeeded(this.displayedAction?.type);
-      this._requestBatchableClassesIfNeeded(this.displayedAction?.type);
-      this._requestCommunitiesIfNeeded(this.displayedAction?.type);
-      this._requestUserAccessPoliciesIfNeeded(this.displayedAction?.type);
-      this._requestBrowserforceCatalogIfNeeded(this.displayedAction?.type);
+      this._requestTypeDataIfNeeded(this.displayedAction?.type);
     }
   }
   get isEditMode() {
@@ -617,12 +613,17 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
         this.action.type = "command";
       }
     }
-    this._requestSchedulableClassesIfNeeded(this.displayedAction?.type);
-    this._requestBatchableClassesIfNeeded(this.displayedAction?.type);
-    this._requestCommunitiesIfNeeded(this.displayedAction?.type);
-    this._requestUserAccessPoliciesIfNeeded(this.displayedAction?.type);
-    this._requestBrowserforceCatalogIfNeeded(this.displayedAction?.type);
+    this._requestTypeDataIfNeeded(this.displayedAction?.type);
     this._updateWhenAndContextOptions(this.displayedAction?.type || "command");
+  }
+
+  // Loads the org data the editor of this action type needs (classes, sites, policies, Browserforce settings)
+  _requestTypeDataIfNeeded(type) {
+    this._requestSchedulableClassesIfNeeded(type);
+    this._requestBatchableClassesIfNeeded(type);
+    this._requestCommunitiesIfNeeded(type);
+    this._requestUserAccessPoliciesIfNeeded(type);
+    this._requestBrowserforceCatalogIfNeeded(type);
   }
 
   disconnectedCallback() {
