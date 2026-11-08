@@ -1,5 +1,6 @@
 import * as assert from "assert";
 import {
+  buildPluginsInstallCommand,
   buildSfCliUpgradeCommand,
   isNativeSfCliInstall,
 } from "../../utils/setupUtils";
@@ -38,5 +39,39 @@ suite("buildSfCliUpgradeCommand", () => {
       buildSfCliUpgradeCommand(NPM_PATH, null),
       "npm install @salesforce/cli@latest -g",
     );
+  });
+});
+
+suite("buildPluginsInstallCommand", () => {
+  const plugins = [
+    { name: "sfdx-hardis" },
+    { name: "sfdx-browserforce-plugin" },
+    { name: "sfdx-git-delta" },
+    { name: "sf-git-merge-driver" },
+  ];
+
+  test("installs Browserforce last, after the other plugins", () => {
+    const command = buildPluginsInstallCommand(plugins, "beta");
+    const installs = [
+      ...command.matchAll(/sf plugins:install ([^@\s]+)@(\S+)/g),
+    ].map((match) => `${match[1]}@${match[2]}`);
+    assert.deepStrictEqual(installs, [
+      "sfdx-hardis@beta",
+      "sfdx-git-delta@latest",
+      "sf-git-merge-driver@latest",
+      "sfdx-browserforce-plugin@latest",
+    ]);
+  });
+
+  test("a failed install never skips the next ones", () => {
+    const command = buildPluginsInstallCommand(plugins, "latest");
+    const steps = command.split(" && ");
+    assert.strictEqual(steps.length, plugins.length);
+    for (const step of steps) {
+      assert.match(
+        step,
+        /^echo y\|sf plugins:install \S+ \|\| echo \[sfdx-hardis\] Unable to install \S+, continuing with the next steps$/,
+      );
+    }
   });
 });

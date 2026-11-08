@@ -18,6 +18,7 @@ const TYPE_LABEL_KEY_BY_CODE = {
   "publish-community": "publishCommunityType",
   "remove-packagexml-items": "removePackageXmlItemsType",
   "user-access-policy": "userAccessPolicyType",
+  browser: "browserType",
   manual: "manualType",
 };
 
@@ -30,6 +31,7 @@ const TYPE_ICON_BY_CODE = {
   "publish-community": "utility:world",
   "remove-packagexml-items": "utility:filterList",
   "user-access-policy": "utility:user_role",
+  browser: "utility:desktop",
   manual: "utility:task",
 };
 
@@ -44,6 +46,8 @@ const TYPE_HUE_BY_CODE = {
   "publish-community": "green",
   "remove-packagexml-items": "pink",
   "user-access-policy": "red",
+  // Every other hue is taken by a type or by the moment and context pills
+  browser: "orange",
   manual: "slate",
 };
 
