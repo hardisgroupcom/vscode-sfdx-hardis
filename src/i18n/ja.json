@@ -442,6 +442,7 @@
   "browserforceVariablesHelp": "各変数を CI/CD の設定で、下のいずれかの名前で宣言してください。sfdx-hardis は対象 branch について最初に見つかった名前を読み取ります。",
   "browserforceVariablesNoLookup": "これらの変数を CI/CD の設定で宣言してください。sfdx-hardis を更新すると、各メジャー branch で読み取る名前が表示されます。",
   "browserforceVariablesTitle": "宣言する CI/CD 変数",
+  "browserforceViewAsJson": "JSON として表示",
   "browserforceWarningClassicOnly": "この設定は Salesforce Classic にのみ存在します。",
   "browserforceWarningIrreversible": "適用後は元に戻せません: {{fields}}",
   "browserforceWarningLightningOnly": "この設定は Lightning Experience にのみ存在します。",

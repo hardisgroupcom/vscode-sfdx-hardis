@@ -442,6 +442,7 @@
   "browserforceVariablesHelp": "Declare cada variável nas configurações do seu CI/CD, com um dos nomes abaixo: o sfdx-hardis lê o primeiro que encontrar para a branch de destino.",
   "browserforceVariablesNoLookup": "Declare estas variáveis nas configurações do seu CI/CD. Atualize o sfdx-hardis para ver os nomes que ele lê para cada branch principal.",
   "browserforceVariablesTitle": "Variáveis CI/CD a declarar",
+  "browserforceViewAsJson": "Ver como JSON",
   "browserforceWarningClassicOnly": "Esta configuração só existe no Salesforce Classic.",
   "browserforceWarningIrreversible": "Não pode ser desfeito depois de aplicado: {{fields}}",
   "browserforceWarningLightningOnly": "Esta configuração só existe no Lightning Experience.",

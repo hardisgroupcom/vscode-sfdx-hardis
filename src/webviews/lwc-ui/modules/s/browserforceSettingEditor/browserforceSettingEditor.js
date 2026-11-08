@@ -65,7 +65,6 @@ const ERROR_LABEL_KEYS = {
 export default class BrowserforceSettingEditor extends SharedMixin(
   LightningElement,
 ) {
-  @api readOnly = false;
   @api catalogLoading = false;
   @api validating = false;
   @api validation = null;
@@ -77,12 +76,30 @@ export default class BrowserforceSettingEditor extends SharedMixin(
   @track jsonError = "";
   // Why Edit as JSON was refused (fields of the form in error)
   @track jsonSwitchError = "";
+  _readOnly = false;
   _setting = "";
   _config = {};
   _configJson = "{}";
   _catalogState = null;
   // JSON of the catalog the form model was built from
   _catalogJson = "null";
+
+  // View mode shows the same fields, read-only. Edit then starts from the form, not the JSON.
+  @api
+  set readOnly(val) {
+    const next = val === true;
+    if (next === this._readOnly) {
+      return;
+    }
+    this._readOnly = next;
+    if (this.jsonMode && !this.jsonError) {
+      this.jsonMode = false;
+      this._rebuildModel();
+    }
+  }
+  get readOnly() {
+    return this._readOnly;
+  }
 
   @api
   set setting(val) {
@@ -335,8 +352,9 @@ export default class BrowserforceSettingEditor extends SharedMixin(
 
   // --- Value -------------------------------------------------------------------
 
+  // View mode shows the same form, read-only
   get showForm() {
-    return !this.readOnly && !!this.entry && !this.jsonMode && !!this.model;
+    return !!this.entry && !this.jsonMode && !!this.model;
   }
 
   // Nothing to edit while the catalog loads: the form or the JSON comes with it
@@ -350,11 +368,26 @@ export default class BrowserforceSettingEditor extends SharedMixin(
   }
 
   get showJsonSwitch() {
-    return !this.readOnly && !!this.entry;
+    return !!this.entry;
   }
 
+  get jsonSwitchLabel() {
+    return this.readOnly
+      ? this.i18n.browserforceViewAsJson
+      : this.i18n.browserforceEditAsJson;
+  }
+
+  // The JSON in view mode: when asked for, or when no catalog describes the setting
   get showReadOnlyValue() {
-    return this.readOnly;
+    return (
+      this.readOnly &&
+      !this.showCatalogLoading &&
+      (this.jsonMode || !this.entry)
+    );
+  }
+
+  get showReadOnlyLoading() {
+    return this.readOnly && this.showCatalogLoading;
   }
 
   get configPretty() {
@@ -438,9 +471,9 @@ export default class BrowserforceSettingEditor extends SharedMixin(
     return !!this.jsonError || this.formErrors.length > 0;
   }
 
-  // The value cannot change while Browserforce checks it
+  // The value cannot change while Browserforce checks it, nor in view mode
   get inputsDisabled() {
-    return this.validating === true;
+    return this.validating === true || this.readOnly;
   }
 
   get showValidating() {
@@ -603,6 +636,11 @@ export default class BrowserforceSettingEditor extends SharedMixin(
   // error state after each switch.
   handleJsonModeToggle(event) {
     const checked = event.target.checked === true;
+    // View mode only switches what is shown: the value does not change
+    if (this.readOnly) {
+      this.jsonMode = checked;
+      return;
+    }
     if (checked) {
       if (this.formErrors.length > 0) {
         event.target.checked = false;

@@ -65,6 +65,13 @@
       </template>
       <template if:true={readOnly}>
         <p class="hardis-field-value mono bfe-readonly-setting">{settingTitle}</p>
+        <!-- The fields of the setting come with the catalog: say it is on its way -->
+        <template if:true={showReadOnlyLoading}>
+          <div class="hardis-note bfe-block bfe-loading-note" role="status">
+            <span class="bfe-button-spinner" aria-hidden="true"></span>
+            <span>{i18n.browserforceCatalogLoading}</span>
+          </div>
+        </template>
       </template>
     </div>
 
@@ -104,9 +111,9 @@
           <div class="bfe-block">
             <lightning-input
               type="toggle"
-              label={i18n.browserforceEditAsJson}
+              label={jsonSwitchLabel}
               checked={jsonMode}
-              disabled={inputsDisabled}
+              disabled={showValidating}
               onchange={handleJsonModeToggle}
               message-toggle-active=""
               message-toggle-inactive=""
@@ -126,16 +133,18 @@
               <template if:true={section.isGroup}>
                 <div class="hardis-group-label">
                   {section.title}
-                  <div class="hardis-group-actions">
-                    <lightning-button
-                      variant="neutral"
-                      icon-name="utility:add"
-                      label={i18n.browserforceAddItem}
-                      data-group-path={section.groupPath}
-                      disabled={inputsDisabled}
-                      onclick={handleAddItem}
-                    ></lightning-button>
-                  </div>
+                  <template if:false={readOnly}>
+                    <div class="hardis-group-actions">
+                      <lightning-button
+                        variant="neutral"
+                        icon-name="utility:add"
+                        label={i18n.browserforceAddItem}
+                        data-group-path={section.groupPath}
+                        disabled={inputsDisabled}
+                        onclick={handleAddItem}
+                      ></lightning-button>
+                    </div>
+                  </template>
                 </div>
                 <template if:true={section.hasHelp}>
                   <p class="hardis-group-desc bfe-multiline">{section.help}</p>
@@ -149,16 +158,18 @@
                   <template if:true={item.isGroupItem}>
                     <div class="bfe-item-head">
                       <span class="hardis-card-title">{item.title}</span>
-                      <lightning-button
-                        variant="neutral"
-                        class="hardis-btn-tinted-red"
-                        icon-name="utility:delete"
-                        label={i18n.browserforceRemoveItem}
-                        data-group-path={item.groupPath}
-                        data-index={item.index}
-                        disabled={inputsDisabled}
-                        onclick={handleRemoveItem}
-                      ></lightning-button>
+                      <template if:false={readOnly}>
+                        <lightning-button
+                          variant="neutral"
+                          class="hardis-btn-tinted-red"
+                          icon-name="utility:delete"
+                          label={i18n.browserforceRemoveItem}
+                          data-group-path={item.groupPath}
+                          data-index={item.index}
+                          disabled={inputsDisabled}
+                          onclick={handleRemoveItem}
+                        ></lightning-button>
+                      </template>
                     </div>
                   </template>
                   <!-- Stacked fields, as the fields every action has: label line, then the control,
@@ -324,6 +335,7 @@
                             <p class="hardis-field-help bfe-under">{i18n.browserforceVariablesNoLookup}</p>
                           </template>
                           <!-- Secondary actions under the value: back to "not set", read from an ENV variable -->
+                          <template if:false={readOnly}>
                           <div class="bfe-field-links bfe-under">
                             <template if:true={field.canClear}>
                               <button
@@ -355,6 +367,7 @@
                               </button>
                             </template>
                           </div>
+                          </template>
                         </div>
                       </div>
                     </template>

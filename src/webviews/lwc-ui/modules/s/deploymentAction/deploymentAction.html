@@ -912,12 +912,19 @@
               label={i18n.cancelLabel}
               onclick={handleCancel}
             ></lightning-button>
-            <lightning-button class="hardis-btn-tinted-blue"
-              variant="neutral"
-              label={i18n.saveLabel}
+            <!-- While the checks run before saving, the button spins and says so -->
+            <button
+              type="button"
+              class="slds-button slds-button_neutral hardis-btn-tinted-blue da-save-button"
               disabled={isSaveDisabled}
+              aria-busy={saveButtonBusy}
               onclick={handleSave}
-            ></lightning-button>
+            >
+              <template if:true={isSaveChecking}>
+                <span class="da-button-spinner" aria-hidden="true"></span>
+              </template>
+              {saveButtonLabel}
+            </button>
           </template>
         </footer>
       </div>

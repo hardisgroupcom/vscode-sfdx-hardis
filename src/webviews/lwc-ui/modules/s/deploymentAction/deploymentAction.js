@@ -803,9 +803,31 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
 
   // --- Browser (Browserforce setting) -------------------------------------------
 
-  // Save waits for the custom functions catalog, and for Browserforce while it checks the value
+  // Save waits for the custom functions catalog, and for a check started by the Check button.
+  // During the check Save itself started, the button stays readable (spinner and label) and
+  // ignores clicks.
   get isSaveDisabled() {
-    return this.customFunctionsLoading === true || this.browserforceValidating;
+    return (
+      this.customFunctionsLoading === true ||
+      (this.browserforceValidating && !this.isSaveChecking)
+    );
+  }
+
+  get isSaveChecking() {
+    return (
+      this.browserforceValidating === true &&
+      this._saveAfterBrowserforceValidation === true
+    );
+  }
+
+  get saveButtonBusy() {
+    return this.isSaveChecking ? "true" : "false";
+  }
+
+  get saveButtonLabel() {
+    return this.isSaveChecking
+      ? this.i18n.browserforceChecking
+      : this.i18n.saveLabel;
   }
 
   get showBrowserFields() {
@@ -1910,6 +1932,10 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   }
 
   handleSave() {
+    // A check is running: its answer saves, or says why not
+    if (this.browserforceValidating) {
+      return;
+    }
     const isValid = this._validateRequiredFields();
     if (!isValid) {
       this.validationError = this.t("deploymentActionMissingRequiredFields");

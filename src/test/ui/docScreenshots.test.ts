@@ -2681,7 +2681,8 @@ suite("Documentation screenshots", function () {
         picker.dispatchEvent(new CustomEvent("change", { detail: { value: ${JSON.stringify(key)} } }));
         return true;
       `);
-    const openBrowserEditor = async () => {
+    // The details of the Browser action of the fixture, in view mode
+    const openBrowserDetails = async () => {
       await shootPanel(panelManager, {
         name: "browserforce-settings-base",
         command: "vscode-sfdx-hardis.showPipeline",
@@ -2704,6 +2705,9 @@ suite("Documentation screenshots", function () {
         throw new Error("No Browser action in the Deployment Actions tab");
       }
       await sleep(1500);
+    };
+    const openBrowserEditor = async () => {
+      await openBrowserDetails();
       const edited = await inWebview(`
         const action = deepAll(panelDocument, "s-deployment-action")[0];
         if (!action) { return null; }
@@ -2749,6 +2753,41 @@ suite("Documentation screenshots", function () {
     await vscode.commands.executeCommand("workbench.action.zoomOut");
     await sleep(800);
     try {
+      // View mode: the fields of the setting, read-only, the JSON on demand, and the line that
+      // says the settings are loading
+      await openBrowserDetails();
+      await waitFor(
+        async () =>
+          (await inEditor(
+            `return inside(".bfe-setting-head").length > 0 ? true : null;`,
+          )) === true,
+        30000,
+        "the Browserforce setting in view mode",
+      );
+      await sleep(800);
+      await scrollTo(".bfe-setting-head");
+      await sleep(400);
+      await captureStable("bf-view-1-form", { attempts: 3, intervalMs: 500 });
+      await inEditor(`
+        const toggle = inside("input[type=checkbox]").find((input) => input.offsetParent !== null && !input.disabled);
+        if (!toggle) { return null; }
+        toggle.click();
+        return true;
+      `);
+      await sleep(600);
+      await scrollTo(".bfe-setting-head");
+      await captureStable("bf-view-2-json", { attempts: 3, intervalMs: 500 });
+      await inEditor(`
+        editor.catalogState = null;
+        editor.catalogLoading = true;
+        return true;
+      `);
+      await sleep(600);
+      await captureStable("bf-view-3-loading", {
+        attempts: 3,
+        intervalMs: 500,
+      });
+
       await openBrowserEditor();
       // The loading state of the Setting picker, as the editor shows it while the catalog loads
       await inEditor(`
@@ -2830,6 +2869,19 @@ suite("Documentation screenshots", function () {
         attempts: 3,
         intervalMs: 500,
       });
+
+      // Save checks the value with Browserforce first: the Save button spins and says so
+      await inWebview(`
+        const action = deepAll(panelDocument, "s-deployment-action")[0];
+        if (!action) { return null; }
+        const save = deepAll(action.shadowRoot || action, "button.da-save-button")[0];
+        if (!save) { return null; }
+        save.click();
+        return true;
+      `);
+      await sleep(1200);
+      await captureStable("bf-zz-saving", { attempts: 1 });
+      await sleep(7000);
     } finally {
       uninstallBrowserforce();
       await vscode.commands.executeCommand("workbench.action.zoomIn");

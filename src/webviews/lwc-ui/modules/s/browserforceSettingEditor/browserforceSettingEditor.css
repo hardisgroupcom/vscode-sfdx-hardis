@@ -206,6 +206,12 @@
   }
 }
 
+.bfe-loading-note {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .bfe-readonly-setting {
   text-align: left;
 }

@@ -239,9 +239,12 @@ suite("Deployment action browser (Browserforce setting)", () => {
             name,
           ),
       );
-    // The Setting picker is also disabled while the catalog loads
+    // The Setting picker is also disabled while the catalog loads, and the
+    // View/Edit as JSON switch only while Browserforce checks (it works in view mode)
     const disabled = (
-      html.match(/disabled=\{(?:inputsDisabled|settingPickerDisabled)\}/g) || []
+      html.match(
+        /disabled=\{(?:inputsDisabled|settingPickerDisabled|showValidating)\}/g,
+      ) || []
     ).length;
     assert.strictEqual(
       disabled,
@@ -259,11 +262,37 @@ suite("Deployment action browser (Browserforce setting)", () => {
       BROWSER_EDITOR_MODULE,
       `${BROWSER_EDITOR_MODULE}.html`,
     );
-    // The loading text is the placeholder of the Setting picker, not a line of its own
+    // In edit mode the loading text is the placeholder of the Setting picker;
+    // in view mode, where there is no picker, a line with a spinner says it
     assert.ok(html.includes("placeholder={settingPickerPlaceholder}"));
     assert.ok(html.includes("loading={showCatalogLoading}"));
-    assert.ok(!html.includes("{i18n.browserforceCatalogLoading}"));
+    assert.strictEqual(
+      html.split("{i18n.browserforceCatalogLoading}").length - 1,
+      1,
+    );
+    assert.match(
+      html,
+      /if:true=\{showReadOnlyLoading\}[\s\S]*?bfe-button-spinner[\s\S]*?\{i18n\.browserforceCatalogLoading\}/,
+    );
+    assert.match(
+      js,
+      /get showReadOnlyLoading\(\) \{\s*return this\.readOnly && this\.showCatalogLoading;/,
+    );
     assert.match(js, /this\.i18n\.browserforceCatalogLoading/);
+    // View mode shows the same fields, read-only, and the JSON only on demand
+    assert.match(
+      js,
+      /get showForm\(\) \{\s*return !!this\.entry && !this\.jsonMode && !!this\.model;/,
+    );
+    assert.match(
+      js,
+      /get inputsDisabled\(\) \{\s*return this\.validating === true \|\| this\.readOnly;/,
+    );
+    assert.match(
+      js,
+      /this\.readOnly\s*\?\s*this\.i18n\.browserforceViewAsJson/,
+    );
+    assert.match(js, /\(this\.jsonMode \|\| !this\.entry\)/);
     // A boolean is a toggle, and no field has a checkbox: the ENV variable switch is a link
     assert.ok(!html.includes('type="checkbox"'));
     assert.match(html, /type="toggle"[\s\S]*?onchange=\{handleBooleanChange\}/);
