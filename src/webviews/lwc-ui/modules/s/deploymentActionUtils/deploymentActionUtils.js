@@ -52,10 +52,11 @@ const TYPE_HUE_BY_CODE = {
   "publish-community": "green",
   "remove-packagexml-items": "pink",
   "user-access-policy": "red",
-  "agent-publish": "indigo",
+  "agent-publish": "yellow",
+  // No hue is left free of the moment and context pills: these two share
+  // theirs, the type and moment columns stay tellable apart by their labels
   "agent-activate": "indigo",
   "agent-running-user": "cyan",
-  // Every other hue is taken by a type or by the moment and context pills
   browser: "orange",
   manual: "slate",
 };

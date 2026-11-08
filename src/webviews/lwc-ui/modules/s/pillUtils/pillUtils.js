@@ -37,7 +37,7 @@ const FALLBACK_HUES = [
 /**
  * CSS classes of a category pill.
  * @param {string} hue hue name (blue, teal, violet, amber, indigo, green,
- *                     pink, cyan, purple, orange, red, slate)
+ *                     pink, cyan, purple, orange, yellow, red, slate)
  * @returns {string} pill CSS classes
  */
 export function getPillClass(hue) {
