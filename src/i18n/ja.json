@@ -61,8 +61,6 @@
   "agentNotInSources": "{{value}} (プロジェクトのソースに見つかりません)",
   "agentPublishType": "Agentforce エージェントを公開",
   "agentRunningUserType": "Agentforce エージェントの実行ユーザーを作成",
-  "agentVersionHelp": "有効化するバージョン番号、またはターゲット組織の最新バージョンには latest を指定します。空欄の場合は latest です。",
-  "agentVersionLabel": "エージェントのバージョン",
   "agentforceOption": "Agentforce",
   "ahaAuthInfo": "Aha! には、Aha! の個人設定で作成した API キーが必要です。",
   "ahaHostNotConfigured": "Aha! ホストが設定されていません。パイプライン設定で ahaHost を設定してください。",

@@ -61,8 +61,6 @@
   "agentNotInSources": "{{value}} (introuvable dans les sources du projet)",
   "agentPublishType": "Publier un agent Agentforce",
   "agentRunningUserType": "Créer l'utilisateur d'exécution d'un agent Agentforce",
-  "agentVersionHelp": "Numéro de version à activer, ou latest pour la version la plus haute de l'org cible. Laisser vide pour latest.",
-  "agentVersionLabel": "Version de l'agent",
   "agentforceOption": "Agentforce",
   "ahaAuthInfo": "Aha! requiert une clé API, créée depuis vos paramètres personnels dans Aha!.",
   "ahaHostNotConfigured": "L'hôte Aha! n'est pas configuré. Veuillez définir ahaHost dans les Paramètres de la pipeline.",

@@ -10,15 +10,14 @@ import {
 
 /**
  * An "agent-activate" deployment action activates a version of an Agentforce agent after the
- * deployment. The CLI does the work: the editor only writes the agent name and the version.
+ * deployment. The CLI does the work: the editor only writes the agent name, and the CLI activates
+ * the latest version of the target org, as each org numbers its own versions.
  */
 
 const AGENT_ACTIVATE_I18N_KEYS = [
   "agentActivateType",
   "agentNameHelp",
   "agentNameLabel",
-  "agentVersionHelp",
-  "agentVersionLabel",
 ];
 
 suite("Deployment action agent activation", () => {
@@ -40,8 +39,11 @@ suite("Deployment action agent activation", () => {
     const js = readModuleFile("deploymentAction", "deploymentAction.js");
     assert.match(
       js,
-      /if \(type === "agent-activate"\) \{\s+return \{ agentName: "", agentVersion: "latest" \};/,
+      /if \(type === "agent-activate"\) \{\s+return \{ agentName: "" \};/,
     );
+    assert.ok(!js.includes("agentVersion"));
+    const html = readModuleFile("deploymentAction", "deploymentAction.html");
+    assert.ok(!html.includes("agentVersion"));
     assert.match(
       js,
       /newType === "agent-activate"\) \{\s+this\.editedAction\.runOnlyOnceByOrg = false;/,

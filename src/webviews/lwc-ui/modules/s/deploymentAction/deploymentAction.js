@@ -727,10 +727,6 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     return type === "publish-community";
   }
 
-  get showAgentActivateFields() {
-    return this.displayedAction?.type === "agent-activate";
-  }
-
   get showAgentNameField() {
     const type = this.displayedAction?.type;
     return (
@@ -1882,7 +1878,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       return { policies: [], activate: true, applyToAll: false };
     }
     if (type === "agent-activate") {
-      return { agentName: "", agentVersion: "latest" };
+      return { agentName: "" };
     }
     if (type === "agent-publish") {
       return { agentName: "" };

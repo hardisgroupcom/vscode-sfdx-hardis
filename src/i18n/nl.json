@@ -61,8 +61,6 @@
   "agentNotInSources": "{{value}} (niet gevonden in de projectbronnen)",
   "agentPublishType": "Agentforce-agent publiceren",
   "agentRunningUserType": "Uitvoerende gebruiker van een Agentforce-agent aanmaken",
-  "agentVersionHelp": "Versienummer om te activeren, of latest voor de hoogste versie in de doel-org. Laat leeg voor latest.",
-  "agentVersionLabel": "Agentversie",
   "agentforceOption": "Agentforce",
   "ahaAuthInfo": "Aha! vereist een API-sleutel, aangemaakt in je persoonlijke instellingen in Aha!.",
   "ahaHostNotConfigured": "De Aha!-host is niet geconfigureerd. Stel ahaHost in via de Pipeline-instellingen.",
