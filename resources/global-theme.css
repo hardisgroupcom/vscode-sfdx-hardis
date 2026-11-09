@@ -2768,6 +2768,9 @@ lightning-helptext::part(icon) {
 .hardis-markdown pre {
   padding: 0.5rem 0.625rem;
   overflow-x: auto;
+  /* A long log line (a MegaLinter or a deployment log) wraps instead of scrolling sideways */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .hardis-markdown pre code {
   padding: 0;

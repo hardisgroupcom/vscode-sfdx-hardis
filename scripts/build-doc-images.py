@@ -177,10 +177,10 @@ BOX_CROPS = {
     "dependencies-ok.jpg": ("sidebar-dependencies", (60, 99, 436, 462)),
     # "My Pull Request" contribution card (pipeline-workflow-cards is captured
     # two zoom levels out so the second card row fits in the window)
-    "card-my-pull-request.png": ("pipeline-workflow-cards", (1378, 698, 1630, 806)),
+    "card-my-pull-request.png": ("pipeline-workflow-cards", (1378, 727, 1630, 835)),
     # The whole "Project Contribution Workflow" card row (same zoomed-out
     # capture), for the Contributor Guide overview
-    "pipeline-contribution-cards.png": ("pipeline-workflow-cards", (312, 636, 1910, 818)),
+    "pipeline-contribution-cards.png": ("pipeline-workflow-cards", (312, 665, 1910, 847)),
     # Branch modal of the pipeline, on its Pull Requests tab (merged Pull
     # Requests of the branch, with the Release Notes buttons)
     "screenshot-branch-pull-requests.jpg": (
@@ -318,7 +318,7 @@ GUIDE_SHOTS = {
     # The No Overwrite entry of that menu: package-no-overwrite.xml in the package viewer, for the
     # overwrite management page of sfdx-hardis
     "package-no-overwrite.png": ("package-no-overwrite", True),
-    "pipeline-workflow-cards.png": ("pipeline-workflow-cards", (315, 625, 1905, 835)),
+    "pipeline-workflow-cards.png": ("pipeline-workflow-cards", (315, 654, 1905, 864)),
     "pipeline-pr-actions-list.png": ("pipeline-pr-actions-list", (400, 40, 1865, 922)),
     # Pull Requests explorer and the window of one Pull Request (sfdx-hardis#2273), opened by
     # deep links: the lookup, the description, a comment tab and a merged Pull Request
