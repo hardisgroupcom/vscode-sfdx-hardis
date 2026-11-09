@@ -741,7 +741,9 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   get agentOptions() {
     const selectedAgent = this.displayedAction?.parameters?.agentName;
     if (this.isViewMode) {
-      return selectedAgent ? [{ label: selectedAgent, value: selectedAgent }] : [];
+      return selectedAgent
+        ? [{ label: selectedAgent, value: selectedAgent }]
+        : [];
     }
     if (this.agentsLoading) {
       const loadingOption = { label: this.t("loadingAgents"), value: "" };

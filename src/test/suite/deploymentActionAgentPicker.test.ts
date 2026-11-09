@@ -21,8 +21,22 @@ const AGENT_PICKER_I18N_KEYS = [
 suite("Deployment action agent picker", () => {
   test("the agent API name is the folder holding the source file", () => {
     const names = agentNamesFromSourcePaths([
-      path.join("force-app", "main", "default", "aiAuthoringBundles", "Helpdesk", "Helpdesk.bundle-meta.xml"),
-      path.join("force-app", "main", "default", "bots", "Concierge", "Concierge.bot-meta.xml"),
+      path.join(
+        "force-app",
+        "main",
+        "default",
+        "aiAuthoringBundles",
+        "Helpdesk",
+        "Helpdesk.bundle-meta.xml",
+      ),
+      path.join(
+        "force-app",
+        "main",
+        "default",
+        "bots",
+        "Concierge",
+        "Concierge.bot-meta.xml",
+      ),
       path.join("other-app", "bots", "Concierge", "Concierge.bot-meta.xml"),
     ]);
     assert.deepStrictEqual(names, ["Concierge", "Helpdesk"]);
@@ -36,10 +50,7 @@ suite("Deployment action agent picker", () => {
     );
     const js = readModuleFile("deploymentAction", "deploymentAction.js");
     assert.match(js, /new CustomEvent\("loadagents"\)/);
-    assert.match(
-      js,
-      /type === "agent-publish"\s+\? agents\.authoringBundles/,
-    );
+    assert.match(js, /type === "agent-publish"\s+\? agents\.authoringBundles/);
   });
 
   test("both panels hosting the editor answer the agent list request", () => {
