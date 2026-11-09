@@ -541,9 +541,9 @@ const BRANCH_NODE = (() => {
   const raw =
     process.env.SFDX_HARDIS_DOC_SCREENSHOTS_BRANCH_NODE ||
     universeSetting("branchNode") ||
-    "850,405";
+    "850,458";
   const [x, y] = raw.split(",").map((part) => Number(part.trim()));
-  return { x: Number.isFinite(x) ? x : 850, y: Number.isFinite(y) ? y : 405 };
+  return { x: Number.isFinite(x) ? x : 850, y: Number.isFinite(y) ? y : 458 };
 })();
 
 /**
@@ -572,7 +572,7 @@ const PROMOTION_VARIANT =
 const PROMOTION_UAT_NODE = parsePoint(
   universeSetting("promotionNode"),
   1097,
-  366,
+  419,
 );
 /** Promotion branch of the fixture, source of the open promotion it carries */
 const PROMOTION_BRANCH =
@@ -1677,7 +1677,7 @@ suite("Documentation screenshots", function () {
       // Single-PR modal of the current branch: Deployment Actions tab, then the
       // Add New Action editor (still zoomed out; the published image is a crop
       // of the modal, so the zoom only affects its resolution)
-      await click(1500, 750); // "My Pull Request" card
+      await click(1500, 779); // "My Pull Request" card
       await sleep(2500);
       await cleanChrome();
       await captureStable("pipeline-pr-modal");

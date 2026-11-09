@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Contributors: the documentation screenshot harness clicks the branch nodes and the contribution cards where the view switch of the DevOps Pipeline put them, and crops the cards pictures at their new place.
 - Pull Request window: a long line of a job log or of a comment code block wraps instead of making the block scroll sideways.
 
 ## [8.19.0] 2026-11-08
