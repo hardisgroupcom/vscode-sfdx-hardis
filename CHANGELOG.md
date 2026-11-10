@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Renovate waits until a dependency release is 14 days old before opening an upgrade Pull Request. Security fixes are still proposed at once.
 - Contributors: the documentation screenshot harness clicks the branch nodes and the contribution cards where the view switch of the DevOps Pipeline put them, and crops the cards pictures at their new place.
 - Pull Request window: a long line of a job log or of a comment code block wraps instead of making the block scroll sideways.
 
