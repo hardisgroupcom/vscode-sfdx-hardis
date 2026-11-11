@@ -12,6 +12,7 @@ import {
   defaultConfigOf,
   findDeprecatedSetting,
   formModelToConfig,
+  getSettingDocUrl,
   listSelectableSettings,
   listVariableNames,
   removeGroupItem,
@@ -261,6 +262,14 @@ export default class BrowserforceSettingEditor extends SharedMixin(
 
   get settingHeadTitle() {
     return this.entry?.title || this._setting;
+  }
+
+  get settingDocUrl() {
+    return getSettingDocUrl(this.entry);
+  }
+
+  get hasSettingDocUrl() {
+    return !!this.settingDocUrl;
   }
 
   get settingDescription() {
@@ -696,6 +705,14 @@ export default class BrowserforceSettingEditor extends SharedMixin(
 
   handleReloadCatalog() {
     this.dispatchEvent(new CustomEvent("reloadcatalog"));
+  }
+
+  // The page of the setting on the Browserforce documentation site, in the browser
+  handleOpenSettingDoc() {
+    const url = this.settingDocUrl;
+    if (url) {
+      window.sendMessageToVSCode({ type: "openExternal", data: { url } });
+    }
   }
 
   // --- Private -------------------------------------------------------------------

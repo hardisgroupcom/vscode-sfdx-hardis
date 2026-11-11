@@ -298,8 +298,9 @@ async function click(
 
 // Catalog of the documentation screenshots of the Browser action type: the settings the
 // fixture actions use, as `sf browserforce plugins list` describes them. densitySettings is
-// written here; userAccessPolicies and picklists are copied from the catalog of
-// Browserforce 7.0.0 (test/fixtures/doc-screenshots-browserforce-settings.json)
+// written here, with the docUrl of Browserforce 7.1.0 so the Documentation button shows;
+// userAccessPolicies and picklists are copied from a Browserforce catalog
+// (test/fixtures/doc-screenshots-browserforce-settings.json)
 const DOC_BROWSERFORCE_CATALOG = {
   formatVersion: 1,
   browserforceVersion: "7.0.0",
@@ -308,6 +309,8 @@ const DOC_BROWSERFORCE_CATALOG = {
     {
       key: "densitySettings",
       title: "Density Settings",
+      docUrl:
+        "https://amtrack.github.io/sfdx-browserforce-plugin/settings/densitySettings/",
       groups: [],
       fields: [
         {
