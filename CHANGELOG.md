@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Deployment actions, **Browser** type: a **Documentation** button opens the page of the selected setting on the Browserforce documentation site (Browserforce 7.1.0 or later).
+- Deployment actions, **Browser** type: the editor asks for Browserforce 7.2.0 or later, which can rename the API name of a picklist value.
 - Renovate waits until a dependency release is 14 days old before opening an upgrade Pull Request. Security fixes are still proposed at once.
 - Contributors: the documentation screenshot harness clicks the branch nodes and the contribution cards where the view switch of the DevOps Pipeline put them, and crops the cards pictures at their new place.
 - Pull Request window: a long line of a job log or of a comment code block wraps instead of making the block scroll sideways.

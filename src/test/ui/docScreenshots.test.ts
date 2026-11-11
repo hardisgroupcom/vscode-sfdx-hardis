@@ -303,7 +303,7 @@ async function click(
 // (test/fixtures/doc-screenshots-browserforce-settings.json)
 const DOC_BROWSERFORCE_CATALOG = {
   formatVersion: 1,
-  browserforceVersion: "7.0.0",
+  browserforceVersion: "7.2.0",
   deprecatedSettings: [],
   plugins: [
     {
@@ -350,11 +350,11 @@ const DOC_BROWSERFORCE_CATALOG = {
 
 /**
  * Serves a Browserforce catalog to the editor of a Browser action without the plugin: an
- * installed Browserforce 7.0.0 in a temporary sf data folder, and the cache file of its catalog
+ * installed Browserforce 7.2.0 in a temporary sf data folder, and the cache file of its catalog
  * (read by src/utils/browserforceCatalogUtils.ts). Returns what puts everything back.
  */
 function installFakeBrowserforce(catalog: any): () => void {
-  const version = "7.0.0";
+  const version = "7.2.0";
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "bf-shots-"));
   const dataDir = path.join(root, "sf-data");
   const pluginDir = path.join(

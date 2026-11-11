@@ -16,8 +16,9 @@ import { getSfCliDataDir } from "./sfPerformanceUtils";
  */
 
 export const BROWSERFORCE_PLUGIN_NAME = "sfdx-browserforce-plugin";
-// First release with plugins list and plugins validate, the same minimum as sfdx-hardis
-export const BROWSERFORCE_MIN_VERSION = "7.0.0";
+// The same minimum as sfdx-hardis: plugins list and plugins validate (7.0.0), and the rename of
+// picklist values that its deployment tips suggest (7.2.0)
+export const BROWSERFORCE_MIN_VERSION = "7.2.0";
 // Version of the catalog format this extension reads: a higher one may lack what it reads
 export const SUPPORTED_BROWSERFORCE_CATALOG_FORMAT_VERSION = 1;
 const SECRETS_LOOKUP_CACHE_MS = 10 * 60 * 1000;
