@@ -388,6 +388,15 @@ export function listSelectableSettings(catalog) {
   );
 }
 
+/**
+ * The documentation page of a setting, given by Browserforce 7.1.0 and later, or "" when the
+ * installed Browserforce does not give one: the editor then shows no Documentation button.
+ */
+export function getSettingDocUrl(entry) {
+  const url = entry?.docUrl;
+  return typeof url === "string" && /^https?:\/\//.test(url) ? url : "";
+}
+
 /** The removal notice of a setting Browserforce no longer applies, if any. */
 export function findDeprecatedSetting(catalog, key) {
   const deprecated = Array.isArray(catalog?.deprecatedSettings)
