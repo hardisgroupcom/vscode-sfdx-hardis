@@ -235,9 +235,13 @@ suite("Deployment action browser (Browserforce setting)", () => {
       .map((match) => match[1])
       .filter(
         (name) =>
-          !["handleOpenSetup", "handleReloadCatalog", "handleCheck"].includes(
-            name,
-          ),
+          // Opening the documentation page of the setting never changes the value
+          ![
+            "handleOpenSetup",
+            "handleReloadCatalog",
+            "handleCheck",
+            "handleOpenSettingDoc",
+          ].includes(name),
       );
     // The Setting picker is also disabled while the catalog loads, and the
     // View/Edit as JSON switch only while Browserforce checks (it works in view mode)

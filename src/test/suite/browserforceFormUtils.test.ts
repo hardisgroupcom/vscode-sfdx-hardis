@@ -448,4 +448,20 @@ suite("Browserforce form utils", () => {
       "m",
     );
   });
+
+  test("a setting links to its documentation page only when Browserforce gives one", () => {
+    const url =
+      "https://amtrack.github.io/sfdx-browserforce-plugin/settings/densitySettings/";
+    assert.strictEqual(
+      utils.getSettingDocUrl({ key: "densitySettings", docUrl: url }),
+      url,
+    );
+    // Browserforce 7.0.x gives no docUrl: no Documentation button
+    assert.strictEqual(utils.getSettingDocUrl({ key: "densitySettings" }), "");
+    assert.strictEqual(utils.getSettingDocUrl(null), "");
+    assert.strictEqual(
+      utils.getSettingDocUrl({ key: "x", docUrl: "javascript:alert(1)" }),
+      "",
+    );
+  });
 });

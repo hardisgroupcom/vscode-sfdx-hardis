@@ -88,6 +88,17 @@
               </div>
               <h3 class="hardis-card-title">{settingHeadTitle}</h3>
               <span class="hardis-branch-chip">{setting}</span>
+              <!-- Page of the setting on the Browserforce documentation site, when the catalog gives it -->
+              <template if:true={hasSettingDocUrl}>
+                <lightning-button
+                  class="bfe-doc-button"
+                  label={i18n.documentation}
+                  title={settingDocUrl}
+                  icon-name="utility:new_window"
+                  icon-position="right"
+                  onclick={handleOpenSettingDoc}
+                ></lightning-button>
+              </template>
             </div>
             <template if:true={hasSettingDescription}>
               <p class="hardis-field-help bfe-setting-desc">{settingDescription}</p>
