@@ -148,7 +148,11 @@ suite("Browserforce catalog utils", () => {
       false,
     );
     assert.strictEqual(
-      isUsableBrowserforce({ version: "7.0.0", root: "r", linked: false }),
+      isUsableBrowserforce({ version: "7.1.0", root: "r", linked: false }),
+      false,
+    );
+    assert.strictEqual(
+      isUsableBrowserforce({ version: "7.2.0", root: "r", linked: false }),
       true,
     );
     assert.strictEqual(
