@@ -8,6 +8,8 @@ import {
   journeyPillClass,
   safeWebUrl,
 } from "s/pullRequestUtils";
+import { countMarkdownMatches } from "s/markdownUtils";
+import { activeMatchByPart, normalizeSearchQuery } from "s/searchUtils";
 
 /**
  * Validation, Deployment and MegaLinter tabs of the Pull Request view: the comments posted on
@@ -26,6 +28,10 @@ import {
  * `sf hardis:project:action:list --with-workflows`. `artifacts` are the answers of
  * `sf hardis:git:artifacts:download`, by job URL: the files are downloaded when the user asks for
  * them, and opened from the workspace.
+ *
+ * `searchQuery` is the search of the Pull Request window: each comment highlights it and says
+ * how many matches it holds, `activeMatch` is the current one counted across the comments of
+ * this tab, and `filterMatches` hides the runs without a match.
  */
 export default class WorkflowRuns extends SharedMixin(LightningElement) {
   @api loading = false;
@@ -33,7 +39,11 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
   @api emptyLabel = "";
   // False when the installed sfdx-hardis or the git provider cannot download the files of a job
   @api artifactsSupported = false;
+  // Hides the runs whose comment does not match the search
+  @api filterMatches = false;
   _runs = [];
+  _searchQuery = "";
+  _activeMatch = -1;
   _runningJobs = [];
   _artifacts = {};
   _durations = {};
@@ -79,6 +89,23 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
     this._durations = value && typeof value === "object" ? value : {};
   }
 
+  @api
+  get searchQuery() {
+    return this._searchQuery;
+  }
+  set searchQuery(value) {
+    this._searchQuery = normalizeSearchQuery(value);
+  }
+
+  // The current match, counted across the comments of this tab, -1 when it is in another tab
+  @api
+  get activeMatch() {
+    return this._activeMatch;
+  }
+  set activeMatch(value) {
+    this._activeMatch = Number.isInteger(value) ? value : -1;
+  }
+
   connectedCallback() {
     super.connectedCallback();
     this._connected = true;
@@ -109,15 +136,27 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
   }
 
   get hasRuns() {
-    return this._runs.length > 0;
+    return this.rows.length > 0;
   }
 
   get hasRunningJobs() {
-    return this._runningJobs.length > 0;
+    return !this._filtering && this._runningJobs.length > 0;
   }
 
   get showEmpty() {
-    return !this.loading && !this.hasRuns && !this.hasRunningJobs;
+    return (
+      !this.loading && this._runs.length === 0 && this._runningJobs.length === 0
+    );
+  }
+
+  // The filter is on and hides everything this tab holds
+  get showNoMatch() {
+    return !this.loading && this._filtering && !this.hasRuns && !this.showEmpty;
+  }
+
+  // A job still running has posted no comment: nothing in it can match
+  get _filtering() {
+    return this.filterMatches === true && this._searchQuery !== "";
   }
 
   // Nothing to wait for behind a spinner when a job is already there to show
@@ -185,6 +224,9 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
       this._folders,
       this._requestTimes,
       this.artifactsSupported,
+      this._searchQuery,
+      this._activeMatch,
+      this.filterMatches,
     ];
     const memo = this._rowsMemo;
     if (
@@ -245,7 +287,12 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
   }
 
   _buildRows() {
-    return this._runs.map((run, index) => {
+    const query = this._searchQuery;
+    const matchCounts = this._runs.map((run) =>
+      query ? countMarkdownMatches(run.body || "", query) : 0,
+    );
+    const activeMatches = activeMatchByPart(this._activeMatch, matchCounts);
+    const rows = this._runs.map((run, index) => {
       const branch = run.targetBranch || "";
       const context = [];
       const jobUrl = safeWebUrl(run.jobUrl);
@@ -279,9 +326,16 @@ export default class WorkflowRuns extends SharedMixin(LightningElement) {
         commentUrl: safeWebUrl(run.commentUrl),
         hasBody: !!run.body,
         body: run.body || "",
+        matchCount: matchCounts[index],
+        matchLabel:
+          matchCounts[index] > 0
+            ? this.t("prSearchMatchCount", { count: matchCounts[index] })
+            : "",
+        searchActiveMatch: activeMatches[index],
         ...this._filesState(jobUrl),
       };
     });
+    return this._filtering ? rows.filter((row) => row.matchCount > 0) : rows;
   }
 
   // The clock only runs while a job that says when it started is on screen

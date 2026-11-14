@@ -860,3 +860,23 @@
 .modal-crumb-sep {
     color: var(--slds-g-color-neutral-base-40);
 }
+
+/* Search bar of a Pull Request, above its tabs */
+.pr-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-bottom: 0.5rem;
+}
+
+.pr-search-input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.pr-search-position {
+    min-width: 4.5rem;
+    text-align: center;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+}

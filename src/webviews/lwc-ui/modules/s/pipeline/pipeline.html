@@ -487,6 +487,23 @@
                                 <p>{checkoutBehindNote}</p>
                             </div>
                         </template>
+                        <!-- Search in the description and in the comments of the jobs (Ctrl+F) -->
+                        <div class="pr-search-bar" role="search">
+                            <lightning-input
+                                type="search"
+                                variant="label-hidden"
+                                label={i18n.prSearchPlaceholder}
+                                placeholder={i18n.prSearchPlaceholder}
+                                value={modalSearchInput}
+                                onchange={handleModalSearchChange}
+                                onkeydown={handleModalSearchKeydown}
+                                class="pr-search-input"
+                            ></lightning-input>
+                            <span class="muted pr-search-position" aria-live="polite">{modalSearchPositionLabel}</span>
+                            <lightning-button-icon icon-name="utility:chevronup" variant="border-filled" size="medium" title={i18n.prSearchPrevious} alternative-text={i18n.prSearchPrevious} disabled={modalSearchNavigationDisabled} onclick={handleModalSearchPrevious}></lightning-button-icon>
+                            <lightning-button-icon icon-name="utility:chevrondown" variant="border-filled" size="medium" title={i18n.prSearchNext} alternative-text={i18n.prSearchNext} disabled={modalSearchNavigationDisabled} onclick={handleModalSearchNext}></lightning-button-icon>
+                            <lightning-button-icon-stateful icon-name="utility:filterList" size="medium" selected={modalSearchFilter} title={i18n.prSearchFilter} alternative-text={i18n.prSearchFilter} onclick={handleModalSearchFilterToggle}></lightning-button-icon-stateful>
+                        </div>
                     </template>
                     <!-- Go-lives selector (top branches such as main/prod) -->
                     <template if:true={modalIsTopBranch}>
@@ -515,9 +532,9 @@
                     <lightning-tabset active-tab-value={modalActiveTabValue}>
                         <!-- General tab: the description of one Pull Request -->
                         <template if:true={isSinglePRMode}>
-                            <lightning-tab onactive={handleModalTabActive} label={i18n.prGeneralTab} value="general" icon-name="utility:info" icon-assistive-text={i18n.prGeneralTab}>
+                            <lightning-tab onactive={handleModalTabActive} label={generalTabLabel} value="general" icon-name="utility:info" icon-assistive-text={i18n.prGeneralTab}>
                                 <template if:true={singlePullRequestDescription}>
-                                    <s-markdown-view markdown={singlePullRequestDescription}></s-markdown-view>
+                                    <s-markdown-view markdown={singlePullRequestDescription} search-query={modalSearchQuery} active-match={generalActiveMatch}></s-markdown-view>
                                 </template>
                                 <template if:false={singlePullRequestDescription}>
                                     <div class="slds-align_absolute-center slds-p-around_medium">
@@ -809,7 +826,7 @@
                             </template>
                             <!-- Validation, Code Quality (MegaLinter) and Deployment tabs: the comments posted on the Pull Request itself -->
                             <template if:true={showWorkflowsTab}>
-                                <lightning-tab onactive={handleModalTabActive} label={i18n.journeyValidation} value="validation" icon-name="utility:search" icon-assistive-text={i18n.journeyValidation} end-icon-name={validationTabEndIcon} end-icon-alternative-text={i18n.jobStatusRunning}>
+                                <lightning-tab onactive={handleModalTabActive} label={validationTabLabel} value="validation" icon-name="utility:search" icon-assistive-text={i18n.journeyValidation} end-icon-name={validationTabEndIcon} end-icon-alternative-text={i18n.jobStatusRunning}>
                                     <s-workflow-runs
                                         runs={modalValidationRuns}
                                         running-jobs={modalValidationRunningJobs}
@@ -818,9 +835,12 @@
                                         artifacts-supported={artifactsSupported}
                                         loading={workflowsLoading}
                                         empty-label={noValidationLabel}
+                                        search-query={modalSearchQuery}
+                                        active-match={validationActiveMatch}
+                                        filter-matches={modalSearchFilter}
                                     ></s-workflow-runs>
                                 </lightning-tab>
-                                <lightning-tab onactive={handleModalTabActive} label={i18n.prCodeQualityTab} value="megalinter" icon-name="utility:shield" icon-assistive-text={i18n.prCodeQualityTab} end-icon-name={megaLinterTabEndIcon} end-icon-alternative-text={i18n.jobStatusRunning}>
+                                <lightning-tab onactive={handleModalTabActive} label={megaLinterTabLabel} value="megalinter" icon-name="utility:shield" icon-assistive-text={i18n.prCodeQualityTab} end-icon-name={megaLinterTabEndIcon} end-icon-alternative-text={i18n.jobStatusRunning}>
                                     <s-workflow-runs
                                         runs={modalMegaLinterRuns}
                                         running-jobs={modalMegaLinterRunningJobs}
@@ -829,9 +849,12 @@
                                         artifacts-supported={artifactsSupported}
                                         loading={workflowsLoading}
                                         empty-label={noMegaLinterLabel}
+                                        search-query={modalSearchQuery}
+                                        active-match={megaLinterActiveMatch}
+                                        filter-matches={modalSearchFilter}
                                     ></s-workflow-runs>
                                 </lightning-tab>
-                                <lightning-tab onactive={handleModalTabActive} label={i18n.workflowDeploymentNoBranch} value="deployment" icon-name="utility:upload" icon-assistive-text={i18n.workflowDeploymentNoBranch} end-icon-name={deploymentTabEndIcon} end-icon-alternative-text={i18n.jobStatusRunning}>
+                                <lightning-tab onactive={handleModalTabActive} label={deploymentTabLabel} value="deployment" icon-name="utility:upload" icon-assistive-text={i18n.workflowDeploymentNoBranch} end-icon-name={deploymentTabEndIcon} end-icon-alternative-text={i18n.jobStatusRunning}>
                                     <s-workflow-runs
                                         runs={modalDeploymentRuns}
                                         running-jobs={modalDeploymentRunningJobs}
@@ -840,6 +863,9 @@
                                         artifacts-supported={artifactsSupported}
                                         loading={workflowsLoading}
                                         empty-label={noDeploymentLabel}
+                                        search-query={modalSearchQuery}
+                                        active-match={deploymentActiveMatch}
+                                        filter-matches={modalSearchFilter}
                                     ></s-workflow-runs>
                                 </lightning-tab>
                             </template>

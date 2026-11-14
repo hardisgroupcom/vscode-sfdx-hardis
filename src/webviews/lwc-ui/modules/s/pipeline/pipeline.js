@@ -31,6 +31,13 @@ import {
   requestBrowserforceCatalog,
   requestBrowserforceValidation,
 } from "s/browserforceHostUtils";
+import { countMarkdownMatches } from "s/markdownUtils";
+import {
+  firstMatchOf,
+  locateMatch,
+  normalizeSearchQuery,
+  stepMatch,
+} from "s/searchUtils";
 
 // Where the major branch deployment check is explained and set up
 const MAJOR_BRANCH_CHECK_DOC_URL =
@@ -273,6 +280,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   jobArtifacts = {};
   // Branch checked out in the workspace, where the actions of the Pull Request are read and written
   modalCheckout = null;
+  // Search bar of a Pull Request (see MODAL_STATE_DEFAULTS): what is typed, what is searched
+  // once the typing pauses, the current match counted across the tabs, and the filter
+  modalSearchInput = "";
+  modalSearchQuery = "";
+  modalSearchIndex = 0;
+  modalSearchFilter = false;
+  _searchDebounce = null;
+  // Holder mutated in place, so that counting while rendering renders nothing again
+  _searchCountsMemo = {};
   // Subject, status and assignee of the tickets of the window are being read
   ticketDetailsLoading = false;
   _ticketDetailsRequestId = 0;
@@ -1085,8 +1101,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this._boundVisibilityChange = this._handleVisibilityChange.bind(this);
     this._boundMermaidMouseMove = this._handleMermaidMouseMove.bind(this);
     this._boundMermaidMouseUp = this._handleMermaidMouseUp.bind(this);
+    this._boundSearchShortcut = this._handleSearchShortcut.bind(this);
     if (typeof window !== "undefined" && window.addEventListener) {
       window.addEventListener("resize", this._boundAdjust);
+      // Captured before VS Code sees it: Ctrl+F in a Pull Request goes to its search bar
+      window.addEventListener("keydown", this._boundSearchShortcut, true);
       document.addEventListener(
         "visibilitychange",
         this._boundVisibilityChange,
@@ -1144,6 +1163,14 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     ) {
       window.removeEventListener("mouseup", this._boundMermaidMouseUp);
     }
+    if (
+      typeof window !== "undefined" &&
+      window.removeEventListener &&
+      this._boundSearchShortcut
+    ) {
+      window.removeEventListener("keydown", this._boundSearchShortcut, true);
+    }
+    clearTimeout(this._searchDebounce);
     // Clean up auto-refresh timer
     this._stopAutoRefresh();
     this._stopRunningJobsPoll();
@@ -3731,7 +3758,118 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     const value = event.target?.value;
     if (value) {
       this.modalActiveTabValue = value;
+      this._followSearchToTab(value);
     }
+  }
+
+  // Search bar of a Pull Request: the description (General) and the comments of the
+  // Validation, Code Quality and Deployment tabs
+  get showModalSearch() {
+    return this.showPRModal && this.showModalTabs && this.isSinglePRMode;
+  }
+
+  get modalSearchTotal() {
+    return this._modalSearchCounts().reduce((sum, tab) => sum + tab.count, 0);
+  }
+
+  get modalSearchPositionLabel() {
+    if (!this.modalSearchQuery) {
+      return "";
+    }
+    const total = this.modalSearchTotal;
+    if (total === 0) {
+      return this.i18n.prSearchNoMatch;
+    }
+    return this.t("prSearchPosition", {
+      current: this._clampedSearchIndex() + 1,
+      total,
+    });
+  }
+
+  get modalSearchNavigationDisabled() {
+    return this.modalSearchTotal === 0;
+  }
+
+  get generalTabLabel() {
+    return this._searchTabLabel("general", this.i18n.prGeneralTab);
+  }
+
+  get validationTabLabel() {
+    return this._searchTabLabel("validation", this.i18n.journeyValidation);
+  }
+
+  get megaLinterTabLabel() {
+    return this._searchTabLabel("megalinter", this.i18n.prCodeQualityTab);
+  }
+
+  get deploymentTabLabel() {
+    return this._searchTabLabel(
+      "deployment",
+      this.i18n.workflowDeploymentNoBranch,
+    );
+  }
+
+  get generalActiveMatch() {
+    return this._activeMatchOf("general");
+  }
+
+  get validationActiveMatch() {
+    return this._activeMatchOf("validation");
+  }
+
+  get megaLinterActiveMatch() {
+    return this._activeMatchOf("megalinter");
+  }
+
+  get deploymentActiveMatch() {
+    return this._activeMatchOf("deployment");
+  }
+
+  // Searched once the typing pauses: a key typed does not search every comment again
+  handleModalSearchChange(event) {
+    this.modalSearchInput = String(event.detail?.value ?? "");
+    clearTimeout(this._searchDebounce);
+    this._searchDebounce = null;
+    if (!normalizeSearchQuery(this.modalSearchInput)) {
+      this._applyModalSearch();
+      return;
+    }
+    // eslint-disable-next-line @lwc/lwc/no-async-operation
+    this._searchDebounce = setTimeout(() => {
+      this._searchDebounce = null;
+      this._applyModalSearch();
+    }, 200);
+  }
+
+  // Enter: next match, Shift+Enter: previous one, Escape: clears the search
+  handleModalSearchKeydown(event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      // Typed and not searched yet: Enter shows the first match before moving on
+      if (this._flushModalSearch()) {
+        this._goToSearchMatch(this._clampedSearchIndex());
+        return;
+      }
+      this._moveModalSearch(event.shiftKey ? -1 : 1);
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      this._clearModalSearch();
+    }
+  }
+
+  handleModalSearchNext() {
+    this._flushModalSearch();
+    this._moveModalSearch(1);
+  }
+
+  handleModalSearchPrevious() {
+    this._flushModalSearch();
+    this._moveModalSearch(-1);
+  }
+
+  handleModalSearchFilterToggle() {
+    this.modalSearchFilter = !this.modalSearchFilter;
   }
 
   // lightning-tabset only follows a change of its active tab once its tabs are rendered: the
@@ -3742,6 +3880,166 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     setTimeout(() => {
       this.modalActiveTabValue = value || "";
     }, 0);
+  }
+
+  // A tab opened by hand shows its own first match, unless it already holds the current one
+  _followSearchToTab(value) {
+    if (!this.modalSearchQuery) {
+      return;
+    }
+    const counts = this._modalSearchCounts();
+    const current = locateMatch(this._clampedSearchIndex(), counts);
+    if (current && current.key === value) {
+      return;
+    }
+    const first = firstMatchOf(value, counts);
+    if (first >= 0) {
+      this.modalSearchIndex = first;
+    }
+  }
+
+  // The matches of each tab, counted again only when the search or a text changes
+  _modalSearchCounts() {
+    const query = this.isSinglePRMode ? this.modalSearchQuery : "";
+    const description = this.singlePullRequestDescription;
+    const workflows = this.showWorkflowsTab ? this.modalWorkflows : null;
+    const memo = this._searchCountsMemo;
+    if (
+      !memo.counts ||
+      memo.query !== query ||
+      memo.description !== description ||
+      memo.workflows !== workflows
+    ) {
+      memo.query = query;
+      memo.description = description;
+      memo.workflows = workflows;
+      memo.counts = query
+        ? this._searchTabs().map((tab) => ({
+            key: tab.key,
+            count: tab.markdowns.reduce(
+              (sum, markdown) => sum + countMarkdownMatches(markdown, query),
+              0,
+            ),
+          }))
+        : [];
+    }
+    return memo.counts;
+  }
+
+  // The tabs the search covers, in the order they are shown, with the markdown each one renders
+  _searchTabs() {
+    const tabs = [
+      { key: "general", markdowns: [this.singlePullRequestDescription] },
+    ];
+    if (this.showWorkflowsTab) {
+      const bodies = (runs) => runs.map((run) => run.body || "");
+      tabs.push(
+        { key: "validation", markdowns: bodies(this.modalValidationRuns) },
+        { key: "megalinter", markdowns: bodies(this.modalMegaLinterRuns) },
+        { key: "deployment", markdowns: bodies(this.modalDeploymentRuns) },
+      );
+    }
+    return tabs;
+  }
+
+  // The current match, kept in range when the comments change under it
+  _clampedSearchIndex() {
+    const total = this.modalSearchTotal;
+    if (total === 0) {
+      return 0;
+    }
+    return Math.min(Math.max(this.modalSearchIndex, 0), total - 1);
+  }
+
+  _searchTabLabel(key, label) {
+    const tab = this._modalSearchCounts().find((entry) => entry.key === key);
+    if (!tab || tab.count === 0) {
+      return label;
+    }
+    return this.t("prSearchTabCount", { label, count: tab.count });
+  }
+
+  _activeMatchOf(key) {
+    if (!this.modalSearchQuery) {
+      return -1;
+    }
+    const current = locateMatch(
+      this._clampedSearchIndex(),
+      this._modalSearchCounts(),
+    );
+    return current && current.key === key ? current.local : -1;
+  }
+
+  // Searches now what was typed, and puts the current match on the first one of the tab shown,
+  // or on the first one at all: typing never switches tabs. True when the search changed.
+  _applyModalSearch() {
+    const query = normalizeSearchQuery(this.modalSearchInput);
+    if (query === this.modalSearchQuery) {
+      return false;
+    }
+    this.modalSearchQuery = query;
+    const first = firstMatchOf(
+      this.modalActiveTabValue,
+      this._modalSearchCounts(),
+    );
+    this.modalSearchIndex = first >= 0 ? first : 0;
+    return true;
+  }
+
+  // Applies a search still waiting for the typing to pause. True when the search changed.
+  _flushModalSearch() {
+    if (!this._searchDebounce) {
+      return false;
+    }
+    clearTimeout(this._searchDebounce);
+    this._searchDebounce = null;
+    return this._applyModalSearch();
+  }
+
+  _moveModalSearch(delta) {
+    const total = this.modalSearchTotal;
+    if (total === 0) {
+      return;
+    }
+    this._goToSearchMatch(stepMatch(this._clampedSearchIndex(), total, delta));
+  }
+
+  // Shows a match, switching to its tab: the tabs are rendered, so the tabset follows at once
+  _goToSearchMatch(index) {
+    this.modalSearchIndex = index;
+    const target = locateMatch(index, this._modalSearchCounts());
+    if (target && target.key !== this.modalActiveTabValue) {
+      this.modalActiveTabValue = target.key;
+    }
+  }
+
+  _clearModalSearch() {
+    clearTimeout(this._searchDebounce);
+    this._searchDebounce = null;
+    this.modalSearchInput = "";
+    this.modalSearchQuery = "";
+    this.modalSearchIndex = 0;
+  }
+
+  // Ctrl+F (Cmd+F on macOS) while a Pull Request is shown: its search bar, not the find bar of
+  // VS Code, which also searches the pipeline behind the window and only the tab shown
+  _handleSearchShortcut(event) {
+    if (
+      !(event.ctrlKey || event.metaKey) ||
+      event.altKey ||
+      event.shiftKey ||
+      String(event.key).toLowerCase() !== "f" ||
+      !this.showModalSearch
+    ) {
+      return;
+    }
+    const input = this.template.querySelector(".pr-search-input");
+    if (!input) {
+      return;
+    }
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    input.focus();
   }
 
   get showExplorerLookup() {

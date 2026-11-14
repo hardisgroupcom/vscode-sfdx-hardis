@@ -326,6 +326,8 @@ GUIDE_SHOTS = {
     "pipeline-pr-view-general.png": ("pipeline-pr-view-general", True),
     "pipeline-pr-view-validation.png": ("pipeline-pr-view-validation", True),
     "pipeline-pr-view-merged.png": ("pipeline-pr-view-merged", True),
+    # The search bar of that window, with the matches of a word highlighted
+    "pipeline-pr-view-search.png": ("pipeline-pr-view-search", True),
     "pipeline-branch-modal-actions.png": ("pipeline-branch-modal-actions", True),
     "org-monitoring.png": ("org-monitoring", True),
     "org-monitoring-packages-menu.png": ("org-monitoring-packages-menu", True),

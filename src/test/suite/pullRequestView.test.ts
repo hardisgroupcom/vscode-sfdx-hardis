@@ -1100,7 +1100,7 @@ suite("Pull Request view", () => {
     test("one Pull Request opens on its description, then its comments by kind", () => {
       assert.match(
         html,
-        /<lightning-tab [^>]*label=\{i18n\.prGeneralTab\} value="general"/,
+        /<lightning-tab [^>]*label=\{generalTabLabel\} value="general"/,
       );
       for (const tab of ["validation", "deployment", "megalinter"]) {
         assert.match(html, new RegExp(`<lightning-tab [^>]*value="${tab}"`));
@@ -1113,7 +1113,7 @@ suite("Pull Request view", () => {
 
     test("the comments are shown as they are, without a button to unfold them", () => {
       const runs = readModuleFile("workflowRuns", "workflowRuns.html");
-      assert.match(runs, /<s-markdown-view markdown=\{row\.body\}>/);
+      assert.match(runs, /<s-markdown-view markdown=\{row\.body\} /);
       assert.ok(!/handleToggle|aria-expanded/.test(runs));
     });
 
@@ -1951,10 +1951,10 @@ suite("Pull Request view", () => {
           String(url),
         );
       }
-      const view = readModuleFile("markdownView", "markdownView.js");
+      const sanitizer = readModuleFile("markdownUtils", "markdownUtils.js");
       // Kept only when trusted, replaced by its alternative text otherwise
       assert.match(
-        view,
+        sanitizer,
         /isTrustedCommentImage\(node\.getAttribute\("src"\)\)\s*\)\s*\{\s*return;\s*\}\s*const alt =/,
       );
     });
@@ -2157,12 +2157,24 @@ suite("Pull Request view", () => {
     });
 
     test("the comment of a run is rendered through the sanitizer only", () => {
+      const sanitizer = readModuleFile("markdownUtils", "markdownUtils.js");
+      assert.match(sanitizer, /purify\.sanitize\(/);
+      assert.match(sanitizer, /ALLOWED_URI_REGEXP: \/\^https\?:/);
+      // The texts the search counts are parsed from the same sanitized HTML
+      assert.ok(
+        !/innerHTML = (?!html)/.test(sanitizer),
+        "markdownUtils must only parse sanitized HTML",
+      );
       const view = readModuleFile("markdownView", "markdownView.js");
-      assert.match(view, /purify\.sanitize\(/);
-      assert.match(view, /ALLOWED_URI_REGEXP: \/\^https\?:/);
+      assert.match(view, /const html = markdownToSafeHtml\(this\._markdown\)/);
       assert.ok(
         !/innerHTML = (?!html)/.test(view),
         "markdownView must only write sanitized HTML",
+      );
+      // A highlight wraps a text node already there: no markup is built from the comment
+      assert.ok(
+        !/insertAdjacentHTML|outerHTML/.test(view),
+        "markdownView must not build markup from the text of a comment",
       );
     });
 
