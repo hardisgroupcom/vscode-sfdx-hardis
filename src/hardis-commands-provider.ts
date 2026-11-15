@@ -721,6 +721,13 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             helpUrl: DOCSITE_URL + "/hardis/org/diagnose/mfa/",
           },
           {
+            id: "hardis:org:diagnose:auth-retirements",
+            label: t("authRetirements"),
+            tooltip: t("authRetirementsTooltip"),
+            command: "sf hardis:org:diagnose:auth-retirements",
+            helpUrl: DOCSITE_URL + "/hardis/org/diagnose/auth-retirements/",
+          },
+          {
             id: "hardis:org:diagnose:unsecure-permissions",
             label: t("unsecurePermissions"),
             tooltip: t("unsecurePermissionsTooltip"),

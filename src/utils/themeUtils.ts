@@ -304,6 +304,10 @@ export class ThemeUtils {
         hardis: "monitoring.svg",
       },
       "hardis:org:diagnose:mfa": { vscode: "key", hardis: "password.svg" },
+      "hardis:org:diagnose:auth-retirements": {
+        vscode: "plug",
+        hardis: "password.svg",
+      },
       "hardis:org:diagnose:unsecure-permissions": {
         vscode: "shield",
         hardis: "warning-red.svg",

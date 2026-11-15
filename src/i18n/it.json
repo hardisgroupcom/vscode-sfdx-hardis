@@ -154,6 +154,8 @@
   "atlassianApiTokenWithScopesHint": "Scegli \"Create API token with scopes\" (non un token API classico).",
   "auditTrailAnalysis": "Analisi Audit Trail",
   "auditTrailAnalysisDescription": "Rileva attività di configurazione sospette nell'audit trail della tua org",
+  "authRetirements": "Ritiri dell'autenticazione",
+  "authRetirementsTooltip": "Trova le integrazioni che i ritiri dell'autenticazione Salesforce interromperanno: SOAP login(), flow OAuth device e username-password, refresh token inattivi",
   "authentication": "Autenticazione",
   "authenticationFailed": "Autenticazione con {{provider}} non riuscita.",
   "authorLabel": "Autore",

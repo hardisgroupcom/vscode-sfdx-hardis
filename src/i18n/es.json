@@ -154,6 +154,8 @@
   "atlassianApiTokenWithScopesHint": "Elija «Create API token with scopes» (no un token de API clásico).",
   "auditTrailAnalysis": "Análisis de la pista de auditoría",
   "auditTrailAnalysisDescription": "Detectar actividades sospechosas en la pista de auditoría de su org",
+  "authRetirements": "Retiradas de autenticación",
+  "authRetirementsTooltip": "Encuentre las integraciones que dejarán de funcionar con las retiradas de autenticación de Salesforce: SOAP login(), flujos OAuth device y username-password, refresh tokens inactivos",
   "authentication": "Autenticación",
   "authenticationFailed": "La autenticación con {{provider}} falló.",
   "authorLabel": "Autor",

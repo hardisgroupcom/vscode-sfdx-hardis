@@ -154,6 +154,8 @@
   "atlassianApiTokenWithScopesHint": "Kies \"Create API token with scopes\" (geen klassiek API-token).",
   "auditTrailAnalysis": "Audit Trail-analyse",
   "auditTrailAnalysisDescription": "Controleer op verdachte set-up activiteiten in de audit trail van je org",
+  "authRetirements": "Uitfasering van authenticatie",
+  "authRetirementsTooltip": "Vind de integraties die stoppen door de uitfasering van Salesforce-authenticatie: SOAP login(), OAuth device- en username-password-flows, inactieve refresh tokens",
   "authentication": "Authenticatie",
   "authenticationFailed": "Authenticatie met {{provider}} mislukt.",
   "authorLabel": "Auteur",

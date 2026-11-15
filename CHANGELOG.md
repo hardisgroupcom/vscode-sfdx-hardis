@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Audit menu: new **Authentication Retirements** command, to find the integrations that Salesforce authentication retirements will break (requires sfdx-hardis 8.25.0).
 - Deployment actions, **Browser** type: a **Documentation** button opens the page of the selected setting on the Browserforce documentation site (Browserforce 7.1.0 or later).
 - Deployment actions, **Browser** type: the editor asks for Browserforce 7.2.0 or later, which can rename the API name of a picklist value.
 - Renovate waits until a dependency release is 14 days old before opening an upgrade Pull Request. Security fixes are still proposed at once.

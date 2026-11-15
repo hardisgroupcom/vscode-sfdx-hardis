@@ -154,6 +154,8 @@
   "atlassianApiTokenWithScopesHint": "「Create API token with scopes」を選択してください（従来の API トークンではありません）。",
   "auditTrailAnalysis": "監査証跡の分析",
   "auditTrailAnalysisDescription": "組織の監査証跡から疑わしい設定アクティビティを検出します",
+  "authRetirements": "認証方式の廃止",
+  "authRetirementsTooltip": "Salesforce の認証方式の廃止で動かなくなる連携を見つけます: SOAP login()、OAuth デバイスフローとユーザー名パスワードフロー、使われていないリフレッシュトークン",
   "authentication": "認証",
   "authenticationFailed": "{{provider}} の認証に失敗しました。",
   "authorLabel": "作成者",

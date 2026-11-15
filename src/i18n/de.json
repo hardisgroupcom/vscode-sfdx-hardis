@@ -154,6 +154,8 @@
   "atlassianApiTokenWithScopesHint": "Wählen Sie „Create API token with scopes“ (kein klassisches API-Token).",
   "auditTrailAnalysis": "Audit Trail-Analyse",
   "auditTrailAnalysisDescription": "Verdächtige Konfigurationsaktivitäten im Audit Trail Ihrer Org erkennen",
+  "authRetirements": "Authentifizierungs-Abkündigungen",
+  "authRetirementsTooltip": "Finden Sie die Integrationen, die durch die Abkündigung von Salesforce-Authentifizierungsmethoden ausfallen: SOAP login(), OAuth Device- und Username-Password-Flow, inaktive Refresh Tokens",
   "authentication": "Authentifizierung",
   "authenticationFailed": "Authentifizierung mit {{provider}} fehlgeschlagen.",
   "authorLabel": "Autor",
