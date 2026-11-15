@@ -134,6 +134,10 @@ export class LwcUiPanel {
         // Retain context when hidden to preserve component state when switching tabs
         retainContextWhenHidden: true,
 
+        // Ctrl+F opens the find bar of VS Code (the Pull Request window keeps it for its own
+        // search bar)
+        enableFindWidget: true,
+
         // Restrict the webview to only loading content from our extension's `media` directory.
         localResourceRoots: [
           vscode.Uri.joinPath(extensionUri, "out", "webviews"),

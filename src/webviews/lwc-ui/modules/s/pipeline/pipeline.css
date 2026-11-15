@@ -842,6 +842,14 @@
     top: 0.5rem;
 }
 
+/* Search of a Pull Request: a discreet icon on the right of the title */
+.modal-search-toggle {
+    position: absolute;
+    right: 1.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
 .modal-breadcrumb {
     display: flex;
     flex-wrap: wrap;
@@ -859,4 +867,31 @@
 
 .modal-crumb-sep {
     color: var(--slds-g-color-neutral-base-40);
+}
+
+/* Search bar of a Pull Request, above its tabs. It stays at the top of the window while the
+   current match is scrolled into view, so its counter and its arrows never leave the screen */
+.pr-search-bar {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-bottom: 0.5rem;
+    padding: 0.375rem 0;
+    background: light-dark(var(--slds-g-color-neutral-base-100), var(--slds-g-color-neutral-base-90));
+    border-bottom: 1px solid var(--slds-g-color-neutral-base-90);
+}
+
+.pr-search-input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.pr-search-position {
+    min-width: 4.5rem;
+    text-align: center;
+    font-size: 0.8125rem;
+    white-space: nowrap;
 }

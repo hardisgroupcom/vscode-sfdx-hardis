@@ -7,6 +7,11 @@
 - Renovate waits until a dependency release is 14 days old before opening an upgrade Pull Request. Security fixes are still proposed at once.
 - Contributors: the documentation screenshot harness clicks the branch nodes and the contribution cards where the view switch of the DevOps Pipeline put them, and crops the cards pictures at their new place.
 - Pull Request window: a long line of a job log or of a comment code block wraps instead of making the block scroll sideways.
+- Pull Request window: search the description and the comments of the Validation, Code Quality and Deployment tabs, from the search icon of its header or Ctrl+F
+  - Matches are highlighted and the collapsed sections holding one open
+  - Each tab shows its number of matches, and Enter jumps to the next one across the tabs
+  - A filter keeps only the runs whose comment matches
+- Ctrl+F opens the VS Code find bar in the other panels
 
 ## [8.19.0] 2026-11-08
 

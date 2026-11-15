@@ -2802,6 +2802,18 @@ lightning-helptext::part(icon) {
   margin-bottom: 0;
 }
 
+/* A match of a search in a text (the search bar of a Pull Request), and the current one */
+.hardis-search-hit {
+  padding: 0 0.0625rem;
+  border-radius: 0.125rem;
+  background: var(--slds-g-color-palette-yellow-80);
+  color: inherit;
+}
+.hardis-search-hit.active {
+  background: var(--slds-g-color-palette-orange-70);
+  outline: 2px solid var(--slds-g-color-palette-orange-60);
+}
+
 /* A table cell that opens something (the number and the title of a Pull Request) is a button of
    the base variant. A button centers its label and keeps the line height of a control: a title
    that wraps then reads as centered lines far apart, unlike the link it replaced. */

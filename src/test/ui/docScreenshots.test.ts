@@ -4,6 +4,7 @@ import {
   CdpWindow,
   inFramedPage,
   inWebview,
+  inWorkbench,
   webviewBoxInWindow,
 } from "./cdpWindow";
 import { cropPng } from "./pngCrop";
@@ -1684,7 +1685,19 @@ suite("Documentation screenshots", function () {
       await sleep(2500);
       await cleanChrome();
       await captureStable("pipeline-pr-modal");
-      await click(660, 245); // "Deployment Actions" tab of the PR modal
+      // "Deployment Actions" tab of the PR modal, by its value: the search bar above the tabs
+      // moves them, and a point would land on it
+      await inWebview(`
+        const tab = deepAll(
+          panelDocument,
+          'a[role="tab"][data-tab-value="actions"]',
+        )[0];
+        if (!tab) {
+          return null;
+        }
+        tab.click();
+        return true;
+      `);
       await sleep(1200);
       await captureStable("pipeline-pr-actions-empty");
       await click(420, 290); // "Add New Action"
@@ -1964,6 +1977,285 @@ suite("Documentation screenshots", function () {
       await windowDriver()?.type("12");
       await sleep(2500);
       await captureStable("pipeline-pr-explorer-search");
+    } finally {
+      checkoutWorkspaceBranch("integration");
+    }
+  });
+
+  // Search of the Pull Request window, in the real webview: Ctrl+F reaches its search bar and
+  // not the find bar of VS Code, a match in a collapsed section opens it, Enter goes through
+  // every tab and the matches counted are the ones highlighted, the filter empties a tab without
+  // match, Escape clears, and once the window is closed Ctrl+F opens the find bar of VS Code.
+  test("pipeline: pull request search", async function () {
+    if (!shouldTake("pipeline-pr-view-search")) {
+      this.skip();
+    }
+    const driver = windowDriver();
+    if (!driver) {
+      this.skip();
+      return;
+    }
+    const ctrlF = {
+      key: "f",
+      code: "KeyF",
+      keyCode: 70,
+      modifiers: process.platform === "darwin" ? 4 : 2,
+    };
+    const enter = { key: "Enter", code: "Enter", keyCode: 13 };
+    const escape = { key: "Escape", code: "Escape", keyCode: 27 };
+    // A real click on an element of the panel, so the keys go to the webview
+    const clickInPanel = async (selector: string): Promise<void> => {
+      const rect = await inWebview(`
+        const element = deepAll(panelDocument, ${JSON.stringify(selector)}).find(
+          (candidate) => candidate.offsetParent !== null,
+        );
+        if (!element) { return null; }
+        const box = element.getBoundingClientRect();
+        return { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+      `);
+      const webview = await webviewBoxInWindow();
+      const ratio = await inWorkbench(`return window.devicePixelRatio;`);
+      assert.ok(rect && webview && ratio, `${selector} is on screen`);
+      await click(
+        Math.round((webview!.x + rect.x) * ratio),
+        Math.round((webview!.y + rect.y) * ratio) - TITLE_BAR_HEIGHT,
+      );
+    };
+    // What the search shows: the bar, the highlights, the sections, the tabs
+    const searchState = (): Promise<any> =>
+      inWebview(`
+        const host = deepAll(panelDocument, "lightning-input.pr-search-input")[0];
+        let focused = panelDocument.activeElement;
+        while (focused && focused.shadowRoot && focused.shadowRoot.activeElement) {
+          focused = focused.shadowRoot.activeElement;
+        }
+        const marks = deepAll(panelDocument, "mark.hardis-search-hit");
+        const shown = marks.filter((mark) => mark.offsetParent !== null);
+        const active = marks.filter((mark) => mark.classList.contains("active"));
+        const sections = deepAll(panelDocument, "s-markdown-view").flatMap((view) =>
+          deepAll(view.shadowRoot || view, "details"),
+        );
+        const position = deepAll(panelDocument, ".pr-search-position")[0];
+        // The bar stays inside the visible part of the window, whatever was scrolled
+        const bar = deepAll(panelDocument, ".pr-search-bar")[0];
+        const content = deepAll(panelDocument, ".slds-modal__content")[0];
+        const barBox = bar ? bar.getBoundingClientRect() : null;
+        const contentBox = content ? content.getBoundingClientRect() : null;
+        return {
+          inputFocused: !!focused && focused.tagName === "INPUT" && focused.type === "search",
+          position: position ? position.textContent.trim() : "",
+          marks: marks.length,
+          shownMarks: shown.length,
+          activeText: active.length === 1 ? active[0].textContent : null,
+          activeShown: active.length === 1 && active[0].offsetParent !== null,
+          closedAroundMatch: marks.filter((mark) => {
+            const section = mark.closest("details");
+            return section && !section.open;
+          }).length,
+          openSections: sections.filter((section) => section.open).length,
+          tabs: deepAll(panelDocument, 'a[role="tab"]').map((tab) => tab.textContent.trim()),
+          noMatchInTab: deepAll(panelDocument, "p").some(
+            (p) => p.offsetParent !== null && p.textContent.trim() === ${JSON.stringify(t("prSearchNoMatchInTab"))},
+          ),
+          modalOpen: deepAll(panelDocument, "section.slds-modal").length > 0,
+          barOpen: !!host,
+          toggleShown: deepAll(panelDocument, ".modal-search-toggle").length > 0,
+          barShown:
+            !!barBox &&
+            !!contentBox &&
+            barBox.top >= contentBox.top - 1 &&
+            barBox.bottom <= contentBox.bottom + 1,
+        };
+      `);
+    const findBarShown = (): Promise<boolean> =>
+      inWorkbench(`
+        return Array.from(
+          document.querySelectorAll(".simple-find-part-wrapper.visible, .simple-find-part.visible"),
+        ).some((element) => element.getBoundingClientRect().height > 0);
+      `);
+
+    checkoutWorkspaceBranch(FEATURE_BRANCH);
+    try {
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+      await vscode.commands.executeCommand("vscode-sfdx-hardis.showPipeline", {
+        focus: "pullRequest",
+        prNumber: 128,
+        tab: "validation",
+      });
+      const panel = await waitFor(
+        () => panelManager.getPanel("s-pipeline"),
+        20000,
+        "pipeline panel to open",
+      );
+      await waitFor(
+        () => pipelineFullyLoaded(panel.getInitializationData() || {}),
+        25000,
+        "pipeline data",
+      );
+      panel.reveal();
+      await waitFor(
+        async () => (await searchState())?.modalOpen === true,
+        30000,
+        "the Pull Request window and its search bar",
+      );
+      await sleep(3000);
+      const before = await searchState();
+      // The bar takes room: closed, with the search button of the header to open it
+      assert.strictEqual(before.barOpen, false, "the search bar starts closed");
+      assert.strictEqual(
+        before.toggleShown,
+        true,
+        "the header has a search button",
+      );
+
+      // Ctrl+F in the window: its search bar, and no find bar of VS Code over it
+      await clickInPanel(".slds-modal__title");
+      await driver.press(ctrlF);
+      await sleep(600);
+      const opened = await searchState();
+      assert.strictEqual(opened.barOpen, true);
+      assert.strictEqual(opened.inputFocused, true);
+      assert.strictEqual(await findBarShown(), false);
+
+      // Typed: highlighted on the tab shown, in the collapsed list of test classes too
+      await driver.type("account");
+      await sleep(1200);
+      const typed = await searchState();
+      // The current match is the first one of the tab shown: General comes before it
+      const countOf = (label: string): number => {
+        const tab = typed.tabs.find((text: string) => text.startsWith(label));
+        const count = tab ? /\((\d+)\)$/.exec(tab) : null;
+        return count ? Number(count[1]) : 0;
+      };
+      const position = /^(\d+) \/ (\d+)$/.exec(typed.position);
+      assert.ok(position, `position of the current match: "${typed.position}"`);
+      const start = Number(position![1]);
+      const total = Number(position![2]);
+      assert.strictEqual(start, countOf(t("prGeneralTab")) + 1);
+      assert.ok(total >= 4, `several matches: ${total}`);
+      assert.strictEqual(
+        countOf(t("prGeneralTab")) + countOf(t("journeyValidation")),
+        total,
+        `the tabs count every match: ${typed.tabs.join(" | ")}`,
+      );
+      assert.ok(
+        typed.shownMarks >= 4,
+        `highlights on screen: ${typed.shownMarks}`,
+      );
+      assert.strictEqual(typed.activeShown, true);
+      assert.strictEqual(
+        typed.barShown,
+        true,
+        "the search bar stays on screen",
+      );
+      assert.strictEqual(typed.closedAroundMatch, 0);
+      assert.ok(typed.openSections > before.openSections, "a section opened");
+      assert.ok(
+        typed.tabs.some(
+          (tab: string) =>
+            /\(\d+\)$/.test(tab) && tab.startsWith(t("journeyValidation")),
+        ),
+        `the Validation tab counts its matches: ${typed.tabs.join(" | ")}`,
+      );
+      // The picture of the documentation: the window back at its top, so the tabs show their
+      // number of matches above the highlights
+      await inWebview(`
+        const content = deepAll(panelDocument, ".slds-modal__content")[0];
+        if (!content) { return null; }
+        content.scrollTop = 0;
+        return true;
+      `);
+      await sleep(600);
+      await cleanChrome();
+      await captureStable("pipeline-pr-view-search");
+
+      // Enter goes through every tab, and comes back to the first match: each match counted
+      // was highlighted once its tab was shown
+      await driver.press(enter);
+      await sleep(600);
+      assert.strictEqual(
+        (await searchState()).position,
+        `${(start % total) + 1} / ${total}`,
+      );
+      for (let step = 1; step < total; step++) {
+        await driver.press(enter);
+        await sleep(500);
+      }
+      const round = await searchState();
+      assert.strictEqual(round.position, `${start} / ${total}`);
+      // Scrolling to each match never took the bar off the screen
+      assert.strictEqual(
+        round.barShown,
+        true,
+        "the search bar stays on screen",
+      );
+      assert.strictEqual(round.marks, total);
+
+      // The filter: the Code Quality tab has no match, and says so
+      const filtered = await inWebview(`
+        const toggle = deepAll(panelDocument, "lightning-button-icon-stateful.pr-search-filter")[0];
+        const tab = deepAll(panelDocument, 'a[role="tab"][data-tab-value="megalinter"]')[0];
+        if (!toggle || !tab) { return null; }
+        deepAll(toggle.shadowRoot || toggle, "button")[0].click();
+        tab.click();
+        return true;
+      `);
+      assert.strictEqual(filtered, true);
+      await sleep(1000);
+      assert.strictEqual((await searchState()).noMatchInTab, true);
+
+      // Escape: nothing highlighted, the sections the search opened closed again
+      await clickInPanel(".slds-modal__title");
+      await driver.press(ctrlF);
+      await sleep(400);
+      await driver.press(escape);
+      await sleep(800);
+      const cleared = await searchState();
+      assert.strictEqual(cleared.barOpen, false, "Escape closes the bar");
+      assert.strictEqual(cleared.marks, 0);
+      assert.strictEqual(cleared.openSections, before.openSections);
+      assert.strictEqual(cleared.modalOpen, true);
+
+      // The search button of the header opens the bar, its close button closes it
+      const clickIn = (selector: string): Promise<any> =>
+        inWebview(`
+          const host = deepAll(panelDocument, ${JSON.stringify(selector)})[0];
+          const button = host && deepAll(host.shadowRoot || host, "button")[0];
+          if (!button) { return null; }
+          button.click();
+          return true;
+        `);
+      assert.strictEqual(await clickIn(".modal-search-toggle"), true);
+      await sleep(600);
+      assert.strictEqual(
+        (await searchState()).barOpen,
+        true,
+        "the search button opens the bar",
+      );
+      assert.strictEqual(
+        await clickIn("lightning-button-icon.pr-search-close"),
+        true,
+      );
+      await sleep(600);
+      assert.strictEqual(
+        (await searchState()).barOpen,
+        false,
+        "the close button closes the bar",
+      );
+
+      // The window closed: Ctrl+F is the find bar of VS Code again
+      await inWebview(`
+        const close = deepAll(panelDocument, "button.slds-modal__close")[0];
+        if (!close) { return null; }
+        close.click();
+        return true;
+      `);
+      await sleep(1000);
+      await clickInPanel(".hardis-page-title");
+      await driver.press(ctrlF);
+      await sleep(800);
+      assert.strictEqual(await findBarShown(), true);
+      await driver.press(escape);
     } finally {
       checkoutWorkspaceBranch("integration");
     }
