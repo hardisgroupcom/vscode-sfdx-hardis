@@ -721,11 +721,11 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             helpUrl: DOCSITE_URL + "/hardis/org/diagnose/mfa/",
           },
           {
-            id: "hardis:org:diagnose:auth-retirements",
-            label: t("authRetirements"),
-            tooltip: t("authRetirementsTooltip"),
-            command: "sf hardis:org:diagnose:auth-retirements",
-            helpUrl: DOCSITE_URL + "/hardis/org/diagnose/auth-retirements/",
+            id: "hardis:org:diagnose:what-will-break",
+            label: t("whatWillBreak"),
+            tooltip: t("whatWillBreakTooltip"),
+            command: "sf hardis:org:diagnose:what-will-break",
+            helpUrl: DOCSITE_URL + "/hardis/org/diagnose/what-will-break/",
           },
           {
             id: "hardis:org:diagnose:unsecure-permissions",
@@ -779,14 +779,6 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             helpUrl: DOCSITE_URL + "/hardis/org/monitor/limits/",
           },
           {
-            id: "hardis:org:diagnose:releaseupdates",
-            label: t("checkReleaseUpdates"),
-            command: "sf hardis:org:diagnose:releaseupdates",
-            tooltip: t("checkReleaseUpdatesTooltip"),
-            requiresProject: true,
-            helpUrl: DOCSITE_URL + "/hardis/org/diagnose/releaseupdates/",
-          },
-          {
             id: "hardis:org:diagnose:unsecure-connected-apps",
             label: t("unsecuredConnectedApps"),
             tooltip: t("unsecuredConnectedAppsTooltip"),
@@ -800,13 +792,6 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             tooltip: t("securityHealthCheckTooltip"),
             command: "sf hardis:org:monitor:health-check",
             helpUrl: DOCSITE_URL + "/hardis/org/monitor/health-check/",
-          },
-          {
-            id: "org:diagnose:legacyapi",
-            label: t("legacyApiVersionsUsage"),
-            tooltip: t("detectLegacyApiTooltip"),
-            command: "sf hardis:org:diagnose:legacyapi",
-            helpUrl: DOCSITE_URL + "/hardis/org/diagnose/legacyapi/",
           },
           {
             id: "hardis:org:diagnose:apex-api-version",

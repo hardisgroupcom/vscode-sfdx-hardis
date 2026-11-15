@@ -304,8 +304,8 @@ export class ThemeUtils {
         hardis: "monitoring.svg",
       },
       "hardis:org:diagnose:mfa": { vscode: "key", hardis: "password.svg" },
-      "hardis:org:diagnose:auth-retirements": {
-        vscode: "plug",
+      "hardis:org:diagnose:what-will-break": {
+        vscode: "warning",
         hardis: "password.svg",
       },
       "hardis:org:diagnose:unsecure-permissions": {
@@ -386,7 +386,6 @@ export class ThemeUtils {
         hardis: "sync.svg",
       },
       "hardis:org:monitor:limits": { vscode: "eye-watch", hardis: "gauge.svg" },
-      "org:diagnose:legacyapi": { vscode: "watch", hardis: "old.svg" },
       "hardis:org:diagnose:unusedusers": {
         vscode: "person",
         hardis: "dollar.svg",
@@ -398,10 +397,6 @@ export class ThemeUtils {
       "hardis:org:diagnose:underusedpermsets": {
         vscode: "key",
         hardis: "password.svg",
-      },
-      "hardis:org:diagnose:releaseupdates": {
-        vscode: "eye-watch",
-        hardis: "monitoring.svg",
       },
       "hardis:org:diagnose:unsecure-connected-apps": {
         vscode: "plug",
