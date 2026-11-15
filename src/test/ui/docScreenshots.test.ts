@@ -2037,6 +2037,11 @@ suite("Documentation screenshots", function () {
           deepAll(view.shadowRoot || view, "details"),
         );
         const position = deepAll(panelDocument, ".pr-search-position")[0];
+        // The bar stays inside the visible part of the window, whatever was scrolled
+        const bar = deepAll(panelDocument, ".pr-search-bar")[0];
+        const content = deepAll(panelDocument, ".slds-modal__content")[0];
+        const barBox = bar ? bar.getBoundingClientRect() : null;
+        const contentBox = content ? content.getBoundingClientRect() : null;
         return {
           inputFocused: !!focused && focused.tagName === "INPUT" && focused.type === "search",
           position: position ? position.textContent.trim() : "",
@@ -2054,6 +2059,11 @@ suite("Documentation screenshots", function () {
             (p) => p.offsetParent !== null && p.textContent.trim() === ${JSON.stringify(t("prSearchNoMatchInTab"))},
           ),
           modalOpen: deepAll(panelDocument, "section.slds-modal").length > 0,
+          barShown:
+            !!barBox &&
+            !!contentBox &&
+            barBox.top >= contentBox.top - 1 &&
+            barBox.bottom <= contentBox.bottom + 1,
         };
       `);
     const findBarShown = (): Promise<boolean> =>
@@ -2123,6 +2133,11 @@ suite("Documentation screenshots", function () {
         `highlights on screen: ${typed.shownMarks}`,
       );
       assert.strictEqual(typed.activeShown, true);
+      assert.strictEqual(
+        typed.barShown,
+        true,
+        "the search bar stays on screen",
+      );
       assert.strictEqual(typed.closedAroundMatch, 0);
       assert.ok(typed.openSections > before.openSections, "a section opened");
       assert.ok(
@@ -2132,6 +2147,15 @@ suite("Documentation screenshots", function () {
         ),
         `the Validation tab counts its matches: ${typed.tabs.join(" | ")}`,
       );
+      // The picture of the documentation: the window back at its top, so the tabs show their
+      // number of matches above the highlights
+      await inWebview(`
+        const content = deepAll(panelDocument, ".slds-modal__content")[0];
+        if (!content) { return null; }
+        content.scrollTop = 0;
+        return true;
+      `);
+      await sleep(600);
       await cleanChrome();
       await captureStable("pipeline-pr-view-search");
 
@@ -2149,6 +2173,12 @@ suite("Documentation screenshots", function () {
       }
       const round = await searchState();
       assert.strictEqual(round.position, `${start} / ${total}`);
+      // Scrolling to each match never took the bar off the screen
+      assert.strictEqual(
+        round.barShown,
+        true,
+        "the search bar stays on screen",
+      );
       assert.strictEqual(round.marks, total);
 
       // The filter: the Code Quality tab has no match, and says so

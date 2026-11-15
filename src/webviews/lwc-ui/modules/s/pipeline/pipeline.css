@@ -861,12 +861,19 @@
     color: var(--slds-g-color-neutral-base-40);
 }
 
-/* Search bar of a Pull Request, above its tabs */
+/* Search bar of a Pull Request, above its tabs. It stays at the top of the window while the
+   current match is scrolled into view, so its counter and its arrows never leave the screen */
 .pr-search-bar {
+    position: sticky;
+    top: 0;
+    z-index: 2;
     display: flex;
     align-items: center;
     gap: 0.375rem;
     margin-bottom: 0.5rem;
+    padding: 0.375rem 0;
+    background: light-dark(var(--slds-g-color-neutral-base-100), var(--slds-g-color-neutral-base-90));
+    border-bottom: 1px solid var(--slds-g-color-neutral-base-90);
 }
 
 .pr-search-input {
