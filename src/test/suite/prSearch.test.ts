@@ -1,3 +1,4 @@
+// cspell:ignore Déploiement Deploiement échoué ECHOUE İstanbul
 import * as assert from "assert";
 import * as path from "path";
 import {

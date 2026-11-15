@@ -88,7 +88,7 @@ export function textNodesOf(root) {
     return nodes;
   }
   const owner = root.ownerDocument || document;
-  const walker = owner.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const walker = owner.createTreeWalker(root, window.NodeFilter.SHOW_TEXT);
   let node = walker.nextNode();
   while (node) {
     nodes.push(node);
