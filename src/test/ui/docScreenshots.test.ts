@@ -2025,7 +2025,6 @@ suite("Documentation screenshots", function () {
     const searchState = (): Promise<any> =>
       inWebview(`
         const host = deepAll(panelDocument, "lightning-input.pr-search-input")[0];
-        if (!host) { return null; }
         let focused = panelDocument.activeElement;
         while (focused && focused.shadowRoot && focused.shadowRoot.activeElement) {
           focused = focused.shadowRoot.activeElement;
@@ -2059,6 +2058,8 @@ suite("Documentation screenshots", function () {
             (p) => p.offsetParent !== null && p.textContent.trim() === ${JSON.stringify(t("prSearchNoMatchInTab"))},
           ),
           modalOpen: deepAll(panelDocument, "section.slds-modal").length > 0,
+          barOpen: !!host,
+          toggleShown: deepAll(panelDocument, ".modal-search-toggle").length > 0,
           barShown:
             !!barBox &&
             !!contentBox &&
@@ -2099,12 +2100,21 @@ suite("Documentation screenshots", function () {
       );
       await sleep(3000);
       const before = await searchState();
+      // The bar takes room: closed, with the search button of the header to open it
+      assert.strictEqual(before.barOpen, false, "the search bar starts closed");
+      assert.strictEqual(
+        before.toggleShown,
+        true,
+        "the header has a search button",
+      );
 
       // Ctrl+F in the window: its search bar, and no find bar of VS Code over it
       await clickInPanel(".slds-modal__title");
       await driver.press(ctrlF);
       await sleep(600);
-      assert.strictEqual((await searchState()).inputFocused, true);
+      const opened = await searchState();
+      assert.strictEqual(opened.barOpen, true);
+      assert.strictEqual(opened.inputFocused, true);
       assert.strictEqual(await findBarShown(), false);
 
       // Typed: highlighted on the tab shown, in the collapsed list of test classes too
@@ -2183,7 +2193,7 @@ suite("Documentation screenshots", function () {
 
       // The filter: the Code Quality tab has no match, and says so
       const filtered = await inWebview(`
-        const toggle = deepAll(panelDocument, "lightning-button-icon-stateful")[0];
+        const toggle = deepAll(panelDocument, "lightning-button-icon-stateful.pr-search-filter")[0];
         const tab = deepAll(panelDocument, 'a[role="tab"][data-tab-value="megalinter"]')[0];
         if (!toggle || !tab) { return null; }
         deepAll(toggle.shadowRoot || toggle, "button")[0].click();
@@ -2201,10 +2211,37 @@ suite("Documentation screenshots", function () {
       await driver.press(escape);
       await sleep(800);
       const cleared = await searchState();
-      assert.strictEqual(cleared.position, "");
+      assert.strictEqual(cleared.barOpen, false, "Escape closes the bar");
       assert.strictEqual(cleared.marks, 0);
       assert.strictEqual(cleared.openSections, before.openSections);
       assert.strictEqual(cleared.modalOpen, true);
+
+      // The search button of the header opens the bar, its close button closes it
+      const clickIn = (selector: string): Promise<any> =>
+        inWebview(`
+          const host = deepAll(panelDocument, ${JSON.stringify(selector)})[0];
+          const button = host && deepAll(host.shadowRoot || host, "button")[0];
+          if (!button) { return null; }
+          button.click();
+          return true;
+        `);
+      assert.strictEqual(await clickIn(".modal-search-toggle"), true);
+      await sleep(600);
+      assert.strictEqual(
+        (await searchState()).barOpen,
+        true,
+        "the search button opens the bar",
+      );
+      assert.strictEqual(
+        await clickIn("lightning-button-icon.pr-search-close"),
+        true,
+      );
+      await sleep(600);
+      assert.strictEqual(
+        (await searchState()).barOpen,
+        false,
+        "the close button closes the bar",
+      );
 
       // The window closed: Ctrl+F is the find bar of VS Code again
       await inWebview(`

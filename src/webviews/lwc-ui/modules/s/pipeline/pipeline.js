@@ -280,8 +280,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   jobArtifacts = {};
   // Branch checked out in the workspace, where the actions of the Pull Request are read and written
   modalCheckout = null;
-  // Search bar of a Pull Request (see MODAL_STATE_DEFAULTS): what is typed, what is searched
-  // once the typing pauses, the current match counted across the tabs, and the filter
+  // Search bar of a Pull Request (see MODAL_STATE_DEFAULTS): open or not, what is typed, what is
+  // searched once the typing pauses, the current match counted across the tabs, and the filter
+  modalSearchOpen = false;
   modalSearchInput = "";
   modalSearchQuery = "";
   modalSearchIndex = 0;
@@ -3762,10 +3763,21 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
   }
 
-  // Search bar of a Pull Request: the description (General) and the comments of the
-  // Validation, Code Quality and Deployment tabs
-  get showModalSearch() {
+  // Search of a Pull Request: the description (General) and the comments of the Validation,
+  // Code Quality and Deployment tabs. Its bar takes room: it stays closed until Ctrl+F or the
+  // search button of the header opens it
+  get canSearchModal() {
     return this.showPRModal && this.showModalTabs && this.isSinglePRMode;
+  }
+
+  get showModalSearch() {
+    return this.canSearchModal && this.modalSearchOpen;
+  }
+
+  get modalSearchToggleTitle() {
+    return this.modalSearchOpen
+      ? this.i18n.prSearchClose
+      : this.i18n.prSearchOpen;
   }
 
   get modalSearchTotal() {
@@ -3854,8 +3866,21 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     } else if (event.key === "Escape") {
       event.preventDefault();
       event.stopPropagation();
-      this._clearModalSearch();
+      this._closeModalSearch();
     }
+  }
+
+  // The search button of the header: opens the bar, or closes it with its search
+  handleModalSearchToggle() {
+    if (this.modalSearchOpen) {
+      this._closeModalSearch();
+      return;
+    }
+    this._openModalSearch();
+  }
+
+  handleModalSearchClose() {
+    this._closeModalSearch();
   }
 
   handleModalSearchNext() {
@@ -4021,6 +4046,24 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.modalSearchIndex = 0;
   }
 
+  // Opens the bar and puts the cursor in it, once it is rendered
+  _openModalSearch() {
+    this.modalSearchOpen = true;
+    // eslint-disable-next-line @lwc/lwc/no-async-operation
+    setTimeout(() => {
+      const input = this.template.querySelector(".pr-search-input");
+      if (input) {
+        input.focus();
+      }
+    }, 0);
+  }
+
+  // Nothing searched, nothing highlighted, and the room of the bar given back
+  _closeModalSearch() {
+    this._clearModalSearch();
+    this.modalSearchOpen = false;
+  }
+
   // Ctrl+F (Cmd+F on macOS) while a Pull Request is shown: its search bar, not the find bar of
   // VS Code, which also searches the pipeline behind the window and only the tab shown
   _handleSearchShortcut(event) {
@@ -4029,17 +4072,13 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       event.altKey ||
       event.shiftKey ||
       String(event.key).toLowerCase() !== "f" ||
-      !this.showModalSearch
+      !this.canSearchModal
     ) {
-      return;
-    }
-    const input = this.template.querySelector(".pr-search-input");
-    if (!input) {
       return;
     }
     event.preventDefault();
     event.stopImmediatePropagation();
-    input.focus();
+    this._openModalSearch();
   }
 
   get showExplorerLookup() {

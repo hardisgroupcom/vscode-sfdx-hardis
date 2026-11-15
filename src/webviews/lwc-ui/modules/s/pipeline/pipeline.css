@@ -842,6 +842,14 @@
     top: 0.5rem;
 }
 
+/* Search of a Pull Request: a discreet icon on the right of the title */
+.modal-search-toggle {
+    position: absolute;
+    right: 1.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
 .modal-breadcrumb {
     display: flex;
     flex-wrap: wrap;

@@ -415,6 +415,12 @@
                             </template>
                         </nav>
                     </template>
+                    <!-- Opens the search of a Pull Request, as Ctrl+F does -->
+                    <template if:true={canSearchModal}>
+                        <div class="modal-search-toggle">
+                            <lightning-button-icon icon-name="utility:search" variant="bare" size="large" title={modalSearchToggleTitle} alternative-text={modalSearchToggleTitle} onclick={handleModalSearchToggle}></lightning-button-icon>
+                        </div>
+                    </template>
                     <h2 id="modal-heading-01" class="slds-modal__title slds-hyphenate">
                         <template if:true={isSinglePRMode}>
                             {modalTitle}
@@ -488,6 +494,7 @@
                             </div>
                         </template>
                         <!-- Search in the description and in the comments of the jobs (Ctrl+F) -->
+                        <template if:true={modalSearchOpen}>
                         <div class="pr-search-bar" role="search">
                             <lightning-input
                                 type="search"
@@ -502,8 +509,10 @@
                             <span class="muted pr-search-position" aria-live="polite">{modalSearchPositionLabel}</span>
                             <lightning-button-icon icon-name="utility:chevronup" variant="border-filled" size="medium" title={i18n.prSearchPrevious} alternative-text={i18n.prSearchPrevious} disabled={modalSearchNavigationDisabled} onclick={handleModalSearchPrevious}></lightning-button-icon>
                             <lightning-button-icon icon-name="utility:chevrondown" variant="border-filled" size="medium" title={i18n.prSearchNext} alternative-text={i18n.prSearchNext} disabled={modalSearchNavigationDisabled} onclick={handleModalSearchNext}></lightning-button-icon>
-                            <lightning-button-icon-stateful icon-name="utility:filterList" size="medium" selected={modalSearchFilter} title={i18n.prSearchFilter} alternative-text={i18n.prSearchFilter} onclick={handleModalSearchFilterToggle}></lightning-button-icon-stateful>
+                            <lightning-button-icon-stateful icon-name="utility:filterList" size="medium" selected={modalSearchFilter} title={i18n.prSearchFilter} alternative-text={i18n.prSearchFilter} onclick={handleModalSearchFilterToggle} class="pr-search-filter"></lightning-button-icon-stateful>
+                            <lightning-button-icon icon-name="utility:close" variant="bare" size="medium" title={i18n.prSearchClose} alternative-text={i18n.prSearchClose} onclick={handleModalSearchClose} class="pr-search-close"></lightning-button-icon>
                         </div>
+                        </template>
                     </template>
                     <!-- Go-lives selector (top branches such as main/prod) -->
                     <template if:true={modalIsTopBranch}>

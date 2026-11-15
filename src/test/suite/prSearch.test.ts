@@ -47,6 +47,7 @@ const PIPELINE_MEMBERS = [
   "_moveModalSearch(delta)",
   "_goToSearchMatch(index)",
   "_clearModalSearch()",
+  "_closeModalSearch()",
 ];
 
 /**
@@ -221,6 +222,17 @@ suite("Pull Request window search", () => {
       assert.strictEqual(view.modalSearchQuery, "");
       assert.strictEqual(view.modalSearchPositionLabel, "");
     });
+
+    test("closing the bar clears the search and gives its room back", () => {
+      const view = searchComponent([{ key: "validation", count: 2 }]);
+      view.modalSearchOpen = true;
+      view.modalSearchInput = "error";
+      view._applyModalSearch();
+      view._closeModalSearch();
+      assert.strictEqual(view.modalSearchOpen, false);
+      assert.strictEqual(view.modalSearchQuery, "");
+      assert.strictEqual(view.modalSearchInput, "");
+    });
   });
 
   suite("wiring", () => {
@@ -234,6 +246,7 @@ suite("Pull Request window search", () => {
         'modalSearchQuery: ""',
         "modalSearchIndex: 0",
         "modalSearchFilter: false",
+        "modalSearchOpen: false",
       ]) {
         assert.ok(defaults.includes(field), field);
       }
@@ -254,8 +267,16 @@ suite("Pull Request window search", () => {
         /window\.removeEventListener\("keydown", this\._boundSearchShortcut, true\)/,
       );
       const shortcut = extractMember(js, "_handleSearchShortcut(event)");
-      assert.match(shortcut, /!this\.showModalSearch/);
+      assert.match(shortcut, /!this\.canSearchModal/);
       assert.match(shortcut, /event\.stopImmediatePropagation\(\)/);
+      assert.match(shortcut, /this\._openModalSearch\(\)/);
+      // The bar takes room: closed until Ctrl+F or the search button of the header opens it
+      const html = readModuleFile("pipeline", "pipeline.html");
+      assert.match(
+        html,
+        /<template if:true=\{modalSearchOpen\}>\s*<div class="pr-search-bar"/,
+      );
+      assert.match(html, /onclick=\{handleModalSearchToggle\}/);
     });
 
     test("every tab searched gets the search, and counts from the same comments", () => {
@@ -301,6 +322,8 @@ suite("Pull Request window search", () => {
         "prSearchNext",
         "prSearchNoMatch",
         "prSearchNoMatchInTab",
+        "prSearchClose",
+        "prSearchOpen",
         "prSearchPlaceholder",
         "prSearchPosition",
         "prSearchPrevious",
