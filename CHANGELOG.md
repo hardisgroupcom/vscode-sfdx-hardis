@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Audit menu: new **What Will Break** command, to find what dated Salesforce changes will break in an org, when, and what to do. It replaces the Legacy API and Release Updates commands, which leave the menu (requires sfdx-hardis 8.25.0).
+- Command runner: the main report of a command is the first report button, before its detail reports (requires sfdx-hardis 8.25.0).
 - Deployment actions, **Browser** type: a **Documentation** button opens the page of the selected setting on the Browserforce documentation site (Browserforce 7.1.0 or later).
 - Deployment actions, **Browser** type: the editor asks for Browserforce 7.2.0 or later, which can rename the API name of a picklist value.
 - Renovate waits until a dependency release is 14 days old before opening an upgrade Pull Request. Security fixes are still proposed at once.

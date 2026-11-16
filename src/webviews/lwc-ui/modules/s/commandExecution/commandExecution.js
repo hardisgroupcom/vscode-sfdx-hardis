@@ -931,6 +931,8 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
             ? data.commandArgs
             : null,
         isPackageXml: data.isPackageXml === true,
+        // Main report of the command (sfdx-hardis 8.25.0+): shown first
+        isMain: data.main === true,
       };
       this.reportFiles = [...this.reportFiles, reportFile];
       this.scrollToBottom();
@@ -2181,6 +2183,7 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
             id: stableId,
             title: baseTitle,
             type: group.files[0].type, // Use the type from the first file
+            isMain: group.files.some((f) => f.isMain),
             isDropdown: true,
             dropdownOptions: [
               ...group.files.map((f) => ({
@@ -2213,7 +2216,12 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
         }
       }
 
-      return [...result, ...standalone];
+      // The main report of the command comes first, whatever the order it was sent in
+      const ordered = [...result, ...standalone];
+      return [
+        ...ordered.filter((f) => f.isMain),
+        ...ordered.filter((f) => !f.isMain),
+      ];
     };
 
     // Group similar files for each category
