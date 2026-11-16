@@ -2258,14 +2258,15 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
           return "utility:page"; // report and anything else
       }
     };
-    const wrapperClassForType = (type) => {
+    // The main report of the command (sent with main: true) gets a stronger tint than its detail reports
+    const wrapperClassForType = (type, isMain) => {
       const category =
         type === "docUrl"
           ? "rf-type-doc"
           : type === "report"
             ? "rf-type-report"
             : "rf-type-action"; // actionCommand, actionUrl
-      return `report-file-btn-wrapper ${category}`;
+      return `report-file-btn-wrapper ${category}${isMain ? " rf-main" : ""}`;
     };
 
     // Shared builder for the split-button shape (stable id + a menu that pairs with
@@ -2277,7 +2278,7 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
       buttonVariant: "neutral",
       menuVariant: "border-filled",
       iconName: iconForType(f.type),
-      wrapperClass: wrapperClassForType(f.type),
+      wrapperClass: wrapperClassForType(f.type, f.isMain),
       isDropdown: true,
       dropdownOptions,
     });
@@ -2329,7 +2330,7 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
         ...f,
         buttonVariant: "neutral",
         iconName: iconForType(f.type),
-        wrapperClass: wrapperClassForType(f.type),
+        wrapperClass: wrapperClassForType(f.type, f.isMain),
       };
 
       // Menu button that pairs with the main button in the split button-group.
