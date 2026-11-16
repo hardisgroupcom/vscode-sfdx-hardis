@@ -257,6 +257,18 @@ lightning-helptext::part(icon) {
   border-color: var(--slds-g-color-palette-green-30);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
 }
+/* Main report of the command (shown first): one step stronger than its detail reports */
+.slds-scope[data-theme] .rf-type-report.rf-main .slds-button {
+  background: var(--slds-g-color-palette-green-80);
+  border-color: var(--slds-g-color-palette-green-30);
+  color: var(--slds-g-color-palette-green-10);
+  font-weight: 700;
+}
+.slds-scope[data-theme] .rf-type-report.rf-main .slds-button:hover,
+.slds-scope[data-theme] .rf-type-report.rf-main .slds-button:focus {
+  border-color: var(--slds-g-color-palette-green-20);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
 
 /* Docs: documentation links -> recessive neutral grey */
 .slds-scope[data-theme] .rf-type-doc .slds-button {
