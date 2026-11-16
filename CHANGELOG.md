@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [8.20.0] 2026-11-16
+
 - Audit menu: new **What Will Break** command, to find what dated Salesforce changes will break in an org, when, and what to do. It replaces the Legacy API and Release Updates commands, which leave the menu (requires sfdx-hardis 8.25.0).
 - Command runner: the main report of a command is the first report button, in a stronger color than its detail reports (requires sfdx-hardis 8.25.0).
 - Deployment actions, **Browser** type: a **Documentation** button opens the page of the selected setting on the Browserforce documentation site (Browserforce 7.1.0 or later).
