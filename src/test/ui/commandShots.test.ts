@@ -99,16 +99,42 @@ function escapeRegex(text: string): string {
 
 /** The answer discovery gives a question: what the panel pre-fills, else its first choice. */
 function discoveryRule(prompt: ShownPrompt): LabAnswer {
-  const q = "^" + escapeRegex(prompt.message.trim().slice(0, 60));
-  if (
+  // The CLI starts every question with a llama: the rule matches the text after it
+  const text = prompt.message.replace(/^\u{1F999}\s*/u, "").trim();
+  const q = escapeRegex(text.slice(0, 60));
+  const hasInitial =
     prompt.initial !== undefined &&
     prompt.initial !== null &&
-    prompt.initial !== ""
-  ) {
-    return { q, value: "__INITIAL__" };
-  }
+    prompt.initial !== "";
   if (prompt.choices.length > 0) {
-    return { q, choice: "^" + escapeRegex(prompt.choices[0].title) + "$" };
+    // The initial of a choice list is a value, or the index of a choice (a yes/no question is
+    // a list whose initial is 0 for Yes): the rule names the choices it points to by their title
+    const initials = hasInitial
+      ? Array.isArray(prompt.initial)
+        ? prompt.initial
+        : [prompt.initial]
+      : [];
+    const titles = initials
+      .map((initial) => {
+        const byValue = prompt.choices.find(
+          (choice) => choice.value === initial,
+        );
+        if (byValue) {
+          return byValue.title;
+        }
+        return typeof initial === "number" && prompt.choices[initial]
+          ? prompt.choices[initial].title
+          : null;
+      })
+      .filter((title): title is string => Boolean(title));
+    const chosen = titles.length > 0 ? titles : [prompt.choices[0].title];
+    return {
+      q,
+      choice: chosen.map((title) => "^" + escapeRegex(title) + "$").join("|"),
+    };
+  }
+  if (hasInitial) {
+    return { q, value: "__INITIAL__" };
   }
   if (prompt.type === "confirm") {
     return { q, value: true };
