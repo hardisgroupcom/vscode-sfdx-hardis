@@ -53,6 +53,12 @@ export interface LabAnswer {
   choice?: string;
   value?: unknown;
   optional?: boolean;
+  /** Command screenshots: capture the question before answering it */
+  shot?: boolean;
+  /** Command screenshots: caption of that capture */
+  caption?: string;
+  /** Command screenshots: numbered pills of that capture, each on the element showing `text` */
+  pills?: { text: string; legend: string }[];
 }
 
 /** One command a lab runs, with the answers its prompts get. */
@@ -116,7 +122,7 @@ export function readLabSpecs(): LabSpecFile | null {
 }
 
 /** A question the panel showed, as the webview received it. */
-interface ShownPrompt {
+export interface ShownPrompt {
   name: string;
   message: string;
   type: string;
@@ -194,9 +200,24 @@ function answerFor(prompt: ShownPrompt, rule: LabAnswer): unknown {
  * Returns the questions that were asked, in order, so a lab can assert that the
  * flow it describes is the flow the learner gets.
  */
+/** What a caller other than the lab driver can add around a step. */
+export interface StepHooks {
+  /** Store the autorun authorization a learner gives (default true, lab driver only) */
+  authorize?: boolean;
+  /** Runs before an answer is sent, with the question shown: a capture of the question */
+  beforeAnswer?: (prompt: ShownPrompt, rule: LabAnswer) => Promise<void>;
+  /** Every message the extension sends to the panel of the command */
+  onMessage?: (message: any) => void;
+  /** Statuses the command may end on (default: completed only) */
+  allowedStatuses?: string[];
+  /** The rule for a question no rule covers, instead of failing (discovery of a new spec) */
+  defaultRule?: (prompt: ShownPrompt) => LabAnswer | null;
+}
+
 export async function runLabStep(
   panelManager: any,
   step: LabStep,
+  hooks: StepHooks = {},
 ): Promise<ShownPrompt[]> {
   const rules: (LabAnswer & { used?: boolean })[] = (step.answers || []).map(
     (rule) => ({ ...rule }),
@@ -204,7 +225,9 @@ export async function runLabStep(
   const timeoutMs = step.timeoutMs ?? 600000;
   const asked: ShownPrompt[] = [];
 
-  await authorizeLikeTheLearner(step.command);
+  if (hooks.authorize !== false) {
+    await authorizeLikeTheLearner(step.command);
+  }
 
   const panelId = await runCommandAndWaitForPanel(
     panelManager,
@@ -221,6 +244,13 @@ export async function runLabStep(
   let failure: string | null = null;
   panel.sendMessage = (message: any) => {
     const result = originalSendMessage(message);
+    if (hooks.onMessage) {
+      try {
+        hooks.onMessage(message);
+      } catch {
+        // An observer never breaks the step
+      }
+    }
     if (message?.type !== "showPrompt" || failure) {
       return result;
     }
@@ -232,10 +262,19 @@ export async function runLabStep(
       if (!prompt) {
         return result;
       }
-      const rule = rules.find(
+      let rule: (LabAnswer & { used?: boolean }) | undefined = rules.find(
         (candidate) =>
           !candidate.used && new RegExp(candidate.q, "i").test(prompt.message),
       );
+      // Discovery (command screenshots): a question no rule covers gets the answer the caller
+      // picks, instead of failing the step
+      if (!rule && hooks.defaultRule) {
+        const discovered = hooks.defaultRule(prompt);
+        if (discovered) {
+          rule = { ...discovered };
+          rules.push(rule);
+        }
+      }
       // There is deliberately no "this is just an echo, ignore it" branch here.
       // `showPrompt` is emitted from one place in hardis-websocket-server.ts and
       // never replayed, so a second arrival with no rule left is a question the
@@ -264,7 +303,7 @@ export async function runLabStep(
       // that turns a submit into the CLI's response. Answering synchronously
       // would answer into the void and the command would wait for its own
       // timeout. Defer to the next tick, once the handler is in place.
-      setTimeout(() => {
+      const submit = () => {
         try {
           panel.simulateWebviewMessage({
             type: "submit",
@@ -273,7 +312,14 @@ export async function runLabStep(
         } catch (error: any) {
           failure = `${step.label}: submitting the answer to "${prompt.message}" failed: ${error?.message || String(error)}`;
         }
-      }, 0);
+      };
+      if (hooks.beforeAnswer) {
+        hooks.beforeAnswer(prompt, rule).then(submit, (error: any) => {
+          failure = `${step.label}: before answering "${prompt.message}": ${error?.message || String(error)}`;
+        });
+      } else {
+        setTimeout(submit, 0);
+      }
     } catch (error: any) {
       failure = `${step.label}: ${error?.message || String(error)}`;
     }
@@ -314,9 +360,9 @@ export async function runLabStep(
 
   assert.ok(!failure, failure || "");
   const status = currentStatus();
-  assert.strictEqual(
-    status,
-    "completed",
+  const allowedStatuses = hooks.allowedStatuses || ["completed"];
+  assert.ok(
+    allowedStatuses.includes(status),
     `${step.label}: "${step.command}" ended as "${status}". ` +
       "A learner following this lab would see the same failure.",
   );

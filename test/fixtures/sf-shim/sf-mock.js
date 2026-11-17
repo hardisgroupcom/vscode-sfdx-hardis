@@ -490,8 +490,185 @@ function outputJsonIfRequested(jsonValue, plainText) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Command shots (scripts/command-screenshots of sfdx-hardis, src/test/ui/commandShots.test.ts):
+// the REAL Salesforce CLI answers every call, through this shim, so that a command the local
+// machine can not run (no ServiceNow, no Confluence, a CI-only context...) can still be replayed
+// from a transcript, and so that a real run can be recorded into one.
+//
+//  - SF_MOCK_PASSTHROUGH: path of the bin/run.js of the real @salesforce/cli. Set, every call
+//    goes to the real CLI, with the same arguments, environment and standard streams
+//  - SF_MOCK_TRANSCRIPTS: folder of <command id>.json transcripts. A sf hardis:* call whose
+//    command has one is replayed from it instead of running
+//  - SF_MOCK_RECORD_DIR: folder where a real sf hardis:* run writes its transcript: the shim
+//    stands between the CLI and the extension on the WebSocket, and writes what the CLI sent
+// ---------------------------------------------------------------------------
+const PASSTHROUGH = process.env.SF_MOCK_PASSTHROUGH || "";
+
+function transcriptFileOf(commandId) {
+  const dir = process.env.SF_MOCK_TRANSCRIPTS;
+  if (!dir || !commandId.startsWith("hardis:")) {
+    return null;
+  }
+  const file = path.join(dir, `${commandId.replace(/:/g, "_")}.json`);
+  return fs.existsSync(file) ? file : null;
+}
+
+function loadWs() {
+  return require(path.join(process.env.SF_MOCK_NODE_MODULES || "", "ws"));
+}
+
+// Runs the real CLI and returns its exit code
+function passThrough(cliArgs) {
+  const { spawn } = require("child_process");
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, [PASSTHROUGH, ...cliArgs], {
+      stdio: "inherit",
+      env: process.env,
+    });
+    child.on("exit", (code) => resolve(code ?? 1));
+    child.on("error", (err) => {
+      console.error("sf-mock: unable to start the real sf: " + err.message);
+      resolve(1);
+    });
+  });
+}
+
+/**
+ * Runs the real CLI with the WebSocket address of a relay of its own: everything the CLI sends
+ * goes on to the extension and is written to <record dir>/<command>.json with the delay since
+ * the message before, and everything the extension answers goes back to the CLI.
+ */
+async function recordThrough(commandId) {
+  const websocketArgIndex = args.indexOf("--websocket");
+  const extensionHostPort = args[websocketArgIndex + 1];
+  const WebSocket = loadWs();
+  const server = new WebSocket.Server({ host: "127.0.0.1", port: 0 });
+  await new Promise((resolve) => server.on("listening", resolve));
+  const relayArgs = [...args];
+  relayArgs[websocketArgIndex + 1] = `127.0.0.1:${server.address().port}`;
+  const events = [];
+  let last = Date.now();
+  server.on("connection", (cli) => {
+    const extension = new WebSocket(`ws://${extensionHostPort}`);
+    const pending = [];
+    extension.on("open", () => {
+      while (pending.length > 0) {
+        extension.send(pending.shift());
+      }
+    });
+    cli.on("message", (raw) => {
+      const text = raw.toString();
+      try {
+        const message = JSON.parse(text);
+        delete message.context;
+        const now = Date.now();
+        events.push({ delay: now - last, message });
+        last = now;
+      } catch {
+        // Not JSON: forwarded, not recorded
+      }
+      if (extension.readyState === WebSocket.OPEN) {
+        extension.send(text);
+      } else {
+        pending.push(text);
+      }
+    });
+    extension.on("message", (raw) => {
+      if (cli.readyState === WebSocket.OPEN) {
+        cli.send(raw.toString());
+      }
+    });
+    cli.on("close", () => extension.close());
+    extension.on("close", () => cli.close());
+    extension.on("error", () => cli.close());
+  });
+  const code = await passThrough(relayArgs);
+  server.close();
+  const dir = process.env.SF_MOCK_RECORD_DIR;
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(
+    path.join(dir, `${commandId.replace(/:/g, "_")}.json`),
+    JSON.stringify({ command: commandId, exitCode: code, events }, null, 2),
+  );
+  return code;
+}
+
+/**
+ * Plays a transcript to the extension: every message with its delay (capped, so a replay never
+ * waits minutes), a "prompts" message waits for the answer of the extension, and the exit code
+ * is the recorded one.
+ */
+async function replayTranscript(commandId, file) {
+  const transcript = JSON.parse(fs.readFileSync(file, "utf8"));
+  console.log("WS Client started");
+  const websocketArgIndex = args.indexOf("--websocket");
+  if (websocketArgIndex < 0) {
+    console.log(`Replayed ${commandId} (no websocket)`);
+    return transcript.exitCode ?? 0;
+  }
+  const WebSocket = loadWs();
+  const contextId =
+    process.env.SFDX_HARDIS_COMMAND_CONTEXT_ID || String(process.pid);
+  const context = { command: commandId, id: contextId };
+  const ws = new WebSocket(`ws://${args[websocketArgIndex + 1]}`);
+  await new Promise((resolve, reject) => {
+    ws.on("open", resolve);
+    ws.on("error", reject);
+  });
+  const promptWaiters = [];
+  ws.on("message", (raw) => {
+    try {
+      const data = JSON.parse(raw.toString());
+      if (data.event === "cancelCommand") {
+        process.exit(1);
+      }
+      if (data.event === "promptsResponse" && promptWaiters.length > 0) {
+        promptWaiters.shift()(data.promptsResponse);
+      }
+    } catch {
+      // Ignore unparseable messages
+    }
+  });
+  const maxDelay = parseInt(
+    process.env.SF_MOCK_REPLAY_MAX_DELAY_MS || "1500",
+    10,
+  );
+  for (const entry of transcript.events || []) {
+    await new Promise((resolve) =>
+      setTimeout(resolve, Math.min(entry.delay || 0, maxDelay)),
+    );
+    const message = entry.message || {};
+    if (message.event === "prompts") {
+      const answered = new Promise((resolve) => promptWaiters.push(resolve));
+      ws.send(JSON.stringify({ ...message, context }));
+      await answered;
+      continue;
+    }
+    ws.send(JSON.stringify({ ...message, context }));
+  }
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  ws.close();
+  return transcript.exitCode ?? 0;
+}
+
 async function main() {
   logInvocation({});
+  if (PASSTHROUGH) {
+    const commandId = args[0] || "";
+    const transcript = transcriptFileOf(commandId);
+    if (transcript) {
+      return await replayTranscript(commandId, transcript);
+    }
+    if (
+      process.env.SF_MOCK_RECORD_DIR &&
+      commandId.startsWith("hardis:") &&
+      args.includes("--websocket")
+    ) {
+      return await recordThrough(commandId);
+    }
+    return await passThrough(args);
+  }
   const bootDelay = parseInt(process.env.SF_MOCK_BOOT_DELAY_MS || "0", 10);
   if (bootDelay > 0) {
     await new Promise((resolve) => setTimeout(resolve, bootDelay));

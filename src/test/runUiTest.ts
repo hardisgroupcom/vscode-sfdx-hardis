@@ -117,7 +117,16 @@ async function main() {
   const realJobArtifacts =
     process.env.SFDX_HARDIS_REAL_JOB_ARTIFACTS === "true" || realRunningJobs;
 
+  // Command screenshots of sfdx-hardis (SFDX_HARDIS_COMMAND_SHOTS=true, started by its
+  // scripts/command-screenshots/run.mjs): like the lab driver, a real project given by
+  // SFDX_HARDIS_LAB_WORKSPACE and the real CLI against real orgs, but through the sf shim in
+  // passthrough mode, so a command the machine can not run is replayed from a transcript. The
+  // window stays on the hidden desktop and is captured through its debugging port. See
+  // src/test/ui/commandShots.test.ts.
+  const commandShots = process.env.SFDX_HARDIS_COMMAND_SHOTS === "true";
+
   const labDriver =
+    commandShots ||
     realRetriever ||
     realJobArtifacts ||
     process.argv.includes("--labs") ||
@@ -584,7 +593,7 @@ async function main() {
     workspaceSettings["workbench.colorTheme"] = "Default Dark Modern";
     workspaceSettings["vsCodeSfdxHardis.theme.colorTheme"] = "dark";
   }
-  if (docScreenshots) {
+  if (docScreenshots || commandShots) {
     // Documentation screenshots are always taken in light mode, English, with
     // a clean chrome (no minimap, no breadcrumbs, no editor decorations).
     // SFDX_HARDIS_DOC_SCREENSHOTS_THEME=dark switches to dark for design QA:
@@ -607,7 +616,9 @@ async function main() {
     workspaceSettings["update.showReleaseNotes"] = false;
     // Stable title: it is both what the screenshots show and what the capture
     // script matches on to find the window
-    workspaceSettings["window.title"] = workspaceName;
+    workspaceSettings["window.title"] = commandShots
+      ? path.basename(workspaceDir)
+      : workspaceName;
     workspaceSettings["workbench.secondarySideBar.defaultVisibility"] =
       "hidden";
     workspaceSettings["chat.commandCenter.enabled"] = false;
@@ -686,7 +697,7 @@ async function main() {
   // cspell:ignore backgrounding
 
   const cdpPort =
-    docScreenshots || realRetriever || realJobArtifacts
+    docScreenshots || realRetriever || realJobArtifacts || commandShots
       ? await findFreePort()
       : 0;
 
@@ -699,7 +710,7 @@ async function main() {
   const hiddenDesktop =
     process.platform === "win32" &&
     !process.env.CI &&
-    (!labDriver || realJobArtifacts) &&
+    (!labDriver || realJobArtifacts || commandShots) &&
     process.env.SFDX_HARDIS_UI_VISIBLE !== "true";
   let vscodeExecutablePath: string | undefined;
   if (hiddenDesktop) {
@@ -780,7 +791,7 @@ async function main() {
               CI: undefined,
               GITHUB_ACTIONS: undefined,
             }
-          : labDriver
+          : labDriver && !commandShots
             ? {}
             : {
                 PATH: `${shimDir}${path.delimiter}${process.env.PATH || ""}`,
@@ -791,6 +802,23 @@ async function main() {
                   "node_modules",
                 ),
               }),
+        ...(commandShots
+          ? {
+              SFDX_HARDIS_COMMAND_SHOTS: "true",
+              // The specs of the run, resolved by the sfdx-hardis runner, and where the captures
+              // and the result of each command go
+              SFDX_HARDIS_COMMAND_SHOTS_SPECS:
+                process.env.SFDX_HARDIS_COMMAND_SHOTS_SPECS || "",
+              SFDX_HARDIS_COMMAND_SHOTS_OUT:
+                process.env.SFDX_HARDIS_COMMAND_SHOTS_OUT || "",
+              // The real CLI behind the shim, the transcripts it replays, and where it records
+              SF_MOCK_PASSTHROUGH: process.env.SF_MOCK_PASSTHROUGH || "",
+              SF_MOCK_TRANSCRIPTS: process.env.SF_MOCK_TRANSCRIPTS || "",
+              SF_MOCK_RECORD_DIR: process.env.SF_MOCK_RECORD_DIR || "",
+              // Reports are captured in Excel by the runner, never opened here
+              NO_OPEN: "true",
+            }
+          : {}),
         VSCODE_SFDX_HARDIS_UI_TEST: "true",
         ...(docScreenshots
           ? {

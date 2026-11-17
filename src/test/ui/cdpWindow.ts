@@ -501,3 +501,34 @@ function evaluateInTarget(url: string, expression: string): Promise<any> {
     });
   });
 }
+
+/**
+ * Evaluates an expression in the VS Code window and in every webview, and returns the value of
+ * each, in the order of the targets. How a capture changes text everywhere it can show, then reads
+ * it all back. A target that does not answer gives null.
+ */
+export async function inWorkbenchAndWebviews(
+  expression: string,
+): Promise<any[]> {
+  if (!CdpWindow.portFromEnv()) {
+    return [];
+  }
+  const targets = (await debugTargets()).filter((target) => {
+    const url = String(target.url || "");
+    return (
+      (target.type === "page" && url.includes("workbench")) ||
+      url.startsWith("vscode-webview://")
+    );
+  });
+  const values: any[] = [];
+  for (const target of targets) {
+    try {
+      values.push(
+        await evaluateInTarget(target.webSocketDebuggerUrl, expression),
+      );
+    } catch {
+      values.push(null);
+    }
+  }
+  return values;
+}
