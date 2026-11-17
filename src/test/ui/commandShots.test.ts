@@ -360,7 +360,9 @@ suite("Command screenshots", function () {
     await cleanChrome();
     const workspace = process.env.SFDX_HARDIS_LAB_WORKSPACE || "";
     startBranch = (
-      await promisify(exec)("git rev-parse --abbrev-ref HEAD", { cwd: workspace })
+      await promisify(exec)("git rev-parse --abbrev-ref HEAD", {
+        cwd: workspace,
+      })
     ).stdout.trim();
     startCommit = (
       await promisify(exec)("git rev-parse HEAD", { cwd: workspace })
@@ -437,10 +439,7 @@ suite("Command screenshots", function () {
                   logLines.shift();
                 }
               }
-              if (
-                message?.type === "completeCommand" &&
-                message.data?.error
-              ) {
+              if (message?.type === "completeCommand" && message.data?.error) {
                 const error = message.data.error;
                 logLines.push(
                   `end: ${String(error?.message || JSON.stringify(error)).slice(0, 1200)}`,
