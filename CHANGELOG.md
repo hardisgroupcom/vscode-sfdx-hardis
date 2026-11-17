@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Contributors: the UI test harness can run sfdx-hardis commands against real orgs and capture them, for the screenshots of the sfdx-hardis command pages.
+
 ## [8.20.0] 2026-11-16
 
 - Audit menu: new **What Will Break** command, to find what dated Salesforce changes will break in an org, when, and what to do. It replaces the Legacy API and Release Updates commands, which leave the menu (requires sfdx-hardis 8.25.0).
