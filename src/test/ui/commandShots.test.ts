@@ -43,6 +43,8 @@ const TITLE_BAR_HEIGHT = 38;
 interface PillSpec {
   text: string;
   legend: string;
+  /** Place it on a button showing the text, when one does (the report buttons) */
+  button?: boolean;
 }
 
 /** One command, as the sfdx-hardis runner resolved its spec. */
@@ -68,6 +70,8 @@ interface CommandShotSpec {
    * choice, and is written to result.json ("discovered") for the runner to turn into rules
    */
   discover?: boolean;
+  /** Shell command run in the workspace after its reset, before the command (ex: reset source tracking) */
+  before?: string;
 }
 
 interface ShotsFile {
@@ -142,7 +146,8 @@ function discoveryRule(prompt: ShownPrompt): LabAnswer {
   if (prompt.type === "number") {
     return { q, value: 1 };
   }
-  return { q, value: "helios" };
+  // A text with no default: left empty, as an optional field is
+  return { q, value: "" };
 }
 
 function readShotsFile(): ShotsFile {
@@ -201,35 +206,52 @@ async function scrollPanelToEnd(): Promise<void> {
  */
 async function locatePill(
   text: string,
-): Promise<{ x: number; y: number; w: number; h: number } | null> {
+  preferButton = false,
+): Promise<{ x: number; y: number; w: number; h: number } | string> {
   const box = await webviewBoxInWindow();
   if (!box) {
-    return null;
+    return "the webview was not found in the window";
   }
   const rect = await inWebview(`
     const wanted = ${JSON.stringify(text.toLowerCase())};
-    const frame = document.querySelector("iframe");
+    const preferButton = ${JSON.stringify(preferButton)};
+    // frame and panelDocument come from the helper every webview script starts with
     const offset = frame && frame.contentDocument ? frame.getBoundingClientRect() : { left: 0, top: 0 };
     const view = panelDocument.defaultView || window;
     let best = null;
-    for (const element of deepAll(panelDocument, "*")) {
-      const own = (element.textContent || "") + " " + (element.getAttribute("title") || "") + " " + (element.getAttribute("aria-label") || "");
+    let bestButton = null;
+    let matched = 0;
+    let hidden = 0;
+    const all = deepAll(panelDocument, "*");
+    for (const element of all) {
+      const own = (element.textContent || "") + " " + (element.getAttribute("title") || "") + " " + (element.getAttribute("aria-label") || "") + " " + (element.getAttribute("label") || "");
       if (!own.toLowerCase().includes(wanted)) {
         continue;
       }
+      matched++;
       const r = element.getBoundingClientRect();
       if (r.width <= 0 || r.height <= 0 || r.bottom < 0 || r.top > view.innerHeight) {
+        hidden++;
         continue;
       }
       const area = r.width * r.height;
+      const candidate = { area, x: r.left, y: r.top, w: r.width, h: r.height };
       if (!best || area < best.area) {
-        best = { area, x: r.left, y: r.top, w: r.width, h: r.height };
+        best = candidate;
+      }
+      // A log line can show the title of a report too: the pill of a report goes on its button
+      const isButton = element.tagName === "BUTTON" || element.getAttribute("role") === "button";
+      if (preferButton && isButton && (!bestButton || area < bestButton.area)) {
+        bestButton = candidate;
       }
     }
-    return best ? { x: best.x + offset.left, y: best.y + offset.top, w: best.w, h: best.h } : null;
+    best = bestButton || best;
+    return best
+      ? { x: best.x + offset.left, y: best.y + offset.top, w: best.w, h: best.h }
+      : "no visible element shows it (" + all.length + " elements, " + matched + " with the text, " + hidden + " of them hidden)";
   `);
-  if (!rect) {
-    return null;
+  if (!rect || typeof rect === "string") {
+    return rect || "no webview answered";
   }
   const pad = 4;
   const scale = CAPTURE_WIDTH / box.windowWidth;
@@ -267,11 +289,11 @@ async function shoot(
   const placed: PlacedPill[] = [];
   const missing: string[] = [];
   for (const pill of pills) {
-    const where = await locatePill(pill.text);
-    if (where) {
-      placed.push({ n: placed.length + 1, ...where, legend: pill.legend });
+    const where = await locatePill(pill.text, pill.button === true);
+    if (typeof where === "string") {
+      missing.push(`${pill.text}: ${where}`);
     } else {
-      missing.push(pill.text);
+      placed.push({ n: placed.length + 1, ...where, legend: pill.legend });
     }
   }
   const file = path.join(OUT_DIR, spec.slug, `${name}.png`);
@@ -283,9 +305,36 @@ async function shoot(
   return { file, caption, pills: placed, missingPills: missing };
 }
 
+/**
+ * Copies the report files a run wrote next to its captures, at once: the next commands may clean
+ * the report folder of the project, and the runner reads the reports after the whole run.
+ */
+function copyReports(
+  spec: CommandShotSpec,
+  reports: { file: string; copy?: string }[],
+): void {
+  const workspace = process.env.SFDX_HARDIS_LAB_WORKSPACE || "";
+  const dir = path.join(OUT_DIR, spec.slug, "files");
+  for (const report of reports) {
+    const source = path.isAbsolute(report.file)
+      ? report.file
+      : path.join(workspace, report.file);
+    if (!fs.existsSync(source) || !fs.statSync(source).isFile()) {
+      continue;
+    }
+    fs.mkdirSync(dir, { recursive: true });
+    const copy = path.join(dir, path.basename(source));
+    fs.copyFileSync(source, copy);
+    report.copy = copy;
+  }
+}
+
 function writeResult(spec: CommandShotSpec, result: Record<string, any>): void {
   const dir = path.join(OUT_DIR, spec.slug);
   fs.mkdirSync(dir, { recursive: true });
+  if (Array.isArray(result.reports)) {
+    copyReports(spec, result.reports);
+  }
   fs.writeFileSync(
     path.join(dir, "result.json"),
     JSON.stringify({ command: spec.command, ...result }, null, 2),
@@ -295,6 +344,10 @@ function writeResult(spec: CommandShotSpec, result: Record<string, any>): void {
 suite("Command screenshots", function () {
   const shotsFile = ENABLED ? readShotsFile() : { specs: [], mask: [] };
   let panelManager: any;
+  // The branch and commit of the workspace when the suite starts: every command starts from them,
+  // whatever the commands before it wrote (a retrieve, a new project, a config change)
+  let startBranch = "";
+  let startCommit = "";
 
   suiteSetup(async function () {
     if (!ENABLED) {
@@ -305,6 +358,13 @@ suite("Command screenshots", function () {
     panelManager = api.getLwcPanelManager();
     assert.ok(panelManager, "the test API must expose the panel manager");
     await cleanChrome();
+    const workspace = process.env.SFDX_HARDIS_LAB_WORKSPACE || "";
+    startBranch = (
+      await promisify(exec)("git rev-parse --abbrev-ref HEAD", { cwd: workspace })
+    ).stdout.trim();
+    startCommit = (
+      await promisify(exec)("git rev-parse HEAD", { cwd: workspace })
+    ).stdout.trim();
   });
 
   for (const spec of shotsFile.specs) {
@@ -312,6 +372,10 @@ suite("Command screenshots", function () {
       this.timeout((spec.timeoutMs || 900000) + 180000);
       const workspace = process.env.SFDX_HARDIS_LAB_WORKSPACE || "";
       await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+      await promisify(exec)(
+        `git checkout -f ${startBranch} && git reset --hard ${startCommit} && git clean -fd`,
+        { cwd: workspace },
+      );
       if (spec.targetOrg) {
         // Asynchronous: a synchronous call would block the extension host for the seconds the CLI
         // takes to start
@@ -319,11 +383,22 @@ suite("Command screenshots", function () {
           cwd: workspace,
         });
       }
+      if (spec.before) {
+        await promisify(exec)(spec.before, { cwd: workspace });
+      }
       const shots: ShotResult[] = [];
-      const reports: { file: string; title: string; type: string }[] = [];
+      const reports: {
+        file: string;
+        title: string;
+        type: string;
+        main?: boolean;
+        copy?: string;
+      }[] = [];
       let promptIndex = 0;
       let asked: ShownPrompt[] = [];
       const discovered: Record<string, unknown>[] = [];
+      // The errors and warnings of the run, and its last steps: why a run failed, in result.json
+      const logLines: string[] = [];
       try {
         asked = await runLabStep(
           panelManager,
@@ -351,11 +426,32 @@ suite("Command screenshots", function () {
                 }
               : undefined,
             onMessage: (message) => {
+              if (
+                message?.type === "addLogLine" &&
+                ["error", "warning", "action"].includes(message.data?.logType)
+              ) {
+                logLines.push(
+                  `${message.data.logType}: ${String(message.data.message || "").slice(0, 600)}`,
+                );
+                if (logLines.length > 40) {
+                  logLines.shift();
+                }
+              }
+              if (
+                message?.type === "completeCommand" &&
+                message.data?.error
+              ) {
+                const error = message.data.error;
+                logLines.push(
+                  `end: ${String(error?.message || JSON.stringify(error)).slice(0, 1200)}`,
+                );
+              }
               if (message?.type === "reportFile" && message.data?.file) {
                 reports.push({
                   file: String(message.data.file),
                   title: String(message.data.title || ""),
                   type: String(message.data.type || ""),
+                  main: message.data.main === true,
                 });
               }
             },
@@ -383,12 +479,17 @@ suite("Command screenshots", function () {
         // A run that wrote reports gets a pill on the button of its main report, unless the spec
         // places its own: the button shows the title of the report, without "(XLSX)"
         const pills = [...(spec.pills || [])];
-        const mainReport = reports.find((report) => report.type === "report");
+        // The main report is the first button of the panel: the one flagged main, else the
+        // first report sent
+        const mainReport =
+          reports.find((report) => report.main && report.type === "report") ||
+          reports.find((report) => report.type === "report");
         if (spec.reportPill !== false && mainReport && pills.length === 0) {
           pills.push({
             text: mainReport.title.replace(/\s*\((XLSX|CSV)\)\s*$/i, ""),
             legend:
               "The report of the run: the button opens it in Excel, the arrow lists its other files",
+            button: true,
           });
         }
         shots.push(
@@ -415,6 +516,7 @@ suite("Command screenshots", function () {
           reports,
           asked,
           discovered,
+          logLines,
         });
         throw error;
       }
