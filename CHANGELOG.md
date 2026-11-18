@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- DevOps Pipeline: with the new **Handle release versioning** branch setting (Pipeline Settings), each versioned branch and its org show their release version, each promotion shows the version it will create, and a new **Releases** tab lists the versions with their tag, Release and release notes (requires sfdx-hardis 8.26.0)
+
 ## [8.18.0] 2026-11-06
 
 - DevOps Pipeline: when ticking User Stories for a promotion, **Selected only** shows the ticked ones, and **Select from a list** ticks the Pull Requests named in pasted text (release notes, an email, a spreadsheet column), directly or through their tickets, saying where each one was found

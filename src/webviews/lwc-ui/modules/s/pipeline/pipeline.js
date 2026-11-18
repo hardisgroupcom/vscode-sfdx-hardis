@@ -40,6 +40,8 @@ const RUNNING_JOBS_MAX_UNKNOWN = 3;
 // Characters an action id or a branch name may hold to be passed to a command line
 const SAFE_ACTION_ID = /^[\w .:@/+-]+$/;
 const SAFE_BRANCH_NAME = /^[\w./-]+$/;
+// Characters a version tag may hold to be passed to a command line (v1.5.0-rc.3)
+const SAFE_RELEASE_TAG = /^[\w.+-]+$/;
 // Org branch under which sfdx-hardis records the actions tried in a developer org
 const DEV_SANDBOXES_BRANCH = "dev-sandboxes";
 
@@ -261,6 +263,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // Last deployment check of the major branch of the window against its org (null unless the
   // project enables enableMajorBranchDeploymentCheck): { found, status, webUrl, ... }
   modalMajorBranchCheck = null;
+  // Release version of the versioned major branch of the window (null unless a branch declares
+  // releaseVersioning and the CLI listed the versions): { current, history, next }
+  modalReleaseVersion = null;
   modalPullRequests = [];
   modalTickets = [];
   modalActions = [];
@@ -1657,7 +1662,14 @@ export default class Pipeline extends SharedMixin(LightningElement) {
             if (nodeIdentifier && nodeIdentifier.endsWith("Branch")) {
               const branchName =
                 this._resolveBranchNameFromNode(nodeIdentifier);
-              this.handleShowBranchOrFeaturePRs(branchName);
+              // A click on the version chip of a branch opens its window on the Release version tab
+              const onVersionChip = !!(
+                target.closest && target.closest(".hardis-version-chip")
+              );
+              this.handleShowBranchOrFeaturePRs(
+                branchName,
+                onVersionChip ? "releaseVersion" : null,
+              );
             }
           });
 
@@ -2018,9 +2030,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         this.mermaidLoading = true;
       }
     }
+    // A manual refresh also lists the release versions again (the timer reuses the last answer)
     window.sendMessageToVSCode({
       type: "refreshPipeline",
-      data: {},
+      data: { manual: !isAutoRefresh },
     });
     console.log(
       "Pipeline refresh event dispatched",
@@ -2445,13 +2458,13 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   // Route a branch node click: major branches open the branch PR modal; feature
   // branches (one PR each) open that PR directly in single-PR mode.
-  handleShowBranchOrFeaturePRs(branchName) {
+  handleShowBranchOrFeaturePRs(branchName, tab = null) {
     const isMajorBranch =
       this.pipelineData &&
       Array.isArray(this.pipelineData.orgs) &&
       this.pipelineData.orgs.some((org) => org.name === branchName);
     if (isMajorBranch) {
-      this.handleShowBranchPRs(branchName);
+      this.handleShowBranchPRs(branchName, tab);
       return;
     }
     // Feature branch: find its pull request by source branch. The node name is a
@@ -2520,7 +2533,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.modalShowPromotionPrs = false;
   }
 
-  handleShowBranchPRs(branchName) {
+  handleShowBranchPRs(branchName, tab = null) {
     console.log("Showing PRs for branch:", branchName);
     this._resetPromotionModalState();
     this.modalBranchName = branchName;
@@ -2543,9 +2556,45 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
 
     this.modalMajorBranchCheck = this._majorBranchCheckOfBranch(branchName);
+    this.modalReleaseVersion = this._releaseVersionOfBranch(branchName);
     this._populateModalFromPrs(prs);
-    this.modalActiveTabValue = "prs";
+    this.modalActiveTabValue =
+      tab === "releaseVersion" && this.modalReleaseVersion
+        ? "releaseVersion"
+        : "prs";
     this.showPRModal = true;
+  }
+
+  // The release version of a versioned major branch as its window shows it: null when the branch
+  // is not versioned or the versions are not known. The history of the branch is filtered from the
+  // history of the project, whose entries name branches in their git form (release/uat)
+  _releaseVersionOfBranch(branchName) {
+    if (this.pipelineData?.releaseVersioningEnabled !== true) {
+      return null;
+    }
+    const org = (this.pipelineData?.orgs || []).find(
+      (o) => o.name === branchName,
+    );
+    if (!org || org.releaseVersioning !== true) {
+      return null;
+    }
+    const gitName = this._gitBranchName(branchName).toLowerCase();
+    const history = (this.pipelineData?.releaseVersionHistory || []).filter(
+      (entry) =>
+        entry &&
+        entry.branchName &&
+        this._gitBranchName(entry.branchName).toLowerCase() === gitName,
+    );
+    return {
+      current: org.releaseVersion || null,
+      next: Array.isArray(org.nextOnPromotion) ? org.nextOnPromotion : [],
+      history,
+    };
+  }
+
+  // A branch named after its config file writes each / as __ (release__uat is release/uat)
+  _gitBranchName(branchName) {
+    return (branchName || "").replace(/__/g, "/");
   }
 
   // The last deployment check of a major branch as its window shows it: null when the project
@@ -5914,6 +5963,272 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   get majorBranchCheckEnabled() {
     return this.pipelineData?.majorBranchDeploymentCheckEnabled === true;
+  }
+
+  // ---- Release versions (releaseVersioning): legend, Releases tab, Release version tab ----
+
+  get releaseVersioningEnabled() {
+    return this.pipelineData?.releaseVersioningEnabled === true;
+  }
+
+  get releaseRows() {
+    return this._releaseVersionRows(this.pipelineData?.releaseVersionHistory);
+  }
+
+  get hasReleaseRows() {
+    return this.releaseRows.length > 0;
+  }
+
+  get releasesTabLabel() {
+    const count = (this.pipelineData?.releaseVersionHistory || []).length;
+    return count > 0
+      ? this.t("releasesTabLabelWithCount", { count })
+      : this.i18n.releasesTabLabel;
+  }
+
+  get releaseColumns() {
+    return this._releaseColumns(true);
+  }
+
+  get releaseHistoryColumns() {
+    return this._releaseColumns(false);
+  }
+
+  get showModalReleaseVersion() {
+    return (
+      !!this.modalReleaseVersion &&
+      this.modalMode !== "singlePR" &&
+      !this.isFeaturePrModal
+    );
+  }
+
+  get modalReleaseVersionCurrent() {
+    return this.modalReleaseVersion?.current || null;
+  }
+
+  get modalReleaseVersionChipClass() {
+    return this._releaseVersionChipClass(this.modalReleaseVersionCurrent);
+  }
+
+  get modalReleaseVersionKindLabel() {
+    return this.modalReleaseVersionCurrent?.prerelease
+      ? this.i18n.releaseVersionReleaseCandidate
+      : this.i18n.releaseVersionReleased;
+  }
+
+  get modalReleaseVersionDeployedAt() {
+    return this._formatCompactDate(this.modalReleaseVersionCurrent?.deployedAt);
+  }
+
+  get modalReleaseVersionOrg() {
+    return this.modalReleaseVersionCurrent?.org || "";
+  }
+
+  get modalReleaseVersionCommit() {
+    return (this.modalReleaseVersionCurrent?.commit || "").substring(0, 8);
+  }
+
+  get modalReleaseVersionHasReleaseUrl() {
+    return !!safeWebUrl(this.modalReleaseVersionCurrent?.releaseUrl);
+  }
+
+  get modalReleaseVersionHasTagUrl() {
+    return !!safeWebUrl(this.modalReleaseVersionCurrent?.tagUrl);
+  }
+
+  get modalReleaseVersionHasJobUrl() {
+    return !!safeWebUrl(this.modalReleaseVersionCurrent?.jobUrl);
+  }
+
+  // Versions the promotions into this branch would create, one line per source branch
+  get modalReleaseVersionNextRows() {
+    return (this.modalReleaseVersion?.next || []).map((next) => ({
+      key: `${next.sourceBranch}>${next.tag}`,
+      tag: next.tag,
+      text: this.t("releaseVersionNextFrom", {
+        source: next.sourceBranch,
+      }),
+    }));
+  }
+
+  get modalReleaseVersionHasNext() {
+    return this.modalReleaseVersionNextRows.length > 0;
+  }
+
+  get modalReleaseHistoryRows() {
+    return this._releaseVersionRows(this.modalReleaseVersion?.history);
+  }
+
+  get modalReleaseHasHistory() {
+    return this.modalReleaseHistoryRows.length > 0;
+  }
+
+  handleOpenReleaseVersionRelease() {
+    this._openReleaseUrl(this.modalReleaseVersionCurrent?.releaseUrl);
+  }
+
+  handleOpenReleaseVersionTag() {
+    this._openReleaseUrl(this.modalReleaseVersionCurrent?.tagUrl);
+  }
+
+  handleOpenReleaseVersionJob() {
+    this._openReleaseUrl(this.modalReleaseVersionCurrent?.jobUrl);
+  }
+
+  handleGenerateReleaseVersionNotes() {
+    this._runReleaseNotesForTag(this.modalReleaseVersionCurrent?.tag);
+  }
+
+  handleReleaseRowAction(event) {
+    const action = event.detail?.action;
+    const row = event.detail?.row;
+    if (!action || !row) {
+      return;
+    }
+    if (action.name === "view_pr" && row.prNumber > 0) {
+      this.openPullRequestView({ prNumber: row.prNumber });
+    } else if (action.name === "open_release") {
+      this._openReleaseUrl(row.releaseUrl);
+    } else if (action.name === "open_tag") {
+      this._openReleaseUrl(row.tagUrl);
+    } else if (action.name === "release_notes") {
+      this._runReleaseNotesForTag(row.tag);
+    }
+  }
+
+  // Columns of the Releases tab, and of the history of one branch (without the Branch column)
+  _releaseColumns(withBranch) {
+    const columns = [
+      {
+        key: "version",
+        label: this.i18n.releaseVersionColumnVersion,
+        fieldName: "tag",
+        type: "typePill",
+        initialWidth: 160,
+        typeAttributes: {
+          label: { fieldName: "tag" },
+          pillClass: { fieldName: "versionPillClass" },
+          url: { fieldName: "versionUrl" },
+          tooltip: { fieldName: "versionTooltip" },
+        },
+      },
+    ];
+    if (withBranch) {
+      columns.push({
+        key: "branch",
+        label: this.i18n.releaseVersionColumnBranch,
+        fieldName: "branchName",
+        type: "branchChip",
+      });
+    }
+    columns.push(
+      {
+        key: "deployed",
+        label: this.i18n.releaseVersionColumnDeployed,
+        fieldName: "deployedLabel",
+        type: "text",
+        cellAttributes: { class: "hardis-date-cell" },
+      },
+      {
+        key: "pullRequest",
+        label: this.prLabel,
+        fieldName: "prText",
+        type: "button",
+        typeAttributes: {
+          label: { fieldName: "prText" },
+          name: "view_pr",
+          variant: "base",
+          disabled: { fieldName: "prDisabled" },
+        },
+      },
+      {
+        key: "links",
+        label: this.i18n.releaseVersionColumnLinks,
+        type: "action",
+        typeAttributes: {
+          rowActions: (row, doneCallback) =>
+            doneCallback(this._releaseRowActions(row)),
+        },
+      },
+    );
+    return columns;
+  }
+
+  _releaseRowActions(row) {
+    const actions = [];
+    if (row?.releaseUrl) {
+      actions.push({
+        label: this.i18n.releaseVersionOpenRelease,
+        name: "open_release",
+        iconName: "utility:new_window",
+      });
+    }
+    if (row?.tagUrl) {
+      actions.push({
+        label: this.i18n.releaseVersionOpenTag,
+        name: "open_tag",
+        iconName: "utility:new_window",
+      });
+    }
+    actions.push({
+      label: this.i18n.releaseVersionGenerateNotes,
+      name: "release_notes",
+      iconName: "utility:document_preview",
+    });
+    return actions;
+  }
+
+  _releaseVersionRows(entries) {
+    return (Array.isArray(entries) ? entries : [])
+      .filter((entry) => entry && entry.tag)
+      .map((entry, index) => {
+        const releaseUrl = safeWebUrl(entry.releaseUrl);
+        const tagUrl = safeWebUrl(entry.tagUrl);
+        return {
+          id: `${entry.tag}-${index}`,
+          tag: entry.tag,
+          versionPillClass: this._releaseVersionChipClass(entry),
+          versionUrl: releaseUrl || tagUrl || null,
+          versionTooltip: entry.prerelease
+            ? this.i18n.releaseVersionReleaseCandidate
+            : this.i18n.releaseVersionReleased,
+          branchName: entry.branchName || "",
+          deployedLabel: this._formatCompactDate(entry.deployedAt),
+          prNumber: entry.pullRequest || 0,
+          prText: entry.pullRequest ? `#${entry.pullRequest}` : "",
+          prDisabled: !entry.pullRequest,
+          releaseUrl,
+          tagUrl,
+        };
+      });
+  }
+
+  // Filled for a released version, outlined for a release candidate (global-theme.css)
+  _releaseVersionChipClass(entry) {
+    return entry?.prerelease
+      ? "hardis-pill hardis-version-chip hardis-version-rc"
+      : "hardis-pill hardis-version-chip hardis-version-released";
+  }
+
+  _openReleaseUrl(value) {
+    const url = safeWebUrl(value);
+    if (!url) {
+      return;
+    }
+    window.sendMessageToVSCode({ type: "openExternal", data: { url } });
+  }
+
+  // The release notes of one version, generated by sfdx-hardis
+  _runReleaseNotesForTag(tag) {
+    if (!tag || !SAFE_RELEASE_TAG.test(tag)) {
+      return;
+    }
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: `sf hardis:doc:release-notes --mode post --release-tag ${tag}`,
+      },
+    });
   }
 
   get modalPrsTabLabel() {

@@ -340,6 +340,25 @@
     );
 }
 
+/* Version chips of the legend: the chip colors come from global-theme.css */
+.legend-version-chip {
+    font-size: 0.66rem;
+    padding: 0 6px;
+}
+
+/* Version chips inside mermaid labels: as compact as the other edge chips */
+.mermaid .hardis-version-chip {
+    margin-top: 2px;
+}
+
+/* Release version tab of a versioned branch window */
+.release-version-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 /* Last deployment check of a major branch, in the last tab of its window */
 .major-branch-check-row {
     display: flex;

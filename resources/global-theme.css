@@ -630,6 +630,35 @@ lightning-helptext::part(icon) {
   color: var(--slds-g-color-palette-blue-40);
 }
 
+/* Release versions (releaseVersioning): the version chips of the DevOps Pipeline
+   diagram, branch window and Releases tab, all in the purple family of the
+   --hardis-version-* tokens. A plain version is filled, a release candidate
+   outlined, the version a promotion would create dashed. Composed in
+   TypeScript (branchStrategyMermaidBuilder.ts) and in datatable cells, so the
+   rules live here. Chips sit on colored mermaid nodes: each one paints its own
+   surface. */
+.slds-scope[data-theme] .hardis-pill.hardis-version-chip {
+  font-variant-numeric: tabular-nums;
+}
+.slds-scope[data-theme] .hardis-pill.hardis-version-released {
+  background: var(--hardis-version-strong);
+  color: var(--hardis-version-on-strong);
+}
+.slds-scope[data-theme] .hardis-pill.hardis-version-rc {
+  background: var(--hardis-version-surface);
+  color: var(--hardis-version-text);
+  box-shadow: inset 0 0 0 1.5px var(--hardis-version-border);
+}
+.slds-scope[data-theme] .hardis-pill.hardis-version-next {
+  background: var(--hardis-version-surface);
+  color: var(--hardis-version-text);
+  border: 1.5px dashed var(--hardis-version-border);
+}
+/* Version installed in an org: same colors, a quieter size */
+.slds-scope[data-theme] .hardis-pill.hardis-version-installed {
+  font-size: 0.66rem;
+}
+
 /* ------------------------------------------------------------------ */
 /* Modal polish (all webviews)                                        */
 /* Brand accent strip on top of the modal container + optional title  */
@@ -788,6 +817,14 @@ lightning-helptext::part(icon) {
   --hardis-shadow-sm: 0 1px 3px light-dark(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.45));
   --hardis-shadow-md: 0 4px 12px light-dark(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.5));
   --hardis-shadow-lg: 0 10px 30px light-dark(rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.6));
+  /* Release versions (purple family): the palette tokens switch light/dark on
+     their own. strong + on-strong fill a released version, text + surface +
+     border draw a release candidate and the next version */
+  --hardis-version-strong: var(--slds-g-color-palette-purple-40);
+  --hardis-version-on-strong: var(--slds-g-color-palette-purple-95);
+  --hardis-version-text: var(--slds-g-color-palette-purple-40);
+  --hardis-version-surface: var(--slds-g-color-palette-purple-95);
+  --hardis-version-border: var(--slds-g-color-palette-purple-50);
 }
 
 /* Soft-tint icon tiles: tinted background + saturated icon of the same hue.

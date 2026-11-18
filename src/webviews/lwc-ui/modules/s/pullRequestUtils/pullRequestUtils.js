@@ -25,6 +25,7 @@ export const MODAL_STATE_DEFAULTS = {
   modalMode: "branch",
   modalBranchName: "",
   modalMajorBranchCheck: null,
+  modalReleaseVersion: null,
   showJobStatusColumn: false,
   isFeaturePrModal: false,
   modalPullRequests: [],

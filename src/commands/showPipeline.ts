@@ -23,6 +23,11 @@ import { getCurrentGitBranch } from "../utils/pipeline/sfdxHardisConfig";
 import { handleDeploymentActionPickerMessage } from "../utils/pipeline/deploymentActionPickers";
 import { extractTicketIdsFromText } from "../utils/pipeline/pastedListUtils";
 import {
+  getCachedReleaseVersions,
+  invalidateReleaseVersionsCache,
+  loadReleaseVersions,
+} from "../utils/pipeline/releaseVersionUtils";
+import {
   getCachedCustomFunctions,
   refreshCustomFunctionsCache,
 } from "../utils/customFunctionsUtils";
@@ -418,6 +423,11 @@ export function registerShowPipeline(commands: Commands) {
         // & PRs), keeps top bar visible; no intermediate PR-less render.
         if (type === "refreshPipeline") {
           ticketDetailsCache.clear();
+          // A refresh asked by the user lists the release versions again; the timer of the panel
+          // reuses the answer of the session
+          if (data?.manual === true) {
+            invalidateReleaseVersionsCache();
+          }
           await loadPipelineFull();
         }
         // The card says the current branch has no Pull Request, and somebody
@@ -1139,6 +1149,8 @@ export function registerShowPipeline(commands: Commands) {
       });
 
       // Start the staged background load — panel shows partial content immediately.
+      // A new panel session lists the release versions again once; its refreshes reuse the answer
+      invalidateReleaseVersionsCache();
       loadPipelineStaged();
     },
   );
@@ -1186,6 +1198,14 @@ export function registerShowPipeline(commands: Commands) {
       Logger.logPerf(
         `[pipeline-perf][browseGit=${browseGitProvider}] loadData START`,
       );
+      // Release versions (releaseVersioning): the CLI fetches the tags, which is too slow for the
+      // first paint. Step 2 shows the answer of the session if there is one, step 3 asks the CLI
+      // when the session has none yet, in parallel with the git provider calls below. Nothing runs
+      // unless a branch config declares the feature. The extension never fetches the tags itself
+      // (it fetches one branch at most), so the CLI keeps its own git fetch --tags
+      const releaseVersions = browseGitProvider
+        ? loadReleaseVersions()
+        : Promise.resolve(getCachedReleaseVersions(getWorkspaceRoot()));
       // Step 2 (browseGitProvider=false) renders the mermaid from local config
       // only — skip the git provider init entirely (its cold detection + token
       // validation costs ~10s on first run). It is initialized in step 3.
@@ -1361,6 +1381,7 @@ export function registerShowPipeline(commands: Commands) {
           browseGitProvider: browseGitProvider,
           colorTheme: colorTheme,
           featureBranchGroupThreshold: featureBranchGroupThreshold,
+          releaseVersions: releaseVersions,
         },
       );
       perfStep("getPipelineData (mermaid)");

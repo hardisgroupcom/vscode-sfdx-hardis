@@ -18,6 +18,14 @@ import {
 } from "./promotionBranchUtils";
 import { t } from "../../i18n/i18n";
 import { MajorBranchCheckView } from "./majorBranchCheckUtils";
+import {
+  findNextVersionFrom,
+  formatReleaseVersionDate,
+  ReleaseVersionEntry,
+  ReleaseVersionNext,
+  ReleaseVersionView,
+  toGitBranchName,
+} from "./releaseVersionUtils";
 
 /**
  * Describes a "+N more" node that folds the older feature branches targeting a
@@ -76,6 +84,9 @@ export class BranchStrategyMermaidBuilder {
   // Last major branch deployment check of each major branch, by branch name: empty unless the
   // project enables enableMajorBranchDeploymentCheck (see majorBranchCheckUtils.ts)
   private majorBranchChecks: Record<string, MajorBranchCheckView | null> = {};
+  // Release version of each versioned major branch, by branch name: empty unless a branch declares
+  // releaseVersioning and the CLI listed the versions (see releaseVersionUtils.ts)
+  private releaseVersions: Record<string, ReleaseVersionView> = {};
 
   constructor(
     branchesAndOrgs: any[],
@@ -89,9 +100,11 @@ export class BranchStrategyMermaidBuilder {
       allowedSteps: [],
     },
     majorBranchChecks: Record<string, MajorBranchCheckView | null> = {},
+    releaseVersions: Record<string, ReleaseVersionView> = {},
   ) {
     this.promotionBranchConfig = promotionBranchConfig;
     this.majorBranchChecks = majorBranchChecks || {};
+    this.releaseVersions = releaseVersions || {};
     this.branchesAndOrgs = branchesAndOrgs;
     this.openPullRequests = openPullRequests;
     this.isAuthenticated = isAuthenticated;
@@ -233,6 +246,20 @@ export class BranchStrategyMermaidBuilder {
         } else {
           linkLabel = this.isAuthenticated ? t("noPr") : t("mergeLabel");
         }
+        // The version this promotion would create in the target branch, next to its Pull Request
+        const nextVersion = findNextVersionFrom(
+          this.releaseVersions[mergeTarget],
+          branchAndOrg.branchName,
+        );
+        if (nextVersion) {
+          linkLabel +=
+            " " +
+            this.buildNextVersionChip(
+              nextVersion,
+              branchAndOrg.branchName,
+              mergeTarget,
+            );
+        }
 
         this.gitLinks.push({
           source: nodeName,
@@ -262,11 +289,19 @@ export class BranchStrategyMermaidBuilder {
       const checkDot = check
         ? `<span class='hardis-pill-dot hardis-node-dot hardis-node-check-dot hardis-status-${check.status}'></span> `
         : "";
+      // The latest version deployed on a versioned branch, under its name
+      const currentVersion =
+        this.releaseVersions[branchAndOrg.branchName]?.current || null;
+      const versionChip = currentVersion
+        ? "<br/>" +
+          this.buildVersionChip(currentVersion, branchAndOrg.branchName)
+        : "";
       const branchLabel =
         checkDot +
         BRANCH_ICON_SVG +
         " " +
         this.escapeHtmlLabel(branchAndOrg.branchName) +
+        versionChip +
         (prCount > 0
           ? `<span class='hardis-node-count' data-count='${prCount}' style='display:none;'></span>`
           : "");
@@ -642,11 +677,22 @@ export class BranchStrategyMermaidBuilder {
           branchAndOrg.orgType === "prod"
             ? "salesforceProd"
             : "salesforceMajor";
+        // The version installed in the org of a versioned branch: the last one its branch deployed
+        const installedVersion =
+          this.releaseVersions[branchAndOrg.branchName]?.current || null;
 
         this.salesforceOrgs.push({
           name: branchAndOrg.branchName,
           nodeName: nodeName,
           label: orgLabel,
+          versionLabel: installedVersion
+            ? "<br/>" +
+              this.buildVersionChip(
+                installedVersion,
+                branchAndOrg.branchName,
+                true,
+              )
+            : "",
           class: orgClass,
           level: branchAndOrg.level,
           group: branchAndOrg.branchName, // Keep group for dev orgs
@@ -747,7 +793,7 @@ export class BranchStrategyMermaidBuilder {
       this.mermaidLines.push(this.indent("direction TB", 2));
       for (const salesforceOrg of majorOrgs) {
         // Node click is handled in the pipeline webview to run sf org open with proper targeting.
-        const nodeLine = `${salesforceOrg.nodeName}(["${CLOUD_ICON_SVG} ${this.escapeHtmlLabel(salesforceOrg.label)}"]):::${salesforceOrg.class}`;
+        const nodeLine = `${salesforceOrg.nodeName}(["${CLOUD_ICON_SVG} ${this.escapeHtmlLabel(salesforceOrg.label)}${salesforceOrg.versionLabel || ""}"]):::${salesforceOrg.class}`;
         this.mermaidLines.push(this.indent(nodeLine, 2));
       }
       this.mermaidLines.push(this.indent("end", 1));
@@ -1001,6 +1047,64 @@ export class BranchStrategyMermaidBuilder {
       return `<a href='${pullRequest.webUrl}' target='_blank' class='hardis-pill hardis-chip hardis-status-${status}${conflictClass}' title='${title}'>${label}</a>`;
     }
     return `<span class='hardis-pill hardis-chip hardis-status-${status}${conflictClass}' title='${title}'>${label}</span>`;
+  }
+
+  /**
+   * Version chip of a versioned branch, or of its org when `installed`: a plain version is drawn
+   * filled, a release candidate outlined (classes in global-theme.css). Its tooltip tells the
+   * branch and the deployment date.
+   */
+  private buildVersionChip(
+    entry: ReleaseVersionEntry,
+    branchName: string,
+    installed: boolean = false,
+  ): string {
+    const kindClass = entry.prerelease
+      ? "hardis-version-rc"
+      : "hardis-version-released";
+    const installedClass = installed ? " hardis-version-installed" : "";
+    const date = formatReleaseVersionDate(entry.deployedAt);
+    const params = {
+      version: entry.tag,
+      branch: toGitBranchName(entry.branchName || branchName),
+      date,
+    };
+    const title = date
+      ? t("releaseVersionChipTooltip", params)
+      : t("releaseVersionChipTooltipNoDate", params);
+    const text = installed
+      ? t("releaseVersionInstalled", { version: entry.tag })
+      : entry.tag;
+    return `<span class='hardis-pill hardis-chip hardis-version-chip ${kindClass}${installedClass}' title='${this.escapeTitle(String(title))}'>${this.escapeHtmlLabel(String(text))}</span>`;
+  }
+
+  /** Dashed chip on a promotion edge: the version merging this branch into the next one creates. */
+  private buildNextVersionChip(
+    next: ReleaseVersionNext,
+    sourceBranch: string,
+    targetBranch: string,
+  ): string {
+    const title = t("releaseVersionNextTooltip", {
+      version: next.tag,
+      source: toGitBranchName(sourceBranch),
+      target: toGitBranchName(targetBranch),
+    });
+    const text = t("releaseVersionNext", { version: next.tag });
+    return `<span class='hardis-pill hardis-chip hardis-version-chip hardis-version-next' title='${this.escapeTitle(String(title))}'>${this.escapeHtmlLabel(String(text))}</span>`;
+  }
+
+  /**
+   * Text of a title attribute inside a mermaid label. Apostrophes and quotes become their
+   * typographic forms rather than entities: mermaid rewrites `#NNN;` itself, so `&#39;` would show
+   * a stray ampersand (see conflictGlyph), and a translated tooltip often holds an apostrophe.
+   */
+  private escapeTitle(text: string): string {
+    return (text || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/'/g, "’")
+      .replace(/"/g, "”");
   }
 
   /**
