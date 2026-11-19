@@ -110,10 +110,17 @@ async function main() {
   const realRunningJobs = process.env.SFDX_HARDIS_REAL_RUNNING_JOBS === "true";
   const realJobArtifacts =
     process.env.SFDX_HARDIS_REAL_JOB_ARTIFACTS === "true" || realRunningJobs;
+  // Real git provider run of the release versions of the DevOps Pipeline
+  // (SFDX_HARDIS_REAL_RELEASE_VERSIONS=true): same setting, it only reads and captures the panel
+  // after each step of the release-versioning end to end scenario of sfdx-hardis. See
+  // src/test/ui/releaseVersionsReal.test.ts.
+  const realReleaseVersions =
+    process.env.SFDX_HARDIS_REAL_RELEASE_VERSIONS === "true";
 
   const labDriver =
     realRetriever ||
     realJobArtifacts ||
+    realReleaseVersions ||
     process.argv.includes("--labs") ||
     process.env.SFDX_HARDIS_LAB_DRIVER === "true";
 
@@ -653,7 +660,7 @@ async function main() {
   // cspell:ignore backgrounding
 
   const cdpPort =
-    docScreenshots || realRetriever || realJobArtifacts
+    docScreenshots || realRetriever || realJobArtifacts || realReleaseVersions
       ? await findFreePort()
       : 0;
 
@@ -666,7 +673,7 @@ async function main() {
   const hiddenDesktop =
     process.platform === "win32" &&
     !process.env.CI &&
-    (!labDriver || realJobArtifacts) &&
+    (!labDriver || realJobArtifacts || realReleaseVersions) &&
     process.env.SFDX_HARDIS_UI_VISIBLE !== "true";
   let vscodeExecutablePath: string | undefined;
   if (hiddenDesktop) {
@@ -723,6 +730,9 @@ async function main() {
           ? {
               SFDX_HARDIS_LAB_DRIVER: "true",
               ...(realRetriever ? { SFDX_HARDIS_REAL_RETRIEVER: "true" } : {}),
+              ...(realReleaseVersions
+                ? { SFDX_HARDIS_REAL_RELEASE_VERSIONS: "true" }
+                : {}),
               ...(realRunningJobs
                 ? { SFDX_HARDIS_REAL_RUNNING_JOBS: "true" }
                 : realJobArtifacts
