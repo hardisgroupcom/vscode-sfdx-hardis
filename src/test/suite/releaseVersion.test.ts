@@ -116,6 +116,36 @@ suite("Release versioning", () => {
       const list = parseReleaseVersionList({ ...CLI_RESULT, enabled: false });
       assert.deepStrictEqual(buildReleaseVersionViews(list, ["main"]), {});
     });
+
+    test("a tag in the tag format of its branch is shown as the CLI names it", () => {
+      const custom = entry("v1.6.0-pi2-it4-uat-rc1", "release/uat", {
+        version: "1.6.0-rc.1",
+        prerelease: true,
+        variables: { PI: "2", IT: 4, bad: { x: 1 } },
+      });
+      const list = parseReleaseVersionList({
+        ...CLI_RESULT,
+        branches: [
+          { ...CLI_RESULT.branches[0], current: custom },
+          CLI_RESULT.branches[1],
+        ],
+        history: [custom, entry("v1.5.0", "main")],
+      })!;
+      const current = list.branches[0].current!;
+      assert.strictEqual(current.tag, "v1.6.0-pi2-it4-uat-rc1");
+      assert.strictEqual(current.version, "1.6.0-rc.1");
+      assert.strictEqual(current.prerelease, true);
+      assert.deepStrictEqual(current.variables, { PI: "2", IT: "4" });
+      // An older CLI sends no variables
+      assert.deepStrictEqual(list.history[1].variables, {});
+      assert.strictEqual(
+        buildReleaseVersionLinks(current.tag, true, {
+          providerName: "gitlab",
+          webUrl: "https://gitlab.com/acme/crm",
+        }).tagUrl,
+        "https://gitlab.com/acme/crm/-/tags/v1.6.0-pi2-it4-uat-rc1",
+      );
+    });
   });
 
   suite("links built from the repository URL", () => {

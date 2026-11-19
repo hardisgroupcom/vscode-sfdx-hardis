@@ -3,6 +3,7 @@
 ## Unreleased
 
 - DevOps Pipeline: with the new **Handle release versioning** branch setting (Pipeline Settings), each versioned branch and its org show their release version, each promotion shows the version it will create, and a new **Releases** tab lists the versions with their tag, Release and release notes (requires sfdx-hardis 8.26.0)
+- Pipeline Settings: new **Release versioning: tag format of release candidates** setting, to name the release candidates of each branch your own way
 
 ## [8.18.0] 2026-11-06
 

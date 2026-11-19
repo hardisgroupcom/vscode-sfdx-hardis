@@ -22,8 +22,12 @@ export type ReleaseVersionRole = "first" | "middle" | "final";
 
 /** One version tag, as the CLI describes it */
 export interface ReleaseVersionEntry {
+  // Name of the tag, in the tag format of its branch (v1.6.0-pi2-it4-uat-rc1): the only identifier
   tag: string;
+  // Semver form (1.6.0-rc.1): with tag formats, two release candidates of two branches can share it
   version: string;
+  // Values of the custom variables of the tag format ({PI}, {IT}), empty for an older CLI
+  variables: Record<string, string>;
   prerelease: boolean;
   // Git branch name (release/uat, not release__uat), null for a tag sfdx-hardis did not write
   branchName: string | null;
@@ -421,6 +425,7 @@ function parseReleaseVersionEntry(raw: any): ReleaseVersionEntry | null {
       typeof raw.version === "string" && raw.version
         ? raw.version
         : raw.tag.replace(/^v/, ""),
+    variables: parseTagVariables(raw.variables),
     prerelease: raw.prerelease === true,
     branchName: stringOrNull(raw.branchName),
     commit: typeof raw.commit === "string" ? raw.commit : "",
@@ -437,6 +442,20 @@ function parseReleaseVersionEntry(raw: any): ReleaseVersionEntry | null {
     tagUrl: stringOrNull(raw.tagUrl),
     releaseUrl: stringOrNull(raw.releaseUrl),
   };
+}
+
+// Only string or number values: anything else the CLI could send is dropped
+function parseTagVariables(raw: any): Record<string, string> {
+  const variables: Record<string, string> = {};
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return variables;
+  }
+  for (const [name, value] of Object.entries(raw)) {
+    if (typeof value === "string" || typeof value === "number") {
+      variables[name] = String(value);
+    }
+  }
+  return variables;
 }
 
 function stringOrNull(value: any): string | null {
