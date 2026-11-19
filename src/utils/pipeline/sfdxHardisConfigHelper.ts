@@ -152,8 +152,8 @@ export class SfdxHardisConfigHelper {
     { name: "releaseVersioning", scopes: ["branch"] },
     { name: "releaseVersioningInitialVersion", scopes: ["global"] },
     { name: "releaseVersioningMinimumVersion", scopes: ["global"] },
-    // releaseVersioningMinimumVariables is an object: no generic form edits it, it is set in the YAML
     { name: "releaseVersioningTagFormat", scopes: ["global", "branch"] },
+    { name: "releaseVersioningMinimumVariables", scopes: ["global", "branch"] },
     { name: "releaseVersioningTicketVersions", scopes: ["global"] },
     { name: "detectManualCherryPicks", scopes: ["global"] },
     { name: "allowedPromotionSteps", scopes: ["global"] },

@@ -433,7 +433,16 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
           // Doc links move inline in the field label; array-of-object fields
           // never carried one (they use their own datatable/modal editor).
           // Nested-object editors carry their own doc link inside the component
-          const showDocLink = hasDocUrl && !isArrayObject && !isObject;
+          // A map of names to values (schema with only additionalProperties)
+          // has a generic editor, which carries no doc link of its own
+          const isKeyValueObject =
+            isObject &&
+            !schema.properties &&
+            !!schema.additionalProperties &&
+            typeof schema.additionalProperties === "object" &&
+            schema.additionalProperties.type !== "object";
+          const showDocLink =
+            hasDocUrl && !isArrayObject && (!isObject || isKeyValueObject);
           // Arrays/objects need the full row width (chips, dual-listbox,
           // datatable) instead of the compact right-aligned control column.
           // Except when empty in view mode: a lone "Not defined" fits the
@@ -498,6 +507,9 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
           entries.push({
             key,
             isAnonymization,
+            isKeyValueObject,
+            keyValueNamePattern: schema.propertyNames?.pattern || null,
+            keyValueValuePattern: schema.additionalProperties?.pattern || null,
             isDeploymentActions,
             isGenericArrayObject: isArrayObject && !isDeploymentActions,
             label,
