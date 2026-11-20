@@ -77,6 +77,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // View of the switch above the diagram: "majorBranches", "featureBranches" or "devOrgs". The
   // panel always opens on the feature branches.
   @track diagramView = "featureBranches";
+  // Release versions drawn on the diagram (Versions toggle of the diagram toolbar)
+  showReleaseVersions = true;
   // Details window of a development org
   @track showDevOrgModal = false;
   @track selectedDevOrg = null;
@@ -1678,6 +1680,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // Remove all leading blank lines after code block
     diagram = diagram.replace(/^[\s\r\n]+/, "");
     diagram = diagram.trim();
+    if (!this.showReleaseVersions) {
+      diagram = this._withoutReleaseVersions(diagram);
+    }
 
     if (debugDiv) {
       debugDiv.textContent = diagram || "[Empty diagram string]";
@@ -2413,6 +2418,13 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   handleShowDevOrgsView() {
     this._setDiagramView("devOrgs");
+  }
+
+  // Versions toggle: the same diagram, drawn again with or without its version chips
+  handleToggleVersions() {
+    this.showReleaseVersions = !this.showReleaseVersions;
+    this.lastDiagram = "";
+    setTimeout(() => this.renderMermaid(), 0);
   }
 
   // "+" node: register an org on its branch; the org, the owner and the users are asked in the
@@ -3462,7 +3474,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // The count bubbles of every node, for the scale the diagram has now. A diagram drawn while the
   // panel had no width (hidden tab, automatic reload in the background) got a scale clamped to
   // its minimum, and bubbles about three times too big that stayed so: nothing is drawn without a
-  // width, and every fit (resize, zoom, panel shown again) draws them again.
+  // width, and every fit (resize, zoom, panel shown again) draws them again. The version chips
+  // under the nodes are measured here for the same reason.
   _drawNodeCountBubbles(mermaidSvg) {
     const viewport = this.template.querySelector(".mermaid-viewport");
     if (!mermaidSvg || !viewport || viewport.clientWidth <= 1) {
@@ -3474,6 +3487,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     const svgScale = this._getMermaidEffectiveScale(mermaidSvg);
     mermaidSvg.querySelectorAll("g.node").forEach((node) => {
       this._drawNodeCountBubble(node, svgScale);
+      this._drawNodeVersionChip(node);
     });
   }
 
@@ -3597,6 +3611,56 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     } catch (e) {
       // keep baseline-centered position
     }
+  }
+
+  // Draw the version chip of a versioned branch or of its org under the node. The chip travels
+  // in the label inside a hidden ".hardis-node-version" marker (BranchStrategyMermaidBuilder):
+  // the label clips what overflows it, so the chip is moved into a foreignObject of its own,
+  // appended to the node group (a click on it still reaches the node, and the click handler
+  // opens the Release version tab from its class). Drawn in SVG units, it scales with the labels.
+  // Called again at each fit: the chip is measured again, it is only moved once.
+  _drawNodeVersionChip(node) {
+    let holder = node.querySelector(".hardis-node-version-box");
+    const marker = node.querySelector(".hardis-node-version");
+    if (!holder && !(marker && marker.firstElementChild)) {
+      return;
+    }
+    const shape = node.querySelector("rect, polygon, path");
+    if (!shape || typeof shape.getBBox !== "function") {
+      return;
+    }
+    let box;
+    try {
+      box = shape.getBBox();
+    } catch (e) {
+      return;
+    }
+    if (!holder) {
+      const SVG_NS = "http://www.w3.org/2000/svg";
+      holder = document.createElementNS(SVG_NS, "foreignObject");
+      holder.setAttribute("class", "hardis-node-version-box");
+      holder.setAttribute("style", "overflow:visible;");
+      const created = document.createElement("div");
+      created.setAttribute(
+        "style",
+        "display:inline-flex;white-space:nowrap;line-height:normal;",
+      );
+      created.appendChild(marker.firstElementChild);
+      holder.appendChild(created);
+      node.appendChild(holder);
+      marker.remove();
+    }
+    // Sized to the chip once it is laid out, centered under the shape
+    holder.setAttribute("width", "400");
+    holder.setAttribute("height", "40");
+    const wrapper = holder.firstElementChild;
+    const width = Math.ceil(wrapper.offsetWidth) + 2;
+    const height = Math.ceil(wrapper.offsetHeight) + 2;
+    const gap = 4;
+    holder.setAttribute("width", String(width));
+    holder.setAttribute("height", String(height));
+    holder.setAttribute("x", String(box.x + box.width / 2 - width / 2));
+    holder.setAttribute("y", String(box.y + box.height + gap));
   }
 
   // ---- Pull Request view: one entry point, a way back, the explorer ----
@@ -6706,6 +6770,34 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   get releaseVersioningEnabled() {
     return this.pipelineData?.releaseVersioningEnabled === true;
+  }
+
+  get showReleaseVersionsLegend() {
+    return this.releaseVersioningEnabled && this.showReleaseVersions;
+  }
+
+  get versionsToggleClass() {
+    return this.showReleaseVersions ? "hardis-seg on" : "hardis-seg";
+  }
+
+  get versionsTogglePressed() {
+    return String(this.showReleaseVersions);
+  }
+
+  // The diagram without its version chips: the hidden chip of each versioned branch and org
+  // (drawn under the node by _drawNodeVersionChip), and the next version under the Pull Request
+  // chip of each promotion. The text of a chip holds no "<" (BranchStrategyMermaidBuilder
+  // escapes it), so each one ends at its first closing tag.
+  _withoutReleaseVersions(diagram) {
+    return diagram
+      .replace(
+        /<span class='hardis-node-version' style='display:none;'>.*?<\/span><\/span>/g,
+        "",
+      )
+      .replace(
+        /<br\/><span class='hardis-pill hardis-chip hardis-version-chip hardis-version-next'.*?<\/span>/g,
+        "",
+      );
   }
 
   get releaseRows() {

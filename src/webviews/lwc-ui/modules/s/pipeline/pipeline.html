@@ -173,6 +173,12 @@
                                                 <button type="button" class={devOrgsViewClass} aria-pressed={devOrgsViewPressed} onclick={handleShowDevOrgsView}>{i18n.pipelineViewDevOrgs}</button>
                                             </template>
                                         </span>
+                                        <!-- Release versions on the diagram, shown by default -->
+                                        <template if:true={releaseVersioningEnabled}>
+                                            <span class="hardis-segmented pipeline-versions-switch" role="group" aria-label={i18n.pipelineViewVersionsTitle} title={i18n.pipelineViewVersionsTitle}>
+                                                <button type="button" class={versionsToggleClass} aria-pressed={versionsTogglePressed} onclick={handleToggleVersions}>{i18n.pipelineViewVersions}</button>
+                                            </span>
+                                        </template>
                                     </div>
                                     <!-- Manual refresh: keep the diagram visible with a spinner overlaid on top -->
                                     <template if:true={isMermaidRefreshing}>
@@ -218,7 +224,7 @@
                                             <span class="legend-separator"></span>
                                             <span class="legend-item"><span class="legend-node-check"></span>{i18n.legendMajorBranchCheck}</span>
                                         </template>
-                                        <template if:true={releaseVersioningEnabled}>
+                                        <template if:true={showReleaseVersionsLegend}>
                                             <span class="legend-separator"></span>
                                             <span class="legend-item"><span class="hardis-pill hardis-version-chip hardis-version-rc legend-version-chip">v1.2.0-rc.1</span>{i18n.legendReleaseCandidate}</span>
                                             <span class="legend-item"><span class="hardis-pill hardis-version-chip hardis-version-released legend-version-chip">v1.1.0</span>{i18n.legendReleasedVersion}</span>

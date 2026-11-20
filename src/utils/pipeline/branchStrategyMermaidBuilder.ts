@@ -274,14 +274,14 @@ export class BranchStrategyMermaidBuilder {
         } else {
           linkLabel = this.isAuthenticated ? t("noPr") : t("mergeLabel");
         }
-        // The version this promotion would create in the target branch, next to its Pull Request
+        // The version this promotion would create in the target branch, under its Pull Request
         const nextVersion = findNextVersionFrom(
           this.releaseVersions[mergeTarget],
           branchAndOrg.branchName,
         );
         if (nextVersion) {
           linkLabel +=
-            " " +
+            "<br/>" +
             this.buildNextVersionChip(
               nextVersion,
               branchAndOrg.branchName,
@@ -317,12 +317,11 @@ export class BranchStrategyMermaidBuilder {
       const checkDot = check
         ? `<span class='hardis-pill-dot hardis-node-dot hardis-node-check-dot hardis-status-${check.status}'></span> `
         : "";
-      // The latest version deployed on a versioned branch, under its name
+      // The latest version deployed on a versioned branch, drawn under the node
       const currentVersion =
         this.releaseVersions[branchAndOrg.branchName]?.current || null;
       const versionChip = currentVersion
-        ? "<br/>" +
-          this.buildVersionChip(currentVersion, branchAndOrg.branchName)
+        ? this.buildVersionChip(currentVersion, branchAndOrg.branchName)
         : "";
       const branchLabel =
         checkDot +
@@ -705,18 +704,17 @@ export class BranchStrategyMermaidBuilder {
           branchAndOrg.orgType === "prod"
             ? "salesforceProd"
             : "salesforceMajor";
-        // The version installed in the org of a versioned branch: the last one its branch deployed
-        const installedVersion =
+        // The version deployed in the org of a versioned branch: the last one its branch deployed
+        const deployedVersion =
           this.releaseVersions[branchAndOrg.branchName]?.current || null;
 
         this.salesforceOrgs.push({
           name: branchAndOrg.branchName,
           nodeName: nodeName,
           label: orgLabel,
-          versionLabel: installedVersion
-            ? "<br/>" +
-              this.buildVersionChip(
-                installedVersion,
+          versionLabel: deployedVersion
+            ? this.buildVersionChip(
+                deployedVersion,
                 branchAndOrg.branchName,
                 true,
               )
@@ -1202,19 +1200,21 @@ export class BranchStrategyMermaidBuilder {
   }
 
   /**
-   * Version chip of a versioned branch, or of its org when `installed`: a plain version is drawn
+   * Version chip of a versioned branch, or of its org when `deployed`: a plain version is drawn
    * filled, a release candidate outlined (classes in global-theme.css). Its tooltip tells the
-   * branch and the deployment date.
+   * branch and the deployment date. The chip travels in the node label inside a hidden
+   * ".hardis-node-version" marker: the webview draws it under the node (_drawNodeVersionChip in
+   * pipeline.js), where the label, which clips what overflows it, cannot.
    */
   private buildVersionChip(
     entry: ReleaseVersionEntry,
     branchName: string,
-    installed: boolean = false,
+    deployed: boolean = false,
   ): string {
     const kindClass = entry.prerelease
       ? "hardis-version-rc"
       : "hardis-version-released";
-    const installedClass = installed ? " hardis-version-installed" : "";
+    const deployedClass = deployed ? " hardis-version-deployed" : "";
     const date = formatReleaseVersionDate(entry.deployedAt);
     const params = {
       version: entry.tag,
@@ -1224,10 +1224,10 @@ export class BranchStrategyMermaidBuilder {
     const title = date
       ? t("releaseVersionChipTooltip", params)
       : t("releaseVersionChipTooltipNoDate", params);
-    const text = installed
-      ? t("releaseVersionInstalled", { version: entry.tag })
+    const text = deployed
+      ? t("releaseVersionDeployed", { version: entry.tag })
       : entry.tag;
-    return `<span class='hardis-pill hardis-chip hardis-version-chip ${kindClass}${installedClass}' title='${this.escapeTitle(String(title))}'>${this.escapeHtmlLabel(String(text))}</span>`;
+    return `<span class='hardis-node-version' style='display:none;'><span class='hardis-pill hardis-chip hardis-version-chip ${kindClass}${deployedClass}' title='${this.escapeTitle(String(title))}'>${this.escapeHtmlLabel(String(text))}</span></span>`;
   }
 
   /** Dashed chip on a promotion edge: the version merging this branch into the next one creates. */

@@ -366,8 +366,15 @@ suite("Release versioning", () => {
         line("mainBranch("),
         /hardis-version-released'[^>]*>v1\.5\.0</,
       );
-      // The org of a versioned branch shows the installed version
-      assert.match(line("release_uatOrg("), /hardis-version-installed/);
+      // The org of a versioned branch shows the deployed version
+      assert.match(line("release_uatOrg("), /hardis-version-deployed/);
+      // The chips of the nodes travel hidden: the webview draws them under the node
+      assert.match(
+        line("release_uatBranch("),
+        /<span class='hardis-node-version' style='display:none;'><span class='hardis-pill/,
+      );
+      // The next version goes under the Pull Request chip of the edge
+      assert.match(line("integrationBranch ==>"), /<br\/><span class='hardis-pill[^']*hardis-version-next'/);
       // Nothing on the non-versioned branch and its org
       assert.doesNotMatch(line("integrationBranch("), /hardis-version/);
       assert.doesNotMatch(line("integrationOrg("), /hardis-version/);

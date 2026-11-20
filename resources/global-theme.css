@@ -674,9 +674,21 @@ lightning-helptext::part(icon) {
   color: var(--hardis-version-text);
   border: 1.5px dashed var(--hardis-version-border);
 }
-/* Version installed in an org: same colors, a quieter size */
-.slds-scope[data-theme] .hardis-pill.hardis-version-installed {
+/* Version deployed in an org: same colors, a quieter size */
+.slds-scope[data-theme] .hardis-pill.hardis-version-deployed {
   font-size: 0.66rem;
+}
+/* Inside the diagram, mermaid turns the color of each classDef into
+   "#graphDiv .<class> span { color: ... !important }", which painted the text
+   of a chip in the color of its node (white on the lilac of a release
+   candidate). The id of the diagram (mermaid.render("graphDiv") in
+   pipeline.js) gives these rules a higher specificity. */
+#graphDiv .hardis-pill.hardis-version-released {
+  color: var(--hardis-version-on-strong) !important;
+}
+#graphDiv .hardis-pill.hardis-version-rc,
+#graphDiv .hardis-pill.hardis-version-next {
+  color: var(--hardis-version-text) !important;
 }
 
 /* ------------------------------------------------------------------ */

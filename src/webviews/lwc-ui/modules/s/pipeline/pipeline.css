@@ -383,6 +383,13 @@
     padding: 0.5rem 0.5rem 0;
 }
 
+/* Versions toggle, next to the view switch */
+.pipeline-versions-switch {
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-left: 0.5rem;
+}
+
 .pipeline-view-switch {
     white-space: nowrap;
     flex-shrink: 0;

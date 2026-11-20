@@ -51,15 +51,29 @@ suite("Release versions on a real git provider", function () {
     .map((tab) => tab.trim())
     .filter(Boolean);
 
-  // Text of every version chip, with the mermaid node that holds it
+  // Text of every version chip, with the mermaid node that holds it and the
+  // contrast of its text on its own background: a chip whose text takes the
+  // color of its node is in the DOM and invisible on the screen
   const versionChips = () =>
     inWebview(`
+      const luminance = (color) => {
+        const rgb = (color.match(/[\\d.]+/g) || []).slice(0, 3).map(Number).map((v) => {
+          const c = v / 255;
+          return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+        });
+        return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+      };
       const chips = deepAll(panelDocument, ".hardis-version-chip").map((chip) => {
         const node = chip.closest("g.node");
+        const style = getComputedStyle(chip);
+        const [light, dark] = [luminance(style.color), luminance(style.backgroundColor)].sort((a, b) => b - a);
         return {
           text: (chip.textContent || "").trim(),
           classes: chip.className,
           node: node ? node.id || "" : "",
+          color: style.color,
+          background: style.backgroundColor,
+          contrast: Math.round(((light + 0.05) / (dark + 0.05)) * 10) / 10,
         };
       });
       return chips.length > 0 ? chips : null;
@@ -71,6 +85,11 @@ suite("Release versions on a real git provider", function () {
     }
     const api = await activateExtension();
     const panelManager = api.getLwcPanelManager();
+    // The diagram fits the width of the panel: without the side bar, the chat and the
+    // notifications, its labels and version chips are big enough to read in a capture
+    await vscode.commands.executeCommand("workbench.action.closeSidebar");
+    await vscode.commands.executeCommand("workbench.action.closeAuxiliaryBar");
+    await vscode.commands.executeCommand("notifications.clearAll");
     await vscode.commands.executeCommand("vscode-sfdx-hardis.showPipeline");
     await waitFor(
       () => panelManager.getPanel(LWC_ID),
@@ -95,8 +114,17 @@ suite("Release versions on a real git provider", function () {
       `the version chips ${Object.values(expected).join(", ") || "(any)"}`,
     );
     for (const chip of chips) {
-      console.log(`      chip "${chip.text}" ${chip.classes} on ${chip.node}`);
+      console.log(
+        `      chip "${chip.text}" ${chip.classes} on ${chip.node}: ${chip.color} on ${chip.background}, contrast ${chip.contrast}`,
+      );
     }
+    // WCAG AA for small text
+    const unreadable = chips.filter((chip: any) => chip.contrast < 4.5);
+    assert.deepStrictEqual(
+      unreadable.map((chip: any) => `${chip.text} on ${chip.node} (${chip.contrast})`),
+      [],
+      "every version chip is readable",
+    );
     for (const [branch, tag] of Object.entries(expected)) {
       assert.ok(
         chips.some(
@@ -111,6 +139,40 @@ suite("Release versions on a real git provider", function () {
     await captureWindowTo(shotsDir, `${prefix}-pipeline`);
   });
 
+  test("the Versions toggle hides the versions of the diagram", async function () {
+    if (!tabs.includes("versions-off") || !CdpWindow.portFromEnv()) {
+      this.skip();
+    }
+    const clickToggle = () =>
+      inWebview(`
+        const button = deepAll(panelDocument, ".pipeline-versions-switch button")[0];
+        if (!button) {
+          return null;
+        }
+        button.click();
+        return true;
+      `);
+    const diagramChips = () =>
+      inWebview(`
+        return deepAll(panelDocument, ".mermaid .hardis-version-chip").length;
+      `);
+    assert.ok(await clickToggle(), "the Versions toggle exists");
+    await waitFor(
+      async () => ((await diagramChips()) === 0 ? true : null),
+      30000,
+      "the diagram without version chips",
+    );
+    await sleep(2000);
+    await captureWindowTo(shotsDir, `${prefix}-versions-hidden`);
+    // Back as the run found it, for the captures that follow
+    await clickToggle();
+    await waitFor(
+      async () => ((await diagramChips()) > 0 ? true : null),
+      30000,
+      "the version chips back on the diagram",
+    );
+  });
+
   test("the Releases tab lists the version tags", async function () {
     if (!tabs.includes("releases") || !CdpWindow.portFromEnv()) {
       this.skip();
@@ -121,11 +183,20 @@ suite("Release versions on a real git provider", function () {
         return null;
       }
       tab.click();
-      tab.scrollIntoView({ block: "center" });
       return true;
     `);
     assert.ok(opened, "the Releases tab exists");
+    // Scrolled once the table is there: before, the page ends under the tab header
     await sleep(2500);
+    await inWebview(`
+      const tab = deepAll(panelDocument, 'a[role="tab"][data-tab-value="releases"]')[0];
+      if (!tab) {
+        return null;
+      }
+      tab.scrollIntoView({ block: "start" });
+      return true;
+    `);
+    await sleep(500);
     await captureWindowTo(shotsDir, `${prefix}-releases`);
   });
 
