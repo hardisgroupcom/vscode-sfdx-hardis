@@ -1191,6 +1191,19 @@ suite("backpromotePanelUtils", () => {
     assert.deepStrictEqual(listAllowedParentBranches({}), []);
   });
 
+  test('listAllowedParentBranches keeps the branch of a "branch,label" entry', () => {
+    assert.deepStrictEqual(
+      listAllowedParentBranches({
+        developmentBranch: "integration",
+        availableTargetBranches: [
+          "integration,Choose this branch for BUILD tickets",
+          "preprod,Choose this branch for HOTFIX tickets",
+        ],
+      }),
+      ["integration", "preprod"],
+    );
+  });
+
   test("the parent branch is taken without asking only when it cannot be another one", () => {
     const allowed = ["integration", "preprod"];
     assert.strictEqual(
