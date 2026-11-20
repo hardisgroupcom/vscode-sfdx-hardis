@@ -4,6 +4,39 @@
 
 - DevOps Pipeline: with the new **Handle release versioning** branch setting (Pipeline Settings), each versioned branch and its org show their release version, each promotion shows the version it will create, and a new **Releases** tab lists the versions with their tag, Release and release notes (requires sfdx-hardis 8.26.0)
 - Pipeline Settings: new **Release versioning: tag format of release candidates** and **values of the tag format variables** settings, to name the release candidates of each branch your own way, with a new editor for settings that map names to values
+- Contributors: the UI test harness can run sfdx-hardis commands against real orgs and capture them, for the screenshots of the sfdx-hardis command pages.
+
+## [8.20.0] 2026-11-16
+
+- Audit menu: new **What Will Break** command, to find what dated Salesforce changes will break in an org, when, and what to do. It replaces the Legacy API and Release Updates commands, which leave the menu (requires sfdx-hardis 8.25.0).
+- Command runner: the main report of a command is the first report button, in a stronger color than its detail reports (requires sfdx-hardis 8.25.0).
+- Deployment actions, **Browser** type: a **Documentation** button opens the page of the selected setting on the Browserforce documentation site (Browserforce 7.1.0 or later).
+- Deployment actions, **Browser** type: the editor asks for Browserforce 7.2.0 or later, which can rename the API name of a picklist value.
+- Renovate waits until a dependency release is 14 days old before opening an upgrade Pull Request. Security fixes are still proposed at once.
+- Contributors: the documentation screenshot harness clicks the branch nodes and the contribution cards where the view switch of the DevOps Pipeline put them, and crops the cards pictures at their new place.
+- Pull Request window: a long line of a job log or of a comment code block wraps instead of making the block scroll sideways.
+- Pull Request window: search the description and the comments of the Validation, Code Quality and Deployment tabs, from the search icon of its header or Ctrl+F
+  - Matches are highlighted and the collapsed sections holding one open
+  - Each tab shows its number of matches, and Enter jumps to the next one across the tabs
+  - A filter keeps only the runs whose comment matches
+- Ctrl+F opens the VS Code find bar in the other panels
+
+## [8.19.0] 2026-11-08
+
+- **Browserforce** ([doc](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions-browser/)): apply with your Pull Request the Setup settings the Metadata API cannot deploy.
+  - Deployment actions: new **Browser** type, with a form for the Browserforce setting (requires sfdx-hardis 8.24.0).
+  - Org Initialization: new **Browser** and **User Access Policies** steps, with the same setting form and the policy picker of the deployment action editor (requires sfdx-hardis 8.24.0).
+- **Scratch org snapshots** ([doc](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-scratch-org-pool/#use-scratch-org-snapshots-for-pull-requests)): the scratch org of a Pull Request starts from a snapshot of its target branch.
+  - Pipeline Settings: a major branch turns it on (`useScratchOrgSnapshot`) and sets how many snapshots to keep (`scratchOrgSnapshotKeep`), in the Dev Hub section of its branch settings.
+- **Development orgs list** ([doc](https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/)): see the developer sandboxes and scratch orgs of the team and the Pull Requests each one misses since its last backpromote (requires sfdx-hardis 8.24.0).
+  - DevOps Pipeline: a switch on the diagram shows the **Major branches**, the **Feature branches** (default) or the new **Dev orgs** view.
+  - Click the count of missed Pull Requests to start a backpromote, and use **+** to register an org.
+- **Agentforce agents in CI/CD** ([doc](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-agentforce-agents/)): retrieve an agent, then publish and activate it in each org with your Pull Request (requires sfdx-hardis 8.24.0).
+  - New menu entry **Retrieve an Agentforce agent**, to get an agent version with the components it uses from an org.
+  - Deployment actions: new **Publish Agentforce Agent**, **Activate Agentforce Agent** and **Create Agentforce Agent Running User** types, the agent picked from the agents of the project sources.
+  - The **Agentforce agents deployment actions** source cleaning adds the publication and the running user to the Pull Request at each User Story save.
+- DevOps Pipeline: the Pull Request count bubbles of the branches no longer become giant when the diagram was drawn while the panel was in the background.
+- Dependencies: when several sf CLI plugins are upgraded at once, one that fails to install no longer stops the others.
 
 ## [8.18.0] 2026-11-06
 

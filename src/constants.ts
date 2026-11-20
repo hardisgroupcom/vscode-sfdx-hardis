@@ -8,6 +8,7 @@ const showBanner = false;
 export const RECOMMENDED_SFDX_CLI_VERSION: string | null = "2.151.6";
 export const NODE_JS_MINIMUM_VERSION = 24.0;
 // Pre-release identifiers are ignored when comparing, so 8.0.0-beta.x satisfies it
+// 8.26.0: the release that ships release versioning (version tags, Releases, version:list)
 export const RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION: string = "8.26.0";
 export const BANNER_IMAGE_URL = showBanner
   ? "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/refs/heads/main/docs/assets/images/cloudity-banner.png"

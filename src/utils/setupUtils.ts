@@ -78,6 +78,37 @@ export function buildSfCliUpgradeCommand(
   return `npm install @salesforce/cli@${recommended || "latest"} -g`;
 }
 
+// Installed last: the heaviest plugin, so a failure of its download comes after the others
+const PLUGINS_INSTALLED_LAST = ["sfdx-browserforce-plugin"];
+
+/**
+ * Builds the shell command that installs or upgrades the given sf CLI plugins, one after the other.
+ * A failed install prints a line and the next one still runs: `a || echo ... && b` chains left to
+ * right in cmd, bash and PowerShell 7 alike, so one failure never skips the other plugins, nor the
+ * steps after them (merge driver enable, refresh of the plugins view, which shows what is still
+ * missing or outdated).
+ */
+export function buildPluginsInstallCommand(
+  plugins: Array<{ name: string }>,
+  sfdxHardisTag: string,
+): string {
+  const ordered = [
+    ...plugins.filter(
+      (plugin) => !PLUGINS_INSTALLED_LAST.includes(plugin.name),
+    ),
+    ...plugins.filter((plugin) => PLUGINS_INSTALLED_LAST.includes(plugin.name)),
+  ];
+  return ordered
+    .map((plugin) => {
+      const tag = plugin.name === "sfdx-hardis" ? sfdxHardisTag : "latest";
+      return (
+        `echo y|sf plugins:install ${plugin.name}@${tag}` +
+        ` || echo [sfdx-hardis] Unable to install ${plugin.name}, continuing with the next steps`
+      );
+    })
+    .join(" && ");
+}
+
 /**
  * Resolves the `sf` binary path via `which`, swallowing the error and returning
  * the sentinel `"missing"` if it cannot be located.
@@ -250,6 +281,19 @@ export class SetupHelper {
         helpUrl: "https://github.com/forcedotcom/SFDX-Data-Move-Utility",
         checkMethod: this.checkSfPlugin.bind(this, "sfdmu"),
         installMethod: this.installSfPlugin.bind(this, "sfdmu"),
+      },
+      "sfplugin:sfdx-browserforce-plugin": {
+        label: "Browserforce",
+        explanation: t("depBrowserforceExplanation"),
+        installable: true,
+        iconName: "utility:desktop",
+        prerequisites: ["sf"],
+        helpUrl: "https://github.com/amtrack/sfdx-browserforce-plugin",
+        checkMethod: this.checkSfPlugin.bind(this, "sfdx-browserforce-plugin"),
+        installMethod: this.installSfPlugin.bind(
+          this,
+          "sfdx-browserforce-plugin",
+        ),
       },
       "sfplugin:sfdx-git-delta": {
         label: "sfdx-git-delta",

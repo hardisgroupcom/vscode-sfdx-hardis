@@ -8,6 +8,12 @@ import {
   getOrgInitStepTypeLabel,
   getOrgInitStepTypePillClass,
 } from "s/deploymentActionUtils";
+import {
+  receiveBrowserforceCatalog,
+  receiveBrowserforceValidation,
+  requestBrowserforceCatalog,
+  requestBrowserforceValidation,
+} from "s/browserforceHostUtils";
 
 // Top-level fields of the scratch org definition shown in the form: the other ones (template,
 // username, adminEmail...) are kept as they are when the file is saved
@@ -62,6 +68,14 @@ export default class OrgInit extends SharedMixin(LightningElement) {
   batchableClassesLoading = false;
   @track communities = [];
   communitiesLoading = false;
+  @track userAccessPolicies = [];
+  userAccessPoliciesLoading = false;
+  // Editor of a "browser" step: the Browserforce catalog and the check of a value
+  @track browserforceCatalog = null;
+  @track browserforceCatalogLoading = false;
+  @track browserforceValidation = null;
+  _browserforceCatalogRequestId = null;
+  _browserforceValidationRequestId = null;
 
   // Scratch org definition editor
   @track scratchDef = {};
@@ -176,6 +190,16 @@ export default class OrgInit extends SharedMixin(LightningElement) {
       case "returnCommunities":
         this.communities = data?.values || [];
         this.communitiesLoading = false;
+        break;
+      case "returnUserAccessPolicies":
+        this.userAccessPolicies = data?.values || [];
+        this.userAccessPoliciesLoading = false;
+        break;
+      case "returnBrowserforceCatalog":
+        receiveBrowserforceCatalog(this, data);
+        break;
+      case "returnBrowserforceValidation":
+        receiveBrowserforceValidation(this, data);
         break;
       default:
         break;
@@ -495,6 +519,19 @@ export default class OrgInit extends SharedMixin(LightningElement) {
   handleLoadCommunities() {
     this.communitiesLoading = true;
     window.sendMessageToVSCode({ type: "loadCommunities", data: {} });
+  }
+
+  handleLoadUserAccessPolicies() {
+    this.userAccessPoliciesLoading = true;
+    window.sendMessageToVSCode({ type: "loadUserAccessPolicies", data: {} });
+  }
+
+  handleLoadBrowserforceCatalog() {
+    requestBrowserforceCatalog(this);
+  }
+
+  handleValidateBrowserforceConfig(event) {
+    requestBrowserforceValidation(this, event);
   }
 
   // ------------------------------------------------------------------ Run now

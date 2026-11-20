@@ -25,19 +25,6 @@
                     </button>
                 </template>
 
-                <template if:true={gitAuthenticated}>
-                    <div class="toggle-wrapper">
-                        <lightning-input
-                            type="toggle"
-                            label={i18n.showFeatureBranches}
-                            checked={displayFeatureBranches}
-                            onchange={handleToggleFeatureBranches}
-                            message-toggle-active=""
-                            message-toggle-inactive=""
-                        ></lightning-input>
-                    </div>
-                </template>
-
                 <lightning-button-group>
                     <lightning-button-menu
                         alternative-text={i18n.pipelineConfig}
@@ -82,6 +69,22 @@
                                 label={i18n.scratchOrgPoolTitle}
                                 icon-name="utility:database"
                                 onclick={handleShowScratchOrgPool}
+                            ></lightning-menu-item>
+                        </template>
+                        <template if:true={showDevOrgsMenu}>
+                            <lightning-menu-item
+                                value="registerDevOrg"
+                                label={i18n.menuRegisterDevOrg}
+                                icon-name="utility:new_window"
+                                onclick={handleRegisterDevOrg}
+                            ></lightning-menu-item>
+                        </template>
+                        <template if:true={showDevOrgsDashboard}>
+                            <lightning-menu-item
+                                value="devOrgsDashboard"
+                                label={i18n.menuDevOrgsDashboard}
+                                icon-name="utility:list"
+                                onclick={handleOpenDevOrgsDashboard}
                             ></lightning-menu-item>
                         </template>
                     </lightning-button-menu>
@@ -161,6 +164,16 @@
                         <template if:true={pipelineData.orgs.length}>
                             <div class="pipeline-container">
                                 <div style="position: relative;">
+                                    <!-- What the diagram shows next to the major branches: nothing more, the feature branches, or the dev orgs. On its own row above the diagram, so it never covers the title of a Mermaid group -->
+                                    <div class="pipeline-diagram-toolbar">
+                                        <span class="hardis-segmented pipeline-view-switch" role="group" aria-label={i18n.pipelineViewTitle} title={i18n.pipelineViewTitle}>
+                                            <button type="button" class={majorBranchesViewClass} aria-pressed={majorBranchesViewPressed} onclick={handleShowMajorBranchesView}>{i18n.pipelineViewMajorBranches}</button>
+                                            <button type="button" class={featureBranchesViewClass} aria-pressed={featureBranchesViewPressed} onclick={handleShowFeatureBranchesView}>{i18n.pipelineViewFeatureBranches}</button>
+                                            <template if:true={devOrgsEnabled}>
+                                                <button type="button" class={devOrgsViewClass} aria-pressed={devOrgsViewPressed} onclick={handleShowDevOrgsView}>{i18n.pipelineViewDevOrgs}</button>
+                                            </template>
+                                        </span>
+                                    </div>
                                     <!-- Manual refresh: keep the diagram visible with a spinner overlaid on top -->
                                     <template if:true={isMermaidRefreshing}>
                                         <div class="pipeline-loading-overlay"></div>
@@ -210,6 +223,11 @@
                                             <span class="legend-item"><span class="hardis-pill hardis-version-chip hardis-version-rc legend-version-chip">v1.2.0-rc.1</span>{i18n.legendReleaseCandidate}</span>
                                             <span class="legend-item"><span class="hardis-pill hardis-version-chip hardis-version-released legend-version-chip">v1.1.0</span>{i18n.legendReleasedVersion}</span>
                                             <span class="legend-item"><span class="hardis-pill hardis-version-chip hardis-version-next legend-version-chip">v1.2.0-rc.2</span>{i18n.legendNextVersion}</span>
+                                        </template>
+                                        <template if:true={showDevOrgsLegend}>
+                                            <span class="legend-separator"></span>
+                                            <span class="legend-item"><span class="legend-line legend-line-dev-org"></span>{i18n.legendDevOrg}</span>
+                                            <span class="legend-item"><span class="legend-node-dev-org-stale"></span>{i18n.legendDevOrgStale}</span>
                                         </template>
                                 </div>
                                 <template if:true={error}>
@@ -422,6 +440,12 @@
                             </template>
                         </nav>
                     </template>
+                    <!-- Opens the search of a Pull Request, as Ctrl+F does -->
+                    <template if:true={canSearchModal}>
+                        <div class="modal-search-toggle">
+                            <lightning-button-icon icon-name="utility:search" variant="bare" size="large" title={modalSearchToggleTitle} alternative-text={modalSearchToggleTitle} onclick={handleModalSearchToggle}></lightning-button-icon>
+                        </div>
+                    </template>
                     <h2 id="modal-heading-01" class="slds-modal__title slds-hyphenate">
                         <template if:true={isSinglePRMode}>
                             {modalTitle}
@@ -494,6 +518,26 @@
                                 <p>{checkoutBehindNote}</p>
                             </div>
                         </template>
+                        <!-- Search in the description and in the comments of the jobs (Ctrl+F) -->
+                        <template if:true={modalSearchOpen}>
+                        <div class="pr-search-bar" role="search">
+                            <lightning-input
+                                type="search"
+                                variant="label-hidden"
+                                label={i18n.prSearchPlaceholder}
+                                placeholder={i18n.prSearchPlaceholder}
+                                value={modalSearchInput}
+                                onchange={handleModalSearchChange}
+                                onkeydown={handleModalSearchKeydown}
+                                class="pr-search-input"
+                            ></lightning-input>
+                            <span class="muted pr-search-position" aria-live="polite">{modalSearchPositionLabel}</span>
+                            <lightning-button-icon icon-name="utility:chevronup" variant="border-filled" size="medium" title={i18n.prSearchPrevious} alternative-text={i18n.prSearchPrevious} disabled={modalSearchNavigationDisabled} onclick={handleModalSearchPrevious}></lightning-button-icon>
+                            <lightning-button-icon icon-name="utility:chevrondown" variant="border-filled" size="medium" title={i18n.prSearchNext} alternative-text={i18n.prSearchNext} disabled={modalSearchNavigationDisabled} onclick={handleModalSearchNext}></lightning-button-icon>
+                            <lightning-button-icon-stateful icon-name="utility:filterList" size="medium" selected={modalSearchFilter} title={i18n.prSearchFilter} alternative-text={i18n.prSearchFilter} onclick={handleModalSearchFilterToggle} class="pr-search-filter"></lightning-button-icon-stateful>
+                            <lightning-button-icon icon-name="utility:close" variant="bare" size="medium" title={i18n.prSearchClose} alternative-text={i18n.prSearchClose} onclick={handleModalSearchClose} class="pr-search-close"></lightning-button-icon>
+                        </div>
+                        </template>
                     </template>
                     <!-- Go-lives selector (top branches such as main/prod) -->
                     <template if:true={modalIsTopBranch}>
@@ -522,9 +566,9 @@
                     <lightning-tabset active-tab-value={modalActiveTabValue}>
                         <!-- General tab: the description of one Pull Request -->
                         <template if:true={isSinglePRMode}>
-                            <lightning-tab onactive={handleModalTabActive} label={i18n.prGeneralTab} value="general" icon-name="utility:info" icon-assistive-text={i18n.prGeneralTab}>
+                            <lightning-tab onactive={handleModalTabActive} label={generalTabLabel} value="general" icon-name="utility:info" icon-assistive-text={i18n.prGeneralTab}>
                                 <template if:true={singlePullRequestDescription}>
-                                    <s-markdown-view markdown={singlePullRequestDescription}></s-markdown-view>
+                                    <s-markdown-view markdown={singlePullRequestDescription} search-query={modalSearchQuery} active-match={generalActiveMatch}></s-markdown-view>
                                 </template>
                                 <template if:false={singlePullRequestDescription}>
                                     <div class="slds-align_absolute-center slds-p-around_medium">
@@ -816,7 +860,7 @@
                             </template>
                             <!-- Validation, Code Quality (MegaLinter) and Deployment tabs: the comments posted on the Pull Request itself -->
                             <template if:true={showWorkflowsTab}>
-                                <lightning-tab onactive={handleModalTabActive} label={i18n.journeyValidation} value="validation" icon-name="utility:search" icon-assistive-text={i18n.journeyValidation} end-icon-name={validationTabEndIcon} end-icon-alternative-text={i18n.jobStatusRunning}>
+                                <lightning-tab onactive={handleModalTabActive} label={validationTabLabel} value="validation" icon-name="utility:search" icon-assistive-text={i18n.journeyValidation} end-icon-name={validationTabEndIcon} end-icon-alternative-text={i18n.jobStatusRunning}>
                                     <s-workflow-runs
                                         runs={modalValidationRuns}
                                         running-jobs={modalValidationRunningJobs}
@@ -825,9 +869,12 @@
                                         artifacts-supported={artifactsSupported}
                                         loading={workflowsLoading}
                                         empty-label={noValidationLabel}
+                                        search-query={modalSearchQuery}
+                                        active-match={validationActiveMatch}
+                                        filter-matches={modalSearchFilter}
                                     ></s-workflow-runs>
                                 </lightning-tab>
-                                <lightning-tab onactive={handleModalTabActive} label={i18n.prCodeQualityTab} value="megalinter" icon-name="utility:shield" icon-assistive-text={i18n.prCodeQualityTab} end-icon-name={megaLinterTabEndIcon} end-icon-alternative-text={i18n.jobStatusRunning}>
+                                <lightning-tab onactive={handleModalTabActive} label={megaLinterTabLabel} value="megalinter" icon-name="utility:shield" icon-assistive-text={i18n.prCodeQualityTab} end-icon-name={megaLinterTabEndIcon} end-icon-alternative-text={i18n.jobStatusRunning}>
                                     <s-workflow-runs
                                         runs={modalMegaLinterRuns}
                                         running-jobs={modalMegaLinterRunningJobs}
@@ -836,9 +883,12 @@
                                         artifacts-supported={artifactsSupported}
                                         loading={workflowsLoading}
                                         empty-label={noMegaLinterLabel}
+                                        search-query={modalSearchQuery}
+                                        active-match={megaLinterActiveMatch}
+                                        filter-matches={modalSearchFilter}
                                     ></s-workflow-runs>
                                 </lightning-tab>
-                                <lightning-tab onactive={handleModalTabActive} label={i18n.workflowDeploymentNoBranch} value="deployment" icon-name="utility:upload" icon-assistive-text={i18n.workflowDeploymentNoBranch} end-icon-name={deploymentTabEndIcon} end-icon-alternative-text={i18n.jobStatusRunning}>
+                                <lightning-tab onactive={handleModalTabActive} label={deploymentTabLabel} value="deployment" icon-name="utility:upload" icon-assistive-text={i18n.workflowDeploymentNoBranch} end-icon-name={deploymentTabEndIcon} end-icon-alternative-text={i18n.jobStatusRunning}>
                                     <s-workflow-runs
                                         runs={modalDeploymentRuns}
                                         running-jobs={modalDeploymentRunningJobs}
@@ -847,6 +897,9 @@
                                         artifacts-supported={artifactsSupported}
                                         loading={workflowsLoading}
                                         empty-label={noDeploymentLabel}
+                                        search-query={modalSearchQuery}
+                                        active-match={deploymentActiveMatch}
+                                        filter-matches={modalSearchFilter}
                                     ></s-workflow-runs>
                                 </lightning-tab>
                             </template>
@@ -1031,6 +1084,11 @@
             communities-loading={communitiesLoading}
             user-access-policies={projectUserAccessPolicies}
             user-access-policies-loading={userAccessPoliciesLoading}
+            agents={projectAgents}
+            agents-loading={agentsLoading}
+            browserforce-catalog={browserforceCatalog}
+            browserforce-catalog-loading={browserforceCatalogLoading}
+            browserforce-validation={browserforceValidation}
             major-branches={majorBranchNames}
             parent-translations={translations}
             onclose={handleCloseDeploymentActionModal}
@@ -1039,7 +1097,27 @@
             onloadbatchableclasses={handleLoadBatchableClasses}
             onloadcommunities={handleLoadCommunities}
             onloaduseraccesspolicies={handleLoadUserAccessPolicies}
+            onloadagents={handleLoadAgents}
+            onloadbrowserforcecatalog={handleLoadBrowserforceCatalog}
+            onvalidatebrowserforceconfig={handleValidateBrowserforceConfig}
             onsave={handleSaveDeploymentAction}
         ></s-deployment-action>
+    </template>
+
+    <!-- Development org details window -->
+    <template if:true={showDevOrgModal}>
+        <s-dev-org-details
+            dev-org={selectedDevOrg}
+            major-branches={devOrgMajorBranches}
+            connected-username={devOrgConnectionUsername}
+            connection-checked={devOrgConnectionChecked}
+            refreshing={devOrgsRefreshing}
+            stale-days={devOrgsStaleDays}
+            onclose={handleCloseDevOrgModal}
+            onrefresh={handleDevOrgRefresh}
+            onbackpromote={handleDevOrgBackpromote}
+            onsave={handleDevOrgSave}
+            onremove={handleDevOrgRemove}
+        ></s-dev-org-details>
     </template>
 </template>

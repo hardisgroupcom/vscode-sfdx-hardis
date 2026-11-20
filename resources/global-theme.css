@@ -257,6 +257,18 @@ lightning-helptext::part(icon) {
   border-color: var(--slds-g-color-palette-green-30);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
 }
+/* Main report of the command (shown first): one step stronger than its detail reports */
+.slds-scope[data-theme] .rf-type-report.rf-main .slds-button {
+  background: var(--slds-g-color-palette-green-80);
+  border-color: var(--slds-g-color-palette-green-30);
+  color: var(--slds-g-color-palette-green-10);
+  font-weight: 700;
+}
+.slds-scope[data-theme] .rf-type-report.rf-main .slds-button:hover,
+.slds-scope[data-theme] .rf-type-report.rf-main .slds-button:focus {
+  border-color: var(--slds-g-color-palette-green-20);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
 
 /* Docs: documentation links -> recessive neutral grey */
 .slds-scope[data-theme] .rf-type-doc .slds-button {
@@ -451,9 +463,17 @@ lightning-helptext::part(icon) {
   background: var(--slds-g-color-palette-orange-90);
   color: var(--slds-g-color-palette-orange-40);
 }
+.slds-scope[data-theme] .hardis-pill.hardis-hue-orange {
+  background: var(--slds-g-color-palette-hot-orange-90);
+  color: var(--slds-g-color-palette-hot-orange-40);
+}
 .slds-scope[data-theme] .hardis-pill.hardis-hue-red {
   background: var(--slds-g-color-palette-red-90);
   color: var(--slds-g-color-palette-red-40);
+}
+.slds-scope[data-theme] .hardis-pill.hardis-hue-yellow {
+  background: var(--slds-g-color-palette-yellow-90);
+  color: var(--slds-g-color-palette-yellow-30);
 }
 .slds-scope[data-theme] .hardis-pill.hardis-hue-slate {
   background: var(--slds-g-color-palette-neutral-90);
@@ -2797,6 +2817,9 @@ lightning-helptext::part(icon) {
 .hardis-markdown pre {
   padding: 0.5rem 0.625rem;
   overflow-x: auto;
+  /* A long log line (a MegaLinter or a deployment log) wraps instead of scrolling sideways */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .hardis-markdown pre code {
   padding: 0;
@@ -2826,6 +2849,18 @@ lightning-helptext::part(icon) {
 }
 .hardis-markdown blockquote > :last-child {
   margin-bottom: 0;
+}
+
+/* A match of a search in a text (the search bar of a Pull Request), and the current one */
+.hardis-search-hit {
+  padding: 0 0.0625rem;
+  border-radius: 0.125rem;
+  background: var(--slds-g-color-palette-yellow-80);
+  color: inherit;
+}
+.hardis-search-hit.active {
+  background: var(--slds-g-color-palette-orange-70);
+  outline: 2px solid var(--slds-g-color-palette-orange-60);
 }
 
 /* A table cell that opens something (the number and the title of a Pull Request) is a button of

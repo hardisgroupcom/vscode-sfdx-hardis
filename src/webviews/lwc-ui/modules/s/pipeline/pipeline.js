@@ -25,6 +25,19 @@ import {
   jobDurationKey,
   formatDuration,
 } from "s/pullRequestUtils";
+import {
+  receiveBrowserforceCatalog,
+  receiveBrowserforceValidation,
+  requestBrowserforceCatalog,
+  requestBrowserforceValidation,
+} from "s/browserforceHostUtils";
+import { countMarkdownMatches } from "s/markdownUtils";
+import {
+  firstMatchOf,
+  locateMatch,
+  normalizeSearchQuery,
+  stepMatch,
+} from "s/searchUtils";
 
 // Where the major branch deployment check is explained and set up
 const MAJOR_BRANCH_CHECK_DOC_URL =
@@ -61,7 +74,19 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track currentBranchPullRequest = null;
   @track autoFixPullRequest = null;
   @track openPullRequests = [];
-  @track displayFeatureBranches = true;
+  // View of the switch above the diagram: "majorBranches", "featureBranches" or "devOrgs". The
+  // panel always opens on the feature branches.
+  @track diagramView = "featureBranches";
+  // Details window of a development org
+  @track showDevOrgModal = false;
+  @track selectedDevOrg = null;
+  // Username of the selected org among the orgs authenticated on this computer (Backpromote)
+  @track devOrgConnectionUsername = null;
+  @track devOrgConnectionChecked = false;
+  // sfdx-hardis lists again the Pull Requests merged into the target branches (Refresh)
+  @track devOrgsRefreshing = false;
+  _devOrgConnectionRequestId = 0;
+  devOrgsByNodeName = new Map();
   // Branch modal: promotion and major-to-major Pull Requests are the vehicles that move the
   // User Stories, not stories themselves, so they are hidden unless this toggle is on
   @track modalShowPromotionPrs = false;
@@ -95,7 +120,17 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track communitiesLoading = false;
   @track projectUserAccessPolicies = [];
   @track userAccessPoliciesLoading = false;
+  // Agents of the project sources, for the agent deployment action types
+  @track projectAgents = { values: [], authoringBundles: [] };
+  @track agentsLoading = false;
+  // Editor of a "browser" deployment action: the Browserforce catalog and the check of a value
+  @track browserforceCatalog = null;
+  @track browserforceCatalogLoading = false;
+  @track browserforceValidation = null;
+  _browserforceCatalogRequestId = null;
+  _browserforceValidationRequestId = null;
   @track communitiesRequestId = null;
+  agentsRequestId = null;
   _refreshTimer = null;
   // When the git provider was last asked whether the current branch has a Pull Request
   _lastPullRequestCheckAt = 0;
@@ -247,6 +282,16 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   jobArtifacts = {};
   // Branch checked out in the workspace, where the actions of the Pull Request are read and written
   modalCheckout = null;
+  // Search bar of a Pull Request (see MODAL_STATE_DEFAULTS): open or not, what is typed, what is
+  // searched once the typing pauses, the current match counted across the tabs, and the filter
+  modalSearchOpen = false;
+  modalSearchInput = "";
+  modalSearchQuery = "";
+  modalSearchIndex = 0;
+  modalSearchFilter = false;
+  _searchDebounce = null;
+  // Holder mutated in place, so that counting while rendering renders nothing again
+  _searchCountsMemo = {};
   // Subject, status and assignee of the tickets of the window are being read
   ticketDetailsLoading = false;
   _ticketDetailsRequestId = 0;
@@ -579,9 +624,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.warnings = (this.pipelineData && this.pipelineData.warnings) || [];
     this.hasWarnings = this.warnings.length > 0;
     this.showOnlyMajor = false;
-    if (Object.prototype.hasOwnProperty.call(data, "displayFeatureBranches")) {
-      this.displayFeatureBranches = data.displayFeatureBranches ?? true;
-    }
     if (
       Object.prototype.hasOwnProperty.call(
         data,
@@ -634,10 +676,26 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         }
       }
     }
-    // Select diagram based on displayFeatureBranches toggle
-    this.currentDiagram = this.displayFeatureBranches
-      ? this.pipelineData.mermaidDiagram
-      : this.pipelineData.mermaidDiagramMajor;
+    // Development orgs: each org by its node for a click on the diagram. A view that has no
+    // diagram anymore falls back to the feature branches.
+    if (
+      (this.diagramView === "devOrgs" &&
+        (!this.pipelineData?.mermaidDiagramDevOrgs || !this.devOrgsEnabled)) ||
+      (this.diagramView === "majorBranches" &&
+        !this.pipelineData?.mermaidDiagramMajor)
+    ) {
+      this.diagramView = "featureBranches";
+    }
+    this.devOrgsByNodeName = new Map();
+    for (const devOrg of this.pipelineData?.devOrgs || []) {
+      if (devOrg && devOrg.nodeName) {
+        this.devOrgsByNodeName.set(devOrg.nodeName, devOrg);
+      }
+    }
+    this._refreshOpenDevOrg();
+
+    // Select diagram based on the feature branches toggle or the Feature branches / Dev orgs switch
+    this.currentDiagram = this._selectDiagram();
     this.error = undefined;
     this.lastDiagram = "";
 
@@ -1049,8 +1107,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this._boundVisibilityChange = this._handleVisibilityChange.bind(this);
     this._boundMermaidMouseMove = this._handleMermaidMouseMove.bind(this);
     this._boundMermaidMouseUp = this._handleMermaidMouseUp.bind(this);
+    this._boundSearchShortcut = this._handleSearchShortcut.bind(this);
     if (typeof window !== "undefined" && window.addEventListener) {
       window.addEventListener("resize", this._boundAdjust);
+      // Captured before VS Code sees it: Ctrl+F in a Pull Request goes to its search bar
+      window.addEventListener("keydown", this._boundSearchShortcut, true);
       document.addEventListener(
         "visibilitychange",
         this._boundVisibilityChange,
@@ -1108,6 +1169,14 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     ) {
       window.removeEventListener("mouseup", this._boundMermaidMouseUp);
     }
+    if (
+      typeof window !== "undefined" &&
+      window.removeEventListener &&
+      this._boundSearchShortcut
+    ) {
+      window.removeEventListener("keydown", this._boundSearchShortcut, true);
+    }
+    clearTimeout(this._searchDebounce);
     // Clean up auto-refresh timer
     this._stopAutoRefresh();
     this._stopRunningJobsPoll();
@@ -1299,6 +1368,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     } else {
       viewport.style.height = `${Math.min(Math.floor(availableHeight), renderedHeight)}px`;
     }
+    // The bubbles are sized for the scale just set: drawn again at every fit
+    this._drawNodeCountBubbles(mermaidSvg);
   }
 
   _getAvailableMermaidViewportHeight(viewport) {
@@ -1641,12 +1712,37 @@ export default class Pipeline extends SharedMixin(LightningElement) {
               return;
             }
             const target = event.target;
+            // The chip of the Pull Requests a development org misses: its backpromote
+            const backpromoteChip = target.closest(".hardis-chip-backpromote");
+            if (backpromoteChip) {
+              this.handleBackpromoteDevOrgChip(
+                backpromoteChip.getAttribute("data-dev-org"),
+              );
+              return;
+            }
+
             const mermaidNode = target.closest("g.node");
             if (!mermaidNode) {
               return;
             }
             const targetId = mermaidNode.getAttribute("id") || "";
             const nodeIdentifier = this._extractNodeIdentifier(targetId);
+
+            // The "+" node of a target branch with no development org: register one
+            if (nodeIdentifier && nodeIdentifier.endsWith("DevOrgAdd")) {
+              this.handleAddDevOrgNode(nodeIdentifier);
+              return;
+            }
+
+            // A development org (checked first: its node id ends with "Org" too)
+            if (
+              nodeIdentifier &&
+              nodeIdentifier.endsWith("DevOrg") &&
+              this.devOrgsByNodeName.has(nodeIdentifier)
+            ) {
+              this.handleOpenDevOrgNode(nodeIdentifier);
+              return;
+            }
 
             if (nodeIdentifier && nodeIdentifier.endsWith("Org")) {
               this.handleOpenOrgNode(nodeIdentifier);
@@ -1735,6 +1831,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       const label = edgeLabels[i];
       const path = edgePaths[i];
 
+      // The orange chip of the Pull Requests to backpromote is no job status: its dotted line
+      // to a development org never moves
+      if (label.querySelector(".hardis-chip-backpromote")) {
+        continue;
+      }
+
       // Status is carried by the chip CSS classes emitted by the mermaid
       // builder (hardis-status-*); keep the legacy emoji check as fallback.
       const labelText = label.textContent || "";
@@ -1764,7 +1866,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // applyLinkAnimations(). Only meaningful for the full diagram (feature
   // branches shown), where the group edges exist.
   _bindFeatureGroupEdgeClicks(mermaidSvg) {
-    if (!this.displayFeatureBranches || !mermaidSvg) {
+    if (
+      this.currentDiagram !== this.pipelineData?.mermaidDiagram ||
+      !mermaidSvg
+    ) {
       return;
     }
     if (
@@ -1819,6 +1924,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
           this._requestActionStatuses();
           this._requestRunningJobs();
         }
+        break;
+      case "devOrgsRefreshing":
+        this.devOrgsRefreshing = data?.refreshing === true;
+        break;
+      case "devOrgConnection":
+        this.handleDevOrgConnection(data);
         break;
       case "openPullRequestsUpdated":
         // allow dynamic updates from extension host
@@ -1884,6 +1995,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         break;
       case "returnUserAccessPolicies":
         this.handleReturnUserAccessPolicies(data);
+        break;
+      case "returnAgents":
+        this.handleReturnAgents(data);
+        break;
+      case "returnBrowserforceCatalog":
+        this.handleReturnBrowserforceCatalog(data);
+        break;
+      case "returnBrowserforceValidation":
+        this.handleReturnBrowserforceValidation(data);
         break;
       case "returnGoLives":
         this.handleReturnGoLives(data);
@@ -1996,6 +2116,51 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.userAccessPoliciesLoading = false;
   }
 
+  handleLoadAgents() {
+    this.agentsLoading = true;
+    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    this.agentsRequestId = requestId;
+    window.sendMessageToVSCode({
+      type: "loadAgents",
+      data: { requestId },
+    });
+  }
+
+  handleReturnAgents(data) {
+    if (
+      this.agentsRequestId &&
+      data?.requestId &&
+      data.requestId !== this.agentsRequestId
+    ) {
+      return;
+    }
+    this.projectAgents = {
+      values: Array.isArray(data?.values) ? data.values : [],
+      authoringBundles: Array.isArray(data?.authoringBundles)
+        ? data.authoringBundles
+        : [],
+    };
+    this.agentsLoading = false;
+  }
+
+  // --- Browserforce (editor of a "browser" deployment action) -----------------
+
+  handleLoadBrowserforceCatalog() {
+    requestBrowserforceCatalog(this);
+  }
+
+  handleReturnBrowserforceCatalog(data) {
+    receiveBrowserforceCatalog(this, data);
+  }
+
+  handleValidateBrowserforceConfig(event) {
+    requestBrowserforceValidation(this, event);
+  }
+
+  handleReturnBrowserforceValidation(data) {
+    receiveBrowserforceValidation(this, data);
+  }
+
   handleShowInstalledPackages() {
     window.sendMessageToVSCode({
       type: "runVsCodeCommand",
@@ -2007,13 +2172,14 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   handleRefresh() {
-    this.refreshPipeline();
+    // Only the Refresh button reads the development orgs again before their hour is over
+    this.refreshPipeline(false, true);
     // Reset auto-refresh timer when manually refreshed
     this._startAutoRefresh();
   }
 
   // Added refreshPipeline method
-  refreshPipeline(isAutoRefresh = false) {
+  refreshPipeline(isAutoRefresh = false, manual = false) {
     this._isAutoRefresh = isAutoRefresh;
     // Manual refresh: overlay a spinner on the already-rendered diagram (keeping
     // it visible). If no diagram is shown yet, fall back to the full first-load
@@ -2033,7 +2199,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // A manual refresh also lists the release versions again (the timer reuses the last answer)
     window.sendMessageToVSCode({
       type: "refreshPipeline",
-      data: { manual: !isAutoRefresh },
+      data: { manual: manual === true },
     });
     console.log(
       "Pipeline refresh event dispatched",
@@ -2161,6 +2327,274 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         command: "vscode-sfdx-hardis.showScratchOrgPool",
       },
     });
+  }
+
+  // ---- Development orgs (sf hardis:project:dev-org:*) ----
+
+  // The project keeps a list of development orgs (enableDevOrgsRegistry is not false)
+  get devOrgsEnabled() {
+    return this.pipelineData?.devOrgsEnabled === true;
+  }
+
+  get majorBranchesViewClass() {
+    return this._viewClass("majorBranches");
+  }
+
+  get featureBranchesViewClass() {
+    return this._viewClass("featureBranches");
+  }
+
+  get devOrgsViewClass() {
+    return this._viewClass("devOrgs");
+  }
+
+  get majorBranchesViewPressed() {
+    return String(this.diagramView === "majorBranches");
+  }
+
+  get featureBranchesViewPressed() {
+    return String(this.diagramView === "featureBranches");
+  }
+
+  get devOrgsViewPressed() {
+    return String(this.diagramView === "devOrgs");
+  }
+
+  // Legend entry of the development org nodes: only while they are drawn
+  get showDevOrgsLegend() {
+    return (
+      !!this.pipelineData?.mermaidDiagramDevOrgs &&
+      this.currentDiagram === this.pipelineData.mermaidDiagramDevOrgs
+    );
+  }
+
+  get showDevOrgsMenu() {
+    return this.devOrgsEnabled;
+  }
+
+  get devOrgsDashboardUrl() {
+    return this.pipelineData?.devOrgsDashboardUrl || "";
+  }
+
+  get showDevOrgsDashboard() {
+    return this.devOrgsEnabled && !!this.devOrgsDashboardUrl;
+  }
+
+  get devOrgsStaleDays() {
+    return this.pipelineData?.devOrgsStaleDays || 0;
+  }
+
+  // Target branches offered by the Edit form of the details window: the target branches of the
+  // project (every major branch when it declares none), and the branch the org targets now
+  get devOrgMajorBranches() {
+    const majorBranches = (this.pipelineData?.orgs || [])
+      .map((org) => org.name)
+      .filter((name) => !!name);
+    const targets = this.pipelineData?.devOrgTargetBranches || [];
+    const branches = targets.length > 0 ? [...targets] : [...majorBranches];
+    const current = this.selectedDevOrg?.targetBranch;
+    if (
+      current &&
+      majorBranches.includes(current) &&
+      !branches.includes(current)
+    ) {
+      branches.push(current);
+    }
+    return branches;
+  }
+
+  handleShowMajorBranchesView() {
+    this._setDiagramView("majorBranches");
+  }
+
+  handleShowFeatureBranchesView() {
+    this._setDiagramView("featureBranches");
+  }
+
+  handleShowDevOrgsView() {
+    this._setDiagramView("devOrgs");
+  }
+
+  // "+" node: register an org on its branch; the org, the owner and the users are asked in the
+  // command runner
+  handleAddDevOrgNode(nodeName) {
+    const slot = (this.pipelineData?.devOrgAddNodes || []).find(
+      (node) => node.nodeName === nodeName,
+    );
+    if (!slot || !/^[\w./-]+$/.test(slot.branch || "")) {
+      return;
+    }
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: `sf hardis:project:dev-org:register --target-branch ${slot.branch}`,
+      },
+    });
+  }
+
+  // Interactive: the owner, the users and the target branch are asked in the command runner
+  handleRegisterDevOrg() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: { command: "sf hardis:project:dev-org:register" },
+    });
+  }
+
+  handleOpenDevOrgsDashboard() {
+    if (!this.devOrgsDashboardUrl) {
+      return;
+    }
+    window.sendMessageToVSCode({
+      type: "openExternal",
+      data: { url: this.devOrgsDashboardUrl },
+    });
+  }
+
+  handleOpenDevOrgNode(nodeIdentifier) {
+    const devOrg = this.devOrgsByNodeName.get(nodeIdentifier);
+    if (!devOrg) {
+      return;
+    }
+    this.selectedDevOrg = devOrg;
+    this.showDevOrgModal = true;
+    // Backpromote needs the org among the ones authenticated on this computer
+    this.devOrgConnectionUsername = null;
+    this.devOrgConnectionChecked = false;
+    this._devOrgConnectionRequestId += 1;
+    window.sendMessageToVSCode({
+      type: "getDevOrgConnection",
+      data: {
+        requestId: this._devOrgConnectionRequestId,
+        orgId: devOrg.orgId,
+      },
+    });
+  }
+
+  handleDevOrgConnection(data) {
+    if (
+      !data ||
+      data.requestId !== this._devOrgConnectionRequestId ||
+      !this.selectedDevOrg ||
+      data.orgId !== this.selectedDevOrg.orgId
+    ) {
+      return;
+    }
+    this.devOrgConnectionUsername = data.username || null;
+    this.devOrgConnectionChecked = true;
+  }
+
+  handleCloseDevOrgModal() {
+    this.showDevOrgModal = false;
+    this.selectedDevOrg = null;
+    this._devOrgConnectionRequestId += 1;
+  }
+
+  handleDevOrgRefresh() {
+    if (this.devOrgsRefreshing) {
+      return;
+    }
+    this.devOrgsRefreshing = true;
+    window.sendMessageToVSCode({ type: "refreshDevOrgs", data: {} });
+  }
+
+  // The chip on the line of an org: the Backpromote panel on that org, from its target branch.
+  // VS Code finds the org among the ones connected here; else the panel asks for it.
+  handleBackpromoteDevOrgChip(nodeName) {
+    const devOrg = this.devOrgsByNodeName.get(nodeName);
+    if (!devOrg) {
+      return;
+    }
+    window.sendMessageToVSCode({
+      type: "backpromoteDevOrg",
+      data: { orgId: devOrg.orgId, parentBranch: devOrg.targetBranch },
+    });
+  }
+
+  // Opens the Backpromote panel on that org, from its target branch
+  handleDevOrgBackpromote() {
+    const devOrg = this.selectedDevOrg;
+    if (!devOrg || !this.devOrgConnectionUsername) {
+      return;
+    }
+    window.sendMessageToVSCode({
+      type: "runVsCodeCommand",
+      data: {
+        command: "vscode-sfdx-hardis.showBackpromote",
+        args: [
+          {
+            targetOrgUsername: this.devOrgConnectionUsername,
+            parentBranch: devOrg.targetBranch,
+          },
+        ],
+      },
+    });
+  }
+
+  // The Edit form: sfdx-hardis writes it in the command runner, the pipeline reloads after
+  handleDevOrgSave(event) {
+    const detail = event?.detail || {};
+    window.sendMessageToVSCode({
+      type: "registerDevOrg",
+      data: {
+        orgId: detail.orgId,
+        targetBranch: detail.targetBranch,
+        owner: detail.owner,
+        users: detail.users,
+      },
+    });
+    this.handleCloseDevOrgModal();
+  }
+
+  handleDevOrgRemove(event) {
+    const orgId = event?.detail?.orgId;
+    if (!orgId) {
+      return;
+    }
+    window.sendMessageToVSCode({ type: "removeDevOrg", data: { orgId } });
+    this.handleCloseDevOrgModal();
+  }
+
+  _setDiagramView(view) {
+    if (view === this.diagramView) {
+      return;
+    }
+    this.diagramView = view;
+    this.currentDiagram = this._selectDiagram();
+    setTimeout(() => this.renderMermaid(), 0);
+  }
+
+  _viewClass(view) {
+    return this.diagramView === view ? "hardis-seg on" : "hardis-seg";
+  }
+
+  // The view of the switch: the major branches alone, with the feature branches, or with the
+  // dev orgs
+  _selectDiagram() {
+    const data = this.pipelineData || {};
+    if (this.diagramView === "devOrgs" && data.mermaidDiagramDevOrgs) {
+      return data.mermaidDiagramDevOrgs;
+    }
+    if (this.diagramView === "majorBranches" && data.mermaidDiagramMajor) {
+      return data.mermaidDiagramMajor;
+    }
+    return data.mermaidDiagram;
+  }
+
+  // New data while the details window is open: it shows the org as read now, and closes when
+  // the org left the list
+  _refreshOpenDevOrg() {
+    if (!this.showDevOrgModal || !this.selectedDevOrg) {
+      return;
+    }
+    const orgId = this.selectedDevOrg.orgId;
+    const updated = (this.pipelineData?.devOrgs || []).find(
+      (devOrg) => devOrg.orgId === orgId,
+    );
+    if (updated) {
+      this.selectedDevOrg = updated;
+    } else if (this.pipelineData?.devOrgsLoaded) {
+      this.handleCloseDevOrgModal();
+    }
   }
 
   // Promotion branches (sfdx-hardis enablePromotionBranches): a major branch with a merge
@@ -2334,33 +2768,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
   }
 
-  handleToggleFeatureBranches(event) {
-    // Get the new state from the toggle
-    this.displayFeatureBranches = event.target.checked;
-
-    // Update VS Code configuration
-    window.sendMessageToVSCode({
-      type: "updateVsCodeSfdxHardisConfiguration",
-      data: {
-        configKey: "pipelineDisplayFeatureBranches",
-        value: this.displayFeatureBranches,
-      },
-    });
-
-    // Switch diagram
-    this.currentDiagram = this.displayFeatureBranches
-      ? this.pipelineData.mermaidDiagram
-      : this.pipelineData.mermaidDiagramMajor;
-
-    // Re-render the diagram
-    setTimeout(() => this.renderMermaid(), 0);
-
-    console.log(
-      "Feature branches display toggled:",
-      this.displayFeatureBranches,
-    );
-  }
-
   _handleVisibilityChange() {
     this._isVisible = !document.hidden;
     console.log(
@@ -2369,6 +2776,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     );
     // Restart timer with appropriate interval when visibility changes
     this._startAutoRefresh();
+    // A diagram drawn while the panel was hidden is fitted again, with its bubbles
+    if (this._isVisible) {
+      this._applyMermaidZoom(this.template.querySelector(".mermaid svg"));
+    }
     if (this._isVisible) {
       this._checkForNewPullRequest();
     }
@@ -3035,17 +3446,34 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       return;
     }
     const nodes = mermaidSvg.querySelectorAll("g.node");
-    const svgScale = this._getMermaidEffectiveScale(mermaidSvg);
     const runningCheckNodes = this._runningMajorBranchCheckNodeNames();
+    this._drawNodeCountBubbles(mermaidSvg);
     nodes.forEach((node) => {
       node.style.cursor = "pointer";
       node.setAttribute("tabindex", "0");
-      this._drawNodeCountBubble(node, svgScale);
       // A major branch whose deployment check is running pulses (pipeline.css), its running dot
       // staying the indicator when motion is reduced
       if (runningCheckNodes.has(this._extractNodeIdentifier(node.id))) {
         node.classList.add("hardis-node-check-running");
       }
+    });
+  }
+
+  // The count bubbles of every node, for the scale the diagram has now. A diagram drawn while the
+  // panel had no width (hidden tab, automatic reload in the background) got a scale clamped to
+  // its minimum, and bubbles about three times too big that stayed so: nothing is drawn without a
+  // width, and every fit (resize, zoom, panel shown again) draws them again.
+  _drawNodeCountBubbles(mermaidSvg) {
+    const viewport = this.template.querySelector(".mermaid-viewport");
+    if (!mermaidSvg || !viewport || viewport.clientWidth <= 1) {
+      return;
+    }
+    mermaidSvg
+      .querySelectorAll(".hardis-count-bubble")
+      .forEach((bubble) => bubble.remove());
+    const svgScale = this._getMermaidEffectiveScale(mermaidSvg);
+    mermaidSvg.querySelectorAll("g.node").forEach((node) => {
+      this._drawNodeCountBubble(node, svgScale);
     });
   }
 
@@ -3380,7 +3808,142 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     const value = event.target?.value;
     if (value) {
       this.modalActiveTabValue = value;
+      this._followSearchToTab(value);
     }
+  }
+
+  // Search of a Pull Request: the description (General) and the comments of the Validation,
+  // Code Quality and Deployment tabs. Its bar takes room: it stays closed until Ctrl+F or the
+  // search button of the header opens it
+  get canSearchModal() {
+    return this.showPRModal && this.showModalTabs && this.isSinglePRMode;
+  }
+
+  get showModalSearch() {
+    return this.canSearchModal && this.modalSearchOpen;
+  }
+
+  get modalSearchToggleTitle() {
+    return this.modalSearchOpen
+      ? this.i18n.prSearchClose
+      : this.i18n.prSearchOpen;
+  }
+
+  get modalSearchTotal() {
+    return this._modalSearchCounts().reduce((sum, tab) => sum + tab.count, 0);
+  }
+
+  get modalSearchPositionLabel() {
+    if (!this.modalSearchQuery) {
+      return "";
+    }
+    const total = this.modalSearchTotal;
+    if (total === 0) {
+      return this.i18n.prSearchNoMatch;
+    }
+    return this.t("prSearchPosition", {
+      current: this._clampedSearchIndex() + 1,
+      total,
+    });
+  }
+
+  get modalSearchNavigationDisabled() {
+    return this.modalSearchTotal === 0;
+  }
+
+  get generalTabLabel() {
+    return this._searchTabLabel("general", this.i18n.prGeneralTab);
+  }
+
+  get validationTabLabel() {
+    return this._searchTabLabel("validation", this.i18n.journeyValidation);
+  }
+
+  get megaLinterTabLabel() {
+    return this._searchTabLabel("megalinter", this.i18n.prCodeQualityTab);
+  }
+
+  get deploymentTabLabel() {
+    return this._searchTabLabel(
+      "deployment",
+      this.i18n.workflowDeploymentNoBranch,
+    );
+  }
+
+  get generalActiveMatch() {
+    return this._activeMatchOf("general");
+  }
+
+  get validationActiveMatch() {
+    return this._activeMatchOf("validation");
+  }
+
+  get megaLinterActiveMatch() {
+    return this._activeMatchOf("megalinter");
+  }
+
+  get deploymentActiveMatch() {
+    return this._activeMatchOf("deployment");
+  }
+
+  // Searched once the typing pauses: a key typed does not search every comment again
+  handleModalSearchChange(event) {
+    this.modalSearchInput = String(event.detail?.value ?? "");
+    clearTimeout(this._searchDebounce);
+    this._searchDebounce = null;
+    if (!normalizeSearchQuery(this.modalSearchInput)) {
+      this._applyModalSearch();
+      return;
+    }
+    // eslint-disable-next-line @lwc/lwc/no-async-operation
+    this._searchDebounce = setTimeout(() => {
+      this._searchDebounce = null;
+      this._applyModalSearch();
+    }, 200);
+  }
+
+  // Enter: next match, Shift+Enter: previous one, Escape: clears the search
+  handleModalSearchKeydown(event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      // Typed and not searched yet: Enter shows the first match before moving on
+      if (this._flushModalSearch()) {
+        this._goToSearchMatch(this._clampedSearchIndex());
+        return;
+      }
+      this._moveModalSearch(event.shiftKey ? -1 : 1);
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      this._closeModalSearch();
+    }
+  }
+
+  // The search button of the header: opens the bar, or closes it with its search
+  handleModalSearchToggle() {
+    if (this.modalSearchOpen) {
+      this._closeModalSearch();
+      return;
+    }
+    this._openModalSearch();
+  }
+
+  handleModalSearchClose() {
+    this._closeModalSearch();
+  }
+
+  handleModalSearchNext() {
+    this._flushModalSearch();
+    this._moveModalSearch(1);
+  }
+
+  handleModalSearchPrevious() {
+    this._flushModalSearch();
+    this._moveModalSearch(-1);
+  }
+
+  handleModalSearchFilterToggle() {
+    this.modalSearchFilter = !this.modalSearchFilter;
   }
 
   // lightning-tabset only follows a change of its active tab once its tabs are rendered: the
@@ -3391,6 +3954,180 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     setTimeout(() => {
       this.modalActiveTabValue = value || "";
     }, 0);
+  }
+
+  // A tab opened by hand shows its own first match, unless it already holds the current one
+  _followSearchToTab(value) {
+    if (!this.modalSearchQuery) {
+      return;
+    }
+    const counts = this._modalSearchCounts();
+    const current = locateMatch(this._clampedSearchIndex(), counts);
+    if (current && current.key === value) {
+      return;
+    }
+    const first = firstMatchOf(value, counts);
+    if (first >= 0) {
+      this.modalSearchIndex = first;
+    }
+  }
+
+  // The matches of each tab, counted again only when the search or a text changes
+  _modalSearchCounts() {
+    const query = this.isSinglePRMode ? this.modalSearchQuery : "";
+    const description = this.singlePullRequestDescription;
+    const workflows = this.showWorkflowsTab ? this.modalWorkflows : null;
+    const memo = this._searchCountsMemo;
+    if (
+      !memo.counts ||
+      memo.query !== query ||
+      memo.description !== description ||
+      memo.workflows !== workflows
+    ) {
+      memo.query = query;
+      memo.description = description;
+      memo.workflows = workflows;
+      memo.counts = query
+        ? this._searchTabs().map((tab) => ({
+            key: tab.key,
+            count: tab.markdowns.reduce(
+              (sum, markdown) => sum + countMarkdownMatches(markdown, query),
+              0,
+            ),
+          }))
+        : [];
+    }
+    return memo.counts;
+  }
+
+  // The tabs the search covers, in the order they are shown, with the markdown each one renders
+  _searchTabs() {
+    const tabs = [
+      { key: "general", markdowns: [this.singlePullRequestDescription] },
+    ];
+    if (this.showWorkflowsTab) {
+      const bodies = (runs) => runs.map((run) => run.body || "");
+      tabs.push(
+        { key: "validation", markdowns: bodies(this.modalValidationRuns) },
+        { key: "megalinter", markdowns: bodies(this.modalMegaLinterRuns) },
+        { key: "deployment", markdowns: bodies(this.modalDeploymentRuns) },
+      );
+    }
+    return tabs;
+  }
+
+  // The current match, kept in range when the comments change under it
+  _clampedSearchIndex() {
+    const total = this.modalSearchTotal;
+    if (total === 0) {
+      return 0;
+    }
+    return Math.min(Math.max(this.modalSearchIndex, 0), total - 1);
+  }
+
+  _searchTabLabel(key, label) {
+    const tab = this._modalSearchCounts().find((entry) => entry.key === key);
+    if (!tab || tab.count === 0) {
+      return label;
+    }
+    return this.t("prSearchTabCount", { label, count: tab.count });
+  }
+
+  _activeMatchOf(key) {
+    if (!this.modalSearchQuery) {
+      return -1;
+    }
+    const current = locateMatch(
+      this._clampedSearchIndex(),
+      this._modalSearchCounts(),
+    );
+    return current && current.key === key ? current.local : -1;
+  }
+
+  // Searches now what was typed, and puts the current match on the first one of the tab shown,
+  // or on the first one at all: typing never switches tabs. True when the search changed.
+  _applyModalSearch() {
+    const query = normalizeSearchQuery(this.modalSearchInput);
+    if (query === this.modalSearchQuery) {
+      return false;
+    }
+    this.modalSearchQuery = query;
+    const first = firstMatchOf(
+      this.modalActiveTabValue,
+      this._modalSearchCounts(),
+    );
+    this.modalSearchIndex = first >= 0 ? first : 0;
+    return true;
+  }
+
+  // Applies a search still waiting for the typing to pause. True when the search changed.
+  _flushModalSearch() {
+    if (!this._searchDebounce) {
+      return false;
+    }
+    clearTimeout(this._searchDebounce);
+    this._searchDebounce = null;
+    return this._applyModalSearch();
+  }
+
+  _moveModalSearch(delta) {
+    const total = this.modalSearchTotal;
+    if (total === 0) {
+      return;
+    }
+    this._goToSearchMatch(stepMatch(this._clampedSearchIndex(), total, delta));
+  }
+
+  // Shows a match, switching to its tab: the tabs are rendered, so the tabset follows at once
+  _goToSearchMatch(index) {
+    this.modalSearchIndex = index;
+    const target = locateMatch(index, this._modalSearchCounts());
+    if (target && target.key !== this.modalActiveTabValue) {
+      this.modalActiveTabValue = target.key;
+    }
+  }
+
+  _clearModalSearch() {
+    clearTimeout(this._searchDebounce);
+    this._searchDebounce = null;
+    this.modalSearchInput = "";
+    this.modalSearchQuery = "";
+    this.modalSearchIndex = 0;
+  }
+
+  // Opens the bar and puts the cursor in it, once it is rendered
+  _openModalSearch() {
+    this.modalSearchOpen = true;
+    // eslint-disable-next-line @lwc/lwc/no-async-operation
+    setTimeout(() => {
+      const input = this.template.querySelector(".pr-search-input");
+      if (input) {
+        input.focus();
+      }
+    }, 0);
+  }
+
+  // Nothing searched, nothing highlighted, and the room of the bar given back
+  _closeModalSearch() {
+    this._clearModalSearch();
+    this.modalSearchOpen = false;
+  }
+
+  // Ctrl+F (Cmd+F on macOS) while a Pull Request is shown: its search bar, not the find bar of
+  // VS Code, which also searches the pipeline behind the window and only the tab shown
+  _handleSearchShortcut(event) {
+    if (
+      !(event.ctrlKey || event.metaKey) ||
+      event.altKey ||
+      event.shiftKey ||
+      String(event.key).toLowerCase() !== "f" ||
+      !this.canSearchModal
+    ) {
+      return;
+    }
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    this._openModalSearch();
   }
 
   get showExplorerLookup() {

@@ -1,79 +1,32 @@
 import { LightningElement, api } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
-import { isTrustedCommentImage } from "s/pullRequestUtils";
-
-// What a Pull Request comment written by sfdx-hardis uses: headings, lists, tables, code,
-// collapsible sections, images and links. Nothing that runs, loads or submits.
-const ALLOWED_TAGS = [
-  "a",
-  "b",
-  "blockquote",
-  "br",
-  "code",
-  "del",
-  "details",
-  "em",
-  "h1",
-  "h2",
-  "h3",
-  "h4",
-  "h5",
-  "h6",
-  "hr",
-  "i",
-  "img",
-  "li",
-  "ol",
-  "p",
-  "pre",
-  "strong",
-  "sub",
-  "summary",
-  "sup",
-  "table",
-  "tbody",
-  "td",
-  "th",
-  "thead",
-  "tr",
-  "ul",
-];
-const ALLOWED_ATTR = ["href", "alt", "title", "align", "open", "src", "width"];
-
-// An image is replaced by its alternative text: the text comes from anyone allowed to comment,
-// and loading an image from the address they chose would tell them who opened the tab, and when.
-// The banners of sfdx-hardis and MegaLinter are kept: see isTrustedCommentImage.
-let imageHookInstalled = false;
-function installImageHook(purify) {
-  if (imageHookInstalled) {
-    return;
-  }
-  imageHookInstalled = true;
-  purify.addHook("uponSanitizeElement", (node, data) => {
-    if (data.tagName !== "img" || !node.parentNode) {
-      return;
-    }
-    if (node.getAttribute && isTrustedCommentImage(node.getAttribute("src"))) {
-      return;
-    }
-    const alt = node.getAttribute ? node.getAttribute("alt") || "" : "";
-    node.parentNode.replaceChild(node.ownerDocument.createTextNode(alt), node);
-  });
-}
+import { markdownToSafeHtml, textNodesOf } from "s/markdownUtils";
+import { findMatches, normalizeSearchQuery } from "s/searchUtils";
 
 /**
  * Markdown rendered as sanitized HTML.
  *
  * The text comes from a Pull Request comment, which anyone allowed to comment can write: it is
- * never trusted. marked turns it into HTML, DOMPurify keeps a short list of tags and attributes,
- * links are limited to web addresses, images are replaced by their alternative text so nothing
- * is loaded from an address the author chose, and a click on a link is handed to VS Code instead of
- * navigating the webview. Without the two libraries (a panel that does not load them), the text
- * is shown as it is.
+ * never trusted. markdownToSafeHtml keeps a short list of tags and attributes, and a click on a
+ * link is handed to VS Code instead of navigating the webview. Without marked and DOMPurify (a
+ * panel that does not load them), the text is shown as it is.
+ *
+ * `searchQuery` highlights what matches it, and opens the collapsed sections holding a match;
+ * `activeMatch` is the match shown as the current one, scrolled into view. A highlight only
+ * splits the text nodes already there and wraps a piece in a <mark>: no markup is ever built
+ * from the text of the comment.
  */
 export default class MarkdownView extends SharedMixin(LightningElement) {
   _markdown = "";
   _rendered = null;
+  _searchQuery = "";
+  _activeMatch = -1;
+  // What the screen shows now: the search applied, the current match and its <mark> elements
+  _appliedQuery = "";
+  _appliedActive = -1;
+  _marks = [];
+  // The collapsed sections the search opened, closed again when the search changes
+  _openedBySearch = [];
 
   @api
   get markdown() {
@@ -81,26 +34,29 @@ export default class MarkdownView extends SharedMixin(LightningElement) {
   }
   set markdown(value) {
     this._markdown = typeof value === "string" ? value : "";
+    this._refresh();
+  }
+
+  @api
+  get searchQuery() {
+    return this._searchQuery;
+  }
+  set searchQuery(value) {
+    this._searchQuery = normalizeSearchQuery(value);
+    this._refresh();
+  }
+
+  @api
+  get activeMatch() {
+    return this._activeMatch;
+  }
+  set activeMatch(value) {
+    this._activeMatch = Number.isInteger(value) ? value : -1;
+    this._refresh();
   }
 
   renderedCallback() {
-    if (this._rendered === this._markdown) {
-      return;
-    }
-    const container = this.template.querySelector(".hardis-markdown");
-    if (!container) {
-      return;
-    }
-    this._rendered = this._markdown;
-    const html = this._toSafeHtml(this._markdown);
-    if (html === null) {
-      container.textContent = this._markdown;
-      return;
-    }
-    container.innerHTML = html;
-    for (const link of container.querySelectorAll("a")) {
-      link.setAttribute("rel", "noopener noreferrer");
-    }
+    this._refresh();
   }
 
   handleClick(event) {
@@ -115,24 +71,107 @@ export default class MarkdownView extends SharedMixin(LightningElement) {
     }
   }
 
-  _toSafeHtml(markdown) {
-    const marked = window.marked;
-    const purify = window.DOMPurify;
-    if (!marked || typeof marked.parse !== "function" || !purify) {
-      return null;
+  // A property only changes the template when the template reads it: the content and the
+  // highlights are put on the screen here, from the setters as well as after a render
+  _refresh() {
+    const container = this.template.querySelector(".hardis-markdown");
+    if (!container) {
+      return;
     }
-    try {
-      installImageHook(purify);
-      const rawHtml = marked.parse(markdown, { gfm: true, async: false });
-      return purify.sanitize(rawHtml, {
-        ALLOWED_TAGS,
-        ALLOWED_ATTR,
-        ALLOWED_URI_REGEXP: /^https?:\/\//i,
-        ALLOW_DATA_ATTR: false,
-      });
-    } catch (e) {
-      console.warn("Markdown not rendered:", e);
-      return null;
+    if (this._rendered !== this._markdown) {
+      this._render(container);
+    }
+    if (this._appliedQuery !== this._searchQuery) {
+      this._clearHighlights(container);
+      this._marks = this._searchQuery
+        ? this._highlight(container, this._searchQuery)
+        : [];
+      this._appliedQuery = this._searchQuery;
+      this._appliedActive = -1;
+    }
+    if (this._appliedActive !== this._activeMatch) {
+      this._showActiveMatch();
+    }
+  }
+
+  _render(container) {
+    this._rendered = this._markdown;
+    // The new content holds no highlight and no section opened by the search
+    this._marks = [];
+    this._openedBySearch = [];
+    this._appliedQuery = "";
+    this._appliedActive = -1;
+    const html = markdownToSafeHtml(this._markdown);
+    if (html === null) {
+      container.textContent = this._markdown;
+      return;
+    }
+    container.innerHTML = html;
+    for (const link of container.querySelectorAll("a")) {
+      link.setAttribute("rel", "noopener noreferrer");
+    }
+  }
+
+  // Wraps each match in a <mark>, and opens every collapsed section holding one
+  _highlight(container, query) {
+    const marks = [];
+    for (const node of textNodesOf(container)) {
+      const matches = findMatches(node.nodeValue || "", query);
+      let rest = node;
+      let offset = 0;
+      for (const match of matches) {
+        const hit = rest.splitText(match.start - offset);
+        rest = hit.splitText(match.end - match.start);
+        offset = match.end;
+        const mark = document.createElement("mark");
+        mark.className = "hardis-search-hit";
+        hit.parentNode.replaceChild(mark, hit);
+        mark.appendChild(hit);
+        marks.push(mark);
+      }
+    }
+    for (const mark of marks) {
+      this._openSectionsAround(mark, container);
+    }
+    return marks;
+  }
+
+  _openSectionsAround(element, container) {
+    let parent = element.parentElement;
+    while (parent && parent !== container) {
+      if (parent.tagName === "DETAILS" && !parent.open) {
+        parent.open = true;
+        this._openedBySearch.push(parent);
+      }
+      parent = parent.parentElement;
+    }
+  }
+
+  _clearHighlights(container) {
+    const marks = container.querySelectorAll("mark.hardis-search-hit");
+    for (const mark of marks) {
+      mark.replaceWith(...mark.childNodes);
+    }
+    if (marks.length > 0) {
+      container.normalize();
+    }
+    for (const section of this._openedBySearch) {
+      section.open = false;
+    }
+    this._openedBySearch = [];
+    this._marks = [];
+  }
+
+  _showActiveMatch() {
+    const previous = this._marks[this._appliedActive];
+    if (previous) {
+      previous.classList.remove("active");
+    }
+    this._appliedActive = this._activeMatch;
+    const current = this._marks[this._activeMatch];
+    if (current) {
+      current.classList.add("active");
+      current.scrollIntoView({ block: "center" });
     }
   }
 }

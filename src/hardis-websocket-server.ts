@@ -560,6 +560,8 @@ export class LocalWebSocketServer {
             title: data.title,
             type: data.type, // Forward the type property for LWC simplification
             isPackageXml,
+            // Main report of the command, shown before the other reports
+            main: data.main === true,
             // Arguments of an "actionCommand" button, used to deep-link into a panel section
             commandArgs: Array.isArray(data.commandArgs)
               ? data.commandArgs

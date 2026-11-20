@@ -174,7 +174,7 @@ suite("PNG crop of the UI harness captures", () => {
     const runner = readSourceFile("test/runUiTest.ts");
     assert.match(
       runner,
-      /const hiddenDesktop =\s*process\.platform === "win32" &&\s*!process\.env\.CI &&\s*\(!labDriver \|\| realJobArtifacts\) &&\s*process\.env\.SFDX_HARDIS_UI_VISIBLE !== "true";/,
+      /const hiddenDesktop =\s*process\.platform === "win32" &&\s*!process\.env\.CI &&\s*\(!labDriver \|\| realJobArtifacts \|\| commandShots\) &&\s*process\.env\.SFDX_HARDIS_UI_VISIBLE !== "true";/,
     );
     assert.match(
       runner,

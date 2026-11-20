@@ -196,6 +196,30 @@ export class CdpWindow {
     await this.send("Input.insertText", { text });
   }
 
+  /**
+   * Press a key of the keyboard, as the window receives it: VS Code sees it too, and runs its
+   * own shortcut for it unless the page stops it. `modifiers` is the CDP bit field: 1 Alt,
+   * 2 Ctrl, 4 Meta (Cmd), 8 Shift.
+   */
+  async press(key: {
+    key: string;
+    code: string;
+    keyCode: number;
+    modifiers?: number;
+  }): Promise<void> {
+    await this.connect();
+    for (const type of ["rawKeyDown", "keyUp"]) {
+      await this.send("Input.dispatchKeyEvent", {
+        type,
+        key: key.key,
+        code: key.code,
+        windowsVirtualKeyCode: key.keyCode,
+        nativeVirtualKeyCode: key.keyCode,
+        modifiers: key.modifiers ?? 0,
+      });
+    }
+  }
+
   /** Zoom factor of the window (VS Code zoom in / zoom out), 1 when not zoomed. */
   private async zoomFactor(): Promise<number> {
     const result = await this.send("Runtime.evaluate", {
@@ -421,6 +445,23 @@ export async function webviewBoxInWindow(): Promise<{
   );
 }
 
+/**
+ * Evaluates an expression in the VS Code window itself, around the webviews (its find bar, its
+ * editors), like inWebview does in a webview. Returns null without a debugging port.
+ */
+export async function inWorkbench(expression: string): Promise<any> {
+  if (!CdpWindow.portFromEnv()) {
+    return null;
+  }
+  const workbench = (await debugTargets()).find(
+    (target) =>
+      target.type === "page" && String(target.url || "").includes("workbench"),
+  );
+  return workbench
+    ? evaluateInTarget(workbench.webSocketDebuggerUrl, expression)
+    : null;
+}
+
 /** The debugging targets of the window: its pages, webviews and framed pages. */
 async function debugTargets(): Promise<any[]> {
   const port = CdpWindow.portFromEnv();
@@ -459,4 +500,35 @@ function evaluateInTarget(url: string, expression: string): Promise<any> {
       }
     });
   });
+}
+
+/**
+ * Evaluates an expression in the VS Code window and in every webview, and returns the value of
+ * each, in the order of the targets. How a capture changes text everywhere it can show, then reads
+ * it all back. A target that does not answer gives null.
+ */
+export async function inWorkbenchAndWebviews(
+  expression: string,
+): Promise<any[]> {
+  if (!CdpWindow.portFromEnv()) {
+    return [];
+  }
+  const targets = (await debugTargets()).filter((target) => {
+    const url = String(target.url || "");
+    return (
+      (target.type === "page" && url.includes("workbench")) ||
+      url.startsWith("vscode-webview://")
+    );
+  });
+  const values: any[] = [];
+  for (const target of targets) {
+    try {
+      values.push(
+        await evaluateInTarget(target.webSocketDebuggerUrl, expression),
+      );
+    } catch {
+      values.push(null);
+    }
+  }
+  return values;
 }

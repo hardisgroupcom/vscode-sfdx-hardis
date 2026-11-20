@@ -56,6 +56,14 @@ export const MODAL_STATE_DEFAULTS = {
   modalRunningJobs: null,
   modalCheckout: null,
   workflowsUnavailable: false,
+  // Search bar of a Pull Request: whether it is open (closed by default, it takes room), what is
+  // typed, what is searched, the current match counted across the tabs, and whether the runs
+  // without a match are hidden
+  modalSearchOpen: false,
+  modalSearchInput: "",
+  modalSearchQuery: "",
+  modalSearchIndex: 0,
+  modalSearchFilter: false,
 };
 
 export const MODAL_LOADING_FLAGS = [

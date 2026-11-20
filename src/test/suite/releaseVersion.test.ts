@@ -348,6 +348,7 @@ suite("Release versioning", () => {
         3,
         undefined,
         {},
+        [],
         views,
       ).build({ format: "string", withMermaidTag: false }) as string;
     }

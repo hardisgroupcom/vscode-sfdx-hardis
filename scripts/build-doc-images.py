@@ -89,6 +89,12 @@ PANEL_SHOTS = {
     # the run into doc-screenshots/major-branch-check (see CONTRIBUTING.md)
     "major-branch-check-pipeline.png": "major-branch-check/major-branch-check-pipeline",
     "major-branch-check-settings.png": "major-branch-check/major-branch-check-settings",
+    # Development orgs, taken by the dev orgs variant of the run into
+    # doc-screenshots/dev-orgs (see CONTRIBUTING.md)
+    "dev-orgs-pipeline.png": "dev-orgs/dev-orgs-pipeline",
+    # Same view before any org is registered: a "+" node per target branch, taken with
+    # SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS_EMPTY=true into doc-screenshots/dev-orgs-empty
+    "dev-orgs-pipeline-empty.png": "dev-orgs-empty/dev-orgs-pipeline",
 }
 
 # Width of the activity bar + side bar in a capture: the editor area (the
@@ -136,6 +142,8 @@ WEBVIEW_ONLY = {
     "promotion-settings.png",
     "major-branch-check-pipeline.png",
     "major-branch-check-settings.png",
+    "dev-orgs-pipeline.png",
+    "dev-orgs-pipeline-empty.png",
     "scratch-org-pool-menu.png",
 }
 
@@ -169,10 +177,10 @@ BOX_CROPS = {
     "dependencies-ok.jpg": ("sidebar-dependencies", (60, 99, 436, 462)),
     # "My Pull Request" contribution card (pipeline-workflow-cards is captured
     # two zoom levels out so the second card row fits in the window)
-    "card-my-pull-request.png": ("pipeline-workflow-cards", (1378, 698, 1630, 806)),
+    "card-my-pull-request.png": ("pipeline-workflow-cards", (1378, 727, 1630, 835)),
     # The whole "Project Contribution Workflow" card row (same zoomed-out
     # capture), for the Contributor Guide overview
-    "pipeline-contribution-cards.png": ("pipeline-workflow-cards", (312, 636, 1910, 818)),
+    "pipeline-contribution-cards.png": ("pipeline-workflow-cards", (312, 665, 1910, 847)),
     # Branch modal of the pipeline, on its Pull Requests tab (merged Pull
     # Requests of the branch, with the Release Notes buttons)
     "screenshot-branch-pull-requests.jpg": (
@@ -232,6 +240,24 @@ BOX_CROPS = {
         "pipeline-edit-action-remove-packagexml-items",
         (760, 239, 1462, 728),
     ),
+    "screenshot-deployment-action-user-access-policy.jpg": (
+        "pipeline-edit-action-user-access-policy",
+        (760, 100, 1462, 854),
+    ),
+    # Browser type: the density setting of the fixture, then the two examples of its doc page,
+    # scrolled to the fields of their first item (userAccessPolicies, picklists)
+    "screenshot-deployment-action-browser.jpg": (
+        "pipeline-edit-action-browser",
+        (760, 146, 1462, 810),
+    ),
+    "screenshot-deployment-action-browser-user-access-policies.jpg": (
+        "pipeline-edit-action-browser-user-access-policies",
+        (760, 66, 1462, 882),
+    ),
+    "screenshot-deployment-action-browser-picklists.jpg": (
+        "pipeline-edit-action-browser-picklists",
+        (760, 66, 1462, 882),
+    ),
     # Security & Privacy tab of the Pipeline Settings panel, in edit mode: the
     # anonymization editor of SECURITY.md (captured two zoom levels out, so the
     # three levels, the local runs toggle and the four channels all fit)
@@ -266,6 +292,11 @@ BOX_CROPS = {
         "major-branch-check/major-branch-check-modal",
         (470, 60, 1866, 915),
     ),
+    # Development orgs: the window of the sandbox missing three Pull Requests
+    "dev-orgs-details.png": (
+        "dev-orgs/dev-orgs-details",
+        (640, 40, 1700, 860),
+    ),
 }
 
 # --- VS Code user guides -----------------------------------------------------
@@ -287,7 +318,7 @@ GUIDE_SHOTS = {
     # The No Overwrite entry of that menu: package-no-overwrite.xml in the package viewer, for the
     # overwrite management page of sfdx-hardis
     "package-no-overwrite.png": ("package-no-overwrite", True),
-    "pipeline-workflow-cards.png": ("pipeline-workflow-cards", (315, 625, 1905, 835)),
+    "pipeline-workflow-cards.png": ("pipeline-workflow-cards", (315, 654, 1905, 864)),
     "pipeline-pr-actions-list.png": ("pipeline-pr-actions-list", (400, 40, 1865, 922)),
     # Pull Requests explorer and the window of one Pull Request (sfdx-hardis#2273), opened by
     # deep links: the lookup, the description, a comment tab and a merged Pull Request
@@ -295,6 +326,8 @@ GUIDE_SHOTS = {
     "pipeline-pr-view-general.png": ("pipeline-pr-view-general", True),
     "pipeline-pr-view-validation.png": ("pipeline-pr-view-validation", True),
     "pipeline-pr-view-merged.png": ("pipeline-pr-view-merged", True),
+    # The search bar of that window, with the matches of a word highlighted
+    "pipeline-pr-view-search.png": ("pipeline-pr-view-search", True),
     "pipeline-branch-modal-actions.png": ("pipeline-branch-modal-actions", True),
     "org-monitoring.png": ("org-monitoring", True),
     "org-monitoring-packages-menu.png": ("org-monitoring-packages-menu", True),

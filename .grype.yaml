@@ -22,7 +22,7 @@ ignore:
   # own %%{init}%% directive) and is passed to the single mermaid.render() call in
   # src/webviews/lwc-ui/modules/s/pipeline/pipeline.js. There is no markdown / ```mermaid fence rendering
   # anywhere in the extension, so no third-party diagram source is ever parsed.
-  # Re-evaluate all five (~2026-11-16), or as soon as mermaid ships a fix for the 11.16 layout regression.
+  # Re-evaluate all five (~2026-12-31), or as soon as mermaid ships a fix for the 11.16 layout regression.
 
   # GHSA-6x64-9x62-f2gx / CVE-2026-71436 - DoS in the XY Charts diagram.
   # Not reachable: the only diagram type this extension emits is "flowchart LR"
@@ -77,7 +77,7 @@ ignore:
   # in katex 0.18.2, outside the range mermaid accepts. KaTeX does not create prototype pollution, it only
   # reads an already polluted Object.prototype, so it is exposed only together with the mermaid
   # GHSA-3rrr-jr9j-h3q3 accepted risk above, and the mermaid output is sanitized by DOMPurify
-  # (force-resolved in package.json). Re-evaluate (~2026-11-16) together with the mermaid pin.
+  # (force-resolved in package.json). Re-evaluate (~2026-12-31) together with the mermaid pin.
   - vulnerability: GHSA-238p-pmpm-9mq7
     package:
       name: katex

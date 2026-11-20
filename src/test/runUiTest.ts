@@ -78,6 +78,12 @@ async function main() {
   const majorBranchCheckVariant =
     docScreenshots &&
     process.env.SFDX_HARDIS_DOC_SCREENSHOTS_MAJOR_BRANCH_CHECK === "true";
+  // Development orgs variant of the screenshot run: the base fixture registers
+  // no development org, so the ordinary pipeline screenshots stay as they were.
+  // This variant serves a list of them (see devOrgsFixture below).
+  const devOrgsVariant =
+    docScreenshots &&
+    process.env.SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS === "true";
   // A post-deployment action failed after a merge, and its fix Pull Request is
   // open: only a universe bringing its own overlay has that state to show
   const actionRecoveryVariant =
@@ -117,7 +123,16 @@ async function main() {
   const realReleaseVersions =
     process.env.SFDX_HARDIS_REAL_RELEASE_VERSIONS === "true";
 
+  // Command screenshots of sfdx-hardis (SFDX_HARDIS_COMMAND_SHOTS=true, started by its
+  // scripts/command-screenshots/run.mjs): like the lab driver, a real project given by
+  // SFDX_HARDIS_LAB_WORKSPACE and the real CLI against real orgs, but through the sf shim in
+  // passthrough mode, so a command the machine can not run is replayed from a transcript. The
+  // window stays on the hidden desktop and is captured through its debugging port. See
+  // src/test/ui/commandShots.test.ts.
+  const commandShots = process.env.SFDX_HARDIS_COMMAND_SHOTS === "true";
+
   const labDriver =
+    commandShots ||
     realRetriever ||
     realJobArtifacts ||
     realReleaseVersions ||
@@ -378,6 +393,19 @@ async function main() {
       "utf8",
     );
   }
+  // Lab 3.1 step 8 compares this picture with the learner's own panel, which has none of the Pull
+  // Requests of later labs: no open Pull Request, so the Feature branches view draws the major
+  // branches only (the panel has no toggle to hide feature branches anymore)
+  if (pipelineState === "level3-split") {
+    const fixture = JSON.parse(fs.readFileSync(gitProviderFixtureFile, "utf8"));
+    fixture.openPullRequests = [];
+    gitProviderFixtureFile = path.join(workDir, "git-provider-mock.json");
+    fs.writeFileSync(
+      gitProviderFixtureFile,
+      JSON.stringify(fixture, null, 2),
+      "utf8",
+    );
+  }
   if (promotionVariant) {
     // The promotion branch exists on the repository, like any branch pushed by
     // hardis:project:promotion:create. An alternate universe names its own, so
@@ -473,6 +501,26 @@ async function main() {
     );
   }
 
+  // The development orgs the mocked CLI answers to hardis:project:dev-org:list.
+  // Written at each run: whether an org is stale and how old a missing Pull
+  // Request is depend on the time of the run.
+  let devOrgsFixtureFile = "";
+  if (devOrgsVariant && !universe) {
+    devOrgsFixtureFile = path.join(workDir, "dev-orgs-mock.json");
+    fs.writeFileSync(
+      devOrgsFixtureFile,
+      JSON.stringify(
+        // SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS_EMPTY: no org registered yet, the "+" nodes
+        process.env.SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS_EMPTY === "true"
+          ? { ...devOrgsFixture(Date.now()), orgs: [] }
+          : devOrgsFixture(Date.now()),
+        null,
+        2,
+      ),
+      "utf8",
+    );
+  }
+
   // The action recovery variant: the merged Pull Request whose actions failed,
   // its fix Pull Request, their actions files in the workspace, and the
   // statuses the mocked CLI answers for them
@@ -552,13 +600,7 @@ async function main() {
     workspaceSettings["workbench.colorTheme"] = "Default Dark Modern";
     workspaceSettings["vsCodeSfdxHardis.theme.colorTheme"] = "dark";
   }
-  // Lab 3.1 step 8 compares this picture with the learner's own panel, which has none of the
-  // feature branches of later labs: show the major branches only
-  if (pipelineState === "level3-split") {
-    workspaceSettings["vsCodeSfdxHardis.pipelineDisplayFeatureBranches"] =
-      false;
-  }
-  if (docScreenshots) {
+  if (docScreenshots || commandShots) {
     // Documentation screenshots are always taken in light mode, English, with
     // a clean chrome (no minimap, no breadcrumbs, no editor decorations).
     // SFDX_HARDIS_DOC_SCREENSHOTS_THEME=dark switches to dark for design QA:
@@ -581,7 +623,9 @@ async function main() {
     workspaceSettings["update.showReleaseNotes"] = false;
     // Stable title: it is both what the screenshots show and what the capture
     // script matches on to find the window
-    workspaceSettings["window.title"] = workspaceName;
+    workspaceSettings["window.title"] = commandShots
+      ? path.basename(workspaceDir)
+      : workspaceName;
     workspaceSettings["workbench.secondarySideBar.defaultVisibility"] =
       "hidden";
     workspaceSettings["chat.commandCenter.enabled"] = false;
@@ -660,7 +704,11 @@ async function main() {
   // cspell:ignore backgrounding
 
   const cdpPort =
-    docScreenshots || realRetriever || realJobArtifacts || realReleaseVersions
+    docScreenshots ||
+    realRetriever ||
+    realJobArtifacts ||
+    realReleaseVersions ||
+    commandShots
       ? await findFreePort()
       : 0;
 
@@ -673,7 +721,7 @@ async function main() {
   const hiddenDesktop =
     process.platform === "win32" &&
     !process.env.CI &&
-    (!labDriver || realJobArtifacts || realReleaseVersions) &&
+    (!labDriver || realJobArtifacts || realReleaseVersions || commandShots) &&
     process.env.SFDX_HARDIS_UI_VISIBLE !== "true";
   let vscodeExecutablePath: string | undefined;
   if (hiddenDesktop) {
@@ -757,7 +805,7 @@ async function main() {
               CI: undefined,
               GITHUB_ACTIONS: undefined,
             }
-          : labDriver
+          : labDriver && !commandShots
             ? {}
             : {
                 PATH: `${shimDir}${path.delimiter}${process.env.PATH || ""}`,
@@ -768,6 +816,23 @@ async function main() {
                   "node_modules",
                 ),
               }),
+        ...(commandShots
+          ? {
+              SFDX_HARDIS_COMMAND_SHOTS: "true",
+              // The specs of the run, resolved by the sfdx-hardis runner, and where the captures
+              // and the result of each command go
+              SFDX_HARDIS_COMMAND_SHOTS_SPECS:
+                process.env.SFDX_HARDIS_COMMAND_SHOTS_SPECS || "",
+              SFDX_HARDIS_COMMAND_SHOTS_OUT:
+                process.env.SFDX_HARDIS_COMMAND_SHOTS_OUT || "",
+              // The real CLI behind the shim, the transcripts it replays, and where it records
+              SF_MOCK_PASSTHROUGH: process.env.SF_MOCK_PASSTHROUGH || "",
+              SF_MOCK_TRANSCRIPTS: process.env.SF_MOCK_TRANSCRIPTS || "",
+              SF_MOCK_RECORD_DIR: process.env.SF_MOCK_RECORD_DIR || "",
+              // Reports are captured in Excel by the runner, never opened here
+              NO_OPEN: "true",
+            }
+          : {}),
         VSCODE_SFDX_HARDIS_UI_TEST: "true",
         ...(docScreenshots
           ? {
@@ -813,6 +878,13 @@ async function main() {
                 : "",
               SFDX_HARDIS_DOC_SCREENSHOTS_MAJOR_BRANCH_CHECK:
                 majorBranchCheckVariant ? "true" : "",
+              SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS: devOrgsVariant
+                ? "true"
+                : "",
+              SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS_EMPTY:
+                process.env.SFDX_HARDIS_DOC_SCREENSHOTS_DEV_ORGS_EMPTY || "",
+              // Answer of hardis:project:dev-org:list in the dev orgs variant
+              SF_MOCK_DEV_ORGS_FILE: devOrgsFixtureFile,
               // Statuses and command scenarios of the action recovery variant
               SF_MOCK_ACTION_RECOVERY_FILE: actionRecoveryOverlayFile,
               SF_MOCK_DEPS_STATE: process.env.SF_MOCK_DEPS_STATE || "ok",
@@ -908,6 +980,203 @@ function majorBranchCheckFixture(now: number): {
         jobsStatus: "success",
       },
     },
+  };
+}
+
+/**
+ * The development orgs the dev orgs variant serves, as hardis:project:dev-org:list
+ * answers them. On integration (BUILD): a sandbox of the current user shared
+ * with two teammates and missing three Pull Requests, a shared sandbox up to
+ * date, and a teammate's scratch org never backpromoted. On preprod (RUN): the
+ * hotfix sandbox, missing a promotion. Developers work on these two target
+ * branches, never on uat. The Pull Requests are the merged ones of the base git
+ * provider fixture. The dates are counted back from `now`.
+ */
+function devOrgsFixture(now: number): Record<string, any> {
+  const daysAgo = (days: number) =>
+    new Date(now - days * 24 * 3600 * 1000).toISOString();
+  const prUrl = (number: number) =>
+    `https://github.com/mycompany/salesforce-crm/pull/${number}`;
+  const alex = { name: "Alex Martin", email: "alex.martin@mycompany.com" };
+  const sam = { name: "Sam Dubois", email: "sam.dubois@mycompany.com" };
+  const jordan = { name: "Jordan Lee", email: "jordan.lee@mycompany.com" };
+  const story = (
+    number: number,
+    title: string,
+    sourceBranch: string,
+    mergedDaysAgo: number,
+  ) => ({
+    number,
+    title,
+    url: prUrl(number),
+    mergedAt: daysAgo(mergedDaysAgo),
+    sourceBranch,
+    vehicle: false,
+    carried: null,
+  });
+  const pr124 = story(
+    124,
+    "CRM-1049 Opportunity stage notifications",
+    "feature/CRM-1049-opportunity-stage-notification",
+    1,
+  );
+  const pr123 = story(
+    123,
+    "CRM-1044 Segment field on Account",
+    "feature/CRM-1044-account-segment-field",
+    3,
+  );
+  const pr122 = story(
+    122,
+    "CRM-1038 Minimize Sales User profile",
+    "feature/CRM-1038-minimize-sales-profile",
+    6,
+  );
+  const behind = (pullRequests: any[], computedDaysAgo = 0.02) => ({
+    count: pullRequests.length,
+    oldestMergedAt: pullRequests.length
+      ? pullRequests[pullRequests.length - 1].mergedAt
+      : null,
+    oldestDays: pullRequests.length
+      ? Math.floor(
+          (now - Date.parse(pullRequests[pullRequests.length - 1].mergedAt)) /
+            (24 * 3600 * 1000),
+        )
+      : null,
+    computedAt: daysAgo(computedDaysAgo),
+    cutOff: false,
+    pullRequests,
+  });
+  const orgs = [
+    {
+      orgId: "00D5f0000012XycEAE",
+      orgType: "sandbox",
+      name: "dev",
+      alias: "dev",
+      instanceUrl: "https://mycompany--dev.sandbox.my.salesforce.com",
+      expirationDate: null,
+      targetBranch: "integration",
+      owner: alex,
+      users: [sam, jordan],
+      featureBranches: [
+        { name: "feature/CRM-1042-account-hierarchy", lastSeen: daysAgo(1) },
+      ],
+      registeredAt: daysAgo(40),
+      lastActivityAt: daysAgo(1),
+      lastBackpromote: {
+        date: daysAgo(9),
+        parentBranch: "integration",
+        pullRequest: 121,
+      },
+      isMine: true,
+      stale: false,
+      startDate: daysAgo(9),
+      behind: behind([pr124, pr123, pr122]),
+    },
+    {
+      orgId: "00D5f0000012XydEAE",
+      orgType: "sandbox",
+      name: "dev2",
+      alias: "dev2",
+      instanceUrl: "https://mycompany--dev2.sandbox.my.salesforce.com",
+      expirationDate: null,
+      targetBranch: "integration",
+      owner: sam,
+      users: [alex],
+      featureBranches: [
+        { name: "feature/CRM-1055-quote-approval", lastSeen: daysAgo(0.5) },
+      ],
+      registeredAt: daysAgo(62),
+      lastActivityAt: daysAgo(0.5),
+      lastBackpromote: {
+        date: daysAgo(0.8),
+        parentBranch: "integration",
+        pullRequest: 124,
+      },
+      isMine: true,
+      stale: false,
+      startDate: daysAgo(0.8),
+      behind: behind([]),
+    },
+    {
+      orgId: "00D5f0000012XyeEAE",
+      orgType: "scratch",
+      name: "crm-1061",
+      alias: "crm-1061",
+      instanceUrl: "https://flow-power-3821-dev-ed.scratch.my.salesforce.com",
+      expirationDate: daysAgo(-5).slice(0, 10),
+      targetBranch: "integration",
+      owner: jordan,
+      users: [],
+      featureBranches: [
+        {
+          name: "feature/CRM-1061-opportunity-trigger-recursion",
+          lastSeen: daysAgo(0.3),
+        },
+      ],
+      registeredAt: daysAgo(2),
+      lastActivityAt: daysAgo(0.3),
+      lastBackpromote: null,
+      isMine: false,
+      stale: false,
+      startDate: daysAgo(2),
+      behind: behind([pr124]),
+    },
+    {
+      orgId: "00D5f0000012XyfEAE",
+      orgType: "sandbox",
+      name: "devHotfix",
+      alias: "devHotfix",
+      instanceUrl: "https://mycompany--devhotfix.sandbox.my.salesforce.com",
+      expirationDate: null,
+      targetBranch: "preprod",
+      owner: sam,
+      users: [jordan],
+      featureBranches: [
+        { name: "fix/CRM-1101-invoice-rounding", lastSeen: daysAgo(0.2) },
+      ],
+      registeredAt: daysAgo(120),
+      lastActivityAt: daysAgo(0.2),
+      lastBackpromote: {
+        date: daysAgo(50),
+        parentBranch: "preprod",
+        pullRequest: 108,
+      },
+      isMine: false,
+      stale: false,
+      startDate: daysAgo(50),
+      behind: behind([
+        {
+          number: 112,
+          title: "Promotion: uat to preprod",
+          url: prUrl(112),
+          mergedAt: daysAgo(4),
+          sourceBranch: "uat",
+          vehicle: true,
+          carried: [
+            {
+              number: 117,
+              title: "CRM-1024 Case auto escalation",
+              url: prUrl(117),
+            },
+            {
+              number: 116,
+              title: "CRM-1018 Lead conversion assistant",
+              url: prUrl(116),
+            },
+          ],
+        },
+      ]),
+    },
+  ];
+  return {
+    enabled: true,
+    dashboardUrl: "https://github.com/mycompany/salesforce-crm/issues/87",
+    currentUser: alex,
+    staleDays: 30,
+    orgs,
+    branches: [],
+    warnings: [],
   };
 }
 

@@ -12,22 +12,25 @@ export async function run(): Promise<void> {
   // The lab driver is the same case, and walks the training course instead.
   // The real org run of the Metadata Retriever is a lab driver run with one suite of its own,
   // and so are the real git provider runs of the job artifacts and of the running jobs.
+  // The command screenshots of sfdx-hardis are a lab driver run with one suite of its own too.
   const pattern =
-    process.env.SFDX_HARDIS_REAL_RETRIEVER === "true"
-      ? "**/retrieverRealOrg.test.js"
-      : process.env.SFDX_HARDIS_REAL_JOB_ARTIFACTS === "true"
-        ? "**/jobArtifactsReal.test.js"
-        : process.env.SFDX_HARDIS_REAL_RUNNING_JOBS === "true"
-          ? "**/runningJobsReal.test.js"
-          : process.env.SFDX_HARDIS_REAL_RELEASE_VERSIONS === "true"
-            ? "**/releaseVersionsReal.test.js"
-            : process.env.SFDX_HARDIS_DOC_SCREENSHOTS === "true"
-              ? "**/docScreenshots.test.js"
-              : process.env.SFDX_HARDIS_REAL_CLI_PERF === "true"
-                ? "**/realCliPerf.test.js"
-                : process.env.SFDX_HARDIS_LAB_DRIVER === "true"
-                  ? "**/labs.test.js"
-                  : "**/*.test.js";
+    process.env.SFDX_HARDIS_COMMAND_SHOTS === "true"
+      ? "**/commandShots.test.js"
+      : process.env.SFDX_HARDIS_REAL_RETRIEVER === "true"
+        ? "**/retrieverRealOrg.test.js"
+        : process.env.SFDX_HARDIS_REAL_JOB_ARTIFACTS === "true"
+          ? "**/jobArtifactsReal.test.js"
+          : process.env.SFDX_HARDIS_REAL_RUNNING_JOBS === "true"
+            ? "**/runningJobsReal.test.js"
+            : process.env.SFDX_HARDIS_REAL_RELEASE_VERSIONS === "true"
+              ? "**/releaseVersionsReal.test.js"
+              : process.env.SFDX_HARDIS_DOC_SCREENSHOTS === "true"
+                ? "**/docScreenshots.test.js"
+                : process.env.SFDX_HARDIS_REAL_CLI_PERF === "true"
+                  ? "**/realCliPerf.test.js"
+                  : process.env.SFDX_HARDIS_LAB_DRIVER === "true"
+                    ? "**/labs.test.js"
+                    : "**/*.test.js";
   return runMochaSuite({
     testsRoot: __dirname,
     pattern,
