@@ -139,6 +139,33 @@ suite("Release versions on a real git provider", function () {
     await captureWindowTo(shotsDir, `${prefix}-pipeline`);
   });
 
+  test("each view of the switch shows the versions", async function () {
+    if (!tabs.includes("views") || !CdpWindow.portFromEnv()) {
+      this.skip();
+    }
+    const pickView = (index: number) =>
+      inWebview(`
+        const button = deepAll(panelDocument, ".pipeline-view-switch button")[${index}];
+        if (!button) {
+          return null;
+        }
+        button.click();
+        return true;
+      `);
+    const names = ["major-branches", "feature-branches", "dev-orgs"];
+    for (let index = 0; index < names.length; index++) {
+      if (!(await pickView(index))) {
+        // No Dev orgs view when the project turned the list off
+        continue;
+      }
+      await sleep(3000);
+      await captureWindowTo(shotsDir, `${prefix}-view-${names[index]}`);
+    }
+    // Back to the view of the other captures
+    await pickView(1);
+    await sleep(2000);
+  });
+
   test("the Versions toggle hides the versions of the diagram", async function () {
     if (!tabs.includes("versions-off") || !CdpWindow.portFromEnv()) {
       this.skip();

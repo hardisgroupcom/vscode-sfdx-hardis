@@ -1372,6 +1372,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
     // The bubbles are sized for the scale just set: drawn again at every fit
     this._drawNodeCountBubbles(mermaidSvg);
+    this._placeDiagramToolbar(mermaidSvg);
   }
 
   _getAvailableMermaidViewportHeight(viewport) {
@@ -3460,6 +3461,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     const nodes = mermaidSvg.querySelectorAll("g.node");
     const runningCheckNodes = this._runningMajorBranchCheckNodeNames();
     this._drawNodeCountBubbles(mermaidSvg);
+    this._placeDiagramToolbar(mermaidSvg);
     nodes.forEach((node) => {
       node.style.cursor = "pointer";
       node.setAttribute("tabindex", "0");
@@ -3489,6 +3491,45 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       this._drawNodeCountBubble(node, svgScale);
       this._drawNodeVersionChip(node);
     });
+  }
+
+  // The view switch and the Versions toggle sit inside the top left corner of the "Git Branches"
+  // group: the pipeline climbs from integration (bottom left) to production (top right), so that
+  // corner is empty whatever the view. They stay in the corner of the diagram (pipeline.css) while
+  // it is zoomed (it moves under them), or when the group is too narrow for them beside its title.
+  _placeDiagramToolbar(mermaidSvg) {
+    const toolbar = this.template.querySelector(".pipeline-diagram-toolbar");
+    if (!toolbar) {
+      return;
+    }
+    toolbar.style.top = "";
+    toolbar.style.left = "";
+    const container = toolbar.parentElement;
+    const group =
+      mermaidSvg && !this.isMermaidZoomed
+        ? mermaidSvg.querySelector('g.cluster[id$="GitBranches"]')
+        : null;
+    const frame = group ? group.querySelector("rect") : null;
+    if (!container || !frame) {
+      return;
+    }
+    const inset = 12;
+    const frameBox = frame.getBoundingClientRect();
+    const containerBox = container.getBoundingClientRect();
+    const toolbarBox = toolbar.getBoundingClientRect();
+    const title = group.querySelector(".cluster-label");
+    const titleBox = title ? title.getBoundingClientRect() : null;
+    const left = frameBox.left + inset;
+    const right = left + toolbarBox.width;
+    const fits =
+      frameBox.width > 0 &&
+      right + inset <= frameBox.right &&
+      !(titleBox && titleBox.width > 0 && right + inset > titleBox.left);
+    if (!fits) {
+      return;
+    }
+    toolbar.style.left = `${Math.round(left - containerBox.left)}px`;
+    toolbar.style.top = `${Math.round(frameBox.top - containerBox.top + inset)}px`;
   }
 
   // Effective on-screen scale of the mermaid SVG: _applyMermaidZoom shrinks

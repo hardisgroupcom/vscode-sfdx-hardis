@@ -41,9 +41,11 @@
 
 .pipeline-diagram-controls {
     position: absolute;
-    bottom: 0.5rem;
-    left: 0.5rem;
+    bottom: 0.75rem;
+    left: 0.75rem;
     z-index: 20;
+    border-radius: 0.25rem;
+    box-shadow: 0 1px 3px rgba(3, 45, 96, 0.18);
 }
 
 .mermaid-viewport {
@@ -378,22 +380,23 @@
    Their buttons paint their own surface, so the diagram under them never shows through. */
 .pipeline-diagram-toolbar {
     position: absolute;
-    top: 0.5rem;
-    left: 0.5rem;
+    top: 0.75rem;
+    left: 0.75rem;
     z-index: 20;
     display: flex;
     align-items: center;
+    gap: 0.5rem;
 }
 
 .pipeline-diagram-toolbar .hardis-segmented {
     background: var(--slds-g-color-neutral-base-100);
+    box-shadow: 0 1px 3px rgba(3, 45, 96, 0.18);
 }
 
 /* Versions toggle, next to the view switch */
 .pipeline-versions-switch {
     white-space: nowrap;
     flex-shrink: 0;
-    margin-left: 0.5rem;
 }
 
 .pipeline-view-switch {
