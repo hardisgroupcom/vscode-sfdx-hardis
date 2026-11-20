@@ -1546,7 +1546,10 @@ export function buildOrgChoices(
     );
 }
 
-/** developmentBranch first, then availableTargetBranches, without duplicates: nothing else */
+/**
+ * developmentBranch first, then availableTargetBranches (an entry can be "branch,label": the name
+ * only), without duplicates: nothing else
+ */
 export function listAllowedParentBranches(config: any): string[] {
   const branches: string[] = [];
   const add = (branch: unknown) => {
@@ -1557,7 +1560,7 @@ export function listAllowedParentBranches(config: any): string[] {
   };
   add(config?.developmentBranch);
   for (const branch of asArray(config?.availableTargetBranches)) {
-    add(branch);
+    add(typeof branch === "string" ? branch.split(",")[0] : branch);
   }
   return branches;
 }
