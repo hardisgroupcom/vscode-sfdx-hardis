@@ -320,7 +320,8 @@ suite("Release versioning", () => {
 
   suite("diagram", () => {
     const branches = [
-      { branchName: "integration", level: 50, mergeTargets: ["release__uat"] },
+      // mergeTargets hold git names, the branch names come from the config file names
+      { branchName: "integration", level: 50, mergeTargets: ["release/uat"] },
       { branchName: "release__uat", level: 70, mergeTargets: ["main"] },
       { branchName: "main", level: 100, mergeTargets: [] },
     ].map((branch) => ({
@@ -374,7 +375,10 @@ suite("Release versioning", () => {
         /<span class='hardis-node-version' style='display:none;'><span class='hardis-pill/,
       );
       // The next version goes under the Pull Request chip of the edge
-      assert.match(line("integrationBranch ==>"), /<br\/><span class='hardis-pill[^']*hardis-version-next'/);
+      assert.match(
+        line("integrationBranch ==>"),
+        /<br\/><span class='hardis-pill[^']*hardis-version-next'/,
+      );
       // Nothing on the non-versioned branch and its org
       assert.doesNotMatch(line("integrationBranch("), /hardis-version/);
       assert.doesNotMatch(line("integrationOrg("), /hardis-version/);

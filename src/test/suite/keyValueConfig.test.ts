@@ -22,14 +22,21 @@ suite("Key/value configuration editor contract", () => {
 
   test("Pipeline Settings renders it for any map of names to values, in both modes", () => {
     const pipelineJs = readModuleFile("pipelineConfig", "pipelineConfig.js");
-    const pipelineHtml = readModuleFile("pipelineConfig", "pipelineConfig.html");
+    const pipelineHtml = readModuleFile(
+      "pipelineConfig",
+      "pipelineConfig.html",
+    );
     assert.match(
       pipelineJs,
       /const isKeyValueObject =\s*isObject &&\s*!schema\.properties &&\s*!!schema\.additionalProperties/,
       "an object schema with only additionalProperties is a key/value setting",
     );
     const editors = pipelineHtml.match(/<s-key-value-config/g) || [];
-    assert.strictEqual(editors.length, 2, "one editable and one read-only editor");
+    assert.strictEqual(
+      editors.length,
+      2,
+      "one editable and one read-only editor",
+    );
     assert.ok(
       pipelineHtml.includes("onchange={handleObjectEditorChange}"),
       "the editor change goes through the nested-object handler",
@@ -60,8 +67,21 @@ suite("Key/value configuration editor contract", () => {
     const field = SfdxHardisConfigHelper.CONFIGURABLE_FIELDS.find(
       (entry) => entry.name === "releaseVersioningMinimumVariables",
     );
-    assert.ok(field, "releaseVersioningMinimumVariables must be a configurable field");
+    assert.ok(
+      field,
+      "releaseVersioningMinimumVariables must be a configurable field",
+    );
     assert.deepStrictEqual(field!.scopes, ["global", "branch"]);
+    // A key outside every section is never shown by Pipeline Settings
+    const sectionKeys = SfdxHardisConfigHelper.SECTIONS.flatMap(
+      (section) => section.keys,
+    );
+    for (const key of [
+      "releaseVersioningMinimumVariables",
+      "releaseVersioningTagFormat",
+    ]) {
+      assert.ok(sectionKeys.includes(key), `${key} must be in a section`);
+    }
   });
 
   test("every i18n key of the editor exists in the 9 locales", () => {
@@ -104,6 +124,57 @@ suite("Key/value configuration editor contract", () => {
     });
     const reset: any = yaml.load(fs.readFileSync(configPath, "utf8"));
     assert.ok(!("releaseVersioningMinimumVariables" in reset));
+  });
+
+  test("a branch save never copies the inherited map or the default tag format", async () => {
+    const workspaceRoot = fs.mkdtempSync(
+      path.join(os.tmpdir(), "sfdx-hardis-key-value-branch-"),
+    );
+    const globalPath = path.join(workspaceRoot, "config", ".sfdx-hardis.yml");
+    const branchPath = path.join(
+      workspaceRoot,
+      "config",
+      "branches",
+      ".sfdx-hardis.uat.yml",
+    );
+    fs.mkdirSync(path.dirname(globalPath), { recursive: true });
+    fs.writeFileSync(
+      globalPath,
+      "releaseVersioningMinimumVariables:\n  PI: 3\n",
+      "utf8",
+    );
+    const helper = new SfdxHardisConfigHelper(workspaceRoot);
+    await SfdxHardisConfigHelper.loadSchema();
+
+    // What the panel sends for a branch: every value it shows, inherited ones included
+    await helper.saveConfigFromEditor({
+      config: {
+        releaseVersioning: true,
+        releaseVersioningMinimumVariables: { PI: 3 },
+        releaseVersioningTagFormat: "v{MAJ}.{MIN}.{PATCH}-rc.{RC}",
+      },
+      isBranch: true,
+      branchName: "uat",
+    });
+    const saved: any = yaml.load(fs.readFileSync(branchPath, "utf8"));
+    assert.strictEqual(saved.releaseVersioning, true);
+    assert.ok(!("releaseVersioningMinimumVariables" in saved));
+    assert.ok(!("releaseVersioningTagFormat" in saved));
+
+    // A value of its own is written
+    await helper.saveConfigFromEditor({
+      config: {
+        releaseVersioning: true,
+        releaseVersioningMinimumVariables: { PI: 3, IT: 2 },
+      },
+      isBranch: true,
+      branchName: "uat",
+    });
+    const overridden: any = yaml.load(fs.readFileSync(branchPath, "utf8"));
+    assert.deepStrictEqual(overridden.releaseVersioningMinimumVariables, {
+      PI: 3,
+      IT: 2,
+    });
   });
 
   test("the stylesheet holds no hardcoded color", () => {

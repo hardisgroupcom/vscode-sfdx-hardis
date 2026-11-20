@@ -2421,11 +2421,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this._setDiagramView("devOrgs");
   }
 
-  // Versions toggle: the same diagram, drawn again with or without its version chips
+  // Versions toggle: the same diagram, drawn again with or without its version chips. The toggle
+  // re-renders the template (its class changes), and renderedCallback draws the diagram again
+  // since lastDiagram no longer matches: a second render here would draw it twice
   handleToggleVersions() {
     this.showReleaseVersions = !this.showReleaseVersions;
     this.lastDiagram = "";
-    setTimeout(() => this.renderMermaid(), 0);
   }
 
   // "+" node: register an org on its branch; the org, the owner and the users are asked in the
@@ -3521,15 +3522,21 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     const titleBox = title ? title.getBoundingClientRect() : null;
     const left = frameBox.left + inset;
     const right = left + toolbarBox.width;
-    const fits =
-      frameBox.width > 0 &&
-      right + inset <= frameBox.right &&
-      !(titleBox && titleBox.width > 0 && right + inset > titleBox.left);
-    if (!fits) {
+    // Too narrow for the group itself: the corner of the diagram
+    if (frameBox.width <= 0 || right + inset > frameBox.right) {
       return;
     }
+    // Beside the title, or under it when the group is too narrow for both on one line
+    const besideTitle = !(
+      titleBox &&
+      titleBox.width > 0 &&
+      right + inset > titleBox.left
+    );
+    const top = besideTitle
+      ? frameBox.top + inset
+      : titleBox.bottom + inset / 2;
     toolbar.style.left = `${Math.round(left - containerBox.left)}px`;
-    toolbar.style.top = `${Math.round(frameBox.top - containerBox.top + inset)}px`;
+    toolbar.style.top = `${Math.round(top - containerBox.top)}px`;
   }
 
   // Effective on-screen scale of the mermaid SVG: _applyMermaidZoom shrinks

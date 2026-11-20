@@ -34,9 +34,14 @@ const WAIT_FOR_VERSIONS_MS = 300000;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// The mermaid node id of a branch: release/uat is drawn as release_uatBranch
+// The mermaid node id of a branch, as BranchStrategyMermaidBuilder.sanitizeNodeName writes it:
+// release/uat is drawn as release_uatBranch, pre-prod keeps its hyphen
 const nodeIdOf = (branch: string) =>
-  `${branch.replace(/[^A-Za-z0-9]/g, "_")}Branch`;
+  `${branch
+    .replace(/[^a-zA-Z0-9_-]/g, "_")
+    .replace(/_{2,}/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .replace(/-+/g, "-")}Branch`;
 
 suite("Release versions on a real git provider", function () {
   this.timeout(WAIT_FOR_VERSIONS_MS * 3);
@@ -121,7 +126,9 @@ suite("Release versions on a real git provider", function () {
     // WCAG AA for small text
     const unreadable = chips.filter((chip: any) => chip.contrast < 4.5);
     assert.deepStrictEqual(
-      unreadable.map((chip: any) => `${chip.text} on ${chip.node} (${chip.contrast})`),
+      unreadable.map(
+        (chip: any) => `${chip.text} on ${chip.node} (${chip.contrast})`,
+      ),
       [],
       "every version chip is readable",
     );

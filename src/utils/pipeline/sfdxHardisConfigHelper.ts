@@ -41,6 +41,20 @@ function applyEditedValues(
   }
 }
 
+// Same config value, objects and arrays compared by content
+function isSameConfigValue(a: any, b: any): boolean {
+  if (a === b) {
+    return true;
+  }
+  if (a === null || b === null || a === undefined || b === undefined) {
+    return false;
+  }
+  if (typeof a !== "object" || typeof b !== "object") {
+    return false;
+  }
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
 export interface SfdxHardisConfig {
   [key: string]: any;
 }
@@ -203,6 +217,8 @@ export class SfdxHardisConfigHelper {
         "releaseVersioning",
         "releaseVersioningInitialVersion",
         "releaseVersioningMinimumVersion",
+        "releaseVersioningTagFormat",
+        "releaseVersioningMinimumVariables",
         "releaseVersioningTicketVersions",
         "flowDeleteMaxAttempts",
         "flowDeleteRetryDelayMs",
@@ -584,25 +600,38 @@ export class SfdxHardisConfigHelper {
         ...baseGlobalConfig,
         ...rootConfig,
       };
+      const branchFileExists = await pathExists(branchPath);
+      const existingBranchConfig: SfdxHardisConfig = branchFileExists
+        ? (yaml.load(
+            await fs.promises.readFile(branchPath, "utf8"),
+          ) as SfdxHardisConfig) || {}
+        : {};
       const branchOnly: SfdxHardisConfig = {};
-      const branchAllowedKeys = SfdxHardisConfigHelper.allConfigFields
-        .filter((f) => f.schema.branchAllowed)
-        .map((f) => f.key);
+      const branchAllowedFields = SfdxHardisConfigHelper.allConfigFields.filter(
+        (f) => f.schema.branchAllowed,
+      );
       for (const key of Object.keys(configWithProperTypes)) {
+        const field = branchAllowedFields.find((f) => f.key === key);
+        if (!field) {
+          continue;
+        }
+        // The panel shows a branch the value it inherits (the project value, else the schema
+        // default): a value left as inherited is not copied into the branch file, where it would
+        // hide a later change of the project value. Objects and arrays are compared by content
+        const inherited =
+          globalConfig[key] !== undefined
+            ? globalConfig[key]
+            : field.schema.default;
         if (
-          branchAllowedKeys.includes(key) &&
-          globalConfig[key] !== configWithProperTypes[key]
+          existingBranchConfig[key] !== undefined ||
+          !isSameConfigValue(inherited, configWithProperTypes[key])
         ) {
           branchOnly[key] = configWithProperTypes[key];
         }
       }
       await fs.promises.mkdir(path.dirname(branchPath), { recursive: true });
       // Merge with existing branch config
-      if (await pathExists(branchPath)) {
-        const existingBranchConfig: SfdxHardisConfig =
-          (yaml.load(
-            await fs.promises.readFile(branchPath, "utf8"),
-          ) as SfdxHardisConfig) || {};
+      if (branchFileExists) {
         applyEditedValues(existingBranchConfig, branchOnly);
         await fs.promises.writeFile(
           branchPath,

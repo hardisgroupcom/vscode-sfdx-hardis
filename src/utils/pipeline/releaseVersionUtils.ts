@@ -399,10 +399,12 @@ async function defaultReleaseVersionDeps(): Promise<ReleaseVersionDeps> {
         await listMajorOrgs({ browseGitProvider: false }),
       ),
     runVersionList: async () => {
-      // The CLI reads the tag and Release links from the git provider: it gets the credentials
-      // the extension is connected with
-      const { execSfdxJsonWithProviderCredentials } =
-        await import("../providerCredentials");
+      // Without --with-links the CLI never calls the git provider API (withReleaseVersionLinks
+      // builds the links): it gets the credentials the extension is connected with, like the
+      // other background CLI calls of the panel
+      const { execSfdxJsonWithProviderCredentials } = await import(
+        "../providerCredentials"
+      );
       return await execSfdxJsonWithProviderCredentials(
         "sf hardis:project:version:list --json",
         "Release versions",

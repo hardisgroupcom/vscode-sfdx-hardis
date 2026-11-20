@@ -21,6 +21,7 @@ import { MajorBranchCheckView } from "./majorBranchCheckUtils";
 import {
   findNextVersionFrom,
   formatReleaseVersionDate,
+  isSameBranch,
   ReleaseVersionEntry,
   ReleaseVersionNext,
   ReleaseVersionView,
@@ -275,8 +276,9 @@ export class BranchStrategyMermaidBuilder {
           linkLabel = this.isAuthenticated ? t("noPr") : t("mergeLabel");
         }
         // The version this promotion would create in the target branch, under its Pull Request
+        // mergeTargets hold git names (release/uat), the views the config file ones (release__uat)
         const nextVersion = findNextVersionFrom(
-          this.releaseVersions[mergeTarget],
+          this.releaseVersionOf(mergeTarget),
           branchAndOrg.branchName,
         );
         if (nextVersion) {
@@ -1228,6 +1230,17 @@ export class BranchStrategyMermaidBuilder {
       ? t("releaseVersionDeployed", { version: entry.tag })
       : entry.tag;
     return `<span class='hardis-node-version' style='display:none;'><span class='hardis-pill hardis-chip hardis-version-chip ${kindClass}${deployedClass}' title='${this.escapeTitle(String(title))}'>${this.escapeHtmlLabel(String(text))}</span></span>`;
+  }
+
+  /** The release version view of a branch, whether it is named in its git or config file form. */
+  private releaseVersionOf(branchName: string): ReleaseVersionView | undefined {
+    if (this.releaseVersions[branchName]) {
+      return this.releaseVersions[branchName];
+    }
+    const key = Object.keys(this.releaseVersions).find((candidate) =>
+      isSameBranch(candidate, branchName),
+    );
+    return key ? this.releaseVersions[key] : undefined;
   }
 
   /** Dashed chip on a promotion edge: the version merging this branch into the next one creates. */
