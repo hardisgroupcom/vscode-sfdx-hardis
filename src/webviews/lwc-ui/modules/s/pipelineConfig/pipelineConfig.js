@@ -920,6 +920,17 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
   }
 
   handleSave() {
+    // A key/value editor leaves an invalid pair out of its value: the panel stays
+    // in edit mode, with the invalid input pointed out, instead of losing the pair
+    const keyValueEditors = [
+      ...this.template.querySelectorAll("s-key-value-config"),
+    ];
+    const invalidEditors = keyValueEditors.filter(
+      (editor) => editor.reportValidity() === false,
+    );
+    if (invalidEditors.length > 0) {
+      return;
+    }
     // Send updated config to VS Code
     window.sendMessageToVSCode({
       type: "saveSfdxHardisConfig",

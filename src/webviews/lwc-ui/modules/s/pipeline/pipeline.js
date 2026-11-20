@@ -3570,14 +3570,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (!count || count === "0" || node.querySelector(".hardis-count-bubble")) {
       return;
     }
-    const shape = node.querySelector("rect, polygon, path");
-    if (!shape || typeof shape.getBBox !== "function") {
-      return;
-    }
-    let box;
-    try {
-      box = shape.getBBox();
-    } catch (e) {
+    const box = this._getNodeShapeBox(node);
+    if (!box) {
       return;
     }
     const SVG_NS = "http://www.w3.org/2000/svg";
@@ -3673,14 +3667,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (!holder && !(marker && marker.firstElementChild)) {
       return;
     }
-    const shape = node.querySelector("rect, polygon, path");
-    if (!shape || typeof shape.getBBox !== "function") {
-      return;
-    }
-    let box;
-    try {
-      box = shape.getBBox();
-    } catch (e) {
+    const box = this._getNodeShapeBox(node);
+    if (!box) {
       return;
     }
     if (!holder) {
@@ -3709,6 +3697,19 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     holder.setAttribute("height", String(height));
     holder.setAttribute("x", String(box.x + box.width / 2 - width / 2));
     holder.setAttribute("y", String(box.y + box.height + gap));
+  }
+
+  // Box of the shape of a pipeline node in SVG units, null when it cannot be measured
+  _getNodeShapeBox(node) {
+    const shape = node.querySelector("rect, polygon, path");
+    if (!shape || typeof shape.getBBox !== "function") {
+      return null;
+    }
+    try {
+      return shape.getBBox();
+    } catch (e) {
+      return null;
+    }
   }
 
   // ---- Pull Request view: one entry point, a way back, the explorer ----

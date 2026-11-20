@@ -302,6 +302,31 @@ suite("Release versioning", () => {
       assert.strictEqual(a, b);
     });
 
+    test("a Refresh during a load asks the CLI again, and the earlier answer is not kept", async () => {
+      let release: (value: any) => void = () => undefined;
+      const answers = [
+        new Promise((resolve) => {
+          release = resolve;
+        }),
+        Promise.resolve(CLI_RESULT),
+      ];
+      const d = deps(true, async () => await answers[runs - 1]);
+      // The timer of the panel started a load: the CLI lists the tags
+      const timerLoad = loadReleaseVersions({}, d);
+      while (runs === 0) {
+        await new Promise((resolve) => setImmediate(resolve));
+      }
+      // A deployment created a tag, and somebody clicks Refresh
+      invalidateReleaseVersionsCache();
+      const refreshLoad = loadReleaseVersions({}, d);
+      release(null);
+      assert.strictEqual(await timerLoad, null);
+      const fresh = await refreshLoad;
+      assert.strictEqual(runs, 2, "the Refresh must not join the earlier call");
+      assert.ok(fresh, "the Refresh gets the answer of its own call");
+      assert.strictEqual(getCachedReleaseVersions("/workspace"), fresh);
+    });
+
     test("a failure (old CLI, error) shows nothing and is not retried at each reload", async () => {
       const failing = deps(true, async () => {
         throw new Error("hardis:project:version:list is not a sf command");

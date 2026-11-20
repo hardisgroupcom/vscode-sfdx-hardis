@@ -3,7 +3,12 @@ import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
 import yaml from "js-yaml";
-import { assertKeysTranslated, readModuleFile } from "./lwcSourceUtils";
+import {
+  assertKeysTranslated,
+  collectComponentI18nKeys,
+  extractMember,
+  readModuleFile,
+} from "./lwcSourceUtils";
 import { SfdxHardisConfigHelper } from "../../utils/pipeline/sfdxHardisConfigHelper";
 
 /**
@@ -85,44 +90,56 @@ suite("Key/value configuration editor contract", () => {
   });
 
   test("every i18n key of the editor exists in the 9 locales", () => {
-    const usedKeys = new Set<string>();
-    for (const match of js.matchAll(/this\.i18n\.(\w+)/g)) {
-      usedKeys.add(match[1]);
-    }
-    for (const match of html.matchAll(/\{i18n\.(\w+)\}/g)) {
-      usedKeys.add(match[1]);
-    }
+    const usedKeys = collectComponentI18nKeys("keyValueConfig");
     assert.ok(usedKeys.size >= 4, "the editor must be translated");
     assertKeysTranslated(usedKeys);
+  });
+
+  test("Save waits until every pair is valid, since an invalid pair is left out of the value", () => {
+    assert.match(
+      js,
+      /@api\s+reportValidity\(\) \{/,
+      "the editor must tell the panel when a pair is invalid",
+    );
+    assert.match(
+      extractMember(js, "reportValidity()"),
+      /row\.invalid\.name \|\| row\.invalid\.value/,
+    );
+    const handleSave = extractMember(
+      readModuleFile("pipelineConfig", "pipelineConfig.js"),
+      "handleSave()",
+    );
+    const check = handleSave.indexOf('querySelectorAll("s-key-value-config")');
+    assert.ok(check > -1, "handleSave must check the key/value editors");
+    assert.match(handleSave, /editor\.reportValidity\(\) === false/);
+    assert.ok(
+      check < handleSave.indexOf("sendMessageToVSCode"),
+      "the check must come before the save message",
+    );
   });
 
   test("saving writes the map, and an empty map removes it", async () => {
     const workspaceRoot = fs.mkdtempSync(
       path.join(os.tmpdir(), "sfdx-hardis-key-value-"),
     );
-    const configPath = path.join(workspaceRoot, ".sfdx-hardis.yml");
-    fs.writeFileSync(configPath, "developmentBranch: integration\n", "utf8");
-    const helper = new SfdxHardisConfigHelper(workspaceRoot);
-    await SfdxHardisConfigHelper.loadSchema();
+    fs.writeFileSync(
+      path.join(workspaceRoot, ".sfdx-hardis.yml"),
+      "developmentBranch: integration\n",
+      "utf8",
+    );
 
-    await helper.saveConfigFromEditor({
-      config: { releaseVersioningMinimumVariables: { PI: 3, IT: "05" } },
-      isBranch: false,
-      branchName: "",
+    const saved = await saveProjectConfig(workspaceRoot, {
+      releaseVersioningMinimumVariables: { PI: 3, IT: "05" },
     });
-    const saved: any = yaml.load(fs.readFileSync(configPath, "utf8"));
     assert.deepStrictEqual(saved.releaseVersioningMinimumVariables, {
       PI: 3,
       IT: "05",
     });
     assert.strictEqual(saved.developmentBranch, "integration");
 
-    await helper.saveConfigFromEditor({
-      config: { releaseVersioningMinimumVariables: null },
-      isBranch: false,
-      branchName: "",
+    const reset = await saveProjectConfig(workspaceRoot, {
+      releaseVersioningMinimumVariables: null,
     });
-    const reset: any = yaml.load(fs.readFileSync(configPath, "utf8"));
     assert.ok(!("releaseVersioningMinimumVariables" in reset));
   });
 
@@ -184,3 +201,19 @@ suite("Key/value configuration editor contract", () => {
     );
   });
 });
+
+/** Saves what Pipeline Settings sends to the project config file, and reads that file back */
+async function saveProjectConfig(
+  workspaceRoot: string,
+  config: Record<string, any>,
+): Promise<any> {
+  await SfdxHardisConfigHelper.loadSchema();
+  await new SfdxHardisConfigHelper(workspaceRoot).saveConfigFromEditor({
+    config,
+    isBranch: false,
+    branchName: "",
+  });
+  return yaml.load(
+    fs.readFileSync(path.join(workspaceRoot, ".sfdx-hardis.yml"), "utf8"),
+  );
+}

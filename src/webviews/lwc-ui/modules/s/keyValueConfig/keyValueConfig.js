@@ -15,6 +15,9 @@ import { SharedMixin } from "s/sharedMixin";
  *   read-only     : renders the pairs as chips, without any control
  *   name-pattern  : regex a name must match (schema propertyNames.pattern)
  *   value-pattern : regex a value must match (schema additionalProperties.pattern)
+ * Methods:
+ *   reportValidity(): false while a pair is invalid, which Pipeline Settings
+ *                   checks before saving, since such a pair is not in the value
  * Fires:
  *   change        : { value } - the object, or null when no complete pair is
  *                   left, so the save removes the property instead of writing
@@ -69,6 +72,16 @@ export default class KeyValueConfig extends SharedMixin(LightningElement) {
     this.rows = Object.entries(source).map(([name, value]) =>
       this._newRow(name, value === null || value === undefined ? "" : String(value)),
     );
+  }
+
+  // An invalid pair is left out of the value: saving then would delete the pair,
+  // and the whole property when it was the only one
+  @api
+  reportValidity() {
+    for (const input of this.template.querySelectorAll("lightning-input")) {
+      input.reportValidity();
+    }
+    return !this.rows.some((row) => row.invalid.name || row.invalid.value);
   }
 
   // --- Derived state --------------------------------------------------------

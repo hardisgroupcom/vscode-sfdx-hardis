@@ -90,8 +90,12 @@ type CacheEntry = {
 let cache: CacheEntry | null = null;
 let inFlight: {
   workspaceRoot: string;
+  generation: number;
   promise: Promise<ReleaseVersionList | null>;
 } | null = null;
+// Raised by each invalidation: a CLI call started before it may have missed a new tag, so its
+// answer is neither shared with a later load nor kept
+let cacheGeneration = 0;
 
 // Characters a tag may hold to be passed to a command line
 const SAFE_TAG = /^[\w.+-]+$/;
@@ -112,6 +116,8 @@ export async function loadReleaseVersions(
   options: { force?: boolean } = {},
   deps?: ReleaseVersionDeps,
 ): Promise<ReleaseVersionList | null> {
+  // Read before any wait: a load asked before an invalidation must not fill the cache after it
+  const generation = cacheGeneration;
   const loadDeps = deps || (await defaultReleaseVersionDeps());
   let declared = false;
   try {
@@ -132,7 +138,11 @@ export async function loadReleaseVersions(
   ) {
     return cache.value;
   }
-  if (inFlight && inFlight.workspaceRoot === loadDeps.workspaceRoot) {
+  if (
+    inFlight &&
+    inFlight.workspaceRoot === loadDeps.workspaceRoot &&
+    inFlight.generation === cacheGeneration
+  ) {
     return await inFlight.promise;
   }
   const promise = (async () => {
@@ -145,10 +155,12 @@ export async function loadReleaseVersions(
       );
     }
     // A failure is kept too: a CLI without the command would otherwise be started at every reload
-    cache = { workspaceRoot: loadDeps.workspaceRoot, value };
+    if (generation === cacheGeneration) {
+      cache = { workspaceRoot: loadDeps.workspaceRoot, value };
+    }
     return value;
   })();
-  inFlight = { workspaceRoot: loadDeps.workspaceRoot, promise };
+  inFlight = { workspaceRoot: loadDeps.workspaceRoot, generation, promise };
   try {
     return await promise;
   } finally {
@@ -174,9 +186,13 @@ export function getCachedReleaseVersions(
   return cache.value;
 }
 
-/** The next load asks the CLI again (manual refresh of the panel). */
+/**
+ * The next load asks the CLI again (manual refresh of the panel), even when a call started earlier
+ * is still running: that one may have listed the tags before the new one was created.
+ */
 export function invalidateReleaseVersionsCache(): void {
   cache = null;
+  cacheGeneration++;
 }
 
 /**
