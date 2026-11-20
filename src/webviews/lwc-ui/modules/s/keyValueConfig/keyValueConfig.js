@@ -70,7 +70,10 @@ export default class KeyValueConfig extends SharedMixin(LightningElement) {
       return;
     }
     this.rows = Object.entries(source).map(([name, value]) =>
-      this._newRow(name, value === null || value === undefined ? "" : String(value)),
+      this._newRow(
+        name,
+        value === null || value === undefined ? "" : String(value),
+      ),
     );
   }
 
@@ -139,7 +142,11 @@ export default class KeyValueConfig extends SharedMixin(LightningElement) {
     input.reportValidity();
     this.rows = this.rows.map((row) =>
       row.id === id
-        ? { ...row, [field]: text, invalid: { ...row.invalid, [field]: !valid } }
+        ? {
+            ...row,
+            [field]: text,
+            invalid: { ...row.invalid, [field]: !valid },
+          }
         : row,
     );
     this._emitChange();
@@ -158,7 +165,12 @@ export default class KeyValueConfig extends SharedMixin(LightningElement) {
   _buildValue() {
     const built = {};
     for (const row of this.rows) {
-      if (!row.name || row.value === "" || row.invalid.name || row.invalid.value) {
+      if (
+        !row.name ||
+        row.value === "" ||
+        row.invalid.name ||
+        row.invalid.value
+      ) {
         continue;
       }
       built[row.name] = /^(0|[1-9]\d{0,14})$/.test(row.value)
