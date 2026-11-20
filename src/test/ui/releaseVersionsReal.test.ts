@@ -56,6 +56,14 @@ suite("Release versions on a real git provider", function () {
     .map((tab) => tab.trim())
     .filter(Boolean);
 
+  // A notification of VS Code (extensions disabled, a sign in offer) can come at any time and covers
+  // the bottom right corner of the diagram: cleared before every capture
+  const capture = async (name: string) => {
+    await vscode.commands.executeCommand("notifications.clearAll");
+    await sleep(500);
+    await captureWindowTo(shotsDir, name);
+  };
+
   // Text of every version chip, with the mermaid node that holds it and the
   // contrast of its text on its own background: a chip whose text takes the
   // color of its node is in the DOM and invisible on the screen
@@ -143,7 +151,7 @@ suite("Release versions on a real git provider", function () {
     }
     // Give the diagram the time to settle before it is captured
     await sleep(2000);
-    await captureWindowTo(shotsDir, `${prefix}-pipeline`);
+    await capture(`${prefix}-pipeline`);
   });
 
   test("each view of the switch shows the versions", async function () {
@@ -166,7 +174,7 @@ suite("Release versions on a real git provider", function () {
         continue;
       }
       await sleep(3000);
-      await captureWindowTo(shotsDir, `${prefix}-view-${names[index]}`);
+      await capture(`${prefix}-view-${names[index]}`);
     }
     // Back to the view of the other captures
     await pickView(1);
@@ -197,7 +205,7 @@ suite("Release versions on a real git provider", function () {
       "the diagram without version chips",
     );
     await sleep(2000);
-    await captureWindowTo(shotsDir, `${prefix}-versions-hidden`);
+    await capture(`${prefix}-versions-hidden`);
     // Back as the run found it, for the captures that follow
     await clickToggle();
     await waitFor(
@@ -231,7 +239,7 @@ suite("Release versions on a real git provider", function () {
       return true;
     `);
     await sleep(500);
-    await captureWindowTo(shotsDir, `${prefix}-releases`);
+    await capture(`${prefix}-releases`);
   });
 
   test("the version chip of a branch opens its Release version tab", async function () {
@@ -265,8 +273,7 @@ suite("Release versions on a real git provider", function () {
         `the Release version tab of ${branch}`,
       );
       await sleep(1500);
-      await captureWindowTo(
-        shotsDir,
+      await capture(
         `${prefix}-${branch.replace(/[^A-Za-z0-9]/g, "-")}-release`,
       );
       // Closed before the next branch, so each capture shows one window
