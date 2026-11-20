@@ -41,9 +41,11 @@
 
 .pipeline-diagram-controls {
     position: absolute;
-    bottom: 0.5rem;
-    left: 0.5rem;
+    bottom: 0.75rem;
+    left: 0.75rem;
     z-index: 20;
+    border-radius: 0.25rem;
+    box-shadow: var(--hardis-shadow-sm);
 }
 
 .mermaid-viewport {
@@ -340,6 +342,25 @@
     );
 }
 
+/* Version chips of the legend: the chip colors come from global-theme.css */
+.legend-version-chip {
+    font-size: 0.66rem;
+    padding: 0 6px;
+}
+
+/* Version chips inside mermaid labels: as compact as the other edge chips */
+.mermaid .hardis-version-chip {
+    margin-top: 2px;
+}
+
+/* Release version tab of a versioned branch window */
+.release-version-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 /* A development org linked to the branch it targets (two-way dotted edge) */
 .legend-line-dev-org {
     border-top: 1.5px dotted var(--slds-g-color-palette-blue-50);
@@ -354,14 +375,28 @@
     border: 1.5px dashed var(--slds-g-color-palette-orange-60);
 }
 
-/* Major branches / Feature branches / Dev orgs switch, over the top left corner of the diagram,
-   like the zoom buttons at the bottom: it takes no room from the diagram */
-/* A row of its own above the diagram: laid over its top left corner, the switch covered the title
-   of the first Mermaid group ("Git Branches") whenever the diagram was narrow */
+/* Major branches / Feature branches / Dev orgs switch and Versions toggle, inside the diagram over
+   its top left corner, like the zoom buttons at the bottom: they take no room from the diagram.
+   Their buttons paint their own surface, so the diagram under them never shows through. */
 .pipeline-diagram-toolbar {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 20;
     display: flex;
     align-items: center;
-    padding: 0.5rem 0.5rem 0;
+    gap: 0.5rem;
+}
+
+.pipeline-diagram-toolbar .hardis-segmented {
+    background: var(--slds-g-color-neutral-base-100);
+    box-shadow: var(--hardis-shadow-sm);
+}
+
+/* Versions toggle, next to the view switch */
+.pipeline-versions-switch {
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .pipeline-view-switch {

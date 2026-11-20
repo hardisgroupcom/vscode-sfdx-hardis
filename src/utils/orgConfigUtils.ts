@@ -49,6 +49,8 @@ export interface MajorOrg {
   // Last major branch deployment check of the branch, read only when the project enables
   // enableMajorBranchDeploymentCheck (see majorBranchCheckUtils.ts). Null when none was found.
   majorBranchCheck?: MajorBranchCheck | null;
+  // The branch config declares releaseVersioning: true (see releaseVersionUtils.ts)
+  releaseVersioning?: boolean;
 }
 
 export async function listMajorOrgs(
@@ -288,6 +290,7 @@ async function processOrgSfdxHardisConfigFile(
     jobs: jobs,
     jobsStatus: jobsStatus,
     enablePromotionBranches: props.enablePromotionBranches,
+    ...(props.releaseVersioning === true ? { releaseVersioning: true } : {}),
     ...(majorBranchCheck !== undefined ? { majorBranchCheck } : {}),
   };
 }

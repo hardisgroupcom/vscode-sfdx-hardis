@@ -1,0 +1,57 @@
+<template>
+  <div class="key-value-config">
+    <template if:false={isEditable}>
+      <div class="key-value-chips">
+        <template for:each={chips} for:item="chip">
+          <span key={chip.id} class="hardis-chip mono" title={chip.text}>{chip.text}</span>
+        </template>
+      </div>
+    </template>
+    <template if:true={isEditable}>
+      <template if:true={hasRows}>
+        <div class="key-value-rows">
+          <template for:each={rows} for:item="row">
+            <div key={row.id} class="key-value-row">
+              <lightning-input
+                type="text"
+                data-id={row.id}
+                value={row.name}
+                label={i18n.keyValueName}
+                placeholder={i18n.keyValueName}
+                variant="label-hidden"
+                onchange={handleNameChange}
+              ></lightning-input>
+              <span class="key-value-separator">=</span>
+              <lightning-input
+                type="text"
+                data-id={row.id}
+                value={row.value}
+                label={i18n.keyValueValue}
+                placeholder={i18n.keyValueValue}
+                variant="label-hidden"
+                onchange={handleValueChange}
+              ></lightning-input>
+              <lightning-button-icon
+                icon-name="utility:delete"
+                variant="bare"
+                data-id={row.id}
+                alternative-text={i18n.removeLabel}
+                title={i18n.removeLabel}
+                onclick={handleRemove}
+              ></lightning-button-icon>
+            </div>
+          </template>
+        </div>
+      </template>
+      <div>
+        <lightning-button
+          variant="neutral"
+          size="small"
+          icon-name="utility:add"
+          label={i18n.keyValueAdd}
+          onclick={handleAdd}
+        ></lightning-button>
+      </div>
+    </template>
+  </div>
+</template>

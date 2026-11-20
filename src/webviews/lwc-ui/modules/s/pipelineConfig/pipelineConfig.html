@@ -313,6 +313,15 @@
                               onchange={handleObjectEditorChange}
                             ></s-anonymization-config>
                           </template>
+                          <template if:true={entry.isKeyValueObject}>
+                            <s-key-value-config
+                              data-key={entry.key}
+                              value={entry.valueEdit}
+                              name-pattern={entry.keyValueNamePattern}
+                              value-pattern={entry.keyValueValuePattern}
+                              onchange={handleObjectEditorChange}
+                            ></s-key-value-config>
+                          </template>
                           <template if:true={entry.isBoolean}>
                             <lightning-input
                               type="toggle"
@@ -364,6 +373,12 @@
                                   doc-url={entry.docUrl}
                                   read-only={isViewMode}
                                 ></s-anonymization-config>
+                              </template>
+                              <template if:true={entry.isKeyValueObject}>
+                                <s-key-value-config
+                                  value={entry.value}
+                                  read-only
+                                ></s-key-value-config>
                               </template>
                               <template if:true={entry.isArrayEnum}>
                                 <template for:each={entry.valueDisplay} for:item="item">

@@ -355,20 +355,34 @@ const DEEP_QUERY = `
  * coordinate. Every webview is asked, and the first one that answers a value wins.
  */
 export async function inWebview(expression: string): Promise<any> {
-  const targets = await debugTargets();
-  const webviews = targets.filter((target) =>
-    String(target.url || "").startsWith("vscode-webview://"),
-  );
-  for (const target of webviews) {
-    const value = await evaluateInTarget(
-      target.webSocketDebuggerUrl,
-      expression,
+  // A webview that reloads between the list of targets and the connection (a panel resized,
+  // the side bar closed) answers "Unexpected server response: 500": list the targets again
+  let lastError: unknown = null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    lastError = null;
+    const targets = await debugTargets();
+    const webviews = targets.filter((target) =>
+      String(target.url || "").startsWith("vscode-webview://"),
     );
-    if (value !== null && value !== undefined) {
-      return value;
+    for (const target of webviews) {
+      try {
+        const value = await evaluateInTarget(
+          target.webSocketDebuggerUrl,
+          expression,
+        );
+        if (value !== null && value !== undefined) {
+          return value;
+        }
+      } catch (error) {
+        lastError = error;
+      }
     }
+    if (!lastError) {
+      return null;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 2000));
   }
-  return null;
+  throw lastError;
 }
 
 /**
