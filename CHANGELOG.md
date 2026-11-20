@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- DevOps Pipeline: with the new **Handle release versioning** branch setting (Pipeline Settings), each versioned branch and its org show their release version, each promotion shows the version it will create, a **Versions** button hides them, and a new **Releases** tab lists the versions with their tag, Release and release notes (requires sfdx-hardis 8.27.0)
+- Pipeline Settings: new **Release versioning: tag format of release candidates** and **values of the tag format variables** settings, to name the release candidates of each branch your own way, with a new editor for settings that map names to values
 - Contributors: the UI test harness can run sfdx-hardis commands against real orgs and capture them, for the screenshots of the sfdx-hardis command pages.
 
 ## [8.20.0] 2026-11-16

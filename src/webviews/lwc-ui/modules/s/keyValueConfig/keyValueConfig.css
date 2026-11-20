@@ -1,0 +1,36 @@
+/* Layout only: every color comes from the hardis kit of global-theme.css */
+
+.key-value-config {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.key-value-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.key-value-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.key-value-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  max-width: 520px;
+}
+
+.key-value-row > lightning-input {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.key-value-separator {
+  flex: 0 0 auto;
+}

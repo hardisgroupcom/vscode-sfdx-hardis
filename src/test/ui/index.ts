@@ -22,13 +22,15 @@ export async function run(): Promise<void> {
           ? "**/jobArtifactsReal.test.js"
           : process.env.SFDX_HARDIS_REAL_RUNNING_JOBS === "true"
             ? "**/runningJobsReal.test.js"
-            : process.env.SFDX_HARDIS_DOC_SCREENSHOTS === "true"
-              ? "**/docScreenshots.test.js"
-              : process.env.SFDX_HARDIS_REAL_CLI_PERF === "true"
-                ? "**/realCliPerf.test.js"
-                : process.env.SFDX_HARDIS_LAB_DRIVER === "true"
-                  ? "**/labs.test.js"
-                  : "**/*.test.js";
+            : process.env.SFDX_HARDIS_REAL_RELEASE_VERSIONS === "true"
+              ? "**/releaseVersionsReal.test.js"
+              : process.env.SFDX_HARDIS_DOC_SCREENSHOTS === "true"
+                ? "**/docScreenshots.test.js"
+                : process.env.SFDX_HARDIS_REAL_CLI_PERF === "true"
+                  ? "**/realCliPerf.test.js"
+                  : process.env.SFDX_HARDIS_LAB_DRIVER === "true"
+                    ? "**/labs.test.js"
+                    : "**/*.test.js";
   return runMochaSuite({
     testsRoot: __dirname,
     pattern,

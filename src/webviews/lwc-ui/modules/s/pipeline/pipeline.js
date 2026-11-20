@@ -53,6 +53,8 @@ const RUNNING_JOBS_MAX_UNKNOWN = 3;
 // Characters an action id or a branch name may hold to be passed to a command line
 const SAFE_ACTION_ID = /^[\w .:@/+-]+$/;
 const SAFE_BRANCH_NAME = /^[\w./-]+$/;
+// Characters a version tag may hold to be passed to a command line (v1.5.0-rc.3)
+const SAFE_RELEASE_TAG = /^[\w.+-]+$/;
 // Org branch under which sfdx-hardis records the actions tried in a developer org
 const DEV_SANDBOXES_BRANCH = "dev-sandboxes";
 
@@ -75,6 +77,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // View of the switch above the diagram: "majorBranches", "featureBranches" or "devOrgs". The
   // panel always opens on the feature branches.
   @track diagramView = "featureBranches";
+  // Release versions drawn on the diagram (Versions toggle of the diagram toolbar)
+  showReleaseVersions = true;
   // Details window of a development org
   @track showDevOrgModal = false;
   @track selectedDevOrg = null;
@@ -306,6 +310,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // Last deployment check of the major branch of the window against its org (null unless the
   // project enables enableMajorBranchDeploymentCheck): { found, status, webUrl, ... }
   modalMajorBranchCheck = null;
+  // Release version of the versioned major branch of the window (null unless a branch declares
+  // releaseVersioning and the CLI listed the versions): { current, history, next }
+  modalReleaseVersion = null;
   modalPullRequests = [];
   modalTickets = [];
   modalActions = [];
@@ -1365,6 +1372,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
     // The bubbles are sized for the scale just set: drawn again at every fit
     this._drawNodeCountBubbles(mermaidSvg);
+    this._placeDiagramToolbar(mermaidSvg);
   }
 
   _getAvailableMermaidViewportHeight(viewport) {
@@ -1673,6 +1681,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // Remove all leading blank lines after code block
     diagram = diagram.replace(/^[\s\r\n]+/, "");
     diagram = diagram.trim();
+    if (!this.showReleaseVersions) {
+      diagram = this._withoutReleaseVersions(diagram);
+    }
 
     if (debugDiv) {
       debugDiv.textContent = diagram || "[Empty diagram string]";
@@ -1753,7 +1764,14 @@ export default class Pipeline extends SharedMixin(LightningElement) {
             if (nodeIdentifier && nodeIdentifier.endsWith("Branch")) {
               const branchName =
                 this._resolveBranchNameFromNode(nodeIdentifier);
-              this.handleShowBranchOrFeaturePRs(branchName);
+              // A click on the version chip of a branch opens its window on the Release version tab
+              const onVersionChip = !!(
+                target.closest && target.closest(".hardis-version-chip")
+              );
+              this.handleShowBranchOrFeaturePRs(
+                branchName,
+                onVersionChip ? "releaseVersion" : null,
+              );
             }
           });
 
@@ -2184,6 +2202,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         this.mermaidLoading = true;
       }
     }
+    // A manual refresh also lists the release versions again (the timer reuses the last answer)
     window.sendMessageToVSCode({
       type: "refreshPipeline",
       data: { manual: manual === true },
@@ -2400,6 +2419,14 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   handleShowDevOrgsView() {
     this._setDiagramView("devOrgs");
+  }
+
+  // Versions toggle: the same diagram, drawn again with or without its version chips. The toggle
+  // re-renders the template (its class changes), and renderedCallback draws the diagram again
+  // since lastDiagram no longer matches: a second render here would draw it twice
+  handleToggleVersions() {
+    this.showReleaseVersions = !this.showReleaseVersions;
+    this.lastDiagram = "";
   }
 
   // "+" node: register an org on its branch; the org, the owner and the users are asked in the
@@ -2856,13 +2883,13 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   // Route a branch node click: major branches open the branch PR modal; feature
   // branches (one PR each) open that PR directly in single-PR mode.
-  handleShowBranchOrFeaturePRs(branchName) {
+  handleShowBranchOrFeaturePRs(branchName, tab = null) {
     const isMajorBranch =
       this.pipelineData &&
       Array.isArray(this.pipelineData.orgs) &&
       this.pipelineData.orgs.some((org) => org.name === branchName);
     if (isMajorBranch) {
-      this.handleShowBranchPRs(branchName);
+      this.handleShowBranchPRs(branchName, tab);
       return;
     }
     // Feature branch: find its pull request by source branch. The node name is a
@@ -2931,7 +2958,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.modalShowPromotionPrs = false;
   }
 
-  handleShowBranchPRs(branchName) {
+  handleShowBranchPRs(branchName, tab = null) {
     console.log("Showing PRs for branch:", branchName);
     this._resetPromotionModalState();
     this.modalBranchName = branchName;
@@ -2954,9 +2981,45 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
 
     this.modalMajorBranchCheck = this._majorBranchCheckOfBranch(branchName);
+    this.modalReleaseVersion = this._releaseVersionOfBranch(branchName);
     this._populateModalFromPrs(prs);
-    this.modalActiveTabValue = "prs";
+    this.modalActiveTabValue =
+      tab === "releaseVersion" && this.modalReleaseVersion
+        ? "releaseVersion"
+        : "prs";
     this.showPRModal = true;
+  }
+
+  // The release version of a versioned major branch as its window shows it: null when the branch
+  // is not versioned or the versions are not known. The history of the branch is filtered from the
+  // history of the project, whose entries name branches in their git form (release/uat)
+  _releaseVersionOfBranch(branchName) {
+    if (this.pipelineData?.releaseVersioningEnabled !== true) {
+      return null;
+    }
+    const org = (this.pipelineData?.orgs || []).find(
+      (o) => o.name === branchName,
+    );
+    if (!org || org.releaseVersioning !== true) {
+      return null;
+    }
+    const gitName = this._gitBranchName(branchName).toLowerCase();
+    const history = (this.pipelineData?.releaseVersionHistory || []).filter(
+      (entry) =>
+        entry &&
+        entry.branchName &&
+        this._gitBranchName(entry.branchName).toLowerCase() === gitName,
+    );
+    return {
+      current: org.releaseVersion || null,
+      next: Array.isArray(org.nextOnPromotion) ? org.nextOnPromotion : [],
+      history,
+    };
+  }
+
+  // A branch named after its config file writes each / as __ (release__uat is release/uat)
+  _gitBranchName(branchName) {
+    return (branchName || "").replace(/__/g, "/");
   }
 
   // The last deployment check of a major branch as its window shows it: null when the project
@@ -3399,6 +3462,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     const nodes = mermaidSvg.querySelectorAll("g.node");
     const runningCheckNodes = this._runningMajorBranchCheckNodeNames();
     this._drawNodeCountBubbles(mermaidSvg);
+    this._placeDiagramToolbar(mermaidSvg);
     nodes.forEach((node) => {
       node.style.cursor = "pointer";
       node.setAttribute("tabindex", "0");
@@ -3413,7 +3477,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // The count bubbles of every node, for the scale the diagram has now. A diagram drawn while the
   // panel had no width (hidden tab, automatic reload in the background) got a scale clamped to
   // its minimum, and bubbles about three times too big that stayed so: nothing is drawn without a
-  // width, and every fit (resize, zoom, panel shown again) draws them again.
+  // width, and every fit (resize, zoom, panel shown again) draws them again. The version chips
+  // under the nodes are measured here for the same reason.
   _drawNodeCountBubbles(mermaidSvg) {
     const viewport = this.template.querySelector(".mermaid-viewport");
     if (!mermaidSvg || !viewport || viewport.clientWidth <= 1) {
@@ -3425,7 +3490,53 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     const svgScale = this._getMermaidEffectiveScale(mermaidSvg);
     mermaidSvg.querySelectorAll("g.node").forEach((node) => {
       this._drawNodeCountBubble(node, svgScale);
+      this._drawNodeVersionChip(node);
     });
+  }
+
+  // The view switch and the Versions toggle sit inside the top left corner of the "Git Branches"
+  // group: the pipeline climbs from integration (bottom left) to production (top right), so that
+  // corner is empty whatever the view. They stay in the corner of the diagram (pipeline.css) while
+  // it is zoomed (it moves under them), or when the group is too narrow for them beside its title.
+  _placeDiagramToolbar(mermaidSvg) {
+    const toolbar = this.template.querySelector(".pipeline-diagram-toolbar");
+    if (!toolbar) {
+      return;
+    }
+    toolbar.style.top = "";
+    toolbar.style.left = "";
+    const container = toolbar.parentElement;
+    const group =
+      mermaidSvg && !this.isMermaidZoomed
+        ? mermaidSvg.querySelector('g.cluster[id$="GitBranches"]')
+        : null;
+    const frame = group ? group.querySelector("rect") : null;
+    if (!container || !frame) {
+      return;
+    }
+    const inset = 12;
+    const frameBox = frame.getBoundingClientRect();
+    const containerBox = container.getBoundingClientRect();
+    const toolbarBox = toolbar.getBoundingClientRect();
+    const title = group.querySelector(".cluster-label");
+    const titleBox = title ? title.getBoundingClientRect() : null;
+    const left = frameBox.left + inset;
+    const right = left + toolbarBox.width;
+    // Too narrow for the group itself: the corner of the diagram
+    if (frameBox.width <= 0 || right + inset > frameBox.right) {
+      return;
+    }
+    // Beside the title, or under it when the group is too narrow for both on one line
+    const besideTitle = !(
+      titleBox &&
+      titleBox.width > 0 &&
+      right + inset > titleBox.left
+    );
+    const top = besideTitle
+      ? frameBox.top + inset
+      : titleBox.bottom + inset / 2;
+    toolbar.style.left = `${Math.round(left - containerBox.left)}px`;
+    toolbar.style.top = `${Math.round(top - containerBox.top)}px`;
   }
 
   // Effective on-screen scale of the mermaid SVG: _applyMermaidZoom shrinks
@@ -3459,14 +3570,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (!count || count === "0" || node.querySelector(".hardis-count-bubble")) {
       return;
     }
-    const shape = node.querySelector("rect, polygon, path");
-    if (!shape || typeof shape.getBBox !== "function") {
-      return;
-    }
-    let box;
-    try {
-      box = shape.getBBox();
-    } catch (e) {
+    const box = this._getNodeShapeBox(node);
+    if (!box) {
       return;
     }
     const SVG_NS = "http://www.w3.org/2000/svg";
@@ -3547,6 +3652,63 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       }
     } catch (e) {
       // keep baseline-centered position
+    }
+  }
+
+  // Draw the version chip of a versioned branch or of its org under the node. The chip travels
+  // in the label inside a hidden ".hardis-node-version" marker (BranchStrategyMermaidBuilder):
+  // the label clips what overflows it, so the chip is moved into a foreignObject of its own,
+  // appended to the node group (a click on it still reaches the node, and the click handler
+  // opens the Release version tab from its class). Drawn in SVG units, it scales with the labels.
+  // Called again at each fit: the chip is measured again, it is only moved once.
+  _drawNodeVersionChip(node) {
+    let holder = node.querySelector(".hardis-node-version-box");
+    const marker = node.querySelector(".hardis-node-version");
+    if (!holder && !(marker && marker.firstElementChild)) {
+      return;
+    }
+    const box = this._getNodeShapeBox(node);
+    if (!box) {
+      return;
+    }
+    if (!holder) {
+      const SVG_NS = "http://www.w3.org/2000/svg";
+      holder = document.createElementNS(SVG_NS, "foreignObject");
+      holder.setAttribute("class", "hardis-node-version-box");
+      holder.setAttribute("style", "overflow:visible;");
+      const created = document.createElement("div");
+      created.setAttribute(
+        "style",
+        "display:inline-flex;white-space:nowrap;line-height:normal;",
+      );
+      created.appendChild(marker.firstElementChild);
+      holder.appendChild(created);
+      node.appendChild(holder);
+      marker.remove();
+    }
+    // Sized to the chip once it is laid out, centered under the shape
+    holder.setAttribute("width", "400");
+    holder.setAttribute("height", "40");
+    const wrapper = holder.firstElementChild;
+    const width = Math.ceil(wrapper.offsetWidth) + 2;
+    const height = Math.ceil(wrapper.offsetHeight) + 2;
+    const gap = 4;
+    holder.setAttribute("width", String(width));
+    holder.setAttribute("height", String(height));
+    holder.setAttribute("x", String(box.x + box.width / 2 - width / 2));
+    holder.setAttribute("y", String(box.y + box.height + gap));
+  }
+
+  // Box of the shape of a pipeline node in SVG units, null when it cannot be measured
+  _getNodeShapeBox(node) {
+    const shape = node.querySelector("rect, polygon, path");
+    if (!shape || typeof shape.getBBox !== "function") {
+      return null;
+    }
+    try {
+      return shape.getBBox();
+    } catch (e) {
+      return null;
     }
   }
 
@@ -6651,6 +6813,300 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   get majorBranchCheckEnabled() {
     return this.pipelineData?.majorBranchDeploymentCheckEnabled === true;
+  }
+
+  // ---- Release versions (releaseVersioning): legend, Releases tab, Release version tab ----
+
+  get releaseVersioningEnabled() {
+    return this.pipelineData?.releaseVersioningEnabled === true;
+  }
+
+  get showReleaseVersionsLegend() {
+    return this.releaseVersioningEnabled && this.showReleaseVersions;
+  }
+
+  get versionsToggleClass() {
+    return this.showReleaseVersions ? "hardis-seg on" : "hardis-seg";
+  }
+
+  get versionsTogglePressed() {
+    return String(this.showReleaseVersions);
+  }
+
+  // The diagram without its version chips: the hidden chip of each versioned branch and org
+  // (drawn under the node by _drawNodeVersionChip), and the next version under the Pull Request
+  // chip of each promotion. The text of a chip holds no "<" (BranchStrategyMermaidBuilder
+  // escapes it), so each one ends at its first closing tag.
+  _withoutReleaseVersions(diagram) {
+    return diagram
+      .replace(
+        /<span class='hardis-node-version' style='display:none;'>.*?<\/span><\/span>/g,
+        "",
+      )
+      .replace(
+        /<br\/><span class='hardis-pill hardis-chip hardis-version-chip hardis-version-next'.*?<\/span>/g,
+        "",
+      );
+  }
+
+  get releaseRows() {
+    return this._releaseVersionRows(this.pipelineData?.releaseVersionHistory);
+  }
+
+  get hasReleaseRows() {
+    return this.releaseRows.length > 0;
+  }
+
+  get releasesTabLabel() {
+    const count = (this.pipelineData?.releaseVersionHistory || []).length;
+    return count > 0
+      ? this.t("releasesTabLabelWithCount", { count })
+      : this.i18n.releasesTabLabel;
+  }
+
+  get releaseColumns() {
+    return this._releaseColumns(true);
+  }
+
+  get releaseHistoryColumns() {
+    return this._releaseColumns(false);
+  }
+
+  get showModalReleaseVersion() {
+    return (
+      !!this.modalReleaseVersion &&
+      this.modalMode !== "singlePR" &&
+      !this.isFeaturePrModal
+    );
+  }
+
+  get modalReleaseVersionCurrent() {
+    return this.modalReleaseVersion?.current || null;
+  }
+
+  get modalReleaseVersionChipClass() {
+    return this._releaseVersionChipClass(this.modalReleaseVersionCurrent);
+  }
+
+  get modalReleaseVersionKindLabel() {
+    return this.modalReleaseVersionCurrent?.prerelease
+      ? this.i18n.releaseVersionReleaseCandidate
+      : this.i18n.releaseVersionReleased;
+  }
+
+  get modalReleaseVersionDeployedAt() {
+    return this._formatCompactDate(this.modalReleaseVersionCurrent?.deployedAt);
+  }
+
+  get modalReleaseVersionOrg() {
+    return this.modalReleaseVersionCurrent?.org || "";
+  }
+
+  get modalReleaseVersionCommit() {
+    return (this.modalReleaseVersionCurrent?.commit || "").substring(0, 8);
+  }
+
+  get modalReleaseVersionHasReleaseUrl() {
+    return !!safeWebUrl(this.modalReleaseVersionCurrent?.releaseUrl);
+  }
+
+  get modalReleaseVersionHasTagUrl() {
+    return !!safeWebUrl(this.modalReleaseVersionCurrent?.tagUrl);
+  }
+
+  get modalReleaseVersionHasJobUrl() {
+    return !!safeWebUrl(this.modalReleaseVersionCurrent?.jobUrl);
+  }
+
+  // Versions the promotions into this branch would create, one line per source branch
+  get modalReleaseVersionNextRows() {
+    return (this.modalReleaseVersion?.next || []).map((next) => ({
+      key: `${next.sourceBranch}>${next.tag}`,
+      tag: next.tag,
+      text: this.t("releaseVersionNextFrom", {
+        source: next.sourceBranch,
+      }),
+    }));
+  }
+
+  get modalReleaseVersionHasNext() {
+    return this.modalReleaseVersionNextRows.length > 0;
+  }
+
+  get modalReleaseHistoryRows() {
+    return this._releaseVersionRows(this.modalReleaseVersion?.history);
+  }
+
+  get modalReleaseHasHistory() {
+    return this.modalReleaseHistoryRows.length > 0;
+  }
+
+  handleOpenReleaseVersionRelease() {
+    this._openReleaseUrl(this.modalReleaseVersionCurrent?.releaseUrl);
+  }
+
+  handleOpenReleaseVersionTag() {
+    this._openReleaseUrl(this.modalReleaseVersionCurrent?.tagUrl);
+  }
+
+  handleOpenReleaseVersionJob() {
+    this._openReleaseUrl(this.modalReleaseVersionCurrent?.jobUrl);
+  }
+
+  handleGenerateReleaseVersionNotes() {
+    this._runReleaseNotesForTag(this.modalReleaseVersionCurrent?.tag);
+  }
+
+  handleReleaseRowAction(event) {
+    const action = event.detail?.action;
+    const row = event.detail?.row;
+    if (!action || !row) {
+      return;
+    }
+    if (action.name === "view_pr" && row.prNumber > 0) {
+      this.openPullRequestView({ prNumber: row.prNumber });
+    } else if (action.name === "open_release") {
+      this._openReleaseUrl(row.releaseUrl);
+    } else if (action.name === "open_tag") {
+      this._openReleaseUrl(row.tagUrl);
+    } else if (action.name === "release_notes") {
+      this._runReleaseNotesForTag(row.tag);
+    }
+  }
+
+  // Columns of the Releases tab, and of the history of one branch (without the Branch column)
+  _releaseColumns(withBranch) {
+    const columns = [
+      {
+        key: "version",
+        label: this.i18n.releaseVersionColumnVersion,
+        fieldName: "tag",
+        type: "typePill",
+        initialWidth: 160,
+        typeAttributes: {
+          label: { fieldName: "tag" },
+          pillClass: { fieldName: "versionPillClass" },
+          url: { fieldName: "versionUrl" },
+          tooltip: { fieldName: "versionTooltip" },
+        },
+      },
+    ];
+    if (withBranch) {
+      columns.push({
+        key: "branch",
+        label: this.i18n.releaseVersionColumnBranch,
+        fieldName: "branchName",
+        type: "branchChip",
+      });
+    }
+    columns.push(
+      {
+        key: "deployed",
+        label: this.i18n.releaseVersionColumnDeployed,
+        fieldName: "deployedLabel",
+        type: "text",
+        cellAttributes: { class: "hardis-date-cell" },
+      },
+      {
+        key: "pullRequest",
+        label: this.prLabel,
+        fieldName: "prText",
+        type: "button",
+        typeAttributes: {
+          label: { fieldName: "prText" },
+          name: "view_pr",
+          variant: "base",
+          disabled: { fieldName: "prDisabled" },
+        },
+      },
+      {
+        key: "links",
+        label: this.i18n.releaseVersionColumnLinks,
+        type: "action",
+        typeAttributes: {
+          rowActions: (row, doneCallback) =>
+            doneCallback(this._releaseRowActions(row)),
+        },
+      },
+    );
+    return columns;
+  }
+
+  _releaseRowActions(row) {
+    const actions = [];
+    if (row?.releaseUrl) {
+      actions.push({
+        label: this.i18n.releaseVersionOpenRelease,
+        name: "open_release",
+        iconName: "utility:new_window",
+      });
+    }
+    if (row?.tagUrl) {
+      actions.push({
+        label: this.i18n.releaseVersionOpenTag,
+        name: "open_tag",
+        iconName: "utility:new_window",
+      });
+    }
+    actions.push({
+      label: this.i18n.releaseVersionGenerateNotes,
+      name: "release_notes",
+      iconName: "utility:document_preview",
+    });
+    return actions;
+  }
+
+  _releaseVersionRows(entries) {
+    return (Array.isArray(entries) ? entries : [])
+      .filter((entry) => entry && entry.tag)
+      .map((entry, index) => {
+        const releaseUrl = safeWebUrl(entry.releaseUrl);
+        const tagUrl = safeWebUrl(entry.tagUrl);
+        return {
+          id: `${entry.tag}-${index}`,
+          tag: entry.tag,
+          versionPillClass: this._releaseVersionChipClass(entry),
+          versionUrl: releaseUrl || tagUrl || null,
+          versionTooltip: entry.prerelease
+            ? this.i18n.releaseVersionReleaseCandidate
+            : this.i18n.releaseVersionReleased,
+          branchName: entry.branchName || "",
+          deployedLabel: this._formatCompactDate(entry.deployedAt),
+          prNumber: entry.pullRequest || 0,
+          prText: entry.pullRequest ? `#${entry.pullRequest}` : "",
+          prDisabled: !entry.pullRequest,
+          releaseUrl,
+          tagUrl,
+        };
+      });
+  }
+
+  // Filled for a released version, outlined for a release candidate (global-theme.css)
+  _releaseVersionChipClass(entry) {
+    return entry?.prerelease
+      ? "hardis-pill hardis-version-chip hardis-version-rc"
+      : "hardis-pill hardis-version-chip hardis-version-released";
+  }
+
+  _openReleaseUrl(value) {
+    const url = safeWebUrl(value);
+    if (!url) {
+      return;
+    }
+    window.sendMessageToVSCode({ type: "openExternal", data: { url } });
+  }
+
+  // The release notes of one version, generated by sfdx-hardis
+  _runReleaseNotesForTag(tag) {
+    if (!tag || !SAFE_RELEASE_TAG.test(tag)) {
+      return;
+    }
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: `sf hardis:doc:release-notes --mode post --release-tag ${tag}`,
+      },
+    });
   }
 
   get modalPrsTabLabel() {

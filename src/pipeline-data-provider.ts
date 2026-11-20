@@ -16,6 +16,15 @@ import {
   isMajorBranchCheckEnabled,
   MajorBranchCheckView,
 } from "./utils/pipeline/majorBranchCheckUtils";
+import {
+  buildReleaseVersionViews,
+  isReleaseVersioningDeclared,
+  ReleaseVersionEntry,
+  ReleaseVersionList,
+  ReleaseVersionNext,
+  ReleaseVersionView,
+  withReleaseVersionLinks,
+} from "./utils/pipeline/releaseVersionUtils";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 import { isScratchOrgPoolConfigured } from "./utils/scratchOrgPoolUtils";
 import {
@@ -44,6 +53,12 @@ export interface OrgNode {
   // Last major branch deployment check of the branch, only when the project enables
   // enableMajorBranchDeploymentCheck: null when none was found (see majorBranchCheckUtils.ts)
   majorBranchCheck?: MajorBranchCheckView | null;
+  // Release versioning, only on a versioned branch once the CLI answered (see releaseVersionUtils.ts):
+  // the latest version deployed on the branch and its org (null when none yet), and the versions a
+  // promotion into this branch would create, by source branch
+  releaseVersioning?: boolean;
+  releaseVersion?: ReleaseVersionEntry | null;
+  nextOnPromotion?: ReleaseVersionNext[];
 }
 
 export interface OrgLink {
@@ -70,6 +85,10 @@ export interface PipelineData {
   // age in hours after which a check is stale (majorBranchDeploymentCheckValidityHours)
   majorBranchDeploymentCheckEnabled?: boolean;
   majorBranchDeploymentCheckValidityHours?: number;
+  // Release versioning: a branch declares releaseVersioning and the CLI listed the versions. The
+  // history holds every version tag, newest first
+  releaseVersioningEnabled?: boolean;
+  releaseVersionHistory?: ReleaseVersionEntry[];
   // Development orgs registry of the project (enableDevOrgsRegistry, on unless set to false)
   devOrgsEnabled?: boolean;
   // The list of development orgs was read for this payload (from sfdx-hardis or its last result)
@@ -99,6 +118,9 @@ export class PipelineDataProvider {
       openPullRequests?: PullRequest[];
       colorTheme?: string;
       featureBranchGroupThreshold?: number;
+      // Versions listed by the CLI, started by the caller in parallel with the git provider calls
+      releaseVersions?:
+        Promise<ReleaseVersionList | null> | ReleaseVersionList | null;
       // The list of development orgs to draw, null when it was not read
       devOrgs?: DevOrgsView | null;
     } = {},
@@ -140,6 +162,29 @@ export class PipelineDataProvider {
           );
         }
       }
+      // Release versions: nothing at all unless a branch config declares the feature and the CLI
+      // answered. Its failures were already logged
+      let releaseVersionList: ReleaseVersionList | null = null;
+      if (isReleaseVersioningDeclared(majorOrgs)) {
+        try {
+          // The tag and Release links come from the repository URL the git provider of the
+          // extension knows (only in the git provider pass): the CLI is not asked to build them
+          releaseVersionList = withReleaseVersionLinks(
+            (await options.releaseVersions) ?? null,
+            gitProvider?.repoInfo || null,
+          );
+        } catch {
+          releaseVersionList = null;
+        }
+      }
+      const releaseVersioningEnabled = releaseVersionList?.enabled === true;
+      const releaseVersionViews: Record<string, ReleaseVersionView> =
+        releaseVersioningEnabled
+          ? buildReleaseVersionViews(
+              releaseVersionList,
+              majorOrgs.map((org) => org.branchName),
+            )
+          : {};
       const mermaidBuilder = new BranchStrategyMermaidBuilder(
         majorOrgs,
         isAuthenticated,
@@ -151,6 +196,7 @@ export class PipelineDataProvider {
         promotionBranchConfig,
         majorBranchChecks,
         devOrgsList,
+        releaseVersionViews,
       );
       const mermaidDiagram = mermaidBuilder.build({
         format: "string",
@@ -197,6 +243,14 @@ export class PipelineDataProvider {
         ...(majorBranchCheckEnabled
           ? { majorBranchCheck: majorBranchChecks[org.branchName] ?? null }
           : {}),
+        ...(releaseVersionViews[org.branchName]
+          ? {
+              releaseVersioning: true,
+              releaseVersion: releaseVersionViews[org.branchName].current,
+              nextOnPromotion:
+                releaseVersionViews[org.branchName].nextOnPromotion,
+            }
+          : {}),
       }));
       const links: OrgLink[] = [];
       for (const org of majorOrgs) {
@@ -227,6 +281,10 @@ export class PipelineDataProvider {
         scratchOrgPoolEnabled: isScratchOrgPoolConfigured(projectConfig),
         majorBranchDeploymentCheckEnabled: majorBranchCheckEnabled,
         majorBranchDeploymentCheckValidityHours: majorBranchCheckValidityHours,
+        releaseVersioningEnabled: releaseVersioningEnabled,
+        releaseVersionHistory: releaseVersioningEnabled
+          ? releaseVersionList?.history || []
+          : [],
         devOrgsEnabled,
         devOrgsLoaded: !!options.devOrgs,
         devOrgs: devOrgsList,

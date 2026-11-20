@@ -164,7 +164,7 @@
                         <template if:true={pipelineData.orgs.length}>
                             <div class="pipeline-container">
                                 <div style="position: relative;">
-                                    <!-- What the diagram shows next to the major branches: nothing more, the feature branches, or the dev orgs. On its own row above the diagram, so it never covers the title of a Mermaid group -->
+                                    <!-- What the diagram shows next to the major branches (nothing more, the feature branches, or the dev orgs) and the Versions toggle, inside the diagram over its top left corner -->
                                     <div class="pipeline-diagram-toolbar">
                                         <span class="hardis-segmented pipeline-view-switch" role="group" aria-label={i18n.pipelineViewTitle} title={i18n.pipelineViewTitle}>
                                             <button type="button" class={majorBranchesViewClass} aria-pressed={majorBranchesViewPressed} onclick={handleShowMajorBranchesView}>{i18n.pipelineViewMajorBranches}</button>
@@ -173,6 +173,12 @@
                                                 <button type="button" class={devOrgsViewClass} aria-pressed={devOrgsViewPressed} onclick={handleShowDevOrgsView}>{i18n.pipelineViewDevOrgs}</button>
                                             </template>
                                         </span>
+                                        <!-- Release versions on the diagram, shown by default -->
+                                        <template if:true={releaseVersioningEnabled}>
+                                            <span class="hardis-segmented pipeline-versions-switch" role="group" aria-label={i18n.pipelineViewVersionsTitle} title={i18n.pipelineViewVersionsTitle}>
+                                                <button type="button" class={versionsToggleClass} aria-pressed={versionsTogglePressed} onclick={handleToggleVersions}>{i18n.pipelineViewVersions}</button>
+                                            </span>
+                                        </template>
                                     </div>
                                     <!-- Manual refresh: keep the diagram visible with a spinner overlaid on top -->
                                     <template if:true={isMermaidRefreshing}>
@@ -217,6 +223,12 @@
                                         <template if:true={majorBranchCheckEnabled}>
                                             <span class="legend-separator"></span>
                                             <span class="legend-item"><span class="legend-node-check"></span>{i18n.legendMajorBranchCheck}</span>
+                                        </template>
+                                        <template if:true={showReleaseVersionsLegend}>
+                                            <span class="legend-separator"></span>
+                                            <span class="legend-item"><span class="hardis-pill hardis-version-chip hardis-version-rc legend-version-chip">v1.2.0-rc.1</span>{i18n.legendReleaseCandidate}</span>
+                                            <span class="legend-item"><span class="hardis-pill hardis-version-chip hardis-version-released legend-version-chip">v1.1.0</span>{i18n.legendReleasedVersion}</span>
+                                            <span class="legend-item"><span class="hardis-pill hardis-version-chip hardis-version-next legend-version-chip">v1.2.0-rc.2</span>{i18n.legendNextVersion}</span>
                                         </template>
                                         <template if:true={showDevOrgsLegend}>
                                             <span class="legend-separator"></span>
@@ -381,6 +393,25 @@
                         </template>
                     </template>
             </lightning-tab>
+            <!-- Version tags of the project (releaseVersioning), newest first -->
+            <template if:true={releaseVersioningEnabled}>
+                <lightning-tab label={releasesTabLabel} value="releases" icon-name="utility:ribbon" icon-assistive-text={releasesTabLabel}>
+                    <template if:true={hasReleaseRows}>
+                        <s-hardis-datatable
+                            class="slds-no-row-hover"
+                            key-field="id"
+                            data={releaseRows}
+                            columns={releaseColumns}
+                            hide-checkbox-column
+                            column-widths-mode="auto"
+                            onrowaction={handleReleaseRowAction}
+                        ></s-hardis-datatable>
+                    </template>
+                    <template if:false={hasReleaseRows}>
+                        <div class="slds-m-around_small slds-text-color_weak">{i18n.releaseVersionNoHistory}</div>
+                    </template>
+                </lightning-tab>
+            </template>
         </lightning-tabset>
         </div>
     </div>
@@ -876,6 +907,86 @@
                                         active-match={deploymentActiveMatch}
                                         filter-matches={modalSearchFilter}
                                     ></s-workflow-runs>
+                                </lightning-tab>
+                            </template>
+                            <!-- Release version of a versioned major branch (releaseVersioning): current version, next ones, history -->
+                            <template if:true={showModalReleaseVersion}>
+                                <lightning-tab onactive={handleModalTabActive} label={i18n.releaseVersionTab} value="releaseVersion" icon-name="utility:ribbon" icon-assistive-text={i18n.releaseVersionTab}>
+                                    <template if:true={modalReleaseVersionCurrent}>
+                                        <div class="hardis-prop-grid">
+                                            <div class="hardis-prop">
+                                                <div class="hardis-prop-key">{i18n.releaseVersionCurrent}</div>
+                                                <div class="hardis-prop-value release-version-row">
+                                                    <span class={modalReleaseVersionChipClass}><span class="hardis-pill-dot"></span>{modalReleaseVersionCurrent.tag}</span>
+                                                    <span class="muted">{modalReleaseVersionKindLabel}</span>
+                                                </div>
+                                            </div>
+                                            <template if:true={modalReleaseVersionDeployedAt}>
+                                                <div class="hardis-prop">
+                                                    <div class="hardis-prop-key">{i18n.releaseVersionColumnDeployed}</div>
+                                                    <div class="hardis-prop-value">{modalReleaseVersionDeployedAt}</div>
+                                                </div>
+                                            </template>
+                                            <template if:true={modalReleaseVersionOrg}>
+                                                <div class="hardis-prop">
+                                                    <div class="hardis-prop-key">{i18n.releaseVersionOrg}</div>
+                                                    <div class="hardis-prop-value mono">{modalReleaseVersionOrg}</div>
+                                                </div>
+                                            </template>
+                                            <template if:true={modalReleaseVersionCommit}>
+                                                <div class="hardis-prop">
+                                                    <div class="hardis-prop-key">{i18n.releaseVersionCommit}</div>
+                                                    <div class="hardis-prop-value mono">{modalReleaseVersionCommit}</div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        <div class="release-version-row slds-m-top_small">
+                                            <template if:true={modalReleaseVersionHasReleaseUrl}>
+                                                <button class="hardis-textlink" onclick={handleOpenReleaseVersionRelease}>{i18n.releaseVersionOpenRelease}</button>
+                                            </template>
+                                            <template if:true={modalReleaseVersionHasTagUrl}>
+                                                <button class="hardis-textlink" onclick={handleOpenReleaseVersionTag}>{i18n.releaseVersionOpenTag}</button>
+                                            </template>
+                                            <template if:true={modalReleaseVersionHasJobUrl}>
+                                                <button class="hardis-textlink" onclick={handleOpenReleaseVersionJob}>{i18n.releaseVersionOpenJob}</button>
+                                            </template>
+                                            <lightning-button
+                                                class="hardis-btn-tinted-green"
+                                                variant="neutral"
+                                                label={i18n.releaseVersionGenerateNotes}
+                                                icon-name="utility:document_preview"
+                                                icon-position="left"
+                                                onclick={handleGenerateReleaseVersionNotes}
+                                            ></lightning-button>
+                                        </div>
+                                    </template>
+                                    <template if:false={modalReleaseVersionCurrent}>
+                                        <div class="slds-text-color_weak">{i18n.releaseVersionNone}</div>
+                                    </template>
+                                    <template if:true={modalReleaseVersionHasNext}>
+                                        <div class="hardis-group-label slds-m-top_medium">{i18n.releaseVersionNextTitle}</div>
+                                        <template for:each={modalReleaseVersionNextRows} for:item="next">
+                                            <div key={next.key} class="release-version-row slds-m-bottom_x-small">
+                                                <span class="hardis-pill hardis-version-chip hardis-version-next">{next.tag}</span>
+                                                <span>{next.text}</span>
+                                            </div>
+                                        </template>
+                                    </template>
+                                    <div class="hardis-group-label slds-m-top_medium">{i18n.releaseVersionHistory}</div>
+                                    <template if:true={modalReleaseHasHistory}>
+                                        <s-hardis-datatable
+                                            class="slds-no-row-hover"
+                                            key-field="id"
+                                            data={modalReleaseHistoryRows}
+                                            columns={releaseHistoryColumns}
+                                            hide-checkbox-column
+                                            column-widths-mode="auto"
+                                            onrowaction={handleReleaseRowAction}
+                                        ></s-hardis-datatable>
+                                    </template>
+                                    <template if:false={modalReleaseHasHistory}>
+                                        <div class="slds-text-color_weak">{i18n.releaseVersionNoHistory}</div>
+                                    </template>
                                 </lightning-tab>
                             </template>
                             <!-- Last tab: last deployment check of the major branch against its org (enableMajorBranchDeploymentCheck) -->
