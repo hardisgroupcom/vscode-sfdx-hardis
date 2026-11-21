@@ -314,8 +314,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // Last deployment check of the major branch of the window against its org (null unless the
   // project enables enableMajorBranchDeploymentCheck): { found, status, webUrl, ... }
   modalMajorBranchCheck = null;
-  // Release version of the versioned major branch of the window (null unless a branch declares
-  // releaseVersioning and the CLI listed the versions): { current, history, next }
+  // Release version of the versioned major branch of the window (null unless the branch declares
+  // releaseVersioning, empty until the CLI listed the versions): { current, history, next }
   modalReleaseVersion = null;
   modalPullRequests = [];
   modalTickets = [];
@@ -2463,42 +2463,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     });
   }
 
-  // The same diagram, drawn again with or without its version chips. The toggle re-renders the
-  // template (its class changes), and renderedCallback draws the diagram again since lastDiagram
-  // no longer matches: a second render here would draw it twice
-  _setShowReleaseVersions(value) {
-    if (value === this.showReleaseVersions) {
-      return;
-    }
-    this.showReleaseVersions = value;
-    this.lastDiagram = "";
-    if (value) {
-      this._requestReleaseVersions();
-    }
-  }
-
-  // Asks the extension for the versions, once: every caller is a place that shows them
-  _requestReleaseVersions() {
-    if (
-      !this.releaseVersioningDeclared ||
-      this.releaseVersionsStatus !== "notLoaded"
-    ) {
-      return;
-    }
-    this.releaseVersionsStatus = "loading";
-    window.sendMessageToVSCode({ type: "loadReleaseVersions" });
-  }
-
-  // The toggle is on, or the Releases tab or the Release version tab of a branch is open
-  get _releaseVersionsWanted() {
-    return (
-      this.showReleaseVersions ||
-      this.template.querySelector(".pipeline-tabs")?.activeTabValue ===
-        "releases" ||
-      (this.showPRModal && this.modalActiveTabValue === "releaseVersion")
-    );
-  }
-
   handleReleasesTabActive() {
     this._requestReleaseVersions();
   }
@@ -3986,6 +3950,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this._prViewRequestId += 1;
     this.prViewLoading = false;
     applyModalState(this, entry.state);
+    // The release versions may have arrived or changed while this window was set aside
+    if (this.modalReleaseVersion) {
+      this.modalReleaseVersion = this._releaseVersionOfBranch(
+        this.modalBranchName,
+      );
+    }
     // Answers on their way belong to the window that was just left: none is waited for, and
     // what the restored window still misses is asked again
     resetModalLoadingFlags(this);
@@ -7562,6 +7532,42 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   _getActionTypeIconName(typeCode) {
     return getActionTypeIconName(typeCode);
+  }
+
+  // The same diagram, drawn again with or without its version chips. The toggle re-renders the
+  // template (its class changes), and renderedCallback draws the diagram again since lastDiagram
+  // no longer matches: a second render here would draw it twice
+  _setShowReleaseVersions(value) {
+    if (value === this.showReleaseVersions) {
+      return;
+    }
+    this.showReleaseVersions = value;
+    this.lastDiagram = "";
+    if (value) {
+      this._requestReleaseVersions();
+    }
+  }
+
+  // Asks the extension for the versions, once: every caller is a place that shows them
+  _requestReleaseVersions() {
+    if (
+      !this.releaseVersioningDeclared ||
+      this.releaseVersionsStatus !== "notLoaded"
+    ) {
+      return;
+    }
+    this.releaseVersionsStatus = "loading";
+    window.sendMessageToVSCode({ type: "loadReleaseVersions" });
+  }
+
+  // The toggle is on, or the Releases tab or the Release version tab of a branch is open
+  get _releaseVersionsWanted() {
+    return (
+      this.showReleaseVersions ||
+      this.template.querySelector(".pipeline-tabs")?.activeTabValue ===
+        "releases" ||
+      (this.showPRModal && this.modalActiveTabValue === "releaseVersion")
+    );
   }
 }
 

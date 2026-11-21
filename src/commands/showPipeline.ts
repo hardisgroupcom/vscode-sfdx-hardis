@@ -345,6 +345,11 @@ export function registerShowPipeline(commands: Commands) {
         return info;
       };
       const requestReleaseVersions = async (force = false) => {
+        // A Refresh that ends after the panel was closed or opened again: nobody waits for it, and
+        // its answer would not be sent
+        if (panel.isDisposed() || versionsSession !== releaseVersionsSession) {
+          return;
+        }
         // The load already running will send its answer. Only a Refresh needs a newer one
         if (releaseVersionLoads > 0 && !force) {
           return;
@@ -503,8 +508,7 @@ export function registerShowPipeline(commands: Commands) {
         }
         // A pass asked with its own age of the development orgs (a manual Refresh, a command that
         // changed an org, a list just read) runs after the one in progress: that one read the
-        // list with the default age, and what was asked would be lost. The same goes for the
-        // release versions a manual Refresh asks again
+        // list with the default age, and what was asked would be lost
         if (opts?.devOrgsMaxAgeMs !== undefined) {
           return fullLoadInFlight.then(() => loadPipelineFull(opts));
         }
@@ -1403,7 +1407,7 @@ export function registerShowPipeline(commands: Commands) {
       });
 
       // Start the staged background load — panel shows partial content immediately.
-      // A new panel session lists the release versions again once; its refreshes reuse the answer
+      // A new panel session forgets the release versions: they are listed when the panel asks
       invalidateReleaseVersionsCache();
       loadPipelineStaged();
     },

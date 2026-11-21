@@ -181,8 +181,8 @@ export async function loadReleaseVersions(
 }
 
 /**
- * The last answer of the CLI, without running anything: what the first paint of the panel can show
- * while the second loading step asks again.
+ * The last answer of the CLI, without running anything: what a load of the pipeline draws, since
+ * it never asks the CLI itself.
  */
 export function getCachedReleaseVersions(
   workspaceRoot?: string,
