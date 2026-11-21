@@ -103,12 +103,32 @@ suite("Release versions on a real git provider", function () {
     await vscode.commands.executeCommand("workbench.action.closeSidebar");
     await vscode.commands.executeCommand("workbench.action.closeAuxiliaryBar");
     await vscode.commands.executeCommand("notifications.clearAll");
+    // The versions are off by default and listed on demand: this suite looks at them
+    await vscode.workspace
+      .getConfiguration("vsCodeSfdxHardis")
+      .update(
+        "pipelineShowReleaseVersions",
+        true,
+        vscode.ConfigurationTarget.Global,
+      );
     await vscode.commands.executeCommand("vscode-sfdx-hardis.showPipeline");
     await waitFor(
       () => panelManager.getPanel(LWC_ID),
       60000,
       "the pipeline panel to open",
     );
+  });
+
+  suiteTeardown(async () => {
+    if (REAL_MODE) {
+      await vscode.workspace
+        .getConfiguration("vsCodeSfdxHardis")
+        .update(
+          "pipelineShowReleaseVersions",
+          undefined,
+          vscode.ConfigurationTarget.Global,
+        );
+    }
   });
 
   test("each versioned branch shows the version deployed last", async function () {

@@ -2565,6 +2565,8 @@
   "releaseVersionReleaseCandidate": "Release candidate",
   "releaseVersionReleased": "Versión publicada",
   "releaseVersionTab": "Versión de release",
+  "releaseVersionsLoadFailed": "No se han podido cargar las versiones. Actualiza sfdx-hardis si es necesario y vuelve a cargar el pipeline.",
+  "releaseVersionsLoading": "Cargando versiones...",
   "releasesTabLabel": "Releases",
   "releasesTabLabelWithCount": "Releases ({{count}})",
   "reloadWindow": "Recargar la ventana",

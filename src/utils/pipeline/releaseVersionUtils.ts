@@ -6,13 +6,16 @@ import { Logger } from "../../logger";
  * (v1.5.0-rc.3) below the highest versioned branch and a plain version (v1.5.0) on it.
  *
  * The CLI is the engine: the extension never computes a version. It runs
- * `sf hardis:project:version:list --json` (which fetches the tags first) in the background, in the
- * second loading step of the DevOps Pipeline, and only when a branch config declares the feature.
- * A failure (a CLI too old to know the command, a git error) is logged and shows nothing.
+ * `sf hardis:project:version:list --json` (which fetches the tags first) in the background, only
+ * when a branch config declares the feature and somebody asks for the versions: the Versions toggle
+ * of the DevOps Pipeline is on, or its Releases tab or the Release version tab of a branch is open.
+ * The load of the pipeline never starts it and never waits for it.
+ * A failure (a CLI too old to know the command, a git error) is logged and the panel says so.
  *
  * Each answer costs a sfdx-hardis start and a `git fetch --tags`, while the panel reloads itself
  * every minute: the answer, or the failure, is kept for the panel session and reused by every
- * reload. Opening the panel and its Refresh button ask again (invalidateReleaseVersionsCache).
+ * reload. Opening the panel forgets it, and its Refresh button asks again when the versions were
+ * requested (invalidateReleaseVersionsCache).
  * The command runs without --with-links, which would call the git provider API: the tag and
  * Release links are built here from the repository URL the extension already knows
  * (withReleaseVersionLinks).
@@ -81,6 +84,13 @@ export interface ReleaseVersionRepo {
   providerName: string;
   webUrl: string;
 }
+
+/** Where the versions of the panel session stand */
+export type ReleaseVersionsStatus =
+  | "notLoaded"
+  | "loading"
+  | "loaded"
+  | "failed";
 
 type CacheEntry = {
   workspaceRoot: string;
@@ -187,11 +197,39 @@ export function getCachedReleaseVersions(
 }
 
 /**
- * The next load asks the CLI again (manual refresh of the panel), even when a call started earlier
- * is still running: that one may have listed the tags before the new one was created.
+ * Where the versions stand, without running anything. A CLI that answered without the feature
+ * counts as a failure: a branch declares it, so the panel has versions to show and none came.
  */
-export function invalidateReleaseVersionsCache(): void {
-  cache = null;
+export function getReleaseVersionsStatus(
+  workspaceRoot?: string,
+): ReleaseVersionsStatus {
+  const sameWorkspace = (root: string) =>
+    workspaceRoot === undefined || root === workspaceRoot;
+  if (
+    inFlight &&
+    inFlight.generation === cacheGeneration &&
+    sameWorkspace(inFlight.workspaceRoot)
+  ) {
+    return "loading";
+  }
+  if (!cache || !sameWorkspace(cache.workspaceRoot)) {
+    return "notLoaded";
+  }
+  return cache.value?.enabled === true ? "loaded" : "failed";
+}
+
+/**
+ * The next load asks the CLI again (manual refresh of the panel), even when a call started earlier
+ * is still running: that one may have listed the tags before the new one was created. With
+ * keepAnswer, the last answer stays readable until the new one replaces it, so the chips of the
+ * diagram do not disappear during a refresh.
+ */
+export function invalidateReleaseVersionsCache(
+  options: { keepAnswer?: boolean } = {},
+): void {
+  if (!options.keepAnswer) {
+    cache = null;
+  }
   cacheGeneration++;
 }
 
@@ -418,8 +456,9 @@ async function defaultReleaseVersionDeps(): Promise<ReleaseVersionDeps> {
       // Without --with-links the CLI never calls the git provider API (withReleaseVersionLinks
       // builds the links): it gets the credentials the extension is connected with, like the
       // other background CLI calls of the panel
-      const { execSfdxJsonWithProviderCredentials } =
-        await import("../providerCredentials");
+      const { execSfdxJsonWithProviderCredentials } = await import(
+        "../providerCredentials"
+      );
       return await execSfdxJsonWithProviderCredentials(
         "sf hardis:project:version:list --json",
         "Release versions",
