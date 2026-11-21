@@ -173,8 +173,8 @@
                                                 <button type="button" class={devOrgsViewClass} aria-pressed={devOrgsViewPressed} onclick={handleShowDevOrgsView}>{i18n.pipelineViewDevOrgs}</button>
                                             </template>
                                         </span>
-                                        <!-- Release versions on the diagram, shown by default -->
-                                        <template if:true={releaseVersioningEnabled}>
+                                        <!-- Release versions on the diagram: off by default, listed by the CLI when turned on -->
+                                        <template if:true={releaseVersioningDeclared}>
                                             <span class="hardis-segmented pipeline-versions-switch" role="group" aria-label={i18n.pipelineViewVersionsTitle} title={i18n.pipelineViewVersionsTitle}>
                                                 <button type="button" class={versionsToggleClass} aria-pressed={versionsTogglePressed} onclick={handleToggleVersions}>{i18n.pipelineViewVersions}</button>
                                             </span>
@@ -229,6 +229,14 @@
                                             <span class="legend-item"><span class="hardis-pill hardis-version-chip hardis-version-rc legend-version-chip">v1.2.0-rc.1</span>{i18n.legendReleaseCandidate}</span>
                                             <span class="legend-item"><span class="hardis-pill hardis-version-chip hardis-version-released legend-version-chip">v1.1.0</span>{i18n.legendReleasedVersion}</span>
                                             <span class="legend-item"><span class="hardis-pill hardis-version-chip hardis-version-next legend-version-chip">v1.2.0-rc.2</span>{i18n.legendNextVersion}</span>
+                                        </template>
+                                        <template if:true={showVersionsLoadingLegend}>
+                                            <span class="legend-separator"></span>
+                                            <span class="legend-item pipeline-versions-status" role="status"><span class="hardis-pill-dot legend-dot hardis-status-running"></span>{i18n.releaseVersionsLoading}</span>
+                                        </template>
+                                        <template if:true={showVersionsFailedLegend}>
+                                            <span class="legend-separator"></span>
+                                            <span class="legend-item pipeline-versions-status" role="status"><span class="hardis-pill-dot legend-dot hardis-status-failed"></span>{i18n.releaseVersionsLoadFailed}</span>
                                         </template>
                                         <template if:true={showDevOrgsLegend}>
                                             <span class="legend-separator"></span>
@@ -394,9 +402,15 @@
                     </template>
             </lightning-tab>
             <!-- Version tags of the project (releaseVersioning), newest first -->
-            <template if:true={releaseVersioningEnabled}>
-                <lightning-tab label={releasesTabLabel} value="releases" icon-name="utility:ribbon" icon-assistive-text={releasesTabLabel}>
-                    <template if:true={hasReleaseRows}>
+            <template if:true={releaseVersioningDeclared}>
+                <lightning-tab onactive={handleReleasesTabActive} label={releasesTabLabel} value="releases" icon-name="utility:ribbon" icon-assistive-text={releasesTabLabel}>
+                    <template if:true={releaseVersionsPending}>
+                        <div class="slds-m-around_small slds-text-color_weak" role="status">{i18n.releaseVersionsLoading}</div>
+                    </template>
+                    <template if:true={releaseVersionsFailed}>
+                        <div class="hardis-note error slds-m-around_small" role="status">{i18n.releaseVersionsLoadFailed}</div>
+                    </template>
+                    <template if:true={showReleaseRows}>
                         <s-hardis-datatable
                             class="slds-no-row-hover"
                             key-field="id"
@@ -407,7 +421,7 @@
                             onrowaction={handleReleaseRowAction}
                         ></s-hardis-datatable>
                     </template>
-                    <template if:false={hasReleaseRows}>
+                    <template if:true={showNoReleaseRows}>
                         <div class="slds-m-around_small slds-text-color_weak">{i18n.releaseVersionNoHistory}</div>
                     </template>
                 </lightning-tab>
@@ -912,6 +926,13 @@
                             <!-- Release version of a versioned major branch (releaseVersioning): current version, next ones, history -->
                             <template if:true={showModalReleaseVersion}>
                                 <lightning-tab onactive={handleModalTabActive} label={i18n.releaseVersionTab} value="releaseVersion" icon-name="utility:ribbon" icon-assistive-text={i18n.releaseVersionTab}>
+                                    <template if:true={releaseVersionsPending}>
+                                        <div class="slds-text-color_weak" role="status">{i18n.releaseVersionsLoading}</div>
+                                    </template>
+                                    <template if:true={releaseVersionsFailed}>
+                                        <div class="hardis-note error" role="status">{i18n.releaseVersionsLoadFailed}</div>
+                                    </template>
+                                    <template if:true={releaseVersioningEnabled}>
                                     <template if:true={modalReleaseVersionCurrent}>
                                         <div class="hardis-prop-grid">
                                             <div class="hardis-prop">
@@ -986,6 +1007,7 @@
                                     </template>
                                     <template if:false={modalReleaseHasHistory}>
                                         <div class="slds-text-color_weak">{i18n.releaseVersionNoHistory}</div>
+                                    </template>
                                     </template>
                                 </lightning-tab>
                             </template>

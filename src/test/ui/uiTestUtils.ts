@@ -108,6 +108,32 @@ export function recordSentMessages(panel: any): any[] {
 }
 
 /**
+ * The DevOps Pipeline panel the command just opened, once its Pull Requests are loaded, with a
+ * record of the messages sent to it.
+ */
+export async function waitForLoadedPipeline(
+  panelManager: any,
+): Promise<{ panel: any; sent: any[]; data: any }> {
+  const panel: any = await waitFor(
+    () => panelManager.getPanel("s-pipeline"),
+    10000,
+    "pipeline panel to open",
+  );
+  const sent = recordSentMessages(panel);
+  const data = await waitFor(
+    () => {
+      const state = panel.getInitializationData();
+      return state && state.prLoading === false && state.pipelineData
+        ? state
+        : null;
+    },
+    60000,
+    "the pipeline to be loaded with its Pull Requests",
+  );
+  return { panel, sent, data };
+}
+
+/**
  * Activates the extension and returns its test API.
  */
 export async function activateExtension(): Promise<any> {

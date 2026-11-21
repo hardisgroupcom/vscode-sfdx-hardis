@@ -27,8 +27,10 @@ import { handleDeploymentActionPickerMessage } from "../utils/pipeline/deploymen
 import { extractTicketIdsFromText } from "../utils/pipeline/pastedListUtils";
 import {
   getCachedReleaseVersions,
+  getReleaseVersionsStatus,
   invalidateReleaseVersionsCache,
   loadReleaseVersions,
+  ReleaseVersionsStatus,
 } from "../utils/pipeline/releaseVersionUtils";
 import {
   getCachedCustomFunctions,
@@ -86,6 +88,10 @@ const notifiedAutoFixBranchHeadByPullRequest = new Map<string, string>();
 let windowFocusListener: vscode.Disposable | undefined;
 // Same rule for the listener that reads the development orgs again after a command changed them
 let devOrgsCommandListener: vscode.Disposable | undefined;
+// Same rule for the listener of the setting behind the Versions toggle
+let showReleaseVersionsListener: vscode.Disposable | undefined;
+// Raised each time the command runs: release versions asked by an earlier run are not sent
+let releaseVersionsSession = 0;
 async function getOriginBranchUpdateStatus(branchName: string): Promise<{
   remoteHeadSha: string | null;
   hasNewRemoteCommit: boolean;
@@ -256,6 +262,12 @@ export function registerShowPipeline(commands: Commands) {
         );
       }
 
+      // State of the Versions toggle, kept here so that a payload built before a click carries
+      // the value of that click
+      let showReleaseVersions = vscode.workspace
+        .getConfiguration("vsCodeSfdxHardis")
+        .get<boolean>("pipelineShowReleaseVersions", false);
+
       // Open the panel immediately with spinner flags so the LWC can render
       // partial content while pipeline data is fetched asynchronously.
       const panel = LwcPanelManager.getInstance().getOrCreatePanel(
@@ -264,6 +276,8 @@ export function registerShowPipeline(commands: Commands) {
           deepLink: pipelineDeepLink,
           mermaidLoading: true,
           prLoading: true,
+          showReleaseVersions: showReleaseVersions,
+          releaseVersionsStatus: "notLoaded",
           imagePaths: {
             git: ["icons", "git.svg"],
             ticket: ["icons", "ticket.svg"],
@@ -305,6 +319,105 @@ export function registerShowPipeline(commands: Commands) {
       // its home view. Consumed by the last stage of the first load.
       let pendingDeepLink = pipelineDeepLink;
 
+      // Release versions: never part of a pipeline load. Asked by the panel when somebody wants
+      // to see them, listed by the CLI in the background, then drawn on the last data sent.
+      const versionsSession = ++releaseVersionsSession;
+      let releaseVersionLoads = 0;
+      const currentReleaseVersionsStatus = (): ReleaseVersionsStatus =>
+        releaseVersionLoads > 0
+          ? "loading"
+          : getReleaseVersionsStatus(getWorkspaceRoot());
+      // Each payload replaces the data a booting webview receives, so each one carries the toggle
+      const sendPanelData = (data: any) => {
+        panel.sendInitializationData({
+          ...data,
+          showReleaseVersions: showReleaseVersions,
+          releaseVersionsStatus: currentReleaseVersionsStatus(),
+        });
+      };
+      // A load started before the answer of the CLI must not send a diagram without its versions
+      const withCurrentReleaseVersions = (info: PipelineInfo): PipelineInfo => {
+        info.pipelineData = new PipelineDataProvider().applyReleaseVersions(
+          info.pipelineData,
+          getCachedReleaseVersions(getWorkspaceRoot()),
+          info.repoInfo || null,
+        );
+        return info;
+      };
+      const requestReleaseVersions = async (force = false) => {
+        // A Refresh that ends after the panel was closed or opened again: nobody waits for it, and
+        // its answer would not be sent
+        if (panel.isDisposed() || versionsSession !== releaseVersionsSession) {
+          return;
+        }
+        // The load already running will send its answer. Only a Refresh needs a newer one
+        if (releaseVersionLoads > 0 && !force) {
+          return;
+        }
+        releaseVersionLoads++;
+        panel.mergeInitializationData({ releaseVersionsStatus: "loading" });
+        panel.sendMessage({
+          type: "releaseVersionsStatus",
+          data: { status: "loading" },
+        });
+        try {
+          await loadReleaseVersions({ force });
+        } catch (e: any) {
+          Logger.log(
+            `[vscode-sfdx-hardis] Release versions not loaded: ${e?.message || e}`,
+          );
+        } finally {
+          releaseVersionLoads--;
+        }
+        if (panel.isDisposed() || versionsSession !== releaseVersionsSession) {
+          return;
+        }
+        const status = currentReleaseVersionsStatus();
+        const pipelineData = pipelineProperties
+          ? withCurrentReleaseVersions(pipelineProperties).pipelineData
+          : null;
+        panel.mergeInitializationData({
+          releaseVersionsStatus: status,
+          ...(pipelineData ? { pipelineData } : {}),
+        });
+        panel.sendMessage({
+          type: "releaseVersionsLoaded",
+          data: { status, pipelineData },
+        });
+      };
+
+      // The setting changed elsewhere (settings panel, another window): the panel follows it. The
+      // writes of the toggle itself are ignored, their events can arrive after a later click.
+      let showReleaseVersionsWrites = 0;
+      let showReleaseVersionsWriteChain: Promise<void> = Promise.resolve();
+      showReleaseVersionsListener?.dispose();
+      showReleaseVersionsListener = vscode.workspace.onDidChangeConfiguration(
+        (event) => {
+          if (
+            !event.affectsConfiguration(
+              "vsCodeSfdxHardis.pipelineShowReleaseVersions",
+            ) ||
+            showReleaseVersionsWrites > 0 ||
+            panel.isDisposed()
+          ) {
+            return;
+          }
+          const value = vscode.workspace
+            .getConfiguration("vsCodeSfdxHardis")
+            .get<boolean>("pipelineShowReleaseVersions", false);
+          if (value === showReleaseVersions) {
+            return;
+          }
+          showReleaseVersions = value;
+          panel.mergeInitializationData({ showReleaseVersions: value });
+          panel.sendMessage({
+            type: "showReleaseVersionsChanged",
+            data: { value },
+          });
+        },
+      );
+      panel.addDisposable(showReleaseVersionsListener);
+
       // Staged 3-step pipeline loader:
       // Step 1: spinner flags already sent via getOrCreatePanel init data.
       // Step 2: fast load (no git provider) — renders diagram without PR annotations.
@@ -312,7 +425,7 @@ export function registerShowPipeline(commands: Commands) {
       const loadPipelineStaged = async (opts?: { resetGit?: boolean }) => {
         const stagedT0 = Date.now();
         Logger.logPerf("[pipeline-perf] staged load START (step 2: no git)");
-        panel.sendInitializationData({
+        sendPanelData({
           mermaidLoading: true,
           prLoading: true,
           deepLink: pendingDeepLink,
@@ -323,13 +436,13 @@ export function registerShowPipeline(commands: Commands) {
             resetGit: opts?.resetGit ?? false,
             withProgress: false,
           });
-          pipelineProperties = fast;
+          pipelineProperties = withCurrentReleaseVersions(fast);
           Logger.logPerf(
             `[pipeline-perf] STEP 2 done (mermaid without PRs ready): ${Date.now() - stagedT0}ms`,
           );
           // Step 2: render the diagram (no PR annotations yet) with a spinner
           // overlaid on it while the git provider data loads for step 3.
-          panel.sendInitializationData({
+          sendPanelData({
             ...fast,
             mermaidLoading: false,
             mermaidRefreshing: true,
@@ -341,12 +454,12 @@ export function registerShowPipeline(commands: Commands) {
             resetGit: opts?.resetGit ?? false,
             withProgress: false,
           });
-          pipelineProperties = full;
+          pipelineProperties = withCurrentReleaseVersions(full);
           Logger.logPerf(
             `[pipeline-perf] STEP 3 done (mermaid with PRs ready): ${Date.now() - stagedT0}ms total`,
           );
           // Step 3: re-render with PR annotations and clear the overlay.
-          panel.sendInitializationData({
+          sendPanelData({
             ...full,
             mermaidLoading: false,
             mermaidRefreshing: false,
@@ -361,7 +474,7 @@ export function registerShowPipeline(commands: Commands) {
             "[vscode-sfdx-hardis] pipeline staged load failed: " +
               (e?.message || e),
           );
-          panel.sendInitializationData({
+          sendPanelData({
             mermaidLoading: false,
             mermaidRefreshing: false,
             prLoading: false,
@@ -395,8 +508,7 @@ export function registerShowPipeline(commands: Commands) {
         }
         // A pass asked with its own age of the development orgs (a manual Refresh, a command that
         // changed an org, a list just read) runs after the one in progress: that one read the
-        // list with the default age, and what was asked would be lost. The same goes for the
-        // release versions a manual Refresh asks again
+        // list with the default age, and what was asked would be lost
         if (opts?.devOrgsMaxAgeMs !== undefined) {
           return fullLoadInFlight.then(() => loadPipelineFull(opts));
         }
@@ -422,8 +534,8 @@ export function registerShowPipeline(commands: Commands) {
               );
             },
           });
-          pipelineProperties = full;
-          panel.sendInitializationData({
+          pipelineProperties = withCurrentReleaseVersions(full);
+          sendPanelData({
             ...full,
             mermaidLoading: false,
             mermaidRefreshing: false,
@@ -434,7 +546,7 @@ export function registerShowPipeline(commands: Commands) {
             "[vscode-sfdx-hardis] pipeline full reload failed: " +
               (e?.message || e),
           );
-          panel.sendInitializationData({
+          sendPanelData({
             mermaidLoading: false,
             mermaidRefreshing: false,
             prLoading: false,
@@ -479,16 +591,55 @@ export function registerShowPipeline(commands: Commands) {
         // & PRs), keeps top bar visible; no intermediate PR-less render.
         if (type === "refreshPipeline") {
           ticketDetailsCache.clear();
-          // A refresh asked by the user lists the release versions again; the timer of the panel
-          // reuses the answer of the session
+          // A refresh asked by the user lists the release versions again if somebody asked for
+          // them in this session, once the pipeline is drawn. The last answer stays on the diagram
+          // meanwhile, and the timer of the panel reuses it
+          const reloadReleaseVersions =
+            data?.manual === true &&
+            currentReleaseVersionsStatus() !== "notLoaded";
           if (data?.manual === true) {
-            invalidateReleaseVersionsCache();
+            invalidateReleaseVersionsCache({
+              keepAnswer: reloadReleaseVersions,
+            });
           }
           // The timer of the panel reloads for the job statuses: the development orgs are read
           // again once an hour, or when somebody clicks Refresh
           await loadPipelineFull({
             devOrgsMaxAgeMs: data?.manual === true ? 0 : undefined,
           });
+          if (reloadReleaseVersions) {
+            void requestReleaseVersions(true);
+          }
+        }
+        // Somebody wants to see the versions: the CLI lists them in the background
+        else if (type === "loadReleaseVersions") {
+          void requestReleaseVersions();
+        }
+        // Versions toggle: saved without any notification. The writes run one at a time, so the
+        // last click is the value that stays
+        else if (type === "saveShowReleaseVersions") {
+          const value = data?.value === true;
+          showReleaseVersions = value;
+          panel.mergeInitializationData({ showReleaseVersions: value });
+          showReleaseVersionsWrites++;
+          showReleaseVersionsWriteChain = showReleaseVersionsWriteChain
+            .then(async () => {
+              await vscode.workspace
+                .getConfiguration("vsCodeSfdxHardis")
+                .update(
+                  "pipelineShowReleaseVersions",
+                  value,
+                  vscode.ConfigurationTarget.Global,
+                );
+            })
+            .catch((e: any) => {
+              Logger.log(
+                `[vscode-sfdx-hardis] Versions toggle not saved: ${e?.message || e}`,
+              );
+            })
+            .finally(() => {
+              showReleaseVersionsWrites--;
+            });
         }
         // The card says the current branch has no Pull Request, and somebody
         // came back to the panel: one call to know whether it has one now, and
@@ -1256,7 +1407,7 @@ export function registerShowPipeline(commands: Commands) {
       });
 
       // Start the staged background load — panel shows partial content immediately.
-      // A new panel session lists the release versions again once; its refreshes reuse the answer
+      // A new panel session forgets the release versions: they are listed when the panel asks
       invalidateReleaseVersionsCache();
       loadPipelineStaged();
     },
@@ -1305,14 +1456,11 @@ export function registerShowPipeline(commands: Commands) {
       Logger.logPerf(
         `[pipeline-perf][browseGit=${browseGitProvider}] loadData START`,
       );
-      // Release versions (releaseVersioning): the CLI fetches the tags, which is too slow for the
-      // first paint. Step 2 shows the answer of the session if there is one, step 3 asks the CLI
-      // when the session has none yet, in parallel with the git provider calls below. Nothing runs
-      // unless a branch config declares the feature. The extension never fetches the tags itself
+      // Release versions (releaseVersioning): the CLI fetches the tags, which costs seconds, so a
+      // load never asks for them and never waits for them. It only draws the answer of the session
+      // if there is one (see requestReleaseVersions). The extension never fetches the tags itself
       // (it fetches one branch at most), so the CLI keeps its own git fetch --tags
-      const releaseVersions = browseGitProvider
-        ? loadReleaseVersions()
-        : Promise.resolve(getCachedReleaseVersions(getWorkspaceRoot()));
+      const releaseVersions = getCachedReleaseVersions(getWorkspaceRoot());
       // Step 2 (browseGitProvider=false) renders the mermaid from local config
       // only — skip the git provider init entirely (its cold detection + token
       // validation costs ~10s on first run). It is initialized in step 3.

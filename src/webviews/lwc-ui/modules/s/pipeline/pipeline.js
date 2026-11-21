@@ -77,8 +77,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // View of the switch above the diagram: "majorBranches", "featureBranches" or "devOrgs". The
   // panel always opens on the feature branches.
   @track diagramView = "featureBranches";
-  // Release versions drawn on the diagram (Versions toggle of the diagram toolbar)
-  showReleaseVersions = true;
+  // Release versions drawn on the diagram (Versions toggle of the diagram toolbar): off by default,
+  // saved in the extension settings
+  showReleaseVersions = false;
+  _showReleaseVersionsRead = false;
+  // The versions are loaded on demand: "notLoaded", "loading", "loaded" or "failed"
+  releaseVersionsStatus = "notLoaded";
   // Details window of a development org
   @track showDevOrgModal = false;
   @track selectedDevOrg = null;
@@ -310,8 +314,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // Last deployment check of the major branch of the window against its org (null unless the
   // project enables enableMajorBranchDeploymentCheck): { found, status, webUrl, ... }
   modalMajorBranchCheck = null;
-  // Release version of the versioned major branch of the window (null unless a branch declares
-  // releaseVersioning and the CLI listed the versions): { current, history, next }
+  // Release version of the versioned major branch of the window (null unless the branch declares
+  // releaseVersioning, empty until the CLI listed the versions): { current, history, next }
   modalReleaseVersion = null;
   modalPullRequests = [];
   modalTickets = [];
@@ -598,6 +602,18 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (Object.prototype.hasOwnProperty.call(data, "deepLink")) {
       this._pendingDeepLink = data.deepLink || null;
     }
+    // The saved value of the Versions toggle is read once: a later payload may have been built
+    // before a click. The extension then tells when the setting changes elsewhere.
+    if (
+      !this._showReleaseVersionsRead &&
+      Object.prototype.hasOwnProperty.call(data, "showReleaseVersions")
+    ) {
+      this._showReleaseVersionsRead = true;
+      this.showReleaseVersions = data.showReleaseVersions === true;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "releaseVersionsStatus")) {
+      this.releaseVersionsStatus = data.releaseVersionsStatus || "notLoaded";
+    }
 
     // When only flag fields are present (step-1 or error-only payload), stop here.
     if (!Object.prototype.hasOwnProperty.call(data, "pipelineData")) {
@@ -776,6 +792,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this._updatePanelTitle();
     // Start auto-refresh timer
     this._startAutoRefresh();
+    // The diagram and the Pull Requests are there: the versions can be listed, if somebody
+    // wants to see them
+    if (!this.prLoading && this._releaseVersionsWanted) {
+      this._requestReleaseVersions();
+    }
     // Apply a pending deep link now that the pull requests are known
     this._maybeApplyPendingDeepLink();
   }
@@ -1959,6 +1980,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         // The catalog of custom functions, read in the background after the pipeline
         this.customFunctions = Array.isArray(data) ? data : [];
         break;
+      case "releaseVersionsStatus":
+        this.releaseVersionsStatus = data?.status || "notLoaded";
+        break;
+      case "releaseVersionsLoaded":
+        this.handleReleaseVersionsLoaded(data);
+        break;
+      case "showReleaseVersionsChanged":
+        this._setShowReleaseVersions(data?.value === true);
+        break;
       case "openPullRequestView":
         // A Pull Request link of another panel, while this panel is already loaded
         if (data?.prNumber > 0) {
@@ -2202,7 +2232,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         this.mermaidLoading = true;
       }
     }
-    // A manual refresh also lists the release versions again (the timer reuses the last answer)
+    // A manual refresh also lists the release versions again when they were asked for (the timer
+    // reuses the last answer)
     window.sendMessageToVSCode({
       type: "refreshPipeline",
       data: { manual: manual === true },
@@ -2421,12 +2452,41 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this._setDiagramView("devOrgs");
   }
 
-  // Versions toggle: the same diagram, drawn again with or without its version chips. The toggle
-  // re-renders the template (its class changes), and renderedCallback draws the diagram again
-  // since lastDiagram no longer matches: a second render here would draw it twice
+  // Versions toggle: saved in the extension settings, and the first time it is turned on the
+  // versions are listed in the background
   handleToggleVersions() {
-    this.showReleaseVersions = !this.showReleaseVersions;
-    this.lastDiagram = "";
+    const value = !this.showReleaseVersions;
+    this._setShowReleaseVersions(value);
+    window.sendMessageToVSCode({
+      type: "saveShowReleaseVersions",
+      data: { value },
+    });
+  }
+
+  handleReleasesTabActive() {
+    this._requestReleaseVersions();
+  }
+
+  // The versions arrived after the pipeline: the diagram is drawn again only if it shows them
+  handleReleaseVersionsLoaded(data) {
+    this.releaseVersionsStatus = data?.status || "notLoaded";
+    if (!data?.pipelineData) {
+      return;
+    }
+    this.pipelineData = data.pipelineData;
+    this.currentDiagram = this._selectDiagram();
+    this.lastDiagram = this.showReleaseVersions ? "" : this.currentDiagram;
+    if (this.showPRModal && this.modalReleaseVersion) {
+      this.modalReleaseVersion = this._releaseVersionOfBranch(
+        this.modalBranchName,
+      );
+    }
+    // Not every answer changes the template: renderedCallback may not run
+    setTimeout(() => {
+      if (this.currentDiagram !== this.lastDiagram) {
+        this.renderMermaid();
+      }
+    }, 0);
   }
 
   // "+" node: register an org on its branch; the org, the owner and the users are asked in the
@@ -2991,10 +3051,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   // The release version of a versioned major branch as its window shows it: null when the branch
-  // is not versioned or the versions are not known. The history of the branch is filtered from the
-  // history of the project, whose entries name branches in their git form (release/uat)
+  // is not versioned, empty until the versions are loaded. The history of the branch is filtered
+  // from the history of the project, whose entries name branches in their git form (release/uat)
   _releaseVersionOfBranch(branchName) {
-    if (this.pipelineData?.releaseVersioningEnabled !== true) {
+    if (!this.releaseVersioningDeclared) {
       return null;
     }
     const org = (this.pipelineData?.orgs || []).find(
@@ -3890,6 +3950,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this._prViewRequestId += 1;
     this.prViewLoading = false;
     applyModalState(this, entry.state);
+    // The release versions may have arrived or changed while this window was set aside
+    if (this.modalReleaseVersion) {
+      this.modalReleaseVersion = this._releaseVersionOfBranch(
+        this.modalBranchName,
+      );
+    }
     // Answers on their way belong to the window that was just left: none is waited for, and
     // what the restored window still misses is asked again
     resetModalLoadingFlags(this);
@@ -3922,6 +3988,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (value) {
       this.modalActiveTabValue = value;
       this._followSearchToTab(value);
+      if (value === "releaseVersion") {
+        this._requestReleaseVersions();
+      }
     }
   }
 
@@ -6817,12 +6886,42 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   // ---- Release versions (releaseVersioning): legend, Releases tab, Release version tab ----
 
+  // A branch config declares the feature: the toggle and the tabs are there before any version
+  get releaseVersioningDeclared() {
+    return this.pipelineData?.releaseVersioningDeclared === true;
+  }
+
+  // The CLI listed the versions
   get releaseVersioningEnabled() {
     return this.pipelineData?.releaseVersioningEnabled === true;
   }
 
+  get releaseVersionsFailed() {
+    return this.releaseVersionsStatus === "failed";
+  }
+
+  get releaseVersionsPending() {
+    return !this.releaseVersioningEnabled && !this.releaseVersionsFailed;
+  }
+
   get showReleaseVersionsLegend() {
     return this.releaseVersioningEnabled && this.showReleaseVersions;
+  }
+
+  get showVersionsLoadingLegend() {
+    return (
+      this.releaseVersioningDeclared &&
+      this.showReleaseVersions &&
+      this.releaseVersionsPending
+    );
+  }
+
+  get showVersionsFailedLegend() {
+    return (
+      this.releaseVersioningDeclared &&
+      this.showReleaseVersions &&
+      this.releaseVersionsFailed
+    );
   }
 
   get versionsToggleClass() {
@@ -6855,6 +6954,14 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   get hasReleaseRows() {
     return this.releaseRows.length > 0;
+  }
+
+  get showReleaseRows() {
+    return this.releaseVersioningEnabled && this.hasReleaseRows;
+  }
+
+  get showNoReleaseRows() {
+    return this.releaseVersioningEnabled && !this.hasReleaseRows;
   }
 
   get releasesTabLabel() {
@@ -7425,6 +7532,42 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   _getActionTypeIconName(typeCode) {
     return getActionTypeIconName(typeCode);
+  }
+
+  // The same diagram, drawn again with or without its version chips. The toggle re-renders the
+  // template (its class changes), and renderedCallback draws the diagram again since lastDiagram
+  // no longer matches: a second render here would draw it twice
+  _setShowReleaseVersions(value) {
+    if (value === this.showReleaseVersions) {
+      return;
+    }
+    this.showReleaseVersions = value;
+    this.lastDiagram = "";
+    if (value) {
+      this._requestReleaseVersions();
+    }
+  }
+
+  // Asks the extension for the versions, once: every caller is a place that shows them
+  _requestReleaseVersions() {
+    if (
+      !this.releaseVersioningDeclared ||
+      this.releaseVersionsStatus !== "notLoaded"
+    ) {
+      return;
+    }
+    this.releaseVersionsStatus = "loading";
+    window.sendMessageToVSCode({ type: "loadReleaseVersions" });
+  }
+
+  // The toggle is on, or the Releases tab or the Release version tab of a branch is open
+  get _releaseVersionsWanted() {
+    return (
+      this.showReleaseVersions ||
+      this.template.querySelector(".pipeline-tabs")?.activeTabValue ===
+        "releases" ||
+      (this.showPRModal && this.modalActiveTabValue === "releaseVersion")
+    );
   }
 }
 
