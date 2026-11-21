@@ -3,9 +3,9 @@ import * as path from "path";
 import * as vscode from "vscode";
 import {
   activateExtension,
-  recordSentMessages,
   resetProviders,
   waitFor,
+  waitForLoadedPipeline,
 } from "./uiTestUtils";
 import { GitProvider } from "../../utils/gitProviders/gitProvider";
 
@@ -43,22 +43,10 @@ suite("Pull Request view UI tests", function () {
       "vscode-sfdx-hardis.showPipeline",
       deepLink,
     );
-    panel = await waitFor(
-      () => panelManager.getPanel(LWC_ID),
-      10000,
-      "pipeline panel to open",
-    );
-    sent = recordSentMessages(panel);
-    return waitFor(
-      () => {
-        const data = panel.getInitializationData();
-        return data && data.prLoading === false && data.pipelineData
-          ? data
-          : null;
-      },
-      60000,
-      "the pipeline to be loaded with its Pull Requests",
-    );
+    const loaded = await waitForLoadedPipeline(panelManager);
+    panel = loaded.panel;
+    sent = loaded.sent;
+    return loaded.data;
   }
 
   /** Sends a message the way the LWC does, and waits for the answer of the given type */

@@ -1459,8 +1459,8 @@ async function main() {
       tagUrl: null,
       releaseUrl: null,
     });
-    const uat = entry("v1.5.0-rc.3", "rvtestuat", true);
-    const main = entry("v1.4.0", "rvtestmain", false);
+    const uat = entry("v1.5.0-rc.3", "versions-uat", true);
+    const main = entry("v1.4.0", "versions-main", false);
     outputJsonIfRequested(
       {
         status: 0,
@@ -1469,8 +1469,8 @@ async function main() {
           initialVersion: "1.0.0",
           minimumVersion: null,
           branches: [
-            { branchName: "rvtestuat", current: uat, nextOnPromotion: [] },
-            { branchName: "rvtestmain", current: main, nextOnPromotion: [] },
+            { branchName: "versions-uat", current: uat, nextOnPromotion: [] },
+            { branchName: "versions-main", current: main, nextOnPromotion: [] },
           ],
           history: [uat, main],
         },

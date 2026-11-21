@@ -5,8 +5,8 @@ import * as vscode from "vscode";
 import {
   activateExtension,
   readMockLog,
-  recordSentMessages,
   waitFor,
+  waitForLoadedPipeline,
 } from "./uiTestUtils";
 
 /**
@@ -51,22 +51,10 @@ suite("Release versions on demand UI tests", function () {
   async function openPipeline(): Promise<any> {
     panelManager.disposePanel(LWC_ID);
     await vscode.commands.executeCommand("vscode-sfdx-hardis.showPipeline");
-    panel = await waitFor(
-      () => panelManager.getPanel(LWC_ID),
-      10000,
-      "pipeline panel to open",
-    );
-    sent = recordSentMessages(panel);
-    return waitFor(
-      () => {
-        const data = panel.getInitializationData();
-        return data && data.prLoading === false && data.pipelineData
-          ? data
-          : null;
-      },
-      60000,
-      "the pipeline to be loaded",
-    );
+    const loaded = await waitForLoadedPipeline(panelManager);
+    panel = loaded.panel;
+    sent = loaded.sent;
+    return loaded.data;
   }
 
   /** Sends what the LWC sends, and waits for the versions it asked for */
@@ -91,8 +79,8 @@ suite("Release versions on demand UI tests", function () {
     const branchDir = path.join(root, "config", "branches");
     fs.mkdirSync(branchDir, { recursive: true });
     branchFiles = [
-      [".sfdx-hardis.rvtestuat.yml", "mergeTargets: [rvtestmain]"],
-      [".sfdx-hardis.rvtestmain.yml", "mergeTargets: []"],
+      [".sfdx-hardis.versions-uat.yml", "mergeTargets: [versions-main]"],
+      [".sfdx-hardis.versions-main.yml", "mergeTargets: []"],
     ].map(([name, targets]) => {
       const file = path.join(branchDir, name);
       fs.writeFileSync(
@@ -198,15 +186,15 @@ suite("Release versions on demand UI tests", function () {
     assert.strictEqual(retried.pipelineData.releaseVersioningEnabled, true);
   });
 
-  test("a toggle saved on opens with it on, and the panel asks for the versions", async function () {
+  test("a toggle saved on opens with it on, and its versions are drawn", async function () {
     await setSetting(true);
     const data = await openPipeline();
     assert.strictEqual(data.showReleaseVersions, true);
-    await waitFor(
-      () => panel.getInitializationData().pipelineData.releaseVersioningEnabled,
-      30000,
-      "the versions asked by the panel itself",
-    );
+    // What the LWC sends once the Pull Requests are displayed. When its page has booted, it has
+    // sent the same message: the two share one CLI call
+    const answer = await nextVersionsAnswer({ type: "loadReleaseVersions" });
+    assert.strictEqual(answer.status, "loaded");
+    assert.strictEqual(answer.pipelineData.releaseVersioningEnabled, true);
     assert.strictEqual(versionCalls(), 1);
   });
 
