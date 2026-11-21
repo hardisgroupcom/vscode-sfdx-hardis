@@ -1330,6 +1330,12 @@ export class LwcUiPanel {
             mermaid.initialize({
               startOnLoad: false,
               securityLevel: 'loose',
+              // Mermaid 12 lays flowcharts out with ELK and draws them with the "neo" look by default.
+              // With those defaults the DevOps Pipeline renders an empty diagram, and the node,
+              // cluster and edge styles of the panel are written for dagre and the classic look.
+              layout: 'dagre',
+              look: 'classic',
+              theme: 'default',
               themeVariables: {
                 fontFamily: "'Salesforce Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
                 fontSize: "13px",
@@ -1340,7 +1346,11 @@ export class LwcUiPanel {
               },
               flowchart: {
                 nodeSpacing: 55,
-                rankSpacing: 65
+                rankSpacing: 65,
+                // Mermaid 12 widens every node to a 120px label area and wraps labels at 120px:
+                // keep each node as wide as its label and wrap at 200px, as before
+                minNodeWidth: 0,
+                wrappingWidth: 200
               }
             });
         </script>`
