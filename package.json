@@ -222,6 +222,12 @@
           "minimum": 0,
           "description": "In the DevOps Pipeline diagram, when more than this number of feature branches target the same major branch, the older ones are folded into a single \"+N more\" node. Set to a very high value to disable grouping."
         },
+        "vsCodeSfdxHardis.pipelineShowReleaseVersions": {
+          "type": "boolean",
+          "default": false,
+          "scope": "application",
+          "description": "Show the release versions on the DevOps Pipeline diagram when the project uses release versioning. Off by default, as listing the versions takes a few seconds. The Versions button of the diagram changes this setting."
+        },
         "vsCodeSfdxHardis.showCommandsDetails": {
           "type": "boolean",
           "default": false,

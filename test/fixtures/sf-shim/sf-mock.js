@@ -1431,6 +1431,55 @@ async function main() {
     return 0;
   }
 
+  // Release versions of the DevOps Pipeline, listed on demand: one version on the branches of
+  // the release versions UI test. SF_MOCK_RELEASE_VERSIONS=error simulates a CLI that fails.
+  if (first === "hardis:project:version:list" && args.includes("--json")) {
+    if (process.env.SF_MOCK_RELEASE_VERSIONS === "error") {
+      console.log(
+        JSON.stringify({
+          name: "SfError",
+          message: "The version tags cannot be read",
+          status: 1,
+          stack: "",
+        }),
+      );
+      return 1;
+    }
+    const entry = (tag, branchName, prerelease) => ({
+      tag,
+      version: tag.replace(/^v/, ""),
+      variables: {},
+      prerelease,
+      branchName,
+      commit: "abc1234",
+      deployedAt: "2026-11-20T10:00:00.000Z",
+      org: null,
+      pullRequest: 12,
+      jobUrl: null,
+      tagUrl: null,
+      releaseUrl: null,
+    });
+    const uat = entry("v1.5.0-rc.3", "versions-uat", true);
+    const main = entry("v1.4.0", "versions-main", false);
+    outputJsonIfRequested(
+      {
+        status: 0,
+        result: {
+          enabled: true,
+          initialVersion: "1.0.0",
+          minimumVersion: null,
+          branches: [
+            { branchName: "versions-uat", current: uat, nextOnPromotion: [] },
+            { branchName: "versions-main", current: main, nextOnPromotion: [] },
+          ],
+          history: [uat, main],
+        },
+      },
+      "",
+    );
+    return 0;
+  }
+
   // Replacement Rules panel: list, preview, create, update and delete
   if (first.startsWith("hardis:project:replacement:")) {
     return await answerReplacementRules(first);

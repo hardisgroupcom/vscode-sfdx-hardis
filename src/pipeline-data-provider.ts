@@ -22,6 +22,7 @@ import {
   ReleaseVersionEntry,
   ReleaseVersionList,
   ReleaseVersionNext,
+  ReleaseVersionRepo,
   ReleaseVersionView,
   withReleaseVersionLinks,
 } from "./utils/pipeline/releaseVersionUtils";
@@ -36,6 +37,7 @@ import {
 import { PullRequest } from "./utils/gitProviders/types";
 import { GitProvider } from "./utils/gitProviders/gitProvider";
 import { t } from "./i18n/i18n";
+import { Logger } from "./logger";
 
 export interface OrgNode {
   name: string;
@@ -53,9 +55,10 @@ export interface OrgNode {
   // Last major branch deployment check of the branch, only when the project enables
   // enableMajorBranchDeploymentCheck: null when none was found (see majorBranchCheckUtils.ts)
   majorBranchCheck?: MajorBranchCheckView | null;
-  // Release versioning, only on a versioned branch once the CLI answered (see releaseVersionUtils.ts):
-  // the latest version deployed on the branch and its org (null when none yet), and the versions a
-  // promotion into this branch would create, by source branch
+  // The branch config declares release versioning. Once the CLI answered (see
+  // releaseVersionUtils.ts), the branch also holds the latest version deployed on it and its org
+  // (null when none yet), and the versions a promotion into this branch would create, by source
+  // branch
   releaseVersioning?: boolean;
   releaseVersion?: ReleaseVersionEntry | null;
   nextOnPromotion?: ReleaseVersionNext[];
@@ -85,8 +88,9 @@ export interface PipelineData {
   // age in hours after which a check is stale (majorBranchDeploymentCheckValidityHours)
   majorBranchDeploymentCheckEnabled?: boolean;
   majorBranchDeploymentCheckValidityHours?: number;
-  // Release versioning: a branch declares releaseVersioning and the CLI listed the versions. The
-  // history holds every version tag, newest first
+  // A branch config declares releaseVersioning: the panel offers the versions, loaded on demand
+  releaseVersioningDeclared?: boolean;
+  // The CLI listed the versions. The history holds every version tag, newest first
   releaseVersioningEnabled?: boolean;
   releaseVersionHistory?: ReleaseVersionEntry[];
   // Development orgs registry of the project (enableDevOrgsRegistry, on unless set to false)
@@ -106,6 +110,29 @@ export interface PipelineData {
   devOrgTargetBranches?: string[];
 }
 
+// What the diagrams of a PipelineData were built from, so that versions arriving later draw them
+// again without reading the branches or calling the git provider
+type PipelineDiagramInputs = {
+  majorOrgs: MajorOrg[];
+  isAuthenticated: boolean;
+  openPullRequests: PullRequest[];
+  gitProvider: GitProvider | null;
+  colorTheme: string;
+  featureBranchGroupThreshold: number;
+  promotionBranchConfig: PromotionBranchConfig;
+  majorBranchCheckEnabled: boolean;
+  majorBranchChecks: Record<string, MajorBranchCheckView | null>;
+  devOrgsList: DevOrgView[];
+  devOrgAddBranches: string[];
+  releaseVersions: ReleaseVersionList | null;
+  repo: ReleaseVersionRepo | null;
+};
+
+const pipelineDiagramInputs = new WeakMap<
+  PipelineData,
+  PipelineDiagramInputs
+>();
+
 export class PipelineDataProvider {
   constructor() {}
 
@@ -118,9 +145,8 @@ export class PipelineDataProvider {
       openPullRequests?: PullRequest[];
       colorTheme?: string;
       featureBranchGroupThreshold?: number;
-      // Versions listed by the CLI, started by the caller in parallel with the git provider calls
-      releaseVersions?:
-        Promise<ReleaseVersionList | null> | ReleaseVersionList | null;
+      // The versions already listed by the CLI in this panel session: this load never asks for them
+      releaseVersions?: ReleaseVersionList | null;
       // The list of development orgs to draw, null when it was not read
       devOrgs?: DevOrgsView | null;
     } = {},
@@ -162,96 +188,33 @@ export class PipelineDataProvider {
           );
         }
       }
-      // Release versions: nothing at all unless a branch config declares the feature and the CLI
-      // answered. Its failures were already logged
-      let releaseVersionList: ReleaseVersionList | null = null;
-      if (isReleaseVersioningDeclared(majorOrgs)) {
-        try {
-          // The tag and Release links come from the repository URL the git provider of the
-          // extension knows (only in the git provider pass): the CLI is not asked to build them
-          releaseVersionList = withReleaseVersionLinks(
-            (await options.releaseVersions) ?? null,
-            gitProvider?.repoInfo || null,
-          );
-        } catch {
-          releaseVersionList = null;
-        }
-      }
-      const releaseVersioningEnabled = releaseVersionList?.enabled === true;
-      const releaseVersionViews: Record<string, ReleaseVersionView> =
-        releaseVersioningEnabled
-          ? buildReleaseVersionViews(
-              releaseVersionList,
-              majorOrgs.map((org) => org.branchName),
-            )
-          : {};
-      const mermaidBuilder = new BranchStrategyMermaidBuilder(
+      const diagramInputs: PipelineDiagramInputs = {
         majorOrgs,
         isAuthenticated,
-        options.openPullRequests || [],
+        openPullRequests: options.openPullRequests || [],
         gitProvider,
-        options.colorTheme || "light",
-        options.featureBranchGroupThreshold ??
+        colorTheme: options.colorTheme || "light",
+        featureBranchGroupThreshold:
+          options.featureBranchGroupThreshold ??
           DEFAULT_FEATURE_BRANCH_GROUP_THRESHOLD,
         promotionBranchConfig,
+        majorBranchCheckEnabled,
         majorBranchChecks,
         devOrgsList,
-        releaseVersionViews,
-      );
-      const mermaidDiagram = mermaidBuilder.build({
-        format: "string",
-        withMermaidTag: true,
-      }) as string;
-      // Capture groups from the full build (feature branches shown) before the
-      // major-only build recomputes state without them.
-      const featureBranchGroups = mermaidBuilder.getFeatureBranchGroups();
-      const mermaidDiagramMajor = mermaidBuilder.build({
-        format: "string",
-        withMermaidTag: true,
-        onlyMajorBranches: true,
-      }) as string;
-      // The "Dev orgs" view: the major branches and every development org, no feature branch,
-      // and a "+" node for each target branch no org targets yet (when the list is on)
-      const mermaidDiagramDevOrgs = mermaidBuilder.build({
-        format: "string",
-        withMermaidTag: true,
-        onlyMajorBranches: true,
-        devOrgs: true,
         devOrgAddBranches: devOrgsEnabled
           ? devOrgTargetBranches(projectConfig)
           : [],
-      }) as string;
-      const devOrgAddNodes = mermaidBuilder.getDevOrgAddNodes();
+        releaseVersions: options.releaseVersions ?? null,
+        // The tag and Release links come from the repository URL the git provider of the
+        // extension knows (only in the git provider pass): the CLI is not asked to build them
+        repo: gitProvider?.repoInfo || null,
+      };
+      const versionedFields = this.buildVersionedFields(diagramInputs);
       // The branches an org can target, among the major branches of the pipeline
       const majorBranchNames = majorOrgs.map((org) => org.branchName);
       const devOrgTargetBranchList = devOrgTargetBranches(projectConfig).filter(
         (branch) => majorBranchNames.includes(branch),
       );
-
-      // Build orgs and links for UI (not just for diagram)
-      const orgs: OrgNode[] = majorOrgs.map((org) => ({
-        name: org.branchName,
-        type: org.orgType,
-        alias: org.alias,
-        instanceUrl: org.instanceUrl,
-        nodeName: `${this.sanitizeNodeName(org.branchName)}Org`,
-        level: org.level,
-        isTopBranch: (org.mergeTargets || []).length === 0,
-        mergeTargets: org.mergeTargets || [],
-        pullRequestsInBranchSinceLastMerge:
-          org.pullRequestsInBranchSinceLastMerge || [],
-        ...(majorBranchCheckEnabled
-          ? { majorBranchCheck: majorBranchChecks[org.branchName] ?? null }
-          : {}),
-        ...(releaseVersionViews[org.branchName]
-          ? {
-              releaseVersioning: true,
-              releaseVersion: releaseVersionViews[org.branchName].current,
-              nextOnPromotion:
-                releaseVersionViews[org.branchName].nextOnPromotion,
-            }
-          : {}),
-      }));
       const links: OrgLink[] = [];
       for (const org of majorOrgs) {
         for (const target of org.mergeTargets) {
@@ -270,30 +233,24 @@ export class PipelineDataProvider {
       this.checkDevelopmentBranchExists(projectConfig, majorOrgs);
       this.checkAvailableTargetBranchesExist(projectConfig, majorOrgs);
 
-      return {
-        orgs,
+      const pipelineData: PipelineData = {
+        ...versionedFields,
         links,
-        mermaidDiagram,
-        mermaidDiagramMajor,
         warnings: this.warnings,
-        featureBranchGroups,
         promotionBranches: promotionBranchConfig,
         scratchOrgPoolEnabled: isScratchOrgPoolConfigured(projectConfig),
         majorBranchDeploymentCheckEnabled: majorBranchCheckEnabled,
         majorBranchDeploymentCheckValidityHours: majorBranchCheckValidityHours,
-        releaseVersioningEnabled: releaseVersioningEnabled,
-        releaseVersionHistory: releaseVersioningEnabled
-          ? releaseVersionList?.history || []
-          : [],
+        releaseVersioningDeclared: isReleaseVersioningDeclared(majorOrgs),
         devOrgsEnabled,
         devOrgsLoaded: !!options.devOrgs,
         devOrgs: devOrgsList,
         devOrgsDashboardUrl: options.devOrgs?.dashboardUrl || null,
         devOrgsStaleDays: options.devOrgs?.staleDays || 0,
-        mermaidDiagramDevOrgs,
-        devOrgAddNodes,
         devOrgTargetBranches: devOrgTargetBranchList,
       };
+      pipelineDiagramInputs.set(pipelineData, diagramInputs);
+      return pipelineData;
     } catch (error: any) {
       vscode.window.showErrorMessage(
         `Failed to get pipeline data: ${error.message}`,
@@ -306,6 +263,39 @@ export class PipelineDataProvider {
         warnings: [error.message],
         featureBranchGroups: [],
       };
+    }
+  }
+
+  /**
+   * The same pipeline with these versions: its orgs and diagrams are built again from what they
+   * were built from, without reading the branches or calling the git provider. Returns the data
+   * untouched when it already holds this answer.
+   */
+  public applyReleaseVersions(
+    pipelineData: PipelineData,
+    releaseVersions: ReleaseVersionList | null,
+    repo: ReleaseVersionRepo | null,
+  ): PipelineData {
+    const inputs = pipelineDiagramInputs.get(pipelineData);
+    if (
+      !inputs ||
+      (inputs.releaseVersions === releaseVersions && inputs.repo === repo)
+    ) {
+      return pipelineData;
+    }
+    try {
+      const newInputs = { ...inputs, releaseVersions, repo };
+      const updated: PipelineData = {
+        ...pipelineData,
+        ...this.buildVersionedFields(newInputs),
+      };
+      pipelineDiagramInputs.set(updated, newInputs);
+      return updated;
+    } catch (error: any) {
+      Logger.log(
+        `[vscode-sfdx-hardis] Release versions not drawn: ${error?.message || error}`,
+      );
+      return pipelineData;
     }
   }
 
@@ -344,6 +334,93 @@ export class PipelineDataProvider {
         );
       }
     }
+  }
+
+  // Everything that shows a version: the orgs of the UI, the three diagrams and the history
+  private buildVersionedFields(inputs: PipelineDiagramInputs) {
+    const { majorOrgs, majorBranchCheckEnabled, majorBranchChecks } = inputs;
+    // Nothing at all unless a branch config declares the feature and the CLI answered
+    const releaseVersionList = isReleaseVersioningDeclared(majorOrgs)
+      ? withReleaseVersionLinks(inputs.releaseVersions, inputs.repo)
+      : null;
+    const releaseVersioningEnabled = releaseVersionList?.enabled === true;
+    const releaseVersionViews: Record<string, ReleaseVersionView> =
+      releaseVersioningEnabled
+        ? buildReleaseVersionViews(
+            releaseVersionList,
+            majorOrgs.map((org) => org.branchName),
+          )
+        : {};
+    const mermaidBuilder = new BranchStrategyMermaidBuilder(
+      majorOrgs,
+      inputs.isAuthenticated,
+      inputs.openPullRequests,
+      inputs.gitProvider,
+      inputs.colorTheme,
+      inputs.featureBranchGroupThreshold,
+      inputs.promotionBranchConfig,
+      majorBranchChecks,
+      inputs.devOrgsList,
+      releaseVersionViews,
+    );
+    const mermaidDiagram = mermaidBuilder.build({
+      format: "string",
+      withMermaidTag: true,
+    }) as string;
+    // Capture groups from the full build (feature branches shown) before the
+    // major-only build recomputes state without them.
+    const featureBranchGroups = mermaidBuilder.getFeatureBranchGroups();
+    const mermaidDiagramMajor = mermaidBuilder.build({
+      format: "string",
+      withMermaidTag: true,
+      onlyMajorBranches: true,
+    }) as string;
+    // The "Dev orgs" view: the major branches and every development org, no feature branch,
+    // and a "+" node for each target branch no org targets yet (when the list is on)
+    const mermaidDiagramDevOrgs = mermaidBuilder.build({
+      format: "string",
+      withMermaidTag: true,
+      onlyMajorBranches: true,
+      devOrgs: true,
+      devOrgAddBranches: inputs.devOrgAddBranches,
+    }) as string;
+    const devOrgAddNodes = mermaidBuilder.getDevOrgAddNodes();
+    // Build orgs for UI (not just for diagram)
+    const orgs: OrgNode[] = majorOrgs.map((org) => ({
+      name: org.branchName,
+      type: org.orgType,
+      alias: org.alias,
+      instanceUrl: org.instanceUrl,
+      nodeName: `${this.sanitizeNodeName(org.branchName)}Org`,
+      level: org.level,
+      isTopBranch: (org.mergeTargets || []).length === 0,
+      mergeTargets: org.mergeTargets || [],
+      pullRequestsInBranchSinceLastMerge:
+        org.pullRequestsInBranchSinceLastMerge || [],
+      ...(majorBranchCheckEnabled
+        ? { majorBranchCheck: majorBranchChecks[org.branchName] ?? null }
+        : {}),
+      ...(org.releaseVersioning === true ? { releaseVersioning: true } : {}),
+      ...(releaseVersionViews[org.branchName]
+        ? {
+            releaseVersion: releaseVersionViews[org.branchName].current,
+            nextOnPromotion:
+              releaseVersionViews[org.branchName].nextOnPromotion,
+          }
+        : {}),
+    }));
+    return {
+      orgs,
+      mermaidDiagram,
+      mermaidDiagramMajor,
+      mermaidDiagramDevOrgs,
+      featureBranchGroups,
+      devOrgAddNodes,
+      releaseVersioningEnabled,
+      releaseVersionHistory: releaseVersioningEnabled
+        ? releaseVersionList?.history || []
+        : [],
+    };
   }
 
   private sanitizeNodeName(branchName: string | undefined): string {
