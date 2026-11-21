@@ -17,7 +17,11 @@ export const EXTENSION_ID = "NicolasVuillamy.vscode-sfdx-hardis";
  */
 export async function waitFor<T>(
   producer: () =>
-    T | undefined | null | false | Promise<T | undefined | null | false>,
+    | T
+    | undefined
+    | null
+    | false
+    | Promise<T | undefined | null | false>,
   timeoutMs: number,
   label: string,
   intervalMs = 100,
@@ -105,6 +109,32 @@ export function recordSentMessages(panel: any): any[] {
     original(message);
   };
   return sent;
+}
+
+/**
+ * The DevOps Pipeline panel the command just opened, once its Pull Requests are loaded, with a
+ * record of the messages sent to it.
+ */
+export async function waitForLoadedPipeline(
+  panelManager: any,
+): Promise<{ panel: any; sent: any[]; data: any }> {
+  const panel: any = await waitFor(
+    () => panelManager.getPanel("s-pipeline"),
+    10000,
+    "pipeline panel to open",
+  );
+  const sent = recordSentMessages(panel);
+  const data = await waitFor(
+    () => {
+      const state = panel.getInitializationData();
+      return state && state.prLoading === false && state.pipelineData
+        ? state
+        : null;
+    },
+    60000,
+    "the pipeline to be loaded with its Pull Requests",
+  );
+  return { panel, sent, data };
 }
 
 /**

@@ -2565,6 +2565,8 @@
   "releaseVersionReleaseCandidate": "リリース候補",
   "releaseVersionReleased": "リリース済みバージョン",
   "releaseVersionTab": "リリースバージョン",
+  "releaseVersionsLoadFailed": "バージョンを読み込めませんでした。必要に応じて sfdx-hardis を更新してから、パイプラインを更新してください。",
+  "releaseVersionsLoading": "バージョンを読み込み中...",
   "releasesTabLabel": "リリース",
   "releasesTabLabelWithCount": "リリース ({{count}})",
   "reloadWindow": "ウィンドウを再読み込み",

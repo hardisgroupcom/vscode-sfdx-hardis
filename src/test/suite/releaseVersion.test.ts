@@ -4,6 +4,7 @@ import {
   buildReleaseVersionViews,
   findNextVersionFrom,
   getCachedReleaseVersions,
+  getReleaseVersionsStatus,
   invalidateReleaseVersionsCache,
   isReleaseVersioningDeclared,
   loadReleaseVersions,
@@ -340,6 +341,57 @@ suite("Release versioning", () => {
         null,
       );
       assert.strictEqual(runs, 2);
+    });
+
+    test("the status follows the load, without running anything", async () => {
+      assert.strictEqual(getReleaseVersionsStatus("/workspace"), "notLoaded");
+      assert.strictEqual(runs, 0);
+      let release: (value: any) => void = () => undefined;
+      const answer = new Promise((resolve) => {
+        release = resolve;
+      });
+      const load = loadReleaseVersions(
+        {},
+        deps(true, async () => await answer),
+      );
+      while (runs === 0) {
+        await new Promise((resolve) => setImmediate(resolve));
+      }
+      assert.strictEqual(getReleaseVersionsStatus("/workspace"), "loading");
+      release(CLI_RESULT);
+      await load;
+      assert.strictEqual(getReleaseVersionsStatus("/workspace"), "loaded");
+      assert.strictEqual(getReleaseVersionsStatus("/other"), "notLoaded");
+    });
+
+    test("a CLI failure or an answer without the feature is a failed status", async () => {
+      await loadReleaseVersions(
+        {},
+        deps(true, async () => {
+          throw new Error("not a sf command");
+        }),
+      );
+      assert.strictEqual(getReleaseVersionsStatus("/workspace"), "failed");
+      await loadReleaseVersions(
+        { force: true },
+        deps(true, async () => ({ ...CLI_RESULT, enabled: false })),
+      );
+      assert.strictEqual(getReleaseVersionsStatus("/workspace"), "failed");
+    });
+
+    test("keepAnswer keeps the versions readable until the new answer replaces them", async () => {
+      const d = deps(true, async () => CLI_RESULT);
+      const first = await loadReleaseVersions({}, d);
+      invalidateReleaseVersionsCache({ keepAnswer: true });
+      assert.strictEqual(getCachedReleaseVersions("/workspace"), first);
+      assert.strictEqual(getReleaseVersionsStatus("/workspace"), "loaded");
+      const second = await loadReleaseVersions({ force: true }, d);
+      assert.strictEqual(runs, 2);
+      assert.notStrictEqual(second, first);
+      assert.strictEqual(getCachedReleaseVersions("/workspace"), second);
+      invalidateReleaseVersionsCache();
+      assert.strictEqual(getCachedReleaseVersions("/workspace"), null);
+      assert.strictEqual(getReleaseVersionsStatus("/workspace"), "notLoaded");
     });
   });
 

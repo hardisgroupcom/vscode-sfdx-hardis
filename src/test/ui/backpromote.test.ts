@@ -8,6 +8,7 @@ import {
   recordSentMessages,
   waitFor,
 } from "./uiTestUtils";
+import { invalidateProviderCredentialEnvCache } from "../../utils/providerCredentials";
 
 /**
  * UI integration tests of the Backpromote panel, against the mocked sf CLI that
@@ -885,6 +886,9 @@ suite("Backpromote panel UI tests", function () {
   test("without a git provider token the panel shows how to configure one and calls nothing", async function () {
     const saved = process.env.GITHUB_TOKEN;
     delete process.env.GITHUB_TOKEN;
+    // The credentials are cached for two minutes: a refresh during the previous tests may hold
+    // the token this test removes
+    invalidateProviderCredentialEnvCache();
     const callsBefore = backpromoteCalls().length;
     try {
       await openPanel();
@@ -893,6 +897,7 @@ suite("Backpromote panel UI tests", function () {
       assert.strictEqual(backpromoteCalls().length, callsBefore);
     } finally {
       process.env.GITHUB_TOKEN = saved;
+      invalidateProviderCredentialEnvCache();
     }
   });
 
