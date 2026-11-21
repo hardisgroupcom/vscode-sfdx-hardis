@@ -87,10 +87,7 @@ export interface ReleaseVersionRepo {
 
 /** Where the versions of the panel session stand */
 export type ReleaseVersionsStatus =
-  | "notLoaded"
-  | "loading"
-  | "loaded"
-  | "failed";
+  "notLoaded" | "loading" | "loaded" | "failed";
 
 type CacheEntry = {
   workspaceRoot: string;
@@ -456,9 +453,8 @@ async function defaultReleaseVersionDeps(): Promise<ReleaseVersionDeps> {
       // Without --with-links the CLI never calls the git provider API (withReleaseVersionLinks
       // builds the links): it gets the credentials the extension is connected with, like the
       // other background CLI calls of the panel
-      const { execSfdxJsonWithProviderCredentials } = await import(
-        "../providerCredentials"
-      );
+      const { execSfdxJsonWithProviderCredentials } =
+        await import("../providerCredentials");
       return await execSfdxJsonWithProviderCredentials(
         "sf hardis:project:version:list --json",
         "Release versions",
