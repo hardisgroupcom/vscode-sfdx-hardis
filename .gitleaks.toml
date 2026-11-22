@@ -13,6 +13,16 @@ description = "Allowlisted false positives"
 # It only routes anonymous telemetry to the publisher's dashboard and grants no access.
 paths = [
   '''src/extension\.ts''',
+  # betterleaks (new in the MegaLinter beta image) reports a generic-password for
+  # every translation key with "Password" in its name (enterJiraPassword...) and
+  # for the label key map of the Browserforce setting editor. They are UI labels
+  # and key names, never values.
+  '''src/i18n/[A-Za-z-]+\.json''',
+  '''src/webviews/lwc-ui/modules/s/browserforceSettingEditor/browserforceSettingEditor\.js''',
+  # Fake credentials written on purpose as test inputs (user:token@host, pass=...).
+  '''src/test/suite/envFileCredentials\.test\.ts''',
+  '''src/test/suite/gitUrlUtils\.test\.ts''',
+  '''src/test/suite/scratchOrgPoolUtils\.test\.ts''',
 ]
 regexes = [
   '''cf83e6dc-2621-4cb6-b92b-30905d1c8476''',
