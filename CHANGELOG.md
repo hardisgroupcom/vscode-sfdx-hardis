@@ -10,6 +10,7 @@
 - Pipeline Settings: new **Release versioning: tag format of release candidates** and **values of the tag format variables** settings, to name the release candidates of each branch your own way, with a new editor for settings that map names to values
 - Contributors: the UI test harness can run sfdx-hardis commands against real orgs and capture them, for the screenshots of the sfdx-hardis command pages.
 - DevOps Pipeline: upgrade MermaidJS to 12.3.0, which fixes six security advisories of MermaidJS and KaTeX, with the same diagram as before.
+- Metadata Retriever: update a hidden surprise.
 
 ## [8.20.0] 2026-11-16
 
