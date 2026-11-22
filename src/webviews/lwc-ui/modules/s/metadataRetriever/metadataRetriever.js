@@ -46,6 +46,10 @@ const OPERATION_MARKERS = {
 // "All Metadata" mode has no change operation to display
 const NO_OPERATION_MARKER = { iconName: "", cellClass: "", labelKey: "" };
 
+// Day of the hidden feature, compared as a calendar day
+const FEATURE_DAY = Date.UTC(2026, 11, 11);
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
 // "Local" column marker: a green check when the component already exists in
 // the local project, a red cross when it is known to be missing, nothing when
 // the local files were not checked.
@@ -98,6 +102,7 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
   @track selectedRowKeys = [];
   @track showFeature = false;
   @track featureId = null;
+  @track featureTitle;
   @track featureText;
 
   get imgFeatureLogo() {
@@ -901,12 +906,9 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       if (v.toLowerCase() === "masha") {
         // random feature id for element attributes
         this.featureId = Math.random().toString(36).slice(2, 10);
-        // Calculate number of days before August 26, 2026
-        const days =
-          Math.ceil(
-            (new Date("2026-08-26") - new Date()) / (1000 * 60 * 60 * 24),
-          ) - 1;
-        this.featureText = `Can't wait to see you in ${days} days 🥰`;
+        const message = buildFeatureMessage(new Date());
+        this.featureTitle = message.title;
+        this.featureText = message.text;
         this.showFeature = true;
         // Add keydown listener to close on ESC
         this._boundFeatureKeydown = (e) => {
@@ -1577,4 +1579,28 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       }
     }
   }
+}
+
+// Counts calendar days in local time, so the hour and daylight saving do not matter
+function buildFeatureMessage(now) {
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const daysLeft = (FEATURE_DAY - today) / MS_PER_DAY;
+  const daysCount = Math.abs(daysLeft);
+  const daysLabel = daysCount === 1 ? "1 day" : `${daysCount} days`;
+  if (daysLeft < 0) {
+    return {
+      title: "Finally together ❤️",
+      text: `Sharing space for ${daysLabel} 🥰`,
+    };
+  }
+  if (daysLeft === 0) {
+    return {
+      title: "I miss you ❤️",
+      text: "Can't wait to live with you today 🥰",
+    };
+  }
+  return {
+    title: "I miss you ❤️",
+    text: `Can't wait to live with you in ${daysLabel} 🥰`,
+  };
 }
