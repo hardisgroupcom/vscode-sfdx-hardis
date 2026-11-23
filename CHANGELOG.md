@@ -2,15 +2,16 @@
 
 ## Unreleased
 
-- Backpromote: fix the parent branch list when target branches are configured with a label, such as `preprod,HOTFIX tickets`
+## [8.21.0] 2026-11-23
+
 - DevOps Pipeline: new **Handle release versioning** branch setting (Pipeline Settings), for projects that version their releases (requires sfdx-hardis 8.27.0)
   - A **Versions** button, off by default and remembered, shows the version of each branch and org and the version each promotion will create
   - A new **Releases** tab lists the versions with their tag, Release and release notes
   - Versions load only when you ask for them, so the pipeline opens as fast as without them
 - Pipeline Settings: new **Release versioning: tag format of release candidates** and **values of the tag format variables** settings, to name the release candidates of each branch your own way, with a new editor for settings that map names to values
 - Contributors: the UI test harness can run sfdx-hardis commands against real orgs and capture them, for the screenshots of the sfdx-hardis command pages.
+- Backpromote: fix the parent branch list when target branches are configured with a label, such as `preprod,HOTFIX tickets`
 - DevOps Pipeline: upgrade MermaidJS to 12.3.0, which fixes six security advisories of MermaidJS and KaTeX, with the same diagram as before.
-- Metadata Retriever: update a hidden surprise.
 
 ## [8.20.0] 2026-11-16
 
