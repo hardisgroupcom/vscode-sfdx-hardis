@@ -5,19 +5,26 @@ import { getAvatarClass, getUsernameInitials } from "s/avatarUtils";
 // Connection state of an org row, computed in ONE place so the Connected pill,
 // the row actions and the removal recommendations can never disagree.
 // "pending": the row arrived before the org was probed (two-phase load).
+// Same rule as isOrgConnected in src/utils/orgConnectionUtils.ts, which webview code cannot
+// import: change both together.
 function orgConnectionState(org) {
   if (org.connectionStatusPending) {
     return "pending";
   }
-  const status = (org.connectedStatus || "").toString().toLowerCase();
+  const scratchStatus = (org.status || "").toString().toLowerCase();
+  if (scratchStatus === "expired" || scratchStatus === "deleted") {
+    return "disconnected";
+  }
+  const status = (org.connectedStatus || "").toString().trim().toLowerCase();
   if (status) {
-    return status.match(/connected|authorized/) ? "connected" : "disconnected";
+    return status === "connected" || status === "authorized"
+      ? "connected"
+      : "disconnected";
   }
   // A scratch org is never probed: `sf org list` asks its Dev Hub instead, and
   // the answer lands in `status`, not in `connectedStatus`. Without this every
   // scratch org reads as disconnected while the CLI shows it Active, and its
   // Open action is replaced by Reconnect.
-  const scratchStatus = (org.status || "").toString().toLowerCase();
   return scratchStatus === "active" ? "connected" : "disconnected";
 }
 

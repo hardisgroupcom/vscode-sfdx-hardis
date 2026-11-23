@@ -50,10 +50,17 @@ import path from "path";
 import * as fs from "fs";
 import { createSimpleGit } from "../utils/simpleGitInstance";
 import {
+  forgetCachedOrgList,
   listAllOrgs,
   openOrgFromCommand,
   showOrgOpenFailure,
 } from "../utils/orgUtils";
+import { onOrgsChanged } from "../utils/orgChangeEvents";
+import {
+  buildOrgOpenCommand,
+  buildOrgReconnectCommand,
+  isSafeUsername,
+} from "../utils/orgConnectionUtils";
 import { getChildBranchNames } from "../utils/orgConfigUtils";
 import { readSfdxHardisConfig } from "../utils/sfdx-hardis-config-utils";
 import {
@@ -68,14 +75,18 @@ import {
   buildDevOrgListCommand,
   buildDevOrgRegisterCommand,
   buildDevOrgRemoveCommand,
+  DevOrgConnection,
   devOrgsCacheKey,
   DevOrgsOutcome,
   DevOrgsView,
+  DevOrgView,
   isDevOrgsChangeCommand,
   isDevOrgsRegistryEnabled,
   devOrgEditBranches,
+  isSafeOrgId,
   isSameOrgId,
   readDevOrgsOutcome,
+  resolveDevOrgConnection,
   sanitizeDevOrgs,
 } from "../utils/pipeline/devOrgsUtils";
 
@@ -88,6 +99,11 @@ const notifiedAutoFixBranchHeadByPullRequest = new Map<string, string>();
 let windowFocusListener: vscode.Disposable | undefined;
 // Same rule for the listener that reads the development orgs again after a command changed them
 let devOrgsCommandListener: vscode.Disposable | undefined;
+// Same rule for the listener that checks the connection to a development org again after a login
+let devOrgsLoginListener: vscode.Disposable | undefined;
+// The last connection check of each development org: Open and Connect use it, never a username
+// sent by the webview
+const devOrgConnections = new Map<string, DevOrgConnection>();
 // Same rule for the listener of the setting behind the Versions toggle
 let showReleaseVersionsListener: vscode.Disposable | undefined;
 // Raised each time the command runs: release versions asked by an earlier run are not sent
@@ -580,6 +596,23 @@ export function registerShowPipeline(commands: Commands) {
         }
       });
       panel.addDisposable(devOrgsCommandListener);
+
+      // A login ended (hardis:org:select asks for a status refresh) or the default org changed:
+      // the cached org list is forgotten and an open details window checks its org again
+      devOrgsLoginListener?.dispose();
+      devOrgConnections.clear();
+      devOrgsLoginListener = onOrgsChanged(() => {
+        if (panel.isDisposed()) {
+          return;
+        }
+        devOrgConnections.clear();
+        void forgetCachedOrgList().then(() => {
+          if (!panel.isDisposed()) {
+            panel.sendMessage({ type: "devOrgConnectionChanged", data: {} });
+          }
+        });
+      });
+      panel.addDisposable(devOrgsLoginListener);
 
       panel.onMessage(async (type, data) => {
         // Retry after initial load error
@@ -1150,14 +1183,54 @@ export function registerShowPipeline(commands: Commands) {
               : { parentBranch },
           );
         } else if (type === "getDevOrgConnection") {
+          const connection = await checkDevOrgConnection(data?.orgId);
           panel.sendMessage({
             type: "devOrgConnection",
             data: {
               requestId: data?.requestId ?? null,
               orgId: data?.orgId ?? null,
-              username: await findDevOrgUsername(data?.orgId),
+              username: connection.connected ? connection.username : null,
+              connected: connection.connected,
             },
           });
+        } else if (type === "openDevOrg") {
+          // The Open button: the login the last check found working, never a value of the webview
+          const connection = rememberedDevOrgConnection(data?.orgId);
+          const devOrg = findDevOrgView(
+            pipelineProperties?.pipelineData?.devOrgs,
+            data?.orgId,
+          );
+          const command =
+            connection?.connected && isSafeUsername(connection.username)
+              ? buildOrgOpenCommand(connection.username)
+              : null;
+          await openOrgOrInstanceUrl(
+            command,
+            t("openingOrgNamed", {
+              name: connection?.username || devOrg?.name || "",
+            }),
+            devOrg?.instanceUrl,
+          );
+        } else if (type === "connectDevOrg") {
+          // The Connect button: a new login through the instance URL of the org, replacing the
+          // login the last check found when it no longer works. A scratch org login is never
+          // replaced: sfdx-hardis would delete it first, and its user rarely has a password.
+          const devOrg = findDevOrgView(
+            pipelineProperties?.pipelineData?.devOrgs,
+            data?.orgId,
+          );
+          const connection = rememberedDevOrgConnection(data?.orgId);
+          const isScratch =
+            connection?.scratch === true || devOrg?.orgType === "scratch";
+          // No setDefault: sfdx-hardis asks whether the org becomes the default one
+          const command = buildOrgReconnectCommand({
+            instanceUrl: devOrg?.instanceUrl,
+            username: isScratch ? null : connection?.username,
+          });
+          void vscode.commands.executeCommand(
+            "vscode-sfdx-hardis.execute-command",
+            command,
+          );
         } else if (type === "registerDevOrg") {
           const pipelineData = pipelineProperties?.pipelineData;
           const registered = (pipelineData?.devOrgs || []).find((org: any) =>
@@ -1223,46 +1296,17 @@ export function registerShowPipeline(commands: Commands) {
 
           let command: string | null = null;
           if (targetOrgUsername) {
-            command = `sf org open --target-org ${targetOrgUsername}`;
+            command = buildOrgOpenCommand(targetOrgUsername);
           } else if (alias) {
-            command = `sf org open --target-org ${alias}`;
+            command = buildOrgOpenCommand(alias);
           }
 
-          if (command) {
-            const progressLabel = targetOrgUsername
-              ? t("openingOrgNamed", { name: targetOrgUsername })
-              : alias
-                ? t("openingOrgNamed", { name: alias })
-                : t("openingOrg");
-            // VS Code opens the link itself: `sf org open` opens nothing in a browser-hosted VS Code
-            const opened = await openOrgFromCommand(command, progressLabel);
-            if (!opened.ok) {
-              if (instanceUrl) {
-                try {
-                  await vscode.env.openExternal(vscode.Uri.parse(instanceUrl));
-                  return;
-                } catch (fallbackError: any) {
-                  vscode.window.showErrorMessage(
-                    t("failedToOpenOrgCliAndUrl", {
-                      error: fallbackError?.message || fallbackError,
-                    }),
-                  );
-                  return;
-                }
-              }
-              showOrgOpenFailure(opened);
-            }
-          } else if (instanceUrl) {
-            try {
-              await vscode.env.openExternal(vscode.Uri.parse(instanceUrl));
-            } catch (error: any) {
-              vscode.window.showErrorMessage(
-                t("failedToOpenOrgUrl", { error: error?.message || error }),
-              );
-            }
-          } else {
-            vscode.window.showWarningMessage(t("unableToOpenOrg"));
-          }
+          const progressLabel = targetOrgUsername
+            ? t("openingOrgNamed", { name: targetOrgUsername })
+            : alias
+              ? t("openingOrgNamed", { name: alias })
+              : t("openingOrg");
+          await openOrgOrInstanceUrl(command, progressLabel, instanceUrl);
         }
         // Authenticate or re-authenticate to Git provider
         else if (type === "connectToGit") {
@@ -2587,8 +2631,9 @@ async function refreshDevOrgs(
 }
 
 /**
- * Username of the development org among the orgs authenticated on this computer, null when it
- * is not one of them: the Backpromote button of the details window needs it.
+ * Username of the development org among the orgs authenticated on this computer, from the cached
+ * org list, null when it is not one of them: the Backpromote chip of the line of an org needs it,
+ * and opens its panel at once (no connection check, the details window does that one).
  */
 async function findDevOrgUsername(orgId: unknown): Promise<string | null> {
   try {
@@ -2602,6 +2647,89 @@ async function findDevOrgUsername(orgId: unknown): Promise<string | null> {
       `[vscode-sfdx-hardis] Orgs not listed for a development org: ${e?.message || e}`,
     );
     return null;
+  }
+}
+
+/**
+ * Whether this computer has a working login to a development org, remembered for its Open and
+ * Connect buttons. Runs when the details window opens, never before.
+ */
+async function checkDevOrgConnection(
+  orgId: unknown,
+): Promise<DevOrgConnection> {
+  const connection = await resolveDevOrgConnection(orgId, {
+    listOrgs: ({ useCache }) => listAllOrgs(false, useCache, true),
+    displayOrg: async (username) => {
+      const result = await execSfdxJson(
+        `sf org display --target-org "${username}" --json`,
+        {
+          fail: false,
+          output: false,
+          reuseRecentResult: false,
+          shareInFlightRun: false,
+        },
+      );
+      return result?.result;
+    },
+  }).catch((e: any): DevOrgConnection => {
+    Logger.log(
+      `[vscode-sfdx-hardis] Connection to a development org not checked: ${e?.message || e}`,
+    );
+    return { username: null, connected: false, scratch: false };
+  });
+  if (isSafeOrgId(orgId)) {
+    devOrgConnections.set(orgId.slice(0, 15), connection);
+  }
+  return connection;
+}
+
+// The last connection check of a development org, null before one
+function rememberedDevOrgConnection(orgId: unknown): DevOrgConnection | null {
+  return isSafeOrgId(orgId)
+    ? devOrgConnections.get(orgId.slice(0, 15)) || null
+    : null;
+}
+
+// A development org of the pipeline, as the extension sanitized it
+function findDevOrgView(
+  devOrgs: DevOrgView[] | undefined,
+  orgId: unknown,
+): DevOrgView | null {
+  return (devOrgs || []).find((org) => isSameOrgId(org?.orgId, orgId)) || null;
+}
+
+/**
+ * Opens an org from a `sf org open` command, VS Code opening the link itself (`sf org open` opens
+ * nothing in a browser-hosted VS Code). Falls back to the instance URL when the command fails or
+ * when there is none.
+ */
+async function openOrgOrInstanceUrl(
+  command: string | null,
+  progressLabel: string,
+  instanceUrl: string | undefined,
+): Promise<void> {
+  if (command) {
+    const opened = await openOrgFromCommand(command, progressLabel);
+    if (opened.ok) {
+      return;
+    }
+    if (!instanceUrl) {
+      showOrgOpenFailure(opened);
+      return;
+    }
+  }
+  if (!instanceUrl) {
+    vscode.window.showWarningMessage(t("unableToOpenOrg"));
+    return;
+  }
+  try {
+    await vscode.env.openExternal(vscode.Uri.parse(instanceUrl));
+  } catch (error: any) {
+    vscode.window.showErrorMessage(
+      command
+        ? t("failedToOpenOrgCliAndUrl", { error: error?.message || error })
+        : t("failedToOpenOrgUrl", { error: error?.message || error }),
+    );
   }
 }
 
