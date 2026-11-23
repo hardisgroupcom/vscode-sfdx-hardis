@@ -1,31 +1,18 @@
 /* Details window of a development org: layout only, colors come from the global kits */
 
-/* Open or Connect at the top right of the header; the title keeps clear of it */
-.dev-org-header {
-  position: relative;
+/* Open or Connect on the right of the title. The two side columns share what the title leaves:
+   equal while there is room (the title stays centered), the button keeps its width when there is
+   not (the title moves left, never under it) */
+.dev-org-title-row {
+  display: grid;
+  grid-template-columns: 1fr minmax(0, auto) 1fr;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .dev-org-header-action {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-}
-
-.dev-org-title {
-  padding: 0 12rem;
-}
-
-@media (max-width: 760px) {
-  .dev-org-header-action {
-    position: static;
-    display: flex;
-    justify-content: center;
-    margin-bottom: 0.5rem;
-  }
-
-  .dev-org-title {
-    padding: 0;
-  }
+  justify-self: end;
+  white-space: nowrap;
 }
 
 .dev-org-subtitle {

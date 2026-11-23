@@ -106,6 +106,16 @@ export type DevOrgsOutcome = { devOrgs: DevOrgsView } | { error: DevOrgsError };
 export interface DevOrgConnection {
   username: string | null;
   connected: boolean;
+  // The login is the one of a scratch org: Connect never replaces it, a scratch org user rarely
+  // has a password for a web login
+  scratch: boolean;
+}
+
+// A login of the org list: its username, whether it is a scratch org, the status its Dev Hub gave
+interface DevOrgLogin {
+  username: string;
+  scratch: boolean;
+  status: string;
 }
 
 // What resolveDevOrgConnection reads, replaceable in tests
@@ -342,28 +352,40 @@ export function isDevOrgsChangeCommand(command: unknown): boolean {
 
 /**
  * Whether this computer has a working login to a development org: the logins of its org id, from
- * the cached org list (an uncached list when the cache has none, a login made in a terminal is not
- * in it), each checked with sf org display until one answers Connected.
- * @returns the username of the first working login, else the first login with connected false,
- * else no username
+ * the cached org list, then from an uncached one when none of them works (a login made in a
+ * terminal is not in the cache). Each login is checked once, until one works.
+ * @returns the first working login, else the first login with connected false, else no username
  */
 export async function resolveDevOrgConnection(
   orgId: unknown,
   runners: DevOrgConnectionRunners,
 ): Promise<DevOrgConnection> {
   if (!isSafeOrgId(orgId)) {
-    return { username: null, connected: false };
+    return { username: null, connected: false, scratch: false };
   }
-  let usernames = await listDevOrgUsernames(orgId, runners, true);
-  if (usernames.length === 0) {
-    usernames = await listDevOrgUsernames(orgId, runners, false);
-  }
-  for (const username of usernames) {
-    if (await isWorkingLogin(username, runners)) {
-      return { username, connected: true };
+  const checked = new Set<string>();
+  let firstLogin: DevOrgLogin | null = null;
+  for (const useCache of [true, false]) {
+    for (const login of await listDevOrgLogins(orgId, runners, useCache)) {
+      if (checked.has(login.username)) {
+        continue;
+      }
+      checked.add(login.username);
+      firstLogin = firstLogin || login;
+      if (await isWorkingLogin(login, runners)) {
+        return {
+          username: login.username,
+          connected: true,
+          scratch: login.scratch,
+        };
+      }
     }
   }
-  return { username: usernames[0] || null, connected: false };
+  return {
+    username: firstLogin?.username || null,
+    connected: false,
+    scratch: firstLogin?.scratch === true,
+  };
 }
 
 /**
@@ -535,50 +557,61 @@ function cleanText(
   return cleanAnswerText(value, maxLength);
 }
 
-// The usernames of the logins of an org id, each once, in the order of the org list
-async function listDevOrgUsernames(
+// The logins of an org id, each once, in the order of the org list
+async function listDevOrgLogins(
   orgId: string,
   runners: DevOrgConnectionRunners,
   useCache: boolean,
-): Promise<string[]> {
+): Promise<DevOrgLogin[]> {
   let orgs: any[];
   try {
     orgs = (await runners.listOrgs({ useCache })) || [];
   } catch {
     return [];
   }
-  const usernames: string[] = [];
+  const logins: DevOrgLogin[] = [];
   for (const org of orgs) {
     const username = typeof org?.username === "string" ? org.username : "";
     if (
       USERNAME_PATTERN.test(username) &&
       isSameOrgId(org?.orgId, orgId) &&
-      !usernames.includes(username)
+      !logins.some((login) => login.username === username)
     ) {
-      usernames.push(username);
+      logins.push({
+        username,
+        scratch: org?.orgType === "scratch" || org?.isScratch === true,
+        status: typeof org?.status === "string" ? org.status : "",
+      });
     }
   }
-  return usernames;
+  return logins;
 }
 
-// A login works when sf org display connects with it. The CLI does not probe a scratch org: its
-// Dev Hub says whether it is still active.
+/**
+ * A login works when sf org display connects with it. A scratch org is not probed (sf org display
+ * does not either): it works until its Dev Hub says it expired or was deleted, even when the Dev Hub
+ * cannot be asked, so a working login is never offered to Connect.
+ */
 async function isWorkingLogin(
-  username: string,
+  login: DevOrgLogin,
   runners: DevOrgConnectionRunners,
 ): Promise<boolean> {
+  if (login.scratch) {
+    return !isEndedScratchStatus(login.status);
+  }
   let org: any;
   try {
-    org = await runners.displayOrg(username);
+    org = await runners.displayOrg(login.username);
   } catch {
     return false;
   }
-  const status = typeof org?.status === "string" ? org.status : "";
-  if (status === "Expired" || status === "Deleted") {
-    return false;
+  if (org?.devHubId || (typeof org?.status === "string" && org.status !== "")) {
+    // A scratch org the org list did not tell apart
+    return !isEndedScratchStatus(org.status);
   }
-  if (org?.connectedStatus === undefined || org?.connectedStatus === null) {
-    return status === "Active";
-  }
-  return org.connectedStatus === "Connected";
+  return org?.connectedStatus === "Connected";
+}
+
+function isEndedScratchStatus(status: unknown): boolean {
+  return status === "Expired" || status === "Deleted";
 }

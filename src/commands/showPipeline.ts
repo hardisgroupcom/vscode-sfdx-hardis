@@ -1214,17 +1214,20 @@ export function registerShowPipeline(commands: Commands) {
           );
         } else if (type === "connectDevOrg") {
           // The Connect button: a new login through the instance URL of the org, replacing the
-          // login the last check found when it no longer works
+          // login the last check found when it no longer works. A scratch org login is never
+          // replaced: sfdx-hardis would delete it first, and its user rarely has a password.
           const devOrg = findDevOrgView(
             pipelineProperties?.pipelineData?.devOrgs,
             data?.orgId,
           );
           const connection = rememberedDevOrgConnection(data?.orgId);
+          const isScratch =
+            connection?.scratch === true || devOrg?.orgType === "scratch";
           let command: string;
           try {
             command = buildDevOrgConnectCommand({
               instanceUrl: devOrg?.instanceUrl,
-              username: connection?.username,
+              username: isScratch ? null : connection?.username,
             });
           } catch {
             vscode.window.showErrorMessage(t("devOrgConnectInvalid"));
@@ -2634,12 +2637,23 @@ async function refreshDevOrgs(
 }
 
 /**
- * Username of a working login to the development org on this computer, null when there is none:
- * the Backpromote chip of the line of an org needs it.
+ * Username of the development org among the orgs authenticated on this computer, from the cached
+ * org list, null when it is not one of them: the Backpromote chip of the line of an org needs it,
+ * and opens its panel at once (no connection check, the details window does that one).
  */
 async function findDevOrgUsername(orgId: unknown): Promise<string | null> {
-  const connection = await checkDevOrgConnection(orgId);
-  return connection.connected ? connection.username : null;
+  try {
+    const orgs = await listAllOrgs(false, true);
+    const match = orgs.find(
+      (org) => org.username && isSameOrgId(org.orgId, orgId),
+    );
+    return match?.username || null;
+  } catch (e: any) {
+    Logger.log(
+      `[vscode-sfdx-hardis] Orgs not listed for a development org: ${e?.message || e}`,
+    );
+    return null;
+  }
 }
 
 /**
@@ -2667,7 +2681,7 @@ async function checkDevOrgConnection(
     Logger.log(
       `[vscode-sfdx-hardis] Connection to a development org not checked: ${e?.message || e}`,
     );
-    return { username: null, connected: false };
+    return { username: null, connected: false, scratch: false };
   });
   if (isSafeOrgId(orgId)) {
     devOrgConnections.set(orgId.slice(0, 15), connection);

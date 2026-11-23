@@ -461,6 +461,7 @@ suite("Development orgs", () => {
       assert.deepStrictEqual(await resolveDevOrgConnection(ORG_A, r.runners), {
         username: "me@acme.com",
         connected: true,
+        scratch: false,
       });
       assert.deepStrictEqual(r.calls, ["list:cached", "display:me@acme.com"]);
     });
@@ -475,6 +476,7 @@ suite("Development orgs", () => {
       assert.deepStrictEqual(await resolveDevOrgConnection(ORG_A, r.runners), {
         username: "me@acme.com",
         connected: false,
+        scratch: false,
       });
     });
 
@@ -498,6 +500,7 @@ suite("Development orgs", () => {
       assert.deepStrictEqual(await resolveDevOrgConnection(ORG_A, r.runners), {
         username: null,
         connected: false,
+        scratch: false,
       });
     });
 
@@ -518,6 +521,7 @@ suite("Development orgs", () => {
       assert.deepStrictEqual(await resolveDevOrgConnection(ORG_A, r.runners), {
         username: "me@acme.com",
         connected: true,
+        scratch: false,
       });
       // Each login checked once
       assert.strictEqual(
@@ -526,26 +530,87 @@ suite("Development orgs", () => {
       );
     });
 
-    test("a scratch org works while its Dev Hub says it is active", async () => {
+    test("an expired login also reads the uncached list: a newer login made in a terminal works", async () => {
+      const r = runners({
+        cached: [{ username: "old@acme.com", orgId: ORG_A }],
+        uncached: [
+          { username: "old@acme.com", orgId: ORG_A },
+          { username: "me@acme.com", orgId: ORG_A },
+        ],
+        display: {
+          "old@acme.com": { connectedStatus: "RefreshTokenAuthError" },
+          "me@acme.com": { connectedStatus: "Connected" },
+        },
+      });
+      assert.deepStrictEqual(await resolveDevOrgConnection(ORG_A, r.runners), {
+        username: "me@acme.com",
+        connected: true,
+        scratch: false,
+      });
+      // The expired login is checked once, not again from the uncached list
+      assert.deepStrictEqual(r.calls, [
+        "list:cached",
+        "display:old@acme.com",
+        "list:uncached",
+        "display:me@acme.com",
+      ]);
+    });
+
+    test("a scratch org works until its Dev Hub says it ended, without sf org display", async () => {
       const active = runners({
-        cached: [{ username: "scratch@acme.com", orgId: ORG_A }],
-        display: { "scratch@acme.com": { status: "Active" } },
+        cached: [
+          {
+            username: "scratch@acme.com",
+            orgId: ORG_A,
+            orgType: "scratch",
+            status: "Active",
+          },
+        ],
+      });
+      assert.deepStrictEqual(
+        await resolveDevOrgConnection(ORG_A, active.runners),
+        { username: "scratch@acme.com", connected: true, scratch: true },
+      );
+      assert.deepStrictEqual(active.calls, ["list:cached"]);
+      // The Dev Hub could not be asked: the login is kept, never offered to Connect
+      const unknown = runners({
+        cached: [
+          { username: "scratch@acme.com", orgId: ORG_A, orgType: "scratch" },
+        ],
+        display: { "scratch@acme.com": new Error("NoScratchInfo") },
       });
       assert.strictEqual(
-        (await resolveDevOrgConnection(ORG_A, active.runners)).connected,
+        (await resolveDevOrgConnection(ORG_A, unknown.runners)).connected,
         true,
       );
-      const expired = runners({
+      for (const status of ["Expired", "Deleted"]) {
+        const ended = runners({
+          cached: [
+            {
+              username: "scratch@acme.com",
+              orgId: ORG_A,
+              orgType: "scratch",
+              status,
+            },
+          ],
+        });
+        assert.deepStrictEqual(
+          await resolveDevOrgConnection(ORG_A, ended.runners),
+          { username: "scratch@acme.com", connected: false, scratch: true },
+          status,
+        );
+      }
+    });
+
+    test("a scratch org the org list did not tell apart is read from sf org display", async () => {
+      const r = runners({
         cached: [{ username: "scratch@acme.com", orgId: ORG_A }],
         display: {
-          "scratch@acme.com": {
-            status: "Expired",
-            connectedStatus: "Connected",
-          },
+          "scratch@acme.com": { devHubId: "hub@acme.com", status: "Expired" },
         },
       });
       assert.strictEqual(
-        (await resolveDevOrgConnection(ORG_A, expired.runners)).connected,
+        (await resolveDevOrgConnection(ORG_A, r.runners)).connected,
         false,
       );
     });
@@ -557,10 +622,12 @@ suite("Development orgs", () => {
       assert.deepStrictEqual(await resolveDevOrgConnection("bad", r.runners), {
         username: null,
         connected: false,
+        scratch: false,
       });
       assert.deepStrictEqual(await resolveDevOrgConnection(ORG_A, r.runners), {
         username: null,
         connected: false,
+        scratch: false,
       });
       assert.ok(!r.calls.some((call) => call.startsWith("display:")));
     });
@@ -669,6 +736,11 @@ suite("Development orgs", () => {
       assert.match(
         source,
         /type === "connectDevOrg"[\s\S]*?buildDevOrgConnectCommand\(/,
+      );
+      // A scratch org login is never replaced: sfdx-hardis would delete it before the web login
+      assert.match(
+        source,
+        /username: isScratch \? null : connection\?\.username,/,
       );
     });
 
