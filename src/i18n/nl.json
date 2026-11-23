@@ -851,7 +851,7 @@
   "devOrgAddNodeTitle": "Een ontwikkel-org registreren voor {{branch}}",
   "devOrgBackpromote": "Backpromote",
   "devOrgBackpromoteChecking": "De verbinding met deze org wordt gecontroleerd...",
-  "devOrgBackpromoteNotConnected": "Maak op deze computer verbinding met deze org om een backpromote uit te voeren",
+  "devOrgBackpromoteNotConnected": "Maak verbinding om backpromote te activeren",
   "devOrgBackpromoteTitle": "Breng naar deze org wat in {{branch}} is gemerged",
   "devOrgBehindChip": "↓ {{count}} PRs",
   "devOrgBehindChipOne": "↓ 1 PR",

@@ -851,7 +851,7 @@
   "devOrgAddNodeTitle": "Eine Entwicklungs-Org für {{branch}} registrieren",
   "devOrgBackpromote": "Rück-Promotion",
   "devOrgBackpromoteChecking": "Die Verbindung zu dieser Org wird geprüft...",
-  "devOrgBackpromoteNotConnected": "Verbinden Sie sich auf diesem Computer mit dieser Org, um eine Rück-Promotion auszuführen",
+  "devOrgBackpromoteNotConnected": "Verbinden Sie sich, um die Rück-Promotion zu aktivieren",
   "devOrgBackpromoteTitle": "In diese Org übernehmen, was in {{branch}} gemergt wurde",
   "devOrgBehindChip": "↓ {{count}} PRs",
   "devOrgBehindChipOne": "↓ 1 PR",

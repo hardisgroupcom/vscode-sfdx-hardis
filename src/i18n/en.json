@@ -851,7 +851,7 @@
   "devOrgAddNodeTitle": "Register a development org targeting {{branch}}",
   "devOrgBackpromote": "Backpromote",
   "devOrgBackpromoteChecking": "Checking the connection to this org...",
-  "devOrgBackpromoteNotConnected": "Connect to this org on this computer to run a backpromote",
+  "devOrgBackpromoteNotConnected": "Connect to activate backpromotion",
   "devOrgBackpromoteTitle": "Bring into this org what was merged into {{branch}}",
   "devOrgBehindChip": "↓ {{count}} PRs",
   "devOrgBehindChipOne": "↓ 1 PR",

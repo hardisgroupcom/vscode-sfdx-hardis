@@ -851,7 +851,7 @@
   "devOrgAddNodeTitle": "Zarejestruj org deweloperską dla {{branch}}",
   "devOrgBackpromote": "Backpromote",
   "devOrgBackpromoteChecking": "Sprawdzanie połączenia z tą org...",
-  "devOrgBackpromoteNotConnected": "Aby uruchomić backpromote, należy połączyć się z tą org na tym komputerze",
+  "devOrgBackpromoteNotConnected": "Aby włączyć backpromote, należy się połączyć",
   "devOrgBackpromoteTitle": "Przenieś do tej org to, co zostało zmergowane do {{branch}}",
   "devOrgBehindChip": "↓ {{count}} PR",
   "devOrgBehindChipOne": "↓ 1 PR",

@@ -674,6 +674,40 @@ suite("Development orgs", () => {
       assert.match(js, /new CustomEvent\("connectorg"\)/);
     });
 
+    test("Backpromote reads as inactive while the org is not connected, its tooltip says to connect", () => {
+      const html = readModuleFile("devOrgDetails", "devOrgDetails.html");
+      // A disabled button shows no tooltip of its own: the title sits on a wrapper
+      assert.match(
+        html,
+        /<span title=\{backpromoteTitle\}>\s*<lightning-button[^>]*label=\{i18n\.devOrgBackpromote\}[^>]*disabled=\{backpromoteDisabled\}/,
+      );
+      const en = JSON.parse(
+        fs.readFileSync(path.join(REPO_ROOT, "src", "i18n", "en.json"), "utf8"),
+      );
+      assert.strictEqual(
+        en.devOrgBackpromoteNotConnected,
+        "Connect to activate backpromotion",
+      );
+      // Every tint loses its color when disabled, after the hover rules
+      const theme = fs.readFileSync(
+        path.join(REPO_ROOT, "resources", "global-theme.css"),
+        "utf8",
+      );
+      for (const tint of ["green", "blue", "red", "amber"]) {
+        const disabled = theme.indexOf(
+          `.slds-scope[data-theme] .hardis-btn-tinted-${tint} .slds-button:disabled`,
+        );
+        const hover = theme.indexOf(
+          `.slds-scope[data-theme] .hardis-btn-tinted-${tint} .slds-button:hover`,
+        );
+        assert.ok(disabled > 0, `${tint} disabled rule`);
+        assert.ok(
+          disabled > hover,
+          `${tint} disabled rule after the hover one`,
+        );
+      }
+    });
+
     test("the pipeline sends the org id only, VS Code picks the login and the URL", () => {
       const html = readModuleFile("pipeline", "pipeline.html");
       assert.match(html, /onopenorg=\{handleDevOrgOpen\}/);

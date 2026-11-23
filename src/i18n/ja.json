@@ -851,7 +851,7 @@
   "devOrgAddNodeTitle": "{{branch}} を対象とする開発組織を登録",
   "devOrgBackpromote": "バックプロモート",
   "devOrgBackpromoteChecking": "この組織への接続を確認しています...",
-  "devOrgBackpromoteNotConnected": "バックプロモートを実行するには、このコンピューターでこの組織に接続してください",
+  "devOrgBackpromoteNotConnected": "バックプロモートを有効にするには接続してください",
   "devOrgBackpromoteTitle": "{{branch}} にマージされた内容をこの組織に取り込みます",
   "devOrgBehindChip": "↓ {{count}} 件のPR",
   "devOrgBehindChipOne": "↓ 1 件のPR",

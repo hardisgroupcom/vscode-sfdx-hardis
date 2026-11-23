@@ -257,15 +257,17 @@
                 disabled={refreshing}
                 onclick={handleRefresh}
               ></lightning-button>
-              <lightning-button
-                variant="neutral"
-                class="hardis-btn-tinted-blue"
-                label={i18n.devOrgBackpromote}
-                title={backpromoteTitle}
-                icon-name="utility:download"
-                disabled={backpromoteDisabled}
-                onclick={handleBackpromote}
-              ></lightning-button>
+              <!-- The tooltip sits on a wrapper: a disabled button shows none of its own -->
+              <span title={backpromoteTitle}>
+                <lightning-button
+                  variant="neutral"
+                  class="hardis-btn-tinted-blue"
+                  label={i18n.devOrgBackpromote}
+                  icon-name="utility:download"
+                  disabled={backpromoteDisabled}
+                  onclick={handleBackpromote}
+                ></lightning-button>
+              </span>
             </div>
             <lightning-button variant="neutral" label={i18n.close} onclick={handleClose}></lightning-button>
           </template>
