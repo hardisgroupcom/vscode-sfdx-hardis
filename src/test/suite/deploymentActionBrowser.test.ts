@@ -276,7 +276,7 @@ suite("Deployment action browser (Browserforce setting)", () => {
     );
     assert.match(
       html,
-      /if:true=\{showReadOnlyLoading\}[\s\S]*?bfe-button-spinner[\s\S]*?\{i18n\.browserforceCatalogLoading\}/,
+      /if:true=\{showReadOnlyLoading\}[\s\S]*?hardis-button-spinner[\s\S]*?\{i18n\.browserforceCatalogLoading\}/,
     );
     assert.match(
       js,
@@ -325,7 +325,7 @@ suite("Deployment action browser (Browserforce setting)", () => {
     );
     assert.ok(html.includes("{section.keyPatternChip}"));
     // The Check button spins and says so, with no other checking text
-    assert.match(html, /class="bfe-button-spinner"/);
+    assert.match(html, /class="hardis-button-spinner"/);
     assert.match(js, /this\.i18n\.browserforceChecking/);
     assert.ok(!html.includes("{i18n.browserforceChecking}"));
   });

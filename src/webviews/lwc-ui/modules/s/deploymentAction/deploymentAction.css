@@ -24,24 +24,3 @@
   align-items: center;
   gap: 0.35rem;
 }
-
-.da-button-spinner {
-  width: 0.75rem;
-  height: 0.75rem;
-  border: 2px solid currentColor;
-  border-right-color: transparent;
-  border-radius: 50%;
-  animation: da-spin 0.8s linear infinite;
-}
-
-@keyframes da-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .da-button-spinner {
-    animation: none;
-  }
-}

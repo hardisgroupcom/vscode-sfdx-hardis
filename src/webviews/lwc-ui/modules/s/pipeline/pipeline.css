@@ -393,10 +393,16 @@
     box-shadow: var(--hardis-shadow-sm);
 }
 
-/* Versions toggle, next to the view switch */
+/* Versions toggle, next to the view switch: a spinner before its label while the versions load */
 .pipeline-versions-switch {
     white-space: nowrap;
     flex-shrink: 0;
+}
+
+.pipeline-versions-switch .hardis-seg {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
 }
 
 .pipeline-view-switch {
@@ -791,21 +797,6 @@
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-}
-
-.da-button-spinner {
-  width: 0.75rem;
-  height: 0.75rem;
-  border: 2px solid currentColor;
-  border-right-color: transparent;
-  border-radius: 50%;
-  animation: da-spin 0.8s linear infinite;
-}
-
-@keyframes da-spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 @keyframes hardis-dot-pulse {

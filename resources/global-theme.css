@@ -1945,6 +1945,26 @@ lightning-helptext::part(icon) {
   }
 }
 
+/* Small spinner inside a button or a toggle while its action runs, in the color of the label:
+     <button class="..."><span class="hardis-button-spinner" aria-hidden="true"></span>Label</button>
+   The button lays its content out with gap (inline-flex) so the label does not stick to it. */
+.slds-scope[data-theme] .hardis-button-spinner {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  vertical-align: middle;
+  animation: hardis-node-spin 0.8s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .slds-scope[data-theme] .hardis-button-spinner {
+    animation: none;
+  }
+}
+
 /* --- Timeline rows --- */
 .hardis-tl-row {
   display: flex;

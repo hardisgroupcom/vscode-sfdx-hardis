@@ -13,6 +13,9 @@ import {
   withReleaseVersionLinks,
 } from "../../utils/pipeline/releaseVersionUtils";
 import { BranchStrategyMermaidBuilder } from "../../utils/pipeline/branchStrategyMermaidBuilder";
+import * as fs from "fs";
+import * as path from "path";
+import { readModuleFile, REPO_ROOT } from "./lwcSourceUtils";
 
 /**
  * Release versioning (sfdx-hardis releaseVersioning): the DevOps Pipeline shows the versions the
@@ -471,6 +474,48 @@ suite("Release versioning", () => {
 
     test("without versions, the diagram is unchanged", () => {
       assert.doesNotMatch(diagram(false), /hardis-version/);
+    });
+  });
+
+  suite("Versions toggle", () => {
+    test("the toggle turns a spinner while the versions load, the legend says nothing", () => {
+      const html = readModuleFile("pipeline", "pipeline.html");
+      assert.match(
+        html,
+        /aria-busy=\{versionsToggleBusy\} onclick=\{handleToggleVersions\}><template if:true=\{isLoadingReleaseVersions\}><span class="hardis-button-spinner" aria-hidden="true"><\/span><\/template>\{i18n\.pipelineViewVersions\}<\/button>/,
+      );
+      const legend = html.slice(
+        html.indexOf('<div class="pipeline-legend">'),
+        html.indexOf("</div>", html.indexOf('<div class="pipeline-legend">')),
+      );
+      assert.doesNotMatch(legend, /releaseVersionsLoading/);
+      const js = readModuleFile("pipeline", "pipeline.js");
+      assert.match(
+        js,
+        /get isLoadingReleaseVersions\(\) \{\s*return \(\s*this\.releaseVersioningDeclared &&\s*this\.showReleaseVersions &&\s*this\.releaseVersionsPending\s*\);/,
+      );
+    });
+
+    test("one spinner for every button, in the theme, never a copy in a component", () => {
+      const theme = fs.readFileSync(
+        path.join(REPO_ROOT, "resources", "global-theme.css"),
+        "utf8",
+      );
+      assert.match(
+        theme,
+        /\.slds-scope\[data-theme\] \.hardis-button-spinner \{/,
+      );
+      for (const component of [
+        "pipeline",
+        "deploymentAction",
+        "browserforceSettingEditor",
+      ]) {
+        assert.doesNotMatch(
+          readModuleFile(component, `${component}.css`),
+          /button-spinner \{|@keyframes (da|bfe)-spin/,
+          component,
+        );
+      }
     });
   });
 });

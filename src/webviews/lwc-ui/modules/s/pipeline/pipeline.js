@@ -6945,7 +6945,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return this.releaseVersioningEnabled && this.showReleaseVersions;
   }
 
-  get showVersionsLoadingLegend() {
+  // The Versions toggle turns a spinner while the versions load
+  get isLoadingReleaseVersions() {
     return (
       this.releaseVersioningDeclared &&
       this.showReleaseVersions &&
@@ -6967,6 +6968,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   get versionsTogglePressed() {
     return String(this.showReleaseVersions);
+  }
+
+  get versionsToggleBusy() {
+    return String(this.isLoadingReleaseVersions);
   }
 
   // The diagram without its version chips: the hidden chip of each versioned branch and org
