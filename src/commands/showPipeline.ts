@@ -56,6 +56,11 @@ import {
   showOrgOpenFailure,
 } from "../utils/orgUtils";
 import { onOrgsChanged } from "../utils/orgChangeEvents";
+import {
+  buildOrgOpenCommand,
+  buildOrgReconnectCommand,
+  isSafeUsername,
+} from "../utils/orgConnectionUtils";
 import { getChildBranchNames } from "../utils/orgConfigUtils";
 import { readSfdxHardisConfig } from "../utils/sfdx-hardis-config-utils";
 import {
@@ -67,9 +72,7 @@ import {
 import { CacheManager } from "../utils/cache-manager";
 import { onCommandCompleted } from "../utils/commandCompletionEvents";
 import {
-  buildDevOrgConnectCommand,
   buildDevOrgListCommand,
-  buildDevOrgOpenCommand,
   buildDevOrgRegisterCommand,
   buildDevOrgRemoveCommand,
   DevOrgConnection,
@@ -1197,14 +1200,10 @@ export function registerShowPipeline(commands: Commands) {
             pipelineProperties?.pipelineData?.devOrgs,
             data?.orgId,
           );
-          let command: string | null;
-          try {
-            command = connection?.connected
-              ? buildDevOrgOpenCommand(connection.username)
+          const command =
+            connection?.connected && isSafeUsername(connection.username)
+              ? buildOrgOpenCommand(connection.username)
               : null;
-          } catch {
-            command = null;
-          }
           await openOrgOrInstanceUrl(
             command,
             t("openingOrgNamed", {
@@ -1223,16 +1222,11 @@ export function registerShowPipeline(commands: Commands) {
           const connection = rememberedDevOrgConnection(data?.orgId);
           const isScratch =
             connection?.scratch === true || devOrg?.orgType === "scratch";
-          let command: string;
-          try {
-            command = buildDevOrgConnectCommand({
-              instanceUrl: devOrg?.instanceUrl,
-              username: isScratch ? null : connection?.username,
-            });
-          } catch {
-            vscode.window.showErrorMessage(t("devOrgConnectInvalid"));
-            return;
-          }
+          // No setDefault: sfdx-hardis asks whether the org becomes the default one
+          const command = buildOrgReconnectCommand({
+            instanceUrl: devOrg?.instanceUrl,
+            username: isScratch ? null : connection?.username,
+          });
           void vscode.commands.executeCommand(
             "vscode-sfdx-hardis.execute-command",
             command,
@@ -1302,9 +1296,9 @@ export function registerShowPipeline(commands: Commands) {
 
           let command: string | null = null;
           if (targetOrgUsername) {
-            command = `sf org open --target-org ${targetOrgUsername}`;
+            command = buildOrgOpenCommand(targetOrgUsername);
           } else if (alias) {
-            command = `sf org open --target-org ${alias}`;
+            command = buildOrgOpenCommand(alias);
           }
 
           const progressLabel = targetOrgUsername

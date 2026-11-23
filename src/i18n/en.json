@@ -861,7 +861,6 @@
   "devOrgBehindNotComputed": "The Pull Requests this org misses are not listed yet. Click Refresh to list them from the git provider.",
   "devOrgCarriedNotComputed": "Content not computed",
   "devOrgConnect": "Connect",
-  "devOrgConnectInvalid": "The instance URL or the username of this org cannot be used to connect",
   "devOrgConnectTitle": "Log in to this org on this computer",
   "devOrgConnectionChecking": "Checking connection...",
   "devOrgDetailsSubtitle": "{{type}} targeting {{branch}}",

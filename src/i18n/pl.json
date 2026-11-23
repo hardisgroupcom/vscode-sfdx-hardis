@@ -861,7 +861,6 @@
   "devOrgBehindNotComputed": "Pull Requesty, których brakuje tej org, nie zostały jeszcze pobrane. Kliknięcie Odśwież pobierze je od dostawcy git.",
   "devOrgCarriedNotComputed": "Zawartość nieobliczona",
   "devOrgConnect": "Połącz",
-  "devOrgConnectInvalid": "Adres URL instancji lub nazwa użytkownika tej org nie pozwala na połączenie",
   "devOrgConnectTitle": "Zaloguj się do tej org na tym komputerze",
   "devOrgConnectionChecking": "Sprawdzanie połączenia...",
   "devOrgDetailsSubtitle": "{{type}} z celem {{branch}}",

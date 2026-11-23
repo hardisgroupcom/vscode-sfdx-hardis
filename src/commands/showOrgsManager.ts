@@ -4,6 +4,7 @@ import { Commands } from "../commands";
 import { execSfdxJson } from "../utils";
 import { Logger } from "../logger";
 import { listAllOrgs, SalesforceOrg } from "../utils/orgUtils";
+import { buildOrgReconnectCommand } from "../utils/orgConnectionUtils";
 import { t } from "../i18n/i18n";
 
 type LoadOrgsRequest = {
@@ -104,12 +105,11 @@ export function registerShowOrgsManager(commandThis: Commands) {
             await loadAndPushOrgs(allFlag, false);
           } else if (type === "connectOrg") {
             // run hardis:org:select to reconnect a disconnected org
-            const username = data.username;
-            const instanceUrl = data.instanceUrl;
-            let command = `sf hardis:org:select --username "${username || ""}" --reconnect --no-set-default`;
-            if (instanceUrl) {
-              command += ` --instance-url "${instanceUrl}"`;
-            }
+            const command = buildOrgReconnectCommand({
+              username: data?.username,
+              instanceUrl: data?.instanceUrl,
+              setDefault: false,
+            });
             commandThis.commandRunner.executeCommand(command);
           } else if (type === "forgetOrgs") {
             try {

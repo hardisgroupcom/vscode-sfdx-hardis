@@ -861,7 +861,6 @@
   "devOrgBehindNotComputed": "Die Pull Requests, die dieser Org fehlen, sind noch nicht aufgelistet. Klicken Sie auf Aktualisieren, um sie vom Git-Anbieter aufzulisten.",
   "devOrgCarriedNotComputed": "Inhalt nicht berechnet",
   "devOrgConnect": "Verbinden",
-  "devOrgConnectInvalid": "Mit der Instanz-URL oder dem Benutzernamen dieser Org ist keine Verbindung möglich",
   "devOrgConnectTitle": "Auf diesem Computer bei dieser Org anmelden",
   "devOrgConnectionChecking": "Verbindung wird geprüft...",
   "devOrgDetailsSubtitle": "{{type}} mit Ziel {{branch}}",

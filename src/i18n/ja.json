@@ -861,7 +861,6 @@
   "devOrgBehindNotComputed": "この組織に不足している Pull Request はまだ取得されていません。「更新」をクリックして git プロバイダーから取得してください。",
   "devOrgCarriedNotComputed": "内容は未計算です",
   "devOrgConnect": "接続",
-  "devOrgConnectInvalid": "この組織のインスタンス URL またはユーザー名では接続できません",
   "devOrgConnectTitle": "このコンピューターでこの組織にログインします",
   "devOrgConnectionChecking": "接続を確認しています...",
   "devOrgDetailsSubtitle": "{{branch}} を対象とする{{type}}",

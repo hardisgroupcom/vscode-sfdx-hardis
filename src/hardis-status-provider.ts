@@ -23,6 +23,10 @@ import { loadProjectSfdxHardisConfig } from "./utils/sfdx-hardis-config-utils";
 import { CacheManager } from "./utils/cache-manager";
 import { emitOrgsChanged } from "./utils/orgChangeEvents";
 import {
+  buildOrgReconnectCommand,
+  isOrgConnected,
+} from "./utils/orgConnectionUtils";
+import {
   SCRATCH_ORG_POOL_COUNTS_CACHE_KEY,
   SCRATCH_ORG_POOL_COUNTS_TTL_MS,
   buildScratchOrgPoolViewCommand,
@@ -66,7 +70,9 @@ export async function updateScratchPoolStatus(
 const GIT_FETCH_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const GIT_FETCH_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes (CacheManager TTL)
 
-export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeItem> {
+export class HardisStatusProvider
+  implements vscode.TreeDataProvider<StatusTreeItem>
+{
   public themeUtils: ThemeUtils;
   constructor(private workspaceRoot: string) {
     this.themeUtils = new ThemeUtils();
@@ -225,17 +231,16 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
     if (orgInfoResult.result || orgInfoResult.id) {
       const orgInfo = orgInfoResult.result || orgInfoResult;
       setOrgCache(orgInfo);
+      // An org whose state is unknown (no probe, no Dev Hub status) is not flagged
       const isDisconnected =
-        orgInfo.connectedStatus &&
-        !orgInfo.connectedStatus
-          .toString()
-          .toLowerCase()
-          .match(/connected|authorized/);
-      const reconnectCommand =
-        "sf hardis:org:select --reconnect --set-default" +
-        (options.devHub ? " --devhub" : "") +
-        (orgInfo.username ? ` --username ${orgInfo.username}` : "") +
-        (orgInfo.instanceUrl ? ` --instance-url ${orgInfo.instanceUrl}` : "");
+        !!(orgInfo.connectedStatus || orgInfo.status) &&
+        !isOrgConnected(orgInfo);
+      const reconnectCommand = buildOrgReconnectCommand({
+        username: orgInfo.username,
+        instanceUrl: orgInfo.instanceUrl,
+        setDefault: true,
+        devHub: options.devHub === true,
+      });
       if (orgInfo.instanceUrl) {
         items.push({
           id: "org-info-instance-url" + (options.devHub ? "-devhub" : ""),
@@ -382,8 +387,9 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
               try {
                 // A pool stored in the git provider is read with its token. Heavy
                 // module: loaded here, in the background, not with the status view
-                const { collectProviderCredentialEnvVars } =
-                  await import("./utils/providerCredentials");
+                const { collectProviderCredentialEnvVars } = await import(
+                  "./utils/providerCredentials"
+                );
                 const poolViewRes = await execSfdxJson(
                   buildScratchOrgPoolViewCommand(),
                   {

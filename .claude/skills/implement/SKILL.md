@@ -18,6 +18,7 @@ A matching **`implement`** sub-agent is defined in `.claude/agents/implement.md`
 ## Steps
 
 1. **Read existing code** before modifying. Understand the context and patterns already in use.
+   - **Reuse before you write (mandatory).** Before writing a function, a check, a command line builder, a regex, a parser or a UI block, search the code for something that already does the same thing or nearly the same: grep the CLI commands it runs, the fields it reads, the flags it builds, the words of its rule. Search both repositories when the change spans sfdx-hardis and vscode-sfdx-hardis. If it exists, call it. If close copies exist, extract one shared helper and switch the existing callers to it in the same change. Never add a new variant next to an existing one. When the code you are about to write differs from the design because you found such code, say so in your report.
 
 2. **Write code** following the style rules and patterns below.
 

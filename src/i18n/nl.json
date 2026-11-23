@@ -861,7 +861,6 @@
   "devOrgBehindNotComputed": "De Pull Requests die deze org mist zijn nog niet opgehaald. Klik op Vernieuwen om ze op te halen bij de git-provider.",
   "devOrgCarriedNotComputed": "Inhoud niet berekend",
   "devOrgConnect": "Verbinden",
-  "devOrgConnectInvalid": "Met de instance-URL of de gebruikersnaam van deze org kan geen verbinding worden gemaakt",
   "devOrgConnectTitle": "Log op deze computer in bij deze org",
   "devOrgConnectionChecking": "Verbinding controleren...",
   "devOrgDetailsSubtitle": "{{type}} met doel {{branch}}",

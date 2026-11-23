@@ -15,6 +15,7 @@ import {
   failedCommandMessage,
 } from "../cliAnswerUtils";
 import { safeWebUrl } from "../doraReportUtils";
+import { isOrgConnected, isSafeUsername } from "../orgConnectionUtils";
 
 export const DEV_ORGS_DOC_URL =
   "https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/";
@@ -144,10 +145,6 @@ const BRANCH_NAME_PATTERN = /^[\w./-]+$/;
 // Characters some shell of the command runner (cmd.exe, bash, PowerShell) reads inside double
 // quotes: a value holding one is refused, never escaped
 const UNSAFE_QUOTED_VALUE = /["\\`$%!]/;
-// A Salesforce username: an email address shape, nothing a shell reads
-const USERNAME_PATTERN = /^[\w.+'-]+@[\w.-]+$/;
-// The instance URL of an org: https, a host name and nothing a shell reads
-const INSTANCE_URL_PATTERN = /^https:\/\/[\w.-]+(:\d+)?\/?$/i;
 
 /**
  * The branches a development org can target: developmentBranch, then availableTargetBranches
@@ -388,47 +385,6 @@ export async function resolveDevOrgConnection(
   };
 }
 
-/**
- * The command the Connect button of the details window runs: a new login to the org, through its
- * instance URL, replacing the login of that username when one exists. Without a usable instance
- * URL, the org list of sfdx-hardis.
- * No --set-default: sfdx-hardis asks whether the org becomes the default one.
- */
-export function buildDevOrgConnectCommand(request: {
-  instanceUrl?: unknown;
-  username?: unknown;
-}): string {
-  const instanceUrl = String(request?.instanceUrl ?? "").trim();
-  if (instanceUrl === "") {
-    return "sf hardis:org:select";
-  }
-  if (!INSTANCE_URL_PATTERN.test(instanceUrl)) {
-    throw new Error("invalidInstanceUrl");
-  }
-  const parts = [
-    "sf hardis:org:select",
-    "--reconnect",
-    `--instance-url "${instanceUrl.replace(/\/+$/, "")}"`,
-  ];
-  const username = String(request?.username ?? "").trim();
-  if (username !== "") {
-    if (!USERNAME_PATTERN.test(username)) {
-      throw new Error("invalidUsername");
-    }
-    parts.push(`--username "${username}"`);
-  }
-  return parts.join(" ");
-}
-
-/** The command the Open button of the details window runs */
-export function buildDevOrgOpenCommand(username: unknown): string {
-  const value = String(username ?? "").trim();
-  if (!USERNAME_PATTERN.test(value)) {
-    throw new Error("invalidUsername");
-  }
-  return `sf org open --target-org "${value}"`;
-}
-
 function sanitizeDevOrg(org: any): DevOrgView | null {
   if (!isSafeOrgId(org?.orgId)) {
     return null;
@@ -573,7 +529,7 @@ async function listDevOrgLogins(
   for (const org of orgs) {
     const username = typeof org?.username === "string" ? org.username : "";
     if (
-      USERNAME_PATTERN.test(username) &&
+      isSafeUsername(username) &&
       isSameOrgId(org?.orgId, orgId) &&
       !logins.some((login) => login.username === username)
     ) {
@@ -588,16 +544,16 @@ async function listDevOrgLogins(
 }
 
 /**
- * A login works when sf org display connects with it. A scratch org is not probed (sf org display
- * does not either): it works until its Dev Hub says it expired or was deleted, even when the Dev Hub
- * cannot be asked, so a working login is never offered to Connect.
+ * A login works when sf org display connects with it (the rule of isOrgConnected). A scratch org is
+ * not probed, like sf org display does not: its Dev Hub status decides, and a scratch org whose Dev
+ * Hub could not be asked keeps its login, so a working login is never offered to Connect.
  */
 async function isWorkingLogin(
   login: DevOrgLogin,
   runners: DevOrgConnectionRunners,
 ): Promise<boolean> {
   if (login.scratch) {
-    return !isEndedScratchStatus(login.status);
+    return login.status === "" || isOrgConnected({ status: login.status });
   }
   let org: any;
   try {
@@ -605,13 +561,9 @@ async function isWorkingLogin(
   } catch {
     return false;
   }
-  if (org?.devHubId || (typeof org?.status === "string" && org.status !== "")) {
-    // A scratch org the org list did not tell apart
-    return !isEndedScratchStatus(org.status);
+  if (org?.devHubId && !org?.status) {
+    // A scratch org the org list did not tell apart, whose Dev Hub could not be asked
+    return true;
   }
-  return org?.connectedStatus === "Connected";
-}
-
-function isEndedScratchStatus(status: unknown): boolean {
-  return status === "Expired" || status === "Deleted";
+  return isOrgConnected(org);
 }

@@ -2,9 +2,7 @@ import * as assert from "assert";
 import * as fs from "fs";
 import * as path from "path";
 import {
-  buildDevOrgConnectCommand,
   buildDevOrgListCommand,
-  buildDevOrgOpenCommand,
   buildDevOrgRegisterCommand,
   buildDevOrgRemoveCommand,
   devOrgNodeName,
@@ -632,59 +630,28 @@ suite("Development orgs", () => {
       assert.ok(!r.calls.some((call) => call.startsWith("display:")));
     });
 
-    test("Connect logs in again through the instance URL, replacing the login of the username", () => {
-      assert.strictEqual(
-        buildDevOrgConnectCommand({
-          instanceUrl: "https://acme--dev.sandbox.my.salesforce.com/",
-          username: "me@acme.com.dev",
-        }),
-        'sf hardis:org:select --reconnect --instance-url "https://acme--dev.sandbox.my.salesforce.com" --username "me@acme.com.dev"',
+    test("Connect and Open use the shared org commands, a scratch org login is never replaced", () => {
+      const source = fs.readFileSync(
+        path.join(REPO_ROOT, "src", "commands", "showPipeline.ts"),
+        "utf8",
       );
-      // No --set-default: sfdx-hardis asks
-      assert.strictEqual(
-        buildDevOrgConnectCommand({
-          instanceUrl: "https://acme--dev.sandbox.my.salesforce.com",
-          username: null,
-        }),
-        'sf hardis:org:select --reconnect --instance-url "https://acme--dev.sandbox.my.salesforce.com"',
+      const connect = source.slice(
+        source.indexOf('type === "connectDevOrg"'),
+        source.indexOf('type === "registerDevOrg"'),
       );
-      // Without an instance URL, the org list of sfdx-hardis
-      assert.strictEqual(
-        buildDevOrgConnectCommand({ instanceUrl: "" }),
-        "sf hardis:org:select",
+      // No setDefault: sfdx-hardis asks
+      assert.match(
+        connect,
+        /buildOrgReconnectCommand\(\{\s*instanceUrl: devOrg\?\.instanceUrl,\s*username: isScratch \? null : connection\?\.username,\s*\}\)/,
       );
-    });
-
-    test("Connect refuses an instance URL or a username a shell reads", () => {
-      for (const instanceUrl of [
-        "http://acme.my.salesforce.com",
-        'https://acme.my.salesforce.com" && calc',
-        "https://acme.my.salesforce.com/$(calc)",
-        "javascript:alert(1)",
-      ]) {
-        assert.throws(
-          () => buildDevOrgConnectCommand({ instanceUrl }),
-          /invalidInstanceUrl/,
-          instanceUrl,
-        );
-      }
-      assert.throws(
-        () =>
-          buildDevOrgConnectCommand({
-            instanceUrl: "https://acme.my.salesforce.com",
-            username: 'me@acme.com" --x "',
-          }),
-        /invalidUsername/,
+      const open = source.slice(
+        source.indexOf('type === "openDevOrg"'),
+        source.indexOf('type === "connectDevOrg"'),
       );
-    });
-
-    test("Open opens the org with its username, quoted", () => {
-      assert.strictEqual(
-        buildDevOrgOpenCommand("me@acme.com.dev"),
-        'sf org open --target-org "me@acme.com.dev"',
+      assert.match(
+        open,
+        /connection\?\.connected && isSafeUsername\(connection\.username\)\s*\? buildOrgOpenCommand\(connection\.username\)/,
       );
-      assert.throws(() => buildDevOrgOpenCommand("me $x"), /invalidUsername/);
-      assert.throws(() => buildDevOrgOpenCommand(null), /invalidUsername/);
     });
 
     test("the header shows Checking, then Open or Connect, and raises openorg / connectorg", () => {
@@ -735,12 +702,7 @@ suite("Development orgs", () => {
       );
       assert.match(
         source,
-        /type === "connectDevOrg"[\s\S]*?buildDevOrgConnectCommand\(/,
-      );
-      // A scratch org login is never replaced: sfdx-hardis would delete it before the web login
-      assert.match(
-        source,
-        /username: isScratch \? null : connection\?\.username,/,
+        /type === "connectDevOrg"[\s\S]*?buildOrgReconnectCommand\(/,
       );
     });
 
