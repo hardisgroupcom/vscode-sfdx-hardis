@@ -23,6 +23,10 @@ import { loadProjectSfdxHardisConfig } from "./utils/sfdx-hardis-config-utils";
 import { CacheManager } from "./utils/cache-manager";
 import { emitOrgsChanged } from "./utils/orgChangeEvents";
 import {
+  buildOrgReconnectCommand,
+  isOrgConnected,
+} from "./utils/orgConnectionUtils";
+import {
   SCRATCH_ORG_POOL_COUNTS_CACHE_KEY,
   SCRATCH_ORG_POOL_COUNTS_TTL_MS,
   buildScratchOrgPoolViewCommand,
@@ -225,17 +229,16 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
     if (orgInfoResult.result || orgInfoResult.id) {
       const orgInfo = orgInfoResult.result || orgInfoResult;
       setOrgCache(orgInfo);
+      // An org whose state is unknown (no probe, no Dev Hub status) is not flagged
       const isDisconnected =
-        orgInfo.connectedStatus &&
-        !orgInfo.connectedStatus
-          .toString()
-          .toLowerCase()
-          .match(/connected|authorized/);
-      const reconnectCommand =
-        "sf hardis:org:select --reconnect --set-default" +
-        (options.devHub ? " --devhub" : "") +
-        (orgInfo.username ? ` --username ${orgInfo.username}` : "") +
-        (orgInfo.instanceUrl ? ` --instance-url ${orgInfo.instanceUrl}` : "");
+        !!(orgInfo.connectedStatus || orgInfo.status) &&
+        !isOrgConnected(orgInfo);
+      const reconnectCommand = buildOrgReconnectCommand({
+        username: orgInfo.username,
+        instanceUrl: orgInfo.instanceUrl,
+        setDefault: true,
+        devHub: options.devHub === true,
+      });
       if (orgInfo.instanceUrl) {
         items.push({
           id: "org-info-instance-url" + (options.devHub ? "-devhub" : ""),

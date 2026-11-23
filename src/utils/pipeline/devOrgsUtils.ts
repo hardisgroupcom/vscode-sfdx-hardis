@@ -15,6 +15,7 @@ import {
   failedCommandMessage,
 } from "../cliAnswerUtils";
 import { safeWebUrl } from "../doraReportUtils";
+import { isOrgConnected, isSafeUsername } from "../orgConnectionUtils";
 
 export const DEV_ORGS_DOC_URL =
   "https://sfdx-hardis.cloudity.com/salesforce-devops-dev-orgs/";
@@ -100,6 +101,31 @@ export interface DevOrgsError {
 }
 
 export type DevOrgsOutcome = { devOrgs: DevOrgsView } | { error: DevOrgsError };
+
+// Whether this computer can use a development org: the username of its login, kept even when
+// the login no longer works (Connect passes it so sfdx-hardis replaces it)
+export interface DevOrgConnection {
+  username: string | null;
+  connected: boolean;
+  // The login is the one of a scratch org: Connect never replaces it, a scratch org user rarely
+  // has a password for a web login
+  scratch: boolean;
+}
+
+// A login of the org list: its username, whether it is a scratch org, the status its Dev Hub gave
+interface DevOrgLogin {
+  username: string;
+  scratch: boolean;
+  status: string;
+}
+
+// What resolveDevOrgConnection reads, replaceable in tests
+export interface DevOrgConnectionRunners {
+  // The orgs authenticated on this computer, as listAllOrgs returns them
+  listOrgs: (options: { useCache: boolean }) => Promise<any[]>;
+  // The answer of sf org display --json for one username (its result)
+  displayOrg: (username: string) => Promise<any>;
+}
 
 // What the Edit form of the details window asks sfdx-hardis to write
 export interface DevOrgEditRequest {
@@ -321,6 +347,44 @@ export function isDevOrgsChangeCommand(command: unknown): boolean {
   );
 }
 
+/**
+ * Whether this computer has a working login to a development org: the logins of its org id, from
+ * the cached org list, then from an uncached one when none of them works (a login made in a
+ * terminal is not in the cache). Each login is checked once, until one works.
+ * @returns the first working login, else the first login with connected false, else no username
+ */
+export async function resolveDevOrgConnection(
+  orgId: unknown,
+  runners: DevOrgConnectionRunners,
+): Promise<DevOrgConnection> {
+  if (!isSafeOrgId(orgId)) {
+    return { username: null, connected: false, scratch: false };
+  }
+  const checked = new Set<string>();
+  let firstLogin: DevOrgLogin | null = null;
+  for (const useCache of [true, false]) {
+    for (const login of await listDevOrgLogins(orgId, runners, useCache)) {
+      if (checked.has(login.username)) {
+        continue;
+      }
+      checked.add(login.username);
+      firstLogin = firstLogin || login;
+      if (await isWorkingLogin(login, runners)) {
+        return {
+          username: login.username,
+          connected: true,
+          scratch: login.scratch,
+        };
+      }
+    }
+  }
+  return {
+    username: firstLogin?.username || null,
+    connected: false,
+    scratch: firstLogin?.scratch === true,
+  };
+}
+
 function sanitizeDevOrg(org: any): DevOrgView | null {
   if (!isSafeOrgId(org?.orgId)) {
     return null;
@@ -447,4 +511,59 @@ function cleanText(
   maxLength: number = MAX_TEXT_LENGTH,
 ): string {
   return cleanAnswerText(value, maxLength);
+}
+
+// The logins of an org id, each once, in the order of the org list
+async function listDevOrgLogins(
+  orgId: string,
+  runners: DevOrgConnectionRunners,
+  useCache: boolean,
+): Promise<DevOrgLogin[]> {
+  let orgs: any[];
+  try {
+    orgs = (await runners.listOrgs({ useCache })) || [];
+  } catch {
+    return [];
+  }
+  const logins: DevOrgLogin[] = [];
+  for (const org of orgs) {
+    const username = typeof org?.username === "string" ? org.username : "";
+    if (
+      isSafeUsername(username) &&
+      isSameOrgId(org?.orgId, orgId) &&
+      !logins.some((login) => login.username === username)
+    ) {
+      logins.push({
+        username,
+        scratch: org?.orgType === "scratch" || org?.isScratch === true,
+        status: typeof org?.status === "string" ? org.status : "",
+      });
+    }
+  }
+  return logins;
+}
+
+/**
+ * A login works when sf org display connects with it (the rule of isOrgConnected). A scratch org is
+ * not probed, like sf org display does not: its Dev Hub status decides, and a scratch org whose Dev
+ * Hub could not be asked keeps its login, so a working login is never offered to Connect.
+ */
+async function isWorkingLogin(
+  login: DevOrgLogin,
+  runners: DevOrgConnectionRunners,
+): Promise<boolean> {
+  if (login.scratch) {
+    return login.status === "" || isOrgConnected({ status: login.status });
+  }
+  let org: any;
+  try {
+    org = await runners.displayOrg(login.username);
+  } catch {
+    return false;
+  }
+  if (org?.devHubId && !org?.status) {
+    // A scratch org the org list did not tell apart, whose Dev Hub could not be asked
+    return true;
+  }
+  return isOrgConnected(org);
 }

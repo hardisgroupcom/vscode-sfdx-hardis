@@ -176,7 +176,7 @@
                                         <!-- Release versions on the diagram: off by default, listed by the CLI when turned on -->
                                         <template if:true={releaseVersioningDeclared}>
                                             <span class="hardis-segmented pipeline-versions-switch" role="group" aria-label={i18n.pipelineViewVersionsTitle} title={i18n.pipelineViewVersionsTitle}>
-                                                <button type="button" class={versionsToggleClass} aria-pressed={versionsTogglePressed} onclick={handleToggleVersions}>{i18n.pipelineViewVersions}</button>
+                                                <button type="button" class={versionsToggleClass} aria-pressed={versionsTogglePressed} aria-busy={versionsToggleBusy} onclick={handleToggleVersions}><template if:true={isLoadingReleaseVersions}><span class="hardis-button-spinner" aria-hidden="true"></span></template>{i18n.pipelineViewVersions}</button>
                                             </span>
                                         </template>
                                     </div>
@@ -229,10 +229,6 @@
                                             <span class="legend-item"><span class="hardis-pill hardis-version-chip hardis-version-rc legend-version-chip">v1.2.0-rc.1</span>{i18n.legendReleaseCandidate}</span>
                                             <span class="legend-item"><span class="hardis-pill hardis-version-chip hardis-version-released legend-version-chip">v1.1.0</span>{i18n.legendReleasedVersion}</span>
                                             <span class="legend-item"><span class="hardis-pill hardis-version-chip hardis-version-next legend-version-chip">v1.2.0-rc.2</span>{i18n.legendNextVersion}</span>
-                                        </template>
-                                        <template if:true={showVersionsLoadingLegend}>
-                                            <span class="legend-separator"></span>
-                                            <span class="legend-item pipeline-versions-status" role="status"><span class="hardis-pill-dot legend-dot hardis-status-running"></span>{i18n.releaseVersionsLoading}</span>
                                         </template>
                                         <template if:true={showVersionsFailedLegend}>
                                             <span class="legend-separator"></span>
@@ -743,7 +739,7 @@
                                                         </div>
                                                         <div class="da-buttons">
                                                             <template for:each={row.inlineButtons} for:item="button">
-                                                                <button key={button.name} class={button.className} data-row-id={row.id} data-action-name={button.name} onclick={handleActionInlineButton} disabled={button.busy}><template if:true={button.busy}><span class="da-button-spinner" aria-hidden="true"></span></template>{button.label}</button>
+                                                                <button key={button.name} class={button.className} data-row-id={row.id} data-action-name={button.name} onclick={handleActionInlineButton} disabled={button.busy}><template if:true={button.busy}><span class="hardis-button-spinner" aria-hidden="true"></span></template>{button.label}</button>
                                                             </template>
                                                             <lightning-button-menu
                                                                 icon-size="small"
@@ -772,7 +768,7 @@
                                                                     </span>
                                                                     <span class="da-detail-action">
                                                                         <template if:true={line.canMarkDone}>
-                                                                            <button class="slds-button slds-button_neutral da-button" data-row-id={row.id} data-branch={line.name} onclick={handleActionDetailMarkDone} disabled={line.busy}><template if:true={line.busy}><span class="da-button-spinner" aria-hidden="true"></span></template>{line.markLabel}</button>
+                                                                            <button class="slds-button slds-button_neutral da-button" data-row-id={row.id} data-branch={line.name} onclick={handleActionDetailMarkDone} disabled={line.busy}><template if:true={line.busy}><span class="hardis-button-spinner" aria-hidden="true"></span></template>{line.markLabel}</button>
                                                                         </template>
                                                                     </span>
                                                                 </div>
@@ -1144,6 +1140,8 @@
             onclose={handleCloseDevOrgModal}
             onrefresh={handleDevOrgRefresh}
             onbackpromote={handleDevOrgBackpromote}
+            onopenorg={handleDevOrgOpen}
+            onconnectorg={handleDevOrgConnect}
             onsave={handleDevOrgSave}
             onremove={handleDevOrgRemove}
         ></s-dev-org-details>

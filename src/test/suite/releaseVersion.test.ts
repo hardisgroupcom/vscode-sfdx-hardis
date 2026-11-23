@@ -13,6 +13,10 @@ import {
   withReleaseVersionLinks,
 } from "../../utils/pipeline/releaseVersionUtils";
 import { BranchStrategyMermaidBuilder } from "../../utils/pipeline/branchStrategyMermaidBuilder";
+import * as fs from "fs";
+import * as path from "path";
+import { readModuleFile, REPO_ROOT } from "./lwcSourceUtils";
+import { SfdxHardisConfigHelper } from "../../utils/pipeline/sfdxHardisConfigHelper";
 
 /**
  * Release versioning (sfdx-hardis releaseVersioning): the DevOps Pipeline shows the versions the
@@ -472,5 +476,81 @@ suite("Release versioning", () => {
     test("without versions, the diagram is unchanged", () => {
       assert.doesNotMatch(diagram(false), /hardis-version/);
     });
+  });
+
+  suite("Versions toggle", () => {
+    test("the toggle turns a spinner while the versions load, the legend says nothing", () => {
+      const html = readModuleFile("pipeline", "pipeline.html");
+      assert.match(
+        html,
+        /aria-busy=\{versionsToggleBusy\} onclick=\{handleToggleVersions\}><template if:true=\{isLoadingReleaseVersions\}><span class="hardis-button-spinner" aria-hidden="true"><\/span><\/template>\{i18n\.pipelineViewVersions\}<\/button>/,
+      );
+      const legend = html.slice(
+        html.indexOf('<div class="pipeline-legend">'),
+        html.indexOf("</div>", html.indexOf('<div class="pipeline-legend">')),
+      );
+      assert.doesNotMatch(legend, /releaseVersionsLoading/);
+      const js = readModuleFile("pipeline", "pipeline.js");
+      assert.match(
+        js,
+        /get isLoadingReleaseVersions\(\) \{\s*return \(\s*this\.releaseVersioningDeclared &&\s*this\.showReleaseVersions &&\s*this\.releaseVersionsPending\s*\);/,
+      );
+    });
+
+    test("one spinner for every button, in the theme, never a copy in a component", () => {
+      const theme = fs.readFileSync(
+        path.join(REPO_ROOT, "resources", "global-theme.css"),
+        "utf8",
+      );
+      assert.match(
+        theme,
+        /\.slds-scope\[data-theme\] \.hardis-button-spinner \{/,
+      );
+      for (const component of [
+        "pipeline",
+        "deploymentAction",
+        "browserforceSettingEditor",
+      ]) {
+        assert.doesNotMatch(
+          readModuleFile(component, `${component}.css`),
+          /button-spinner \{|@keyframes (da|bfe)-spin/,
+          component,
+        );
+      }
+    });
+  });
+
+  test("Pipeline Settings groups every versioning setting in its Versioning tab, after Deployment", () => {
+    const sections = SfdxHardisConfigHelper.SECTIONS;
+    const labels = sections.map((section) => section.label);
+    assert.strictEqual(
+      labels.indexOf("versioning"),
+      labels.indexOf("deployment") + 1,
+    );
+    const versioning = sections.find(
+      (section) => section.label === "versioning",
+    );
+    assert.deepStrictEqual(versioning?.keys, [
+      "releaseVersioning",
+      "releaseVersioningInitialVersion",
+      "releaseVersioningMinimumVersion",
+      "releaseVersioningTagFormat",
+      "releaseVersioningMinimumVariables",
+      "releaseVersioningTicketVersions",
+    ]);
+    // Every releaseVersioning setting the extension edits is in that tab, and in no other
+    const versioningFields = SfdxHardisConfigHelper.CONFIGURABLE_FIELDS.map(
+      (field) => field.name,
+    ).filter((name) => name.startsWith("releaseVersioning"));
+    assert.deepStrictEqual(
+      [...versioningFields].sort(),
+      [...versioning!.keys].sort(),
+    );
+    for (const section of sections.filter((s) => s.label !== "versioning")) {
+      assert.ok(
+        !section.keys.some((key) => key.startsWith("releaseVersioning")),
+        section.label,
+      );
+    }
   });
 });

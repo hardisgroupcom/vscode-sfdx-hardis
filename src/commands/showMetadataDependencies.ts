@@ -5,6 +5,10 @@ import { LwcPanelManager } from "../lwc-panel-manager";
 import { LwcUiPanel } from "../webviews/lwc-ui-panel";
 import { listAllOrgs } from "../utils/orgUtils";
 import {
+  buildOrgOpenCommand,
+  isOrgConnected,
+} from "../utils/orgConnectionUtils";
+import {
   execSfdxJson,
   getDefaultTargetOrgUsername,
   getWorkspaceRoot,
@@ -176,10 +180,7 @@ function metadataTypeNames(): string[] {
 async function listConnectedOrgs(): Promise<any[]> {
   try {
     const orgs = await listAllOrgs(false);
-    return orgs.filter(
-      (org: any) =>
-        org.connectedStatus === "Connected" || org.status === "Active",
-    );
+    return orgs.filter((org: any) => isOrgConnected(org));
   } catch (error: any) {
     Logger.log(`Error listing orgs: ${error?.message || error}`);
     return [];
@@ -211,7 +212,7 @@ async function openInSetup(
     },
     () =>
       execSfdxJson(
-        `sf org open --target-org ${quote(username)} --path ${quote(setupPath)} --url-only`,
+        `${buildOrgOpenCommand(username, { path: setupPath })} --url-only`,
         { fail: false, output: false, reuseRecentResult: false },
       ),
   );

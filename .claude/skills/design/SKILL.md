@@ -25,6 +25,7 @@ A matching **`design`** sub-agent is defined in `.claude/agents/design.md`. Pref
    - **New config field**: `CONFIGURABLE_FIELDS` + `SECTIONS` in `src/utils/pipeline/sfdxHardisConfigHelper.ts`, schema update
    - **New provider integration**: Follow patterns in `src/utils/gitProviders/` or `src/utils/ticketProviders/` (interface + implementation). Git and ticket providers share a unified UX: `promptForToken`, consistent failure guidance, a disconnect flag, clickable token-creation links and full scope hints — a new provider must match it, not invent its own flow.
    - **New dependency**: don't. Check `httpUtils` / `executableUtils` / `portUtils` / `processUtils` first — the runtime dependency list was deliberately cut from 28 to 14.
+   - **Reuse before you write (mandatory).** Before writing a function, a check, a command line builder, a regex, a parser or a UI block, search the code for something that already does the same thing or nearly the same: grep the CLI commands it runs, the fields it reads, the flags it builds, the words of its rule. Search both repositories when the change spans sfdx-hardis and vscode-sfdx-hardis. If it exists, call it. If close copies exist, extract one shared helper and switch the existing callers to it in the same change. Never add a new variant next to an existing one. The design names what it reuses and what it factorizes, with file paths.
 
 3. **Address key design decisions**:
    - **Execution mode**: Background (via `command-runner.ts` spawn) vs terminal vs LWC webview panel

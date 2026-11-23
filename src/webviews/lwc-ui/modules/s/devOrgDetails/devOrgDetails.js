@@ -11,17 +11,20 @@ import { SharedMixin } from "s/sharedMixin";
  * org registered by sfdx-hardis). Driven by its props, it only raises events: the pipeline sends
  * the matching messages to the extension, which runs sfdx-hardis.
  *
- * Events: close, refresh, backpromote, save ({ orgId, targetBranch, owner, users }),
- * remove ({ orgId }).
+ * Events: close, refresh, backpromote, openorg, connectorg, save ({ orgId, targetBranch, owner,
+ * users }), remove ({ orgId }).
+ *
+ * Open (a working login on this computer) or Connect (none) shows once the extension checked the
+ * login, after the window opened.
  */
 export default class DevOrgDetails extends SharedMixin(LightningElement) {
   // The org, as sf hardis:project:dev-org:list describes it (sanitized by the extension)
   @api devOrg = null;
   // Major branches of the pipeline: the target branches the Edit form offers
   @api majorBranches = [];
-  // Username of the org among the orgs authenticated on this computer, null when it is not one
+  // Username of a working login to the org on this computer, null when there is none
   @api connectedUsername = null;
-  // The authenticated orgs were looked through (the Backpromote button waits for it)
+  // The login was checked (Open, Connect and Backpromote wait for it)
   @api connectionChecked = false;
   // sfdx-hardis lists again the merged Pull Requests
   @api refreshing = false;
@@ -237,6 +240,24 @@ export default class DevOrgDetails extends SharedMixin(LightningElement) {
 
   // ---- Buttons ----
 
+  get isCheckingConnection() {
+    return !this.connectionChecked;
+  }
+
+  get showOpenButton() {
+    return this.connectionChecked && !!this.connectedUsername;
+  }
+
+  get showConnectButton() {
+    return this.connectionChecked && !this.connectedUsername;
+  }
+
+  get openTitle() {
+    return this.t("devOrgOpenTitle", {
+      username: this.connectedUsername || "",
+    });
+  }
+
   get backpromoteDisabled() {
     return !this.connectedUsername;
   }
@@ -289,6 +310,20 @@ export default class DevOrgDetails extends SharedMixin(LightningElement) {
       return;
     }
     this.dispatchEvent(new CustomEvent("backpromote"));
+  }
+
+  handleOpenOrg() {
+    if (!this.showOpenButton) {
+      return;
+    }
+    this.dispatchEvent(new CustomEvent("openorg"));
+  }
+
+  handleConnectOrg() {
+    if (!this.showConnectButton) {
+      return;
+    }
+    this.dispatchEvent(new CustomEvent("connectorg"));
   }
 
   handleEdit() {

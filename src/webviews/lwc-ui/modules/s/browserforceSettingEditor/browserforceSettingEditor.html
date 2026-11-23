@@ -68,7 +68,7 @@
         <!-- The fields of the setting come with the catalog: say it is on its way -->
         <template if:true={showReadOnlyLoading}>
           <div class="hardis-note bfe-block bfe-loading-note" role="status">
-            <span class="bfe-button-spinner" aria-hidden="true"></span>
+            <span class="hardis-button-spinner" aria-hidden="true"></span>
             <span>{i18n.browserforceCatalogLoading}</span>
           </div>
         </template>
@@ -465,7 +465,7 @@
               onclick={handleCheck}
             >
               <template if:true={showValidating}>
-                <span class="bfe-button-spinner" aria-hidden="true"></span>
+                <span class="hardis-button-spinner" aria-hidden="true"></span>
               </template>
               <template if:false={showValidating}>
                 <lightning-icon icon-name="utility:check" size="x-small" class="bfe-switch-icon"></lightning-icon>

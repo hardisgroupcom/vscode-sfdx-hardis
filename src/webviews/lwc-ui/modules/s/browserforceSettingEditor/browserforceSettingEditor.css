@@ -189,28 +189,6 @@
   vertical-align: middle;
 }
 
-/* Spinner inside the Check button while Browserforce answers */
-.bfe-button-spinner {
-  width: 0.75rem;
-  height: 0.75rem;
-  border: 2px solid currentColor;
-  border-right-color: transparent;
-  border-radius: 50%;
-  animation: bfe-spin 0.8s linear infinite;
-}
-
-@keyframes bfe-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .bfe-button-spinner {
-    animation: none;
-  }
-}
-
 .bfe-loading-note {
   display: flex;
   align-items: center;

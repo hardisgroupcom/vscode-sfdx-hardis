@@ -839,6 +839,24 @@ lightning-helptext::part(icon) {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
 }
 
+/* A disabled tinted button loses its tint and reads as inactive, in both themes. After the
+   hover rules: a disabled button never lights up under the mouse. Give it a title saying how
+   to activate it. */
+.slds-scope[data-theme] .hardis-btn-tinted-green .slds-button:disabled,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-green:disabled,
+.slds-scope[data-theme] .hardis-btn-tinted-blue .slds-button:disabled,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-blue:disabled,
+.slds-scope[data-theme] .hardis-btn-tinted-red .slds-button:disabled,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-red:disabled,
+.slds-scope[data-theme] .hardis-btn-tinted-amber .slds-button:disabled,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-amber:disabled {
+  background: var(--slds-g-color-neutral-base-95);
+  border-color: var(--slds-g-color-neutral-base-80);
+  color: var(--slds-g-color-neutral-base-60);
+  box-shadow: none;
+  cursor: default;
+}
+
 /* sfdx-hardis brand gradient (official banner: cyan to violet), tuned per theme
    so the start stays a vivid cyan on light backgrounds too */
 .slds-scope[data-theme] {
@@ -1924,6 +1942,26 @@ lightning-helptext::part(icon) {
   .slds-scope[data-theme] .hardis-tl-node.running::after {
     animation: none;
     border-top-color: currentColor;
+  }
+}
+
+/* Small spinner inside a button or a toggle while its action runs, in the color of the label:
+     <button class="..."><span class="hardis-button-spinner" aria-hidden="true"></span>Label</button>
+   The button lays its content out with gap (inline-flex) so the label does not stick to it. */
+.slds-scope[data-theme] .hardis-button-spinner {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  vertical-align: middle;
+  animation: hardis-node-spin 0.8s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .slds-scope[data-theme] .hardis-button-spinner {
+    animation: none;
   }
 }
 

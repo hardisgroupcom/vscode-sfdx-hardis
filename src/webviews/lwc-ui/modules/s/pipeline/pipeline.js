@@ -1958,6 +1958,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       case "devOrgConnection":
         this.handleDevOrgConnection(data);
         break;
+      case "devOrgConnectionChanged":
+        // A login ended: the open details window checks its org again
+        if (this.showDevOrgModal && this.selectedDevOrg) {
+          this._requestDevOrgConnection();
+        }
+        break;
       case "openPullRequestsUpdated":
         // allow dynamic updates from extension host
         this.openPullRequests = this._mapPrsWithIcons(data || []);
@@ -2531,17 +2537,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
     this.selectedDevOrg = devOrg;
     this.showDevOrgModal = true;
-    // Backpromote needs the org among the ones authenticated on this computer
-    this.devOrgConnectionUsername = null;
-    this.devOrgConnectionChecked = false;
-    this._devOrgConnectionRequestId += 1;
-    window.sendMessageToVSCode({
-      type: "getDevOrgConnection",
-      data: {
-        requestId: this._devOrgConnectionRequestId,
-        orgId: devOrg.orgId,
-      },
-    });
+    this._requestDevOrgConnection();
   }
 
   handleDevOrgConnection(data) {
@@ -2553,7 +2549,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     ) {
       return;
     }
-    this.devOrgConnectionUsername = data.username || null;
+    // Open and Backpromote need a working login, Connect shows otherwise
+    this.devOrgConnectionUsername =
+      data.connected === true ? data.username || null : null;
     this.devOrgConnectionChecked = true;
   }
 
@@ -2604,6 +2602,31 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     });
   }
 
+  // Opens the org in the browser with the login VS Code found working
+  handleDevOrgOpen() {
+    const devOrg = this.selectedDevOrg;
+    if (!devOrg || !this.devOrgConnectionUsername) {
+      return;
+    }
+    window.sendMessageToVSCode({
+      type: "openDevOrg",
+      data: { orgId: devOrg.orgId },
+    });
+  }
+
+  // Logs in to the org in the command runner. The window stays open and switches to Open when
+  // the login ends (devOrgConnectionChanged).
+  handleDevOrgConnect() {
+    const devOrg = this.selectedDevOrg;
+    if (!devOrg || !this.devOrgConnectionChecked) {
+      return;
+    }
+    window.sendMessageToVSCode({
+      type: "connectDevOrg",
+      data: { orgId: devOrg.orgId },
+    });
+  }
+
   // The Edit form: sfdx-hardis writes it in the command runner, the pipeline reloads after
   handleDevOrgSave(event) {
     const detail = event?.detail || {};
@@ -2626,6 +2649,20 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
     window.sendMessageToVSCode({ type: "removeDevOrg", data: { orgId } });
     this.handleCloseDevOrgModal();
+  }
+
+  // Open, Connect and Backpromote wait for VS Code to check the login to the org of the window
+  _requestDevOrgConnection() {
+    this.devOrgConnectionUsername = null;
+    this.devOrgConnectionChecked = false;
+    this._devOrgConnectionRequestId += 1;
+    window.sendMessageToVSCode({
+      type: "getDevOrgConnection",
+      data: {
+        requestId: this._devOrgConnectionRequestId,
+        orgId: this.selectedDevOrg.orgId,
+      },
+    });
   }
 
   _setDiagramView(view) {
@@ -6908,7 +6945,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return this.releaseVersioningEnabled && this.showReleaseVersions;
   }
 
-  get showVersionsLoadingLegend() {
+  // The Versions toggle turns a spinner while the versions load
+  get isLoadingReleaseVersions() {
     return (
       this.releaseVersioningDeclared &&
       this.showReleaseVersions &&
@@ -6930,6 +6968,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   get versionsTogglePressed() {
     return String(this.showReleaseVersions);
+  }
+
+  get versionsToggleBusy() {
+    return String(this.isLoadingReleaseVersions);
   }
 
   // The diagram without its version chips: the hidden chip of each versioned branch and org

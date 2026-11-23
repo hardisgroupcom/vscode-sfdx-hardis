@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- DevOps Pipeline:
+  - The window of a development org shows **Open** when you are connected to the org, and **Connect** when you are not
+  - The **Versions** button shows a spinner while the versions load
+- Pipeline Settings: new **Versioning** tab that groups the release versioning settings
+- Disabled colored buttons look inactive, in every panel
+
 ## [8.21.0] 2026-11-23
 
 - DevOps Pipeline: new **Handle release versioning** branch setting (Pipeline Settings), for projects that version their releases (requires sfdx-hardis 8.27.0)

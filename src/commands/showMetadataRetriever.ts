@@ -3,6 +3,7 @@ import * as os from "os";
 import { Commands } from "../commands";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { listAllOrgs, SalesforceOrg } from "../utils/orgUtils";
+import { isOrgConnected } from "../utils/orgConnectionUtils";
 import {
   execSfdxJson,
   getDefaultTargetOrgUsername,
@@ -392,10 +393,8 @@ async function handleListOrgs(panel: LwcUiPanel) {
   const orgs = await listAllOrgs(false);
 
   // Filter connected orgs and find default from the connected list
-  // Include both regular orgs (connectedStatus: "Connected") and scratch orgs (status: "Active")
-  const connectedOrgs = orgs.filter(
-    (org) => org.connectedStatus === "Connected" || org.status === "Active",
-  );
+  // Regular orgs answer their connection probe, scratch orgs their Dev Hub status
+  const connectedOrgs = orgs.filter((org) => isOrgConnected(org));
   const selectedOrg =
     connectedOrgs.find((org) => org.isDefaultUsername) || connectedOrgs[0];
   panel.sendMessage({
