@@ -101,6 +101,21 @@ export interface DevOrgsError {
 
 export type DevOrgsOutcome = { devOrgs: DevOrgsView } | { error: DevOrgsError };
 
+// Whether this computer can use a development org: the username of its login, kept even when
+// the login no longer works (Connect passes it so sfdx-hardis replaces it)
+export interface DevOrgConnection {
+  username: string | null;
+  connected: boolean;
+}
+
+// What resolveDevOrgConnection reads, replaceable in tests
+export interface DevOrgConnectionRunners {
+  // The orgs authenticated on this computer, as listAllOrgs returns them
+  listOrgs: (options: { useCache: boolean }) => Promise<any[]>;
+  // The answer of sf org display --json for one username (its result)
+  displayOrg: (username: string) => Promise<any>;
+}
+
 // What the Edit form of the details window asks sfdx-hardis to write
 export interface DevOrgEditRequest {
   orgId: string;
@@ -119,6 +134,10 @@ const BRANCH_NAME_PATTERN = /^[\w./-]+$/;
 // Characters some shell of the command runner (cmd.exe, bash, PowerShell) reads inside double
 // quotes: a value holding one is refused, never escaped
 const UNSAFE_QUOTED_VALUE = /["\\`$%!]/;
+// A Salesforce username: an email address shape, nothing a shell reads
+const USERNAME_PATTERN = /^[\w.+'-]+@[\w.-]+$/;
+// The instance URL of an org: https, a host name and nothing a shell reads
+const INSTANCE_URL_PATTERN = /^https:\/\/[\w.-]+(:\d+)?\/?$/i;
 
 /**
  * The branches a development org can target: developmentBranch, then availableTargetBranches
@@ -321,6 +340,73 @@ export function isDevOrgsChangeCommand(command: unknown): boolean {
   );
 }
 
+/**
+ * Whether this computer has a working login to a development org: the logins of its org id, from
+ * the cached org list (an uncached list when the cache has none, a login made in a terminal is not
+ * in it), each checked with sf org display until one answers Connected.
+ * @returns the username of the first working login, else the first login with connected false,
+ * else no username
+ */
+export async function resolveDevOrgConnection(
+  orgId: unknown,
+  runners: DevOrgConnectionRunners,
+): Promise<DevOrgConnection> {
+  if (!isSafeOrgId(orgId)) {
+    return { username: null, connected: false };
+  }
+  let usernames = await listDevOrgUsernames(orgId, runners, true);
+  if (usernames.length === 0) {
+    usernames = await listDevOrgUsernames(orgId, runners, false);
+  }
+  for (const username of usernames) {
+    if (await isWorkingLogin(username, runners)) {
+      return { username, connected: true };
+    }
+  }
+  return { username: usernames[0] || null, connected: false };
+}
+
+/**
+ * The command the Connect button of the details window runs: a new login to the org, through its
+ * instance URL, replacing the login of that username when one exists. Without a usable instance
+ * URL, the org list of sfdx-hardis.
+ * No --set-default: sfdx-hardis asks whether the org becomes the default one.
+ */
+export function buildDevOrgConnectCommand(request: {
+  instanceUrl?: unknown;
+  username?: unknown;
+}): string {
+  const instanceUrl = String(request?.instanceUrl ?? "").trim();
+  if (instanceUrl === "") {
+    return "sf hardis:org:select";
+  }
+  if (!INSTANCE_URL_PATTERN.test(instanceUrl)) {
+    throw new Error("invalidInstanceUrl");
+  }
+  const parts = [
+    "sf hardis:org:select",
+    "--reconnect",
+    `--instance-url "${instanceUrl.replace(/\/+$/, "")}"`,
+  ];
+  const username = String(request?.username ?? "").trim();
+  if (username !== "") {
+    if (!USERNAME_PATTERN.test(username)) {
+      throw new Error("invalidUsername");
+    }
+    parts.push(`--username "${username}"`);
+  }
+  return parts.join(" ");
+}
+
+/** The command the Open button of the details window runs */
+export function buildDevOrgOpenCommand(username: unknown): string {
+  const value = String(username ?? "").trim();
+  if (!USERNAME_PATTERN.test(value)) {
+    throw new Error("invalidUsername");
+  }
+  return `sf org open --target-org "${value}"`;
+}
+
 function sanitizeDevOrg(org: any): DevOrgView | null {
   if (!isSafeOrgId(org?.orgId)) {
     return null;
@@ -447,4 +533,52 @@ function cleanText(
   maxLength: number = MAX_TEXT_LENGTH,
 ): string {
   return cleanAnswerText(value, maxLength);
+}
+
+// The usernames of the logins of an org id, each once, in the order of the org list
+async function listDevOrgUsernames(
+  orgId: string,
+  runners: DevOrgConnectionRunners,
+  useCache: boolean,
+): Promise<string[]> {
+  let orgs: any[];
+  try {
+    orgs = (await runners.listOrgs({ useCache })) || [];
+  } catch {
+    return [];
+  }
+  const usernames: string[] = [];
+  for (const org of orgs) {
+    const username = typeof org?.username === "string" ? org.username : "";
+    if (
+      USERNAME_PATTERN.test(username) &&
+      isSameOrgId(org?.orgId, orgId) &&
+      !usernames.includes(username)
+    ) {
+      usernames.push(username);
+    }
+  }
+  return usernames;
+}
+
+// A login works when sf org display connects with it. The CLI does not probe a scratch org: its
+// Dev Hub says whether it is still active.
+async function isWorkingLogin(
+  username: string,
+  runners: DevOrgConnectionRunners,
+): Promise<boolean> {
+  let org: any;
+  try {
+    org = await runners.displayOrg(username);
+  } catch {
+    return false;
+  }
+  const status = typeof org?.status === "string" ? org.status : "";
+  if (status === "Expired" || status === "Deleted") {
+    return false;
+  }
+  if (org?.connectedStatus === undefined || org?.connectedStatus === null) {
+    return status === "Active";
+  }
+  return org.connectedStatus === "Connected";
 }

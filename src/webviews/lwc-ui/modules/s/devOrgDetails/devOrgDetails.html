@@ -9,7 +9,7 @@
     >
       <div class="slds-modal__container">
         <div class="modal-accent-strip"></div>
-        <header class="slds-modal__header">
+        <header class="slds-modal__header dev-org-header">
           <button
             class="slds-button slds-button_icon slds-modal__close"
             title={i18n.close}
@@ -18,7 +18,38 @@
             <lightning-icon icon-name="utility:close" size="small" alternative-text={i18n.close}></lightning-icon>
             <span class="slds-assistive-text">{i18n.close}</span>
           </button>
-          <h2 id="dev-org-details-heading" class="slds-modal__title slds-hyphenate">{title}</h2>
+          <!-- Open or Connect, once VS Code checked the login to the org -->
+          <template if:true={isViewMode}>
+            <div class="dev-org-header-action">
+              <template if:true={isCheckingConnection}>
+                <lightning-button
+                  variant="neutral"
+                  label={i18n.devOrgConnectionChecking}
+                  disabled
+                ></lightning-button>
+              </template>
+              <template if:true={showOpenButton}>
+                <lightning-button
+                  variant="neutral"
+                  class="hardis-btn-tinted-blue"
+                  label={i18n.devOrgOpen}
+                  title={openTitle}
+                  icon-name="utility:new_window"
+                  onclick={handleOpenOrg}
+                ></lightning-button>
+              </template>
+              <template if:true={showConnectButton}>
+                <lightning-button
+                  variant="neutral"
+                  label={i18n.devOrgConnect}
+                  title={i18n.devOrgConnectTitle}
+                  icon-name="utility:link"
+                  onclick={handleConnectOrg}
+                ></lightning-button>
+              </template>
+            </div>
+          </template>
+          <h2 id="dev-org-details-heading" class="slds-modal__title slds-hyphenate dev-org-title">{title}</h2>
           <p class="dev-org-subtitle">{subtitle}</p>
           <div class="hardis-chip-row dev-org-badges">
             <span class="hardis-pill hardis-status-info">{typeLabel}</span>

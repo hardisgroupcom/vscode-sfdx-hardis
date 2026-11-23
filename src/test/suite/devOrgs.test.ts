@@ -2,7 +2,9 @@ import * as assert from "assert";
 import * as fs from "fs";
 import * as path from "path";
 import {
+  buildDevOrgConnectCommand,
   buildDevOrgListCommand,
+  buildDevOrgOpenCommand,
   buildDevOrgRegisterCommand,
   buildDevOrgRemoveCommand,
   devOrgNodeName,
@@ -13,6 +15,7 @@ import {
   isDevOrgsRegistryEnabled,
   isSameOrgId,
   readDevOrgsOutcome,
+  resolveDevOrgConnection,
   sanitizeDevOrgs,
 } from "../../utils/pipeline/devOrgsUtils";
 import { BranchStrategyMermaidBuilder } from "../../utils/pipeline/branchStrategyMermaidBuilder";
@@ -419,6 +422,270 @@ suite("Development orgs", () => {
       assert.ok(isSameOrgId(ORG_A, ORG_A));
       assert.ok(!isSameOrgId(ORG_A, ORG_B));
       assert.ok(!isSameOrgId(undefined, ORG_A));
+    });
+  });
+
+  suite("Open or Connect in the details window", () => {
+    // The orgs of the cached list and of the uncached one, and the answer of sf org display for
+    // each username. Records what was called.
+    function runners(options: {
+      cached?: any[];
+      uncached?: any[];
+      display?: Record<string, any>;
+    }) {
+      const calls: string[] = [];
+      return {
+        calls,
+        runners: {
+          listOrgs: async ({ useCache }: { useCache: boolean }) => {
+            calls.push(useCache ? "list:cached" : "list:uncached");
+            return (useCache ? options.cached : options.uncached) || [];
+          },
+          displayOrg: async (username: string) => {
+            calls.push(`display:${username}`);
+            const answer = options.display?.[username];
+            if (answer instanceof Error) {
+              throw answer;
+            }
+            return answer;
+          },
+        },
+      };
+    }
+
+    test("a working login in the cached list shows Open, no uncached list", async () => {
+      const r = runners({
+        cached: [{ username: "me@acme.com", orgId: ORG_A }],
+        display: { "me@acme.com": { connectedStatus: "Connected" } },
+      });
+      assert.deepStrictEqual(await resolveDevOrgConnection(ORG_A, r.runners), {
+        username: "me@acme.com",
+        connected: true,
+      });
+      assert.deepStrictEqual(r.calls, ["list:cached", "display:me@acme.com"]);
+    });
+
+    test("an expired login shows Connect and keeps the username to replace it", async () => {
+      const r = runners({
+        cached: [{ username: "me@acme.com", orgId: "00D000000000001" }],
+        display: {
+          "me@acme.com": { connectedStatus: "RefreshTokenAuthError" },
+        },
+      });
+      assert.deepStrictEqual(await resolveDevOrgConnection(ORG_A, r.runners), {
+        username: "me@acme.com",
+        connected: false,
+      });
+    });
+
+    test("a login missing from the cache is found in the uncached list", async () => {
+      const r = runners({
+        cached: [{ username: "other@acme.com", orgId: ORG_B }],
+        uncached: [{ username: "me@acme.com", orgId: ORG_A }],
+        display: { "me@acme.com": { connectedStatus: "Connected" } },
+      });
+      const connection = await resolveDevOrgConnection(ORG_A, r.runners);
+      assert.strictEqual(connection.connected, true);
+      assert.deepStrictEqual(r.calls, [
+        "list:cached",
+        "list:uncached",
+        "display:me@acme.com",
+      ]);
+    });
+
+    test("no login at all shows Connect without a username", async () => {
+      const r = runners({ cached: [], uncached: [] });
+      assert.deepStrictEqual(await resolveDevOrgConnection(ORG_A, r.runners), {
+        username: null,
+        connected: false,
+      });
+    });
+
+    test("the first working login of the org wins, a failing check counts as not connected", async () => {
+      const r = runners({
+        cached: [
+          { username: "old@acme.com", orgId: ORG_A },
+          { username: "broken@acme.com", orgId: ORG_A },
+          { username: "me@acme.com", orgId: ORG_A },
+          { username: "me@acme.com", orgId: ORG_A },
+        ],
+        display: {
+          "old@acme.com": { connectedStatus: "expired access/refresh token" },
+          "broken@acme.com": new Error("no auth file"),
+          "me@acme.com": { connectedStatus: "Connected" },
+        },
+      });
+      assert.deepStrictEqual(await resolveDevOrgConnection(ORG_A, r.runners), {
+        username: "me@acme.com",
+        connected: true,
+      });
+      // Each login checked once
+      assert.strictEqual(
+        r.calls.filter((call) => call === "display:me@acme.com").length,
+        1,
+      );
+    });
+
+    test("a scratch org works while its Dev Hub says it is active", async () => {
+      const active = runners({
+        cached: [{ username: "scratch@acme.com", orgId: ORG_A }],
+        display: { "scratch@acme.com": { status: "Active" } },
+      });
+      assert.strictEqual(
+        (await resolveDevOrgConnection(ORG_A, active.runners)).connected,
+        true,
+      );
+      const expired = runners({
+        cached: [{ username: "scratch@acme.com", orgId: ORG_A }],
+        display: {
+          "scratch@acme.com": {
+            status: "Expired",
+            connectedStatus: "Connected",
+          },
+        },
+      });
+      assert.strictEqual(
+        (await resolveDevOrgConnection(ORG_A, expired.runners)).connected,
+        false,
+      );
+    });
+
+    test("a bad org id or a username a shell reads is never checked", async () => {
+      const r = runners({
+        cached: [{ username: "me@acme.com; calc", orgId: ORG_A }],
+      });
+      assert.deepStrictEqual(await resolveDevOrgConnection("bad", r.runners), {
+        username: null,
+        connected: false,
+      });
+      assert.deepStrictEqual(await resolveDevOrgConnection(ORG_A, r.runners), {
+        username: null,
+        connected: false,
+      });
+      assert.ok(!r.calls.some((call) => call.startsWith("display:")));
+    });
+
+    test("Connect logs in again through the instance URL, replacing the login of the username", () => {
+      assert.strictEqual(
+        buildDevOrgConnectCommand({
+          instanceUrl: "https://acme--dev.sandbox.my.salesforce.com/",
+          username: "me@acme.com.dev",
+        }),
+        'sf hardis:org:select --reconnect --instance-url "https://acme--dev.sandbox.my.salesforce.com" --username "me@acme.com.dev"',
+      );
+      // No --set-default: sfdx-hardis asks
+      assert.strictEqual(
+        buildDevOrgConnectCommand({
+          instanceUrl: "https://acme--dev.sandbox.my.salesforce.com",
+          username: null,
+        }),
+        'sf hardis:org:select --reconnect --instance-url "https://acme--dev.sandbox.my.salesforce.com"',
+      );
+      // Without an instance URL, the org list of sfdx-hardis
+      assert.strictEqual(
+        buildDevOrgConnectCommand({ instanceUrl: "" }),
+        "sf hardis:org:select",
+      );
+    });
+
+    test("Connect refuses an instance URL or a username a shell reads", () => {
+      for (const instanceUrl of [
+        "http://acme.my.salesforce.com",
+        'https://acme.my.salesforce.com" && calc',
+        "https://acme.my.salesforce.com/$(calc)",
+        "javascript:alert(1)",
+      ]) {
+        assert.throws(
+          () => buildDevOrgConnectCommand({ instanceUrl }),
+          /invalidInstanceUrl/,
+          instanceUrl,
+        );
+      }
+      assert.throws(
+        () =>
+          buildDevOrgConnectCommand({
+            instanceUrl: "https://acme.my.salesforce.com",
+            username: 'me@acme.com" --x "',
+          }),
+        /invalidUsername/,
+      );
+    });
+
+    test("Open opens the org with its username, quoted", () => {
+      assert.strictEqual(
+        buildDevOrgOpenCommand("me@acme.com.dev"),
+        'sf org open --target-org "me@acme.com.dev"',
+      );
+      assert.throws(() => buildDevOrgOpenCommand("me $x"), /invalidUsername/);
+      assert.throws(() => buildDevOrgOpenCommand(null), /invalidUsername/);
+    });
+
+    test("the header shows Checking, then Open or Connect, and raises openorg / connectorg", () => {
+      const html = readModuleFile("devOrgDetails", "devOrgDetails.html");
+      const header = html.slice(
+        html.indexOf("<header"),
+        html.indexOf("</header>"),
+      );
+      assert.match(header, /if:true=\{isCheckingConnection\}/);
+      assert.match(
+        header,
+        /if:true=\{showOpenButton\}[\s\S]*onclick=\{handleOpenOrg\}/,
+      );
+      assert.match(
+        header,
+        /if:true=\{showConnectButton\}[\s\S]*onclick=\{handleConnectOrg\}/,
+      );
+      const js = readModuleFile("devOrgDetails", "devOrgDetails.js");
+      assert.match(js, /new CustomEvent\("openorg"\)/);
+      assert.match(js, /new CustomEvent\("connectorg"\)/);
+    });
+
+    test("the pipeline sends the org id only, VS Code picks the login and the URL", () => {
+      const html = readModuleFile("pipeline", "pipeline.html");
+      assert.match(html, /onopenorg=\{handleDevOrgOpen\}/);
+      assert.match(html, /onconnectorg=\{handleDevOrgConnect\}/);
+      const js = readModuleFile("pipeline", "pipeline.js");
+      assert.match(
+        js,
+        /type: "openDevOrg",\s*data: \{ orgId: devOrg\.orgId \}/,
+      );
+      assert.match(
+        js,
+        /type: "connectDevOrg",\s*data: \{ orgId: devOrg\.orgId \}/,
+      );
+      // An answer that is not a working login leaves Open and Backpromote off
+      assert.match(
+        js,
+        /this\.devOrgConnectionUsername =\s*data\.connected === true \? data\.username \|\| null : null;/,
+      );
+      const source = fs.readFileSync(
+        path.join(REPO_ROOT, "src", "commands", "showPipeline.ts"),
+        "utf8",
+      );
+      assert.match(
+        source,
+        /type === "openDevOrg"[\s\S]*?rememberedDevOrgConnection\(data\?\.orgId\)/,
+      );
+      assert.match(
+        source,
+        /type === "connectDevOrg"[\s\S]*?buildDevOrgConnectCommand\(/,
+      );
+    });
+
+    test("a login that ends checks the open window again", () => {
+      const source = fs.readFileSync(
+        path.join(REPO_ROOT, "src", "commands", "showPipeline.ts"),
+        "utf8",
+      );
+      assert.match(
+        source,
+        /onOrgsChanged\(\(\) => \{[\s\S]*?forgetCachedOrgList\(\)[\s\S]*?type: "devOrgConnectionChanged"/,
+      );
+      const js = readModuleFile("pipeline", "pipeline.js");
+      assert.match(
+        js,
+        /case "devOrgConnectionChanged":[\s\S]*?if \(this\.showDevOrgModal && this\.selectedDevOrg\) \{\s*this\._requestDevOrgConnection\(\);/,
+      );
     });
   });
 
