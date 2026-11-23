@@ -3198,6 +3198,7 @@
   "validate": "Validieren",
   "validateCount": "Bestätigen ({{count}})",
   "versionColumn": "Version",
+  "versioning": "Versionierung",
   "viewAllOrgs": "Alle Orgs anzeigen",
   "viewAndCommitFiles": "Dateien anzeigen und commiten",
   "viewDocumentation": "Dokumentation anzeigen",

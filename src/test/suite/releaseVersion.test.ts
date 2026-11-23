@@ -16,6 +16,7 @@ import { BranchStrategyMermaidBuilder } from "../../utils/pipeline/branchStrateg
 import * as fs from "fs";
 import * as path from "path";
 import { readModuleFile, REPO_ROOT } from "./lwcSourceUtils";
+import { SfdxHardisConfigHelper } from "../../utils/pipeline/sfdxHardisConfigHelper";
 
 /**
  * Release versioning (sfdx-hardis releaseVersioning): the DevOps Pipeline shows the versions the
@@ -517,5 +518,39 @@ suite("Release versioning", () => {
         );
       }
     });
+  });
+
+  test("Pipeline Settings groups every versioning setting in its Versioning tab, after Deployment", () => {
+    const sections = SfdxHardisConfigHelper.SECTIONS;
+    const labels = sections.map((section) => section.label);
+    assert.strictEqual(
+      labels.indexOf("versioning"),
+      labels.indexOf("deployment") + 1,
+    );
+    const versioning = sections.find(
+      (section) => section.label === "versioning",
+    );
+    assert.deepStrictEqual(versioning?.keys, [
+      "releaseVersioning",
+      "releaseVersioningInitialVersion",
+      "releaseVersioningMinimumVersion",
+      "releaseVersioningTagFormat",
+      "releaseVersioningMinimumVariables",
+      "releaseVersioningTicketVersions",
+    ]);
+    // Every releaseVersioning setting the extension edits is in that tab, and in no other
+    const versioningFields = SfdxHardisConfigHelper.CONFIGURABLE_FIELDS.map(
+      (field) => field.name,
+    ).filter((name) => name.startsWith("releaseVersioning"));
+    assert.deepStrictEqual(
+      [...versioningFields].sort(),
+      [...versioning!.keys].sort(),
+    );
+    for (const section of sections.filter((s) => s.label !== "versioning")) {
+      assert.ok(
+        !section.keys.some((key) => key.startsWith("releaseVersioning")),
+        section.label,
+      );
+    }
   });
 });

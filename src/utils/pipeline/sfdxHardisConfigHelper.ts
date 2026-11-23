@@ -214,14 +214,21 @@ export class SfdxHardisConfigHelper {
         "mergeTargets",
         "enableMajorBranchDeploymentCheck",
         "majorBranchDeploymentCheckValidityHours",
+        "flowDeleteMaxAttempts",
+        "flowDeleteRetryDelayMs",
+      ],
+    },
+    {
+      label: "versioning",
+      description: "",
+      iconName: "utility:ribbon",
+      keys: [
         "releaseVersioning",
         "releaseVersioningInitialVersion",
         "releaseVersioningMinimumVersion",
         "releaseVersioningTagFormat",
         "releaseVersioningMinimumVariables",
         "releaseVersioningTicketVersions",
-        "flowDeleteMaxAttempts",
-        "flowDeleteRetryDelayMs",
       ],
     },
     {

@@ -3198,6 +3198,7 @@
   "validate": "検証",
   "validateCount": "確定 ({{count}})",
   "versionColumn": "バージョン",
+  "versioning": "バージョン管理",
   "viewAllOrgs": "すべての組織を表示",
   "viewAndCommitFiles": "ファイルを表示して commit",
   "viewDocumentation": "ドキュメントを表示",
