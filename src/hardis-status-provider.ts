@@ -70,9 +70,7 @@ export async function updateScratchPoolStatus(
 const GIT_FETCH_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const GIT_FETCH_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes (CacheManager TTL)
 
-export class HardisStatusProvider
-  implements vscode.TreeDataProvider<StatusTreeItem>
-{
+export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeItem> {
   public themeUtils: ThemeUtils;
   constructor(private workspaceRoot: string) {
     this.themeUtils = new ThemeUtils();
@@ -387,9 +385,8 @@ export class HardisStatusProvider
               try {
                 // A pool stored in the git provider is read with its token. Heavy
                 // module: loaded here, in the background, not with the status view
-                const { collectProviderCredentialEnvVars } = await import(
-                  "./utils/providerCredentials"
-                );
+                const { collectProviderCredentialEnvVars } =
+                  await import("./utils/providerCredentials");
                 const poolViewRes = await execSfdxJson(
                   buildScratchOrgPoolViewCommand(),
                   {
