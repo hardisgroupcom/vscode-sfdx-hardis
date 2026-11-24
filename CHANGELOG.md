@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Commands launched by the extension use only the git provider and ticketing credentials of the extension: sfdx-hardis never reads a token from `gh`, `glab` or `az` for them, and makes no call to check the token
 - DevOps Pipeline:
   - The window of a development org shows **Open** when you are connected to the org, and **Connect** when you are not
   - The **Versions** button shows a spinner while the versions load
