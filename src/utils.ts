@@ -13,6 +13,7 @@ import { RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION } from "./constants";
 import { resetSfdxHardisConfigCache } from "./utils/sfdx-hardis-config-utils";
 import { getJson, postJson } from "./utils/httpUtils";
 import { applySfPerformanceEnv } from "./utils/sfPerformanceUtils";
+import { disableProviderCliAuth } from "./utils/providerCliAuthEnv";
 import { tryRunSfCommandInProcess } from "./utils/sfCoreInProcess";
 import { findWorkerScript } from "./utils/executableUtils";
 import {
@@ -743,14 +744,16 @@ export async function execCommand(
   const execOptions: any = {
     maxBuffer: 10000 * 10000,
     cwd: options.cwd || vscode.workspace.rootPath,
-    env: applySfPerformanceEnv(
-      {
-        ...process.env,
-        ...(options.env || {}),
-        FORCE_COLOR: "0",
-        NO_NEW_COMMAND_TAB: "true",
-      },
-      command,
+    env: disableProviderCliAuth(
+      applySfPerformanceEnv(
+        {
+          ...process.env,
+          ...(options.env || {}),
+          FORCE_COLOR: "0",
+          NO_NEW_COMMAND_TAB: "true",
+        },
+        command,
+      ),
     ),
   };
   const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");

@@ -40,6 +40,7 @@ import {
   collectProviderCredentialEnvVars,
   SECRET_ENV_KEYS,
 } from "./utils/providerCredentials";
+import { disableProviderCliAuth } from "./utils/providerCliAuthEnv";
 import {
   extractCommandId,
   extractTargetOrgUsername,
@@ -699,7 +700,9 @@ export class CommandRunner {
     const spawnOptions: any = {
       shell: true,
       cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd(),
-      env: applySfPerformanceEnv({ ...process.env }, preprocessedCommand),
+      env: disableProviderCliAuth(
+        applySfPerformanceEnv({ ...process.env }, preprocessedCommand),
+      ),
     };
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     const langSetting = config.get<string>("lang", "auto");
