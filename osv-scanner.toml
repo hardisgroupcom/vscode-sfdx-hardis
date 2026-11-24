@@ -21,13 +21,3 @@ reason = "Added 2026-11-01: minimatch before 11.0.1, CPU and memory DoS through 
 id = "GHSA-8988-4f7v-96qf"
 ignoreUntil = 2026-12-31
 reason = "Re-evaluated 2026-09-19: still no patched 1.x core and applicationinsights still pins it. Affects @opentelemetry/core only via the 1.x tree pinned inside @vscode/extension-telemetry > applicationinsights (sdk-trace-base/resources all pin core 1.30.1, no patched 1.x release exists - only 2.8.0). The 2.x copies are already resolved to 2.8.0. CVE-2026-54285 is unbounded memory allocation while PARSING an inbound W3C Baggage header; this extension only EMITS outbound telemetry to Azure and never parses attacker-controlled baggage headers, so the path is not reachable. Re-evaluate when applicationinsights ships an OTel 2.x line or a patched 1.x core."
-
-[[IgnoredVulns]]
-id = "GHSA-gcqx-w48m-w2h4"
-ignoreUntil = 2027-01-31
-reason = "Added 2026-10-29: CVE-2026-2577 / CVE-2026-93753. deepmerge 4.3.1 has no fixed release. It is pulled only by bitbucket (the Bitbucket Cloud API client), which uses it to merge its default request options with the endpoint parameters our own code passes. Responses from the server are never merged, so no remote or user data reaches mergeObject and the prototype pollution path is not reachable. Re-evaluate when deepmerge ships a fix or bitbucket drops it."
-
-[[IgnoredVulns]]
-id = "GHSA-fc5q-39xc-vjpf"
-ignoreUntil = 2027-01-31
-reason = "Added 2026-11-17: CVE-2026-112366, ReDoS in picomatch through a crafted extglob pattern. Every release up to 4.0.7, the latest, is affected: there is no fix to upgrade to. picomatch 4 is pulled by build and dev tooling (@rollup/pluginutils, tinyglobby), which only compile glob patterns written in this repository, never a pattern from a user or a server. Re-evaluate when picomatch ships a fix."

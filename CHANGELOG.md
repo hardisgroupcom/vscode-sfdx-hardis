@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Commands launched by the extension use only the git provider and ticketing credentials of the extension: sfdx-hardis never reads a token from `gh`, `glab` or `az` for them, and makes no call to check the token
+- Upgrade **i18next** to 26.7.2, which fixes a denial of service through recursive object merging (CVE-2026-63402)
 - DevOps Pipeline:
   - The window of a development org shows **Open** when you are connected to the org, and **Connect** when you are not
   - The **Versions** button shows a spinner while the versions load
