@@ -20,14 +20,14 @@ import {
 const DOC_CONFIG_KEYS = [
   "promptsLanguage",
   "promptsParallelCallNumber",
-  "useLangchainLlm",
-  "langchainLlmProvider",
-  "langchainLlmModel",
-  "langchainLlmTemperature",
-  "langchainLlmMaxTokens",
-  "langchainLlmMaxRetries",
-  "langchainLlmTimeout",
-  "langchainLlmBaseUrl",
+  "useAiLlm",
+  "aiLlmProvider",
+  "aiLlmModel",
+  "aiLlmTemperature",
+  "aiLlmMaxTokens",
+  "aiLlmMaxRetries",
+  "aiLlmTimeout",
+  "aiLlmBaseUrl",
   "useOpenaiDirect",
   "openaiModel",
   "useAgentforce",
@@ -37,6 +37,22 @@ const DOC_CONFIG_KEYS = [
   "docDeployToConfluence",
   "docDeployToOrg",
 ];
+
+/**
+ * sfdx-hardis renamed its LangChain settings (langchainLlm* became aiLlm*). The former keys still
+ * work there, with a warning. The panel shows their values under the new names, and when it saves
+ * a new key it removes the former ones, so the CLI stops warning about them.
+ */
+const FORMER_DOC_CONFIG_KEYS: Record<string, string[]> = {
+  useAiLlm: ["useLangchainLlm", "USE_LANGCHAIN_LLM"],
+  aiLlmProvider: ["langchainLlmProvider", "LANGCHAIN_LLM_PROVIDER"],
+  aiLlmModel: ["langchainLlmModel", "LANGCHAIN_LLM_MODEL"],
+  aiLlmTemperature: ["langchainLlmTemperature", "LANGCHAIN_LLM_TEMPERATURE"],
+  aiLlmMaxTokens: ["langchainLlmMaxTokens", "LANGCHAIN_LLM_MAX_TOKENS"],
+  aiLlmMaxRetries: ["langchainLlmMaxRetries", "LANGCHAIN_LLM_MAX_RETRIES"],
+  aiLlmTimeout: ["langchainLlmTimeout", "LANGCHAIN_LLM_TIMEOUT"],
+  aiLlmBaseUrl: ["langchainLlmBaseUrl", "LANGCHAIN_LLM_BASE_URL"],
+};
 
 const REMOTE_SCHEMA_URL =
   "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/sfdx-hardis.jsonschema.json";
@@ -75,6 +91,14 @@ function extractDocSchema(fullSchema: any): Record<string, any> {
   for (const key of DOC_CONFIG_KEYS) {
     if (props[key]) {
       result[key] = props[key];
+      continue;
+    }
+    // A schema older than the rename only describes the former key
+    const formerKey = (FORMER_DOC_CONFIG_KEYS[key] || []).find(
+      (former) => props[former],
+    );
+    if (formerKey) {
+      result[key] = { ...props[formerKey], $id: `#/properties/${key}` };
     }
   }
   return result;
@@ -113,22 +137,44 @@ function getPromptTemplatesInfo(): {
 
 function buildDocConfigPayload(config: any, schema: Record<string, any>) {
   return {
-    config: config || {},
+    config: withNewDocConfigKeys(config || {}),
     schema: schema,
     ...getPromptTemplatesInfo(),
     helpUrl: DOCSITE_URL + "/salesforce-project-documentation/",
   };
 }
 
+// The value of each renamed key, read from its former name when the new one is not set
+function withNewDocConfigKeys(config: any): any {
+  const result = { ...config };
+  for (const [newKey, formerKeys] of Object.entries(FORMER_DOC_CONFIG_KEYS)) {
+    if (result[newKey] !== undefined) {
+      continue;
+    }
+    const formerKey = formerKeys.find((former) => config[former] !== undefined);
+    if (formerKey) {
+      result[newKey] = config[formerKey];
+    }
+  }
+  return result;
+}
+
 // Persist each documentation config key, allowing booleans (including false)
 // and non-empty string values while skipping undefined / empty entries.
 async function saveDocConfigKeys(configToSave: any): Promise<void> {
+  const currentConfig = (await readSfdxHardisConfig()) || {};
   for (const key of DOC_CONFIG_KEYS) {
     if (
       configToSave[key] !== undefined &&
       (typeof configToSave[key] === "boolean" || configToSave[key] !== "")
     ) {
       await writeSfdxHardisConfig(key, configToSave[key]);
+      // undefined removes the former name of a renamed key
+      for (const formerKey of FORMER_DOC_CONFIG_KEYS[key] || []) {
+        if (currentConfig[formerKey] !== undefined) {
+          await writeSfdxHardisConfig(formerKey, undefined);
+        }
+      }
     }
   }
 }

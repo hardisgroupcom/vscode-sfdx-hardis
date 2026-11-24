@@ -66,4 +66,44 @@ suite("Documentation config fields contract", () => {
       "docDeployToConfluence disappeared from the schema",
     );
   });
+
+  // sfdx-hardis renamed its LangChain settings: the panel must write the new names, which an
+  // up-to-date CLI reads, and still show the values of a file holding only the former ones
+  test("the LLM API settings use the new aiLlm names, and know their former names", () => {
+    const workbench = fs.readFileSync(
+      path.join(REPO_ROOT, "src", "commands", "showDocumentationWorkbench.ts"),
+      "utf8",
+    );
+    const editor = readModuleFile(
+      "documentationConfig",
+      "documentationConfig.js",
+    );
+    for (const [newKey, formerKey] of [
+      ["useAiLlm", "useLangchainLlm"],
+      ["aiLlmProvider", "langchainLlmProvider"],
+      ["aiLlmModel", "langchainLlmModel"],
+      ["aiLlmTemperature", "langchainLlmTemperature"],
+      ["aiLlmMaxTokens", "langchainLlmMaxTokens"],
+      ["aiLlmMaxRetries", "langchainLlmMaxRetries"],
+      ["aiLlmTimeout", "langchainLlmTimeout"],
+      ["aiLlmBaseUrl", "langchainLlmBaseUrl"],
+    ]) {
+      assert.ok(
+        workbench.includes(`  "${newKey}",`),
+        `${newKey} is not loaded by the panel`,
+      );
+      assert.ok(
+        workbench.includes(`${newKey}: ["${formerKey}"`),
+        `${formerKey} is not mapped to ${newKey}`,
+      );
+      assert.ok(
+        !editor.includes(`"${formerKey}"`),
+        `the editor still uses ${formerKey}`,
+      );
+    }
+    assert.ok(
+      editor.includes('useAiLlm: selection === "llmApi"'),
+      "the editor does not enable the LLM API with useAiLlm",
+    );
+  });
 });
