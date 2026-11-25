@@ -267,6 +267,23 @@ export class GitProviderAzure extends GitProvider {
   }
 
   /**
+   * The Microsoft session token, when the provider is connected with it rather than with a
+   * Personal Access Token. Read from VS Code at each call, which renews it silently: the caller
+   * must not keep it, it expires after about an hour. The CLI sends it as a Bearer token
+   * (azdev.getHandlerFromToken).
+   *
+   * A command reads it once, when it starts: one that runs longer than the token still lives is
+   * rejected by Azure DevOps on the way. A stored Personal Access Token has no such limit.
+   */
+  async getNativeSessionToken(): Promise<string | null> {
+    if (!this.isActive || this.usesPersonalAccessToken) {
+      return null;
+    }
+    const { session } = await this.getOAuthSession();
+    return session?.accessToken || null;
+  }
+
+  /**
    * The provider instance lives as long as the window, and the Microsoft session token it was
    * built with expires after about an hour. Every call then failed with 401 and was answered with
    * an empty list, while the provider still looked connected: with several windows open, only the

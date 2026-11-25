@@ -196,6 +196,8 @@ export const SECRET_ENV_KEYS = new Set([
 let credentialEnvCache: {
   value: Record<string, string>;
   expiresAt: number;
+  // The credentials hold a token that expires on its own (see CollectedCredentials)
+  expiring: boolean;
 } | null = null;
 const CREDENTIAL_ENV_CACHE_TTL_MS = 120000;
 // Hard bound on the time credential collection may add to a command launch:
@@ -214,15 +216,16 @@ export function invalidateProviderCredentialEnvCache(): void {
 }
 
 function storeCredentialEnvCache(
-  value: Record<string, string>,
+  collected: CollectedCredentials,
   generation: number,
 ): void {
   if (generation !== cacheGeneration) {
     return;
   }
   credentialEnvCache = {
-    value,
+    value: collected.env,
     expiresAt: Date.now() + CREDENTIAL_ENV_CACHE_TTL_MS,
+    expiring: collected.expiring,
   };
 }
 
@@ -333,13 +336,20 @@ export async function collectProviderCredentialEnvVarsWithStatus(): Promise<{
   timedOut: boolean;
 }> {
   if (credentialEnvCache) {
-    if (Date.now() >= credentialEnvCache.expiresAt) {
-      // Stale: serve it right away (tokens rarely change, and any secret
-      // change already wipes the cache) and refresh it in the background so
-      // the command launch never waits on git/ticketing providers
-      void refreshProviderCredentialEnvCache();
+    const stale = Date.now() >= credentialEnvCache.expiresAt;
+    if (stale && credentialEnvCache.expiring) {
+      // A session token expires on its own, about an hour after it was issued: a stale copy may
+      // be rejected by the provider, so it is never served. Collected again below, before the launch.
+      credentialEnvCache = null;
+    } else {
+      if (stale) {
+        // Stale: serve it right away (stored tokens rarely change, and any secret
+        // change already wipes the cache) and refresh it in the background so
+        // the command launch never waits on git/ticketing providers
+        void refreshProviderCredentialEnvCache();
+      }
+      return { env: { ...credentialEnvCache.value }, timedOut: false };
     }
-    return { env: { ...credentialEnvCache.value }, timedOut: false };
   }
   const generation = cacheGeneration;
   const collectPromise = collectProviderCredentialEnvVarsNow();
@@ -363,7 +373,7 @@ export async function collectProviderCredentialEnvVarsWithStatus(): Promise<{
     return { env: {}, timedOut: true };
   }
   storeCredentialEnvCache(collected, generation);
-  return { env: { ...collected }, timedOut: false };
+  return { env: { ...collected.env }, timedOut: false };
 }
 
 /**
@@ -376,10 +386,16 @@ export async function storePoolEncryptionKey(value: string): Promise<void> {
   await SecretsManager.setSecret(await getPoolEncryptionKeySecretName(), value);
 }
 
-async function collectProviderCredentialEnvVarsNow(): Promise<
-  Record<string, string>
-> {
+// expiring: one of the credentials is the token of a native VS Code session that expires on its
+// own (Microsoft: about an hour), unlike a stored token. Such credentials are never served stale.
+interface CollectedCredentials {
+  env: Record<string, string>;
+  expiring: boolean;
+}
+
+async function collectProviderCredentialEnvVarsNow(): Promise<CollectedCredentials> {
   const env: Record<string, string> = {};
+  let expiring = false;
 
   // --- Git provider credentials ---
   try {
@@ -420,10 +436,17 @@ async function collectProviderCredentialEnvVarsNow(): Promise<
           break;
         }
         case "azure": {
-          const token = await SecretsManager.getSecret(
+          // Prefer a stored personal access token; otherwise use the Microsoft session the
+          // extension is connected with
+          const storedToken = await SecretsManager.getSecret(
             hostKey + "_TOKEN",
             PROVIDER_ENV_VAR_NAMES.azureToken,
           );
+          const sessionToken = storedToken
+            ? null
+            : await gitProvider.getNativeSessionToken();
+          expiring = !!sessionToken;
+          const token = storedToken || sessionToken;
           if (token) {
             env.CI_SFDX_HARDIS_AZURE_TOKEN = token;
             env.SYSTEM_ACCESSTOKEN = token;
@@ -570,7 +593,7 @@ async function collectProviderCredentialEnvVarsNow(): Promise<
     );
   }
 
-  return env;
+  return { env, expiring };
 }
 
 // One key per repository: named after its git remote, or after its folder when it has none

@@ -400,6 +400,15 @@ export class GitProvider {
     return;
   }
 
+  /**
+   * Access token of the native VS Code session the provider is connected with, when it is not
+   * connected with a stored token. Forwarded to the CLI by collectProviderCredentialEnvVars(), so
+   * commands run from the extension use the same connection as the extension. Null by default.
+   */
+  async getNativeSessionToken(): Promise<string | null> {
+    return null;
+  }
+
   async getJobsForBranchLatestCommit(
     _branchName: string,
   ): Promise<{ jobs: Job[]; jobsStatus: JobStatus } | null> {
