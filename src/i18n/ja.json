@@ -3005,6 +3005,7 @@
   "selectedOrgLabel": "選択中の組織",
   "serviceNowAuthInfo": "ServiceNow はインスタンスの URL と、Table API でレコードを参照できるユーザーのユーザー名およびパスワードが必要です。",
   "serviceNowUrlPlaceholder": "mycompany.service-now.com",
+  "sessionTokenExpiresSoon": "Azure DevOps に接続している Microsoft セッションは {{minutes}} 分後に期限切れになり、VS Code は期限の数分前にしか更新しません。その時点で実行中のコマンドは Azure DevOps にアクセスできなくなります。長時間のコマンドを実行するには Personal Access Token を保存してください。",
   "setAsDefaultDevHub": "デフォルト Dev Hub に設定",
   "setAsDefaultOrg": "デフォルト組織に設定",
   "setDeploymentRepository": "デプロイリポジトリを設定",

@@ -196,8 +196,13 @@ export const SECRET_ENV_KEYS = new Set([
 let credentialEnvCache: {
   value: Record<string, string>;
   expiresAt: number;
+  // Set when value holds the token of a native VS Code session (see CollectedCredentials)
+  sessionToken: SessionTokenSource | null;
 } | null = null;
 const CREDENTIAL_ENV_CACHE_TTL_MS = 120000;
+// VS Code renews a Microsoft session token only a few minutes before it expires: below this
+// lifetime, a long command may lose access to the provider before it ends
+const SESSION_TOKEN_SHORT_LIFETIME_MS = 15 * 60 * 1000;
 // Hard bound on the time credential collection may add to a command launch:
 // provider initialization can perform network validation with OS-level
 // timeouts (dozens of seconds on unreachable hosts).
@@ -213,44 +218,20 @@ export function invalidateProviderCredentialEnvCache(): void {
   cacheGeneration++;
 }
 
-function storeCredentialEnvCache(
-  value: Record<string, string>,
-  generation: number,
-): void {
-  if (generation !== cacheGeneration) {
-    return;
-  }
-  credentialEnvCache = {
-    value,
-    expiresAt: Date.now() + CREDENTIAL_ENV_CACHE_TTL_MS,
-  };
-}
-
-let credentialRefreshInProgress: Promise<void> | null = null;
-
 /**
  * Fills (or refreshes) the credential cache without blocking anyone. Called at
  * activation so the first command click finds the credentials ready, and by
  * collectProviderCredentialEnvVars() when the cache is stale.
  */
 export function refreshProviderCredentialEnvCache(): Promise<void> {
-  if (credentialRefreshInProgress) {
-    return credentialRefreshInProgress;
-  }
-  const generation = cacheGeneration;
-  credentialRefreshInProgress = collectProviderCredentialEnvVarsNow()
-    .then((value) => {
-      storeCredentialEnvCache(value, generation);
-    })
-    .catch((e) => {
+  return startCredentialCollection().then(
+    () => {},
+    (e) => {
       Logger.log(
         `Could not refresh provider credentials: ${e instanceof Error ? e.message : String(e)}`,
       );
-    })
-    .finally(() => {
-      credentialRefreshInProgress = null;
-    });
-  return credentialRefreshInProgress;
+    },
+  );
 }
 
 // Any stored/deleted secret (provider connect, disconnect, token update)
@@ -258,6 +239,114 @@ export function refreshProviderCredentialEnvCache(): Promise<void> {
 // workspace .env file
 SecretsManager.onSecretChanged(invalidateProviderCredentialEnvCache);
 onEnvFileChanged(invalidateProviderCredentialEnvCache);
+// A sign-in, a sign-out or an account switch of a native session: the token itself is read again
+// at each launch (see serveCachedCredentials), but a session that just appeared is only found by a
+// new collection. The cache keeps being served meanwhile, so the next launch does not wait.
+vscode.authentication.onDidChangeSessions((e) => {
+  if (
+    (e.provider.id === "microsoft" || e.provider.id === "github") &&
+    credentialEnvCache
+  ) {
+    // A collection started before the change is not reused, nor stored
+    cacheGeneration++;
+    credentialEnvCache.expiresAt = 0;
+    void refreshProviderCredentialEnvCache();
+  }
+});
+
+let shortLivedSessionTokenWarned = false;
+
+/**
+ * Tells the user, once per window, that the session token given to a command they launched
+ * expires soon: a long command would lose access to the git provider before it ends, which a
+ * stored Personal Access Token avoids. VS Code gives no way to renew the token earlier.
+ */
+export function warnIfSessionTokenExpiresSoon(
+  sessionTokenExpiresAt: number | null,
+): void {
+  if (sessionTokenExpiresAt === null) {
+    return;
+  }
+  const remainingMs = sessionTokenExpiresAt - Date.now();
+  if (remainingMs >= SESSION_TOKEN_SHORT_LIFETIME_MS) {
+    return;
+  }
+  const minutes = Math.max(0, Math.floor(remainingMs / 60000));
+  Logger.log(
+    `The Microsoft session token given to the command expires in ${minutes} minutes`,
+  );
+  if (shortLivedSessionTokenWarned) {
+    return;
+  }
+  shortLivedSessionTokenWarned = true;
+  void vscode.window.showWarningMessage(
+    t("sessionTokenExpiresSoon", { minutes }),
+  );
+}
+
+/**
+ * Expiry time (ms since epoch) of a JWT access token, from its `exp` claim. Null when the token is
+ * not a JWT or has no expiry: a Personal Access Token, for instance.
+ */
+export function getAccessTokenExpiresAt(token: string): number | null {
+  const payload = token.split(".")[1];
+  if (!payload) {
+    return null;
+  }
+  try {
+    const claims = JSON.parse(
+      Buffer.from(payload, "base64url").toString("utf8"),
+    );
+    return typeof claims?.exp === "number" ? claims.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
+function storeCredentialEnvCache(
+  collected: CollectedCredentials,
+  generation: number,
+): void {
+  if (generation !== cacheGeneration) {
+    return;
+  }
+  credentialEnvCache = {
+    value: collected.env,
+    expiresAt: Date.now() + CREDENTIAL_ENV_CACHE_TTL_MS,
+    sessionToken: collected.sessionToken,
+  };
+}
+
+// One collection at a time: the background refresh and the launches that find no cache share it,
+// unless the cache was invalidated since it started (its result would not be stored)
+let credentialCollectionInProgress: {
+  promise: Promise<CollectedCredentials>;
+  generation: number;
+} | null = null;
+
+function startCredentialCollection(): Promise<CollectedCredentials> {
+  if (
+    credentialCollectionInProgress &&
+    credentialCollectionInProgress.generation === cacheGeneration
+  ) {
+    return credentialCollectionInProgress.promise;
+  }
+  const generation = cacheGeneration;
+  const promise = collectProviderCredentialEnvVarsNow();
+  const collection = { promise, generation };
+  credentialCollectionInProgress = collection;
+  promise
+    .then((collected) => storeCredentialEnvCache(collected, generation))
+    .catch(() => {
+      // Logged by the callers
+    })
+    .finally(() => {
+      if (credentialCollectionInProgress === collection) {
+        credentialCollectionInProgress = null;
+      }
+    });
+  return promise;
+}
 
 /**
  * Runs an sfdx-hardis command with --json in the background, its git provider connection passed
@@ -331,18 +420,20 @@ export async function collectProviderCredentialEnvVars(): Promise<
 export async function collectProviderCredentialEnvVarsWithStatus(): Promise<{
   env: Record<string, string>;
   timedOut: boolean;
+  // Expiry time of the native session token in env (ms since epoch), null when there is none
+  sessionTokenExpiresAt: number | null;
 }> {
   if (credentialEnvCache) {
     if (Date.now() >= credentialEnvCache.expiresAt) {
-      // Stale: serve it right away (tokens rarely change, and any secret
+      // Stale: serve it right away (stored tokens rarely change, and any secret
       // change already wipes the cache) and refresh it in the background so
       // the command launch never waits on git/ticketing providers
       void refreshProviderCredentialEnvCache();
     }
-    return { env: { ...credentialEnvCache.value }, timedOut: false };
+    return await serveCachedCredentials(credentialEnvCache);
   }
-  const generation = cacheGeneration;
-  const collectPromise = collectProviderCredentialEnvVarsNow();
+  // The collection primes the cache for the next launch, even when it ends after the timeout
+  const collectPromise = startCredentialCollection();
   const collected = await Promise.race([
     collectPromise,
     new Promise<null>((resolve) =>
@@ -353,17 +444,17 @@ export async function collectProviderCredentialEnvVarsWithStatus(): Promise<{
     Logger.log(
       "Provider credential collection timed out: running command without provider credentials",
     );
-    // Let the slow collection finish in the background and prime the cache
-    // for the next command launch
-    collectPromise
-      .then((value) => {
-        storeCredentialEnvCache(value, generation);
-      })
-      .catch(() => {});
-    return { env: {}, timedOut: true };
+    return { env: {}, timedOut: true, sessionTokenExpiresAt: null };
   }
-  storeCredentialEnvCache(collected, generation);
-  return { env: { ...collected }, timedOut: false };
+  const env = { ...collected.env };
+  return {
+    env,
+    timedOut: false,
+    sessionTokenExpiresAt: getSessionTokenExpiresAt(
+      env,
+      collected.sessionToken,
+    ),
+  };
 }
 
 /**
@@ -376,10 +467,76 @@ export async function storePoolEncryptionKey(value: string): Promise<void> {
   await SecretsManager.setSecret(await getPoolEncryptionKeySecretName(), value);
 }
 
-async function collectProviderCredentialEnvVarsNow(): Promise<
-  Record<string, string>
-> {
+// A token of a native VS Code session that expires on its own (Microsoft: about an hour), unlike
+// a stored token: the provider it is read from, and the env vars that hold it
+interface SessionTokenSource {
+  provider: GitProvider;
+  envKeys: string[];
+}
+
+interface CollectedCredentials {
+  env: Record<string, string>;
+  // Set when env holds a session token: it is read again each time the cache is served
+  sessionToken: SessionTokenSource | null;
+}
+
+/**
+ * A copy of the cached credentials, with the session token they may hold read again from VS Code,
+ * which renews it silently: a cached copy could be one Azure DevOps already rejects, and would not
+ * follow a sign-out or an account switch. The read is local and quick, and bounded by the
+ * collection timeout. When no token comes back, the command gets none rather than a stale one.
+ */
+async function serveCachedCredentials(cache: {
+  value: Record<string, string>;
+  sessionToken: SessionTokenSource | null;
+}): Promise<{
+  env: Record<string, string>;
+  timedOut: boolean;
+  sessionTokenExpiresAt: number | null;
+}> {
+  const env = { ...cache.value };
+  const source = cache.sessionToken;
+  if (!source) {
+    return { env, timedOut: false, sessionTokenExpiresAt: null };
+  }
+  let token: string | null = null;
+  try {
+    token = await Promise.race([
+      source.provider.getNativeSessionToken(),
+      new Promise<null>((resolve) =>
+        setTimeout(() => resolve(null), CREDENTIAL_COLLECT_TIMEOUT_MS),
+      ),
+    ]);
+  } catch (e) {
+    Logger.log(
+      `Could not read the session token again: ${e instanceof Error ? e.message : String(e)}`,
+    );
+  }
+  for (const key of source.envKeys) {
+    if (token) {
+      env[key] = token;
+    } else {
+      delete env[key];
+    }
+  }
+  return {
+    env,
+    timedOut: false,
+    sessionTokenExpiresAt: getSessionTokenExpiresAt(env, source),
+  };
+}
+
+function getSessionTokenExpiresAt(
+  env: Record<string, string>,
+  source: SessionTokenSource | null,
+): number | null {
+  const token = source ? env[source.envKeys[0]] : undefined;
+  return token ? getAccessTokenExpiresAt(token) : null;
+}
+
+async function collectProviderCredentialEnvVarsNow(): Promise<CollectedCredentials> {
   const env: Record<string, string> = {};
+  let sessionToken: SessionTokenSource | null = null;
 
   // --- Git provider credentials ---
   try {
@@ -420,13 +577,25 @@ async function collectProviderCredentialEnvVarsNow(): Promise<
           break;
         }
         case "azure": {
-          const token = await SecretsManager.getSecret(
+          // Prefer a stored personal access token; otherwise use the Microsoft session the
+          // extension is connected with
+          const storedToken = await SecretsManager.getSecret(
             hostKey + "_TOKEN",
             PROVIDER_ENV_VAR_NAMES.azureToken,
           );
+          const nativeSessionToken = storedToken
+            ? null
+            : await gitProvider.getNativeSessionToken();
+          const token = storedToken || nativeSessionToken;
           if (token) {
             env.CI_SFDX_HARDIS_AZURE_TOKEN = token;
             env.SYSTEM_ACCESSTOKEN = token;
+          }
+          if (nativeSessionToken) {
+            sessionToken = {
+              provider: gitProvider,
+              envKeys: ["CI_SFDX_HARDIS_AZURE_TOKEN", "SYSTEM_ACCESSTOKEN"],
+            };
           }
           break;
         }
@@ -570,7 +739,7 @@ async function collectProviderCredentialEnvVarsNow(): Promise<
     );
   }
 
-  return env;
+  return { env, sessionToken };
 }
 
 // One key per repository: named after its git remote, or after its folder when it has none

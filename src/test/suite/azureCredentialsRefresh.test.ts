@@ -6,7 +6,9 @@ import { newAzureProviderStub } from "./azureProviderStub";
 
 // What getOAuthSession() answers: a session, no session, or a read failure
 type SessionRead =
-  { id: string; accessToken: string } | null | { failed: true };
+  | { id: string; accessToken: string }
+  | null
+  | { failed: true };
 
 // The provider instance lives as long as the window, and the Microsoft session token it was built
 // with expires after about an hour: every call then failed with 401 and was answered with an empty
@@ -138,6 +140,57 @@ suite("GitProviderAzure credentials refresh", () => {
     provider.credentialsCheckedAt = 0;
     await provider.refreshCredentials();
     assert.strictEqual(initializations, 1);
+  });
+
+  test("gives the session token to the commands when connected with the Microsoft session", async () => {
+    const provider = buildProvider([
+      { id: "session-1", accessToken: "token-1" },
+      { id: "session-1", accessToken: "token-renewed" },
+    ]);
+    provider.isActive = true;
+
+    assert.strictEqual(await provider.getNativeSessionToken(), "token-1");
+    // Read again at each call: a renewed token is never missed
+    assert.strictEqual(await provider.getNativeSessionToken(), "token-renewed");
+  });
+
+  test("reads the session token silently, never asking to sign in", async () => {
+    const provider = buildProvider([]);
+    provider.isActive = true;
+    let readOptions: any = null;
+    provider.getOAuthSession = async (options: any) => {
+      readOptions = options;
+      return { session: null, failed: false };
+    };
+
+    assert.strictEqual(await provider.getNativeSessionToken(), null);
+    assert.deepStrictEqual(readOptions, { silent: true });
+  });
+
+  test("gives no session token when connected with a PAT", async () => {
+    const provider = buildProvider([
+      { id: "session-1", accessToken: "oauth-token" },
+    ]);
+    provider.isActive = true;
+    provider.usesPersonalAccessToken = true;
+
+    assert.strictEqual(await provider.getNativeSessionToken(), null);
+  });
+
+  test("gives no session token when not connected, signed out or unreadable", async () => {
+    const notConnected = buildProvider([
+      { id: "session-1", accessToken: "oauth-token" },
+    ]);
+    notConnected.isActive = false;
+    assert.strictEqual(await notConnected.getNativeSessionToken(), null);
+
+    const signedOut = buildProvider([null]);
+    signedOut.isActive = true;
+    assert.strictEqual(await signedOut.getNativeSessionToken(), null);
+
+    const unreadable = buildProvider([{ failed: true }]);
+    unreadable.isActive = true;
+    assert.strictEqual(await unreadable.getNativeSessionToken(), null);
   });
 
   test("keeps the connection when the session cannot be read", async () => {
