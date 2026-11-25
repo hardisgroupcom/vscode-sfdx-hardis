@@ -3005,6 +3005,7 @@
   "selectedOrgLabel": "Ausgewählte Org",
   "serviceNowAuthInfo": "ServiceNow erfordert die Instanz-URL sowie Benutzername und Passwort eines Benutzers, der Datensätze über die Table API lesen darf.",
   "serviceNowUrlPlaceholder": "mycompany.service-now.com",
+  "sessionTokenExpiresSoon": "Die Microsoft-Sitzung, die Azure DevOps verbindet, läuft in {{minutes}} Minuten ab, und VS Code erneuert sie erst wenige Minuten vorher. Ein dann noch laufender Befehl verliert den Zugriff auf Azure DevOps: Speichern Sie ein Personal Access Token, um lange Befehle auszuführen.",
   "setAsDefaultDevHub": "Als Standard-Dev-Hub festlegen",
   "setAsDefaultOrg": "Als Standard-Org festlegen",
   "setDeploymentRepository": "Deployment-Repository festlegen",

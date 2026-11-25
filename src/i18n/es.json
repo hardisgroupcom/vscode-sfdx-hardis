@@ -3005,6 +3005,7 @@
   "selectedOrgLabel": "Org seleccionada",
   "serviceNowAuthInfo": "ServiceNow requiere la URL de la instancia, y el nombre de usuario y la contraseña de un usuario autorizado a leer registros mediante la Table API.",
   "serviceNowUrlPlaceholder": "mycompany.service-now.com",
+  "sessionTokenExpiresSoon": "La sesión de Microsoft que conecta Azure DevOps caduca en {{minutes}} minutos, y VS Code solo la renueva unos minutos antes. Un comando que siga en ejecución pierde entonces el acceso a Azure DevOps: guarda un Personal Access Token para ejecutar comandos largos.",
   "setAsDefaultDevHub": "Establecer como Dev Hub predeterminado",
   "setAsDefaultOrg": "Establecer como org predeterminada",
   "setDeploymentRepository": "Definir el repositorio de despliegue",

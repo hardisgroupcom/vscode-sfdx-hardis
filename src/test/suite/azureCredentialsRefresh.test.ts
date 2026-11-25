@@ -6,7 +6,9 @@ import { newAzureProviderStub } from "./azureProviderStub";
 
 // What getOAuthSession() answers: a session, no session, or a read failure
 type SessionRead =
-  { id: string; accessToken: string } | null | { failed: true };
+  | { id: string; accessToken: string }
+  | null
+  | { failed: true };
 
 // The provider instance lives as long as the window, and the Microsoft session token it was built
 // with expires after about an hour: every call then failed with 401 and was answered with an empty
@@ -150,6 +152,19 @@ suite("GitProviderAzure credentials refresh", () => {
     assert.strictEqual(await provider.getNativeSessionToken(), "token-1");
     // Read again at each call: a renewed token is never missed
     assert.strictEqual(await provider.getNativeSessionToken(), "token-renewed");
+  });
+
+  test("reads the session token silently, never asking to sign in", async () => {
+    const provider = buildProvider([]);
+    provider.isActive = true;
+    let readOptions: any = null;
+    provider.getOAuthSession = async (options: any) => {
+      readOptions = options;
+      return { session: null, failed: false };
+    };
+
+    assert.strictEqual(await provider.getNativeSessionToken(), null);
+    assert.deepStrictEqual(readOptions, { silent: true });
   });
 
   test("gives no session token when connected with a PAT", async () => {

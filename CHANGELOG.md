@@ -10,7 +10,7 @@
   - The **Versions** button shows a spinner while the versions load
 - Pipeline Settings: new **Versioning** tab that groups the release versioning settings
 - Disabled colored buttons look inactive, in every panel
-- Azure DevOps: commands run from the extension (Backpromote and the others that read the git provider) use the Microsoft session the DevOps Pipeline is connected with when no Personal Access Token is stored, instead of reporting a missing token
+- Azure DevOps: commands run from the extension (Backpromote and the others that read the git provider) use the Microsoft session the DevOps Pipeline is connected with when no Personal Access Token is stored, instead of reporting a missing token (requires sfdx-hardis 8.28.0)
 
 ## [8.21.0] 2026-11-23
 

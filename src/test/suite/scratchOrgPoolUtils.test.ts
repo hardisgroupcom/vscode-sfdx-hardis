@@ -473,7 +473,11 @@ suite("Scratch Org Pool panel", () => {
   test("credentials not read in time are a retryable error, not a missing connection", () => {
     const command = readSourceFile("commands/showScratchOrgPool.ts");
     const credentials = readSourceFile("utils/providerCredentials.ts");
-    assert.ok(credentials.includes("return { env: {}, timedOut: true };"));
+    assert.ok(
+      credentials.includes(
+        "return { env: {}, timedOut: true, sessionTokenExpiresAt: null };",
+      ),
+    );
     assert.strictEqual(
       (command.match(/await collectCredentials\(\)/g) || []).length,
       2,

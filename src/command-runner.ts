@@ -37,7 +37,8 @@ import {
   showOrgOpenFailure,
 } from "./utils/orgUtils";
 import {
-  collectProviderCredentialEnvVars,
+  collectProviderCredentialEnvVarsWithStatus,
+  warnIfSessionTokenExpiresSoon,
   SECRET_ENV_KEYS,
 } from "./utils/providerCredentials";
 import { disableProviderCliAuth } from "./utils/providerCliAuthEnv";
@@ -274,7 +275,9 @@ export class CommandRunner {
     // (see runCommandInTerminal), so collecting them would be pure latency.
     if (isHardisCommand && isBackgroundMode) {
       try {
-        const credentialEnv = await collectProviderCredentialEnvVars();
+        const credentials = await collectProviderCredentialEnvVarsWithStatus();
+        const credentialEnv = credentials.env;
+        warnIfSessionTokenExpiresSoon(credentials.sessionTokenExpiresAt);
         if (Object.keys(credentialEnv).length > 0) {
           // Caller-supplied values take precedence over auto-collected ones
           extraEnv = { ...credentialEnv, ...extraEnv };
