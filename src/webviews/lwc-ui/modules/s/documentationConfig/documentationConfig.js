@@ -99,7 +99,7 @@ export default class DocumentationConfig extends SharedMixin(LightningElement) {
     // Provider options are fixed based on provider type, not schema
     this.providerOptions = [
       { label: this.t("noneOption"), value: "" },
-      { label: this.t("langchainLlms"), value: "langchain" },
+      { label: this.t("llmApiOption"), value: "llmApi" },
       { label: this.t("agentforceOption"), value: "agentforce" },
       { label: this.t("openaiDirect"), value: "openai" },
     ];
@@ -119,8 +119,8 @@ export default class DocumentationConfig extends SharedMixin(LightningElement) {
   }
 
   _detectProviderSelection() {
-    if (this.configValues.useLangchainLlm) {
-      return "langchain";
+    if (this.configValues.useAiLlm) {
+      return "llmApi";
     }
     if (this.configValues.useAgentforce) {
       return "agentforce";
@@ -130,16 +130,16 @@ export default class DocumentationConfig extends SharedMixin(LightningElement) {
     }
     if (
       this._hasAnyValue([
-        "langchainLlmProvider",
-        "langchainLlmModel",
-        "langchainLlmTemperature",
-        "langchainLlmMaxTokens",
-        "langchainLlmMaxRetries",
-        "langchainLlmTimeout",
-        "langchainLlmBaseUrl",
+        "aiLlmProvider",
+        "aiLlmModel",
+        "aiLlmTemperature",
+        "aiLlmMaxTokens",
+        "aiLlmMaxRetries",
+        "aiLlmTimeout",
+        "aiLlmBaseUrl",
       ])
     ) {
-      return "langchain";
+      return "llmApi";
     }
     if (
       this._hasAnyValue([
@@ -181,15 +181,15 @@ export default class DocumentationConfig extends SharedMixin(LightningElement) {
     }
 
     let providerKeys = [];
-    if (this.providerSelection === "langchain") {
+    if (this.providerSelection === "llmApi") {
       providerKeys = [
-        "langchainLlmProvider",
-        "langchainLlmModel",
-        "langchainLlmTemperature",
-        "langchainLlmMaxTokens",
-        "langchainLlmMaxRetries",
-        "langchainLlmTimeout",
-        "langchainLlmBaseUrl",
+        "aiLlmProvider",
+        "aiLlmModel",
+        "aiLlmTemperature",
+        "aiLlmMaxTokens",
+        "aiLlmMaxRetries",
+        "aiLlmTimeout",
+        "aiLlmBaseUrl",
       ];
     } else if (this.providerSelection === "openai") {
       providerKeys = ["openaiModel"];
@@ -342,7 +342,7 @@ export default class DocumentationConfig extends SharedMixin(LightningElement) {
     // Update provider flags: explicitly set each one based on selection
     this.configValues = {
       ...this.configValues,
-      useLangchainLlm: selection === "langchain",
+      useAiLlm: selection === "llmApi",
       useAgentforce: selection === "agentforce",
       useOpenaiDirect: selection === "openai",
     };
